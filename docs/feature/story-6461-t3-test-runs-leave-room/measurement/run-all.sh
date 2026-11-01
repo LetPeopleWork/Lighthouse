@@ -13,7 +13,8 @@ echo "label,exit,wall_s,peak_tree_rss_mb,min_mem_available_mb,max_threads" >"$re
 cores=$(nproc)
 fe_full=$((cores - 1))
 be_full=$cores
-half=$((cores / 2))
+half=$((cores / 2)); [ "$half" -ge 1 ] || half=1
+[ "$fe_full" -ge 1 ] || fe_full=1
 
 filter='TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration'
 
