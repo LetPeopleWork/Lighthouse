@@ -23,8 +23,9 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
-	stateNameClashErrors,
+	mappingAutoSaveBlockers,
 	validateStateMappings,
+	withoutIncompleteMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -97,8 +98,8 @@ function teamAutoSaveBlockers(
 			s.refinement,
 			getTerm(TERMINOLOGY_KEYS.REFINEMENT),
 		),
+		...mappingAutoSaveBlockers(s.stateMappings, s),
 	);
-	reasons.push(...stateNameClashErrors(s.stateMappings, s));
 	if (isDefault) {
 		return reasons;
 	}
@@ -237,11 +238,9 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onRemoveDoneState={doneHandlers.onRemove}
 							onReorderDoneStates={doneHandlers.onReorder}
 							isForTeam={true}
-							stateMappingNames={
-								teamSettings.stateMappings
-									?.filter((m) => m.name.trim() !== "")
-									.map((m) => m.name) || []
-							}
+							stateMappingNames={withoutIncompleteMappings(
+								teamSettings.stateMappings ?? [],
+							).map((m) => m.name)}
 						/>
 
 						<StateMappingsEditor

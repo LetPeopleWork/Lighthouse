@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { IStateMapping } from "../models/Common/StateMapping";
 import {
+	isApplied,
+	normalise,
 	reconcileDoingStates,
+	sharesStateWithAnother,
 	wouldShadow,
 } from "./stateMappingReconciliation";
 import { validateStateMappings } from "./stateMappingValidation";
@@ -467,6 +470,88 @@ describe("reconcileDoingStates", () => {
 			expect(wouldShadow({ name: "Group", states: ["QA"] }, ["QA"])).toBe(
 				false,
 			);
+		});
+	});
+
+	describe("wouldShadow for a name of only spaces", () => {
+		it("is false even when Doing lists an empty state", () => {
+			expect(wouldShadow({ name: "  ", states: ["QA"] }, [""])).toBe(false);
+		});
+	});
+
+	describe("normalise", () => {
+		it("trims and lowercases", () => {
+			expect(normalise("  In Progress ")).toBe("in progress");
+		});
+	});
+
+	describe("sharesStateWithAnother", () => {
+		it("is true when only one of the mapping's states is grouped by another mapping", () => {
+			const mapping: IStateMapping = { name: "A", states: ["QA", "Testing"] };
+			const other: IStateMapping = { name: "B", states: ["Review", "testing"] };
+
+			expect(sharesStateWithAnother(mapping, [mapping, other])).toBe(true);
+		});
+
+		it("is false when no other mapping groups one of its states", () => {
+			const mapping: IStateMapping = { name: "A", states: ["QA"] };
+
+			expect(sharesStateWithAnother(mapping, [mapping])).toBe(false);
+		});
+	});
+
+	describe("isApplied", () => {
+		it("is false while one of its states is still listed in Doing", () => {
+			const mapping: IStateMapping = { name: "Group", states: ["A", "B"] };
+
+			expect(isApplied(mapping, ["Group", "A"], [mapping])).toBe(false);
+		});
+
+		it("is true when its own name is one of its states", () => {
+			const mapping: IStateMapping = { name: "Impl", states: ["impl", "B"] };
+
+			expect(isApplied(mapping, ["Impl"], [mapping])).toBe(true);
+		});
+	});
+
+	describe("editing a mapping without changing how many states it has", () => {
+		it("takes the replaced state back and groups the new one", () => {
+			const prev: IStateMapping = { name: "Group", states: ["A", "B"] };
+			const next: IStateMapping = { name: "Group", states: ["A", "C"] };
+
+			const result = reconcileDoingStates(
+				[prev],
+				[next],
+				["Dev", "Group", "C"],
+			);
+
+			expect(result).toEqual(["Dev", "B", "Group"]);
+		});
+
+		it("leaves Doing as it is when only the order of the states changed", () => {
+			const prev: IStateMapping = { name: "Group", states: ["B", "A"] };
+			const next: IStateMapping = { name: "Group", states: ["A", "B"] };
+
+			const result = reconcileDoingStates([prev], [next], ["X", "Group", "Y"]);
+
+			expect(result).toEqual(["X", "Group", "Y"]);
+		});
+
+		it("leaves Doing as it is when only the order of the states changed the other way", () => {
+			const prev: IStateMapping = { name: "Group", states: ["A", "B"] };
+			const next: IStateMapping = { name: "Group", states: ["B", "A"] };
+
+			const result = reconcileDoingStates([prev], [next], ["X", "Group", "Y"]);
+
+			expect(result).toEqual(["X", "Group", "Y"]);
+		});
+
+		it("leaves a state where it is while the mapping stays the same and its name was taken out of Doing by hand", () => {
+			const mapping: IStateMapping = { name: "Group", states: ["A"] };
+
+			const result = reconcileDoingStates([mapping], [mapping], ["Dev", "A"]);
+
+			expect(result).toEqual(["Dev", "A"]);
 		});
 	});
 

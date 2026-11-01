@@ -305,7 +305,7 @@ describe("auto-save and auto-refresh state mappings (validity gate)", () => {
 		vi.useRealTimers();
 	});
 
-	it("fires no save when a mapping group name is left empty", async () => {
+	it("fires no save and no refresh while a blocking validation reason is reported", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
 		const additionalFetch = vi.fn().mockResolvedValue(undefined);
 		const args = makeArgs(
@@ -328,6 +328,93 @@ describe("auto-save and auto-refresh state mappings (validity gate)", () => {
 		expect(saveSettings).not.toHaveBeenCalled();
 		expect(additionalFetch).not.toHaveBeenCalled();
 		expect(result.current.formValid).toBe(false);
+	});
+});
+
+describe("auto-save skips a payload that has not changed", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
+	});
+
+	it("sends no save and no refresh when only an empty mapping is added", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const additionalFetch = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs(
+			{ saveSettings, additionalFetch },
+			teamAdminCanSaveAndRefresh,
+		);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+		additionalFetch.mockClear();
+
+		act(() =>
+			result.current.updateSettings("stateMappings", [
+				{ name: "", states: [] },
+			]),
+		);
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+		});
+
+		expect(saveSettings).not.toHaveBeenCalled();
+		expect(additionalFetch).not.toHaveBeenCalled();
+	});
+
+	it("sends one save once the added mapping is filled in", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() =>
+			result.current.updateSettings("stateMappings", [
+				{ name: "", states: [] },
+			]),
+		);
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS * 2);
+		});
+		act(() =>
+			result.current.updateSettings("stateMappings", [
+				{ name: "Review", states: ["QA"] },
+			]),
+		);
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		expect(saveSettings).toHaveBeenCalledWith(
+			expect.objectContaining({
+				stateMappings: [{ name: "Review", states: ["QA"] }],
+			}),
+		);
+	});
+
+	it("saves again when a value goes back to what was loaded after a later save", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = makeArgs({ saveSettings }, teamAdminCanSave);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "my-query"));
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
 	});
 });
 
@@ -693,5 +780,154 @@ describe("switching the work tracking system connection", () => {
 
 		expect(saveSettings).not.toHaveBeenCalled();
 		expect(result.current.selectedWorkTrackingSystem).toBeNull();
+	});
+});
+
+describe("saving while a state mapping is still being filled in", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
+	});
+
+	const complete = { name: "In Review", states: ["Review", "QA"] };
+	const another = { name: "Blocked", states: ["Waiting"] };
+
+	const loadedHook = async (
+		saveSettings = vi.fn().mockResolvedValue(undefined),
+		validateSettings = vi.fn().mockResolvedValue(true),
+	) => {
+		const args = makeArgs(
+			{
+				saveSettings,
+				validateSettings,
+				getSettings: vi
+					.fn()
+					.mockResolvedValue(atlasSettings({ stateMappings: [complete] })),
+			},
+			teamAdminCanSave,
+		);
+		const rendered = renderHook(() => useModifySettings(args));
+		await waitFor(() =>
+			expect(rendered.result.current.settings).not.toBeNull(),
+		);
+		return { ...rendered, args, saveSettings };
+	};
+
+	it("autosaves without the empty mapping and keeps the row in the editor", async () => {
+		const { result, saveSettings } = await loadedHook();
+		const draft = { name: "", states: [] };
+
+		act(() =>
+			result.current.updateSettings("stateMappings", [
+				complete,
+				another,
+				draft,
+			]),
+		);
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		expect(saveSettings.mock.calls[0][0].stateMappings).toEqual([
+			complete,
+			another,
+		]);
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+		expect(result.current.settings?.stateMappings).toEqual([
+			complete,
+			another,
+			draft,
+		]);
+	});
+
+	it.each([
+		["a name but no states", { name: "In", states: [] }],
+		["states but a blank name", { name: "", states: ["X"] }],
+		["states but a whitespace-only name", { name: "   ", states: ["X"] }],
+	])(
+		"leaves out a mapping with %s, keeping the others in order",
+		async (_label, draft) => {
+			const { result, saveSettings } = await loadedHook();
+
+			act(() =>
+				result.current.updateSettings("stateMappings", [
+					complete,
+					draft,
+					another,
+				]),
+			);
+			await actAndSettle(() => {
+				vi.advanceTimersByTime(DEBOUNCE_MS);
+			});
+
+			await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+			expect(saveSettings.mock.calls[0][0].stateMappings).toEqual([
+				complete,
+				another,
+			]);
+		},
+	);
+
+	it("sends a complete mapping unchanged", async () => {
+		const { result, saveSettings } = await loadedHook();
+
+		act(() =>
+			result.current.updateSettings("stateMappings", [complete, another]),
+		);
+		await actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		expect(saveSettings.mock.calls[0][0].stateMappings).toEqual([
+			complete,
+			another,
+		]);
+	});
+
+	it("flushes the unsent autosave without the empty mapping when the page is left", async () => {
+		const { result, unmount, saveSettings } = await loadedHook();
+
+		act(() =>
+			result.current.updateSettings("stateMappings", [
+				complete,
+				another,
+				{ name: "", states: [] },
+			]),
+		);
+		unmount();
+
+		expect(saveSettings).toHaveBeenCalledTimes(1);
+		expect(saveSettings.mock.calls[0][0].stateMappings).toEqual([
+			complete,
+			another,
+		]);
+	});
+
+	it("saves and validates manually without the empty mapping", async () => {
+		const validateSettings = vi.fn().mockResolvedValue(true);
+		const { result, saveSettings } = await loadedHook(
+			undefined,
+			validateSettings,
+		);
+
+		act(() =>
+			result.current.updateSettings("stateMappings", [
+				complete,
+				{ name: "", states: [] },
+			]),
+		);
+		await act(() => result.current.handleSave());
+
+		expect(validateSettings.mock.calls[0][0].stateMappings).toEqual([complete]);
+		expect(
+			saveSettings.mock.calls[saveSettings.mock.calls.length - 1][0]
+				.stateMappings,
+		).toEqual([complete]);
 	});
 });

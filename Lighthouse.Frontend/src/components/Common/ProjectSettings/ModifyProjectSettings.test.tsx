@@ -125,7 +125,9 @@ vi.mock("../StatesList/StatesList", () => ({
 		onRemoveDoingState,
 		onAddDoneState,
 		onRemoveDoneState,
+		stateMappingNames,
 	}: {
+		stateMappingNames?: string[];
 		onAddToDoState: (state: string) => void;
 		onRemoveToDoState: (state: string) => void;
 		onAddDoingState: (state: string) => void;
@@ -135,6 +137,9 @@ vi.mock("../StatesList/StatesList", () => ({
 	}) => (
 		<div>
 			<div>StatesList</div>
+			<div data-testid="state-mapping-names">
+				{(stateMappingNames ?? []).join("|")}
+			</div>
 			<button type="button" onClick={() => onAddToDoState("New ToDo")}>
 				Add ToDo
 			</button>
@@ -1060,6 +1065,109 @@ describe("ModifyProjectSettings", () => {
 			).toBeInTheDocument();
 			await waitPastTheDebounce();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+		});
+
+		it("holds back autosave while two complete mappings share a source state", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				stateMappings: [
+					{ name: "First", states: ["Review"] },
+					{ name: "Second", states: ["Review"] },
+				],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change General"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(
+				within(warning).getByText(
+					'Source state "Review" is used in multiple mappings.',
+				),
+			).toBeInTheDocument();
+			await waitPastTheDebounce();
+			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+		});
+
+		it("shows no warning for a mapping row still being filled in, and other edits still save", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				stateMappings: [
+					{ name: "First", states: ["Review"] },
+					{ name: "", states: [] },
+				],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			fireEvent.click(screen.getByText("Change General"));
+
+			await waitFor(() =>
+				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						stateMappings: [{ name: "First", states: ["Review"] }],
+					}),
+				),
+			);
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
+		});
+
+		it("offers only complete mappings as state options", async () => {
+			mockGetProjectSettings.mockResolvedValue({
+				...projectSettings,
+				stateMappings: [
+					{ name: "First", states: ["Review"] },
+					{ name: "Half", states: [] },
+				],
+			});
+
+			render(
+				<ModifyProjectSettings
+					title="Modify Project Settings"
+					getWorkTrackingSystems={mockGetWorkTrackingSystems}
+					getProjectSettings={mockGetProjectSettings}
+					getAllTeams={mockGetAllTeams}
+					saveProjectSettings={mockSaveProjectSettings}
+					validateProjectSettings={mockValidateProjectSettings}
+				/>,
+			);
+
+			await waitFor(() =>
+				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+			);
+
+			expect(screen.getByTestId("state-mapping-names")).toHaveTextContent(
+				/^First$/,
+			);
 		});
 
 		it("renders no warning while the form can be saved", async () => {

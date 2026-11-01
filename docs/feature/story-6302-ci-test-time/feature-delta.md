@@ -959,7 +959,7 @@ The three other final-gate reviewers (DISCUSS, DESIGN, DEVOPS) were not dispatch
   - E-KPI: median of ≥5 `main` runs, `Verify Frontend` ≤12 min and `Verify Backend` ≤13.5 min; test totals not below 7,630 / 10,198.
 - **Owed A/B (E-01):** the MUI bump (`641ac9c6f`) and pnpm 12.10 (`1bbde5105`) were not measured. Each needs ≥3 alternated runs per arm, the same protocol as the vite A/B in slice 01.
 - **DoD 1 status: open.** The ~9 % uniform frontend step from 13 Oct is not explained: vite was disproved, and MUI and pnpm 12.10 are unmeasured. DoD 1 stays open until that A/B runs, or until a follow-up ADO item records it.
-- **Follow-up ADO items, to be created on maintainer confirmation** (none created yet): see the list at the end of the slice 06 record.
+- **Follow-up ADO items**: filed on 2026-10-31 under Epic #6264 (T2 #6460, T4 #6462, FE7 #6457); see the list at the end of the slice 06 record.
 
 Also carried: the slice-06 brief and the journey named the budget file `Scripts/test-time-budget.json`, while DI-1 and the DO-7 trigger glob put it at `Scripts/test-timings/test-time-budget.json`. DELIVER follows DI-1; the brief and journey were corrected to match.
 
@@ -1477,7 +1477,7 @@ exit=0
 
 **DoD 1 status: open.** The ~9 % uniform frontend step from 13 Oct is not yet explained: vite was disproved, and MUI and pnpm 12.10 are unmeasured. DoD 1 stays open until that A/B runs, or until a follow-up ADO item records it.
 
-**Follow-up ADO items, to be created on maintainer confirmation** (none created yet):
+**Follow-up ADO items.** Filed on 2026-10-31 under Epic #6264's test-infrastructure track. Per-scenario database set-up, `ClusterSubstrateProbeRegistrationTest` and the 60 s deadline went to T2 #6460. The DataGrid render cost and the `ModifyTeamSettings.refinement` sleep went to FE7 #6457. The shared Postgres container is already done: only one test file still starts its own. The remaining budget recalibration and the removal of `--warn-only` went to T4 #6462. The original list:
 - Cheaper per-scenario database set-up for the shared-host backend harnesses. Since slice 04 shares the host, creating and seeding each scenario's database is the main cost.
 - The production render cost of MUI DataGrid and dialogs in jsdom, the cause left in every slow frontend file after slices 02 and 03.
 - `ModifyTeamSettings.refinement.test.tsx` still sleeps 600 ms of real time; move it to a fake clock like its siblings.

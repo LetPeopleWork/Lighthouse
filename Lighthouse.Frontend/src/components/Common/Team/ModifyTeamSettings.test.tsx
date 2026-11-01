@@ -140,7 +140,9 @@ vi.mock("../StatesList/StatesList", () => ({
 		onRemoveDoingState,
 		onAddDoneState,
 		onRemoveDoneState,
+		stateMappingNames,
 	}: {
+		stateMappingNames?: string[];
 		onAddToDoState: (state: string) => void;
 		onRemoveToDoState: (state: string) => void;
 		onAddDoingState: (state: string) => void;
@@ -150,6 +152,9 @@ vi.mock("../StatesList/StatesList", () => ({
 	}) => (
 		<div>
 			<div>StatesList</div>
+			<div data-testid="state-mapping-names">
+				{(stateMappingNames ?? []).join("|")}
+			</div>
 			<button type="button" onClick={() => onAddToDoState("New ToDo")}>
 				Add ToDo
 			</button>
@@ -472,13 +477,19 @@ describe("ModifyTeamSettings", () => {
 	it("auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure", async () => {
 		const validTeamSettings = createMockTeamSettings();
 		validTeamSettings.id = 42;
+		validTeamSettings.stateMappings = [
+			{ name: "In Review", states: ["Review"] },
+			{ name: "Blocked", states: ["Waiting"] },
+		];
 		mockGetTeamSettings.mockResolvedValueOnce(validTeamSettings);
 
 		await renderModifyTeamSettings();
 
 		mockUpdateTeamData.mockClear();
 
-		fireEvent.click(screen.getByText("Add State Mapping"));
+		fireEvent.click(
+			screen.getAllByRole("button", { name: "remove mapping" })[0],
+		);
 
 		await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
 		await waitFor(() =>
@@ -490,7 +501,7 @@ describe("ModifyTeamSettings", () => {
 
 		mockUpdateTeamData.mockRejectedValueOnce(new Error("refresh failed"));
 
-		fireEvent.click(screen.getByText("Add State Mapping"));
+		fireEvent.click(screen.getByRole("button", { name: "remove mapping" }));
 
 		expect(
 			await screen.findByRole("button", { name: "Reload now" }),
@@ -731,6 +742,85 @@ describe("ModifyTeamSettings", () => {
 						],
 					}),
 				),
+			);
+		});
+
+		it("tells the user which source state is used in more than one mapping", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				doingStates: ["Dev"],
+				stateMappings: [
+					{ name: "First", states: ["QA"] },
+					{ name: "Second", states: ["QA"] },
+				],
+			});
+
+			await renderModifyTeamSettings();
+
+			expect(
+				screen.getAllByText('Source state "QA" is used in multiple mappings.'),
+			).toHaveLength(2);
+		});
+
+		it("holds back autosave while two complete mappings share a source state", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				doingStates: ["Dev"],
+				stateMappings: [
+					{ name: "First", states: ["QA"] },
+					{ name: "Second", states: ["QA"] },
+				],
+			});
+
+			await renderModifyTeamSettings();
+
+			fireEvent.click(screen.getByText("Add ToDo"));
+
+			const warning = await screen.findByTestId("settings-blocking-warning");
+			expect(
+				within(warning).getByText(
+					'Source state "QA" is used in multiple mappings.',
+				),
+			).toBeInTheDocument();
+			await waitPastTheDebounce();
+			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
+		});
+
+		it("shows no warning for a mapping that was just added, and other edits still save", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				stateMappings: [{ name: "First", states: ["Review"] }],
+			});
+			await renderModifyTeamSettings();
+
+			fireEvent.click(screen.getByText("Add State Mapping"));
+			fireEvent.click(screen.getByText("Add ToDo"));
+
+			await waitFor(() =>
+				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						stateMappings: [{ name: "First", states: ["Review"] }],
+					}),
+				),
+			);
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
+		});
+
+		it("offers only complete mappings as state options", async () => {
+			mockGetTeamSettings.mockResolvedValueOnce({
+				...createMockTeamSettings(),
+				stateMappings: [
+					{ name: "First", states: ["Review"] },
+					{ name: "Half", states: [] },
+				],
+			});
+
+			await renderModifyTeamSettings();
+
+			expect(screen.getByTestId("state-mapping-names")).toHaveTextContent(
+				/^First$/,
 			);
 		});
 

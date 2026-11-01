@@ -1,0 +1,12 @@
+or {
+    JsFunctionBody(statements=$statements),
+    JsBlockStatement(statements=$statements)
+} where {
+    $statements <: [
+        ...,
+        JsExpressionStatement(expression=`$list.push($first)`),
+        JsExpressionStatement(expression=`$list.push($second)`),
+        ...
+    ],
+    register_diagnostic(span=$list, message="Two push() calls in a row on the same array: merge them into one call with several arguments, e.g. list.push(a, ...b).", severity="error")
+}

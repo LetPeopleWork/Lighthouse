@@ -77,6 +77,26 @@ describe("WaitStatesEditor", () => {
 		expect(within(options).getAllByRole("option")).toHaveLength(3);
 	});
 
+	it("does not suggest a mapping that has a name but no states yet", async () => {
+		render(
+			<WaitStatesEditor
+				waitStates={[]}
+				doingStates={doingStates}
+				stateMappings={[...stateMappings, { name: "Half Done", states: [] }]}
+				onChange={vi.fn()}
+			/>,
+		);
+
+		await openControl();
+		await userEvent.click(
+			screen.getByRole("combobox", { name: /wait state/i }),
+		);
+
+		const options = screen.getByRole("listbox");
+		expect(within(options).queryByText("Half Done")).not.toBeInTheDocument();
+		expect(within(options).getAllByRole("option")).toHaveLength(3);
+	});
+
 	it("clears the wait states when the toggle is switched off", async () => {
 		const onChange = vi.fn();
 		render(

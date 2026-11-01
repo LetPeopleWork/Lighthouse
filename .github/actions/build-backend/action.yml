@@ -18,7 +18,7 @@ runs:
     - name: Setup .NET
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
       with:
-        dotnet-version: '10.0.402'
+        dotnet-version: '10.0.403'
 
     - name: Restore dependencies
       shell: bash
@@ -45,17 +45,17 @@ runs:
       if: ${{ inputs.publish == 'true' }}
       shell: bash
       run: |
-        dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64 ./Lighthouse.Backend/Lighthouse.Backend
-        dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ inputs.fileversion }} -o ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64 ./Lighthouse.Backend/Lighthouse.Backend
+        dotnet publish -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -p:Version=${{ inputs.fileversion }} -o ./artifacts/publish/win-x64 ./Lighthouse.Backend/Lighthouse.Backend
+        dotnet publish -c Release -r linux-x64 --self-contained -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:Version=${{ inputs.fileversion }} -o ./artifacts/publish/linux-x64 ./Lighthouse.Backend/Lighthouse.Backend
         dotnet publish -c Release -r osx-arm64 --self-contained \
           -p:Version=${{ inputs.fileversion }} \
-          -o ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64 \
+          -o ./artifacts/publish/osx-arm64 \
           ./Lighthouse.Backend/Lighthouse.Backend
 
     - name: Remove development settings from published outputs
       if: ${{ inputs.publish == 'true' }}
       shell: bash
       run: |
-        rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/win-x64/appsettings.Development.json || true
-        rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/linux-x64/appsettings.Development.json || true
-        rm -f ./Lighthouse.Backend/Lighthouse.Backend/publish/osx-arm64/appsettings.Development.json || true
+        rm -f ./artifacts/publish/win-x64/appsettings.Development.json || true
+        rm -f ./artifacts/publish/linux-x64/appsettings.Development.json || true
+        rm -f ./artifacts/publish/osx-arm64/appsettings.Development.json || true

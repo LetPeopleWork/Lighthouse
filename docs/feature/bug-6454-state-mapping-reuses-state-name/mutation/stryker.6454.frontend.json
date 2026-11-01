@@ -1,0 +1,48 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6454.mutation.ts",
+    "related": false
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6454.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports",
+    "/StrykerOutput"
+  ],
+  "mutate": [
+    "src/utils/stateMappingReconciliation.ts",
+    "src/utils/stateMappingValidation.ts",
+    "src/components/Common/StateMappings/StateMappingsEditor.tsx:51-61",
+    "src/components/Common/Team/ModifyTeamSettings.tsx:101-101",
+    "src/components/Common/Team/ModifyTeamSettings.tsx:174-177",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:104-104",
+    "src/components/Common/ProjectSettings/ModifyProjectSettings.tsx:194-197"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6454-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6454"
+}
