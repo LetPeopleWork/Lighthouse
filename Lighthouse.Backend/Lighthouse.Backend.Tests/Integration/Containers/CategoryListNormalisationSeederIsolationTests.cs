@@ -81,7 +81,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
                 using var readScope = provider.CreateScope();
                 var readContext = readScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                var refusedAfter = (await readContext.Teams.AsNoTracking().SingleAsync(t => t.Id == refusedTeamId)).DoingStates;
+                var refusedTeam = await readContext.Teams.AsNoTracking().SingleAsync(t => t.Id == refusedTeamId);
+                var refusedAfter = refusedTeam.DoingStates;
                 var laterAfter = (await readContext.Teams.AsNoTracking().SingleAsync(t => t.Id == laterTeamId)).DoingStates;
                 var portfolioAfter = (await readContext.Portfolios.AsNoTracking().SingleAsync(p => p.Id == portfolioId)).DoingStates;
                 var summary = log.Everything.Last(entry => entry.Level == LogLevel.Information && entry.Properties.ContainsKey("Scanned"));
@@ -89,6 +90,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 using (Assert.EnterMultipleScope())
                 {
                     Assert.That(refusedAfter, Is.EqualTo(Listed("Analysis", "Review", "Waiting")), "The refused owner keeps what it had.");
+                    Assert.That(refusedTeam.AllStates, Is.SupersetOf(Listed("Code Review", "Testing")), "and every read of it still finds the group's states.");
                     Assert.That(laterAfter, Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")));
                     Assert.That(portfolioAfter, Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")));
                     Assert.That(Convert.ToInt32(summary.Properties["Skipped"], System.Globalization.CultureInfo.InvariantCulture), Is.EqualTo(1));

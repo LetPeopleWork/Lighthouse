@@ -4,6 +4,8 @@ namespace Lighthouse.Backend.Tests.Models
 {
     public class WorkTrackingSystemOptionsOwnerCategoryListsTest
     {
+        private const char NonBreakingSpace = (char)160;
+
         private const string Pending = "pending: category lists hold raw states";
 
         private static string[] Listed(params string[] states) => states;
@@ -57,7 +59,7 @@ namespace Lighthouse.Backend.Tests.Models
         [Ignore(Pending)]
         public void DisplayStatesFor_StatesPaddedWithTabsAndNonBreakingSpaces_AreRecognisedAsTheirGroup()
         {
-            var team = ATeamWithReviewMapping("Analysis", "\tCode Review", " Testing ");
+            var team = ATeamWithReviewMapping("Analysis", "\tCode Review", string.Concat(NonBreakingSpace, "Testing", NonBreakingSpace), " Testing");
 
             Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review")));
         }
@@ -288,15 +290,42 @@ namespace Lighthouse.Backend.Tests.Models
             Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "In Progress", "Done")));
         }
 
+        // A mapping with no states (none stored, or an empty list) is not a group: an entry with its name stays a
+        // state of the tracker, and no read throws.
         [Test]
+        [TestCase(true)]
+        [TestCase(false)]
         [Ignore(Pending)]
-        public void AllStates_OwnerTheStartUpPassCouldNotRead_StillHoldsTheStatesOfTheOtherEntries()
+        public void Reads_MappingWithNoStates_KeepTheEntryAsAStateAndDoNotThrow(bool statesAreNull)
         {
             var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review", "Waiting"], DoneStates = ["Done"] };
-            team.StateMappings.Add(new StateMapping { Name = "Review", States = null! });
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = statesAreNull ? null! : [] });
 
-            Assert.That(() => team.AllStates.ToList(), Throws.Nothing);
-            Assert.That(team.AllStates, Is.SupersetOf(Listed("Backlog", "Analysis", "Waiting", "Done")));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(() => team.AllStates.ToList(), Throws.Nothing);
+                Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Review", "Waiting", "Done")));
+                Assert.That(team.OpenStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Review", "Waiting")));
+                Assert.That(team.CategoryOfRawState("Review"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            }
+        }
+
+        // The same owner when the start-up pass could not rewrite a collapsed list (a save that failed): the list
+        // still holds the group's name, and every read must still find the group's states.
+        [Test]
+        [Ignore(Pending)]
+        public void Reads_CollapsedListTheStartUpPassCouldNotRewrite_FindTheGroupsStatesEverywhere()
+        {
+            var team = ATeamWithReviewMapping("Analysis", "Review", "Waiting");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.AllStates, Is.SupersetOf(Listed("Code Review", "Testing")));
+                Assert.That(team.OpenStates, Is.SupersetOf(Listed("Code Review", "Testing")));
+                Assert.That(team.CategoryOfRawState("Testing"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            }
         }
 
         [Test]
@@ -309,7 +338,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore(Pending)]
         public void AllStates_RawListWithAMappingOverIt_HoldsEveryRawStateOnce()
         {
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing");

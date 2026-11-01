@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
 
         private static readonly string[] NamesTheLogMayCarry = ["OwnerType", "OwnerId", "Scanned", "Rewritten", "LegacyExpanded", "Skipped", "Rule"];
 
-        private static readonly string[] WordsTheLogMayCarry = ["Team", "Portfolio", "Shadowing", "Chained", "Unreadable", "SaveFailed"];
+        private static readonly string[] WordsTheLogMayCarry = ["Team", "Portfolio", "Shadowing", "Chained", "EmptyGroup", "SaveFailed"];
 
         private static Team ACollapsedTeam(int id)
         {
@@ -61,6 +61,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             {
                 teams.Verify(r => r.Save(), Times.Exactly(2));
                 Assert.That(second.DoingStates, Is.EqualTo(new List<string> { "Analysis", "Code Review", "Testing" }));
+            }
+        }
+
+        // A mapping with no states is not a group: the owner is left as it is, one Warning names the rule, nothing throws.
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        [Ignore(Pending)]
+        public async Task Seed_MappingWithNoStates_LogsOneWarningWithAFixedRuleAndLeavesTheOwnerAlone(bool statesAreNull)
+        {
+            var team = new Team { Id = 3, Name = "Broken Squad", ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = statesAreNull ? null! : [] });
+            var teams = new Mock<IRepository<Team>>();
+            teams.Setup(r => r.GetAll()).Returns([team]);
+            var log = new RecordingLogger<CategoryListNormalisationSeeder>();
+
+            await Assert.ThatAsync(async () => await new CategoryListNormalisationSeeder(teams.Object, NoPortfolios().Object, log).Seed(), Throws.Nothing);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.DoingStates, Is.EqualTo(new List<string> { "Analysis", "Review" }));
+                Assert.That(log.Warnings, Has.Count.EqualTo(1));
+                Assert.That(log.Everything.Single(entry => entry.Level == LogLevel.Warning).Properties["Rule"], Is.EqualTo("EmptyGroup"));
+                teams.Verify(r => r.Save(), Times.Never);
             }
         }
 

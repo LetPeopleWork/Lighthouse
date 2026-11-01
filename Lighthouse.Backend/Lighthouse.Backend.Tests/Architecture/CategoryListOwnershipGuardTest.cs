@@ -3,12 +3,13 @@ using System.Text.RegularExpressions;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// The To Do, Doing and Done lists hold the tracker's own states, so reading them never expands a mapping name.
-    /// Only a name a person typed into a setting that refers to a group (a wait state, a cycle time boundary, a
-    /// refinement state) is expanded, and only the code that reads those settings may do so.
+    /// Who touches a To Do, Doing or Done list. Only the owner turns a mapping's name into its states when it reads
+    /// the lists (plus the few readers of a setting that names a group: a wait state, a cycle time boundary, a
+    /// refinement state). Only the settings sync, the start-up seeder and the seed-data factory write the lists, so
+    /// every stored list has been through the owner's classifier.
     /// </summary>
     [TestFixture]
-    public partial class CategoryListsAreReadAsTheyAreGuardTest
+    public partial class CategoryListOwnershipGuardTest
     {
         private const string Pending = "pending: category lists hold raw states";
 
@@ -38,6 +39,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             // Builds a throwaway Team from a payload to ask the owner whether a cycle time boundary is valid; it is never stored.
             "API/Helpers/CycleTimeDefinitionValidator.cs",
+
+            // Fills a board description handed back to the settings page (not an owner) with the states it found.
+            "Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
         ];
 
         // Catches a call with the list inline. A call through a variable or a parameter (the ServiceNow mapper
@@ -45,9 +49,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         [GeneratedRegex(@"GetRawStatesForCategory\(\s*[\w.]*\b(ToDoStates|DoingStates|DoneStates)\b", RegexOptions.CultureInvariant)]
         private static partial Regex ExpandsACategoryList();
 
-        // Two shapes: a member assignment or mutation on an owner variable, and a list set inside the initialiser of a
-        // new Team or Portfolio.
-        [GeneratedRegex(@"\b(?:team|project|portfolio|owner|workItemQueryOwner|workTrackingSystemOptionsOwner)\.(?:ToDoStates|DoingStates|DoneStates)\s*(?:=(?!=)|\.(?:Add|AddRange|Clear|Remove|RemoveAll|Insert)\()|\bnew\s+(?:Team|Portfolio)\b[^;]*?\b(?:ToDoStates|DoingStates|DoneStates)\s*=(?!=)", RegexOptions.CultureInvariant | RegexOptions.Singleline)]
+        // Two shapes: any assignment to, or mutation of, one of the three lists through a member access, whatever the
+        // receiver is called, and a list set inside the initialiser of a new Team or Portfolio.
+        [GeneratedRegex(@"\.\s*(?:ToDoStates|DoingStates|DoneStates)\s*(?:=(?!=)|\.(?:Add|AddRange|Clear|Remove|RemoveAll|Insert)\()|\bnew\s+(?:Team|Portfolio)\b[^;]*?\b(?:ToDoStates|DoingStates|DoneStates)\s*=(?!=)", RegexOptions.CultureInvariant | RegexOptions.Singleline)]
         private static partial Regex PutsAListOnAnOwner();
 
         private static string FindRepositoryRoot()

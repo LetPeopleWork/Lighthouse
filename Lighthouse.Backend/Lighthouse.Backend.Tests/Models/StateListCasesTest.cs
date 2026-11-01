@@ -5,6 +5,8 @@ namespace Lighthouse.Backend.Tests.Models
     /// <summary>The generated lists really contain the shapes the property tests claim to cover.</summary>
     public class StateListCasesTest
     {
+        private const char NonBreakingSpace = (char)160;
+
         [Test]
         public void Generate_ThreeHundredCases_HoldEveryKindOfEntryAndEveryKindOfPadding()
         {
@@ -17,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Models
                 Assert.That(kinds, Is.EquivalentTo(new[] { ListEntryKind.StateOfItsOwnMapping, ListEntryKind.CollapsedGroup, ListEntryKind.Shadowing }));
                 Assert.That(entries, Has.Some.Matches<string>(entry => entry.StartsWith(' ') && !entry.EndsWith(' ')), "a leading space only");
                 Assert.That(entries, Has.Some.Matches<string>(entry => entry.StartsWith('\t')), "a tab");
-                Assert.That(entries, Has.Some.Matches<string>(entry => entry.StartsWith(' ') && entry.EndsWith(' ')), "non-breaking spaces");
+                Assert.That(entries, Has.Some.Matches<string>(entry => entry.StartsWith(NonBreakingSpace) && entry.EndsWith(NonBreakingSpace)), "non-breaking spaces");
                 Assert.That(entries, Has.Some.Matches<string>(entry => entry != entry.ToLowerInvariant() && entry == entry.ToUpperInvariant() && entry.Length > 3), "an upper-case variant");
                 Assert.That(cases.Select(c => c.Index), Is.Unique);
             }

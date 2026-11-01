@@ -19,6 +19,8 @@ const cases: RuleCases = JSON.parse(
 	readFileSync(resolve(here, "./stateMappingRuleCases.json"), "utf8"),
 );
 
+const NONBREAKING_SPACE = String.fromCharCode(160);
+
 const review: IStateMapping = {
 	name: "Review",
 	states: ["Code Review", "Testing"],
@@ -97,7 +99,14 @@ describe("displayStatesFor", () => {
 
 	it.skip("recognises states padded with tabs and non-breaking spaces as their group", () => {
 		expect(
-			displayStatesFor(["Analysis", "\tCode Review", " Testing "], [review]),
+			displayStatesFor(
+				[
+					"Analysis",
+					"\tCode Review",
+					`${NONBREAKING_SPACE}Testing${NONBREAKING_SPACE}`,
+				],
+				[review],
+			),
 		).toEqual(["Analysis", "Review"]);
 	});
 

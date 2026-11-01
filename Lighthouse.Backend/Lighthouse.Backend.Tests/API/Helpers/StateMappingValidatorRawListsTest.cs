@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             Assert.That(
                 StateMappingValidator.ValidateSettings(settings).Errors,
-                Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the To Do state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name."));
+                Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the To Do state \"In Arbeit\". Choose another name."));
         }
 
         [Test]
@@ -50,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
             Assert.That(
                 StateMappingValidator.ValidateSettings(settings).Errors,
-                Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the Done state \"In Arbeit\". Add \"In Arbeit\" to this mapping to group it, or choose another name."));
+                Has.Some.EqualTo("Mapping \"In Arbeit\" has the same name as the Done state \"In Arbeit\". Choose another name."));
         }
 
         [Test]

@@ -4,6 +4,8 @@ namespace Lighthouse.Backend.Tests.Models
 {
     public class CategoryListNormalisationTest
     {
+        private const char NonBreakingSpace = (char)160;
+
         private const string Pending = "pending: category lists hold raw states";
 
         private static string[] Listed(params string[] states) => states;
@@ -77,6 +79,30 @@ namespace Lighthouse.Backend.Tests.Models
             var team = ATeamWithReviewGroup("Analysis", "Review");
 
             Assert.That(team.ClassifyListEntry(team.DoingStates, "Analysis"), Is.EqualTo(ListEntryKind.NotAGroupName));
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        [Ignore(Pending)]
+        public void ClassifyListEntry_NameOfAMappingWithNoStates_IsAStateOfTheTracker(bool statesAreNull)
+        {
+            var team = new Team { DoingStates = ["Analysis", "Review"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = statesAreNull ? null! : [] });
+
+            Assert.That(team.ClassifyListEntry(team.DoingStates, "Review"), Is.EqualTo(ListEntryKind.NotAGroupName));
+        }
+
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        [Ignore(Pending)]
+        public void NormalisedStatesFor_NameOfAMappingWithNoStates_StaysInTheList(bool statesAreNull)
+        {
+            var team = new Team { DoingStates = ["Analysis", "Review", "Waiting"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = statesAreNull ? null! : [] });
+
+            Assert.That(team.NormalisedStatesFor(team.DoingStates), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
         }
 
         [Test]
@@ -154,7 +180,7 @@ namespace Lighthouse.Backend.Tests.Models
         {
             var team = new Team();
 
-            Assert.That(team.NormalisedStatesFor(["Analysis", null!, "", "   ", "\t", " ", "Testing"]), Is.EqualTo(Listed("Analysis", "Testing")));
+            Assert.That(team.NormalisedStatesFor(["Analysis", null!, "", "   ", "\t", NonBreakingSpace.ToString(), "Testing"]), Is.EqualTo(Listed("Analysis", "Testing")));
         }
 
         [Test]

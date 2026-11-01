@@ -126,15 +126,16 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         [Test]
         [Ignore(Pending)]
-        public async Task AnOwnerWhoseGroupsCannotBeRead_IsSkippedWithAWarning_AndTheOthersAreStillRewritten(
-            [Values(Provider.Sqlite, Provider.Postgres)] Provider provider)
+        public async Task AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten(
+            [Values(Provider.Sqlite, Provider.Postgres)] Provider provider,
+            [Values(true, false)] bool statesAreNull)
         {
             var shape = ShapeOf(StoredShape.GroupNamedInPlaceOfItsStates);
 
             await WithADatabase(provider, async services =>
             {
                 var owners = await SeedATeamAndAPortfolio(services, shape);
-                var unreadableTeamId = await SeedATeamWhoseGroupHasNoStatesAtAll(services);
+                var unreadableTeamId = await SeedATeamWhoseGroupHasNoStatesAtAll(services, statesAreNull);
 
                 var run = new RecordingLogger<CategoryListNormalisationSeeder>();
                 await RunTheSeeder(services, run);
@@ -151,6 +152,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     Assert.That(Counted(run, "Skipped"), Is.EqualTo(1));
                     Assert.That(run.Warnings, Has.Count.EqualTo(1));
                     Assert.That(run.Warnings[0], Does.Contain(unreadableTeamId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+                    Assert.That(run.Everything.Single(entry => entry.Level == LogLevel.Warning).Properties["Rule"], Is.EqualTo("EmptyGroup"));
                 }
             });
         }
@@ -238,7 +240,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private static StateMapping Copy(StateMapping mapping) => new() { Name = mapping.Name, States = [.. mapping.States] };
 
         // Written with SQL because the model refuses to hold such a mapping: a row left by a version that let one through.
-        private static async Task<int> SeedATeamWhoseGroupHasNoStatesAtAll(ServiceProvider services)
+        private static async Task<int> SeedATeamWhoseGroupHasNoStatesAtAll(ServiceProvider services, bool statesAreNull)
         {
             using var scope = services.CreateScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -255,7 +257,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             context.Add(team);
             await context.SaveChangesAsync();
 
-            const string aGroupWithNoStates = "[{\"Name\":\"Review\",\"States\":null}]";
+            var aGroupWithNoStates = statesAreNull ? "[{\"Name\":\"Review\",\"States\":null}]" : "[{\"Name\":\"Review\",\"States\":[]}]";
             await context.Database.ExecuteSqlInterpolatedAsync($"UPDATE \"Teams\" SET \"StateMappings\" = {aGroupWithNoStates} WHERE \"Id\" = {team.Id}");
             return team.Id;
         }

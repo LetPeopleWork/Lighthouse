@@ -32,25 +32,25 @@ describe("validateStateMappings over lists of raw states", () => {
 		expect(validateStateMappings([inArbeit], lists(["In Arbeit"]))).toEqual([]);
 	});
 
-	it.skip("names the To Do list when the shadowing sits there", () => {
+	it("names the To Do list when the shadowing sits there", () => {
 		expect(
 			validateStateMappings(
 				[inArbeit],
 				lists(["Active"], ["In Arbeit", "In Progress"]),
 			),
 		).toEqual([
-			'Mapping "In Arbeit" has the same name as the To Do state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+			'Mapping "In Arbeit" has the same name as the To Do state "In Arbeit". Choose another name.',
 		]);
 	});
 
-	it.skip("names the Done list when the shadowing sits there", () => {
+	it("names the Done list when the shadowing sits there", () => {
 		expect(
 			validateStateMappings(
 				[inArbeit],
 				lists(["Active"], ["Backlog"], ["In Arbeit", "In Progress"]),
 			),
 		).toEqual([
-			'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+			'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Choose another name.',
 		]);
 	});
 

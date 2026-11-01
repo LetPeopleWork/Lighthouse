@@ -33,7 +33,9 @@ namespace Lighthouse.Backend.Tests.Models
 
         private static readonly string[] FreshNames = ["Group A", "Group B", "Group C"];
 
-        private static readonly string[] Paddings = [" {0}", "{0} ", "\t{0}", " {0} ", "  {0}  "];
+        private const char NonBreakingSpace = (char)160;
+
+        private static readonly string[] Paddings = [" {0}", "{0} ", "\t{0}", $"{NonBreakingSpace}{{0}}{NonBreakingSpace}", "  {0}  "];
 
         public static IEnumerable<StateListCase> Generate(int count)
         {

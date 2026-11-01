@@ -211,7 +211,7 @@ namespace Lighthouse.Backend.Models
             => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {category})");
 
         // SCAFFOLD: true
-        /// <summary>The category of a raw tracker state, read from the lists as they are.</summary>
+        /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
         public StateCategories CategoryOfRawState(string rawState)
             => throw new InvalidOperationException($"Not yet implemented -- RED scaffold ({StateMappings.Count} mappings, {rawState})");
 

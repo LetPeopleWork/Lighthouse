@@ -478,13 +478,36 @@ namespace Lighthouse.Backend.Tests.API.Integration
         // reads through the classifier, so its pages and suggestions already show the states.
         [Test]
         [Ignore(Pending)]
-        public async Task ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupOnDisplay()
+        public async Task ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupsStatesAndTheGroupOnDisplay()
         {
             SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);
 
             var settings = await ReadSettings();
 
-            Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")), "The states of the group are in the list.");
+                Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            }
+        }
+
+        // The group has no states (none stored, or an empty list), so it is not a group: its name stays a state, and
+        // reading the owner does not fail.
+        [Test]
+        [TestCase(true)]
+        [TestCase(false)]
+        [Ignore(Pending)]
+        public async Task ReadingAnOwnerWhoseGroupHasNoStates_KeepsTheEntryAsAStateAndDoesNotFail(bool statesAreNull)
+        {
+            SeedOwner(mappings: [new StateMappingDto { Name = "Review", States = statesAreNull ? null! : [] }], doing: ["Analysis", "Review", "Waiting"]);
+
+            var settings = await ReadSettings();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+                Assert.That(Strings(settings, "doingDisplayStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            }
         }
 
         [Test]
@@ -612,7 +635,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             using var scope = factory.Services.CreateScope();
             var connection = new WorkTrackingSystemConnection { Name = $"Connection {Guid.NewGuid():N}", WorkTrackingSystem = WorkTrackingSystems.Jira };
-            var stored = (mappings ?? []).Select(m => new StateMapping { Name = m.Name, States = [.. m.States] }).ToList();
+            var stored = (mappings ?? []).Select(m => new StateMapping { Name = m.Name, States = m.States is null ? null! : [.. m.States] }).ToList();
 
             if (kind == OwnerKind.Team)
             {

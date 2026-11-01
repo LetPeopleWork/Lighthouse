@@ -258,6 +258,11 @@ below.
   - The invariant is that `ToDoStates`, `DoingStates` and `DoneStates` hold raw states. `AllStates`,
     `OpenStates` and `MapStateToStateCategory` (`:33-38,188-206`) read the lists as they are and stop
     calling `GetRawStatesForCategory` on them. The same goes for the three connector sites in the table.
+    **Superseded by the design's D12 (normalise on read):** the stored lists hold raw states, but every read
+    (`AllStates`, `OpenStates`, both category lookups, `DisplayStatesFor`, the connector reads, the suggestions
+    endpoint) goes through the owner's one classifier / normaliser, so a stored list that still holds a collapsed
+    group name (a skipped, pre-seeder or old-pod-written owner) still loads every item. On a list that already
+    holds raw states the normaliser is the identity. The "read as they are" wording above is the earlier draft.
   - Keep `GetRawStatesForCategory` for mapped-name references only: wait states, cycle-time boundaries
     and refinement.
   - Add `DisplayStatesFor(category)`, the one place the view is computed. It is a single pass over the raw
@@ -284,11 +289,14 @@ below.
     collapsed chip (`[Analysis, Review]` with `Review = [Code Review, Testing]`), which is the shape the current
     editor saves on every mapping edit. The corrected rule, for a list entry that equals a mapping's name:
     - (a) the name is one of that mapping's own states: a raw state; keep it, then add the members not yet listed;
-    - (b) collapsed chip: no state of that mapping is listed anywhere in that list: replace the entry by the
-      members, in place. Never a 400. The write path and the seeder both do this;
-    - (c) shadowing (the 6454 configuration): the name is listed AND at least one of the mapping's states is
-      listed alongside it: 400 on the write path, naming the fix (the frontend's existing copy is reused);
-      legacy expansion plus a Warning in the seeder.
+    - (b) collapsed chip: the name is not one of that mapping's own states and no state of that mapping is listed
+      anywhere in that list: replace the entry by the members, in place. Never a 400. The write path and the
+      seeder both do this;
+    - (c) shadowing (the 6454 configuration): the name is not one of that mapping's own states, the name is listed
+      AND at least one of the mapping's states is listed alongside it: 400 on the write path, naming the fix (the
+      frontend's existing copy is reused); legacy expansion plus a Warning in the seeder.
+    - A mapping with no states (null or empty) is not a group: an entry with its name stays a raw state. The
+      seeder logs it as a Warning with the fixed rule value `EmptyGroup` and does not throw; no read throws either.
     - The normaliser's output holds a mapping name only under (a).
   - **Pre-check (rejects with 400, naming the fix):**
     - **V3** (case c only): shadowing as defined above.
