@@ -1,0 +1,23 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNames.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs",
+      "**/Factories/IssueFactory.cs",
+      "**/Services/Implementation/WorkItems/FetchFingerprint.cs",
+      "**/API/SuggestionsController.cs"
+    ],
+    "ignore-methods": ["*Log*", "Console.*"],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "(FullyQualifiedName~WorkTrackingConnectors.Jira|FullyQualifiedName~Factories.IssueFactory|FullyQualifiedName~Fingerprint|FullyQualifiedName~SuggestionsControllerTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&TestCategory!=JiraIntegration&TestCategory!=AdoIntegration&TestCategory!=LinearIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=Integration&TestCategory!=requires-docker&TestCategory!=real-io",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

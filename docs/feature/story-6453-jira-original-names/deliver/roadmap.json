@@ -1,0 +1,525 @@
+{
+  "roadmap": {
+    "project_id": "story-6453-jira-original-names",
+    "created_at": "2026-10-31T20:00:00Z",
+    "total_steps": 11,
+    "total_phases": 3,
+    "goal": "ADO #6453 'Jira: work against the original (untranslated) status and work item type names'. Backend only (C# .NET 10). Three slices, delivered 01 -> 02 -> 03. Slice 01: Load from board and every refresh use the original names of statuses and work item types (status category key, untranslatedName with name as the Data Center fallback, de-duplication ignoring case, one memoised read of each list per connector instance, one re-read on an unknown id, visible failures with the approved Activity copy; conditions C-1, C-2, C-4). Slice 02: a Jira-only reading-version marker in the fetch fingerprint so every Jira Team and Portfolio takes one full refresh after the upgrade (DD-11, MD-15, condition C-3); its own droppable commit; the two Jira pinned-digest tests move on purpose. Slice 03: the eight Distinct calls in SuggestionsController compare ignoring case. Done when all 61 [Ignore]d test methods are un-ignored (55 in slice 01 including the five live methods, 2 in slice 02, 4 in slice 03) and green: 56 in the default run, and the five live methods green in a run with both tokens set (the crafter of 01-09 runs JiraOriginalNamesLiveTest with JiraLighthouseIntegrationTestToken and JiraLighthouseRestrictedIntegrationTestToken from the local environment; without them the class self-skips), the pins stay green, `dotnet build` has zero warnings and the filtered `dotnet test` is green. Release notes, docs, and mutation runs (>= 80 %) belong to finalization and are NOT steps here.",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "wave": "DELIVER",
+    "paradigm_note": "The Hypothesis + state-delta unit mandate from nw-roadmap does not apply, deliberately: the backend is NUnit 4 + Moq without a property-testing library, and DISTILL authored every scenario example-based with [TestCase]/[TestCaseSource] tables for finite axes. RED is removing [Ignore] and watching the test fail on its assertion, as the feature-delta's red classification records; GREEN is production code. DELIVER writes no new tests except where a step says so (the exact post-marker digest in step 02-01). Contract shapes (feature-delta, Driven Ports): JiraOriginalNames pure-function (return-only, no I/O, no logger); IssueFactory.CreateIssueFromJson pure-function, unchanged contract; connector lookup read bounded-change (one memo entry on the connector instance, no database, no Jira write, counted per route by the fake handler); board load pure read (every request a GET). No nWave scenario tags in code.",
+    "exit_gates": [
+      "End of every step: `dotnet build` in Lighthouse.Backend with zero warnings (TreatWarningsAsErrors); the touched test classes green; no [Ignore] left on the methods the step un-ignores.",
+      "End of every phase-01 step that touches the connector or the factory (01-02, 01-04 .. 01-09): the whole Jira test folder (Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira) green, plus the three API/Integration fixtures that reach a Jira download (ParentFromIssueLinks, ParentPlacementAcceptanceTest, NamedDependencyLinkAcceptanceTest) green. DISTILL could not prove the fixtures survive the new list reads before the connector reads them; this is where it is proven.",
+      "End of phase 01: the filtered `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"` green (CLAUDE.md's environmental signatures are not regressions); JiraBoardQueryAssemblyTest green with a real issue-type list answer in AReadableBoardExcept and board issues that carry type ids; JiraRouteLiteralsTest and ModuleBoundariesArchUnitTest green; every request the board load makes is a GET. The live class JiraOriginalNamesLiveTest has no [Ignore] and self-skips without both tokens (run locally with both tokens before the push, the maintainer's call).",
+      "Conditions from the review gate, each pinned by a test in the slice that implements it: C-1 (a non-null id a list lacks is never answered with the payload name, through JiraOriginalNames and through IssueFactory: steps 01-01 and 01-02); C-2 (board status id missing after one re-read is left out with a warning naming the id: step 01-07); C-3 (the non-Jira byte-identical fingerprint pin covers every WorkTrackingSystems value except Jira, parametrised: step 02-01); C-4 (the list read happens once in GetIssuesByQuery before the deployment branch, both download methods receive the lookup, the board load's status read goes through the same memo: steps 01-04 and 01-09).",
+      "End of phase 02: FetchShapingPropertyGuardTest, the non-Jira digest pins, FetchFingerprintTest and every other fingerprint test green unchanged; only the two Jira pinned digests moved, with their rationale text updated to name the marker; the commit is separate so `git revert` drops it alone.",
+      "End of phase 03: SuggestionsControllerTest green; `Distinct()` with no comparer no longer appears in SuggestionsController.cs; no other change in the file.",
+      "Sonar/analyzer rules pre-applied (docs/ci-learnings.md): S6667, CA2254, S2139, CA1859, S107, S2325/S1144, S3776 for the board and lookup code; tests NUnit2045/2056, NUnit4002, NUnit2046, NUnit1028, CA1861.",
+      "Comments in new code: rare, plain-language why, never an internal reference (no MD-, DD-, AC-, C-, O-, US- or ADR- numbers). Log and verdict copy is exactly the approved wording the DISTILL tests pin. EF migrations, frontend, API shapes and updaters are UNCHANGED; no step lists them."
+    ],
+    "sizing_convention": "Step size is counted in [Ignore]d test methods un-ignored (a [TestCase] row adds a test case, not a method). Target about 1-3 hours and at most about 8 methods per step."
+  },
+  "ssot_inputs": {
+    "feature_delta": "docs/feature/story-6453-jira-original-names/feature-delta.md",
+    "slices": "docs/feature/story-6453-jira-original-names/slices/slice-01-board-and-sync-use-original-names.md, slice-02-one-full-refresh-after-upgrade.md, slice-03-suggestions-ignore-case.md",
+    "test_helpers": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/JiraInstanceStub.cs, TrackerWireFormats.cs (JiraWireFormat), JiraConnectorTestSetup.cs",
+    "ci_learnings": "docs/ci-learnings.md",
+    "ado_story": "https://dev.azure.com/letpeoplework/Lighthouse/_workitems/edit/6453"
+  },
+  "user_decisions": [
+    "MD-2 / MD-3 - Lighthouse always works against the original names for statuses and work item types; no migration of stored translated names.",
+    "MD-6 - Data Center / Server: where untranslatedName (or the status category key) is absent, use name (and the category name switch); behaviour as today.",
+    "MD-7 / MD-9 - History (changelog) and the JQL Lighthouse builds need no change; both are regression pins.",
+    "MD-8 / MD-12 - A refresh whose status or issue type list cannot be read fails visibly through JiraReadException with the approved Activity copy; never a fallback to translated names.",
+    "MD-13 - Only the Team verdict carries the kept-state sentence; Portfolio and validation verdicts end after 'Jira answered {code} ({status}).'",
+    "MD-14 - An id missing from a list that was read fine: re-read both lists once, then fail visibly naming the id (refresh) or leave it out with a warning naming the id (board load). The payload name is used only for an issue payload without an id and for a list entry without untranslatedName.",
+    "MD-15 - DD-11 confirmed: a Jira-only reading-version marker in the fetch fingerprint, own commit, every non-Jira digest byte-identical; the Jira pinned digests move on purpose; the configuration-changed reason on that one refresh is accepted.",
+    "MD-10 / MD-11 - AFK session: nothing pushed (hold locally); rigor profile standard (agent_model sonnet, reviewer_model haiku); mutation once at the end."
+  ],
+  "out_of_scope": [
+    "Migrating stored translated names (MD-3); matching a configured name against both the translated and the original name.",
+    "Issue link type names, resolution, priority and other fields; the changelog and the JQL builder (MD-4, MD-7, MD-9).",
+    "Any frontend, API shape, EF schema or migration change; TeamUpdater, PortfolioUpdater, UpdateServiceBase, WorkItemService, TeamDataService (UNCHANGED).",
+    "Other connectors' languages (ADO, Linear, ServiceNow); a Data Center probe.",
+    "Finalize items: docs/concepts/worktrackingsystems/jira.md, release note (names the MD-3 break and the DD-11 repair), mutation runs on frozen code (>= 80 %), ADO state transitions."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Load from board and every refresh use the original names (#6453 slice 01)",
+      "description": "Releasable alone; English accounts see no change. Order: the pure lookup (01-01), the factory that asks it (01-02), the verdict copy (01-03), the refresh reading and memoising both lists (01-04), a refused list stopping the refresh (01-05), an unknown id re-read once then failing visibly (01-06), the board load's states (01-07) and work item types (01-08), then the shared memo between board load and refresh and the live class (01-09). Committed per step; nothing pushed.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The lookup reports a status or type by its original name and reports an unknown id instead of inventing a name",
+          "description": "Replace the JiraOriginalNames scaffold: FromLists builds the status-id and issue-type-id maps from the two Jira lists (name = untranslatedName, else the entry's own name); StatusNameFor and IssueTypeNameFor answer the original name for a known id, the payload name only for a payload that carries no id, and null (a miss) for a non-null id the lists lack; StatusIdsItDoesNotKnow and IssueTypeIdsItDoesNotKnow report exactly the unknown ids, once each; a status id is never looked up among the types; AsReported stays the identity that knows every id (Data Center). Pure value object: no I/O, no logger, no clock. Parsing of already-fetched JSON only.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesTest.cs"
+          ],
+          "scenario_name": "JiraOriginalNames: original name by id, unknown ids reported, never the payload name for an unknown id (C-1)",
+          "unskips": [
+            "JiraOriginalNamesTest.A_status_the_list_knows_is_reported_by_its_original_name",
+            "JiraOriginalNamesTest.A_work_item_type_the_list_knows_is_reported_by_its_original_name",
+            "JiraOriginalNamesTest.An_entry_without_an_original_name_is_reported_by_the_name_of_the_entry",
+            "JiraOriginalNamesTest.Status_ids_the_list_does_not_hold_are_reported_as_unknown_once_each",
+            "JiraOriginalNamesTest.Work_item_type_ids_the_list_does_not_hold_are_reported_as_unknown_once_each",
+            "JiraOriginalNamesTest.Only_the_ids_the_lists_lack_are_reported_as_unknown",
+            "JiraOriginalNamesTest.A_non_null_id_the_lists_lack_is_never_answered_with_the_name_the_payload_carried",
+            "JiraOriginalNamesTest.A_status_id_is_never_looked_up_among_the_work_item_types"
+          ],
+          "guards_kept_green": [
+            "JiraOriginalNamesTest pins: a payload without an id keeps its name; the as-reported identity knows every id",
+            "JiraRouteLiteralsTest",
+            "ModuleBoundariesArchUnitTest"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNames.cs (edit - scaffold replaced)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesTest.cs (edit - un-ignore)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "A status or work item type id the lists know is reported by its original name; an entry without an original name is reported by the entry's own name.",
+            "An id the lists lack is reported as unknown, once each and only those, and is never answered with the name the payload carried; a status id never resolves among the work item types.",
+            "A payload with no id keeps its name, and the as-reported lookup knows every id, so Data Center behaves as today.",
+            "JiraOriginalNamesTest green (8 un-ignored, pins unchanged); dotnet build zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: closed example tables over a pure value object; no property library in the backend. Pure-function contract shape (return-only): immutable, no I/O, no logger. Keep the StatusNameFor/IssueTypeNameFor string? return types the scaffold fixed so a miss is expressible. Public because IIssueFactory (public) takes it. Pre-apply docs/ci-learnings.md (S3776, CA1859). Commit via des-commit: `feat(jira): ...`.",
+          "sizing_review": "8 un-ignored methods: at the ceiling, informational"
+        },
+        {
+          "id": "01-02",
+          "name": "A work item is built with the original state and type, and its dates do not depend on the account's language",
+          "description": "IssueFactory resolves the current state and the issue type through the optional JiraOriginalNames input (null means as reported): the id in fields.status / fields.issuetype is looked up, the resolved original state is the name GetStartedAndClosedDate compares against the changelog's already-original fromString/toString, and a non-null id the lookup does not know is never given the payload name. Changelog handling is untouched. Existing callers and tests that omit the argument keep today's behaviour.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryOriginalNamesTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryOriginalNamesTest.cs"
+          ],
+          "scenario_name": "IssueFactory: German payload gives the original state and type; equal dates; no payload name for an unknown id (C-1)",
+          "unskips": [
+            "IssueFactoryOriginalNamesTest.A_German_payload_gives_the_state_and_type_an_English_account_would_see",
+            "IssueFactoryOriginalNamesTest.Started_and_closed_dates_are_the_same_whichever_language_the_account_reads",
+            "IssueFactoryOriginalNamesTest.A_non_null_id_the_lists_lack_is_never_given_the_name_the_payload_carried"
+          ],
+          "guards_kept_green": [
+            "IssueFactoryOriginalNamesTest pins: history untouched; a payload with no id keeps its names; no lookup given keeps today's names",
+            "IssueFactoryTest and IssueFactoryLinkDatesTest (every existing call site compiles and behaves as before)",
+            "the whole Jira test folder"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs (edit - state and type asked of the lookup)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Factories/IssueFactoryOriginalNamesTest.cs (edit - un-ignore)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "criteria": [
+            "A German issue payload with ids the lists know yields the state and type an English account would see.",
+            "Started and closed dates are identical whichever language the account reads, because the original current state is compared against the changelog's original names.",
+            "A non-null id the lookup lacks never yields the payload's own name: the factory sets that State (or IssueType) to null, and the test asserts Is.Null (tighten IssueFactoryOriginalNamesTest accordingly). The connector checks every page for unknown ids before the factory sees it (01-06), so a null never reaches storage. A payload without ids and a call without a lookup behave exactly as today.",
+            "IssueFactoryOriginalNamesTest green (3 un-ignored, 3 pins unchanged); existing factory tests unchanged."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example tests over a pure mapper. Pure-function contract shape (return-only), unchanged: the constructor logger stays the only dependency, the factory makes no HTTP and does not throw for a miss (the connector checks ids before the factory sees a page, step 01-06). IIssueFactory already carries the optional trailing JiraOriginalNames? parameter; do not change its signature. Commit via des-commit: `feat(jira): ...`."
+        },
+        {
+          "id": "01-03",
+          "name": "A refused list or an unknown id reaches the administrator in the approved words",
+          "description": "Write the verdict messages of JiraReadException's four factories StatusListRefused, IssueTypeListRefused, StatusIdNotInList and IssueTypeIdNotInList using the ReadFor argument: the Team variant ends with the kept-state sentence 'Nothing was changed; the Team keeps the work items from its last refresh.'; the Portfolio and validation variants end after 'Jira answered {code} ({status}).' for refused lists and after the unknown-id sentence for unknown ids. Status and work item type wording exactly as approved (list refused: 'Lighthouse could not read the list of statuses on this Jira instance, so it cannot tell which state each work item is in. Jira answered {code} ({status}).'; unknown id: 'Jira reported a status (id {id}) that is not in its list of statuses on this Jira instance, so Lighthouse cannot tell which state each work item is in.' and the work item type variants). Codes and technical detail stay as scaffolded.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs"
+          ],
+          "scenario_name": "The refresh log reason for a refused list or an unknown id, Team with the kept-state sentence and Portfolio without it",
+          "unskips": [
+            "TeamUpdaterTest.TriggerUpdate_JiraCouldNotReadItsStatusList_TheReasonSaysSoAndThatTheTeamKeepsItsWorkItems",
+            "TeamUpdaterTest.TriggerUpdate_JiraCouldNotReadItsWorkItemTypeList_TheReasonSaysSoAndThatTheTeamKeepsItsWorkItems",
+            "TeamUpdaterTest.TriggerUpdate_JiraReportedAnIdItsListLacks_TheReasonNamesTheIdAndSaysTheTeamKeepsItsWorkItems",
+            "PortfolioUpdaterTest.TriggerUpdate_JiraCouldNotReadItsWorkItemTypeList_TheReasonSaysSoWithoutSayingWhatWasKept",
+            "PortfolioUpdaterTest.TriggerUpdate_JiraCouldNotReadItsStatusList_TheReasonSaysSoWithoutSayingWhatWasKept",
+            "PortfolioUpdaterTest.TriggerUpdate_JiraReportedAnIdItsListLacks_TheReasonNamesTheIdWithoutSayingWhatWasKept"
+          ],
+          "guards_kept_green": [
+            "the rest of TeamUpdaterTest and PortfolioUpdaterTest (existing read-failure reasons unchanged)",
+            "JiraReadException users: the field-list and link-type refusals' verdicts"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraReadException.cs (edit - verdict messages written)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs (edit - un-ignore)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/PortfolioUpdaterTest.cs (edit - un-ignore)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "When Jira's status or work item type list cannot be read, the Activity reason says which list and what Jira answered; for a Team it adds that nothing was changed and the Team keeps its work items; for a Portfolio and for the settings check it does not.",
+            "When Jira reports a status or work item type id its list lacks, the reason names the id; the Team variant adds the kept-state sentence, the Portfolio and validation variants do not.",
+            "The full reason is compared exactly by the updater tests; TeamUpdaterTest and PortfolioUpdaterTest green (6 un-ignored)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: exact copy strings are golden-text assertions; compensate with the existing refused-list class in step 01-05 that asserts the same verdicts through the connector. The ReadFor argument switches only the kept-state sentence (Team on, Portfolio and validation off). No updater change is needed: WorkTrackingReadException is already caught before the generic handler in both updaters. Commit via des-commit: `feat(jira): ...`."
+        },
+        {
+          "id": "01-04",
+          "name": "A refresh reads each list once and stores the original states and types",
+          "description": "In GetIssuesByQuery, before the Cloud versus Data Center branch, read the status list and the issue type list (rest/api/latest/status and rest/api/latest/issuetype, JiraRestRoutes.IssueType) once per connector instance and memoise the built JiraOriginalNames on the instance; hand it to both download methods and on to the factory. An identified Data Center makes no list call and passes AsReported; Cloud and an unidentified deployment (serverInfo fails) read both lists and fall back to the entry's own name where untranslatedName is absent. Paging, chunked by-key queries and every later query on the same instance reuse the memo; the identity sweep makes no list call. Fixtures that reach a download are fixed through the shared JiraWireFormat / JiraConnectorTestSetup helpers, never by loosening an assertion.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs"
+          ],
+          "scenario_name": "Cloud refresh: original states and types, equal dates, unidentified deployment, lists read once across pages and chunks",
+          "unskips": [
+            "JiraRefreshOriginalNamesTest.A_German_account_refreshes_work_items_in_the_original_states_and_types",
+            "JiraRefreshOriginalNamesTest.Started_and_closed_dates_come_out_the_same_for_the_German_and_the_English_account",
+            "JiraRefreshOriginalNamesTest.A_custom_status_an_administrator_named_in_German_is_the_state_for_a_German_account",
+            "JiraRefreshOriginalNamesTest.A_deployment_that_cannot_be_identified_reads_the_lists_and_gives_a_German_account_the_original_names",
+            "JiraRefreshOriginalNamesTest.A_deployment_that_cannot_be_identified_uses_the_name_of_an_entry_that_has_no_original_name",
+            "JiraRefreshOriginalNamesTest.A_refresh_reads_each_list_once_however_many_pages_the_search_has",
+            "JiraRefreshOriginalNamesTest.A_download_by_key_split_into_several_queries_reads_each_list_once"
+          ],
+          "guards_kept_green": [
+            "JiraRefreshOriginalNamesTest pins: English account unchanged; English custom status 'In Prüfung'; identified Data Center asks for no list; sweep makes no list call; exact JQL identical under both languages",
+            "the whole Jira test folder (JiraIncrementalSyncTest, JiraCancellationGranularityTest, JiraIssuesPerRequestTest, JiraDeliverySourceProviderTest, JiraNamedDependencyLinkTest, JiraWorkTrackingConnectorTest non-live)",
+            "the three API/Integration fixtures reaching a Jira download (ParentFromIssueLinks, ParentPlacementAcceptanceTest, NamedDependencyLinkAcceptanceTest)",
+            "JiraRouteLiteralsTest"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - list read and memo before the deployment branch, lookup passed to both download methods)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs (edit - un-ignore)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TrackerWireFormats.cs and JiraConnectorTestSetup.cs (edit only if a fixture needs a list answer or an issue id its list carries)"
+          ],
+          "dependencies": [
+            "01-01",
+            "01-02"
+          ],
+          "criteria": [
+            "Refreshing through a German account stores the original state and type of each work item, with started and closed dates equal to the English read, including a custom status whose original name is German.",
+            "Each list is read once per connector instance however many pages or chunked by-key queries follow; an identity sweep and an identified Data Center make no list call.",
+            "A deployment that cannot be identified still reads the lists, giving a German account original names and a list entry without an original name its own name.",
+            "JiraRefreshOriginalNamesTest green (7 un-ignored, 5 pins unchanged); the whole Jira folder and the three integration fixtures green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example tests over HTTP-stubbed connector behaviour (JiraInstanceStub counts requests per route). Bounded-change contract shape: one memo entry on the connector instance, no database, no Jira write; assert request counts per route with the fake handler. The read must NOT sit in SweepIdentities/WalkSweep. A failed read is not remembered (step 01-05 pins the failure side). Every fixture issue the refresh reads must carry an id its list answers. Blast radius: run the whole Jira folder first, fix shared helpers before individual fixtures. Commit via des-commit: `feat(jira): ...`."
+        },
+        {
+          "id": "01-05",
+          "name": "A list Jira cannot answer usefully stops the refresh before anything is stored",
+          "description": "The connector treats a non-success answer, a body that is not a JSON array (a gateway page answered with 200, or an object) and an empty array as an unreadable list: it logs at Error 'GET {route} answered {code} {status}. {Jira's body}' and throws JiraReadException.StatusListRefused / IssueTypeListRefused (Team, Portfolio or validation as the caller is) before any issue is turned into a work item. A failed read is not memoised, so the next refresh asks again. Applies to Team refresh, Portfolio refresh and the settings check (ValidateTeamSettings / ValidatePortfolioSettings).",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs"
+          ],
+          "scenario_name": "Refused status or work item type list (503, 403, 200 [], 200 {}, 200 gateway page): Team, Portfolio and validation verdicts, code, detail, Error log, nothing stored, asked again next refresh",
+          "unskips": [
+            "JiraOriginalNamesRefusedListTest.A_list_that_cannot_be_read_stops_a_Team_refresh_with_the_sentence_the_administrator_reads",
+            "JiraOriginalNamesRefusedListTest.A_list_that_cannot_be_read_stops_a_Portfolio_refresh_without_saying_what_was_kept",
+            "JiraOriginalNamesRefusedListTest.A_list_that_cannot_be_read_fails_the_settings_check_without_a_last_refresh_to_keep",
+            "JiraOriginalNamesRefusedListTest.The_refusal_carries_its_code_and_the_request_with_what_Jira_said_and_names_no_input",
+            "JiraOriginalNamesRefusedListTest.The_refusal_is_logged_at_error_with_the_request_and_Jiras_answer",
+            "JiraOriginalNamesRefusedListTest.A_refusal_stops_the_refresh_before_any_issue_is_turned_into_a_work_item",
+            "JiraRefreshOriginalNamesTest.A_list_that_could_not_be_read_is_asked_for_again_on_the_next_refresh"
+          ],
+          "guards_kept_green": [
+            "WorkItemServiceTest.UpdateWorkItemsForTeam_JiraStatusListCouldNotBeRead_LeavesTheStoredWorkItemsAsTheyWere (service-level pin: nothing stored, fingerprint unchanged)",
+            "JiraNamedDependencyLinkTest link-type-list refusal pins",
+            "the whole Jira test folder",
+            "TeamUpdaterTest and PortfolioUpdaterTest reasons from 01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - unusable-list detection, Error log, throw)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs (edit - un-ignore)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs (edit - un-ignore)"
+          ],
+          "dependencies": [
+            "01-03",
+            "01-04"
+          ],
+          "criteria": [
+            "If Jira refuses a list (503, 403), answers 200 with an empty array, an object or a gateway page, the refresh stops with a verdict naming the list and Jira's answer and no work item is stored or changed.",
+            "A Team verdict ends with the kept-state sentence; a Portfolio verdict and the settings check end after Jira's answer; the failure names no input field.",
+            "The same detail with Jira's response body is logged at Error before the stop.",
+            "A list that could not be read is asked for again on the next refresh, never remembered as empty or translated.",
+            "JiraOriginalNamesRefusedListTest green for the 6 un-ignored methods (all their [TestCase] rows) and JiraRefreshOriginalNamesTest's failed-read case green."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: [TestCase] tables over a fixed set of refusal shapes, asserted on exception, log and request records. Use the existing JiraReadException/WorkTrackingReadException path (precedent: the refused link-type list); no updater change. Fetch-before-write ordering must not change. Commit via des-commit: `feat(jira): ...`."
+        },
+        {
+          "id": "01-06",
+          "name": "An id Jira reports but its list lacks is re-read once, then fails the refresh naming the id",
+          "description": "After each page of issues is downloaded and before the factory sees it, the connector asks the lookup which status and issue type ids of the page it does not know (the miss list of step 01-01). On a miss it re-reads both lists once, replacing the memo (at most one re-read per instance, so a later miss in the same refresh fails without a third read), rebuilds the lookup and checks again. An id that appears after the re-read resolves normally; an id still missing throws JiraReadException.StatusIdNotInList / IssueTypeIdNotInList for the right caller, logged at Error naming the id, before anything is stored. Never falls back to a translated name.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs"
+          ],
+          "scenario_name": "Unknown status or type id on refresh: one re-read of both lists, then success or a visible failure naming the id",
+          "unskips": [
+            "JiraOriginalNamesRefusedListTest.An_id_the_list_still_lacks_after_one_more_read_stops_the_refresh_naming_the_id",
+            "JiraOriginalNamesRefusedListTest.An_id_the_list_still_lacks_is_logged_at_error_naming_the_id",
+            "JiraRefreshOriginalNamesTest.A_status_that_appears_after_the_lists_are_read_again_is_resolved_with_one_extra_read_of_each_list",
+            "JiraRefreshOriginalNamesTest.A_second_missing_id_in_the_same_refresh_fails_without_a_third_read"
+          ],
+          "guards_kept_green": [
+            "JiraRefreshOriginalNamesTest: lists read once across pages and chunks (01-04), failed read asked again (01-05)",
+            "JiraOriginalNamesTest and IssueFactoryOriginalNamesTest (C-1 pins from 01-01 and 01-02)",
+            "the whole Jira test folder",
+            "the three API/Integration fixtures reaching a Jira download"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - miss check per page, single re-read, verdict)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesRefusedListTest.cs (edit - un-ignore)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraRefreshOriginalNamesTest.cs (edit - un-ignore)"
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "criteria": [
+            "A status or type id that Jira's list gained a minute ago resolves after exactly one extra read of each list and the refresh stores original names.",
+            "An id the lists still lack after that one re-read stops the refresh: Team, Portfolio and settings check each get their verdict (Team with the kept-state sentence), the technical detail names the id and says both lists were read twice, and an Error log names the id.",
+            "A second missing id in the same refresh fails without a third read, and nothing is stored when the refresh fails.",
+            "Un-ignored methods green; the unknown-id verdict table covers status and work item type for all three callers."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example tests over request counts and verdicts (the unknown-id verdicts share one table body across Team, Portfolio and validation). The factory stays pure and total; the connector owns the check and the re-read. The re-read replaces the memo held since 01-04. The same helper is reused by the board load in 01-07/01-08 with a different ending (leave out and warn), so keep the check-and-re-read separate from the throwing. Commit via des-commit: `feat(jira): ...`."
+        },
+        {
+          "id": "01-07",
+          "name": "Load from board sorts states by category key and lists each state once by its original name",
+          "description": "The board load's status path (MapStatusToCategory) goes through the connector's memoised lookup (one GET of the status list per instance, C-4) and sorts each board status into To Do / Doing / Done by statusCategory.key (new / indeterminate / done), never the display name; any other key is ignored as today; an identified Data Center whose entries carry no category key keeps the category-name switch. Each status is reported by untranslatedName, falling back to name, de-duplicated ignoring case inside each list with the first spelling kept; a name sitting in two categories is listed in each. A board status id the status list still lacks after one re-read (shared helper from 01-06) is left out with a warning naming the id, never silently dropped (C-2); an id that appears after the re-read is listed. A refused status list still gives three empty lists and a warning.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs"
+          ],
+          "scenario_name": "Load from board, states: German account gets To Do / Doing / Done as an English one, each once; unknown status id re-read once then left out with a warning (C-2)",
+          "unskips": [
+            "JiraBoardOriginalNamesTest.A_German_account_gets_the_To_Do_Doing_and_Done_states_an_English_account_gets",
+            "JiraBoardOriginalNamesTest.A_custom_status_an_administrator_named_in_German_is_listed_as_it_is_next_to_the_English_names_for_a_German_account",
+            "JiraBoardOriginalNamesTest.A_state_name_shared_by_two_statuses_is_listed_once_ignoring_case_with_the_first_spelling",
+            "JiraBoardOriginalNamesTest.A_name_that_sits_in_two_categories_is_listed_in_each_of_them",
+            "JiraBoardOriginalNamesTest.A_status_id_the_list_still_lacks_after_one_more_read_is_left_out_with_a_warning_naming_the_id",
+            "JiraBoardOriginalNamesTest.A_status_id_that_appears_after_one_more_read_is_listed_by_its_original_name"
+          ],
+          "guards_kept_green": [
+            "JiraBoardOriginalNamesTest pins: English account; English and no-original-name statuses; English custom status 'In Prüfung'; Data Center without category key; unknown category left out; Data Center board reports payload type names and asks for no type list; loading only reads",
+            "JiraBoardQueryAssemblyTest (status path, logged 403, every request a GET)",
+            "the whole Jira test folder"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - board status mapping by category key, original names, de-duplication, id check)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs (edit - un-ignore)"
+          ],
+          "dependencies": [
+            "01-04",
+            "01-06"
+          ],
+          "criteria": [
+            "Load from board through a German account fills To Do, Doing and Done with the same original names an English account gets, each name once ignoring case with the first spelling; a custom status named in German is listed as it is.",
+            "A name that sits in two categories is listed in each of them.",
+            "A board status id Jira's list lacks even after one more read is left out with a warning naming the id; one that appears after the re-read is listed by its original name.",
+            "Data Center behaviour is unchanged (names as Jira gives them; category name when no key); no new UI.",
+            "6 methods un-ignored green, pins unchanged."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example tests over a stubbed board and instance. Board load is a pure read: every request a GET (the existing JiraBoardQueryAssemblyTest handler asserts it). The board's status read keeps its own call on every deployment as today but now shares the memo; only a refused or unusable list degrades to three empty lists plus a warning that names Jira's answer (the types side is 01-08). Commit via des-commit: `feat(jira): ...`."
+        },
+        {
+          "id": "01-08",
+          "name": "Load from board lists work item types by their original names, and a list it cannot trust gives no types",
+          "description": "GetItemTypesForBoard resolves each board issue's issuetype id through the memoised issue type list (Cloud and unidentified deployments; an identified Data Center keeps each board issue's payload type name and makes no type-list call): original names, de-duplicated ignoring case, first spelling kept. A type id still missing after one re-read is left out with a warning naming the id; one that appears after the re-read is reported by its original name. A refused type list (403, 503, 200 empty, 200 gateway page) gives no types and a warning carrying Jira's whole answer; a refused status list gives no states while the types stay original. An unidentified deployment gives original states and types. Give JiraBoardQueryAssemblyTest's AReadableBoardExcept a real issue type list answer and board issues that carry type ids.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs"
+          ],
+          "scenario_name": "Load from board, work item types: original and once; unknown type id re-read then left out; refused lists never show translated names; unidentified deployment",
+          "unskips": [
+            "JiraBoardOriginalNamesTest.The_work_item_types_are_the_original_names_each_once",
+            "JiraBoardOriginalNamesTest.Two_types_with_the_same_original_name_are_listed_once_ignoring_case",
+            "JiraBoardOriginalNamesTest.A_type_id_the_list_still_lacks_after_one_more_read_is_left_out_with_a_warning_naming_the_id",
+            "JiraBoardOriginalNamesTest.A_type_id_that_appears_after_one_more_read_is_reported_by_its_original_name",
+            "JiraBoardOriginalNamesTest.A_work_item_type_list_that_cannot_be_read_gives_no_types_and_a_warning_naming_the_answer",
+            "JiraBoardOriginalNamesTest.A_status_list_that_cannot_be_read_gives_no_states_but_the_types_are_still_original",
+            "JiraBoardOriginalNamesTest.A_deployment_that_cannot_be_identified_still_gets_the_original_names"
+          ],
+          "guards_kept_green": [
+            "JiraBoardQueryAssemblyTest: its type assertion (Story,Bug) must see a real issue type list answer and ids on its board issues; the logged 403 status-path case; every request a GET",
+            "JiraBoardOriginalNamesTest pins (Data Center board reports payload type names and asks for no type list) and the six states methods from 01-07",
+            "the whole Jira test folder"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit - board work item types by id through the memo, warnings)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs (edit - un-ignore)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs (edit - fixture gets a real issue type list and type ids)"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "criteria": [
+            "Load from board lists the original work item type names, each once ignoring case, for a German and an English account alike.",
+            "If the type list cannot be read, answers an empty array or a gateway page, the board reports no work item types and logs a warning carrying Jira's answer; it never shows translated names. A refused status list gives no states while the types stay original.",
+            "A type id the list still lacks after one more read is left out with a warning naming the id; one that appears after the re-read is reported by its original name.",
+            "A deployment that cannot be identified still gets original states and types; an identified Data Center makes no type-list call.",
+            "7 methods un-ignored green; JiraBoardQueryAssemblyTest green with a real issue-type list answer."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: example tests over stubbed board and instance answers; one method carries 4 [TestCase] rows for the refused-list shapes. Board load is a pure read (no write). A refused or unusable list degrades to 'no types' plus a warning here; it does NOT throw (the wizard has no copy for a throw: DESIGN rejected that). Commit via des-commit: `feat(jira): ...`."
+        },
+        {
+          "id": "01-09",
+          "name": "A board load and a refresh on one connector read each list once, and the live comparison is switched on",
+          "description": "Pin and, where needed, finish the shared memo: loading the board reads the status list once and the issue type list once, and a board load followed by a refresh on one connector instance reads each list once in total (C-4). Remove the [Ignore] from the five JiraOriginalNamesLiveTest methods (JiraIntegration category); they self-skip without both the English and the restricted German token, so the filtered CI run stays unaffected. Final slice-01 hygiene: run the whole Jira folder, the three integration fixtures and the filtered suite.",
+          "agent": "nw-software-crafter",
+          "commit_type": "test",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesLiveTest.cs"
+          ],
+          "scenario_name": "One read of each list per connector instance across board load and refresh; live boards 6, 1 and 107 through the English and the German account",
+          "unskips": [
+            "JiraBoardOriginalNamesTest.Loading_the_board_reads_the_status_list_once_and_the_work_item_type_list_once",
+            "JiraBoardOriginalNamesTest.A_board_load_then_a_refresh_on_one_connector_reads_each_list_once",
+            "JiraOriginalNamesLiveTest.The_demo_board_lists_the_same_states_and_types_through_both_accounts",
+            "JiraOriginalNamesLiveTest.The_scrum_board_lists_the_custom_German_status_next_to_the_English_ones_through_both_accounts",
+            "JiraOriginalNamesLiveTest.A_board_naming_one_state_under_several_status_ids_lists_it_once_through_both_accounts",
+            "JiraOriginalNamesLiveTest.The_demo_projects_work_items_have_the_same_states_types_and_dates_through_both_accounts",
+            "JiraOriginalNamesLiveTest.The_item_in_the_custom_German_status_has_that_state_through_both_accounts"
+          ],
+          "guards_kept_green": [
+            "the whole Jira test folder",
+            "the three API/Integration fixtures reaching a Jira download (ParentFromIssueLinks, ParentPlacementAcceptanceTest, NamedDependencyLinkAcceptanceTest)",
+            "JiraBoardQueryAssemblyTest, JiraRefreshOriginalNamesTest, JiraOriginalNamesRefusedListTest",
+            "JiraRouteLiteralsTest, ModuleBoundariesArchUnitTest",
+            "the filtered dotnet test (no live-connector categories)"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs (edit only if the board load does not yet share the memo of 01-04)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs (edit - un-ignore)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraOriginalNamesLiveTest.cs (edit - [Ignore] removed from the five methods)"
+          ],
+          "dependencies": [
+            "01-08"
+          ],
+          "criteria": [
+            "Loading a board makes one status-list request and one work item type-list request; a board load then a refresh on the same connector make one of each in total.",
+            "The live class has no [Ignore]. Run it once in this step with both tokens set (both are in the local environment): the same boards (1, 6 and 107) loaded and refreshed through the German and the English account give identical state lists, type lists, item states, started and closed dates and JQL counts, all five methods green. Without the tokens it self-skips.",
+            "All of slice 01 is green: whole Jira folder, three integration fixtures, filtered dotnet test; dotnet build zero warnings."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: request-count assertions (bounded-change shape) and a live gold test. The live class needs no network in CI because it throws or self-skips without tokens and the filter excludes JiraIntegration; do not run it without both tokens and never loop live runs (shared Jira site). Commit via des-commit: `test(jira): ...` for the un-ignores; a `feat(jira): ...` if the connector needed the shared-memo change."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "One full refresh of every Jira Team and Portfolio after the upgrade (#6453 slice 02)",
+      "description": "Droppable alone: its own commit after slice 01 is green. A Jira reading-version marker in the fetch fingerprint, rendered only for Jira connections, so each Jira Team and Portfolio takes one full refresh after the upgrade and its items are re-read in original names. Dropping it leaves slice 01 correct for new and changed items.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The upgrade gives every Jira Team and Portfolio exactly one full refresh, and no other tracker notices",
+          "description": "FetchFingerprint.ForConnection appends a Jira reading-version marker for WorkTrackingSystems.Jira connections only; the digests of AzureDevOps, Linear, Csv and ServiceNow Teams and Portfolios stay byte-identical (C-3). A Jira Team or Portfolio stored with its pre-upgrade digest no longer matches, so its next refresh is a full one and the refresh after it is a delta again. The two Jira pinned-digest tests are re-pinned on purpose: FetchFingerprintPinnedDigestTest and FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest get their new Jira values, with rationale text updated to say the Jira reading marker is the reason; the exact post-marker Jira digest is pinned (Team and Portfolio) so a later change to the marker cannot pass silently. The configuration-changed reason on that one refresh is accepted.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/JiraReadingVersionFingerprintTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/JiraReadingVersionFingerprintTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintPinnedDigestTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest.cs"
+          ],
+          "scenario_name": "A Jira Team or Portfolio stored before the upgrade no longer matches, so it is refreshed in full once; every other tracker keeps its digest byte for byte",
+          "unskips": [
+            "JiraReadingVersionFingerprintTest.A_Jira_Team_stored_before_the_upgrade_no_longer_matches_so_it_is_refreshed_in_full_once",
+            "JiraReadingVersionFingerprintTest.A_Jira_Portfolio_stored_before_the_upgrade_no_longer_matches_so_it_is_refreshed_in_full_once"
+          ],
+          "guards_kept_green": [
+            "JiraReadingVersionFingerprintTest pins: every WorkTrackingSystems value except Jira (AzureDevOps, Linear, Csv, ServiceNow; Team and Portfolio, 8 digests) byte-identical to its pre-change value, plus the guard that a new enum member must be pinned (C-3); Jira deterministic; ownerless owner stable and not empty",
+            "FetchShapingPropertyGuardTest (Architecture)",
+            "FetchFingerprintTest and the rest of the fingerprint and sync-mode tests",
+            "the non-Jira pins inside FetchFingerprintPinnedDigestTest and FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest must NOT move"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs (edit - Jira-only reading-version marker)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/JiraReadingVersionFingerprintTest.cs (edit - un-ignore; add the exact post-marker Jira digest pin)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintPinnedDigestTest.cs (edit - Jira digests re-pinned on purpose, rationale text updated)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItems/FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest.cs (edit - Jira digests re-pinned on purpose, rationale text updated)"
+          ],
+          "dependencies": [
+            "01-09"
+          ],
+          "criteria": [
+            "The first refresh after the upgrade of a Jira Team or Portfolio downloads everything and stores current states and types in their original names; the refresh after it is a delta again.",
+            "Teams and Portfolios on any other tracker keep their delta refresh: their fetch fingerprint is byte-identical to its value before this change (AzureDevOps, Linear, Csv, ServiceNow, parametrised so a new tracker cannot silently join the Jira branch).",
+            "Only the two Jira pinned digests moved, on purpose, with rationale text that names the marker; the exact post-marker digest is pinned.",
+            "JiraReadingVersionFingerprintTest green (2 un-ignored, 5 pins unchanged); FetchShapingPropertyGuardTest green; dotnet build zero warnings.",
+            "The exact Jira Team and Portfolio digests after the marker are pinned by a new test in JiraReadingVersionFingerprintTest (value computed once, after the marker lands)."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: golden-digest pins are exact-value assertions by design. The marker is a constant appended only on the Jira branch; do not touch the shared digest path for other trackers. Compensate with the byte-identical non-Jira table over the enum minus Jira. Obtain the new Jira digest values by running the tests, then pin them exactly (never a loosened assertion). Own commit so `git revert` drops it alone: `feat(fetch-fingerprint): ...` or `feat(jira): ...` per scope convention. Release note at /release says the upgrade repairs Teams configured in English on a German-token account; Teams configured in German still need Load from board again."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Suggestions list each name once, ignoring case (#6453 slice 03)",
+      "description": "Independent and connector-agnostic; can be dropped without harm. The eight Distinct calls in SuggestionsController (types list and three state lists each for Teams and Projects) compare names ignoring case, keeping the first spelling met.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "State and work item type suggestions list each name once whatever its letter case",
+          "description": "Each of the eight Distinct() calls in SuggestionsController (work item types and the three state lists, for Teams and for Portfolios/Projects) becomes Distinct(StringComparer.OrdinalIgnoreCase); Distinct keeps the first occurrence, which is the first spelling met. No other change; no new helper, no new RBAC or API shape.",
+          "agent": "nw-software-crafter",
+          "commit_type": "feat",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SuggestionsControllerTest.cs",
+          "test_files": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SuggestionsControllerTest.cs"
+          ],
+          "scenario_name": "Suggestions: names differing only in case are listed once with the first spelling (types and states, Teams and Portfolios)",
+          "unskips": [
+            "SuggestionsControllerTest.GetWorkItemTypesForTeams_NamesDifferingOnlyInCase_AreListedOnceWithTheFirstSpelling",
+            "SuggestionsControllerTest.GetWorkItemTypesForProjects_NamesDifferingOnlyInCase_AreListedOnceWithTheFirstSpelling",
+            "SuggestionsControllerTest.GetStatesForTeams_NamesDifferingOnlyInCase_AreListedOnceInEachListWithTheFirstSpelling",
+            "SuggestionsControllerTest.GetStatesForProjects_NamesDifferingOnlyInCase_AreListedOnceInEachListWithTheFirstSpelling"
+          ],
+          "guards_kept_green": [
+            "the rest of SuggestionsControllerTest (RBAC filtering, existing suggestion lists and ordering)",
+            "SuggestionsController endpoints stay read-only GETs"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/SuggestionsController.cs (edit - eight Distinct calls get an ignore-case comparer)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/SuggestionsControllerTest.cs (edit - un-ignore)"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "Opening a Team's or Portfolio's state or work item type field lists 'In Progress' once even when another team wrote 'in progress'; the first spelling met is kept.",
+            "Applies to every connector's names, since suggestions are connector-agnostic.",
+            "SuggestionsControllerTest green (4 un-ignored); the existing suggestion tests unchanged."
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: four example tests over the controller; eight one-token edits, no helper (a shared helper is rejected as not worth it). Keep the RBAC filtering untouched. Commit via des-commit: `feat(suggestions): ...`."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (haiku)",
+    "verdict": "conditionally_approved, 0 blockers; F-1..F-3 applied by orchestrator",
+    "reviewed_at": "2026-10-31T19:27:47+01:00"
+  }
+}
