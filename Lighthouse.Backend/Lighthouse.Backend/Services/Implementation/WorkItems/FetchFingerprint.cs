@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
     {
         /// <summary>
         /// The registered properties that live on the connection rather than on a Team or Portfolio, and so
-        /// change for every owner on the connection at once. <see cref="ForConnection"/> renders exactly these.
+        /// change for every owner on the connection at once. <see cref="ForConnection"/> renders these, plus the Jira reading version for a Jira connection.
         /// Declared first because static initialisers run top to bottom and the full list below includes it.
         /// </summary>
         public static IReadOnlyCollection<string> ConnectionScopedProperties { get; } =
@@ -105,8 +105,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         /// </summary>
         /// <remarks>
         /// Rendered, not digested, and joined with the same separator <see cref="For"/> uses between its
-        /// properties: <see cref="For"/> splices this answer in where the two properties used to sit, so every
-        /// fingerprint already stored keeps matching after an upgrade.
+        /// properties: <see cref="For"/> splices this answer in where the two properties used to sit, so a
+        /// fingerprint already stored keeps matching after an upgrade. A Jira connection is the one deliberate
+        /// exception: its reading version changes every Jira fingerprint once, so each Jira owner is re-read.
         /// </remarks>
         public static string ForConnection(WorkTrackingSystemConnection? connection)
             => connection?.WorkTrackingSystem == WorkTrackingSystems.Jira

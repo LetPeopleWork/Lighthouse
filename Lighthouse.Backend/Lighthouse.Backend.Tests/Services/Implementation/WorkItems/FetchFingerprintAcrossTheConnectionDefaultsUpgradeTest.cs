@@ -18,12 +18,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     /// refresh after that upgrade and keeps its new digest from then on.
     /// </summary>
     [TestFixture]
-    [Category("epic-6303-configure-once-per-connection")]
-    [Category("story-6304")]
-    [Category("slice-05a")]
-    [Category("ac-4.4")]
-    [Category("active-guard")]
-    [Category("contract-shape:pure-function")]
     public class FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest
     {
         private const string TheOwningTeamsStoredFingerprint = "154b09f400b4278eb953f8f7eb0d272c";

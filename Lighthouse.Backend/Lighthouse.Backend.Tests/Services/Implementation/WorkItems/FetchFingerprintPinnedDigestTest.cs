@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     /// a Portfolio read without its connection did not.
     /// </summary>
     [TestFixture]
-    [Category("story-6307-refresh-on-additional-fields-change")]
-    [Category("contract-shape:pure-function")]
     public class FetchFingerprintPinnedDigestTest
     {
         private const string TheTeamsStoredFingerprint = "178f7c190469f76ef4423c1e680ea2d6";
