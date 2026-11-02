@@ -1006,3 +1006,34 @@ optional slice 5 ran, B3 A/B failure path dangling, B4 owed items unverified, B5
 lead together with NOTE N-a (01-08 depends on the slice-1 conversions) and N-e (slice 3 is pushed only after slice 2 is pushed or recorded
 as reverted). NOTE N-b showed that the six `*IntegrationTest` host fixtures are `NotMovedYet`, not reasoned; 04-05 now owns them.
 Carried NOTEs: 01-10 has six criteria; 03-03, 03-06 and 04-01..04-03 are coarse and are split before they start. **Roadmap approved.**
+
+## Wave: DELIVER / [REF] 01-02 D1 measurement (2026-11-02, lead, quiet machine)
+
+Tree `2d98a137a` (host-build timing on, nothing converted), Debug, `LIGHTHOUSE_TEST_WORKERS=6`, standard filter, T3 sampler.
+Raw files: `measurement/d1-2026-11-02/` (`fixture-setup-timings.csv`, `d1-summary.txt`, `d1-by-listed-owner.csv`, `d1-full.log`).
+
+- **Run:** 400 s wall; 11,916 passed, 2 failed (the two publish-output scans, environmental), 1 skipped.
+- **Memory:** peak **4,524 MB**; min available 17,895 MB. The base moved since `b573b1924` (4,300 MB), so this is main's
+  peak today and the **new baseline**. Stop threshold +10 %: **4,976 MB**.
+- **Host builds:** 2,089 in the run, **282 s summed** (mean 135 ms); 309 timed fixtures. Every type that builds more than one
+  host is on the allow-list or derives from a listed base, except `S2_ConnectionListPayloadShapeTests` (2 builds, 0.2 s).
+- **Reachable by one host per concrete fixture, host build only: 241 s summed** across 120 listed owners, roughly **40 s wall**
+  at 6 workers (about 10 % of the run). This counts host construction only. Per-test database creation, seeding and teardown
+  are separate and slice 2's template is aimed at them.
+
+| Group (roadmap) | Owners | Host-build saving, summed |
+|---|---|---|
+| Slice 1: ConnectionDefaults family + ConnectionFieldChange | 2 | 16.1 s |
+| Slice 3: UsageDataCollectorObservation, FasterUpdates, TaskManager, ReconstructOverTimeHistory | 4 | 59.0 s |
+| Slice 4: ForecastRealityCheck, BehaviourSettings, TeamFeatureSize, BlockedItems, PercentilesOverTime, ManualSorting, DeliverySources, Dependencies, FastWithManyFeatures | 9 | 59.4 s |
+| Rest (single fixtures; long tail, 04-05/04-06 families included) | 105 | about 106 s |
+
+**Re-sizing decision (lead):** the order stands. The biggest single owner, `UsageDataCollectorObservationTest`, saves 36 s,
+14 classes and 279 host builds; it is already in slice 3. Slice 1 stays as planned because it carries the guard. Its own
+host-build saving is small (16 s summed, about 3 s wall), so slice 1's CI claim is now **at most about 30 s CI** (16 s × 1.8),
+lower than the 65 s ceiling in Gate revision C1. The pre-registered C3 rule is applied to that figure, not to the old one.
+The long tail holds as much as slices 3 and 4 together, but spread over about 100 owners, each 0.1 to 6.5 s.
+Slice 5 stays optional. The first conversions are S8_EmbedEntryPoint (6.5 s), DeliveryMetricSnapshotRecordingHandler
+(4.7 s), WorkItemEstimateApi (3.7 s) and Slice03AzureDevOpsRelationTypeAccepted (3.7 s).
+**Honest read:** host construction is about 40 % of all fixture set-up and teardown time measured. The story's total win depends
+as much on slice 2's database template as on the moves.
