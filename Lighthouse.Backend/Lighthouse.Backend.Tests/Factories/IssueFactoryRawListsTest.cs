@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Lighthouse.Backend.Factories;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -48,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Factories
             var team = ATeamWhoseListsHoldTheGroupName(["Analysis", "Review"], ["Closed"]);
             using var json = AnIssueNowIn("Code Review", "Backlog", "2024-09-27T00:00:00.000+0000");
 
-            var issue = new IssueFactory(Mock.Of<ILogger<IssueFactory>>()).CreateIssueFromJson(json.RootElement, team);
+            var issue = new IssueFactory(Mock.Of<ILogger<IssueFactory>>()).CreateIssueFromJson(json.RootElement, team, JiraOriginalNames.AsReported);
 
             using (Assert.EnterMultipleScope())
             {
@@ -63,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Factories
             var team = ATeamWhoseListsHoldTheGroupName(["Analysis"], ["Review"]);
             using var json = AnIssueNowIn("Testing", "Analysis", "2024-09-28T00:00:00.000+0000");
 
-            var issue = new IssueFactory(Mock.Of<ILogger<IssueFactory>>()).CreateIssueFromJson(json.RootElement, team);
+            var issue = new IssueFactory(Mock.Of<ILogger<IssueFactory>>()).CreateIssueFromJson(json.RootElement, team, JiraOriginalNames.AsReported);
 
             Assert.That(issue.ClosedDate?.Date, Is.EqualTo(new DateTime(2024, 9, 28)));
         }
