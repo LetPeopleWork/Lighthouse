@@ -3,7 +3,7 @@
 
 **Epic**: ADO #6455 "Deeper hierarchies: portfolio items that are not direct parents of the team's items".
 Supersedes #5806 and #6119 (both set to Removed on 2026-10-30).
-**Waves present**: DISCOVER (2026-10-30).
+**Waves present**: DISCOVER (2026-10-30), DIVERGE (2026-10-30; `recommendation.md`, `diverge/`), DISCUSS (started 2026-11-02, scope and split only so far).
 **Density**: lean (Tier-1 [REF] sections only). Decisions in `discover/wave-decisions.md`.
 **Anonymisation**: customers are "Customer A" and "Customer B". No company, person or host names appear in
 this workspace. Tracker type names (Story, Epic, Change, Project, Program, Feature, Business Epic) are the
@@ -405,3 +405,301 @@ as the direction for the UI. This Epic is where most of it lands, so DISCUSS ans
   or only leaves room for it. Each Epic must ship on its own, so onboarding is its own Epic unless it is small.
 - **Splitting System Settings (ADR-271 U1) belongs to this Epic** (maintainer, 2026-11-01). No ADO Story yet: DISCUSS
   scopes it (its own slice or folded into the levels work) and only then is it mirrored to the board.
+
+---
+
+## Wave: DISCUSS / [REF] Locked decisions
+
+Only what the maintainer has already decided. Everything else in this wave is a proposal until the walk-through.
+
+**D1. The event storming supersedes the DIVERGE recommendation on four points** (maintainer, 2026-11-01 and
+2026-11-02).
+
+1. Levels are defined **once per installation**, not per Portfolio. An organisation that says "Initiative" says it
+   everywhere, and one structure per installation is fair to support.
+2. Each level **pairs an owning unit** (a group of people or a board) **with its unit of work** (the items on that
+   level). The recommendation stacked levels of work only and kept Teams flat.
+3. **Deliveries hang off a non-leaf level and hold that level's items** (the target; see D2 for now).
+4. What is special is **leaf versus non-leaf**, not Team versus Portfolio. The leaf unit is the one that generates
+   throughput; everything above it is a unit on a level.
+
+What DIVERGE got right and stays: forecasts composed upward with the joint "all children done" maths; flow
+metrics per level from the items' own states; one parent per item per level, read by the existing parent-source
+rule (native parent, a field, or a Jira link type); Feature WIP and the simulation unchanged at the leaf's direct
+parent; setup counts ("N {features} have no {level}"); the connector approach; and the Premium boundary as an open
+question. The DISCOVER decision that every item passes through every configured level, with a skipped level being
+the Parent Override Field's business, also stands.
+
+Sources: `../story-6357-s01-bounded-contexts-context-map/event-storming/board.md` (sections A, D, F, G, H, Hold 1);
+`../../product/architecture/adr-270-bounded-contexts-context-map-and-module-layout.md` (Decision 4, Consequences);
+maintainer, 2026-11-02.
+
+**D2. Deliveries stay as they are, locked to the second level, for now** (maintainer, 2026-11-02). The level above
+the leaf (today's Portfolio level, items named Feature) keeps today's Deliveries unchanged. Upper levels get no
+Deliveries in this Epic family's first deliveries. Deliveries on any non-leaf level, with generic units and levels
+underneath, may come through the behaviour-free refactoring in Epic 6264; switching them on for an upper level is
+a later step.
+
+**D3. Migration of existing installs: direction** (maintainer, 2026-11-02). Today's structure becomes the leaf
+level (Team, Work Item) plus one level above it (today's Portfolio), whose item is named "Feature" and whose item
+types are extracted from all existing Portfolios' Feature types. Users can then add more levels. Details
+(per-Portfolio lists, two trackers, shape (a) installs) are open; see the questions below.
+
+**D4. Splitting System Settings into Organisation, Access and System belongs to this Epic family** (maintainer,
+2026-11-01, "Input for DISCUSS" above). It is **its own small Epic, delivered first** (maintainer, 2026-11-02): it
+has value without levels and gives levels their home in Organisation.
+
+**D5. Units all the way up** (maintainer, 2026-11-02). A level above the second has its own units (for example a
+programme board), each with its own query and page, reusing what a Portfolio has today; their items' children are
+the second level's items. Upper levels are not shown as a stack inside each Portfolio.
+
+**D6. Level names live on the levels, next to the rest of the terminology** (maintainer, 2026-11-02). Team, Work
+Item, Portfolio and Feature move out of Terminology onto the two seeded levels: each level names its unit and its
+item. Organisation gets one place to manage the levels, and the remaining terms (cycle time, throughput, WIP,
+blocked, …) sit close to it, in the same tab, so naming is not split over two screens.
+
+**D7. Structure first, and deep: one Unit type before any level is added** (maintainer, 2026-11-02). Today's
+Teams and Portfolios move onto an installation-wide level structure as one generic unit type on a level, without
+users noticing, and only then are levels added above. Building new levels beside a Team and a Portfolio that stay
+special concepts would leave two ways of saying "a level". Chosen over a thin step (levels plus Team and Portfolio
+kept as separate classes). Consequences to carry into the story map and DESIGN: the work is several slices, not
+one; it overlaps Epic 6264's packaging Stories for Portfolio/Delivery and Organisation set-up and its aggregates
+Story, whose scope must be re-cut; expand-only migrations mean the unit structure is added beside today's tables;
+the `/teams` and `/portfolios` routes stay for the CLI and MCP clients.
+
+**D8. The structure is its own Epic in this family, before the levels above** (maintainer, 2026-11-02), not an
+Epic 6264 Story. The maintainer deliberately accepts an Epic whose value is mostly preparation ("they can live with
+1–2 weeks more of waiting"), as an exception to "each Epic adds visible value"; it is also not invisible:
+- the number of levels is part of set-up and Organisation settings, **fixed at two for now**;
+- **item types come from the structure**: each level lists the tracker types of its items, and a unit no longer
+  overrides them. A unit narrows what it reads with its filters. The maintainer sees this as an improvement.
+Order: the structure Epic first, then the levels above, in that order.
+
+**D9. Public API: today's routes stay** (maintainer, 2026-11-02). `/teams` and `/portfolios` remain for the CLI and
+MCP clients; if their shape has to change they are deprecated, not removed. How the API looks in a units-on-levels
+world is an open question for DESIGN.
+
+**D10. The migration carries today's set-ups over as they are** (maintainer, 2026-11-02). An install that
+configured Change as the Portfolio's Feature type keeps Change on the second level; fixing that waits for the
+levels above. No automatic restructuring on upgrade.
+
+**D11. Two Epics in order: "One structure", then "Levels above"; Deliveries everywhere comes later still**
+(maintainer, 2026-11-02). "One structure" ships first (one Unit type on two fixed levels, levels in set-up and
+Organisation, names on the levels, item types owned by the level, migration as is). "Levels above" starts once it
+has shipped (third and further levels, their units, dates built up from the level below, flow metrics per level,
+set-up counts, connectors). Deliveries on any upper level is a later Epic: Deliveries stay on the second level
+until the Promises context is ready in code.
+
+**D12. A unit narrows its level's item types to a subset** (maintainer, 2026-11-02). It may untick types from its
+level's list, never add one. The migration ticks exactly what each Team and Portfolio reads today, so nobody's
+throughput or forecasts change on upgrade.
+
+**D13. State mapping belongs to the unit entirely** (maintainer, 2026-11-02). Across one organisation the same
+state may mean "to do" for one Team and "doing" for another, so there is no organisation default to inherit from.
+
+**D14. The guided set-up covers structure only** (maintainer, 2026-11-02): levels, their names and item types,
+from a template such as today's two levels, SAFe or Flight Levels, editable during set-up and later. States and
+blocked rules stay out.
+
+**D15. Every level above the second is Premium** (maintainer, 2026-11-02). The free tier stays at three units on
+the leaf level and one unit on the second level, and has no further levels.
+
+**D16. The leaf level keeps "Team" and "Work Item" as its seeded names** (maintainer, 2026-11-02); users rename
+them on the level. How the leaf's item is named inside the code is a separate code-naming question.
+
+**D17. The guided set-up with templates ships after "Levels above"** (maintainer, 2026-11-02), once, with every
+template including those with three or more levels.
+
+**D18. One parent per item per level; several parents are not planned** (maintainer, 2026-11-02: "several parents
+are never needed"). Revisit only once several levels are in use.
+
+**D19. A missing parent is fine, as today** (maintainer, 2026-11-02). A Work Item without a Feature simply does not
+count towards any Portfolio; the same holds on every level. How items without a parent are shown on an upper
+level is left to the "Levels above" DISCUSS.
+
+**D20. A context that a feature Epic changes heavily is refactored inside that Epic** (maintainer, 2026-11-02). If
+Deliveries on every level needs Deliveries to become the Promises module (module boundary, domain events), that
+refactoring moves out of Epic 6264 into "Deliveries on every level". The same applies to the others where they
+touch a context hard; Forecasting may matter for building dates up from the level below in "Levels above". Epic
+6264's catalogue is re-cut accordingly through its own plan.
+
+**D21. ADO tracking** (maintainer, 2026-11-02):
+
+| Epic | ADO | Board column |
+|---|---|---|
+| Settings split by who decides: Organisation, Access and System | #6473 | Planned |
+| One structure: Teams and Portfolios as units on levels | #6474 | Planned |
+| Levels above the Feature: dates and flow at every level of the hierarchy | #6455 (retitled) | Options |
+| Guided set-up with structure templates | #6475 | Options |
+| One page per unit, open on your level | #6476 | Options |
+| Deliveries on every level | #6477 | Options |
+| Organisation defaults with a local override | #6349 (re-scoped by a discussion note, title unchanged) | Options |
+
+Links: all Related to #6455; #6474 precedes #6455, #6476 and #6477; #6455 precedes #6475; #6473 precedes #6349.
+
+### Proposed, not locked
+
+- Guided first-run set-up that picks an initial structure, changeable later (maintainer idea, 2026-11-02).
+- Templates (for example SAFe) prefilling levels, names and item types, editable during the guided set-up
+  (maintainer idea, 2026-11-02).
+- **Open, waiting for the Customer B session (2026-11-02, later today)**: the level a person lands on; whether
+  Customer B accepts Epics as the items directly above the leaf; whether the SAFe Feature level is shown.
+- **Open, no session needed**: the leaf item's name and the leaf unit's name (ADR-270 "Left open"); sequencing
+  against Epic 6264's "Package Organisation set-up" (#6468), which waits for the Metrics pilot and the
+  test-infrastructure track.
+
+---
+
+## Wave: DISCUSS / [REF] Changed Assumptions
+
+DISCOVER and DIVERGE files are not edited; the changes are recorded here.
+
+| Original (verbatim) | Source | New assumption | Why |
+|---|---|---|---|
+| "**Proceed with Option 1, a level stack above the Feature, on the Portfolio.** The Feature stays the Teams' direct parent. A Portfolio may declare an ordered list of named levels above it (for Customer A: Change, Project, Program)." | `recommendation.md`, Decision for DISCUSS | Levels are declared once per installation, in Organisation. Each level has an owning unit and an item. | D1. The storming placed levels with Terminology as "how the organisation is set up", one per installation. |
+| "\| What a level is \| A named, ordered entry on the Portfolio above its Feature level: tracker types plus an attach field \|" | `recommendation.md`, What DISCUSS inherits | A level is an installation-wide tier pairing an owning unit with its item; tracker types and the attach rule stay per level. | D1 points 1 and 2. |
+| "\| Deliveries \| Unchanged: a cut across the Feature level. A Delivery rule may match an upper-level item, replacing today's "one rule per Change" workaround \|" | `recommendation.md` | Target: a Delivery holds items of the level it hangs off. For now: unchanged and locked to the second level. Whether a Delivery rule may match an upper-level item is open. | D1 point 3, D2. |
+| "\| Terminology \| One name pair per declared level, set where the level is declared. The Feature level keeps the instance-wide Feature term. [...] \|" | `recommendation.md` | Proposed: every level, including the leaf and the second level, carries its unit name and item name; today's Team, Work Item, Portfolio and Feature terms become the names of the two seeded levels. | Maintainer idea B3; Terminology has one key pair per fixed concept and no notion of a level (ADR-270 glossary). |
+| "\| Migration \| None for two-level instances (no levels declared = today). [...] \|" | `recommendation.md` | Every install is migrated to two seeded levels (D3), with the second level's item types taken from all Portfolios' Feature types. | D3. |
+| "\| Setup \| Portfolio settings: "Levels above {feature}" → add a level, pick types, name it. [...] \|" | `recommendation.md` | Levels are set up in Organisation (ADR-271 Decision 2); first run may be a guided set-up with templates (proposed). The per-level counts stay. | D1 point 1; ADR-271; maintainer ideas B1, B2. |
+| "A two-level user sees nothing new. One action, "Add a level above {feature}", reveals the rest; a level page appears only once a level exists" | `diverge/taste-evaluation.md`, T3 | A two-level user's forecasts, metrics and Deliveries behave as today, but they will see their two levels in Organisation and, if B3 is taken, find the Team and Portfolio names there instead of under Terminology. | Behaviour stays (DISCOVER constraint C5); the surface changes. |
+| "The answer is not to build Option 3 now (2.85, highest cost) but to let Option 1 grow into it." | `recommendation.md`, Dissenting case | The installation-wide model is chosen now. Its cost is managed by splitting: behaviour-free generalisation in Epic 6264, behaviour in this Epic family. | D1; maintainer input on scope (2026-11-02). |
+| "If Customer B says the same on Monday, the recommendation should become **Option 1 plus a per-Portfolio "home level"**." | `recommendation.md`, Dissenting case | Which level someone sees first is navigation per person, not a setting of a Portfolio (ADR-271 Decision 5). Still open until the Customer B session. | ADR-270 Decision 4: hiding what someone may not see is Access, choosing what they see first is navigation. |
+| "**Key assumption**: an organisation has one shared structure across its Teams and Portfolios (per connection)." | `diverge/options-raw.md`, Option 3 | One structure per installation, not per connection. Whether type and state defaults need a per-tracker layer stays open (ADR-270 "Left open"). | Board, interlude: "Usually there is one tracker". |
+| "**2. Org default, local override** \| Work Item types · Feature types · state mapping · [...]" | `../story-6357-s01-bounded-contexts-context-map/event-storming/board.md`, interlude; ADR-270 settings buckets | Item types are owned by the level, and a unit only narrows them to a subset. State mapping is local to the unit, with no organisation default. | D12, D13. ADR-270's bucket table and ARCHITECTURE.md §4 must be updated in the same feature. |
+| "Premium boundary \| Candidate: the Feature level and today's Parent column stay free; declared levels above are Premium [...] Open question below for prospects" | `recommendation.md` | Every level above the second is Premium; the free tier has no upper levels. | D15. |
+| "Conditions before DISCUSS: OA1 and OA3 answered (names or counts), and Customer B asked what they need at the Business Epic level." | this file, DISCOVER decision gate | DISCUSS starts before the Customer B session, for scope and split only. Nothing that depends on Customer B is locked. | Maintainer, 2026-11-02. |
+
+---
+
+## Wave: DISCUSS / [REF] Scope Assessment
+
+### Oversize heuristics
+
+| Signal | Evidence | Verdict |
+|---|---|---|
+| More than 10 user stories | Settings split (2–3), levels with naming and migration (3–4), upper-level forecasts and flow (3–4), per-connector fetch (Jira, Azure DevOps, Linear, CSV: 4), guided set-up and templates (3–4), unit page and landing level (3+) | **Oversized**: about 20–25 |
+| More than 3 bounded contexts | Organisation set-up, Tracker integration, Work Items, Forecasting, Flow metrics, Promises, Access, Licensing (ADR-270) | **Oversized**: 8 |
+| Walking skeleton needs more than 5 integration points | Level set-up → connector fetch per level → parent attach per level → composed forecast → upper-level flow metrics → a page to read it on | **Oversized**: 6 |
+| Effort over 2 weeks | Upper levels alone touch fetch, storage, forecasting and UI across four connectors | **Oversized** |
+| Independent outcomes that could ship apart | Settings split; levels above the Feature; guided set-up; one unit page with a landing level; Deliveries on upper levels | **Oversized**: 5 |
+
+**Verdict: oversized on all five signals.** The DIVERGE scope (levels on one Portfolio) was already large; the
+event storming widened it to the organisation's whole structure. Split before journeys or stories are written.
+
+### Where behaviour-free ends and behaviour begins
+
+The test: does a user, an API client (the CLI or MCP server) or an existing test see any difference?
+
+- **Behaviour-free, so Epic 6264 can do it.** Re-shaping storage and code so today's Team and Portfolio are units
+  on two levels. A Delivery pointing at "a unit on a non-leaf level" while only one such level exists. Item rows
+  carrying a level number instead of the flag that marks a Feature's parent row. The data step of the migration
+  (D3): the second level's item types become an organisation default equal to the union of the Portfolios'
+  Feature types, while each Portfolio keeps its own list as its override. That is the existing
+  "follows the default or set here" pattern, so no Portfolio changes what it fetches. Routes, payloads and pixels
+  stay the same.
+- **Behaviour, so this Epic family does it.** Anything a person can see or do: a levels list in Organisation, even
+  with only the two seeded levels; names moving from Terminology to the levels; a third level, its items, its
+  composed dates and flow metrics; templates and the guided set-up; Deliveries on a third level; a new unit page.
+  A level exposed on the public API is behaviour too, because the Lighthouse clients read it.
+- **The grey zone is the migration.** Its data step is behaviour-free; showing the result is not. So the migration
+  lands with whichever piece of work first builds the level, and the other side builds on it.
+
+### Proposed Epic split (DRAFT — for maintainer walk-through)
+
+Summary, in the proposed order:
+
+| # | Candidate | Value alone, for whom | Contexts touched | ADR-271 step | Depends on (earlier only) | Home |
+|---|---|---|---|---|---|---|
+| A | Organisation, Access and System settings | config-admin finds "how we work" apart from running the instance; whoever administers the server stops wading through Terminology | none in the domain; UI surfaces of Organisation set-up, Access, Tracker integration (connections), Licensing, platform lane | U1 | nothing | 6455 family (Epic or first Story, Q3) |
+| B | Levels above the Feature | Customers A and B (and SAFe and Flight Levels setups) get a real "likely by" date and flow metrics at Change or Business Epic level | Organisation set-up, Tracker integration, Work Items, Forecasting, Flow metrics, Access, Licensing | towards U4 (keeps Team and Portfolio pages parallel); levels live in Organisation | A soft (gives levels their home) | 6455 feature work, the core |
+| C | Guided set-up with structure templates | forecasting-prospect and config-admin get the structure right on the first run, the failure Customer A hit in evaluation | Organisation set-up (UI only) | U5, structure part | B | 6455 family, its own Epic |
+| D | One page per unit, landing on your level | everyone reads any level the same way; leaders open on their level | Organisation set-up, Access (kept apart from landing) | U4, Decision 5 | B; the Customer B session | 6455 family, its own Epic, later |
+| E | Deliveries on any level above the Team | a programme board promises a set of Changes the way Deliveries promise Features today | Promises, Forecasting | Decision 1 (Deliveries tab where Deliveries hang off) | B; Epic 6264 "units on levels" | 6455 family, small, after 6264 |
+| F | Organisation defaults with a local override (state mapping, SLE, staleness …) | config-admin sets "how we work" once instead of per Team | Organisation set-up, Tracker integration | U2, U3 | A | needs its own Epic, outside 6455 |
+| R1 | Package Organisation set-up (exists, #6468) | developers | Organisation set-up | none | Metrics pilot (S02) | Epic 6264 |
+| R2 | Units on levels, two levels only (proposed new Story) | developers; makes D and E small | Organisation set-up, Promises | none | R1, Package Promises (S03d); B if B builds the level first | Epic 6264 |
+| R3 | One item model with a level (proposed new Story) | developers; ADR-270's "one item model" | Work Items | none | Package Work Items (S03b), forecasts off the Feature (S13) | Epic 6264 |
+
+**A. Organisation, Access and System settings.**
+IN: split today's System Settings tabs by who decides (ADR-271 Decision 2), moving each existing setting
+unchanged, with the sketch and the maintainer's yes before building. OUT: any new setting, levels, the shared
+default-or-override control, mapping. Size: 1–2 Stories, a few days. Can start now; nothing in it depends on
+Customer B.
+
+**B. Levels above the Feature.**
+IN: levels defined once in Organisation, each with an owning-unit name, an item name, its tracker types and how
+its items attach; the migration to two seeded levels (D3, the data step if Epic 6264 has not done it); adding a
+third and further level; units on those levels and their items fetched per connector (Jira and Azure DevOps first,
+Linear and CSV as later slices); composed "likely by" dates, with a visible count of default-sized parts; flow
+metrics per level; the per-level setup counts. Context map: Organisation set-up publishes "level introduced"; the
+level's items reach Work Items through the existing mapping path; Forecasting composes upward after its forecast
+round. ADR-270's "levels above the Feature" stop being target-only, so the map and glossary are updated in the same
+Epic. OUT: Deliveries on upper levels (D2), the unit page and landing level, templates, onboarding, many-to-many
+and link-typed goal levels (OKR, SAFe Themes), reworking Feature WIP. Walking skeleton: a Customer-A-shaped Jira
+structure (Story, Epic, Change) where one added level shows a Change with a composed date. That skeleton does not
+depend on Customer B. If B's story map exceeds about ten Stories, Linear and CSV split out as their own Epic.
+
+**C. Guided set-up with structure templates.**
+IN: a first-run step that picks an initial structure (levels, names, item types) from a template such as today's
+two levels, SAFe or Flight Levels, editable during the set-up and later in Organisation; it reuses the existing
+onboarding stepper and wizard shell. OUT: state mapping and blocked rules in the interview (they wait for F), OKR
+templates. Releasable once B has shipped.
+
+**D. One page per unit, landing on your level.**
+IN: Team and Portfolio pages become one unit page whose tabs depend on leaf or non-leaf; the Overview lists units
+by level and opens on the person's level. OUT: anything Access-related beyond what exists. Its main question waits
+for Customer B, so it is not scoped further now.
+
+**E. Deliveries on any level above the Team.**
+IN: a Delivery on a third or higher level, holding that level's items. OUT: the promise lifecycle (kept, missed,
+renegotiated). Small once Epic 6264 has made a Delivery point at a unit on a non-leaf level.
+
+**F. Organisation defaults with a local override.**
+Listed because C's full interview and ADR-271's onboarding need it, but it is its own Epic: it changes how every
+Team's settings behave and has value without levels.
+
+**Ordering.** A, then B, then C. D after B and once Customer B's answers are in. E after B and Epic 6264's R2.
+F whenever it is wanted, before C grows an interview about states. Every dependency points from a later candidate
+to an earlier, finished one; none waits on a slice of a sibling.
+
+**Recommended first Epic: A (settings split) to deliver, with B's DISCUSS continuing straight after the Customer
+B session.** A is small, unblocked today, and gives levels their home, so B does not put them into System
+Settings only to move them again. B is the Epic with the customer value and should follow without a gap.
+
+### Questions for the maintainer
+
+1. **Order against Epic 6264.** (a) Epic 6264 first: R1 and R2 make Team and Portfolio units on levels, then B
+   builds on them; clean, but behind the test-infrastructure track and the Metrics pilot, so weeks before any
+   customer value. (b) B first: B builds the level and the migration, keeping Team and Portfolio as they are and
+   placing new code in the target layout; R1 and R2 later fold Team and Portfolio into units. (c) Pull R2 ahead of
+   the Metrics pilot. **Recommendation: (b).** Customer value does not wait, and D2 already accepts Deliveries
+   locked to the second level.
+2. **Where do upper-level items live?** (a) Units all the way up: a unit on level 3 (for example a programme board)
+   has its own query and page, reusing the Portfolio machinery, and its items' children are the second level's
+   Features. (b) No unit above level 2 yet: upper levels are shown on each Portfolio. **Recommendation: (a)**,
+   because pairing is decided (D1); (b) would rebuild the per-Portfolio stack the storming rejected. DESIGN must
+   answer how a level-3 date stays as fresh as the level-2 dates it is built from.
+3. **How is the settings split tracked?** (a) Its own small Epic, delivered first. (b) The first Story of B.
+   (c) Folded into B's levels Story. **Recommendation: (a)**, because it has value without levels.
+4. **Shape (a) installs in the migration.** Customer A configured Change as the Portfolio's Feature type, so D3
+   would carry Change into the second level, where nothing has children. (a) Migrate as is; the setup counts show
+   it and Organisation offers "move Change one level up". (b) Detect and move automatically. (c) Document only.
+   **Recommendation: (a)**: no install changes behaviour without consent.
+5. **Names per level (idea B3).** (a) In B, Team, Work Item, Portfolio and Feature move from Terminology into the
+   two seeded levels, and new levels carry their own names. (b) Terminology keeps those four; only new levels get
+   names on the level. **Recommendation: (a)**: one place per level name, and "Portfolio" stops being a standalone
+   word.
+6. **Leaf names.** (a) Keep "Team" and "Work Item" as the seeded user-facing names of the leaf level; renaming
+   the leaf's item in code is Epic 6264's concern. (b) Pick new names now. **Recommendation: (a)**: it does not
+   block B, and the user already renames both.
+7. **Guided set-up scope.** (a) C covers structure only (levels, names, types, templates). (b) C also asks about
+   states and blocked rules, which needs F first. **Recommendation: (a).**
+8. **Premium line.** (a) All levels above the second are Premium. (b) The first level above the second is free,
+   more are Premium. (c) All levels free; upper-level units count against the free tier's unit limit.
+   **Recommendation: (b)**: an evaluating prospect like Customer A sees a Change date without a licence.
+9. **After the Customer B session** (not to be answered now): the level a person lands on; Epics as the items
+   directly above the leaf; whether the SAFe Feature level is shown. These decide D and part of B's UI, not B's
+   walking skeleton.
+
+Nothing is mirrored to the ADO board until the maintainer has walked through each candidate.
