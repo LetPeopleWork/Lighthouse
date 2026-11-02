@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -32,6 +33,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// is the one the epic is observed through: the scheduled refresh, triggered on an updater and run by
     /// the production update queue in its own DI scope. The observable surface is the log stream — so the
     /// harness replaces the logger factory rather than the services that write to it.
+    ///
+    /// One host serves the whole fixture, and every scenario gets its own database, clock, doubles and
+    /// recordings inside it. The history filler's queue and the memo of what earlier refreshes found
+    /// out live as long as the host, and both are keyed by owner id while every fresh database numbers
+    /// its owners from one again - so a scenario ends by emptying the filler's queue and making the
+    /// memo forget each owner it seeded, and fails if the host is not left idle.
     ///
     /// Real: EF over SQLite, the update queue, <c>TeamDataService</c>, <c>WorkItemService</c>, the
     /// metrics services, the domain-event dispatcher and <c>RefreshLogService</c>. Faked: the
@@ -71,48 +78,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// </summary>
         protected CapturedWorkItemWrites CapturedWorkItemWrites = null!;
 
-        [SetUp]
-        public void Init()
+        private Mock<IWorkTrackingConnectorFactory> connectorFactoryMock = null!;
+
+        /// <summary>
+        /// Every owner the current scenario seeded. The memo keeps notes per owner id for as long as the
+        /// host lives, so these are the ids it has to be told to forget when the scenario is over.
+        /// </summary>
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             RootFactory = new TestWebApplicationFactory<Program>();
+
+            // The logger factory is a singleton that holds this sink for the life of the host, so the
+            // sink is one object that each scenario empties rather than a new one.
             CapturedLogs = new CapturedLogMessages();
             CapturedEvents = new CapturedDomainEvents();
             CapturedWorkItemWrites = new CapturedWorkItemWrites();
-            ResetTrackerObservations();
 
-            LicenseServiceMock = new Mock<ILicenseService>();
-            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
-
-            ConnectorMock = new Mock<IWorkTrackingConnector>();
-            ConnectorMock.Setup(c => c.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
-            ConnectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
-            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-
-            // Epic #5687 slice 02: a connector that cannot scan is the default, so nothing in slice 01
-            // changes shape. A scenario that wants the two-phase path says so explicitly.
-            ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
-            ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-
-            // Epic #5687 slice 03: the portfolio half of the same default. A portfolio whose scenario says
-            // nothing about the two-phase path behaves exactly as it did in slices 01 and 02.
-            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
-            ConnectorMock
-                .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
-                .ReturnsAsync(new WriteBackResult());
-
-            // Monte Carlo is non-deterministic and this slice asserts nothing about a forecast; faking it
-            // keeps the portfolio refresh's duration and log shape reproducible.
-            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
-
-            var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock
                 .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
-                .Returns(ConnectorMock.Object);
+                .Returns(() => ConnectorMock.Object);
 
             Factory = RootFactory.WithWebHostBuilder(builder =>
             {
@@ -162,6 +152,51 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                     ReplaceServicesForTheScenario(services);
                 });
             });
+        }
+
+        [SetUp]
+        public void GiveTheScenarioItsOwnState()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            CapturedLogs.Clear();
+            CapturedEvents = new CapturedDomainEvents();
+            CapturedWorkItemWrites = new CapturedWorkItemWrites();
+            ownersSeeded.Clear();
+            ResetTrackerObservations();
+
+            LicenseServiceMock = new Mock<ILicenseService>();
+            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            ConnectorMock = new Mock<IWorkTrackingConnector>();
+            ConnectorMock.Setup(c => c.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            ConnectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+            // Epic #5687 slice 02: a connector that cannot scan is the default, so nothing in slice 01
+            // changes shape. A scenario that wants the two-phase path says so explicitly.
+            ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+
+            // Epic #5687 slice 03: the portfolio half of the same default. A portfolio whose scenario says
+            // nothing about the two-phase path behaves exactly as it did in slices 01 and 02.
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
+                .ReturnsAsync(new WriteBackResult());
+
+            // Monte Carlo is non-deterministic and this slice asserts nothing about a forecast; faking it
+            // keeps the portfolio refresh's duration and log shape reproducible.
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
+
+            RootFactory.Clock.Reset();
+            RootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             using var setupScope = Factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -183,15 +218,88 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = Factory.Services.CreateScope())
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
+            await TheFillerGoesIdleOrFails();
+            await MakeTheMemoForgetTheOwnersSeeded();
+            await TheQueueGoesIdleOrFails();
+
+            using var scope = Factory.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            RootFactory?.Dispose();
+        }
+
+        /// <summary>
+        /// Empties what a scenario asked the filler for and was never run, which also lets its owners be
+        /// asked for again: the filler only forgets an owner once a pass for it has ended, and an ask left
+        /// waiting would otherwise run against the next scenario's database, or turn that scenario's own
+        /// ask for the same owner id away.
+        /// </summary>
+        private async Task TheFillerGoesIdleOrFails()
+        {
+            var filler = Factory.Services.GetRequiredService<OverTimeHistoryFiller>();
+            var emptied = Task.Run(() => filler.DrainAsync(CancellationToken.None));
+
+            if (await Task.WhenAny(emptied, Task.Delay(TimeSpan.FromSeconds(60))) != emptied)
             {
-                teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                Assert.Fail("The filler's queue did not empty in time; a pass left running would write into the next scenario's database.");
             }
 
-            Factory.Dispose();
-            RootFactory.Dispose();
+            await emptied;
+
+            var deadline = DateTime.UtcNow.AddSeconds(60);
+            while (filler.HasPassInFlight && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+
+            if (filler.HasPassInFlight)
+            {
+                Assert.Fail("A reconstruction pass was still running at the end of the scenario; it would leak into the next one on this host.");
+            }
+        }
+
+        private async Task MakeTheMemoForgetTheOwnersSeeded()
+        {
+            var memo = Factory.Services.GetRequiredService<ReconstructionMemo>();
+
+            foreach (var (ownerId, ownerType) in ownersSeeded)
+            {
+                if (ownerType == OwnerType.Team)
+                {
+                    await memo.HandleAsync(new TeamDataRefreshed(ownerId), CancellationToken.None);
+                }
+                else
+                {
+                    await memo.HandleAsync(new PortfolioFeaturesRefreshed(ownerId), CancellationToken.None);
+                }
+            }
+        }
+
+        private async Task TheQueueGoesIdleOrFails()
+        {
+            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+
+            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+
+            if (store.HasActiveWork())
+            {
+                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
+            }
         }
 
         // --- Seeding (preconditions only — never the expected output) ---
@@ -230,6 +338,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             repository.Add(portfolio);
             repository.Save().GetAwaiter().GetResult();
 
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
+
             return portfolio.Id;
         }
 
@@ -256,6 +366,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             var repository = sp.GetRequiredService<IRepository<Team>>();
             repository.Add(team);
             repository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((team.Id, OwnerType.Team));
 
             return team.Id;
         }
