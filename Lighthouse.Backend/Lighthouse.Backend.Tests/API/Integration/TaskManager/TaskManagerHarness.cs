@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// the refresh log.
     ///
     /// Faked: the work-tracking connector, <see cref="IForecastService"/> and the licence service — the
-    /// external and non-deterministic driven ports per docs/architecture/atdd-infrastructure-policy.md.
+    /// external and non-deterministic driven ports.
     /// </summary>
     public abstract class TaskManagerHarness
     {

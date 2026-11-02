@@ -3,9 +3,9 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
     /// <summary>
-    /// DISTILL acceptance scenarios (Epic #5511 — Task Manager), slice 04 / ADO #5842: stop a refresh that
-    /// is doing harm. Driving port: the System-Administrator-guarded task list and its cancel route on
-    /// <c>UpdateController</c>, exercised over HTTP. US-04, AC-04.1 … AC-04.8.
+    /// Acceptance scenarios for stopping a refresh that is doing harm. Driving port: the
+    /// System-Administrator-guarded task list and its cancel route on <c>UpdateController</c>, exercised
+    /// over HTTP.
     ///
     /// The thing an operator is buying here is the ability to intervene, so the scenarios are about what
     /// stops and what does not: a queued refresh must never reach the tracker at all, a running one must
@@ -13,12 +13,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     ///
     /// Answered elsewhere, none of it silently:
     ///
-    /// AC-04.2's granularity is a measurement, not an assertion — it is recorded in the slice brief from
-    /// the probe, and the mechanism it rests on is pinned by <c>Slice04CancellationReachProbe</c> (an
+    /// How finely a running refresh can be stopped is a measurement, not an assertion — it is recorded in
+    /// the slice brief from the probe, and the mechanism it rests on is pinned by <c>Slice04CancellationReachProbe</c> (an
     /// ambient value set by the queue is readable inside a connector call) and by the paging tests in each
     /// connector. A ratio between two durations asserted in a suite becomes a flake, not a guard.
     ///
-    /// AC-04.3's ordinals are frozen in <c>UpdateProgressOrdinalFreezeTest</c>, because the claim is about
+    /// The progress ordinals are frozen in <c>UpdateProgressOrdinalFreezeTest</c>, because the claim is about
     /// numbers already written into the Redis hash rather than about anything this endpoint answers.
     ///
     /// Cancelling work running on another replica is <c>TaskManagerCancellationMultiReplicaTests</c>: it
@@ -26,8 +26,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5511-task-manager")]
-    [Category("slice-04")]
     public partial class Slice04StopARefreshTest
     {
         // the whole promise in one scenario: an

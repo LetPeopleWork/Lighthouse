@@ -130,14 +130,15 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         {
             using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            var reachedTheCensus = Outbound.ThatReached(TheLiveCensusHost);
-
             // Batches a scenario handed in and never asked about would otherwise be sent by the next
             // scenario, against its database.
             await Factory.Services.GetRequiredService<UsageDataForwardingService>()
                 .SendWhatIsWaitingAsync(CancellationToken.None);
 
             var idle = await TheUpdateQueueGoesIdle();
+
+            // Read last, so a batch sent by the drain above is checked as well.
+            var reachedTheCensus = Outbound.ThatReached(TheLiveCensusHost);
 
             using (var scope = Factory.Services.CreateScope())
             {

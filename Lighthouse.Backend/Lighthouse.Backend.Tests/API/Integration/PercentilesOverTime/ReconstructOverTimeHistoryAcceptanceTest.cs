@@ -27,13 +27,14 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 {
     /// <summary>
-    /// Story-wide acceptance harness for 6053 - an over-time chart shows the trend the stored work items
-    /// already support, instead of the handful of days the recorder happened to catch.
+    /// Acceptance harness for rebuilding over-time history: an over-time chart shows the trend the
+    /// stored work items already support, instead of the handful of days the recorder happened to catch.
     ///
-    /// Separate from the Epic 5427 harness on purpose. These scenarios turn on which calendar day the
-    /// instance believes it is - how far back the walk may reach, which days sit after an owner's last
-    /// observation, and where the cap falls - so the clock is pinned. The epic-5427 harness leaves the
-    /// clock real, and pinning it there would move every one of its expectations.
+    /// Separate from the percentiles-over-time recorder's harness on purpose. These scenarios turn on
+    /// which calendar day the instance believes it is - how far back the walk may reach, which days sit
+    /// after an owner's last observation, and where the cap falls - so the clock is pinned. The
+    /// recorder's harness leaves the clock real, and pinning it there would move every one of its
+    /// expectations.
     ///
     /// The app is the production app: the real ASP.NET host over a real SQLite FILE (not the in-memory
     /// provider), real EF, real DI. That matters beyond style here - the in-memory provider does not
@@ -44,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// One host serves the whole fixture, and every scenario gets its own database, clock and latches
     /// inside it. The filler's queue and the memo of what earlier passes found out live as long as the
     /// host, and both are keyed by owner id while every fresh database numbers its owners from one
-    /// again - so a scenario ends by emptying the filler's queue and making the memo forget each owner
+    /// again - so a scenario ends by running out the filler's queue and making the memo forget each owner
     /// it seeded, and fails if the host is not left idle.
     /// </summary>
     public abstract class ReconstructOverTimeHistoryAcceptanceTest
@@ -208,13 +209,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             fillPause.Release();
             stagedDayPause.Release();
 
-            SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
-            await SharedHostCleanup.DrainTheHistoryFillerOrFail(ThisReplicasFiller, LongEnoughThatSomethingIsWrong);
-            await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
-            await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(ThisReplicasFiller, LongerThanAnyScenarioHoldsAPass);
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                // A failed wait above must not leave the memo's notes or the database behind for the next
+                // scenario on this host; the failure itself still propagates.
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
 
-            using var scope = Factory.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                using var scope = Factory.Services.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+            }
         }
 
         [OneTimeTearDown]

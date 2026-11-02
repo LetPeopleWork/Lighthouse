@@ -24,9 +24,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6311-responsive-during-updates")]
-    [Category("slice-05")]
-    [Category("us-04")]
     public class Slice05CancelAllScenarios : TaskManagerHostPerFixtureAcceptanceTest
     {
         private const string CancelAllRoute = "/api/latest/update/tasks/cancel";
@@ -110,10 +107,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.1")]
-        [Category("walking_skeleton")]
-        [Category("driving_port")]
-        [Category("contract-shape:bounded-change")]
         public async Task Cancel_all_clears_every_queued_refresh_at_once_and_stops_the_running_one()
         {
             var running = GivenATeamThatIsRefreshedOnSchedule();
@@ -142,9 +135,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.4")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_removal_on_the_list_is_left_to_finish()
         {
             var running = GivenATeamThatIsRefreshedOnSchedule();
@@ -169,9 +159,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.2")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_follow_up_parked_behind_the_running_refresh_never_runs()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();
@@ -196,9 +183,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.2")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_forecast_held_until_a_Team_finishes_is_let_go_without_running()
         {
             var running = GivenATeamThatIsRefreshedOnSchedule();
@@ -224,9 +208,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.2")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
         public async Task What_a_round_resolved_before_its_held_forecast_was_let_go_is_still_written_back()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();
@@ -253,9 +234,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.3")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_refresh_asked_for_after_Cancel_all_runs_as_usual()
         {
             var team = GivenATeamThatIsRefreshedOnSchedule();
@@ -272,9 +250,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.5")]
-        [Category("edge")]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Cancel_all_with_nothing_to_cancel_is_accepted_and_can_be_asked_again()
         {
             await WhenTheOperatorCancelsAll();
@@ -284,9 +259,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         }
 
         [Test]
-        [Category("ac-05.5")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task Cancel_all_is_refused_to_somebody_who_is_not_a_system_administrator()
         {
             using var client = hostForSomebodyWhoIsNotAnAdministrator.CreateClient();

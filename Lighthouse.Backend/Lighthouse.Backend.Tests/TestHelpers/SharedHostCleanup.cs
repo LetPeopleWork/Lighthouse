@@ -42,10 +42,11 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
 
         /// <summary>
-        /// Empties what a scenario asked the filler for and was never run, which also lets its owners be
-        /// asked for again: the filler only forgets an owner once a pass for it has ended, and an ask left
-        /// waiting would otherwise run against the next scenario's database, or turn that scenario's own
-        /// ask for the same owner id away.
+        /// Runs the passes a scenario asked the filler for and left queued, so none of them is left to run
+        /// against the next scenario's database. They write into the database of the scenario that asked,
+        /// which is deleted right after. It also lets their owners be asked for again: the filler only
+        /// forgets an owner once a pass for it has ended, and an ask left waiting would otherwise turn the
+        /// next scenario's own ask for the same owner id away.
         /// </summary>
         public static async Task DrainTheHistoryFillerOrFail(OverTimeHistoryFiller filler, TimeSpan within)
         {

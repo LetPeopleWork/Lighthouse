@@ -22,10 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
     [TestFixture(4)]
     [TestFixture(8)]
     [Category("acceptance")]
-    [Category("epic-6400-fast-with-many-features")]
-    [Category("slice-01")]
-    [Category("us-01")]
-    [Category("story-6404")]
     public class Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios(int coresTheHostHas) : ForecastWhileItUpdatesAcceptanceTest
     {
         private static readonly TimeSpan TheLongestAStopMayTake = TimeSpan.FromSeconds(30);
@@ -57,9 +53,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Category("driving_port")]
-        [Category("kpi-OUT-6400-no-stall-during-rounds")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_background_round_simulates_on_Lighthouses_own_forecast_threads_never_on_the_threads_that_answer_pages()
         {
             var portfolio = GivenAPortfolioWithOneFeatureOfFiveItems();
@@ -83,9 +76,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Category("driving_port")]
-        [Category("kpi-OUT-6400-no-stall-during-rounds")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_background_round_saves_its_forecasts_from_the_forecast_threads_too()
         {
             var portfolio = GivenAPortfolioWithOneFeatureOfFiveItems();
@@ -102,9 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Category("driving_port")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task A_round_stopped_from_the_Task_Manager_ends_and_every_Feature_keeps_the_forecast_it_had()
         {
             var portfolio = GivenAPortfolioWithOneFeatureOfFiveItems();
@@ -126,9 +113,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         }
 
         [Test]
-        [Category("driving_port")]
-        [Category("error")]
-        [Category("contract-shape:unbounded-preservation")]
         public async Task When_Lighthouse_stops_in_the_middle_of_a_round_the_round_ends_and_every_Feature_keeps_the_forecast_it_had()
         {
             var portfolio = GivenAPortfolioWithOneFeatureOfFiveItems();

@@ -37,13 +37,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// One host serves the whole fixture, and every scenario gets its own database, clock, doubles and
     /// recordings inside it. The history filler's queue and the memo of what earlier refreshes found
     /// out live as long as the host, and both are keyed by owner id while every fresh database numbers
-    /// its owners from one again - so a scenario ends by emptying the filler's queue and making the
+    /// its owners from one again - so a scenario ends by running out the filler's queue and making the
     /// memo forget each owner it seeded, and fails if the host is not left idle.
     ///
     /// Real: EF over SQLite, the update queue, <c>TeamDataService</c>, <c>WorkItemService</c>, the
     /// metrics services, the domain-event dispatcher and <c>RefreshLogService</c>. Faked: the
     /// work-tracking connector and <see cref="IForecastService"/> — the two external / non-deterministic
-    /// driven ports per docs/architecture/atdd-infrastructure-policy.md — and the licence service.
+    /// driven ports — and the licence service.
     ///
     /// Faking the data services (as the Quiet-write-back harness does) would make the noise assertions
     /// vacuous: <c>WorkItemService</c> and <c>TeamDataService</c> are the loudest voices on the update
@@ -160,8 +160,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
 
             CapturedLogs.Clear();
-            CapturedEvents = new CapturedDomainEvents();
-            CapturedWorkItemWrites = new CapturedWorkItemWrites();
+            CapturedEvents.Clear();
+            CapturedWorkItemWrites.Clear();
             ownersSeeded.Clear();
             ResetTrackerObservations();
 
@@ -222,13 +222,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-            await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
-            await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            try
+            {
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                // A failed wait above must not leave the memo's notes or the database behind for the next
+                // scenario on this host; the failure itself still propagates.
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
 
-            using var scope = Factory.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                using var scope = Factory.Services.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+            }
         }
 
         [OneTimeTearDown]

@@ -50,10 +50,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            await TheQueueGoesIdleOrFails();
-
-            using var scope = Factory.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+            try
+            {
+                await TheQueueGoesIdleOrFails();
+            }
+            finally
+            {
+                // A failed wait must not leave the database behind for the next scenario on this host; the
+                // failure itself still propagates.
+                using var scope = Factory.Services.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+            }
         }
 
         [OneTimeTearDown]

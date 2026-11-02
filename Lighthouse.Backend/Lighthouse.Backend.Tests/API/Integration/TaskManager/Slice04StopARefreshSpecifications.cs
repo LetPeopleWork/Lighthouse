@@ -13,7 +13,7 @@ using System.Net;
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
     /// <summary>
-    /// DISTILL step definitions (Specifications) for Epic #5511 slice 04 — stop a refresh.
+    /// Step definitions for stopping a refresh.
     ///
     /// The contract these steps fix, which is what DELIVER has to build:
     ///
@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     ///
     /// A tracker that answers one page at a time is how a running refresh is held open long enough to be
     /// cancelled. A synthetic sleep would prove only that a token was observed somewhere; paging is where
-    /// the wall-clock actually is, and AC-04.8 asks for a refresh long enough to be cancelled mid-flight
+    /// the wall-clock actually is, and the scenarios want a refresh long enough to be cancelled mid-flight
     /// rather than one arranged to be.
     /// </summary>
     public partial class Slice04StopARefreshTest : TaskManagerHostPerFixtureAcceptanceTest
@@ -40,11 +40,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private int pagesTheTrackerWasAskedFor;
 
+        private int pagesWhenTheOperatorCancelled;
+
+        private TaskCompletionSource? theTrackerGaveItsFirstPage;
+
         /// <summary>
-        /// Runs before the harness tears the host down, because NUnit unwinds from the derived class
-        /// outwards. A scenario that left the tracker gated would otherwise leave a refresh parked in the
-        /// queue while the database underneath it is deleted.
+        /// Set only by the teardown. It ends a paging tracker the scenario left running so it cannot keep
+        /// asking for pages on a host the next scenario shares; the scenarios themselves never touch it, so
+        /// "the tracker is free to answer" and "the refresh stopped paging" stay two different facts.
         /// </summary>
+        private TaskCompletionSource? theTeardownEndsAnyPaging;
+
         private WebApplicationFactory<Program> theInstanceThatRefusesNonAdministrators = null!;
 
         [OneTimeSetUp]
@@ -54,11 +60,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         [OneTimeTearDown]
         public void StopTheDerivedHost() => theInstanceThatRefusesNonAdministrators.Dispose();
 
+        /// <summary>
+        /// Runs before the harness tears the host down, because NUnit unwinds from the derived class
+        /// outwards. A scenario that left the tracker gated would otherwise leave a refresh parked in the
+        /// queue while the database underneath it is deleted.
+        /// </summary>
         [TearDown]
         public async Task LetAnyGatedRefreshFinish()
         {
+            theTeardownEndsAnyPaging?.TrySetResult();
             theTrackerMayAnswer?.TrySetResult();
             await TheQueueGoesIdle();
+
+            theTeardownEndsAnyPaging = null;
+            theTrackerGaveItsFirstPage = null;
         }
 
         // --- Given ---
@@ -100,6 +115,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         private void GivenTheTrackerAnswersOnePageAtATimeUntilWeSaySo()
         {
             theTrackerMayAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var firstPage = theTrackerGaveItsFirstPage = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var teardownEndsPaging = theTeardownEndsAnyPaging = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            pagesTheTrackerWasAskedFor = 0;
 
             ConnectorMock
                 .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
@@ -113,12 +131,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                     // A tracker with more to give than this refresh will ever ask for. Each turn of the loop
                     // is a page, and a page is where a real connector notices it has been told to stop - so
                     // a refresh that carries on looping here is one that ignored the ask.
-                    // The teardown releases the tracker, which also ends a refresh the scenario left running, so
-                    // it cannot go on asking for pages on a host the next scenario shares.
-                    for (var page = 0; page < PagesTheTrackerCouldGiveForever && !theTrackerMayAnswer.Task.IsCompleted; page++)
+                    for (var page = 0; page < PagesTheTrackerCouldGiveForever && !teardownEndsPaging.Task.IsCompleted; page++)
                     {
                         stopping.ThrowIfCancellationRequested();
                         Interlocked.Increment(ref pagesTheTrackerWasAskedFor);
+                        firstPage.TrySetResult();
                         await Task.Delay(20, CancellationToken.None);
                     }
 
@@ -158,14 +175,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         // --- When ---
 
-        private Task WhenARefreshOfThatTeamIsUnderWay(SeededTeam team)
-            => StartRefreshAndWaitUntil(team, UpdateProgress.InProgress);
+        private async Task WhenARefreshOfThatTeamIsUnderWay(SeededTeam team)
+        {
+            await StartRefreshAndWaitUntil(team, UpdateProgress.InProgress);
+
+            if (theTrackerGaveItsFirstPage is { } firstPage
+                && await Task.WhenAny(firstPage.Task, Task.Delay(TimeSpan.FromSeconds(30))) != firstPage.Task)
+            {
+                Assert.Fail("The refresh was under way but never asked the tracker for a page; the scenario cannot cancel it mid-flight.");
+            }
+        }
 
         private Task WhenARefreshOfThatTeamIsAlsoAskedFor(SeededTeam team)
             => StartRefreshAndWaitUntil(team, UpdateProgress.Queued);
 
         private async Task WhenTheOperatorCancels(SeededTeam team)
         {
+            pagesWhenTheOperatorCancelled = Volatile.Read(ref pagesTheTrackerWasAskedFor);
+
             using var client = Factory.CreateClient();
             using var response = await client.PostAsync(CancelRouteFor(UpdateType.Team, team.Id), null);
 
@@ -230,12 +257,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private async Task ThenThatRefreshStopsBeforeItHasReadEveryPage(SeededTeam team)
         {
-            var pagesWhenCancelled = Volatile.Read(ref pagesTheTrackerWasAskedFor);
-            theTrackerMayAnswer.TrySetResult();
+            // The tracker is deliberately not released: it still has pages to give, so the only thing that
+            // can stop the paging is the cancel. A short wait lets the refresh reach its next page, which
+            // is where it notices the ask; after that the count must stand still.
+            Assert.That(pagesWhenTheOperatorCancelled, Is.GreaterThan(0),
+                "The refresh had not read a page when it was cancelled, so there is no paging to stop.");
 
-            await TheQueueSettles(team);
+            await Task.Delay(TimeSpan.FromMilliseconds(150));
+            var pagesOnceTheCancelWasNoticed = Volatile.Read(ref pagesTheTrackerWasAskedFor);
 
-            Assert.That(Volatile.Read(ref pagesTheTrackerWasAskedFor), Is.EqualTo(pagesWhenCancelled),
+            await Task.Delay(TimeSpan.FromMilliseconds(400));
+
+            Assert.That(Volatile.Read(ref pagesTheTrackerWasAskedFor), Is.EqualTo(pagesOnceTheCancelWasNoticed),
                 "A refresh that carried on paging after being cancelled is a button that does not work - and "
                 + "the pages it reads after the click are exactly the ones an operator pressed it to stop.");
         }
@@ -252,7 +285,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private async Task ThenTheWriteBackRoundWasAccountedFor()
         {
-            theTrackerMayAnswer.TrySetResult();
             await TheQueueGoesIdle();
 
             Assert.That(WriteBackFlushes.Value, Is.GreaterThan(0),
@@ -263,8 +295,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private async Task ThenWhatWasHeldBehindItWasLetGo()
         {
-            theTrackerMayAnswer.TrySetResult();
-
             var released = await Task.WhenAny(WhatWasHeldBehind.Task, Task.Delay(TimeSpan.FromSeconds(30)));
 
             Assert.That(released, Is.SameAs(WhatWasHeldBehind.Task),
@@ -368,7 +398,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         /// <summary>
-        /// AC-04.6 asks for the same refusal the list gives, so the scenario asks both and compares rather
+        /// The cancel route must refuse the way the list does, so the scenario asks both and compares rather
         /// than writing a status code down twice and letting them drift apart.
         /// </summary>
         private async Task ThenCancellingRefusesANonAdministratorTheSameWayTheTaskListDoes(SeededTeam team)
