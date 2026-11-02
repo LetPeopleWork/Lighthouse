@@ -134,6 +134,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             teamRepository.Add(team);
             teamRepository.Save().GetAwaiter().GetResult();
 
+            RememberTheTeam(team.Id);
+
             var feature = new Feature([(team, 0, 5)])
             {
                 Name = name,

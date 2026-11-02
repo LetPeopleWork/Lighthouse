@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5565-delivery-date-sync")]
-    [Category("slice-04")]
     public partial class Slice04ForecastPublishingTest
     {
         [TestCase(ApiV1Prefix)]
