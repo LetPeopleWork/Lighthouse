@@ -9,8 +9,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5074-blocked-items")]
-    [Category("slice-02")]
     public partial class Slice02BlockedDurationTest
     {
         [Test]
