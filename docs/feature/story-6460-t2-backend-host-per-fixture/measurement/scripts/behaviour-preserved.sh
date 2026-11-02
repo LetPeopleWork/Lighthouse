@@ -8,15 +8,17 @@ cd "$(git rev-parse --show-toplevel)" || exit 2
 root=Lighthouse.Backend/Lighthouse.Backend.Tests
 here=docs/feature/story-6460-t2-backend-host-per-fixture/measurement
 fail=0
+run=$(mktemp -d)
+trap 'rm -rf "$run"' EXIT
 
 echo "== 1. test ids: same names as before? (sorted, duplicates kept; the list holds names, not classes)"
 before="$here/test-ids-before.2026-11-01.txt.gz"
-(cd Lighthouse.Backend && dotnet test --no-build --list-tests) | tail -n +5 | sed 's/^    //' | sort > /tmp/test-ids-after.txt
-if zcat "$before" | diff - /tmp/test-ids-after.txt > /tmp/test-ids.diff; then
-  echo "same $(wc -l < /tmp/test-ids-after.txt) names"
+(cd Lighthouse.Backend && dotnet test --no-build --list-tests) | tail -n +5 | sed 's/^    //' | sort > "$run/test-ids-after.txt"
+if zcat "$before" | diff - "$run/test-ids-after.txt" > "$run/test-ids.diff"; then
+  echo "same $(wc -l < "$run/test-ids-after.txt") names"
 else
   echo "DIFFERENT (lines starting with < are gone, > are new; the guard's own new tests are expected under >):"
-  cat /tmp/test-ids.diff
+  cat "$run/test-ids.diff"
   fail=1
 fi
 

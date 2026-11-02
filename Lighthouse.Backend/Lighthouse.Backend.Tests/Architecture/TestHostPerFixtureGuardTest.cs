@@ -263,6 +263,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase(nameof(PlantedFixtures.StartsAHostAfterAnAwait), true)]
         [TestCase(nameof(PlantedFixtures.DerivesAHostInATestBody), true)]
         [TestCase(nameof(PlantedFixtures.StartsAHostFromAFactoryThreeStepsBelowTheNamedOne), true)]
+        [TestCase(nameof(PlantedFixtures.StartsAHostOnlyThroughAVirtualCall), true)]
         [TestCase(nameof(PlantedFixtures.CallsAnUnrelatedMethodWithTheSameNameAsAHostSink), false)]
         [TestCase(nameof(PlantedFixtures.StartsAHostOnlyInOneTimeSetUp), false)]
         [TestCase(nameof(PlantedFixtures.StartsNoHostAtAll), false)]
@@ -529,25 +530,37 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             // Declared from the bottom up on purpose: a scan that walks the types once, in order, meets each
             // factory before it knows its parent is one, so only a scan that repeats finds the third step.
-            internal class FactoryThreeStepsBelowTheNamedOne : FactoryTwoStepsBelowTheNamedOne
-            {
-                internal const int StepsBelowTheNamedOne = 3;
-            }
+#pragma warning disable S2094 // The classes are empty on purpose: only their place in the inheritance chain is scanned.
+            internal class FactoryThreeStepsBelowTheNamedOne : FactoryTwoStepsBelowTheNamedOne;
 
-            internal class FactoryTwoStepsBelowTheNamedOne : FactoryOneStepBelowTheNamedOne
-            {
-                internal const int StepsBelowTheOneBeforeIt = 2;
-            }
+            internal class FactoryTwoStepsBelowTheNamedOne : FactoryOneStepBelowTheNamedOne;
 
-            internal class FactoryOneStepBelowTheNamedOne : TestWebApplicationFactory<Program>
-            {
-                internal const int StepsBelowTheFactoryTheScanKnowsByName = 1;
-            }
+            internal class FactoryOneStepBelowTheNamedOne : TestWebApplicationFactory<Program>;
+#pragma warning restore S2094
 
             internal abstract class StartsAHostFromAFactoryThreeStepsBelowTheNamedOne
             {
                 [SetUp]
                 public void Prepare() => _ = new FactoryThreeStepsBelowTheNamedOne();
+            }
+
+            internal abstract class PrepareStep
+            {
+                public abstract void Run();
+            }
+
+            internal sealed class PrepareStepThatStartsAHost : PrepareStep
+            {
+                public override void Run() => _ = new TestWebApplicationFactory<Program>();
+            }
+
+            // The set-up only sees the base type; the host is started by an override it never names.
+            internal abstract class StartsAHostOnlyThroughAVirtualCall
+            {
+                [SetUp]
+                public void Prepare() => step.Run();
+
+                private readonly PrepareStep step = new PrepareStepThatStartsAHost();
             }
 
             internal static class SomethingThatIsNotAHostFactory
