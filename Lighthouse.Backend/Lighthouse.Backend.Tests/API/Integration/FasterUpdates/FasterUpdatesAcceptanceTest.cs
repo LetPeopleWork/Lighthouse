@@ -29,7 +29,7 @@ using System.Net.Http.Json;
 namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 {
     /// <summary>
-    /// DISTILL acceptance harness (Epic 5687 — Faster Updates, slice 01 / Story #5724). The driving port
+    /// Acceptance harness for Faster Updates. The driving port
     /// is the one the epic is observed through: the scheduled refresh, triggered on an updater and run by
     /// the production update queue in its own DI scope. The observable surface is the log stream — so the
     /// harness replaces the logger factory rather than the services that write to it.
@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     ///
     /// Faking the data services (as the Quiet-write-back harness does) would make the noise assertions
     /// vacuous: <c>WorkItemService</c> and <c>TeamDataService</c> are the loudest voices on the update
-    /// path and AC-1.7 is a promise about exactly them.
+    /// path and the quiet-log promise is about exactly them.
     /// </summary>
     public abstract class FasterUpdatesAcceptanceTest
     {
@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         protected CapturedLogMessages CapturedLogs = null!;
 
         /// <summary>
-        /// Every domain event the refresh raised. Staleness (AC-2.5) has no handler that persists
+        /// Every domain event the refresh raised. Staleness has no handler that persists
         /// anything, so the bus is the only place the promise is observable.
         /// </summary>
         protected CapturedDomainEvents CapturedEvents = null!;
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// <summary>
         /// Which work items the refresh handed to storage to be written. An issue that did not move is
         /// written with exactly what it already said, so comparing its stored values cannot tell a write
-        /// from no write at all (AC-2.4) - the write path itself is where the two differ.
+        /// from no write at all - the write path itself is where the two differ.
         /// </summary>
         protected CapturedWorkItemWrites CapturedWorkItemWrites = null!;
 
@@ -121,7 +121,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                     services.AddScoped<IDomainEventHandler<WorkItemBecameStale>>(_ => new CapturingDomainEventHandler<WorkItemBecameStale>(CapturedEvents));
                     services.AddScoped<IDomainEventHandler<TeamDataRefreshed>>(_ => new CapturingDomainEventHandler<TeamDataRefreshed>(CapturedEvents));
 
-                    // Epic #5687 slice 03. FeatureUnblocked is the one that matters: the departed-spell
+                    // FeatureUnblocked is the one that matters: the departed-spell
                     // sweep closes a spell for every Feature missing from the refreshed list, so a delta
                     // cycle that hands it only the Features that moved closes the rest silently.
                     services.AddScoped<IDomainEventHandler<FeatureUnblocked>>(_ => new CapturingDomainEventHandler<FeatureUnblocked>(CapturedEvents));
@@ -135,7 +135,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                     services.AddScoped<IWorkItemRepository>(sp =>
                         new WriteRecordingWorkItemRepository(sp.GetRequiredService<WorkItemRepository>(), CapturedWorkItemWrites));
 
-                    // ADR-137 D72: Serilog is the pipeline, so an ILoggerProvider added here would be
+                    // Serilog is the pipeline, so an ILoggerProvider added here would be
                     // inert. Replacing the factory is what makes the refresh's own log readable.
                     services.RemoveAll<ILoggerFactory>();
                     // The framework overrides mirror appsettings.json: "operator-visible" has to mean the
@@ -173,7 +173,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ConnectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
             ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
-            // Epic #5687 slice 02: a connector that cannot scan is the default, so nothing in slice 01
+            // A connector that cannot scan is the default, so nothing about the full download
             // changes shape. A scenario that wants the two-phase path says so explicitly.
             ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
             ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
@@ -181,8 +181,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
 
-            // Epic #5687 slice 03: the portfolio half of the same default. A portfolio whose scenario says
-            // nothing about the two-phase path behaves exactly as it did in slices 01 and 02.
+            // The portfolio half of the same default. A portfolio whose scenario says
+            // nothing about the two-phase path behaves as it always did.
             ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
             ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
@@ -222,9 +222,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            await TheFillerGoesIdleOrFails();
-            await MakeTheMemoForgetTheOwnersSeeded();
-            await TheQueueGoesIdleOrFails();
+            await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+            await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
+            await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
 
             using var scope = Factory.Services.CreateScope();
             await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
@@ -237,69 +238,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
             Factory?.Dispose();
             RootFactory?.Dispose();
-        }
-
-        /// <summary>
-        /// Empties what a scenario asked the filler for and was never run, which also lets its owners be
-        /// asked for again: the filler only forgets an owner once a pass for it has ended, and an ask left
-        /// waiting would otherwise run against the next scenario's database, or turn that scenario's own
-        /// ask for the same owner id away.
-        /// </summary>
-        private async Task TheFillerGoesIdleOrFails()
-        {
-            var filler = Factory.Services.GetRequiredService<OverTimeHistoryFiller>();
-            var emptied = Task.Run(() => filler.DrainAsync(CancellationToken.None));
-
-            if (await Task.WhenAny(emptied, Task.Delay(TimeSpan.FromSeconds(60))) != emptied)
-            {
-                Assert.Fail("The filler's queue did not empty in time; a pass left running would write into the next scenario's database.");
-            }
-
-            await emptied;
-
-            var deadline = DateTime.UtcNow.AddSeconds(60);
-            while (filler.HasPassInFlight && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-
-            if (filler.HasPassInFlight)
-            {
-                Assert.Fail("A reconstruction pass was still running at the end of the scenario; it would leak into the next one on this host.");
-            }
-        }
-
-        private async Task MakeTheMemoForgetTheOwnersSeeded()
-        {
-            var memo = Factory.Services.GetRequiredService<ReconstructionMemo>();
-
-            foreach (var (ownerId, ownerType) in ownersSeeded)
-            {
-                if (ownerType == OwnerType.Team)
-                {
-                    await memo.HandleAsync(new TeamDataRefreshed(ownerId), CancellationToken.None);
-                }
-                else
-                {
-                    await memo.HandleAsync(new PortfolioFeaturesRefreshed(ownerId), CancellationToken.None);
-                }
-            }
-        }
-
-        private async Task TheQueueGoesIdleOrFails()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-
-            if (store.HasActiveWork())
-            {
-                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
-            }
         }
 
         // --- Seeding (preconditions only — never the expected output) ---
@@ -431,7 +369,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
             // Host startup and fixture seeding log through the same sink; the line budget is a promise
             // about one update, so counting starts here. The same applies to what the tracker was asked
-            // for and to the signals raised (Epic #5687 slice 02, where scenarios chain two refreshes).
+            // for and to the signals raised (scenarios chain two refreshes).
             CapturedLogs.Clear();
             CapturedEvents.Clear();
             CapturedWorkItemWrites.Clear();
@@ -483,7 +421,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// </summary>
         protected List<string> TheIssuesWrittenToStorage => CapturedWorkItemWrites.ReferenceIds;
 
-        // --- The tracker as the two-phase fetch sees it (Epic #5687 slice 02) ---
+        // --- The tracker as the two-phase fetch sees it ---
 
         /// <summary>
         /// One record as the tracker holds it right now. <see cref="ChangedAt"/> is what the identity
@@ -621,7 +559,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         protected void OnTheTrackerTheIssueIsGone(string referenceId)
             => remoteRecords.RemoveAll(record => record.ReferenceId == referenceId);
 
-        // --- The tracker's Features, as the two-phase portfolio fetch sees them (Epic #5687 slice 03) ---
+        // --- The tracker's Features, as the two-phase portfolio fetch sees them ---
 
         private readonly List<RemoteRecord> remoteFeatures = [];
 
@@ -769,7 +707,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// <summary>
         /// The connector hands back an item that already carries its remote change stamp - that is the
         /// port's contract, and mapping it out of a Jira payload is the connector's own business. Setting
-        /// it after construction on purpose: the copy constructor is exactly what AC-2.7 is about, and a
+        /// it after construction on purpose: the copy constructor is the thing under test, and a
         /// double that inherits the defect under test cannot measure it.
         /// </summary>
         private static List<WorkItem> AsWorkItems(IEnumerable<RemoteRecord> records, Team team)
@@ -889,7 +827,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 .GetByPredicate(feature => feature.ReferenceId == referenceId);
         }
 
-        // --- The portfolio as storage holds it (Epic #5687 slice 03) ---
+        // --- The portfolio as storage holds it ---
 
         /// <summary>
         /// Puts Features straight into storage and claims them for the portfolio. Stands for an instance
@@ -991,11 +929,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             }
         }
 
-        // --- The settings screen (Epic #5687 slice 05) ---
+        // --- The settings screen ---
 
         /// <summary>
         /// The admin's browser, against the running host. Settings saves go through the controller because
-        /// half of what slice 05 decides - whether the edit costs a purge - is decided there, in
+        /// half of what the settings screen decides - whether the edit costs a purge - is decided there, in
         /// <c>WorkItemRelatedSettingsChanged</c>. An edit applied straight through the repository would
         /// bypass that decision entirely and leave the scenario measuring the other half only.
         /// </summary>
@@ -1042,7 +980,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 $"The settings save was refused with {(int)response.StatusCode}: {response.Content.ReadAsStringAsync().GetAwaiter().GetResult()}");
         }
 
-        // --- What the last cycle asked for, as storage holds it (Epic #5687 slice 05) ---
+        // --- What the last cycle asked for, as storage holds it ---
 
         protected string? TheStoredFetchFingerprintForTeam(int teamId)
         {
@@ -1056,7 +994,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             return scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(portfolioId)?.FetchFingerprint;
         }
 
-        // --- The connection, which the query owner only points at (Epic #5687 slice 05) ---
+        // --- The connection, which the query owner only points at ---
 
         /// <summary>
         /// Adds a field definition to the CONNECTION, not to the team. Everything the connector reads out
@@ -1079,7 +1017,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             return definition.Id;
         }
 
-        // --- History as it was before this refresh (Epic #5687 slice 05) ---
+        // --- History as it was before this refresh ---
 
         /// <summary>
         /// One recorded state change for a stored issue. Transition rows are the part of a purge nobody

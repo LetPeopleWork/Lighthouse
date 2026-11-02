@@ -28,7 +28,7 @@ using System.Text.Json;
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
     /// <summary>
-    /// DISTILL acceptance harness for Epic #5511 (Task Manager). The driving port is the one the whole
+    /// Acceptance harness for the Task Manager. The driving port is the one the whole
     /// Epic is observed through: a refresh triggered on an updater and run by the production update
     /// queue in its own DI scope.
     ///
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         }
 
         /// <summary>
-        /// Registered last, so a slice can replace something the harness itself set up. Slice 03 pins the
+        /// Registered last, so a fixture can replace something the harness set up. A scenario that needs elapsed time pins the
         /// instance clock here: elapsed time is only assertable if the test decides what "now" is.
         /// </summary>
         protected virtual void ConfigureAdditionalServices(IServiceCollection services)
@@ -214,25 +214,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// what it exists to prevent.
         /// </summary>
         protected async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-        }
+            => await SharedHostCleanup.WaitUntilTheQueueIsIdle(Factory.Services, TimeSpan.FromSeconds(30));
 
         protected async Task TheQueueGoesIdleOrFails()
-        {
-            await TheQueueGoesIdle();
-
-            if (Factory.Services.GetRequiredService<IUpdateStatusStore>().HasActiveWork())
-            {
-                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
-            }
-        }
+            => await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
 
         protected int SeedConnection(WorkTrackingSystems system = WorkTrackingSystems.Jira)
         {

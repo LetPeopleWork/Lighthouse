@@ -168,17 +168,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         }
 
         private async Task<bool> TheUpdateQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-
-            return !store.HasActiveWork();
-        }
+            => await SharedHostCleanup.WaitUntilTheQueueIsIdle(Factory.Services, TimeSpan.FromSeconds(30));
 
         /// <summary>
         /// For a fixture that needs more of the host than the recorder. Called while the host is

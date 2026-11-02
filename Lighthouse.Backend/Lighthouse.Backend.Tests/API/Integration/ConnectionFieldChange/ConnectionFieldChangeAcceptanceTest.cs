@@ -963,20 +963,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         }
 
         protected async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow + LongEnoughForAnyUpdateToFinish;
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-
-            if (store.HasActiveWork())
-            {
-                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
-            }
-        }
+            => await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, LongEnoughForAnyUpdateToFinish);
 
         private static bool SameNames(List<string> listed, string[] expected)
             => listed.Count == expected.Length && listed.Order(StringComparer.Ordinal).SequenceEqual(expected.Order(StringComparer.Ordinal));

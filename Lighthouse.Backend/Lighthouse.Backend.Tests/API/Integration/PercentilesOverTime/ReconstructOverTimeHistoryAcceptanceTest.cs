@@ -208,10 +208,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             fillPause.Release();
             stagedDayPause.Release();
 
-            TheMaintenanceGateIsOpenAgain();
-            await TheFillerGoesIdleOrFails();
-            await MakeTheMemoForgetTheOwnersSeeded();
-            await TheQueueGoesIdleOrFails();
+            SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
+            await SharedHostCleanup.DrainTheHistoryFillerOrFail(ThisReplicasFiller, LongEnoughThatSomethingIsWrong);
+            await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
+            await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
 
             using var scope = Factory.Services.CreateScope();
             await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
@@ -225,99 +225,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             Client?.Dispose();
             Factory?.Dispose();
             rootFactory?.Dispose();
-        }
-
-        /// <summary>
-        /// The gate lives as long as the host, so an operation a scenario started and never finished would
-        /// hold every later scenario's passes off, and so would an operator the fill turned away, who stays
-        /// counted as waiting for a minute of the host's clock - which the next scenario's clock reset puts
-        /// back to the start. Releasing the one and letting an operator in once, then out again, is how the
-        /// gate itself is told both are over.
-        /// </summary>
-        private void TheMaintenanceGateIsOpenAgain()
-        {
-            var gate = MaintenanceGate;
-
-            if (gate.ActiveOperationId is { } stillRunning)
-            {
-                gate.Release(stillRunning);
-            }
-
-            if (!gate.IsMaintenanceOperationWaiting)
-            {
-                return;
-            }
-
-            const string OperationThatClearsTheWaiting = "gate-reset-between-scenarios";
-            var attempt = gate.TryAcquire(DatabaseOperationType.Restore, OperationThatClearsTheWaiting);
-
-            Assert.That(attempt.Acquired, Is.True,
-                $"The maintenance gate could not be reopened at the end of the scenario: {attempt.BlockedReason}");
-
-            gate.Release(OperationThatClearsTheWaiting);
-        }
-
-        /// <summary>
-        /// Empties what a scenario asked the filler for and was never run, which also lets its owners be
-        /// asked for again: the filler only forgets an owner once a pass for it has ended, and an ask left
-        /// waiting would otherwise run against the next scenario's database, or turn that scenario's own
-        /// ask for the same owner id away.
-        /// </summary>
-        private async Task TheFillerGoesIdleOrFails()
-        {
-            var filler = ThisReplicasFiller;
-            var emptied = Task.Run(() => filler.DrainAsync(CancellationToken.None));
-
-            if (await Task.WhenAny(emptied, Task.Delay(LongEnoughThatSomethingIsWrong)) != emptied)
-            {
-                Assert.Fail("The filler's queue did not empty in time; a pass left running would write into the next scenario's database.");
-            }
-
-            await emptied;
-
-            var deadline = DateTime.UtcNow.Add(LongEnoughThatSomethingIsWrong);
-            while (filler.HasPassInFlight && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-
-            if (filler.HasPassInFlight)
-            {
-                Assert.Fail("A reconstruction pass was still running at the end of the scenario; it would leak into the next one on this host.");
-            }
-        }
-
-        private async Task MakeTheMemoForgetTheOwnersSeeded()
-        {
-            var memo = Factory.Services.GetRequiredService<ReconstructionMemo>();
-
-            foreach (var (ownerId, ownerType) in ownersSeeded)
-            {
-                if (ownerType == OwnerType.Team)
-                {
-                    await memo.HandleAsync(new TeamDataRefreshed(ownerId), CancellationToken.None);
-                }
-                else
-                {
-                    await memo.HandleAsync(new PortfolioFeaturesRefreshed(ownerId), CancellationToken.None);
-                }
-            }
-        }
-
-        private async Task TheQueueGoesIdleOrFails()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-
-            if (store.HasActiveWork())
-            {
-                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
-            }
         }
 
         /// <summary>

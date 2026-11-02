@@ -1298,20 +1298,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             => [.. (await TheRefreshHistory()).Where(entry => entry.Id > lastHistoryEntryBeforeTheSave)];
 
         protected async Task TheQueueGoesIdle()
-        {
-            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-            var deadline = DateTime.UtcNow + LongEnoughForAnyUpdateToFinish;
-
-            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
-            {
-                await Task.Delay(20);
-            }
-
-            if (store.HasActiveWork())
-            {
-                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
-            }
-        }
+            => await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, LongEnoughForAnyUpdateToFinish);
 
         // --- The gap between opening a connection save and committing it ---
 
