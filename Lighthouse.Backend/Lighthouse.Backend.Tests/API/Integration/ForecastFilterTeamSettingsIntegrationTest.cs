@@ -4,6 +4,7 @@ using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -31,13 +32,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private int seededConnectionId;
         private int seededAdditionalFieldId;
 
-        [SetUp]
-        public void Init()
+        // The memo keeps notes per owner id for as long as the host lives, and every test's fresh
+        // database numbers its owners from one again, so each test hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             rootFactory = new TestWebApplicationFactory<Program>();
 
             licenseServiceMock = new Mock<ILicenseService>();
-            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
             factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory)
                 .WithWebHostBuilder(builder =>
@@ -48,6 +54,20 @@ namespace Lighthouse.Backend.Tests.API.Integration
                         services.AddScoped(_ => licenseServiceMock.Object);
                     });
                 });
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+            licenseServiceMock.Reset();
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            factory.ForgetTheCachedMetrics();
 
             client = factory.CreateClient();
 
@@ -60,17 +80,37 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = factory.Services.CreateScope())
-            {
-                var dbContext = teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
-                dbContext.Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(factory.Services, ownersSeeded);
+
+                using (var scope = factory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         [Test]
@@ -269,6 +309,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             teamRepository.Save().GetAwaiter().GetResult();
 
             seededTeamId = team.Id;
+            ownersSeeded.Add((team.Id, OwnerType.Team));
             seededConnectionId = connection.Id;
             seededAdditionalFieldId = additionalField.Id;
         }

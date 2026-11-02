@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string OnlyAFewTestsStartAHost = "only one or two of its tests start a host, each under its own settings, so sharing a host would save at most one host build";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 65;
+        private const int MostTypesTheListMayHold = 61;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -44,8 +44,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting.Slice00OneForecastPerBatchScenarios"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.EncryptionControllerTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures.Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios"] = StopsAndRestartsItsHostInOneTest,
-            ["Lighthouse.Backend.Tests.API.Integration.ForecastFilterTeamSettingsIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ForecastFilterThroughputChartIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ForwardedHeadersIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.HealthCheckIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.MetricsEndpointIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
@@ -67,8 +65,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest"] = KeepsProblemsNothingCanEmpty,
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest"] = KeepsProblemsNothingCanEmpty,
             ["Lighthouse.Backend.Tests.API.Integration.TeamDeleteSerialisationTests"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.API.Integration.TeamStalenessThresholdSettingsIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TeamThroughputHistoryValidationIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TimeInStateReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.WorkItemEstimateApiIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.WriteBackMappingForNewAdditionalFieldIntegrationTest"] = NotMovedYet,
