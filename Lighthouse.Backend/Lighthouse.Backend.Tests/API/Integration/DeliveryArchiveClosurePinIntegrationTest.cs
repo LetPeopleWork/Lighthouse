@@ -7,7 +7,6 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -84,10 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(factory.Services);
             }
             finally
             {

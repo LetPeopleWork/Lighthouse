@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
@@ -81,10 +80,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(factory.Services);
             }
             finally
             {

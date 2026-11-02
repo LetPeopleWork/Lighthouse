@@ -3,7 +3,6 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
@@ -133,10 +132,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(Factory.Services);
             }
             finally
             {

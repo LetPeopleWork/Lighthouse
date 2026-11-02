@@ -6,7 +6,6 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -176,10 +175,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(Factory.Services);
             }
             finally
             {
