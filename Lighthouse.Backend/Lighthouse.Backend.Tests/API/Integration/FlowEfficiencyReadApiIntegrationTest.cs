@@ -12,9 +12,7 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    // Black-box example-based ATs over WebApplicationFactory<Program> — the C#/TS Architecture-of-Reference
-    // rows govern (see docs/architecture/atdd-infrastructure-policy.md): no Hypothesis/PBT, no state_delta
-    // Universe (Python pilot only). Assertions target the HTTP/JSON contract only.
+    // Black-box tests over WebApplicationFactory<Program>: they assert the HTTP/JSON contract only.
     [TestFixture]
     public class FlowEfficiencyReadApiIntegrationTest
     {
@@ -85,7 +83,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetFlowEfficiency_TeamWithKnownWaitTime_ReturnsActiveOverTotalDoingTimeAsPercent()
         {
-            // US-01 / D2 / ADR-054: efficiency = activeDoingTime / totalDoingTime over the in-scope set.
+            // Efficiency is active Doing time over total Doing time, across the items in scope.
             // Fixture: total Doing-time 540d, of which 356d are in wait states ("Waiting for Review" +
             // "Ready for Test") → active 184d → 184/540 = 34%. This is the single most-mis-implementable
             // rule in the feature; pin it against a known fixture.
@@ -99,18 +97,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(IsConfigured(body), Is.True,
-                    $"D3: with wait states configured, the tile reports IsConfigured=true. Body: {body}");
+                    $"With wait states configured, the tile reports IsConfigured=true. Body: {body}");
                 Assert.That(HasDataInScope(body), Is.True,
-                    $"D4: with Doing-time in scope, the tile reports HasDataInScope=true. Body: {body}");
+                    $"With Doing-time in scope, the tile reports HasDataInScope=true. Body: {body}");
                 Assert.That(EfficiencyPercent(body), Is.EqualTo(34.0).Within(PercentTolerance),
-                    $"D2: efficiency = active(184d) / total Doing(540d) = 34%. Body: {body}");
+                    $"Efficiency = active(184d) / total Doing(540d) = 34%. Body: {body}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_TeamWithRawStateMarkedWait_CountsThatStateAsWaitTime()
         {
-            // US-01 / D11: a RAW Doing-state marked directly as a wait state counts its time as wait time.
+            // A raw Doing state marked directly as a wait state counts its time as wait time.
             // "Waiting for Review" (90d) of 240d total Doing → active 150d → 150/240 = 62.5% ≈ 63%.
             var teamId = SeedTeamWithSingleRawWaitState();
 
@@ -122,7 +120,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(EfficiencyPercent(body), Is.EqualTo(62.5).Within(PercentTolerance),
-                    $"D11: a raw state marked wait removes its 90d from active; 150/240 = 62.5%. Body: {body}");
+                    $"A raw state marked wait removes its 90d from active; 150/240 = 62.5%. Body: {body}");
             }
         }
 
@@ -152,7 +150,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetFlowEfficiency_WaitEntryOutsideDoingSet_ContributesNothingToTheDenominator()
         {
-            // US-01 edge case / ADR-056 §3: a wait entry that resolves OUTSIDE the Doing set (here the
+            // A wait entry that resolves outside the Doing set (here the
             // Done-state "Closed") contributes nothing — it is neither in the denominator nor counted as wait.
             // Fixture has the same 240d/90d-wait shape as the raw-wait case PLUS "Closed" in WaitStates;
             // the efficiency must be identical to ignoring "Closed" entirely (62.5%).
@@ -166,14 +164,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(EfficiencyPercent(body), Is.EqualTo(62.5).Within(PercentTolerance),
-                    $"ADR-056: 'Closed' is outside the Doing set, so it neither adds wait time nor enters the denominator; efficiency stays 62.5%. Body: {body}");
+                    $"'Closed' is outside the Doing set, so it neither adds wait time nor enters the denominator; efficiency stays 62.5%. Body: {body}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_NoWaitStatesConfigured_ReportsNotConfiguredNeverHundredPercent()
         {
-            // D3 / ADR-055: no wait states → IsConfigured=false (the "not configured" signal), NEVER a
+            // No wait states → IsConfigured=false (the "not configured" signal), never a
             // misleading 100%. The two booleans are explicit contract flags, not magic sentinels.
             var teamId = SeedTeamWithDoingTimeButNoWaitStates();
 
@@ -185,17 +183,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(IsConfigured(body), Is.False,
-                    $"D3: an unconfigured team reports IsConfigured=false (renders 'not configured'). Body: {body}");
+                    $"An unconfigured team reports IsConfigured=false (renders 'not configured'). Body: {body}");
                 Assert.That(EfficiencyPercent(body), Is.Not.EqualTo(100.0).Within(PercentTolerance),
-                    $"D3: an unconfigured team must NEVER read 100% efficiency. Body: {body}");
+                    $"An unconfigured team must never read 100% efficiency. Body: {body}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_ZeroDoingTimeInScope_ReportsNoDataNeverDividesByZero()
         {
-            // D4 / ADR-055: wait states ARE configured but there is zero Doing-time in scope → HasDataInScope
-            // =false (the "no data in scope" signal, DISTINCT from D3's "not configured"), and no division error.
+            // Wait states are configured but there is zero Doing-time in scope → HasDataInScope=false (the
+            // "no data in scope" signal, distinct from "not configured"), and no division error.
             var teamId = SeedTeamWithWaitStatesButNoDoingTimeInScope();
 
             client.AsTeamAdmin(teamId);
@@ -206,16 +204,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(IsConfigured(body), Is.True,
-                    $"D4: wait states ARE configured here — this is the no-data case, not the not-configured case. Body: {body}");
+                    $"Wait states are configured here — this is the no-data case, not the not-configured case. Body: {body}");
                 Assert.That(HasDataInScope(body), Is.False,
-                    $"D4: zero Doing-time in scope reports HasDataInScope=false, distinct from D3. Body: {body}");
+                    $"Zero Doing-time in scope reports HasDataInScope=false, distinct from not configured. Body: {body}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_TileNeverFollowsThePicker_HasNoItemIdsParameter()
         {
-            // D5 / D18 / ADR-055: the tile is whole-set ONLY. Passing itemIds must not narrow it — the
+            // The tile always covers the whole set. Passing itemIds must not narrow it — the
             // endpoint has no itemIds parameter, so the value is identical with and without a spurious itemIds.
             var teamId = SeedTeamWithKnownDoingAndWaitTime();
 
@@ -230,14 +228,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(wholeSetResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), wholeSetBody);
                 Assert.That(withSpuriousItemIdsResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), withItemIdsBody);
                 Assert.That(EfficiencyPercent(withItemIdsBody), Is.EqualTo(EfficiencyPercent(wholeSetBody)).Within(PercentTolerance),
-                    $"D5/D18: the tile never follows the picker; a stray itemIds param does not change the whole-set value. Whole-set: {wholeSetBody} With itemIds: {withItemIdsBody}");
+                    $"The tile never follows the picker; a stray itemIds param does not change the whole-set value. Whole-set: {wholeSetBody} With itemIds: {withItemIdsBody}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_StartDateAfterEndDate_ReturnsBadRequest()
         {
-            // ADR-055: validation mirrors the established …Info tile pattern (400 on inverted dates).
+            // Validation mirrors the other …Info tiles: 400 on inverted dates.
             var teamId = SeedTeamWithKnownDoingAndWaitTime();
 
             client.AsTeamAdmin(teamId);
@@ -246,7 +244,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
-                $"ADR-055: startDate after endDate is rejected with 400, mirroring the wipOverviewInfo validation. Body: {body}");
+                $"A startDate after endDate is rejected with 400, mirroring the wipOverviewInfo validation. Body: {body}");
         }
 
         [Test]
@@ -260,13 +258,13 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"ADR-055: an equal start/end date is a valid single-day window and must not be rejected (only startDate strictly after endDate is a 400). Body: {body}");
+                $"An equal start/end date is a valid single-day window and must not be rejected (only startDate strictly after endDate is a 400). Body: {body}");
         }
 
         [Test]
         public async Task GetFlowEfficiency_TeamViewer_CanReadTheTile()
         {
-            // ADR-055: class-level RbacGuard(TeamRead) — a Viewer (read role) can read the tile.
+            // The controller is guarded by TeamRead, so a Viewer (read role) can read the tile.
             var teamId = SeedTeamWithKnownDoingAndWaitTime();
 
             client.AsTeamViewer(teamId);
@@ -280,7 +278,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetFlowEfficiency_AnonymousCaller_IsRejected()
         {
-            // ADR-055: class-level RbacGuard(TeamRead) — an unauthenticated caller is rejected.
+            // The controller is guarded by TeamRead, so an unauthenticated caller is rejected.
             var teamId = SeedTeamWithKnownDoingAndWaitTime();
 
             client.AsAnonymous();
@@ -295,9 +293,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task PutTeamSettings_WithWaitStatesIncludingAMappingName_PersistsThemReadYourWrites()
         {
-            // US-01 / D8 / ADR-056 §1: WaitStates rides the EXISTING settings endpoint as an additive field
-            // (no new write endpoint). Black-box: PUT the settings JSON with a waitStates array containing a
-            // raw state AND a mapping name, GET the settings back, assert the array round-trips (read-your-writes).
+            // Wait states are saved through the existing settings endpoint, as one more field. PUT the settings
+            // JSON with a waitStates array holding a raw state and a mapping name, GET the settings back, and
+            // assert the array round-trips.
             var teamId = SeedTeamWithStateMappingWaitingGroup(out var connectionId);
 
             client.AsTeamAdmin(teamId);
@@ -314,16 +312,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Assert.That(settingsResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), settingsBody);
                 var persisted = StringArray(settingsBody, "waitStates");
                 Assert.That(persisted, Does.Contain(WaitingForReview),
-                    $"D8: a raw wait state must round-trip through the existing settings payload. Body: {settingsBody}");
+                    $"A raw wait state must round-trip through the existing settings payload. Body: {settingsBody}");
                 Assert.That(persisted, Does.Contain("Waiting"),
-                    $"D11: a mapping-name wait state must round-trip too (entries are raw states OR mapping names). Body: {settingsBody}");
+                    $"A mapping-name wait state must round-trip too (entries are raw states OR mapping names). Body: {settingsBody}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_WithWaitStatesDefined_DoesNotChangeAnyOtherMetric()
         {
-            // D9 / review action item #2: wait states are a labelling OVERLAY only — defining them must not
+            // Wait states only label time for this tile — defining them must not
             // shift throughput, cycle-time, or age-in-state for the same team. Capture those metric bodies
             // before any wait state exists, then define wait states through the real settings PUT endpoint,
             // then re-capture: each other-metric body must be byte-identical before and after.
@@ -346,11 +344,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(throughputAfter, Is.EqualTo(throughputBefore),
-                    "D9: defining wait states must not change throughput — it is a labelling overlay only.");
+                    "Defining wait states must not change throughput — they only label time for this tile.");
                 Assert.That(cycleTimeAfter, Is.EqualTo(cycleTimeBefore),
-                    "D9: defining wait states must not change cycle-time percentiles.");
+                    "Defining wait states must not change cycle-time percentiles.");
                 Assert.That(ageInStateAfter, Is.EqualTo(ageInStateBefore),
-                    "D9: defining wait states must not change age-in-state percentiles.");
+                    "Defining wait states must not change age-in-state percentiles.");
             }
         }
 
@@ -366,7 +364,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             // Read-modify-write the real settings JSON, mutating ONLY waitStates — this guarantees the only
             // configuration delta the team sees is the wait-states overlay, so a byte-identical other-metric
-            // body afterwards proves the overlay changed nothing else (D9).
+            // body afterwards proves the wait states changed nothing else.
             var settingsBody = await ReadBody($"/api/latest/teams/{teamId}/settings");
             var payload = JsonNode.Parse(settingsBody)!.AsObject();
             payload["waitStates"] = new JsonArray(waitStates.Select(s => (JsonNode)s).ToArray());
@@ -389,9 +387,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private async Task<HttpResponseMessage> PutTeamSettingsWithWaitStates(int teamId, int connectionId, string[] waitStates)
         {
-            // Built as raw JSON (JsonNode), NOT a typed DTO — the WaitStates property does not exist on
-            // SettingsOwnerDtoBase until DELIVER, so referencing it would break compilation. The black-box
-            // payload injects waitStates as a plain JSON array, mirroring the staleness-threshold settings test.
+            // Built as raw JSON rather than a typed DTO, so the test pins waitStates as the plain JSON array the
+            // settings page sends, as the staleness-threshold settings test does.
             var payload = new JsonObject
             {
                 ["id"] = teamId,
@@ -486,7 +483,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private int SeedTeamWithDoingTimeButNoWaitStates()
         {
-            // Doing-time present, but WaitStates empty → "not configured" (D3).
+            // Doing-time present, but WaitStates empty → "not configured".
             return SeedTeam(
                 waitStates: [],
                 stateMappings: [],
@@ -499,7 +496,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private int SeedTeamWithWaitStatesButNoDoingTimeInScope()
         {
-            // Wait states configured, but no items contribute any Doing-time in the window → "no data" (D4).
+            // Wait states configured, but no items contribute any Doing-time in the window → "no data".
             return SeedTeam(
                 waitStates: [WaitingForReview],
                 stateMappings: [],

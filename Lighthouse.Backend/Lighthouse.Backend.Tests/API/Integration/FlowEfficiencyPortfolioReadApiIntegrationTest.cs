@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetFlowEfficiency_PortfolioWithNoWaitStates_ReportsNotConfiguredNeverHundredPercent()
         {
-            // D3 parity: no wait states → IsConfigured=false, never 100%.
+            // As for a team: no wait states → IsConfigured=false, never 100%.
             var portfolioId = SeedPortfolioWithDoingTimeButNoWaitStates();
 
             client.AsPortfolioAdmin(portfolioId);
@@ -114,16 +114,16 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(IsConfigured(body), Is.False,
-                    $"D3 parity: an unconfigured portfolio reports IsConfigured=false. Body: {body}");
+                    $"An unconfigured portfolio reports IsConfigured=false. Body: {body}");
                 Assert.That(EfficiencyPercent(body), Is.Not.EqualTo(100.0).Within(PercentTolerance),
-                    $"D3 parity: an unconfigured portfolio must NEVER read 100%. Body: {body}");
+                    $"An unconfigured portfolio must never read 100%. Body: {body}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_PortfolioWithZeroDoingTimeInScope_ReportsNoData()
         {
-            // D4 parity: wait states configured but zero Doing-time → HasDataInScope=false, no division error.
+            // As for a team: wait states configured but zero Doing-time → HasDataInScope=false, no division error.
             var portfolioId = SeedPortfolioWithWaitStatesButNoDoingTimeInScope();
 
             client.AsPortfolioAdmin(portfolioId);
@@ -134,14 +134,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(HasDataInScope(body), Is.False,
-                    $"D4 parity: zero Doing-time in scope reports HasDataInScope=false. Body: {body}");
+                    $"Zero Doing-time in scope reports HasDataInScope=false. Body: {body}");
             }
         }
 
         [Test]
         public async Task GetFlowEfficiency_PortfolioAnonymousCaller_IsRejected()
         {
-            // ADR-055: class-level RbacGuard(PortfolioRead) — an unauthenticated caller is rejected.
+            // The controller is guarded by PortfolioRead, so an unauthenticated caller is rejected.
             var portfolioId = SeedPortfolioWithMappingNameMarkedAsWaitState();
 
             client.AsAnonymous();
@@ -164,7 +164,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest),
-                $"ADR-055 parity: a portfolio startDate after endDate is rejected with 400. Body: {body}");
+                $"As for a team, a portfolio startDate after endDate is rejected with 400. Body: {body}");
         }
 
         [Test]
@@ -178,7 +178,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             var body = await response.Content.ReadAsStringAsync();
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                $"ADR-055 parity: an equal start/end date is a valid single-day window and must not be rejected. Body: {body}");
+                $"As for a team, an equal start/end date is a valid single-day window and must not be rejected. Body: {body}");
         }
 
         private string InfoUrl(int portfolioId)

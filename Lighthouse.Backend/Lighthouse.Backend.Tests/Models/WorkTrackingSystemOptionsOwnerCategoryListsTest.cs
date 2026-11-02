@@ -6,7 +6,6 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private const char NonBreakingSpace = (char)160;
 
-        private const string Pending = "pending: category lists hold raw states";
 
         private static string[] Listed(params string[] states) => states;
 
