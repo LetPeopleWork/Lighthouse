@@ -1063,3 +1063,10 @@ as much on slice 2's database template as on the moves.
 - **Push unit**: 827ab7eb8, e795f94c8, 95a46eca5, 5c095942a, 53e6d4686, ac6244a4b, 2d98a137a, cb5a79263, ecbfbc233, 7c4194f2f,
   1fe43f201, 4bcfa70a9, bc6ba1aca, 58703b04a, 90b847505, 99e4dcd2b and this record. `Program.cs` changed, so CI runs the forced-full
   filter (268 live-connector tests in addition; the Linear key is shared with CI).
+
+## Wave: DELIVER / [REF] Maintainer decision: slice 5 is mandatory (2026-11-02)
+
+The maintainer made slice 5 mandatory ("Yeah do slice 5 mandatory"). This supersedes "Slice 5 is optional" in Slice sizes
+(D1 to D4) and the 04-07 decision point. The track ends only when every allow-list entry is either converted or carries a
+written reason (`ChecksTheTestHostItself`, `OnAPostgresServer`, `HasOneTestOnly`, or a new reason constant with its why);
+no `NotMovedYet` entry remains. Leaving the host entirely, where a test does not need it, is a separate item (#6469).

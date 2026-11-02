@@ -5,7 +5,7 @@
     "total_steps": 32,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
-    "goal": "Story 6460 (T2): backend tests build one application host per fixture instead of one per test, and a guard keeps it that way. Test infrastructure only: same test ids (additions only where a step names them), no test deleted, skipped, ignored or weakened, no new NonParallelizable, product behaviour unchanged (the single product-side edit is one visibility keyword on Program.ConfigureHealthChecks, step 01-07). Five slices, each shippable alone: (1) guard already live, host-build timing, first move, cluster-substrate leftover; (2) schema template database, kept only if its A/B passes; (3) four biggest untimed families; (4) mid-size bases, the families the guard found that the classifier did not see, and the rate-limit fixtures; (5, optional) long tail. Payoff is measured by the lead after each push (CI step median, summed time of moved classes), never asserted by a test. Savings in the workspace are unmeasured ceilings.",
+    "goal": "Story 6460 (T2): backend tests build one application host per fixture instead of one per test, and a guard keeps it that way. Test infrastructure only: same test ids (additions only where a step names them), no test deleted, skipped, ignored or weakened, no new NonParallelizable, product behaviour unchanged (the single product-side edit is one visibility keyword on Program.ConfigureHealthChecks, step 01-07). Five slices, each shippable alone: (1) guard already live, host-build timing, first move, cluster-substrate leftover; (2) schema template database, kept only if its A/B passes; (3) four biggest untimed families; (4) mid-size bases, the families the guard found that the classifier did not see, and the rate-limit fixtures; (5, mandatory) long tail. Payoff is measured by the lead after each push (CI step median, summed time of moved classes), never asserted by a test. Savings in the workspace are unmeasured ceilings.",
     "rigor": "standard for all five slices (crafter sonnet, reviewer haiku), agreed with the maintainer on 2026-11-01 for T1, T2 and FE7; the model is passed explicitly on every dispatch.",
     "preconditions": [
       "P-prereq (done, no step): the gate-round-2 owed items are committed as 53e6d4686. The scaffold 827ab7eb8 is the first local commit of slice 1.",
@@ -734,8 +734,8 @@
     },
     {
       "id": "05",
-      "name": "Slice 5 (OPTIONAL): the long tail by the 25 percent rule, ending with reasoned entries or an empty list",
-      "description": "OPTIONAL and COARSE: skippable at any file; decided at 04-07. Value is either the tail's CI target (25 s win rule) or a list where every entry carries a written reason. If the maintainer declines, this phase and its three steps drop.",
+      "name": "Slice 5 (MANDATORY): the long tail by the 25 percent rule, ending with reasoned entries or an empty list",
+      "description": "MANDATORY (maintainer, 2026-11-02) and COARSE. Value is either the tail's CI target (25 s win rule) or a list where every entry carries a written reason.",
       "steps": [
         {
           "id": "05-01",
@@ -799,7 +799,8 @@
           "estimated_size": "S (about 0.5 day plus lead checks)",
           "implementation_notes": "See Roadmap notes 05-01 to 05-03."
         }
-      ]
+      ],
+      "maintainer_decision": "2026-11-02: slice 5 is mandatory (maintainer). Every remaining entry is converted or carries a written reason; no NotMovedYet entry remains at the end of the track."
     }
   ],
   "validation": {
