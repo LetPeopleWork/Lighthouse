@@ -119,6 +119,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private CapturedLogMessages whatWasLogged = null!;
         private SerilogLoggerFactory theLog = null!;
+        private readonly Mock<ILicenseService> licence = new();
         private Func<Task>? meanwhileBeforeTheSaveCommits;
         private int lastHistoryEntryBeforeTheSave;
         private int logLinesBeforeTheSave;
@@ -167,6 +168,50 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             DroppingWhatItDoesNotKnow,
         }
 
+        // Starting a host costs more than most scenarios take, so a fixture starts one and every scenario gets
+        // its own database, clock, licence answer, log and connection inside it instead.
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            whatWasLogged = new CapturedLogMessages();
+            theLog = new SerilogLoggerFactory(
+                new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(whatWasLogged).CreateLogger(),
+                dispose: true);
+
+            var licenceService = licence.Object;
+            var tracker = ATrackerThatReadsWhatItIsHanded();
+            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactory
+                .Setup(factory => factory.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(tracker.Object);
+
+            var log = theLog;
+            rootFactory = new TestWebApplicationFactory<Program>();
+            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory).WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<ILicenseService>();
+                    services.AddScoped(_ => licenceService);
+
+                    services.RemoveAll<IWorkTrackingConnectorFactory>();
+                    services.AddScoped(_ => connectorFactory.Object);
+
+                    services.RemoveAll<IForecastService>();
+                    services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
+
+                    services.RemoveAll<ILoggerFactory>();
+                    services.AddSingleton<ILoggerFactory>(log);
+
+                    LetAnotherSaveLandBeforeTheConnectionSaveCommits(services);
+                });
+            });
+
+            Factory.StartServer();
+        }
+
         [SetUp]
         public async Task StartLighthouseForThePaymentsDepartment()
         {
@@ -184,48 +229,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             SaveAnswer = default;
             SaveAnswerBody = string.Empty;
 
-            whatWasLogged = new CapturedLogMessages();
-            theLog = new SerilogLoggerFactory(
-                new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(whatWasLogged).CreateLogger(),
-                dispose: true);
-
-            var licence = new Mock<ILicenseService>();
+            whatWasLogged.Clear();
             licence.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
-
-            var tracker = ATrackerThatReadsWhatItIsHanded();
-            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactory
-                .Setup(factory => factory.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
-                .Returns(tracker.Object);
-
-            var log = theLog;
-            rootFactory = new TestWebApplicationFactory<Program>();
-            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory).WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<ILicenseService>();
-                    services.AddScoped(_ => licence.Object);
-
-                    services.RemoveAll<IWorkTrackingConnectorFactory>();
-                    services.AddScoped(_ => connectorFactory.Object);
-
-                    services.RemoveAll<IForecastService>();
-                    services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
-
-                    services.RemoveAll<ILoggerFactory>();
-                    services.AddSingleton<ILoggerFactory>(log);
-
-                    LetAnotherSaveLandBeforeTheConnectionSaveCommits(services);
-                });
-            });
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
             Client.AsSystemAdmin();
 
             using var scope = Factory.Services.CreateScope();
             var database = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            await database.Database.EnsureDeletedAsync();
             await database.Database.EnsureCreatedAsync();
 
             foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
@@ -248,10 +262,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
             }
 
-            Client.Dispose();
-            Factory.Dispose();
-            rootFactory.Dispose();
-            theLog.Dispose();
+            Client?.Dispose();
+            Client = null!;
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            rootFactory?.Dispose();
+            theLog?.Dispose();
         }
 
         // --- Given ---

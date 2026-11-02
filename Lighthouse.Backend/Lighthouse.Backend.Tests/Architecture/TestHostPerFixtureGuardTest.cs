@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string ChecksTheTestHostItself = "tests how the test host starts and stops, so it has to start hosts itself";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 126;
+        private const int MostTypesTheListMayHold = 125;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -36,7 +36,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.BlockedItems.BlockedItemsAcceptanceTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.BlockedItems.BlockedStalenessThresholdValidationTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.BlockedItems.PortfolioBlockedHistoryAcceptanceTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.ConnectionDefaultsAcceptanceTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice01JiraDependenciesFromANamedLinkScenarios"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice02NamedLinkThatMatchedNothingScenarios"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice03AzureDevOpsRelationTypeAcceptedScenarios"] = NotMovedYet,
