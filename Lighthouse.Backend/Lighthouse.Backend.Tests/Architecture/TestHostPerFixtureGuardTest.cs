@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string StopsOrDrainsItsHostInEachTest = "its tests stop or drain the host they run on, and a host that has been stopped cannot serve the next test";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 86;
+        private const int MostTypesTheListMayHold = 82;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -35,10 +35,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryReadStabilityIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryStaleAggregateRaceIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryWriteRefusalIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice01JiraDependenciesFromANamedLinkScenarios"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice02NamedLinkThatMatchedNothingScenarios"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice03AzureDevOpsRelationTypeAcceptedScenarios"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConnectionSecretStatePayloadTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConnectionValidationUnreadableSecretTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.CycleTimeDefinitionSettingsIntegrationTest"] = NotMovedYet,

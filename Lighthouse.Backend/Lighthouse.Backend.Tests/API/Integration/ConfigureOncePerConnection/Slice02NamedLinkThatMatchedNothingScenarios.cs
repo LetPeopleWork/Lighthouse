@@ -13,9 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6303-configure-once-per-connection")]
-    [Category("story-6300")]
-    [Category("slice-02")]
     public class Slice02NamedLinkThatMatchedNothingScenarios : NamedDependencyLinkAcceptanceTest
     {
         private static readonly string[] TheLinksSeen = ["is blocked by", "relates to"];

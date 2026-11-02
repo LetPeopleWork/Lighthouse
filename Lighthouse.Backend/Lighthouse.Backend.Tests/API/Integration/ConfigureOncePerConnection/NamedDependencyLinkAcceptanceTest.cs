@@ -9,6 +9,8 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -131,7 +133,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private readonly Dictionary<string, Team> adoTeams = new(StringComparer.Ordinal);
 
-        private CapturedLogMessages whatWasLogged = new();
+        private readonly CapturedLogMessages whatWasLogged = new();
 
         private SerilogLoggerFactory theLog = null!;
 
@@ -141,11 +143,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private int nextConnectionId = 9600;
 
-        private TestWebApplicationFactory<Program>? theHost;
+        private TestWebApplicationFactory<Program> theHost = null!;
 
-        private WebApplicationFactory<Program>? theRunningLighthouse;
+        private WebApplicationFactory<Program> theRunningLighthouse = null!;
 
         private AzureDevOpsOverEveryOrganisation? theAdoConnector;
+
+        private JiraWorkTrackingConnector theJiraConnector = null!;
+
+        // Set once this scenario has filled the database; until then nothing was written to it.
+        private bool theDatabaseIsFilled;
 
         /// <summary>One finding a refresh recorded, as Refresh History hands it to the screen.</summary>
         protected sealed record Finding(string Kind, string Setting, string Named, IReadOnlyList<string> Seen);
@@ -173,9 +180,69 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             public Finding? TheFirstFinding => Findings is { Count: > 0 } ? Findings[0] : null;
         }
 
+        /// <summary>The instant the host's clock reports now; every scenario begins at the same one.</summary>
+        protected DateTimeOffset TheHostClockNow => theHost.Clock.GetUtcNow();
+
+        [OneTimeSetUp]
+        public void StartTheLighthouseEveryScenarioRunsOn()
+        {
+            using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            theLog = new SerilogLoggerFactory(
+                new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(whatWasLogged).CreateLogger(),
+                dispose: true);
+
+            theHost = new TestWebApplicationFactory<Program>();
+
+            // The host asks for the connectors through these, and each scenario hands over its own.
+            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactory
+                .Setup(factory => factory.GetWorkTrackingConnector(WorkTrackingSystems.Jira))
+                .Returns(() => theJiraConnector);
+            connectorFactory
+                .Setup(factory => factory.GetWorkTrackingConnector(WorkTrackingSystems.AzureDevOps))
+                .Returns(() => TheAzureDevOpsConnector());
+
+            var licensed = new Mock<ILicenseService>();
+            licensed.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
+
+            var log = theLog;
+
+            theRunningLighthouse = theHost.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IWorkTrackingConnectorFactory>();
+                services.AddScoped(_ => connectorFactory.Object);
+
+                services.RemoveAll<ILicenseService>();
+                services.AddScoped(_ => licensed.Object);
+
+                services.RemoveAll<IForecastService>();
+                services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
+
+                services.RemoveAll<ILoggerFactory>();
+                services.AddSingleton<ILoggerFactory>(log);
+            }));
+
+            _ = theRunningLighthouse.Services;
+        }
+
+        [OneTimeTearDown]
+        public void StopTheLighthouse()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            theRunningLighthouse?.Dispose();
+            theHost?.Dispose();
+            theLog?.Dispose();
+        }
+
         [SetUp]
         public void ForgetWhatTheLastScenarioDescribed()
         {
+            theHost.Clock.Reset();
+            theDatabaseIsFilled = false;
+            whatWasLogged.Clear();
+
             jiraFeatures.Clear();
             jiraLinkTypes.Clear();
             jiraLinkTypes.AddRange([Blocks, Dependency, Relates]);
@@ -190,32 +257,36 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             nextConnectionId = 9600;
             theAdoConnector = null;
 
-            whatWasLogged = new CapturedLogMessages();
-            theLog = new SerilogLoggerFactory(
-                new LoggerConfiguration().MinimumLevel.Verbose().WriteTo.Sink(whatWasLogged).CreateLogger(),
-                dispose: true);
-
             theJiraPortfolio = JiraConnectorTestSetup.APortfolioOnJiraCloud();
             theJiraPortfolio.Name = PaymentsPlatform;
         }
 
         [TearDown]
-        public void StopTheLighthouseThisScenarioStarted()
+        public async Task LeaveTheLighthouseIdle()
         {
-            if (theRunningLighthouse is not null)
+            if (!theDatabaseIsFilled)
             {
-                using (var scope = theRunningLighthouse.Services.CreateScope())
-                {
-                    scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-                }
-
-                theRunningLighthouse.Dispose();
-                theRunningLighthouse = null;
+                return;
             }
 
-            theHost?.Dispose();
-            theHost = null;
-            theLog.Dispose();
+            var services = theRunningLighthouse.Services;
+
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                var teamsAndPortfolios = adoTeams.Values.Select(team => (team.Id, OwnerType.Team))
+                    .Concat(adoPortfolios.Values.Append(theJiraPortfolio).Select(portfolio => (portfolio.Id, OwnerType.Portfolio)));
+                await SharedHostCleanup.ForgetOwners(services, teamsAndPortfolios);
+
+                using var scope = services.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+            }
         }
 
         // ----- What the Jira instance holds -------------------------------------------------------------
@@ -567,7 +638,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected async Task<string> TheParentTheTeamShowsFor(string adoTeam, int workItemId)
         {
             TheRunningLighthouse();
-            using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
+            using var client = theRunningLighthouse.CreateClient().AsSystemAdmin();
             var today = theRunningLighthouse.Services.GetRequiredService<ILighthouseClock>().Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
             using var response = await client.GetAsync(new Uri($"/api/latest/teams/{adoTeams[adoTeam].Id}/metrics/wip?asOfDate={today}", UriKind.Relative));
             var body = await response.Content.ReadAsStringAsync();
@@ -609,7 +680,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             var unsaved = new WorkTrackingSystemConnectionDto(connection) { Id = 0 };
 
             TheRunningLighthouse();
-            using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
+            using var client = theRunningLighthouse.CreateClient().AsSystemAdmin();
             using var response = await client.PostAsJsonAsync(new Uri(ValidateRoute, UriKind.Relative), unsaved);
             var body = await response.Content.ReadAsStringAsync();
             var answer = JsonNode.Parse(string.IsNullOrWhiteSpace(body) ? "{}" : body) as JsonObject ?? [];
@@ -689,7 +760,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private async Task<JsonObject?> TheFeatureAsListed(string reference)
         {
             TheRunningLighthouse();
-            using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
+            using var client = theRunningLighthouse.CreateClient().AsSystemAdmin();
             using var response = await client.GetAsync(new Uri($"{FeaturesByReferenceRoute}{Uri.EscapeDataString(reference)}", UriKind.Relative));
             var body = await response.Content.ReadAsStringAsync();
 
@@ -710,7 +781,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private async Task TheAdminSavesTheSettingsOf(Portfolio portfolio, Action<JsonObject> change)
         {
             TheRunningLighthouse();
-            using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
+            using var client = theRunningLighthouse.CreateClient().AsSystemAdmin();
             var route = $"{PortfolioRoute}{portfolio.Id}";
 
             using var read = await client.GetAsync(new Uri($"{route}/settings", UriKind.Relative));
@@ -732,7 +803,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// </summary>
         private async Task<WhatRefreshHistoryShows> WhatRefreshHistoryShowsFor(int entityId, RefreshType type = RefreshType.Portfolio)
         {
-            using var client = theRunningLighthouse!.CreateClient().AsSystemAdmin();
+            using var client = theRunningLighthouse.CreateClient().AsSystemAdmin();
             using var response = await client.GetAsync(new Uri(RefreshLogRoute, UriKind.Relative));
             var body = await response.Content.ReadAsStringAsync();
 
@@ -821,47 +892,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// </summary>
         private IServiceProvider TheRunningLighthouse()
         {
-            if (theRunningLighthouse is not null)
+            if (theDatabaseIsFilled)
             {
                 return theRunningLighthouse.Services;
             }
 
-            theHost = new TestWebApplicationFactory<Program>();
+            theJiraConnector = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), theLog.CreateLogger<JiraWorkTrackingConnector>());
+            _ = TheAzureDevOpsConnector();
 
-            var jira = JiraConnectorTestSetup.AConnectorOver(AJiraAnsweringForThatInstance(), theLog.CreateLogger<JiraWorkTrackingConnector>());
-            var ado = TheAzureDevOpsConnector();
-
-            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactory
-                .Setup(factory => factory.GetWorkTrackingConnector(WorkTrackingSystems.Jira))
-                .Returns(jira);
-            connectorFactory
-                .Setup(factory => factory.GetWorkTrackingConnector(WorkTrackingSystems.AzureDevOps))
-                .Returns(ado);
-
-            var licensed = new Mock<ILicenseService>();
-            licensed.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
-
-            var log = theLog;
-
-            theRunningLighthouse = theHost.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IWorkTrackingConnectorFactory>();
-                services.AddScoped(_ => connectorFactory.Object);
-
-                services.RemoveAll<ILicenseService>();
-                services.AddScoped(_ => licensed.Object);
-
-                services.RemoveAll<IForecastService>();
-                services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
-
-                services.RemoveAll<ILoggerFactory>();
-                services.AddSingleton<ILoggerFactory>(log);
-            }));
+            theHost.UseFreshDatabase();
+            theRunningLighthouse.ForgetTheCachedMetrics();
 
             using var setupScope = theRunningLighthouse.Services.CreateScope();
             var database = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            database.Database.EnsureDeleted();
             database.Database.EnsureCreated();
 
             foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
@@ -884,6 +927,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
 
             portfolios.Save().GetAwaiter().GetResult();
+
+            theDatabaseIsFilled = true;
 
             return theRunningLighthouse.Services;
         }
