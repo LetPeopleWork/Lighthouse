@@ -17,17 +17,33 @@ namespace Lighthouse.Backend.Tests.API.Integration
     public class ViewerEmbedSessionJourneyTests
     {
         private ViewerEmbedTestHost host = null!;
+        private WebApplicationFactory<Program> hostAheadOfRealTime = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            host = new ViewerEmbedTestHost();
+
+            var clock = new FakeTimeProvider(DateTimeOffset.UtcNow.AddHours(18));
+            hostAheadOfRealTime = host.AuthEnabled.WithWebHostBuilder(builder =>
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(clock);
+                }));
+        }
 
         [SetUp]
         public void SetUp()
         {
-            host = new ViewerEmbedTestHost();
+            host.BeginTest();
             host.SeedRbacFixture();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void StopTheHost()
         {
+            hostAheadOfRealTime.Dispose();
             host.Dispose();
         }
 
@@ -64,14 +80,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task AForgedInteractiveCookie_IsAccepted_WhenTheHostClockIsHoursAheadOfRealTime()
         {
-            var clock = new FakeTimeProvider(DateTimeOffset.UtcNow.AddHours(18));
-            await using var hostAheadOfRealTime = host.AuthEnabled.WithWebHostBuilder(builder =>
-                builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<TimeProvider>();
-                    services.AddSingleton<TimeProvider>(clock);
-                }));
-
             var sessionCookie = host.ForgeInteractiveSessionCookie(
                 hostAheadOfRealTime, ViewerEmbedTestHost.ExplicitViewerSubject, "Explicitly Permissioned Viewer");
 

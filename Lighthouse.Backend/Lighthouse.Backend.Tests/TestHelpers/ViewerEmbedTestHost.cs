@@ -68,6 +68,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         private const string CookieProtectorPurpose =
             "Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationMiddleware";
 
+        private static readonly WebApplicationFactoryClientOptions ClientOptions = new()
+        {
+            AllowAutoRedirect = false,
+            HandleCookies = false,
+        };
+
         private readonly TestWebApplicationFactory<Program> root;
         private readonly List<WebApplicationFactory<Program>> derivedHosts = [];
 
@@ -128,11 +134,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public static HttpClient CreateClient(WebApplicationFactory<Program> host)
         {
-            return host.CreateClient(new WebApplicationFactoryClientOptions
-            {
-                AllowAutoRedirect = false,
-                HandleCookies = false,
-            });
+            return host.CreateClient(ClientOptions);
         }
 
         public static string NewNonce()
@@ -316,6 +318,17 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             Assert.That(embedCookie, Is.Not.Null.And.Not.Empty, "precondition: the entry point must issue an embed cookie");
             return embedCookie!;
+        }
+
+        /// <summary>
+        /// For a fixture that keeps this host across tests: puts back what one test could leave for the
+        /// next. The database is a new file, so tokens and profiles of the last test are not there.
+        /// </summary>
+        public void BeginTest()
+        {
+            root.Clock.Reset();
+            root.UseFreshDatabase();
+            LogEvents.Clear();
         }
 
         public void SeedRbacFixture()
@@ -583,6 +596,14 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     {
                         return [.. eventNames];
                     }
+                }
+            }
+
+            public void Clear()
+            {
+                lock (gate)
+                {
+                    eventNames.Clear();
                 }
             }
 

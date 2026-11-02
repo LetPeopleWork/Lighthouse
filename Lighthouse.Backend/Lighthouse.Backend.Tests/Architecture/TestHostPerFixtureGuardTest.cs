@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string StopsAndRestartsItsHostInOneTest = "one test stops the host the way a service manager does and starts another, so the fixture builds a host again inside a test";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 94;
+        private const int MostTypesTheListMayHold = 88;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -80,23 +80,17 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.TeamStalenessThresholdSettingsIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TeamThroughputHistoryValidationIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TimeInStateReadApiIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ViewerEmbedSessionJourneyTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.WorkItemEstimateApiIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.WriteBackMappingForNewAdditionalFieldIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.F_BE_1_GroupSnapshotInheritanceTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S13_ViewerEmbedHandshakeTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S14_ViewerEmbedSubjectValidatorTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S15_EmbedSurfaceOptInTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S1_AllowedOriginsEnvVarBindingTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S1_CorsFailClosedTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S3_UpdateNotificationHubAuthorizeTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S4_DeliveriesDeleteGuardInversionTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S5_ApiKeyScopesTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S6_RateLimitingTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S8_EmbedEntryPointTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S9b_EmbedCookieConcurrencyTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S9_EmbedCookiePolicyTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.W1_VersionEndpointAuthorizationTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = ChecksTheTestHostItself,
