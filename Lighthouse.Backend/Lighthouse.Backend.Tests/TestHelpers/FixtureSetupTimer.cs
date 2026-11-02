@@ -34,19 +34,22 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     TearDownTotalMs = kvp.Value.TearDownTotalMs,
                     OneTimeSetUpMs = kvp.Value.OneTimeSetUpMs,
                     OneTimeTearDownMs = kvp.Value.OneTimeTearDownMs,
+                    kvp.Value.HostBuildCount,
+                    HostBuildTotalMs = kvp.Value.HostBuildTotalMs,
                 })
                 .OrderByDescending(r => r.SetUpTotalMs)
                 .ToList();
 
             var sb = new StringBuilder();
-            sb.AppendLine("fixture,setup_count,setup_total_ms,setup_mean_ms,teardown_total_ms,one_time_setup_ms,one_time_teardown_ms");
+            sb.AppendLine("fixture,setup_count,setup_total_ms,setup_mean_ms,teardown_total_ms,one_time_setup_ms,one_time_teardown_ms,host_build_count,host_build_total_ms");
             foreach (var r in rows)
             {
                 sb.AppendLine(string.Format(
                     CultureInfo.InvariantCulture,
-                    "{0},{1},{2:F1},{3:F2},{4:F1},{5:F1},{6:F1}",
+                    "{0},{1},{2:F1},{3:F2},{4:F1},{5:F1},{6:F1},{7},{8:F1}",
                     r.Fixture, r.SetUpCount, r.SetUpTotalMs, r.SetUpMeanMs,
-                    r.TearDownTotalMs, r.OneTimeSetUpMs, r.OneTimeTearDownMs));
+                    r.TearDownTotalMs, r.OneTimeSetUpMs, r.OneTimeTearDownMs,
+                    r.HostBuildCount, r.HostBuildTotalMs));
             }
 
             File.WriteAllText(outputPath, sb.ToString());
@@ -59,6 +62,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             SetUp,
             TearDown,
             OneTimeTearDown,
+            HostBuild,
         }
 
         private sealed class FixtureStats
@@ -67,13 +71,17 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             private long tearDownTotalTicks;
             private long oneTimeSetUpTicks;
             private long oneTimeTearDownTicks;
+            private long hostBuildTotalTicks;
             private int setUpCount;
+            private int hostBuildCount;
 
             public int SetUpCount => setUpCount;
             public double SetUpTotalMs => TicksToMs(setUpTotalTicks);
             public double TearDownTotalMs => TicksToMs(tearDownTotalTicks);
             public double OneTimeSetUpMs => TicksToMs(oneTimeSetUpTicks);
             public double OneTimeTearDownMs => TicksToMs(oneTimeTearDownTicks);
+            public int HostBuildCount => hostBuildCount;
+            public double HostBuildTotalMs => TicksToMs(hostBuildTotalTicks);
 
             public void Record(MeasurementKind kind, long ticks)
             {
@@ -91,6 +99,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                         break;
                     case MeasurementKind.OneTimeTearDown:
                         Interlocked.Add(ref oneTimeTearDownTicks, ticks);
+                        break;
+                    case MeasurementKind.HostBuild:
+                        Interlocked.Add(ref hostBuildTotalTicks, ticks);
+                        Interlocked.Increment(ref hostBuildCount);
                         break;
                 }
             }

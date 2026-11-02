@@ -114,6 +114,20 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
         }
 
+        // Hosts are built lazily, often inside a test's SetUp, so the time lands under the running
+        // fixture rather than under any setup phase the fixture measures itself.
+        protected override IHost CreateHost(IHostBuilder builder)
+        {
+            using var _ = FixtureSetupTimer.Measure(RunningFixtureName(), FixtureSetupTimer.MeasurementKind.HostBuild);
+            return base.CreateHost(builder);
+        }
+
+        private static string RunningFixtureName()
+        {
+            var className = TestContext.CurrentContext.Test.ClassName;
+            return string.IsNullOrEmpty(className) ? "(outside a test)" : className[(className.LastIndexOf('.') + 1)..];
+        }
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             // Set test environment to skip migrations in Program.cs
