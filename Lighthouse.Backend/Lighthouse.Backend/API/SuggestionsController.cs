@@ -67,9 +67,9 @@ namespace Lighthouse.Backend.API
 
             var statesCollection = new StatesCollectionDto
             {
-                ToDoStates = teams.SelectMany(x => x.ToDoStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-                DoingStates = teams.SelectMany(x => x.DoingStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-                DoneStates = teams.SelectMany(x => x.DoneStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                ToDoStates = teams.SelectMany(x => x.NormalisedStatesFor(x.ToDoStates)).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoingStates = teams.SelectMany(x => x.NormalisedStatesFor(x.DoingStates)).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoneStates = teams.SelectMany(x => x.NormalisedStatesFor(x.DoneStates)).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
             };
 
             return Ok(statesCollection);
@@ -84,9 +84,9 @@ namespace Lighthouse.Backend.API
 
             var statesCollection = new StatesCollectionDto
             {
-                ToDoStates = projects.SelectMany(x => x.ToDoStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-                DoingStates = projects.SelectMany(x => x.DoingStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
-                DoneStates = projects.SelectMany(x => x.DoneStates).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
+                ToDoStates = projects.SelectMany(x => x.NormalisedStatesFor(x.ToDoStates)).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoingStates = projects.SelectMany(x => x.NormalisedStatesFor(x.DoingStates)).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                DoneStates = projects.SelectMany(x => x.NormalisedStatesFor(x.DoneStates)).Distinct(StringComparer.OrdinalIgnoreCase).ToList()
             };
 
             return Ok(statesCollection);

@@ -30,6 +30,8 @@
 
         StateCategories CategoryOfDisplayName(string displayName);
 
+        List<string> NormalisedStatesFor(IReadOnlyList<string> storedList);
+
         List<string> GetRawStatesForCategory(List<string> categoryStates);
 
         string MapRawStateToMappedName(string rawState);

@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public partial class CategoryListOwnershipGuardTest
     {
-        private const string Pending = "pending: category lists hold raw states";
-
         private const string ProductionProject = "Lighthouse.Backend";
 
         private static readonly string[] FilesThatReadSettingsNamingAGroup =
@@ -70,7 +68,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NoCodeExpandsACategoryList()
         {
             var offenders = ProductionSources()
@@ -94,7 +91,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        [Ignore(Pending)]
         public void OnlyCodeThatReadsSettingsNamingAGroupCallsTheExpansion()
         {
             var root = Path.Combine(FindRepositoryRoot(), ProductionProject.Replace('/', Path.DirectorySeparatorChar));

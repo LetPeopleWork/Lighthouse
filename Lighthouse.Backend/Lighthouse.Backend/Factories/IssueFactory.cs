@@ -252,9 +252,9 @@ namespace Lighthouse.Backend.Factories
 
             var stateCategory = workitemQueryOwner.MapStateToStateCategory(state);
 
-            var rawToDoStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.ToDoStates);
-            var rawDoingStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.DoingStates);
-            var rawDoneStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.DoneStates);
+            var rawToDoStates = workitemQueryOwner.NormalisedStatesFor(workitemQueryOwner.ToDoStates);
+            var rawDoingStates = workitemQueryOwner.NormalisedStatesFor(workitemQueryOwner.DoingStates);
+            var rawDoneStates = workitemQueryOwner.NormalisedStatesFor(workitemQueryOwner.DoneStates);
 
             DateTime? closedDate = null;
             DateTime? startedDate = null;

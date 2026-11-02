@@ -78,8 +78,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             return WorkItemCategoryCrossing.LastEntryInto(
                 ArrivalsIn(InStartOrder(TheTeamRecognisesAsState(spans, owner))),
-                owner.GetRawStatesForCategory(category),
-                owner.GetRawStatesForCategory(categoryToIgnoreArrivalsFrom));
+                owner.NormalisedStatesFor(category),
+                owner.NormalisedStatesFor(categoryToIgnoreArrivalsFrom));
         }
 
         // Every arrival the spans record, the earliest coming from nowhere — the same shape Azure

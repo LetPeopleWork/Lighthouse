@@ -23,8 +23,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [TestFixture(OwnerKind.Portfolio)]
     public class CategoryListsHoldRawStatesSettingsIntegrationTest(OwnerKind kind)
     {
-        private const string Pending = "pending: category lists hold raw states";
-
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
         private HttpClient client = null!;
@@ -611,7 +609,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName()
         {
             SeedOwner(mappings: [Review()], doing: ["Analysis", "Review"]);
