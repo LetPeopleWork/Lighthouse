@@ -12,8 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-6251-team-feature-size")]
-    [Category("slice-00")]
     public partial class Slice00OwnerScopedMetricsTest
     {
         // Gravity finished 3 Work Items in the last 30 days, each in 2 to 4 days; Ocean Explorer

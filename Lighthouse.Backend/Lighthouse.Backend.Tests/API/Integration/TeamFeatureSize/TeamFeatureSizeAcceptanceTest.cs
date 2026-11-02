@@ -3,6 +3,7 @@ using System.Net;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -60,6 +61,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
 
         private readonly List<int> commandsPerAnswer = [];
 
+        // The memo keeps notes per owner id for as long as the host lives, and every test's fresh
+        // database numbers its owners from one again, so each test hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
         private TestWebApplicationFactory<Program> rootFactory = null!;
 
         private CommandsSentToTheDatabase commands = null!;
@@ -74,6 +79,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
 
         protected HttpClient Client { get; private set; } = null!;
 
+        /// <summary>The database commands sent since this test began.</summary>
+        protected int CommandsSentSoFar => commands.Count;
+
         protected HttpResponseMessage Response { get; private set; } = null!;
 
         protected string Body { get; private set; } = string.Empty;
@@ -82,6 +90,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
         protected static DateTime WindowStart => Today.UtcDateTime.Date.AddDays(-29);
 
         protected static DateTime WindowEnd => Today.UtcDateTime.Date;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            commands = new CommandsSentToTheDatabase();
+            rootFactory = new TestWebApplicationFactory<Program>();
+
+            // The host holds the counter for as long as it lives, so each test empties it in place
+            // instead of replacing it.
+            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory).WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<ILighthouseClock>();
+                    services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
+                    services.ConfigureDbContext<LighthouseAppContext>((_, options) => options.AddInterceptors(commands));
+                });
+            });
+        }
 
         [SetUp]
         public void Init()
@@ -92,21 +121,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             // from an empty database, so names remembered by the previous test point at nothing.
             teamIds.Clear();
             portfolioIds.Clear();
+            ownersSeeded.Clear();
             commandsPerAnswer.Clear();
             featuresSeededForCounting = 0;
 
-            commands = new CommandsSentToTheDatabase();
-            rootFactory = new TestWebApplicationFactory<Program>();
-
-            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory).WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<ILighthouseClock>();
-                    services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
-                    services.ConfigureDbContext<LighthouseAppContext>((_, options) => options.AddInterceptors(commands));
-                });
-            });
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
 
@@ -119,22 +140,43 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
+
+            commands.Reset();
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            using (var scope = Factory.Services.CreateScope())
+            try
             {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
             }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
 
-            Response?.Dispose();
-            Client.Dispose();
-            Factory.Dispose();
-            rootFactory.Dispose();
+                using (var scope = Factory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                Response?.Dispose();
+                Client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         // --- Given ---
@@ -365,6 +407,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             repository.Add(team);
             repository.Save().GetAwaiter().GetResult();
 
+            ownersSeeded.Add((team.Id, OwnerType.Team));
+
             return team.Id;
         }
 
@@ -384,6 +428,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
 
             repository.Add(portfolio);
             repository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             return portfolio.Id;
         }
@@ -515,6 +561,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
             private int count;
 
             public int Count => Volatile.Read(ref count);
+
+            public void Reset() => Volatile.Write(ref count, 0);
 
             public override InterceptionResult<DbDataReader> ReaderExecuting(
                 DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
