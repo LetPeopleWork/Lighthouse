@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6028-parent-from-issue-links")]
-    [Category("slice-03")]
     public partial class Slice03AmbiguityRefusalTest
     {
         /// <summary>
