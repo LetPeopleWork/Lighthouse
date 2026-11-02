@@ -1,7 +1,7 @@
 <!-- markdownlint-disable MD024 -->
 # Feature Delta — epic-6473-settings-split
 
-ADO Epic #6473 "Settings split by who decides: Organisation, Access and System". ADR-271 step U1. Locked as its own
+ADO Epic #6473 "Settings split by who decides: Organization, Access and System". ADR-271 step U1. Locked as its own
 small Epic, delivered first in the 6455 family (6455 feature-delta, D4, D21). Precedes #6349 (organisation defaults
 with a local override). Runs in parallel with #6474 "One structure" DISCUSS.
 
@@ -14,20 +14,21 @@ raised by the connections decision. The sketches still go through DISTILL's walk
 
 ### Maintainer decisions (2026-11-02)
 
-- **M1 (Q1) Navigation.** One header menu, "Settings ▾" → Organisation / Access / System. Scope confirmed: every
+- **M1 (Q1) Navigation.** One header menu, "Settings ▾" → Organization / Access / System. Scope confirmed: every
   installation-wide setting lands in one of the three areas; each Team's and Portfolio's own settings stay on its page;
   a redesign of units comes later, outside this Epic.
-- **M2 (Q2) Labels.** "Settings"; areas "Organisation", "Access", "System"; Organisation tabs "Terminology",
-  "Calendar", "Refresh & ordering".
-- **M3 (Q3) Licence.** System → Licence. `/settings/license` redirects there, fixing today's broken link from the
+- **M2 (Q2) Labels.** "Settings"; areas "Organization", "Access", "System"; Organization tabs "Terminology",
+  "Calendar", "Refresh & ordering". (DISCUSS wrote "Organisation"; spelling changed to American by the maintainer at
+  DESIGN, MD1. All UI labels, slugs and test ids in this document now use "Organization" and "License".)
+- **M3 (Q3) License.** System → License. `/settings/license` redirects there, fixing today's broken link from the
   connection wizard and connection settings.
 - **M4 (Q4) Connections move to System only** and are removed from the Overview (against the recommendation). Reason: a
   connection belongs there, and a future onboarding flow will connect first (for example to read hierarchies from
   Jira). Slices 04 and 05 carry it.
-- **M5 (Q5)** Organisation stays hidden from anyone who is no System Admin, as today.
+- **M5 (Q5)** Organization stays hidden from anyone who is no System Admin, as today.
 - **M6 (Q6) DIVERGE skipped explicitly.** The Epic 6455 DIVERGE plus ADR-271 count as this Epic's DIVERGE.
-- **M7 Levels.** Organisation later receives the levels section from #6474 (its slice 05 waits for this Epic's
-  Organisation shell, delivered by slice 02).
+- **M7 Levels.** Organization later receives the levels section from #6474 (its slice 05 waits for this Epic's
+  Organization shell, delivered by slice 02).
 
 ---
 
@@ -113,7 +114,7 @@ Settings ADR-271 names that are **not** on this page today:
 | Setting | Lives today | Notes |
 |---|---|---|
 | Connections (credentials, health) | Overview: "Connections" section (System Admin only: `DataGridBase` list with edit and delete, reconnect banners, "No {connection} found. Load Demo Data or Check the documentation" empty state, a connections-refused alert) and the "Add {connection}" button; full pages `/connections/new`, `/connections/:id/edit`, which return to `/` on save and cancel. Entry points elsewhere: Onboarding stepper step 1 "Add {connection}", the "Create a {connection} before adding a {team}" tooltip, Task Manager connections section | ADR-271 puts them in System; M4 moves them (slices 04, 05). The Overview still needs to know whether a connection exists (stepper, disabled "Add {team}") |
-| Licence | Header `LicenseStatusIcon` popover (import, clear for System Admin) | ADR-271 puts it in System. `ModifyConnectionSettings` and `CreateConnectionWizard` link to `/settings/license`, which appears to match **no route** today (verify in DESIGN) |
+| License | Header `LicenseStatusIcon` popover (import, clear for System Admin) | ADR-271 puts it in System. `ModifyConnectionSettings` and `CreateConnectionWizard` link to `/settings/license`, which appears to match **no route** today (verify in DESIGN) |
 | Usage data, per person | Footer `UsageDataDialog` | A personal choice, not an instance setting: stays |
 | Task Manager | Header | Live view, not a setting: stays |
 | Mapping, connection defaults, per-unit settings | Connection and unit pages | ADR-271 U2/U3, #6349: OUT |
@@ -124,10 +125,10 @@ Settings ADR-271 names that are **not** on this page today:
 
 | Setting | Today | Target area → tab (DRAFT names) | Placed by ADR-271? |
 |---|---|---|---|
-| Terminology | Configuration | Organisation → Terminology | yes |
-| Blackout periods and recurring rules | Configuration | Organisation → Calendar | yes ("calendar") |
-| {Team} Refresh, {Feature} Refresh | Configuration | Organisation → Refresh & ordering | yes ("refresh cadence") |
-| Let Lighthouse own the order of your {features} | Configuration / Behaviour | Organisation → Refresh & ordering | yes ("Feature ordering policy") |
+| Terminology | Configuration | Organization → Terminology | yes |
+| Blackout periods and recurring rules | Configuration | Organization → Calendar | yes ("calendar") |
+| {Team} Refresh, {Feature} Refresh | Configuration | Organization → Refresh & ordering | yes ("refresh cadence") |
+| Let Lighthouse own the order of your {features} | Configuration / Behaviour | Organization → Refresh & ordering | yes ("Feature ordering policy") |
 | Never send usage data (admin veto) | Configuration / Behaviour | System → Usage Data | yes ("usage data") |
 | System Admins, SSO group mappings, RBAC status | System Admins | Access → System Admins | yes |
 | API Keys | API Keys | Access → API Keys | yes |
@@ -138,14 +139,14 @@ Settings ADR-271 names that are **not** on this page today:
 | Refresh History | System Info | System → System Info | **not named** (it reads as system info; kept with it) |
 | Third Party Packages | System Info | System → System Info | **not named** (same) |
 | RBAC status diagnostic | System Admins | Access → System Admins | **not named** (Access diagnostics) |
-| Licence | header popover (stays too) | System → Licence (slice 03, M3) | yes, but not on today's page |
+| License | header popover (stays too) | System → License (slice 03, M3) | yes, but not on today's page |
 | Connections | Overview | System → Connections only (slices 04, 05, M4) | yes, but not on today's page |
 
-Counts: **Organisation 4** (Terminology, Calendar, the two refresh cadences as one, Feature ordering), **Access 2**
+Counts: **Organization 4** (Terminology, Calendar, the two refresh cadences as one, Feature ordering), **Access 2**
 (System Admins with group mappings, API Keys), **System 5** (Demo Data, Database, Encryption, Usage Data veto, System
-Info) plus Licence and Connections (M3, M4): **System 7**. Three sections ADR-271 does not name, all placed with their current neighbours.
+Info) plus License and Connections (M3, M4): **System 7**. Three sections ADR-271 does not name, all placed with their current neighbours.
 
-Room for #6474: the Organisation → Terminology tab is where #6474 adds its levels section (D6: levels and the
+Room for #6474: the Organization → Terminology tab is where #6474 adds its levels section (D6: levels and the
 remaining terms in the same tab). This Epic builds the tab and its first section only; #6474 may rename the tab.
 
 ---
@@ -160,22 +161,22 @@ Emotional arc: **unsure** ("where was that again?") → **oriented** (the area's
 
 ```text
 [Trigger]               [Step 1]                [Step 2]                 [Step 3]                [Goal]
-Priya wants to add      Opens Settings in the   Picks Organisation; sees Opens Calendar, adds    Change saved, same
+Priya wants to add      Opens Settings in the   Picks Organization; sees Opens Calendar, adds    Change saved, same
 Christmas week as a  →  header; sees three  →   Terminology, Calendar,→  the period as before →  dialog as last year
 blackout period         areas, what each holds  Refresh & ordering
 Feels: unsure           Feels: oriented         Feels: "this is mine"    Feels: in control       Feels: confident
 Artifacts: header       area names, visibility  tab list per area        unchanged panel         URL /settings/
-label                   (useRbac)                                                                organisation/calendar
+label                   (useRbac)                                                                organization/calendar
 
 Error paths
 E1 Old bookmark /settings?tab=database   → lands on System → Database (redirect, replace)
-E2 Tomasz opens an Organisation link     → he is System Admin too: he sees it (gating unchanged)
+E2 Tomasz opens an Organization link     → he is System Admin too: he sees it (gating unchanged)
 E3 Morgan opens /settings/system/database → lands on System → System Info, the first tab he may see
 E4 Deep link while access is still loading → lone spinner, then the right tab (no bounce to the first tab)
-E5 /settings/license (dead today)        → System (slice 01), System → Licence (slice 03)
+E5 /settings/license (dead today)        → System (slice 01), System → License (slice 03)
 ```
 
-Steps 2 and 3 show the end state after slice 02 (after slice 01 Organisation holds one Configuration tab). Error paths
+Steps 2 and 3 show the end state after slice 02 (after slice 01 Organization holds one Configuration tab). Error paths
 feel like this: E1, E5 relief ("it still works"); E3 calm, nothing to see that is not his; E4 a short wait instead of
 confusion.
 
@@ -185,9 +186,9 @@ accepted (14, matched case-insensitively); gating reads `useRbac()` only; in-app
 Gherkin per step (embedded; no `.feature` file, no tags in code):
 
 ```gherkin
-Scenario: The organisation's settings are found under Organisation
+Scenario: The organisation's settings are found under Organization
   Given Priya Raman is a System Admin of Northwind Logistics
-  When she opens Settings and chooses Organisation
+  When she opens Settings and chooses Organization
   Then she sees the tabs Terminology, Calendar, and Refresh & ordering
   And none of them holds backups, encryption, or demo data
 
@@ -200,12 +201,12 @@ Scenario: A reader sees only what is theirs
   Given Morgan Lee reads one Team and is no System Admin, with RBAC on
   When he opens Settings
   Then he sees Access with API Keys and System with System Info
-  And he sees no Organisation area
+  And he sees no Organization area
 ```
 
 ---
 
-## Wave: DISCUSS / [REF] UI sketches (DRAFT; area menu, labels, Licence and Connections decided by M1–M4)
+## Wave: DISCUSS / [REF] UI sketches (DRAFT; area menu, labels, License and Connections decided by M1–M4)
 
 Reuses the existing `Settings.tsx` shell (heading, `Paper`, MUI `TabList` with icon tabs, `TabPanel`) for each area,
 and every panel component unchanged. New: the area menu (M1: option A, chosen) and the System → Connections tab.
@@ -213,12 +214,12 @@ and every panel component unchanged. New: the area menu (M1: option A, chosen) a
 ```text
  Overview   Features   Reports   [Settings v]              (licence) (theme) (Update all)
                                  +-----------------+
-                                 | Organisation    |  how your organisation works
+                                 | Organization    |  how your organisation works
                                  | Access          |  who may do what
                                  | System          |  running this Lighthouse
                                  +-----------------+
 
- Settings > Organisation                                       /settings/organisation/terminology
+ Settings > Organization                                       /settings/organization/terminology
  +---------------------------------------------------------------------------+
  |  [Terminology]        [Calendar]         [Refresh & ordering]              |
  +---------------------------------------------------------------------------+
@@ -231,7 +232,7 @@ and every panel component unchanged. New: the area menu (M1: option A, chosen) a
  |  [System Admins]*     [API Keys]                                          |   * RBAC on + System Admin
 
  Settings > System                                             /settings/system/connections
- | [Connections] [Database] [Encryption] [Demo Data] [Usage Data] [System Info] [Licence] |
+ | [Connections] [Database] [Encryption] [Demo Data] [Usage Data] [System Info] [License] |
 
  Settings > System > Connections  (slice 04; moved from the Overview, same parts)
  +---------------------------------------------------------------------------+
@@ -266,7 +267,7 @@ Visualization skill: N/A, because no chart, metric or data view is added or chan
 
 ## Wave: DISCUSS / [REF] Navigation and URLs
 
-New routes: `/settings/:area/:tab?` with areas `organisation`, `access`, `system`. A tab is a path segment, as on Team
+New routes: `/settings/:area/:tab?` with areas `organization`, `access`, `system`. A tab is a path segment, as on Team
 and Portfolio pages. Redirects use `replace`, so Back does not loop.
 
 Legacy keys: 14, matched case-insensitively, as `Settings.tsx` does today.
@@ -274,14 +275,14 @@ Legacy keys: 14, matched case-insensitively, as `Settings.tsx` does today.
 | Old link | New target (slice 01) | After slice 02 (and later slices) |
 |---|---|---|
 | `/settings` (header, docs) | first area the person may see | same |
-| `?tab=configuration`, `?tab=system` | `/settings/organisation/configuration` | `/settings/organisation/terminology` |
+| `?tab=configuration`, `?tab=system` | `/settings/organization/configuration` | `/settings/organization/terminology` |
 | `?tab=demodata`, `?tab=demo-data` | `/settings/system/demo-data` | same |
 | `?tab=database`, `?tab=database-management` | `/settings/system/database` | same |
 | `?tab=api-keys`, `?tab=apikeys` | `/settings/access/api-keys` | same |
 | `?tab=encryption` | `/settings/system/encryption` | same |
 | `?tab=rbac`, `?tab=authorization` | `/settings/access/system-admins` | same |
 | `?tab=logs`, `?tab=systeminfo`, `?tab=system-info` | `/settings/system/system-info` | same |
-| `/settings/license` (dead today) | `/settings/system` | `/settings/system/licence` after slice 03 |
+| `/settings/license` (dead today) | `/settings/system` | `/settings/system/license` after slice 03 |
 | `/connections/new` | unchanged until slice 05 | `/settings/system/connections/new` (slice 05) |
 | `/connections/:id/edit` | unchanged until slice 05 | `/settings/system/connections/:id/edit` (slice 05) |
 | Connection page Save / Cancel (today back to `/`) | unchanged until slice 05 | back to System → Connections (slice 05) |
@@ -314,12 +315,12 @@ Backend guards (`RbacGuard SystemAdmin` on blackout, optional features, logs, en
 
 | Area → tab | RBAC off (everyone is System Admin) | RBAC on, System Admin | RBAC on, anyone else |
 |---|---|---|---|
-| Organisation (all tabs) | yes | yes | area hidden |
+| Organization (all tabs) | yes | yes | area hidden |
 | Access → System Admins | hidden (as today) | yes | hidden |
 | Access → API Keys | yes (shows "auth off" state) | yes | yes |
 | System → Database, Encryption, Demo Data, Usage Data | yes | yes | hidden |
 | System → System Info | yes | yes | yes, without Log Level |
-| System → Licence (slice 03) | yes | yes, with import and clear | yes, read-only (as the popover) |
+| System → License (slice 03) | yes | yes, with import and clear | yes, read-only (as the popover) |
 | System → Connections (slice 04) | yes | yes | hidden (the Overview section is System Admin only today) |
 
 Scoped Team and Portfolio admins keep picking a connection in their forms through the existing summary endpoint;
@@ -339,7 +340,7 @@ only once `isLoading` is false.
 | Each moved panel | its own, unchanged | its existing look | its existing look |
 | System → Connections (new home, slice 04) | connection list | lone spinner in the tab (the list never shows the empty-state alert while loading) | refused (403): today's connections-refused alert; any other failure: the inline "Failed to load …" alert, never the empty state |
 | Overview after slice 04 | still asks whether a connection exists (stepper, "Add {team}") | today's look | as today |
-| Behaviour Settings rows (ordering in Organisation, usage veto in System) | optional features, licence status | today: section hidden until loaded | today: optional features failing hides the section; licence status failing sets it to none, so the Premium ordering switch shows as locked |
+| Behaviour Settings rows (ordering in Organization, usage veto in System) | optional features, licence status | today: section hidden until loaded | today: optional features failing hides the section; licence status failing sets it to none, so the Premium ordering switch shows as locked |
 
 The behaviour rows are the one gap: each now stands alone on its tab, so a hidden section is an empty tab, and an
 unreadable licence looks like "no Premium". Slice 02 gives them a spinner while loading and the existing inline alert
@@ -360,16 +361,16 @@ connection points at System; old connection URLs redirect).
 | Activity | Walking skeleton (slice 01) | Release 2 (slice 02) | Release 3 (slice 03) |
 |---|---|---|---|
 | Open Settings | header entry with three areas | | |
-| Pick area | Organisation, Access, System, gated as today | | |
-| Pick tab | today's tabs re-homed whole (Configuration under Organisation) | Configuration split into Terminology, Calendar, Refresh & ordering; Usage Data in System | Licence in System |
+| Pick area | Organization, Access, System, gated as today | | |
+| Pick tab | today's tabs re-homed whole (Configuration under Organization) | Configuration split into Terminology, Calendar, Refresh & ordering; Usage Data in System | License in System |
 | Change setting | panels unchanged | behaviour rows with loading and failure looks | licence import and clear as in the popover |
-| Come back by link | 14 old keys redirect, in-app links updated, POMs updated | `configuration` key → Terminology | `/settings/license` → Licence |
+| Come back by link | 14 old keys redirect, in-app links updated, POMs updated | `configuration` key → Terminology | `/settings/license` → License |
 
 ### Priority Rationale
 
 1. Slice 01 first: it carries the whole navigation risk (redirects, gating, POMs) on unchanged panels, and is the
    smallest step a user notices.
-2. Slice 02 second: the outcome the Epic exists for (no instance setting in Organisation), built on 01's routes.
+2. Slice 02 second: the outcome the Epic exists for (no instance setting in Organization), built on 01's routes.
 3. Slice 03 (M3): fixes a dead link; small and independent.
 4. Slice 04 then 05 (M4): the list moves first with its page objects, so `main` stays green; then every entry point
    and old URL follows. Between them, the stepper still opens the old `/connections/new`, which works.
@@ -397,18 +398,18 @@ leave Save on a connection page returning to an Overview with no connections on 
 
 - Before: Priya scans seven tabs in one row (Configuration, Demo Data, Database, API Keys, Encryption, System Admins,
   System Info) to find the blackout periods.
-- After: she opens Settings → Organisation and sees one tab, Configuration; Database and Encryption are under System.
+- After: she opens Settings → Organization and sees one tab, Configuration; Database and Encryption are under System.
 - Decision enabled: Priya can leave the System area to Tomasz without worrying he will rename a Team.
 
 Details, examples, UAT and AC: `slices/slice-01-three-areas.md`.
 
-### US-02: Organisation holds only how the organisation works
+### US-02: Organization holds only how the organisation works
 
 - **job_id**: `job-config-admin-find-how-we-work-in-one-place`
 #### Elevator Pitch
 
 - Before: "Never send usage data" sits next to Feature ordering in one Configuration tab.
-- After: Settings → Organisation shows the tabs Terminology, Calendar, Refresh & ordering; Settings → System → Usage
+- After: Settings → Organization shows the tabs Terminology, Calendar, Refresh & ordering; Settings → System → Usage
   Data shows the one switch "Never send usage data".
 - Decision enabled: Tomasz decides about usage data without opening the organisation's settings.
 
@@ -420,7 +421,7 @@ Details: `slices/slice-02-organisation-tabs.md`.
 #### Elevator Pitch
 
 - Before: "import a licence" in the connection form opens a blank page.
-- After: it opens Settings → System → Licence, showing licence status, organisation and expiry date, with import and
+- After: it opens Settings → System → License, showing licence status, organisation and expiry date, with import and
   clear for a System Admin.
 - Decision enabled: Tomasz renews the licence from a link.
 
@@ -459,7 +460,7 @@ Details: `slices/slice-05-connection-entry-points.md`.
 | KPI | Who | Does what | Target | Measured by | Baseline |
 |---|---|---|---|---|---|
 | K1 Right area | System Admins | find a named setting in the right area at the first try | 5 of 5 named settings (Terminology, blackout period, Team refresh, backup, API key) for 3 maintainer-chosen testers | maintainer walkthrough at DELIVER review | today: one page, 7 tabs, Configuration mixes 2 audiences |
-| K2 No misplaced setting | product | settings placed per ADR-271 Decision 2 | 0 instance settings in Organisation, 0 organisation settings in System after slice 02 | inventory table above, checked at finalize | 1 misplaced (usage-data veto) plus 4 org settings on the System Settings page |
+| K2 No misplaced setting | product | settings placed per ADR-271 Decision 2 | 0 instance settings in Organization, 0 organisation settings in System after slice 02 | inventory table above, checked at finalize | 1 misplaced (usage-data veto) plus 4 org settings on the System Settings page |
 | K3 No broken link | everyone with a bookmark | old links open the same setting | 14 of 14 legacy keys plus `/settings/license` resolve | unit tests on the key map; E2E walking skeleton | `/settings/license` dead today |
 | K4 Support | users | ask "where is X in settings?" | no rise in such questions in the release after | maintainer's support inbox, Slack | not counted today |
 
@@ -485,12 +486,12 @@ Usage-data event: DEVOPS answers whether one is worth it (for example opening an
 - **Contexts touched**: none in the domain. The UI re-homes views of Organisation set-up (Terminology, calendar,
   refresh cadence, Feature ordering), Access (System Admins, group mappings, API keys), Licensing (licence, slice 03)
   and the platform lane (database, encryption, demo data, log level, usage-data veto, system info).
-- **New terms**: the three settings areas Organisation, Access and System, already named by ADR-271 Decision 2.
+- **New terms**: the three settings areas Organization, Access and System, already named by ADR-271 Decision 2.
   "Access" also names the Team and Portfolio Access tab; both mean the Access context, so no clash.
 - **Domain events**: none published or handled, because no domain state or rule changes; only where a view sits.
-- **UI surface**: this Epic creates ADR-271's Organisation, Access and System surfaces (U1), and puts Tracker
+- **UI surface**: this Epic creates ADR-271's Organization, Access and System surfaces (U1), and puts Tracker
   integration's connections on System (M4, towards ADR-271 Decision 4). The connection page still holds mapping;
-  moving mapping to Organisation is U3, later. Team and Portfolio pages keep their own settings (M1).
+  moving mapping to Organization is U3, later. Team and Portfolio pages keep their own settings (M1).
 - **ARCHITECTURE.md §4**: no change, because no module or edge changes.
 
 ---
@@ -504,7 +505,7 @@ Usage-data event: DEVOPS answers whether one is worth it (for example opening an
 - **Website marketing surface**: the website hot-links `docs/assets` from `@main`, so refreshed screenshots reach it
   without a website change as long as file names stay. Check the website for "System Settings" copy at finalize.
 - **Docs (per feature, at finalize)**: `docs/settings/settings.md` (rewrite into the three areas, title "Settings"),
-  `configuration.md` (becomes Organisation; the usage-data veto section moves to `usagedata.md`), `apikeys.md`,
+  `configuration.md` (becomes Organization; the usage-data veto section moves to `usagedata.md`), `apikeys.md`,
   `rbac.md`, `databasemanagement.md`, `demodata.md`, `encryption.md`, `systeminfo.md`, `usagedata.md`,
   `taskmanager.md`, `worktrackingsystems.md` (how to add, edit and delete a connection now starts from System →
   Connections, not the Overview), the Overview and getting-started pages that describe the connection list or the
@@ -515,7 +516,7 @@ Usage-data event: DEVOPS answers whether one is worth it (for example opening an
   `encryption.png`, `databasemanagement.png`, `rbac.png`, `apikeys.png`); element shots likely do not
   (`optionalfeatures.png` does: it loses a row; `teamrefreshsettings.png`, `featurerefreshsettings.png`,
   `systeminfo_auth.png`, `rbac_groupmapping.png`, `apikeys_create.png`); `terminologyConfiguration.png` and
-  `blackoutPeriodsSection.png` have no producing spec found — check at finalize. New: a Licence shot and a System →
+  `blackoutPeriodsSection.png` have no producing spec found — check at finalize. New: a License shot and a System →
   Connections shot. Overview page shots lose the Connections section. Connection wizard and edit shots keep their
   file names (the specs reach them through the new page object).
 - **Demo data**: N/A, because no data shape changes.
@@ -526,10 +527,10 @@ Usage-data event: DEVOPS answers whether one is worth it (for example opening an
 ## Wave: DISCUSS / [REF] Boundary with #6474 and #6349
 
 - #6473 builds the three areas and moves today's settings, unchanged.
-- #6474 adds levels (each naming its unit and item) inside Organisation → Terminology, and may rename that tab.
+- #6474 adds levels (each naming its unit and item) inside Organization → Terminology, and may rename that tab.
   #6473 builds nothing about levels, units, item types or level names.
-- #6349 adds organisation defaults with a local override (U2) in Organisation, in a tab of its own. #6473 leaves the
-  Organisation tab list open-ended for it.
+- #6349 adds organisation defaults with a local override (U2) in Organization, in a tab of its own. #6473 leaves the
+  Organization tab list open-ended for it.
 
 ---
 
@@ -586,7 +587,7 @@ Personas: `config-admin.yaml` `primary_jobs` add `job-config-admin-find-how-we-w
 Journey: `docs/product/journeys/settings-by-who-decides.yaml` (new), from the journey section above, changelog entry
 `2026-11-02, epic-6473-settings-split, created`. `rbac-enhancements.yaml`: its "System Settings → Access" and "License
 Info section in System Settings" lines become "Settings → Access → System Admins" and "header licence popover /
-System → Licence" (changelog entry).
+System → License" (changelog entry).
 
 ADR-271: "Today" column of Decision 2 and the U1 row get "done by Epic #6473" once shipped; the System row notes
 Connections moved from the Overview to System by #6473 (mapping still on the connection page until U3). ADR-270: no map or context change; glossary
@@ -632,24 +633,448 @@ scenario, page heading, mobile and keyboard, interim gap accepted, US-01 re-esti
 
 Q1–Q6 were answered on 2026-11-02 (Locked decisions, M1–M6):
 
-1. **How do people reach the three areas?** ANSWERED (M1): one header menu "Settings ▾" → Organisation / Access /
+1. **How do people reach the three areas?** ANSWERED (M1): one header menu "Settings ▾" → Organization / Access /
    System (the recommendation).
-2. **Labels.** ANSWERED (M2): "Settings"; "Organisation", "Access", "System"; "Terminology", "Calendar", "Refresh &
+2. **Labels.** ANSWERED (M2): "Settings"; "Organization", "Access", "System"; "Terminology", "Calendar", "Refresh &
    ordering" (the recommendation).
-3. **Licence in System?** ANSWERED (M3): yes, System → Licence; `/settings/license` redirects there.
+3. **License in System?** ANSWERED (M3): yes, System → License; `/settings/license` redirects there.
 4. **Connections in System?** ANSWERED (M4): connections move to System only and leave the Overview (not the
    recommendation). Slices 04 and 05 added.
-5. **Readers and Organisation.** ANSWERED (M5): hidden from non-admins, as today.
+5. **Readers and Organization.** ANSWERED (M5): hidden from non-admins, as today.
 6. **DIVERGE.** ANSWERED (M6): skipped explicitly; the 6455 DIVERGE plus ADR-271 count.
 
 New, raised by M4 (for the DISTILL walk-through; neither blocks DESIGN):
 
-7. **Reconnect warnings after the move.** An OAuth connection that needs reconnecting shows a banner at the top of the
+7. **ANSWERED at DESIGN (MD2): today's banner stays on the Overview and also shows on System → Connections.**
+   **Reconnect warnings after the move.** An OAuth connection that needs reconnecting shows a banner at the top of the
    Overview list today. (a) Keep one banner on the Overview, "Northwind Jira needs to be reconnected", linking to
    System → Connections; the list itself moves. (b) Banner only on System → Connections and in the Task Manager.
    **Recommend (a)**: a broken connection stops every Team refreshing, and the Overview is where admins look; it is a
    warning, not the connection list.
-8. **Connection page URLs.** (a) `/settings/system/connections/new` and `/settings/system/connections/:id/edit`, old
+8. **ANSWERED at DESIGN (MD3): option (a).** **Connection page URLs.** (a) `/settings/system/connections/new` and `/settings/system/connections/:id/edit`, old
    `/connections/...` redirecting. (b) Keep `/connections/...` as the pages' address and only change where they are
    opened from and return to. **Recommend (a)**: the address says where the page lives, and the area menu shows
    System as current.
+
+---
+
+## Wave: DESIGN / [REF] Design summary
+
+Wave: DESIGN, application scope, interaction mode PROPOSE, 2026-11-02. Architect: Morgan. Paradigm: OOP project,
+functional-leaning React. Frontend only; **no backend, API, payload or schema change**. Style unchanged: the
+frontend's existing layering (pages → components/hooks/models/services, enforced by `fallow` boundaries in
+`.fallowrc.json` and `layerBoundaries.enforcement.test.ts`) on top of the backend's ports-and-adapters. This Epic
+adds one data definition, one pure resolver, one header control and one parameterised shell, and re-homes existing
+panels. Read before the design: every DISCUSS section, slices 01–05, ADR-270, ADR-271, brief.md lines 1–205,
+CLAUDE.md, ci-learnings (Frontend, E2E), and the code listed in the Reuse Analysis.
+
+Verified in code (DISCUSS asked DESIGN to verify):
+
+- `/settings/license` matches **no route**: `App.tsx` has only `path="/settings"` and no catch-all, so it renders an
+  empty shell. Confirmed dead.
+- `useRbac()` starts with `PERMISSIVE_SUMMARY` (`isSystemAdmin: true`, `isRbacEnabled: false`) and `isLoading: true`.
+  So today the System Admins tab is filtered out on the first render and the "selected tab not visible" effect
+  bounces a deep link to the first tab. Confirmed; slice 01 fixes it by not resolving before `isLoading` is false.
+- `useRbac()` on failure keeps the permissive summary and sets `loadFailed`. The rbac-enhancements brief makes "a
+  failed RBAC call never locks users out" an invariant. DESIGN keeps it: no new failure look for the shell (as
+  DISCUSS said); backend guards remain the protection.
+- The Overview's connections section is **inline JSX in `OverviewDashboard.tsx`** (lines ~586–698 plus the column
+  definition, delete dialog and handlers), not a component. "Reuse, not rewrite" therefore means: extract it as a
+  behaviour-unchanged refactor first, then mount it in System (DD9).
+- A non-403 failure of the connection list today turns the **whole Overview** into "Error loading data"; there is no
+  inline connections failure look yet. The System tab's inline "could not be loaded" alert is new (as DISCUSS said).
+- The backend serves `index.html` for any SPA path (`UseSpa`, `vite base: '/'`, absolute asset paths), and
+  `/teams/:id/:tab/:reportId` already proves three-segment deep links load. `/settings/system/connections/4/edit`
+  (five segments) relies on the same fallback; the walking-skeleton E2E `page.goto` of a deep link is its probe.
+
+---
+
+## Wave: DESIGN / [REF] DDD list (design decisions)
+
+| ID | Decision | Rejected (why) |
+|---|---|---|
+| DD1 | **Routes are path segments**: `/settings/:area/:tab?`, areas `organization`, `access`, `system`; declared as nested `<Route>`s so React Router ranks static paths (`/settings/license`, `/settings/system/connections/new`) above the dynamic one | `?area=&tab=` query tabs (inconsistent with Team/Portfolio pages; DISCUSS chose paths); one `/settings/*` splat parsed by hand (hides routes from the router's ranking, a second matcher to keep right) |
+| DD2 | **One definition, data only**: `src/models/Settings/settingsAreas.ts` holds areas (slug, label, order), tabs per area (slug, label, test id, panel test id, visibility rule, earlier slugs), the 14 legacy `?tab=` keys, and the connection page paths. It lives in `models` because the Header and `OnboardingStepper` (zone `components`) may import `models` but not `pages`. Panels are bound to tab slugs in `pages/Settings` | Definition in `pages/Settings` (the Header could not import it: fallow violation); one list per consumer (the HIGH shared-artifact risk: a mismatch is a dead link) |
+| DD3 | **One pure resolver** `resolveSettingsLocation(request, access) → Show(area, tab) \| Redirect(path) \| Wait`, where `access` is the three facts the rules need (`isLoading`, `isSystemAdmin`, `isRbacEnabled`) read from `useRbac()`. Covers bare `/settings`, the 14 keys (case-insensitive), unknown or earlier slugs, a tab or area the person may not see. Contract shape: pure function, return-only | Rules spread over effects in the shell (today's shape; it caused the deep-link bounce) |
+| DD4 | **Where redirects live**: `pages/Settings/settingsRoutes.tsx`, returning the settings route elements with lazy pages (precedent: `reportPrintRoutes()`). Static path redirects (`/settings/license`, `/connections/new`, `/connections/:id/edit`) are `<Navigate replace>` routes; `?tab=` and visibility redirects are the resolver's `Redirect`, rendered as `<Navigate replace>`. `App.tsx` calls `settingsRoutes()` once | Server-side 301s in ASP.NET (the `?tab=` mapping and the visibility fallback need the person's access, and the Standalone app runs the same SPA); a redirect table in `App.tsx` (splits the knowledge from the definition) |
+| DD5 | **One parameterised shell** `SettingsAreaPage` extracted from `Settings.tsx`: same `Container`, heading, `Paper`, `TabList`, `TabPanel`, icons, mobile scrollable tabs. Heading "Settings › {area}". While `Wait`: `LoadingAnimation` lone spinner in the panel area, no tab row (nothing to bounce). A tab click navigates with `replace` (as TeamDetail does, and as today's `replaceState` does) | Three area pages (three copies of the shell); keeping `?tab=` written back by `history.replaceState` (bypasses the router, which is why the RBAC POM needed a click workaround) |
+| DD6 | **Header `SettingsMenu`** in `components/App/Header`: an MUI `Button` "Settings" with `Menu` items that are router links, each with its one-line description; bold/underlined as active when the path starts with `/settings`. The mobile drawer lists the three areas as `NavigationItem`s. Items come from the definition, filtered by the same rules; gated items appear once `useRbac()` has loaded | A `NavigationItem` to `/settings` plus areas on the page (rejected by M1) |
+| DD7 | **Slice 02 split**: `SystemSettingsTab` becomes `TerminologyTab`, `CalendarTab`, `RefreshAndOrderingTab` (Organization) and `UsageDataTab` (System), each composing today's `InputGroup` sections unchanged. A new hook `useBehaviourSettings` reads the optional features through a **keyed TanStack query** `["optionalFeatures"]` and the licence through the shared `useLicenseStatusQuery`, and returns `loading \| failed \| ready` plus the rows; each tab filters rows by `key`, never id. Toggle and usage reporting keep today's logic. `CalendarTab` passes `isPremium` from `useLicenseStatusQuery`. `SystemSettingsTab.tsx` is deleted and **removed from the licence-asker allow-list** (the list shrinks, as it should) | Copying the fetch into two tabs (two requests, two places to fix); `WidgetShell` (dashboard widgets, not settings forms; DISCUSS agreed) |
+| DD8 | **License tab** (slice 03): extract `LicenseStatusContent` from `LicenseStatusPopover` (the popover becomes a thin `Popover` around it). The tab renders it with `useLicenseStatusQuery`; import and clear invalidate `["licenseStatus"]`, so the header icon updates from the same query. No new licence asker, so `licenseStatusOneAsker` stays green unchanged | A second licence card (two looks, two askers); embedding the popover (anchored overlay inside a tab) |
+| DD9 | **Connections tab** (slice 04) in two commits: (1) `refactor`: extract the Overview's inline section into `pages/Settings/Connections/ConnectionsSettings.tsx` (title, Add button, empty-state alert with Load Demo Data and docs links, `ReconnectBanner`s, `DataGridBase` with today's columns and `storageKey="overview-connection-table"` so saved column state survives, delete dialog), still rendered on the Overview; (2) `feat`: mount it as System → Connections and remove it and the Add button from the Overview. The list reads a new keyed query hook `useConfiguredConnections` (`["configuredConnections"]`). Writes that change the list (add, update, delete, reconnect) **remove** that key (as the Overview's `forgetReportsOf` does for reports), so coming back after Save shows a spinner and then the fresh list, never the old list as if current. Looks: no data → lone spinner; 403 → today's refused alert; other error → inline "Could not load the {Work Tracking Systems}" alert (ApiKeys style); empty list only after a successful load. The Overview keeps its own existence check (unchanged fetch) for the stepper and the disabled "Add {team}" | Rewriting the list for System; sharing one query with the Overview now (changes the Overview's whole-page error handling, out of scope); `invalidateQueries` (a remount shows the cached old list while refetching) |
+| DD10 | **Connection pages** (slice 05, Q8 a, maintainer MD3): `EditConnection` is mounted at `/settings/system/connections/new` and `/settings/system/connections/:id/edit`; `/connections/new` and `/connections/:id/edit` are `<Navigate replace>` routes keeping the id. Save, Cancel and wizard completion go to the Connections tab path from the definition. The no-access alert keeps "Back to Overview" (a person refused here cannot see System → Connections). Every entry point (stepper, "Add {team}" hint link, Task Manager connections section, row Edit links) takes its path from the definition | Keeping `/connections/...` (Q8 b): two routes fewer, but the address no longer says where the page lives and the area menu shows nothing as current |
+| DD11 | **Reconnect warning** (Q7, maintainer MD2): the existing `ReconnectBanner` stays on the Overview for each connection that needs reconnecting, unchanged (it already reconnects in place through the OAuth popup), and also shows on System → Connections | A new link-only banner (new copy and look for no gain) |
+| DD12 | **E2E page objects**: `LighthousePage.goToSettings()` opens the header "Settings" menu and returns `SettingsPage`; every `SettingsPage.goTo<Tab>()` picks its area in the menu, then the tab by its unchanged test id, then waits for content only that panel renders. Specs that call them do not change. `RbacSettingsPage.goToAccessTab` goes through the same path (its same-pathname workaround goes). New `SystemConnectionsPage` (`addConnection`, `editConnection(name)`, `deleteConnection(name)`) scoped to the connections grid and its name cell; `OverviewPage` loses the three connection methods in the same change; 11 call sites in 8 specs switch (Screenshots 3, ConnectionDefaults 2, ado, csv, jira, linear, servicenow, OAuthConnection 1 each). `RoleBasedAccessControl.spec.ts` (`page.goto("/connections/new")`, expects the no-access alert) keeps working because the connection pages render outside the area resolver (see Amendments). Slice 02 splits `SystemConfigurationPage` into Terminology, Calendar and Refresh & ordering page objects | Specs calling `page.goto("/settings/...")` directly (bypasses the menu the walking skeleton must prove); keeping connection methods on `OverviewPage` as a second path |
+| DD13 | **Test ids**: every existing tab and panel id is kept where its tab survives. New: `connections-tab`, `license-tab`, `usage-data-tab`, `terminology-tab`, `calendar-tab`, `refresh-ordering-tab`, plus `settings-menu` and one id per area item. `configuration-tab`/`configuration-panel` retire with the Configuration tab in slice 02. `src/tests/e2eTestIds.test.ts` keeps the POMs and the app in step | Reusing `configuration-tab` for Terminology (a test id that names a tab no one sees) |
+| DD14 | **Enforcement**: (1) the existing fallow boundaries keep the definition importable by the Header (models zone); (2) a new source-scan enforcement test, shaped like `licenseStatusOneAsker.enforcement.test.ts`: no production module other than the definition and `settingsRoutes.tsx` (which declares the route patterns, including the old `/connections/...` ones) contains a string or template literal that *starts with* `/settings` or `/connections` (so `/teams/${id}/settings` and `/api/...` paths stay allowed). It turns the HIGH "mismatch is a dead link" risk into a failing build; (3) a unit test feeds every one of the 14 legacy keys, both cases, through the resolver; (4) a test that every settings and connection path yields no usage-data page opening (`usageDataPageOpeningFor`) | A ledger rule in ci-learnings (the check can be automated, so per CLAUDE.md it is) |
+| DD15 | **Context map**: no domain, context, edge, event or glossary change. This Epic creates ADR-271's three UI surfaces (U1) and puts connections on System (towards ADR-271 Decision 4). ADR-270 and `ARCHITECTURE.md` §4 unchanged; ADR-271 gets the "done" notes (proposed block below). ADR-272 records DD1–DD4 and DD14 | — |
+| DD16 | **#6474 and #6349 additive**: Organization's tab list is open-ended in the definition; `TerminologyTab` is a stack of `InputGroup` sections, so #6474 adds its levels section inside it, and a rename of the tab moves the old slug into the tab's "earlier slugs" (the resolver redirects it), with no change to the shell, menu or POM structure. #6349 appends a tab | A fixed three-tab Organization |
+
+---
+
+## Wave: DESIGN / [REF] Component decomposition
+
+| Component | File (proposed) | New / changed | Slice |
+|---|---|---|---|
+| Settings definition (areas, tabs, legacy keys, connection paths) | `src/models/Settings/settingsAreas.ts` | NEW (data only) | 01, grows in 02–05 |
+| Location resolver | `src/models/Settings/resolveSettingsLocation.ts` | NEW (pure) | 01 |
+| Settings routes and static redirects | `src/pages/Settings/settingsRoutes.tsx` | NEW | 01, 03, 05 |
+| Area shell | `src/pages/Settings/SettingsAreaPage.tsx` (from `Settings.tsx`) | CHANGED (extracted, parameterised) | 01 |
+| Panel binding (tab slug → panel) | `src/pages/Settings/settingsPanels.tsx` | NEW | 01–04 |
+| Header menu | `src/components/App/Header/SettingsMenu.tsx`; `Header.tsx` uses it | NEW + CHANGED | 01 |
+| Organization tabs | `src/pages/Settings/Organization/{Terminology,Calendar,RefreshAndOrdering}Tab.tsx` | NEW (compose existing sections) | 02 |
+| Usage Data tab | `src/pages/Settings/System/UsageDataTab.tsx` | NEW (composes `BehaviourSettingsTable`) | 02 |
+| Behaviour settings hook | `src/hooks/useBehaviourSettings.ts` | NEW (keyed query + shared licence query) | 02 |
+| `SystemSettingsTab` | `src/pages/Settings/System/SystemSettingsTab.tsx` | DELETED (split), its tests move | 02 |
+| License content | `src/components/Common/LicenseStatus/LicenseStatusContent.tsx`; popover wraps it | NEW (extracted) + CHANGED | 03 |
+| License tab | `src/pages/Settings/System/LicenseTab.tsx` | NEW (thin) | 03 |
+| Connections list | `src/pages/Settings/Connections/ConnectionsSettings.tsx` | NEW (extracted from Overview) | 04 |
+| Connections query hook | `src/hooks/useConfiguredConnections.ts` | NEW | 04 |
+| Overview | `OverviewDashboard.tsx` | CHANGED (section and Add button out; `ReconnectBanner`s stay, Q7) | 04, 05 |
+| Connection page | `pages/Connections/Edit/EditConnection.tsx` | CHANGED (return path) | 05 |
+| Entry points | `OnboardingStepper`, Overview "Add {team}" hint, `TaskManager/ConnectionsSection`, `RecentProblemsSection`, `DataOverviewTable`, `CreateConnectionWizard`, `ModifyConnectionSettings` | CHANGED (paths from the definition) | 01, 05 |
+| E2E POMs | `LighthousePage`, `SettingsPage`, `RbacSettingsPage`, `SystemConfigurationPage` (split), new `SystemConnectionsPage`, `OverviewPage` | CHANGED / NEW | 01, 02, 04 |
+
+---
+
+## Wave: DESIGN / [REF] Driving ports
+
+Frontend driving adapters only; no HTTP endpoint is added or changed.
+
+| Driving port | Shape | Notes |
+|---|---|---|
+| URL `/settings` (bare, and with `?tab=<legacy key>`) | redirect (replace) | resolver; waits for access only when the target depends on it |
+| URL `/settings/:area/:tab?` | page | resolver decides Show / Redirect / Wait |
+| URL `/settings/license` | redirect (replace) | to `/settings/system` (slice 01), `/settings/system/license` (slice 03) |
+| URL `/settings/system/connections/new`, `.../:id/edit` | page (`EditConnection`) | slice 05 (Q8 a) |
+| URL `/connections/new`, `/connections/:id/edit` | redirect (replace) | slice 05 |
+| Header "Settings" menu and mobile drawer entries | navigation | items filtered by access |
+| In-app links (stepper, hint, Task Manager, demo-data links, licence links, row Edit) | navigation | paths from the definition only (DD14) |
+
+Read/write split holds: the shell and menu only read access; writes stay inside the unchanged panels.
+
+---
+
+## Wave: DESIGN / [REF] Driven ports and adapters
+
+All existing, all unchanged, all reached through `ApiServiceContext`:
+
+| Port (frontend service interface) | Used by | Change |
+|---|---|---|
+| `IRbacService.getAuthorizationSummary` via `useRbac()` | shell, menu | none; the only access source (no component fetches `my-summary`) |
+| `IWorkTrackingSystemService` (list, delete, add, update) | Connections tab, connection page, Overview existence check | none; list now also read through `useConfiguredConnections` |
+| `ILicensingService.getLicenseStatus` via `useLicenseStatusQuery` | License tab, Refresh & ordering, Calendar, header icon | none; one more consumer of the shared query, one fewer direct asker |
+| `IOptionalFeatureService` (`getAllFeatures`, `updateFeature`) | `useBehaviourSettings` | none |
+| Every panel's own service | moved panels | none |
+
+Earned Trust: no new driven adapter, so no new probe contract. The environment assumptions this design rests on, and
+how each is checked empirically: the SPA fallback serves deep nested paths (walking-skeleton E2E opens a deep link
+by `page.goto` on a real backend, SQLite and Postgres CI runs); a slow `my-summary` (resolver unit test for `Wait`,
+plus a manual check with the browser throttled); a failing `my-summary` (permissive fallback, existing tests); a
+failing list or licence call (component tests per failure look).
+
+---
+
+## Wave: DESIGN / [REF] Technology choices
+
+No new dependency. React 19, React Router (`Navigate`, nested `Route`, `useParams`, `useNavigate` with `replace`),
+MUI 9 (`Button`, `Menu`, `MenuItem`, `@mui/lab` `TabContext`/`TabList`/`TabPanel`), TanStack Query (keyed
+queries), Vitest + RTL, Playwright POMs, fallow (boundaries). All MIT or Apache-2.0 and already installed.
+
+---
+
+## Wave: DESIGN / [REF] Loading and failure looks per view
+
+| View | Loading | Failure | Reused look |
+|---|---|---|---|
+| Shell (all areas) | lone spinner in the panel area until `useRbac().isLoading` is false; no tab row yet | permissive fallback (invariant), no new look | `LoadingAnimation` |
+| Header menu | gated items absent until loaded | permissive | — |
+| Moved panels (Database, Encryption, Demo Data, System Info, API Keys, System Admins, Terminology, Calendar) | their own, unchanged | their own, unchanged | — |
+| Refresh & ordering, Usage Data (behaviour rows) | spinner in the section | "Could not load the behaviour settings" inline alert when either the optional features or the licence cannot be read (never a locked switch for an unread licence) | `LoadingAnimation`, `ApiKeysSettings` alert style |
+| License tab | the popover content's own loading | its own could-not-load message | `LicenseStatusContent` |
+| Connections tab | lone spinner while no data | 403: refused alert; other: inline "Could not load the {Work Tracking Systems}"; never the empty state | `LoadingAnimation`, today's alerts |
+| Connection page | unchanged | unchanged | — |
+
+Keyed queries: `["configuredConnections"]`, `["optionalFeatures"]`, `["licenseStatus"]` (existing). A late answer
+cannot land on another view because each key names one thing, and the list key is removed on every write.
+
+---
+
+## Wave: DESIGN / [REF] C4 diagrams
+
+L1 System Context: unchanged by this Epic (see `docs/product/architecture/c4-diagrams.md`, rbac-enhancements L1).
+Repeated briefly for the handoff.
+
+```mermaid
+C4Context
+  title System Context — Lighthouse (unchanged by #6473)
+  Person(admin, "System Admin / platform operator", "Sets up how the organisation works; runs the instance")
+  Person(reader, "Team or Portfolio reader", "Reads forecasts; manages own API keys")
+  System(lighthouse, "Lighthouse", "Forecasting and flow metrics")
+  System_Ext(trackers, "Work tracking systems", "Jira, Azure DevOps, Linear, ServiceNow, CSV")
+  System_Ext(idp, "Identity provider", "OIDC sign-in, groups")
+  Rel(admin, lighthouse, "Configures settings and connections in")
+  Rel(reader, lighthouse, "Reads forecasts in")
+  Rel(lighthouse, trackers, "Reads work items from")
+  Rel(lighthouse, idp, "Authenticates users with")
+```
+
+```mermaid
+C4Container
+  title Container — Lighthouse (no container changes; the SPA's routes change)
+  Person(admin, "System Admin")
+  Container(spa, "Frontend SPA", "React 19, MUI, React Router", "Settings areas Organization, Access, System")
+  Container(api, "Backend API", "ASP.NET Core .NET 10", "Serves the SPA (UseSpa fallback) and /api/latest")
+  ContainerDb(db, "Database", "SQLite or PostgreSQL", "Settings, connections, RBAC")
+  System_Ext(trackers, "Work tracking systems")
+  Rel(admin, spa, "Opens /settings/{area}/{tab} in")
+  Rel(spa, api, "Reads access, settings and connections from")
+  Rel(api, db, "Persists settings in")
+  Rel(api, trackers, "Validates connections against")
+```
+
+L3, the Settings area inside the SPA:
+
+```mermaid
+C4Component
+  title Component — Settings area (frontend)
+  Container_Boundary(spa, "Frontend SPA") {
+    Component(menu, "SettingsMenu", "components/App/Header", "Settings menu and drawer entries")
+    Component(routes, "settingsRoutes", "pages/Settings", "Routes and static redirects")
+    Component(def, "settingsAreas", "models/Settings", "Areas, tabs, legacy keys, connection paths (data)")
+    Component(resolver, "resolveSettingsLocation", "models/Settings", "Show / Redirect / Wait (pure)")
+    Component(shell, "SettingsAreaPage", "pages/Settings", "Heading, tab row, panels")
+    Component(panels, "Panels", "pages/Settings/*", "Existing panels, new tabs, ConnectionsSettings, LicenseTab")
+    Component(rbac, "useRbac", "hooks", "Single access source")
+    Component(queries, "Keyed queries", "hooks", "configuredConnections, optionalFeatures, licenseStatus")
+    Component(entry, "Entry points", "components", "Stepper, Task Manager, connection forms")
+  }
+  Container(api, "Backend API", "ASP.NET Core")
+  Rel(menu, def, "Lists areas from")
+  Rel(menu, rbac, "Filters areas with")
+  Rel(routes, shell, "Renders")
+  Rel(shell, resolver, "Asks where to go")
+  Rel(resolver, def, "Reads rules from")
+  Rel(shell, rbac, "Reads access facts from")
+  Rel(shell, panels, "Shows the chosen")
+  Rel(panels, queries, "Read data through")
+  Rel(queries, api, "Fetch from")
+  Rel(entry, def, "Take paths from")
+```
+
+---
+
+## Wave: DESIGN / [REF] Reuse Analysis (HARD GATE)
+
+| Existing component | File | Overlap | Decision | Contract shape · universe · assertion |
+|---|---|---|---|---|
+| Settings page shell | `pages/Settings/Settings.tsx` | heading, Paper, tab row, panels, gating | EXTEND (extract to `SettingsAreaPage`, parameterise by area) | bounded-change: renders; mutates only the URL via `navigate(replace)`; RTL asserts tabs per access and the URL after a click |
+| Tab key map, `systemAdminTabValues`, `settingsTabTestIds` | `Settings.tsx` | legacy keys, gating, test ids | MOVE into `settingsAreas.ts` | data; unit test over all 14 keys |
+| `useRbac` / `useRbacGate` | `hooks/` | access | REUSE unchanged | read-only; resolver takes plain facts so tests need no hook |
+| `NavigationItem` | `components/App/Header` | header link | REUSE for drawer entries | read-only |
+| `SystemSettingsTab` | `pages/Settings/System` | all four Configuration groups | SPLIT into four tabs; delete | bounded-change: toggle writes one optional feature by `key`; tests assert only that row changes |
+| `BehaviourSettingsTable`, `BlackoutSettings`, `TerminologyConfiguration`, `RefreshSettingUpdater`, `InputGroup` | `pages/Settings/*`, `components/*` | panel content | REUSE unchanged | as today |
+| `useLicenseStatusQuery` | `hooks/useLicenseRestrictions.ts` | licence read | REUSE (more consumers) | read-only; `licenseStatusOneAsker` enforces one asker |
+| `LicenseStatusPopover` | `components/Common/LicenseStatus` | licence view, import, clear | EXTEND (extract `LicenseStatusContent`) | bounded-change: import/clear invalidate `["licenseStatus"]` only |
+| Overview connections section | `pages/Overview/OverviewDashboard.tsx` | list, banners, empty state, delete | EXTRACT then MOVE (`ConnectionsSettings`) | bounded-change: delete removes one row and the list key |
+| `DataGridBase` | `components/Common/DataGrid` | grid | REUSE (same `storageKey`) | read-only |
+| `ReconnectBanner`, `DeleteConfirmationDialog`, `LoadingAnimation` | `components/Common/*` | banner, dialog, spinner | REUSE unchanged | as today |
+| `EditConnection`, `CreateConnectionWizard`, `ModifyConnectionSettings` | `pages/Connections`, `components/Common/Connection` | connection pages | REUSE at new routes; only return path and links change | as today |
+| `OnboardingStepper`, `TaskManager/ConnectionsSection`, `RecentProblemsSection`, `DataOverviewTable` | `components/*` | entry links | EXTEND (paths from definition) | navigation only |
+| `reportPrintRoutes()` pattern | `pages/Common/Reports/print` | routes module with lazy pages | REUSE pattern for `settingsRoutes()` | — |
+| `usageDataRouteKeys` | `services/UsageData` | page events | REUSE unchanged | regression test: no settings path yields an event |
+| fallow boundaries, `layerBoundaries.enforcement.test.ts` | frontend root | layering | REUSE | build-time |
+| E2E `SettingsPage`, `LighthousePage`, `RbacSettingsPage`, `SystemConfigurationPage`, `OverviewPage`, connection wizard/edit POMs | `Lighthouse.EndToEndTests/tests/models` | navigation | EXTEND; new `SystemConnectionsPage` | specs unchanged except 8 one-line switches |
+
+New components and why no existing one fits: `settingsAreas`/`resolveSettingsLocation` (no route definition
+exists that the Header may import), `SettingsMenu` (the header has links only, M1 needs a menu),
+`useBehaviourSettings` and `useConfiguredConnections` (no keyed query exists for these lists), the four split tabs
+and `LicenseTab` (thin compositions of existing parts).
+
+---
+
+## Wave: DESIGN / [REF] Architecture enforcement
+
+Style: frontend layering (fallow zones) under backend ports-and-adapters. Language: TypeScript. Tools: fallow
+(existing), Vitest source-scan enforcement tests (existing pattern), `e2eTestIds.test.ts` (existing).
+
+- The definition lives in `models`; nothing in `components` imports `pages` (fallow, existing).
+- No settings or connection path literal outside `settingsAreas.ts` (new enforcement test, DD14).
+- No new direct `getLicenseStatus` asker; `SystemSettingsTab.tsx` leaves the allow-list (existing test, edited).
+- No component fetches `my-summary` (existing invariant; the shell and menu read `useRbac()`).
+
+---
+
+## Wave: DESIGN / [REF] Docs, screenshots and deep links (for finalize)
+
+- In-app links all move to definition paths (DD14 makes a missed one a build failure). Old bookmarks, runbooks and
+  release notes keep working through the redirects (K3). Docs pages contain no in-app URLs today (searched
+  `docs/` outside `feature/`), so no docs link needs rewriting for routing; the copy changes listed under DISCUSS
+  checklists stand. Docs file names and anchors stay, because the app links to `encryption.html`,
+  `usagedata.html` and the website hot-links `docs/assets`.
+- Screenshot specs reach every view through the POMs (DD12), so file names stay; new shots for System → Connections
+  and System → License are added at finalize.
+
+---
+
+## Wave: DESIGN / [REF] Maintainer decisions (DESIGN, 2026-11-02)
+
+All four DESIGN questions are answered; none is left for the DISTILL walk-through.
+
+- **MD1 (Q-D1 Spelling) ANSWERED: American everywhere.** Labels "Organization" and "License"; slugs
+  `/settings/organization/...` and `/settings/system/license`; test ids to match (`license-tab`). This overrides
+  the British spelling DISCUSS wrote for M2/M3 (not DESIGN's default (a)); recorded in `design/upstream-changes.md`.
+  `/settings/license` redirects to `/settings/system/license`. #6474's Levels section uses the same "Organization"
+  area name. Prose about the domain keeps the context name "Organisation set-up" (ADR-270), which is not a UI label.
+- **MD2 (Q7) ANSWERED:** today's `ReconnectBanner` stays on the Overview (it fixes in place), and the same banner
+  also shows on System → Connections (DD11, A10).
+- **MD3 (Q8) ANSWERED:** connection pages move under `/settings/system/connections/new` and
+  `/settings/system/connections/:id/edit`; old `/connections/...` URLs redirect; Save and Cancel return to
+  System → Connections (DD10).
+- **MD4 (Q-D2) ANSWERED:** no text filter on System → Connections (A11; an AC change, upstream-changes row 2).
+
+---
+
+## Wave: DESIGN / [REF] Open questions
+
+- None. Q-D1, Q7, Q8 and Q-D2 are answered (Maintainer decisions MD1–MD4).
+- JTBD precondition: the reviewer found `job-config-admin-find-how-we-work-in-one-place` in `jobs.yaml` and both
+  persona files referencing the new ids; `job-operator-run-the-instance-apart-from-how-we-work` is still to be
+  confirmed in `jobs.yaml` (file too large for search) before DISTILL starts.
+- DEVOPS: the usage-data event question (DESIGN adds none; DD14 keeps settings paths event-free until DEVOPS says
+  otherwise).
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- DISCUSS spoke of "the existing component" for the connections list; it is inline JSX in the Overview. DD9 adds a
+  refactor-only extract step inside slice 04 (no scope change, about +0.25 day).
+- DISCUSS's "existing failure handling" for the shell is the permissive fallback, which is an architectural
+  invariant; DESIGN confirms no new look rather than adding one.
+- Details in `design/upstream-changes.md`.
+
+---
+
+## Wave: DESIGN / [REF] Proposed brief.md section
+
+To append under the heading "## Application Architecture — epic-6473-settings-split" (not edited here).
+
+```markdown
+## Application Architecture — epic-6473-settings-split
+
+Wave: DESIGN · 2026-11-02 · Morgan · frontend only, no backend change.
+
+Settings are split by who decides (ADR-271 U1) into three areas, Organization, Access and System, addressed as
+`/settings/:area/:tab?` (ADR-272). One data definition, `src/models/Settings/settingsAreas.ts`, holds the areas,
+tabs, legacy `?tab=` keys and connection page paths; a pure resolver turns a request plus the person's access into
+Show, Redirect or Wait. `settingsRoutes()` owns every settings route and redirect, `SettingsAreaPage` is the one
+shell, and the header's `SettingsMenu` lists the areas. Access comes only from `useRbac()`; nothing resolves before
+it has loaded, and its permissive fallback stays. Connections live in System → Connections
+(`/settings/system/connections`, add and edit pages beneath it, old `/connections/...` URLs redirect); the list
+reads the keyed query `["configuredConnections"]`, which every write removes. Behaviour settings read
+`["optionalFeatures"]` and the shared licence query. Enforcement: fallow zones keep the definition importable by the
+header; a source-scan test bans settings and connection path literals outside the definition.
+```
+
+---
+
+## Wave: DESIGN / [REF] Proposed ADR-271 edits
+
+To apply at finalize (not edited here).
+
+- Decision 2 table, "Today" column: Organization → "Settings → Organization (Terminology, Calendar, Refresh &
+  ordering), done by Epic #6473; connection defaults and per-unit settings unchanged"; Access → "Settings → Access
+  (System Admins, API Keys), done by #6473; unit settings unchanged"; System → "Settings → System (Connections,
+  Database, Encryption, Demo Data, Usage Data, System Info, License), done by #6473; connection mapping still on
+  the connection page until U3".
+- "How we get there", U1 row: add "Done by Epic #6473 (addresses per ADR-272)".
+- Builds on / see also: add ADR-272.
+
+---
+
+## Wave: DESIGN / [REF] Handoff
+
+To DEVOPS (platform-architect): no external integration added or changed, so no new contract test; the usage-data
+event question; CI unchanged (the E2E deep-link `page.goto` runs in the existing verify jobs on SQLite and Postgres).
+To DISTILL: MD1–MD4 are settled (no DESIGN question left for the walk-through); resolver cases as unit scenarios; per-view loading and failure looks
+as above; no nWave tags in test code.
+
+---
+
+## Wave: DESIGN / [REF] Amendments after peer review (iteration 1)
+
+The solution-architect-reviewer returned REJECTED on count (0 critical, 4 high, 8 medium, 8 low). It found no
+architecture change needed, only gaps in the document. These amendments take precedence over the DD rows above
+wherever they disagree.
+
+- **A1 (H-1) Optional-feature toggles write the query.** A toggle updates `["optionalFeatures"]` in the cache
+  straight away and puts the old value back if the server refuses (the same order as today: the switch moves first,
+  usage is reported only once the server accepts). So leaving the tab and coming back within the 5-minute stale time
+  shows the new value, never the old one. DISTILL scenario: toggle, leave, return, the switch shows the new value.
+- **A2 (H-2) Calendar does not read an unknown licence as "no Premium".** While the licence is loading, the
+  Calendar tab's Premium-gated controls (those `BlackoutSettings` locks when `isPremium` is false) show a spinner in their place. When the licence cannot be
+  read, they show the inline "Could not load the licence" alert in place of the "Premium required" state. Slice 02's
+  AC gains: "the Calendar tab never shows Premium-required while the licence is unknown". The blackout periods list
+  keeps its own looks.
+- **A3 (H-3) Every connection write names its invalidation.** The writers and what each does to
+  `["configuredConnections"]`: the list's own delete (removes the row from the cached list, then removes the key on
+  failure so the next view reloads); `EditConnection` save for add and update, and wizard completion (remove the key
+  before navigating, so the add from the stepper lands on a list that loads fresh); the wizard's draft deletes
+  (remove the key); `ModifyConnectionSettings` save (goes through `EditConnection`'s save, same rule);
+  `ReconnectBanner` (`ConnectionsSettings` and the Overview pass `onReconnected`, which removes the key). The crafter
+  may gather these behind one hook that owns the removal; the contract is that no write leaves the old list cached.
+  DISTILL scenario: create from the stepper, land on System → Connections, the new connection is listed.
+- **A4 (H-4) Loading and failure sketches**, reusing existing looks:
+
+```text
+ Shell, Wait (any area, deep link, access loading)        Connections tab, loading            Connections tab, failed
+ Settings › System                                        [Connections] [Database] ...        [Connections] [Database] ...
+ +------------------------------------------+             +------------------------------+    +----------------------------------------+
+ |                                          |             |                              |    | (!) Could not load the {Work Tracking  |
+ |                 ( spinner )              |             |          ( spinner )         |    |     Systems}. Try again later.         |
+ |                                          |             |                              |    +----------------------------------------+
+ +------------------------------------------+             +------------------------------+    403: "You don't have access to the
+ no tab row until access has loaded                       no empty-state alert, no Add yet     connections list. Ask a Lighthouse
+                                                                                               administrator to check your roles."
+
+ Refresh & ordering, behaviour row loading                 Refresh & ordering, behaviour row failed
+ > {Team} Refresh        (unchanged)                       > {Team} Refresh        (unchanged)
+ > {Feature} Refresh     (unchanged)                       > {Feature} Refresh     (unchanged)
+ v Behaviour Settings                                      v Behaviour Settings
+   ( spinner )                                               (!) Could not load the behaviour settings.
+ (Usage Data tab: the same two looks for its one row)      (either call failing; never a locked switch)
+
+ License tab, loading / failed: the popover content's own spinner and its own could-not-load message, in the tab.
+```
+
+- **A5 (M-1) ADR-272 slugs.** Settled by MD1: `organization` and `license`; ADR-272 updated.
+- **A6 (M-2) Access reads.** `useRbac()` asks per instance, so the header and the shell each send one request
+  (today's behaviour; accepted, no shared query added in this Epic). They can differ for a moment: the menu hides
+  gated items until its own read has loaded, and the shell waits for its own. Neither shows a gated item early.
+- **A7 (M-3) Failure look, stated.** When access cannot be read, the permissive fallback applies: every person sees
+  all three areas and every tab, including Organization, as the old page did. This deliberately overrides M5 in that
+  one state, to keep the "a failed access call never locks anyone out" invariant; the backend refuses what the
+  person may not do. Pinned by a resolver unit test and a DISTILL scenario.
+- **A8 (M-4) Connection pages sit outside the area resolver.** Their routes are their own, so a reader opening
+  `/connections/new` or `/settings/system/connections/new` gets the connection page's existing no-access alert, not
+  a redirect to System Info. `RoleBasedAccessControl.spec.ts` (line 855) is on the E2E impact list; with Q8 (a) its
+  `goto` hits the redirect and then the same alert.
+- **A9 (M-5)** The reviewer could not find `e2eTestIds.test.ts`; it exists at
+  `Lighthouse.Frontend/src/tests/e2eTestIds.test.ts`. DD13 stands.
+- **A10 (M-6) Banners in slice 04.** Slice 04 keeps the Overview's `ReconnectBanner`s (only the list, empty state,
+  Add button and delete move), so no broken connection is hidden between slices 04 and 05. DD11 departs from DISCUSS
+  Q7 (a) (in-place banner instead of a link-only one); recorded in `design/upstream-changes.md`.
+- **A11 (M-7) Text filter.** Once the list leaves the Overview (slice 04), the Overview's filter box can no longer
+  narrow it; MD4 settles it: System → Connections has no text filter. That is an AC change, recorded in `design/upstream-changes.md`, and the "no AC changes
+  meaning" line does not hold for that item.
+- **A12 (L-2) Failure copy.** One copy: "Could not load the {Work Tracking Systems}." (DISTILL pins it.)
+- **A13 (L-3)** `settingsRoutes()` is mounted inside `AppShell`; `App.tsx`'s `/connections` and `/settings` routes
+  are deleted in the same change, so the source-scan test can pass.
+- **A14 (L-4)** The source scan catches literals that start with `/settings` or `/connections`. A path built from a
+  variable passes it; accepted, because the definition exports the paths and code review sees a hand-built one.
+- **A15 (L-7)** The `SystemSettingsTab.tsx` entry leaves the licence-asker allow-list in the commit that deletes the
+  file.
+- **A16 (L-8)** Note for the release: `?tab=configuration` opens Terminology; the usage-data veto now sits in System
+  → Usage Data.
+- L-1, L-5, L-6 accepted as noted (out of scope, diagram detail, test ids in the definition left to DISTILL).
+
+Re-review (iteration 2) was not run inside this DESIGN; the orchestrator may run it before DISTILL.

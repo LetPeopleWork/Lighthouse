@@ -4,7 +4,7 @@ Story US-03. job_id `job-operator-run-the-instance-apart-from-how-we-work`. Effo
 
 ## Outcome a user sees
 
-System gets a Licence tab showing what the header licence popover shows today: status, organisation, expiry, and for
+System gets a License tab showing what the header licence popover shows today: status, organisation, expiry, and for
 System Admins import and clear. The "import a licence" links in the connection forms open it. The header icon stays.
 
 ## Learning hypothesis
@@ -14,8 +14,8 @@ is never opened after a release (DEVOPS decides whether to count it).
 
 ## IN
 
-- System → Licence tab reusing the popover's content component; same rights as the popover.
-- `/settings/license` and `/settings/system/licence` open it.
+- System → License tab reusing the popover's content component; same rights as the popover.
+- `/settings/license` and `/settings/system/license` open it.
 - Its loading and failure looks: the popover's existing ones.
 
 ## OUT
@@ -34,8 +34,8 @@ licence" and gets a blank page. He finds the licence only by guessing the header
 
 ## Domain examples
 
-1. Tomasz follows the licence link from the connection form and imports the renewed licence file on System → Licence.
-2. Morgan Lee opens System → Licence and sees "Premium, valid until 31 March 2027", with no import or clear button.
+1. Tomasz follows the licence link from the connection form and imports the renewed licence file on System → License.
+2. Morgan Lee opens System → License and sees "Premium, valid until 31 March 2027", with no import or clear button.
 3. The licence status cannot be loaded; the tab shows the popover's existing could-not-load message.
 
 ## UAT scenarios
@@ -44,29 +44,29 @@ licence" and gets a blank page. He finds the licence only by guessing the header
 
 Given Tomasz is editing the connection "Northwind Jira"
 When he follows the link to import a licence
-Then he sees System, Licence, with the current licence status
+Then he sees System, License, with the current licence status
 
 ### Scenario: An admin imports a licence from System
 
 Given Tomasz is a System Admin and holds a renewed licence file
-When he imports it on System, Licence
+When he imports it on System, License
 Then the new expiry date shows there and in the header icon
 
 ### Scenario: A reader sees the licence without changing it
 
 Given Morgan Lee is no System Admin
-When he opens System, Licence
+When he opens System, License
 Then he sees the status and expiry and no import or clear action
 
 ### Scenario: A licence that cannot be loaded says so
 
 Given the licence status cannot be loaded
-When Tomasz opens System, Licence
+When Tomasz opens System, License
 Then he sees that the licence could not be loaded
 
 ## Acceptance criteria
 
-- [ ] System → Licence shows the popover's content with the popover's rights.
+- [ ] System → License shows the popover's content with the popover's rights.
 - [ ] `/settings/license` opens it.
 - [ ] Import updates the header icon too (one source of licence status).
 - [ ] Loading and failure looks reuse the popover's.

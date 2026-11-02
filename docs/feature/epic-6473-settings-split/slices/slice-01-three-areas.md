@@ -4,8 +4,8 @@ Story US-01. job_id `job-config-admin-find-how-we-work-in-one-place`. Effort abo
 
 ## Outcome a user sees
 
-The header's "System Settings" becomes "Settings" with three areas: Organisation, Access and System. Each area uses
-today's page shell and holds today's tabs whole: Organisation → Configuration; Access → System Admins, API Keys;
+The header's "System Settings" becomes "Settings" with three areas: Organization, Access and System. Each area uses
+today's page shell and holds today's tabs whole: Organization → Configuration; Access → System Admins, API Keys;
 System → Database, Encryption, Demo Data, System Info. Old links open the same tab.
 
 ## Learning hypothesis
@@ -25,7 +25,7 @@ nobody reports a broken bookmark (K3). Disproved if testers open the wrong area 
 ## OUT
 
 Splitting the Configuration tab and the behaviour rows' loading and failure looks (slice 02; the gap is accepted on
-`main` until then, no release in between), Licence tab (slice 03), Connections (slices 04, 05), any setting change, docs and
+`main` until then, no release in between), License tab (slice 03), Connections (slices 04, 05), any setting change, docs and
 screenshots (finalize).
 
 ## Problem
@@ -41,10 +41,10 @@ one row, past Database and Encryption, which belong to Tomasz Nowak, who runs th
 
 ## Domain examples
 
-1. Priya opens Settings → Organisation and finds Configuration with blackout periods, as before.
+1. Priya opens Settings → Organization and finds Configuration with blackout periods, as before.
 2. Tomasz opens his runbook link `/settings?tab=database` and lands on System → Database.
 3. Morgan Lee, a Team reader, opens Settings: Access shows API Keys only; System shows System Info without Log Level;
-   no Organisation.
+   no Organization.
 4. Priya, with RBAC on, follows a link to `/settings/access/system-admins`; the page waits for her access to load and
    opens System Admins, not the first tab.
 
@@ -54,8 +54,8 @@ one row, past Database and Encryption, which belong to Tomasz Nowak, who runs th
 
 Given Priya Raman is a System Admin of Northwind Logistics
 When she opens Settings
-Then she can choose Organisation, Access or System
-And Organisation holds Configuration, Access holds System Admins and API Keys, System holds Database, Encryption,
+Then she can choose Organization, Access or System
+And Organization holds Configuration, Access holds System Admins and API Keys, System holds Database, Encryption,
 Demo Data and System Info
 
 ### Scenario: A runbook link opens the same tab
@@ -76,7 +76,7 @@ System Info
 Given Morgan Lee reads one Team, is no System Admin, and RBAC is on
 When he opens Settings
 Then he sees Access with API Keys and System with System Info without Log Level
-And he sees no Organisation area
+And he sees no Organization area
 
 ### Scenario: A deep link waits for access to load
 

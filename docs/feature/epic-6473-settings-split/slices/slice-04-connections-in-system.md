@@ -18,8 +18,10 @@ connections went (K1). Disproved if testers open the Overview first to fix a con
 ## IN
 
 - Move the section out of `OverviewDashboard` into System → Connections, reusing `DataGridBase` (same columns, same
-  `storageKey`), `ReconnectBanner`, the delete dialog and the empty-state alert. The filter box stays on the Overview.
-- Loading look: lone spinner. Failure looks: today's connections-refused alert (403) and the inline "Failed to load …"
+  `storageKey`), `ReconnectBanner`, the delete dialog and the empty-state alert. The filter box stays on the Overview and no longer narrows connections;
+  System → Connections has no text filter (maintainer, DESIGN MD4). The Overview keeps today's `ReconnectBanner`s, and
+  the same banner also shows on System → Connections (MD2).
+- Loading look: lone spinner. Failure looks: today's connections-refused alert (403) and the inline "Could not load the {Work Tracking Systems}."
   alert otherwise, never the empty state.
 - The Overview still asks whether a connection exists, for the onboarding stepper and the disabled "Add {team}".
 - Page objects: a System connections page object takes over `addConnection`, `editConnection`, `deleteConnection`
@@ -28,7 +30,7 @@ connections went (K1). Disproved if testers open the Overview first to fix a con
 ## OUT
 
 Entry points, return paths and old URLs (slice 05); any change to the connection pages themselves; mapping (U3);
-Q7's reconnect banner on the Overview (slice 05).
+Any new banner (MD2: today's banner stays on the Overview as it is).
 
 ## Problem
 
@@ -82,7 +84,8 @@ Then he sees no Connections tab
 
 ## Acceptance criteria
 
-- [ ] System → Connections holds the list, Edit, Delete, reconnect banners, empty state and the Add button, unchanged.
+- [ ] System → Connections holds the list, Edit, Delete, reconnect banners, empty state and the Add button, unchanged except that it has no text filter (MD4).
+- [ ] The Overview still shows a reconnect banner for each connection that needs reconnecting.
 - [ ] The Overview shows no connections section and no Add connection button.
 - [ ] Loading and failure looks as above; the empty state never shows while loading or after a failure.
 - [ ] The tab is visible to System Admins only.

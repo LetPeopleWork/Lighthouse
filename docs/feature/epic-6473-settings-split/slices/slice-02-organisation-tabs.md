@@ -1,21 +1,21 @@
-# Slice 02: Organisation holds only how the organisation works
+# Slice 02: Organization holds only how the organisation works
 
 Story US-02. job_id `job-config-admin-find-how-we-work-in-one-place`. Effort about 0.5 to 1 day. Depends on slice 01.
 
 ## Outcome a user sees
 
-Organisation's single Configuration tab becomes three: Terminology, Calendar, Refresh & ordering (names decided, M2).
+Organization's single Configuration tab becomes three: Terminology, Calendar, Refresh & ordering (names decided, M2).
 "Never send usage data" leaves the Behaviour Settings table and gets its own System → Usage Data tab. Both behaviour
 rows show a spinner while loading and an alert when they cannot be loaded, instead of disappearing.
 
 ## Learning hypothesis
 
-If Organisation shows only the organisation's settings, nobody looks for the usage-data veto there and nobody asks
-where Terminology went (K1, K2). Disproved if a tester opens Organisation to find usage data.
+If Organization shows only the organisation's settings, nobody looks for the usage-data veto there and nobody asks
+where Terminology went (K1, K2). Disproved if a tester opens Organization to find usage data.
 
 ## IN
 
-- Split `SystemSettingsTab` into three Organisation tabs, panels unchanged.
+- Split `SystemSettingsTab` into three Organization tabs, panels unchanged.
 - Behaviour Settings: the ordering row in Refresh & ordering; the usage-data row in System → Usage Data, with a link
   to the usage-data docs page.
 - Loading and failure looks for both rows (existing inline alert style).
@@ -39,20 +39,20 @@ ordering and Terminology. Tomasz, who decides about usage data, has to open the 
 
 ## Domain examples
 
-1. Priya opens Organisation → Terminology and renames Feature to Initiative (her organisation's word, an example
+1. Priya opens Organization → Terminology and renames Feature to Initiative (her organisation's word, an example
    rename; the seeded default stays Feature); the Refresh & ordering tab now reads
    "Initiative Refresh".
-2. Priya adds 24–31 December as a blackout period under Organisation → Calendar.
+2. Priya adds 24–31 December as a blackout period under Organization → Calendar.
 3. Tomasz turns on "Never send usage data" under System → Usage Data.
 4. On a slow connection the optional-features call fails; Refresh & ordering shows "Could not load the behaviour
    settings" instead of an empty space.
 
 ## UAT scenarios
 
-### Scenario: Organisation shows three tabs of the organisation's settings
+### Scenario: Organization shows three tabs of the organisation's settings
 
 Given Priya Raman is a System Admin
-When she opens Organisation
+When she opens Organization
 Then she sees Terminology, Calendar, and Refresh & ordering
 And she sees no usage-data setting there
 
@@ -84,11 +84,11 @@ Then the ordering row says it could not be loaded, rather than showing a locked 
 
 Given a docs link "/settings?tab=configuration"
 When Priya opens it
-Then she lands on Organisation, Terminology
+Then she lands on Organization, Terminology
 
 ## Acceptance criteria
 
-- [ ] Organisation has exactly Terminology, Calendar, Refresh & ordering; each panel behaves as before.
+- [ ] Organization has exactly Terminology, Calendar, Refresh & ordering; each panel behaves as before.
 - [ ] System → Usage Data holds the usage-data veto only; toggling it reports usage as today.
 - [ ] Labels use the configurable terms.
 - [ ] Both behaviour rows have a loading and a failure look, for the optional-features call and the licence call.

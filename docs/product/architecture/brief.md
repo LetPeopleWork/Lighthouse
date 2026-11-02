@@ -10977,3 +10977,62 @@ C4Container
 
 No external integrations are touched, so no contract-test recommendation applies. Workspace:
 `docs/feature/story-6389-fe1-import-boundary-enforcement/feature-delta.md`.
+
+## Application Architecture — epic-6473-settings-split
+
+Wave: DESIGN · 2026-11-02 · Morgan · frontend only, no backend change.
+
+Settings are split by who decides (ADR-271 U1) into three areas, Organization, Access and System, addressed as
+`/settings/:area/:tab?` (ADR-272). One data definition, `src/models/Settings/settingsAreas.ts`, holds the areas,
+tabs, legacy `?tab=` keys and connection page paths; a pure resolver turns a request plus the person's access into
+Show, Redirect or Wait. `settingsRoutes()` owns every settings route and redirect, `SettingsAreaPage` is the one
+shell, and the header's `SettingsMenu` lists the areas. Access comes only from `useRbac()`; nothing resolves before
+it has loaded, and its permissive fallback stays. Connections live in System → Connections
+(`/settings/system/connections`, add and edit pages beneath it, old `/connections/...` URLs redirect); the list
+reads the keyed query `["configuredConnections"]`, which every write removes. Behaviour settings read
+`["optionalFeatures"]` and the shared licence query. Enforcement: fallow zones keep the definition importable by the
+header; a source-scan test bans settings and connection path literals outside the definition.
+
+
+## Domain Model — epic-6474-one-structure
+
+Epic #6474, DESIGN 2026-11-02, Hera (PROPOSE). Context: Organisation set-up (changed), Work Items and Forecasting
+(extensions, events), Access and Licensing (re-expressed per level, no rule change).
+
+- Aggregates: `OrganisationStructure` (root; `Level` entities: stable id, ordinal, unit and item names, item types,
+  on/off; exactly two levels, one leaf, only the Feature level can be off and only while two levels exist) and
+  `Unit` (root; `UnitId` = (level, number on that level); shared tracker and way-of-working settings; item-type
+  subset ⊆ its level's types ignoring case; `FeatureLevelMapping` value object only on the Feature level).
+- Extensions keyed by `UnitId`: `LeafCapacity` (Forecasting), `DefaultSizeGuess` (Work Items),
+  `ForecastInputFingerprint` (Forecasting).
+- Ids (ADR-273): numbers per level, today's Team and Portfolio numbers kept; stored kind discriminators read as the
+  level key, never rewritten.
+- Item types (ADR-274): owned by the level, each type on exactly one level (the Feature level wins at migration);
+  a unit narrows, in the level's spelling; what it reads is subset ∩ level types; removing a type narrows the named
+  units in the same transaction. OUT-1 has two named exceptions: respelled units refetch once, Teams that lose a
+  type to the Feature level are listed.
+- Events: `UnitCreated`, `UnitDeleted` (replaces `TeamDeleted`), `LevelRenamed`, `LevelItemTypesChanged`,
+  `LevelSwitchedOff`/`On`. Refresh events keep their names in this Epic.
+- ES/CQRS: not warranted.
+
+
+## Application Architecture — epic-6474-one-structure
+
+Wave: DESIGN · 2026-11-02 · Morgan · backend and frontend.
+
+Teams and Portfolios are one `Unit` type (the renamed `WorkTrackingSystemOptionsOwner`) on two installation-wide
+levels held by the `OrganisationStructure` aggregate (ADR-273). Organisation set-up is the second context in ADR-270's
+layout, after the Metrics pilot: `Modules/OrganisationSetup/{Domain, Application, Adapters}` and `src/modules/` (folder names per 6264 S02).
+Units keep their two tables, ids and sequences; levels live in `Levels` and `OrganisationStructures`; a unit's subset
+and its "needs item types" state are new columns, and `WorkItemTypes` is dual-written for rollback, with
+`UnitTypeLossNotices` as the recovery record (ADR-275). A startup migrator applies a pure plan once and checks its own
+result. Each type is on one level; a unit reads its subset intersected with its level's types (ADR-274); a unit on
+Jira, Azure DevOps or CSV with no types is flagged and not refreshed. `/teams` and `/portfolios` keep their wire shape
+and refuse an unknown type with 400 for everyone; `/levels` reads and (System Admin, any licence) writes names, types
+and the Feature-level switch; `PUT /terminology` keeps Premium for the remaining terms and refuses changed level
+keys. "Teams only" is enforced on the server. Free-tier messages name the level's unit in the configured word. One
+`UnitUpdater` refreshes every unit with level-chosen steps and one eligibility rule (ADR-276). Events: `UnitCreated`,
+`UnitDeleted`, `LevelRenamed`, `LevelItemTypesChanged`, `LevelSwitchedOff/On`. Frontend: `useLevels()` on
+`["levels"]`, a Levels section in Organization → Terminology, a subset picker in unit forms. Enforcement: ArchUnitNET
+layer rules for the module, single publishers, read-only readers, an OUT-4 ratchet; a module-entry rule and a source
+scan for `/levels` on the frontend.

@@ -1,7 +1,7 @@
 # Slice 05: Every way to a connection leads to System
 
 Story US-05. job_id `job-operator-run-the-instance-apart-from-how-we-work`. Effort about 1 day. Depends on slice 04.
-Decided by M4 (2026-11-02); Q7 and Q8 open for the DISTILL walk-through.
+Decided by M4 (2026-11-02); Q7 and Q8 answered by the maintainer at DESIGN (MD2, MD3).
 
 ## Outcome a user sees
 
@@ -16,12 +16,12 @@ the first connection without getting lost, which is the path a connect-first onb
 
 ## IN
 
-- Onboarding stepper step 1 opens the add page under System (Q8 shape); the stepper stays on the Overview.
+- Onboarding stepper step 1 opens `/settings/system/connections/new` (MD3); the stepper stays on the Overview.
 - The "Add {team}" disabled hint gains a link to System → Connections.
-- Task Manager connections section and `ReconnectBanner` link there; Q7 decides whether one banner stays on the
-  Overview.
+- The Task Manager connections section links there. Today's `ReconnectBanner` stays on the Overview, fixing in place,
+  and also shows on System → Connections (MD2); the banner itself does not change.
 - Connection add and edit pages return to System → Connections on Save, Cancel and wizard completion.
-- Redirects (replace): `/connections/new` and `/connections/:id/edit` to the Q8 addresses; unknown ids behave as today.
+- Redirects (replace): `/connections/new` and `/connections/:id/edit` to `/settings/system/connections/new` and `/settings/system/connections/:id/edit`; unknown ids behave as today.
 - Docs list for finalize: `worktrackingsystems.md`, getting-started and Overview pages (see feature-delta checklists).
 
 ## OUT
@@ -92,4 +92,4 @@ K3 (no broken link, now including connection URLs); see feature-delta.
 ## Technical notes
 
 - Docs and screenshots at finalize; connection screenshot file names stay.
-- Dependencies: slice 04; Q7 and Q8 at the DISTILL walk-through.
+- Dependencies: slice 04.
