@@ -1044,3 +1044,22 @@ as much on slice 2's database template as on the moves.
 - **Conditions cleared by the lead:** (1) no assertion line changed in the two converted bases (checked by diff 5c095942a..58703b04a); (2) the cluster probe test asserted registration and tags only before the move, and still asserts the same three things.
 - **Fixed in this revision:** `TheQueueGoesIdle` in both converted bases now fails loudly when the update queue has not gone idle by the deadline; the connection-defaults base resets the licence mock before arming it, like the field-change base; the clock and host-build comments in `TestWebApplicationFactory.cs` say what is true, and `ResettableFakeTimeProvider` documents that Reset shifts reported time only; the "Host lifecycles" entry in `docs/ci-learnings.md` names the reasons that exist, the guard's reach, and the singleton-state check.
 - **Carried notes:** the guard does not follow interface dispatch (no fixture relies on it). The singleton maps `UpdateQueueService` awaiters/pendingReruns/heldUpdates and `OverTimeHistoryFiller.alreadyAsked` must be checked before slice 3/4 converts a chart-reading or history-fill fixture (checklist item for 03-xx and 04-xx). Timers are not rewound by Reset. The timing hook counts builds through derived factories (the 01-01 spot check showed 15 HostBuild rows for one ConnectionFieldChange fixture).
+
+## Wave: DELIVER / [REF] 01-10 Slice 1 pre-push evidence (2026-11-02, lead)
+
+- **Full standard-filter run** on `58703b04a`, 6 workers, quiet machine: 403 s; 11,917 passed, 2 failed (the two publish-output
+  scans, environmental), 1 skipped. **Peak 4,312 MB** (baseline 4,524 MB, stop threshold 4,976 MB): under the threshold.
+  The review revision after it (`90b847505`: queue drain fails loud, licence reset) re-ran the converted folders green (216/216).
+- **`behaviour-preserved.sh 827ab7eb8^`** on `99e4dcd2b`: check 2 (added Ignore/Explicit/NonParallelizable) and check 3 (assertion
+  lines per file) print nothing. Check 1 lists only the two named additions (`TheHostReadsTheFactoryClockAndResettingItRestoresTheFrozenInstant`,
+  the planted virtual-call case) and the two cases of `What_a_created_Delivery_holds_is_settled_by_how_its_Features_were_chosen`, whose
+  names embed the run's date (12/1 vs 12/2) and change every day. Not a behaviour change; same-day lists are equal.
+- **Guard parity**: Release build 0 warnings; guard + parallelization guard 20/20 in `-c Release` (Debug green in every step).
+- **Memory trace, one converted fixture family**: `ConfigureOncePerConnection` (161 tests, one host per fixture) peaks at 1,172 MB
+  over 30 s; nothing left in `IntegrationTests_*.db*` afterwards.
+- **IL-guard noise fallback: not triggered** (no false offender reported in slice 1).
+- **Allow-list**: 126 -> 123 entries, ceiling 123.
+- **Frontend gates**: not run; slice 1 changes no frontend or E2E file.
+- **Push unit**: 827ab7eb8, e795f94c8, 95a46eca5, 5c095942a, 53e6d4686, ac6244a4b, 2d98a137a, cb5a79263, ecbfbc233, 7c4194f2f,
+  1fe43f201, 4bcfa70a9, bc6ba1aca, 58703b04a, 90b847505, 99e4dcd2b and this record. `Program.cs` changed, so CI runs the forced-full
+  filter (268 live-connector tests in addition; the Linear key is shared with CI).
