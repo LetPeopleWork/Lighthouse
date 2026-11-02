@@ -19,27 +19,33 @@ namespace Lighthouse.Backend.Tests.API.Security
         private const int PermitsPerSignIn = 3;
 
         private ViewerEmbedTestHost host = null!;
+        private WebApplicationFactory<Program> instance = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            host = new ViewerEmbedTestHost();
+            instance = host.WithEmbedRateLimit(
+                permitLimit: ConcurrentSessions * PermitsPerSignIn, windowSeconds: 60);
+        }
 
         [SetUp]
         public void SetUp()
         {
-            host = new ViewerEmbedTestHost();
+            host.BeginTest();
             host.SeedRbacFixture();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void StopTheHost()
         {
+            instance.Dispose();
             host.Dispose();
         }
 
         [Test]
         public async Task ConcurrentEmbedSignIns_RelaxedAttributesNeverLeakOntoTheOrdinaryCookie()
         {
-            // Disposed with the host, which owns every instance it derives.
-            var instance = host.WithEmbedRateLimit(
-                permitLimit: ConcurrentSessions * PermitsPerSignIn, windowSeconds: 60);
-
             var tokens = new List<string>();
             for (var index = 0; index < ConcurrentSessions; index++)
             {

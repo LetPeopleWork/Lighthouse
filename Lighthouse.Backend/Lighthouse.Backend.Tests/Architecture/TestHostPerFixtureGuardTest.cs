@@ -23,10 +23,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string StopsAndRestartsItsHostInOneTest = "one test stops the host the way a service manager does and starts another, so the fixture builds a host again inside a test";
 
         private const string RunsEachTestUnderAnotherSetting = "each test starts the host under a different setting that is read only when the host starts, so every test needs a host of its own";
+        private const string CountersArePerHost = "its daily tally lives in the host and cannot be emptied, so a second test would find the first test's allowance already spent";
         private const string StopsOrDrainsItsHostInEachTest = "its tests stop or drain the host they run on, and a host that has been stopped cannot serve the next test";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 78;
+        private const int MostTypesTheListMayHold = 76;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -82,8 +83,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Security.S3_UpdateNotificationHubAuthorizeTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S4_DeliveriesDeleteGuardInversionTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S5_ApiKeyScopesTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S6_RateLimitingTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S9b_EmbedCookieConcurrencyTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.W1_VersionEndpointAuthorizationTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = ChecksTheTestHostItself,
@@ -95,8 +94,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Integration.Containers.LighterRoundsOnPostgresTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.ScalabilityTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataCollectorAddressTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = HasOneTestOnly,
+            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = CountersArePerHost,
             ["Lighthouse.Backend.Tests.LighthouseAppContextConcurrencyTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.DeliveryMetricSnapshotRecordingHandlerTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest"] = NotMovedYet,
