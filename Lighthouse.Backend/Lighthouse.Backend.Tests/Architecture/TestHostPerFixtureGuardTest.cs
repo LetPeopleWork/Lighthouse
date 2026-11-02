@@ -139,9 +139,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Assert.That(
                 TypesAllowedToBuildAHostPerTest,
-                Has.Count.LessThanOrEqualTo(MostTypesTheListMayHold),
-                "The list of types allowed to start a host for every test can only get shorter. Fix the type instead of adding it, " +
-                "and when a type leaves the list, lower the number above by the same amount.");
+                Has.Count.EqualTo(MostTypesTheListMayHold),
+                "The list of types allowed to start a host for every test can only get shorter. Fix the type instead of adding it. " +
+                "When a type leaves the list, lower MostTypesTheListMayHold by the same amount in the same commit, so the number always matches the list.");
         }
 
         [Test]

@@ -92,6 +92,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
             finally
             {
+                await SharedHostCleanup.ForgetOwners(Factory.Services, [(SeededTeamId, OwnerType.Team)]);
+
                 using (var teardownScope = Factory.Services.CreateScope())
                 {
                     var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();

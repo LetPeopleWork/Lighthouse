@@ -211,9 +211,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
                 await SharedHostCleanup.DrainTheHistoryFillerOrFail(ThisReplicasFiller, LongerThanAnyScenarioHoldsAPass);
                 await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
             }
             finally
             {

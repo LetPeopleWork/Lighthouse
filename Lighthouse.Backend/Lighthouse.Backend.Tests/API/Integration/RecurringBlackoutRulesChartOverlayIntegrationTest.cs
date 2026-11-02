@@ -97,6 +97,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
             finally
             {
+                await SharedHostCleanup.ForgetOwners(factory.Services, [(seededTeamId, OwnerType.Team)]);
+
                 using (var scope = factory.Services.CreateScope())
                 {
                     await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
