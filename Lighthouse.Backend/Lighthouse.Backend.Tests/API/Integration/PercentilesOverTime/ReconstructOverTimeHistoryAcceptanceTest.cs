@@ -816,6 +816,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         protected Task TheReconstructionPassRunsToCompletion()
             => ThisReplicasFiller.DrainAsync(CancellationToken.None);
 
+        // A pass that is held blocks its thread until the test releases it. On a pool thread that parks a
+        // worker, and a small pool (CI) can then starve the very test waiting to release it.
+        private static Task OnADedicatedThread(Func<Task> pass)
+        {
+            return Task.Factory.StartNew(
+                pass,
+                CancellationToken.None,
+                TaskCreationOptions.LongRunning,
+                TaskScheduler.Default).Unwrap();
+        }
+
         /// <summary>
         /// Holds a pass genuinely open: a real pass is started, it reaches the point at which it is
         /// about to write its first day, and it waits there until this handle is disposed. Both the
@@ -832,7 +843,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             var filler = ThisReplicasFiller;
             fillPause.Arm();
 
-            var heldPass = Task.Run(() => filler.DrainAsync(CancellationToken.None));
+            var heldPass = OnADedicatedThread(() => filler.DrainAsync(CancellationToken.None));
 
             var parked = fillPause.WaitUntilAPassIsParked(LongEnoughThatSomethingIsWrong);
 
@@ -871,7 +882,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             var filler = ThisReplicasFiller;
             stagedDayPause.Arm();
 
-            var pass = Task.Run(() => filler.DrainAsync(CancellationToken.None));
+            var pass = OnADedicatedThread(() => filler.DrainAsync(CancellationToken.None));
 
             var dayBeingCommitted = stagedDayPause.WaitUntilADayIsWorkedOutButNotCommitted(LongEnoughThatSomethingIsWrong);
 
@@ -920,8 +931,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
                 ownerId, ownerType, DaysCarryingNoReadingYet(ownerId, ownerType, MetricType.CycleTime)));
 
             await Task.WhenAll(
-                Task.Run(() => thisReplica.DrainAsync(CancellationToken.None)),
-                Task.Run(() => otherReplica.DrainAsync(CancellationToken.None)));
+                OnADedicatedThread(() => thisReplica.DrainAsync(CancellationToken.None)),
+                OnADedicatedThread(() => otherReplica.DrainAsync(CancellationToken.None)));
         }
 
         /// <summary>
