@@ -40,7 +40,9 @@ target_environments:
     description: >
       Slice 2's CI arm: a throwaway features/** branch (or workflow_dispatch on it) whose tip commit changes
       vitest.config.ts, so the frontend job runs. Compared against the latest qualifying main run and the 5-run
-      median. Lead step (it pushes); the branch is deleted afterwards.
+      median. Lead step (it pushes); the branch is deleted afterwards. COST: not just the frontend job; packageapp,
+      sbom, docker, verifysqlite (live-connector secrets incl. the shared Linear key), verifypostgres and verifyauth
+      have no change filter (ci.yml:93-165) and run too. At most one such run, away from any other connector run.
     platform: [linux]
     preconditions:
       - "Tip commit touches a frontend path (non-main refs diff against HEAD^)"
@@ -48,7 +50,7 @@ target_environments:
 coexistence_matrix:
   - tool: ci.yml / ci_frontend.yml / build-frontend action
     must_not_break: true
-    note: "Only ci_frontend.yml line 60 changes (--warn-only removed from the frontend call, slice 1); no new step, job or workflow. That edit sets github_changes in ci_changes.yml, so slice 1's push runs the full backend, E2E and live connector suites"
+    note: "Only ci_frontend.yml lines 55-60 change (slice 1b: --warn-only on the frontend call becomes controlled by repository variable LIGHTHOUSE_BUDGET_WARN_ONLY); action.yml gains one env line from vars.LIGHTHOUSE_TIME_BUDGET (slice 1a); no new step, job or workflow. The ci_frontend.yml edit sets github_changes in ci_changes.yml, so slice 1b's push runs the full backend, E2E and live connector suites; 1a does not"
   - tool: check_budget.py / test-time-budget.json (frontend section)
     must_not_break: true
     note: "Made failing in slice 1; ceilings re-derived if it does not pass on the 7 saved artifacts. Stale entries already fail under --warn-only. The backend call keeps --warn-only (T4)"
@@ -76,8 +78,8 @@ coexistence_matrix:
 
 deployment_assumptions:
   - "Nothing deploys; ships with the next regular push to main. Trunk-based: one push per slice, each green first, no branches or PRs (features/** throwaway branch for slice 2's CI arm only)"
-  - "Rollback is git revert of the slice commit; nothing is persisted. The reporter has a one-option switch (LIGHTHOUSE_TIME_BUDGET=warn|off) that avoids reverting the guard; the per-file half re-adds --warn-only"
+  - "Rollback is git revert of the slice commit; nothing is persisted. Repository variables switch without a commit: LIGHTHOUSE_TIME_BUDGET=warn|off for the reporter, LIGHTHOUSE_BUDGET_WARN_ONLY=true for the per-file half"
   - "Rigor standard for every slice (D11), thorough for slices 1 and 3 if the maintainer prefers; agent model and reviewer model passed explicitly on every dispatch"
-  - "CI after-measurement owned by the lead: artifact test-timings-frontend, at least 5 main runs whose frontend job ran (counted by artifact presence, no Failed rows, row count not below the baseline), against measurement/ci-artifacts-2026-11-02"
+  - "CI after-measurement owned by the lead: artifact test-timings-frontend, at least 5 main runs whose frontend job result is success (gh run view --json jobs), no Failed rows in test-timings-frontend; KPI 16 frontend half = median Vitest Duration from the job log (baseline 930.9 s over 7 runs, measurement/ci-artifacts-2026-11-02/ci-vitest-duration.txt)"
   - "Observability: N/A, no running service touched; the test-timings-frontend artifact and the Vitest Duration line are the instrument"
   - "Usage-data event: N/A, behaviour-free test infrastructure with no user-facing feature"

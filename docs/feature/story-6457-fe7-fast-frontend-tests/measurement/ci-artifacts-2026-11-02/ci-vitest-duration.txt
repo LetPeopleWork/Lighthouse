@@ -1,0 +1,7 @@
+41227946204 job 124616015395 | vitest Duration: 1092.25s (tests 53%, import 22%, environment 14%, transform 5%, setup 4%, worker 1%)
+41228644313 job 124618070417 | vitest Duration: 1084.89s (tests 54%, import 22%, environment 14%, transform 5%, setup 4%, worker 1%)
+41230501832 job 124623611994 | vitest Duration: 930.91s (tests 51%, import 24%, environment 14%, transform 6%, setup 4%, worker 1%)
+41240982700 job 124654702616 | vitest Duration: 677.03s (tests 53%, import 22%, environment 14%, transform 6%, setup 4%, worker 1%)
+41274180320 job 124752934991 | vitest Duration: 809.69s (tests 52%, import 22%, environment 14%, transform 6%, setup 4%, worker 1%)
+41341400720 job 124952059201 | vitest Duration: 834.69s (tests 53%, import 22%, environment 14%, transform 6%, setup 4%, worker 1%)
+41428581254 job 125221344639 | vitest Duration: 1069.85s (tests 53%, import 22%, environment 14%, transform 5%, setup 4%, worker 1%)
