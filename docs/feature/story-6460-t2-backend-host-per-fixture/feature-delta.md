@@ -1208,3 +1208,14 @@ acceptance-designer (a scenario that can fail on a broken cancel needs a differe
 **Gates.** `dotnet build` 0 warnings. The agreed filter (TaskManager, ResponsiveDuringUpdates, SkipUnchangedForecasts,
 FastWithManyFeatures, PercentilesOverTime, FasterUpdates, Integration.UsageData, TestHostPerFixtureGuard): 843 passed, 1 skipped,
 0 failed, twice. Slice04StopARefresh alone: 12/12 three times.
+
+## Wave: DELIVER / [REF] 03-07 Slice 3 pre-push evidence (2026-11-02, lead)
+
+- **Full run with sampler** on `8e1dfc197`: **366 s** (before T2: 400 s); 11,933 passed, the two environmental failures, 1 skipped;
+  **peak 3,881 MB** (threshold 4,976 MB). Raw: `measurement/slice3-2026-11-02/`.
+- **Final full run** on `50998b0fe` (after the review revision): 371 s wall in-run (6 m 11 s), 11,933 passed, same two failures.
+- **`behaviour-preserved.sh f62977eef`**: check 2 prints nothing; check 1 lists only additions (clock pair and template tests from
+  earlier slices against this base) and the daily date-named case; check 3 lists three files whose `Assert.` lines dropped, each a
+  **move** verified by the lead: the two `Assert.Fail` queue-idle checks moved into `SharedHostCleanup` with the same message, and the
+  four assertions of the old `TaskManagerAcceptanceTest` moved into `TaskManagerHarness`.
+- **Allow-list**: 123 -> 114 in this slice. Trunk moved by two frontend-only dependency commits; rebased, no backend re-run needed.
