@@ -343,7 +343,6 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore(Pending)]
         public void Reads_MappingWithNoStates_KeepTheEntryAsAStateAndDoNotThrow(bool statesAreNull)
         {
             var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review", "Waiting"], DoneStates = ["Done"] };
@@ -362,7 +361,6 @@ namespace Lighthouse.Backend.Tests.Models
         // The same owner when the start-up pass could not rewrite a collapsed list (a save that failed): the list
         // still holds the group's name, and every read must still find the group's states.
         [Test]
-        [Ignore(Pending)]
         public void Reads_CollapsedListTheStartUpPassCouldNotRewrite_FindTheGroupsStatesEverywhere()
         {
             var team = ATeamWithReviewMapping("Analysis", "Review", "Waiting");
@@ -373,6 +371,26 @@ namespace Lighthouse.Backend.Tests.Models
                 Assert.That(team.OpenStates, Is.SupersetOf(Listed("Code Review", "Testing")));
                 Assert.That(team.CategoryOfRawState("Testing"), Is.EqualTo(StateCategories.Doing));
                 Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
+            }
+        }
+
+        // Only rows saved before chains were refused look like this: Doing holds B, which is a group of its own and
+        // also a state that A groups. The reads take B as the state A groups, as the display does when it shows A,
+        // rather than opening B up into states the lists never name.
+        [Test]
+        public void Reads_ListedNameOfAGroupThatAnotherGroupHoldsAsAState_KeepTheNameAsAState()
+        {
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["B"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "A", States = ["B", "C"] });
+            team.StateMappings.Add(new StateMapping { Name = "B", States = ["X", "Y"] });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "B", "Done")));
+                Assert.That(team.OpenStates, Is.EquivalentTo(Listed("Backlog", "B")));
+                Assert.That(team.MapStateToStateCategory("B"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.MapStateToStateCategory("X"), Is.EqualTo(StateCategories.Unknown));
+                Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("A")));
             }
         }
 

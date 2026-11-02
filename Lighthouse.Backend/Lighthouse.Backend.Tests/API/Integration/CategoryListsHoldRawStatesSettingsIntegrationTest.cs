@@ -183,16 +183,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
         public async Task SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates()
         {
             SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);
-            var asStored = await ReadSettings();
+            var asStored = StoredDoingStates();
 
-            var saved = await Save(Settings(doing: Strings(asStored, "doingStates"), mappings: [Review()]));
-            var settings = await ReadSettings();
+            var saved = await Save(Settings(doing: asStored, mappings: [Review()]));
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(Strings(asStored, "doingStates"), Is.EqualTo(Listed("Analysis", "Review", "Waiting")), "The stored list is the collapsed one.");
+                Assert.That(asStored, Is.EqualTo(Listed("Analysis", "Review", "Waiting")), "The stored list is the collapsed one.");
                 Assert.That(saved.StatusCode, Is.EqualTo(HttpStatusCode.OK), await saved.Content.ReadAsStringAsync());
-                Assert.That(Strings(settings, "doingStates"), Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")));
+                Assert.That(StoredDoingStates(), Is.EqualTo(Listed("Analysis", "Code Review", "Testing", "Waiting")));
             }
         }
 
@@ -570,7 +569,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         // An owner the start-up pass has not rewritten (skipped, not yet reached, or saved by an older instance)
         // reads through the classifier, so its pages and suggestions already show the states.
         [Test]
-        [Ignore(Pending)]
         public async Task ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupsStatesAndTheGroupOnDisplay()
         {
             SeedOwner(mappings: [Review()], doing: ["Analysis", "Review", "Waiting"]);
@@ -589,7 +587,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         [TestCase(true)]
         [TestCase(false)]
-        [Ignore(Pending)]
         public async Task ReadingAnOwnerWhoseGroupHasNoStates_KeepsTheEntryAsAStateAndDoesNotFail(bool statesAreNull)
         {
             SeedOwner(mappings: [new StateMappingDto { Name = "Review", States = statesAreNull ? null! : [] }], doing: ["Analysis", "Review", "Waiting"]);
@@ -604,7 +601,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task ReadingAnOwnerWhoseStoredListHoldsAGroupNameBesideOneOfItsStates_ShowsTheGroupOnceAsTheOldExpansionDid()
         {
             SeedOwner(mappings: [new StateMappingDto { Name = "In Arbeit", States = ["In Progress"] }], doing: ["In Arbeit", "In Progress"]);
@@ -712,6 +708,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         private string Route => kind == OwnerKind.Team ? "teams" : "portfolios";
+
+        // The list as it sits in the database, before the settings read turns any group name back into its states.
+        private string[] StoredDoingStates()
+        {
+            using var scope = factory.Services.CreateScope();
+            WorkTrackingSystemOptionsOwner? owner = kind == OwnerKind.Team
+                ? scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(ownerId)
+                : scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>().GetById(ownerId);
+            Assert.That(owner, Is.Not.Null, $"No owner {ownerId} is stored.");
+            return [.. owner!.DoingStates];
+        }
 
         private static string[] Strings(JsonElement settings, string property)
         {

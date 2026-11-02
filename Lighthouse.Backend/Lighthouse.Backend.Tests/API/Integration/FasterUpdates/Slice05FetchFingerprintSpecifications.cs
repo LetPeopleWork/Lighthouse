@@ -230,16 +230,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             => WhenTheOperatorEditsThePortfoliosSettings(portfolio, settings => settings.DataRetrievalValue = "project = SOMEWHEREELSE");
 
         /// <summary>
-        /// The Doing column reads "Dev" only, and the Done column reads "Done" and "Test". The raw state
-        /// set is word-for-word the one the previous mapping produced - only which mapped name, and
-        /// therefore which state category, "Test" lands in has moved.
+        /// "Test" is now read as "Done" instead of "In Progress". The lists hold the tracker's own states,
+        /// so the operator moves "Test" from the Doing list to the Done list along with the mapping; a save
+        /// that regroups it without moving it is refused. The raw state set is word-for-word the one before -
+        /// only which mapped name, and therefore which state category, "Test" lands in has moved.
         /// </summary>
         private void WhenTheOperatorReadsOneRawStateAsADifferentState(SeededTeam team)
-            => WhenTheOperatorEditsTheTeamsSettings(team, settings => settings.StateMappings =
-            [
-                new StateMappingDto { Name = "In Progress", States = ["Dev"] },
-                new StateMappingDto { Name = TheReMappedName, States = [TheReMappedName, AMappedRawState] },
-            ]);
+            => WhenTheOperatorEditsTheTeamsSettings(team, settings =>
+            {
+                settings.StateMappings =
+                [
+                    new StateMappingDto { Name = "In Progress", States = ["Dev"] },
+                    new StateMappingDto { Name = TheReMappedName, States = [TheReMappedName, AMappedRawState] },
+                ];
+                settings.DoingStates = [.. settings.DoingStates.Where(state => state != AMappedRawState)];
+                settings.DoneStates = [.. settings.DoneStates, AMappedRawState];
+            });
 
         /// <summary>
         /// A state moves from the Doing column to the Done column. The union the query is built from does

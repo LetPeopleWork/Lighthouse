@@ -15,9 +15,9 @@ namespace Lighthouse.Backend.API.DTO
             Name = workTrackingSystemOptionsOwner.Name;
             DataRetrievalValue = workTrackingSystemOptionsOwner.DataRetrievalValue;
             WorkItemTypes = workTrackingSystemOptionsOwner.WorkItemTypes;
-            ToDoStates = workTrackingSystemOptionsOwner.ToDoStates;
-            DoingStates = workTrackingSystemOptionsOwner.DoingStates;
-            DoneStates = workTrackingSystemOptionsOwner.DoneStates;
+            ToDoStates = workTrackingSystemOptionsOwner.NormalisedStatesFor(workTrackingSystemOptionsOwner.ToDoStates);
+            DoingStates = workTrackingSystemOptionsOwner.NormalisedStatesFor(workTrackingSystemOptionsOwner.DoingStates);
+            DoneStates = workTrackingSystemOptionsOwner.NormalisedStatesFor(workTrackingSystemOptionsOwner.DoneStates);
             ToDoDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.ToDo);
             DoingDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.Doing);
             DoneDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.Done);

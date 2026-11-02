@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using Lighthouse.Backend.Extensions;
 
 namespace Lighthouse.Backend.Models
 {
@@ -30,12 +29,12 @@ namespace Lighthouse.Backend.Models
 
         public List<string> DoneStates { get; set; } = new List<string> { "Done", "Closed" };
 
-        public IEnumerable<string> AllStates => GetRawStatesForCategory(ToDoStates)
-            .Union(GetRawStatesForCategory(DoingStates))
-            .Union(GetRawStatesForCategory(DoneStates));
+        public IEnumerable<string> AllStates => NormalisedStatesFor(ToDoStates)
+            .Union(NormalisedStatesFor(DoingStates))
+            .Union(NormalisedStatesFor(DoneStates));
 
-        public IEnumerable<string> OpenStates => GetRawStatesForCategory(ToDoStates)
-            .Union(GetRawStatesForCategory(DoingStates));
+        public IEnumerable<string> OpenStates => NormalisedStatesFor(ToDoStates)
+            .Union(NormalisedStatesFor(DoingStates));
 
         public int ServiceLevelExpectationProbability { get; set; } = 0;
 
@@ -185,25 +184,7 @@ namespace Lighthouse.Backend.Models
             set => (storedParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
         }
 
-        public StateCategories MapStateToStateCategory(string state)
-        {
-            if (GetRawStatesForCategory(ToDoStates).IsItemInList(state))
-            {
-                return StateCategories.ToDo;
-            }
-
-            if (GetRawStatesForCategory(DoingStates).IsItemInList(state))
-            {
-                return StateCategories.Doing;
-            }
-
-            if (GetRawStatesForCategory(DoneStates).IsItemInList(state))
-            {
-                return StateCategories.Done;
-            }
-
-            return StateCategories.Unknown;
-        }
+        public StateCategories MapStateToStateCategory(string state) => CategoryOfRawState(state);
 
         /// <summary>This owner's To Do, Doing and Done lists, read against its mappings.</summary>
         public StateCategoryLists CategoryLists() => new(ToDoStates, DoingStates, DoneStates, StateMappings);
