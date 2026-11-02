@@ -22,8 +22,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         private const int BuildAttempts = 5;
 
-        // The template is a write-ahead-log database that was checkpointed into its main file, so that file
-        // alone holds the whole schema and only it is copied; a copied log file would not belong to the copy.
+        // Test databases use SQLite's default rollback journal, not the write-ahead log the product turns on,
+        // so once the schema is committed the main file alone holds all of it and only it is copied; a copied
+        // journal file would not belong to the copy.
         // Another process scanning the directory can hold the file for a moment, so a failed copy is tried
         // again a few times before giving up. A copy that never succeeds leaves nothing behind, so a later
         // scope cannot open a truncated file.

@@ -7,7 +7,6 @@ using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    // Epic 5146 slice 02a (#5641) — ADR-130, review-gate pre-requisite.
     // CookieAuthenticationOptions is resolved once and shared. Per-request mutation of it would be a
     // data race that passes every single-threaded test, so both cookies are observed together while
     // embed sign-ins are genuinely in flight.
