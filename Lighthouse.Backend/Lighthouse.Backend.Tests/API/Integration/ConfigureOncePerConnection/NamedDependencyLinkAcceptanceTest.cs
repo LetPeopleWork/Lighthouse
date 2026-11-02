@@ -862,22 +862,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         private async Task TheRefreshOf(Action<IServiceProvider> trigger)
         {
             var services = TheRunningLighthouse();
-            var statusStore = services.GetRequiredService<IUpdateStatusStore>();
 
             var warningsBefore = whatWasLogged.WarningsAsWritten.Count;
             var requestsBefore = requestsJiraAnswered.Count;
 
             trigger(services);
 
-            var deadline = DateTime.UtcNow.AddSeconds(60);
-            while (statusStore.HasActiveWork())
+            if (!await SharedHostCleanup.WaitUntilTheQueueIsIdle(services, TimeSpan.FromSeconds(60)))
             {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue never went idle, so the refresh this scenario describes never finished.");
-                }
-
-                await Task.Delay(20);
+                Assert.Fail("The update queue never went idle, so the refresh this scenario describes never finished.");
             }
 
             warningsOfTheLastRefresh = [.. whatWasLogged.WarningsAsWritten.Skip(warningsBefore)];

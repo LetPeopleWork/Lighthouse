@@ -334,19 +334,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// </summary>
         private static async Task TheRefreshRuns(IServiceProvider services, Action<IServiceProvider> trigger)
         {
-            var statusStore = services.GetRequiredService<IUpdateStatusStore>();
-
             trigger(services);
 
-            var deadline = DateTime.UtcNow.AddSeconds(60);
-            while (statusStore.HasActiveWork())
+            if (!await SharedHostCleanup.WaitUntilTheQueueIsIdle(services, TimeSpan.FromSeconds(60)))
             {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue never went idle, so the refresh this scenario describes never finished.");
-                }
-
-                await Task.Delay(20);
+                Assert.Fail("The update queue never went idle, so the refresh this scenario describes never finished.");
             }
         }
 

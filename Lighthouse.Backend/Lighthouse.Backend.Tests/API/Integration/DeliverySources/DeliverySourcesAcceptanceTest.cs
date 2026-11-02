@@ -328,19 +328,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         /// </summary>
         protected async Task ThePortfolioRefreshRuns(int portfolioId)
         {
-            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-
             Factory.Services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolioId);
 
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            while (statusStore.HasActiveWork())
+            if (!await SharedHostCleanup.WaitUntilTheQueueIsIdle(Factory.Services, TimeSpan.FromSeconds(30)))
             {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue did not go idle within 30s - the refresh never completed.");
-                }
-
-                await Task.Delay(20);
+                Assert.Fail("The update queue did not go idle within 30s - the refresh never completed.");
             }
         }
 
