@@ -1,0 +1,8 @@
+groupB-ConfigureOncePerConnection off: per-test set-up mean per run (ms) = 281.7, 281.2, 275.8, 278.4, 277.9; median 278.4
+groupB-ConfigureOncePerConnection on: per-test set-up mean per run (ms) = 213.3, 207.0, 210.4, 207.9, 213.9; median 210.4
+groupB-ConfigureOncePerConnection: fall 24.4% -> FAIL (threshold 30%)
+
+groupC-CsvWorkTrackingConnectorTest off: per-test set-up mean per run (ms) = 53.1, 65.6, 45.3, 48.9, 35.5; median 48.9
+groupC-CsvWorkTrackingConnectorTest on: per-test set-up mean per run (ms) = 4.0, 4.0, 4.2, 4.4, 4.1; median 4.1
+groupC-CsvWorkTrackingConnectorTest: fall 91.7% -> PASS (threshold 30%)
+

@@ -1070,3 +1070,18 @@ The maintainer made slice 5 mandatory ("Yeah do slice 5 mandatory"). This supers
 (D1 to D4) and the 04-07 decision point. The track ends only when every allow-list entry is either converted or carries a
 written reason (`ChecksTheTestHostItself`, `OnAPostgresServer`, `HasOneTestOnly`, or a new reason constant with its why);
 no `NotMovedYet` entry remains. Leaving the host entirely, where a test does not need it, is a separate item (#6469).
+
+## Wave: DELIVER / [REF] 02-03 Template A/B (2026-11-02, lead, quiet machine)
+
+Tree `7e442a1af` + a temporary, uncommitted environment switch (reverted). 6 workers, timing on, 5 runs per arm, arms
+interleaved. Raw: `measurement/ab-2026-11-02/` (`summary.txt`, per-run CSV and logs). Per-test set-up mean (ms) per run:
+
+| Fixture (group) | Template off | Template on | Median off -> on | Fall | Verdict (30 %) |
+|---|---|---|---|---|---|
+| `ConfigureOncePerConnection`, 161 tests (B: host per fixture, database + seed per test) | 281.7, 281.2, 275.8, 278.4, 277.9 | 213.3, 207.0, 210.4, 207.9, 213.9 | 278.4 -> 210.4 | 24.4 % | **FAIL** |
+| `CsvWorkTrackingConnectorTest`, 60 tests (C: `IntegrationTestBase`, database per test) | 53.1, 65.6, 45.3, 48.9, 35.5 | 4.0, 4.0, 4.2, 4.4, 4.1 | 48.9 -> 4.1 | 91.7 % | **PASS** |
+
+Wall time per run: group B 27 s either way (set-up is not on its critical path at 6 workers); group C 2-4 s -> 0.43-0.45 s.
+All 20 runs green. **Decision (pre-registered rule):** the template ships for group C only, the `IntegrationTestBase` fixtures
+(02-04). Group B keeps `EnsureCreated`; its seeding, not the schema, is the cost. **Seeded variant (D4b): not pursued**, the rule
+allowed it only if both groups passed. Slice 2 is pushed (02-05).
