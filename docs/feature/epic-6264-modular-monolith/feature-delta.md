@@ -803,3 +803,11 @@ item changes the plan for the others.
   - CLAUDE.md: every feature is placed on the context map at DISCUSS, or at the latest at DESIGN, and updates ADR-270 and ARCHITECTURE.md §4 in the same feature.
   - Epic 6455 input: levels per installation, paired with an owning unit; leaf vs non-leaf; Deliveries on non-leaf levels holding items of their own level; both reverse the DIVERGE recommendation (per-Portfolio levels, work-only stack).
   - Order after S01: test-infrastructure track (G0b) as planned, then S02 (the gate).
+
+### 2026-11-02 — T2 #6460 Backend test host per fixture — Done
+- Commits: `12419728b..208926f7b` (five slices plus final gates) · workspace: `docs/feature/story-6460-t2-backend-host-per-fixture/`
+- Ratchet: `TestHostPerFixtureGuardTest` allow-list 115 → 53 entries, each with a written reason, ceiling exact; new `DbContextComesFromAScopeGuardTest` (empty list) and `SharedHostsDrainTheUpdateQueueGuardTest` (fixtures that never start a refresh listed by name).
+- KPIs re-measured: local standard-filter run 400 → ~350 s at 6 workers, peak 4,524 → ~3,650 MB; CI summed backend test time 2,806 → 2,253 s (overstates by one host build per moved fixture); CI test step not yet readable (runner-bimodal), re-read after 7 `main` runs.
+- Changes the plan:
+  - FE7 and T4: a per-file frontend budget already exists in CI, warn-only; FE7 takes the per-test ratchet, T4 keeps the per-file budget and drops `--warn-only`.
+  - Follow-up candidates, not filed: per-test seeding cost in seeded acceptance suites (~210 ms per test with the schema template); two usage-data fixtures leave database files behind; `A_cancelled_refresh_still_lets_go_of_the_work_held_behind_it` cannot fail on a no-op cancel; test names that embed today's date drift the id list daily; a test-writing guidance skill for DISTILL and DELIVER once T4/T5 settle the convention.

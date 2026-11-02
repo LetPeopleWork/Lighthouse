@@ -1,0 +1,51 @@
+files 578 tests 8970 file-span sum 691s test-duration sum 691s
+top 10 files: 155s (22%)
+top 20 files: 253s (37%)
+top 50 files: 406s (59%)
+slowest files: span s | tests s | n | file
+  19.7   19.7   44 src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx
+  19.0   19.0  108 src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx
+  17.7   17.7   33 src/components/Common/Team/ModifyTeamSettings.test.tsx
+  16.3   16.3   24 src/pages/Reports/ReportsPage.removal.test.tsx
+  15.4   15.4   52 src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx
+  14.9   14.9   20 src/pages/Reports/ReportsPage.combinedPdf.test.tsx
+  14.4   14.4   47 src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx
+  13.4   13.4   11 src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx
+  12.2   12.2   38 src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx
+  12.1   12.1   51 src/pages/Overview/OverviewDashboard.test.tsx
+  11.9   11.9  129 src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx
+  11.2   11.2   10 src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx
+  11.1   11.1   64 src/pages/Common/Reports/ReportsTab.createWizard.test.tsx
+  10.0   10.0   41 src/pages/Reports/BulkReportWizard.test.tsx
+   9.9    9.9   28 src/components/Common/DataGrid/DataGridBase.paging.test.tsx
+   9.1    9.1   47 src/pages/Common/Reports/ReportsTab.test.tsx
+   9.0    9.0   24 src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx
+   8.9    8.9   42 src/pages/Connections/Edit/EditConnection.defaults.test.tsx
+   8.7    8.7   33 src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx
+   8.1    8.1   42 src/components/Common/Connection/CreateConnectionWizard.test.tsx
+   8.0    8.0   83 src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx
+   7.2    7.2   15 src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx
+   7.1    7.1    6 src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx
+   6.8    6.8   91 src/pages/Common/Reports/ReportView.test.tsx
+   6.3    6.3  198 src/pages/Common/MetricsView/BaseMetricsView.test.tsx
+tests > 0.1s: 1893  (546s)
+tests > 0.5s: 252  (197s)
+tests > 1s: 50  (65s)
+tests > 2s: 4  (9s)
+tests > 5s: 0  (0s)
+slowest tests:
+ 2.48 src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it
+ 2.15 src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: switches a rule that was refused when switched off back on at its last allowed t
+ 2.06 src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx :: Priya, on the second page of 243, filters to 64 and sees all of them with no foo
+ 2.02 src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: saves the edited query once, after the field is left
+ 1.97 src/pages/Reports/ReportsPage.removal.test.tsx :: Select all picks every row, on every page
+ 1.89 src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: saves the edited query once, after the field is left
+ 1.79 src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: with 120 needed, a State filter on the second page that leaves 64 shows them all
+ 1.75 src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: saves the latest edit after the save already on its way, when the page is left m
+ 1.53 src/components/Common/DataGrid/DataGridBase.paging.test.tsx :: never scrolls for a page change the reader did not ask for with an arrow
+ 1.52 src/pages/Common/MetricsView/DashboardHeader.test.tsx :: shows label and formatted date range and opens popover which calls handlers
+ 1.50 src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: switches a rule back on at the threshold it was changed to before it was switche
+ 1.42 src/pages/Reports/ReportsPage.removal.test.tsx :: above 50 picked, Remove is disabled and says at most 50
+ 1.41 src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: keeps an edited Ready rule when the Yes votes needed change before it is saved
+ 1.39 src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: saves a changed name after the debounce without anyone leaving a field
+ 1.36 src/hooks/useLicenseRestrictions.status.test.tsx :: the licence is asked for once, not again a second later
