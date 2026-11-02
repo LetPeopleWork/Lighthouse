@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         }
 
         /// <summary>
-        /// Permanently false (Epic #5687, D11). A CSV fetch is a file the user already uploaded; there is
+        /// Permanently false. A CSV fetch is a file the user already uploaded; there is
         /// no remote call for an identity sweep to save.
         /// </summary>
         public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
