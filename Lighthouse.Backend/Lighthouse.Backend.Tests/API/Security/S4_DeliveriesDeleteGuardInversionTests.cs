@@ -19,15 +19,59 @@ namespace Lighthouse.Backend.Tests.API.Security
         private const int DeliveryIdInScope = 7;
         private const int DeliveryIdOutOfScope = 8;
 
+        private readonly Mock<IDeliveryRepository> deliveryRepository = new();
+        private readonly Mock<IRbacAdministrationService> rbacAdministration = new();
+
+        private WebApplicationFactory<Program> factory = null!;
+        private HttpClient client = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            factory = WebApplicationFactory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<IDeliveryRepository>();
+                    services.AddScoped(_ => deliveryRepository.Object);
+
+                    services.RemoveAll<IRbacAdministrationService>();
+                    services.AddScoped(_ => rbacAdministration.Object);
+                });
+            });
+        }
+
+        [SetUp]
+        public void ResetTheDoubles()
+        {
+            WebApplicationFactory.Clock.Reset();
+            deliveryRepository.Reset();
+            rbacAdministration.Reset();
+
+            client = factory.CreateClient();
+        }
+
+        [TearDown]
+        public void DropTheClient()
+        {
+            client.Dispose();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
+        }
+
         [Test]
         public async Task S4_DeleteNonExistentDelivery_Returns404AndRemoveNeverCalled()
         {
-            var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetPortfolioId(NonExistentDeliveryId)).Returns((int?)null);
-            var rbacAdministration = AlwaysAllowRbac();
-
-            using var factory = WithMockedServices(deliveryRepository.Object, rbacAdministration.Object);
-            using var client = factory.CreateClient();
+            AlwaysAllowRbac();
 
             var response = await client.DeleteAsync($"/api/latest/deliveries/{NonExistentDeliveryId}");
 
@@ -39,10 +83,8 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S4_DeleteDeliveryOutsideWriteScope_Returns403AndRemoveNeverCalled()
         {
-            var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetPortfolioId(DeliveryIdOutOfScope)).Returns(DeliveryPortfolioId);
 
-            var rbacAdministration = new Mock<IRbacAdministrationService>();
             rbacAdministration
                 .Setup(s => s.CanSatisfyRequirementAsync(
                     It.IsAny<ClaimsPrincipal>(),
@@ -58,9 +100,6 @@ namespace Lighthouse.Backend.Tests.API.Security
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            using var factory = WithMockedServices(deliveryRepository.Object, rbacAdministration.Object);
-            using var client = factory.CreateClient();
-
             var response = await client.DeleteAsync($"/api/latest/deliveries/{DeliveryIdOutOfScope}");
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
@@ -71,10 +110,8 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S4_DeleteDeliveryInWriteScope_Returns204()
         {
-            var deliveryRepository = new Mock<IDeliveryRepository>();
             deliveryRepository.Setup(r => r.GetPortfolioId(DeliveryIdInScope)).Returns(DeliveryPortfolioId);
 
-            var rbacAdministration = new Mock<IRbacAdministrationService>();
             rbacAdministration
                 .Setup(s => s.CanSatisfyRequirementAsync(
                     It.IsAny<ClaimsPrincipal>(),
@@ -83,9 +120,6 @@ namespace Lighthouse.Backend.Tests.API.Security
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
 
-            using var factory = WithMockedServices(deliveryRepository.Object, rbacAdministration.Object);
-            using var client = factory.CreateClient();
-
             var response = await client.DeleteAsync($"/api/latest/deliveries/{DeliveryIdInScope}");
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NoContent));
@@ -93,33 +127,14 @@ namespace Lighthouse.Backend.Tests.API.Security
             deliveryRepository.Verify(r => r.Save(), Times.Once);
         }
 
-        private WebApplicationFactory<Program> WithMockedServices(
-            IDeliveryRepository deliveryRepository,
-            IRbacAdministrationService rbacAdministrationService)
+        private void AlwaysAllowRbac()
         {
-            return new TestWebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<IDeliveryRepository>();
-                    services.AddScoped(_ => deliveryRepository);
-
-                    services.RemoveAll<IRbacAdministrationService>();
-                    services.AddScoped(_ => rbacAdministrationService);
-                });
-            });
-        }
-
-        private static Mock<IRbacAdministrationService> AlwaysAllowRbac()
-        {
-            var rbac = new Mock<IRbacAdministrationService>();
-            rbac.Setup(s => s.CanSatisfyRequirementAsync(
+            rbacAdministration.Setup(s => s.CanSatisfyRequirementAsync(
                     It.IsAny<ClaimsPrincipal>(),
                     It.IsAny<RbacGuardRequirement>(),
                     It.IsAny<int?>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(true);
-            return rbac;
         }
     }
 }

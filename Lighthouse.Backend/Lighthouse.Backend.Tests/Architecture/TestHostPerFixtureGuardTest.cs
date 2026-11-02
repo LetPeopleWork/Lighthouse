@@ -30,21 +30,17 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string OnlyAFewTestsStartAHost = "only one or two of its tests start a host, each under its own settings, so sharing a host would save at most one host build";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 76;
+        private const int MostTypesTheListMayHold = 70;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
         {
             ["Lighthouse.Backend.Tests.API.Integration.AgeInStatePercentilesPortfolioReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryReadStabilityIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryStaleAggregateRaceIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryWriteRefusalIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConnectionSecretStatePayloadTests"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.ConnectionValidationUnreadableSecretTests"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.CycleTimeDefinitionSettingsIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.CycleTimeDefinitionValidityIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.API.Integration.DeliveryArchiveClosurePinIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.DeliveryMetricsHistoryReadApiIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting.Slice00OneForecastPerBatchScenarios"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.EncryptionControllerTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures.Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios"] = StopsAndRestartsItsHostInOneTest,
@@ -84,7 +80,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Security.S1_AllowedOriginsEnvVarBindingTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Security.S1_CorsFailClosedTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Security.S3_UpdateNotificationHubAuthorizeTests"] = StartsHostsUnderSeveralStartupSettings,
-            ["Lighthouse.Backend.Tests.API.Security.S4_DeliveriesDeleteGuardInversionTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S5_ApiKeyScopesTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.W1_VersionEndpointAuthorizationTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = NotMovedYet,
@@ -100,7 +95,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = CountersArePerHost,
             ["Lighthouse.Backend.Tests.LighthouseAppContextConcurrencyTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.DeliveryMetricSnapshotRecordingHandlerTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.Services.Implementation.LighthouseClockTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthProviderRegistryTest"] = OnlyAFewTestsStartAHost,

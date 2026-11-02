@@ -7,6 +7,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -32,13 +33,18 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private HttpClient client = null!;
         private Mock<ILicenseService> licenseServiceMock = null!;
 
-        [SetUp]
-        public void Init()
+        // The memo keeps notes per owner id for as long as the host lives, and every test's fresh
+        // database numbers its owners from one again, so each test hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             rootFactory = new TestWebApplicationFactory<Program>();
 
             licenseServiceMock = new Mock<ILicenseService>();
-            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
             factory = rootFactory.WithWebHostBuilder(builder =>
             {
@@ -48,6 +54,20 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     services.AddScoped(_ => licenseServiceMock.Object);
                 });
             });
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+            licenseServiceMock.Reset();
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            factory.ForgetTheCachedMetrics();
 
             client = factory.CreateClient();
 
@@ -58,16 +78,37 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var scope = factory.Services.CreateScope())
-            {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(factory.Services, ownersSeeded);
+
+                using (var scope = factory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         [Test]
@@ -350,6 +391,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             var portfolioRepository = provider.GetRequiredService<IRepository<Portfolio>>();
             portfolioRepository.Add(portfolio);
             await portfolioRepository.Save();
+
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             return portfolio.Id;
         }
