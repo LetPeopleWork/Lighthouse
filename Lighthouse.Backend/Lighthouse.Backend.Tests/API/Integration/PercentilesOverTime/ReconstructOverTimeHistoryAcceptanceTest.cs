@@ -9,10 +9,12 @@ using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
+using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -38,6 +40,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// enforce unique indexes, so the natural-key collision that the concurrency story rests on is
     /// invisible to it and would pass against an implementation that has no backstop at all. Only the
     /// licence port and the clock are substituted, both being external or non-deterministic.
+    ///
+    /// One host serves the whole fixture, and every scenario gets its own database, clock and latches
+    /// inside it. The filler's queue and the memo of what earlier passes found out live as long as the
+    /// host, and both are keyed by owner id while every fresh database numbers its owners from one
+    /// again - so a scenario ends by emptying the filler's queue and making the memo forget each owner
+    /// it seeded, and fails if the host is not left idle.
     /// </summary>
     public abstract class ReconstructOverTimeHistoryAcceptanceTest
     {
@@ -97,6 +105,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         /// </summary>
         private int? teamTheDeliveriesAreBrokenDownFor;
 
+        /// <summary>
+        /// Every owner the current scenario seeded. The memo keeps notes per owner id for as long as the
+        /// host lives, so these are the ids it has to be told to forget when the scenario is over.
+        /// </summary>
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
         protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
         protected HttpClient Client { get; private set; } = null!;
@@ -107,13 +121,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         protected DatabaseMaintenanceGate MaintenanceGate =>
             Factory.Services.GetRequiredService<DatabaseMaintenanceGate>();
 
-        [SetUp]
-        public void Init()
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             rootFactory = new TestWebApplicationFactory<Program>();
             fillPause = new FillPause();
             stagedDayPause = new StagedDayPause();
-            teamTheDeliveriesAreBrokenDownFor = null;
 
             Factory = TestWebApplicationFactory<Program>
                 .WithTestAuthentication(rootFactory)
@@ -158,6 +173,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
             Client = Factory.CreateClient();
 
+        }
+
+        [SetUp]
+        public void GiveTheScenarioItsOwnState()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            teamTheDeliveriesAreBrokenDownFor = null;
+            periodLastOpened = null;
+            ownersSeeded.Clear();
+
+            rootFactory.Clock.Reset();
+            instanceClock.SetInstant(Today);
+            rootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
+
             using var scope = Factory.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             dbContext.Database.EnsureDeleted();
@@ -170,16 +201,123 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var scope = Factory.Services.CreateScope())
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
+            fillPause.Release();
+            stagedDayPause.Release();
+
+            TheMaintenanceGateIsOpenAgain();
+            await TheFillerGoesIdleOrFails();
+            await MakeTheMemoForgetTheOwnersSeeded();
+            await TheQueueGoesIdleOrFails();
+
+            using var scope = Factory.Services.CreateScope();
+            await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Client?.Dispose();
+            Factory?.Dispose();
+            rootFactory?.Dispose();
+        }
+
+        /// <summary>
+        /// The gate lives as long as the host, so an operation a scenario started and never finished would
+        /// hold every later scenario's passes off, and so would an operator the fill turned away, who stays
+        /// counted as waiting for a minute of the host's clock - which the next scenario's clock reset puts
+        /// back to the start. Releasing the one and letting an operator in once, then out again, is how the
+        /// gate itself is told both are over.
+        /// </summary>
+        private void TheMaintenanceGateIsOpenAgain()
+        {
+            var gate = MaintenanceGate;
+
+            if (gate.ActiveOperationId is { } stillRunning)
             {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                gate.Release(stillRunning);
             }
 
-            Client.Dispose();
-            Factory.Dispose();
-            rootFactory.Dispose();
+            if (!gate.IsMaintenanceOperationWaiting)
+            {
+                return;
+            }
+
+            const string OperationThatClearsTheWaiting = "gate-reset-between-scenarios";
+            var attempt = gate.TryAcquire(DatabaseOperationType.Restore, OperationThatClearsTheWaiting);
+
+            Assert.That(attempt.Acquired, Is.True,
+                $"The maintenance gate could not be reopened at the end of the scenario: {attempt.BlockedReason}");
+
+            gate.Release(OperationThatClearsTheWaiting);
+        }
+
+        /// <summary>
+        /// Empties what a scenario asked the filler for and was never run, which also lets its owners be
+        /// asked for again: the filler only forgets an owner once a pass for it has ended, and an ask left
+        /// waiting would otherwise run against the next scenario's database, or turn that scenario's own
+        /// ask for the same owner id away.
+        /// </summary>
+        private async Task TheFillerGoesIdleOrFails()
+        {
+            var filler = ThisReplicasFiller;
+            var emptied = Task.Run(() => filler.DrainAsync(CancellationToken.None));
+
+            if (await Task.WhenAny(emptied, Task.Delay(LongEnoughThatSomethingIsWrong)) != emptied)
+            {
+                Assert.Fail("The filler's queue did not empty in time; a pass left running would write into the next scenario's database.");
+            }
+
+            await emptied;
+
+            var deadline = DateTime.UtcNow.Add(LongEnoughThatSomethingIsWrong);
+            while (filler.HasPassInFlight && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+
+            if (filler.HasPassInFlight)
+            {
+                Assert.Fail("A reconstruction pass was still running at the end of the scenario; it would leak into the next one on this host.");
+            }
+        }
+
+        private async Task MakeTheMemoForgetTheOwnersSeeded()
+        {
+            var memo = Factory.Services.GetRequiredService<ReconstructionMemo>();
+
+            foreach (var (ownerId, ownerType) in ownersSeeded)
+            {
+                if (ownerType == OwnerType.Team)
+                {
+                    await memo.HandleAsync(new TeamDataRefreshed(ownerId), CancellationToken.None);
+                }
+                else
+                {
+                    await memo.HandleAsync(new PortfolioFeaturesRefreshed(ownerId), CancellationToken.None);
+                }
+            }
+        }
+
+        private async Task TheQueueGoesIdleOrFails()
+        {
+            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+
+            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+
+            if (store.HasActiveWork())
+            {
+                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
+            }
         }
 
         /// <summary>
@@ -276,6 +414,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
             repository.Add(team);
             repository.Save().GetAwaiter().GetResult();
 
+            ownersSeeded.Add((team.Id, OwnerType.Team));
+
             return team.Id;
         }
 
@@ -303,6 +443,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 
             repository.Add(portfolio);
             repository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             return portfolio.Id;
         }
