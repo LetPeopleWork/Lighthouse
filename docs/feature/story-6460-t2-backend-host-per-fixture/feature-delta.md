@@ -1085,3 +1085,23 @@ Wall time per run: group B 27 s either way (set-up is not on its critical path a
 All 20 runs green. **Decision (pre-registered rule):** the template ships for group C only, the `IntegrationTestBase` fixtures
 (02-04). Group B keeps `EnsureCreated`; its seeding, not the schema, is the cost. **Seeded variant (D4b): not pursued**, the rule
 allowed it only if both groups passed. Slice 2 is pushed (02-05).
+
+## Wave: DELIVER / [REF] Slice 2 review (2026-11-02)
+
+Verdict: conditionally_approved, 0 blockers.
+
+- WAL note refuted by the lead: the template file is a WAL database (SQLite header bytes 18-19 read 2,2 on disk), so the checkpoint before copying is needed and the comment that only the main file is copied is right. The comment now says plainly that the template is a WAL database checkpointed into its main file.
+- Fixed in this revision:
+  - The in-progress-template test now plants a temp file under the production naming scheme (`template_<guid>.tmp`) and proves it is neither used nor deleted.
+  - `EnsureBuilt` takes an optional move delegate (like `CopyTo`'s copy delegate), so the "another process moved its template in between the existence check and our move" branch is hit deterministically: ours is discarded, theirs is kept untouched. The test that only took the early return was renamed `ATemplateAlreadyInPlaceIsReturnedWithoutBeingBuiltAgain`.
+  - `EnsureBuilt` retries a failing build on `IOException` (5 attempts, 20 ms steps, at most 200 ms of waiting) before rethrowing, since the lazily cached template would otherwise cache the failure for the whole process. Tests: retry succeeds on the third attempt; a build that never succeeds fails and leaves no files.
+  - The stale-template test also asserts the file name equals `template_<first 16 hex of SHA-256 of GenerateCreateScript()>.db`.
+  - `CopyTo` deletes the partial destination before throwing on its final failed attempt; the failed-copy test asserts the destination no longer exists.
+  - `IntegrationTestBase` comment states that every fixture on that base starts from the template, and that a subclass opts out by setting `UseSchemaTemplate = false` on the factory after the base constructor (the flag is read when a scope first uses a new database path, so this works).
+  - The switch-off test asserts the database file exists before reading its schema.
+- Finding (host derived with `WithWebHostBuilder` / `WithTestAuthentication`): it SHARES `databaseFileName`, `UseSchemaTemplate` and `Clock` with its root. `WebApplicationFactory.WithWebHostBuilder` returns a `DelegatedWebApplicationFactory` (not a `TestWebApplicationFactory`; the return type is `WebApplicationFactory<T>`), whose configuration delegate calls the root's `ConfigureWebHost` and then the extra configuration. The root's lambdas close over the root instance, so `UseFreshDatabase()` on the root changes the path the derived host uses, and the template switch applies to it as well. Pinned by `AHostDerivedFromTheFactoryUsesTheSameDatabaseAndTheSwitchAsTheFactory`; no behaviour change.
+- Carried notes:
+  - Group C was measured on one fixture (`CsvWorkTrackingConnectorTest`).
+  - About 51 `IntegrationTestBase` classes (399 tests) ran green twice with the template on; no migration-based subclass was found and there are no opt-outs.
+  - Old `template_*.db` files accumulate in `bin/` (one per schema change); accepted.
+  - The template build cost is paid once per process and is not in the per-test means.
