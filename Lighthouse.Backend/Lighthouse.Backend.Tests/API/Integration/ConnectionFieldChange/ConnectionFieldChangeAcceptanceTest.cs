@@ -103,7 +103,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
         private readonly HashSet<string> teamsTheTrackerRefuses = [];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
-        private Mock<ILicenseService> licence = null!;
+        private readonly Mock<ILicenseService> licence = new();
         private Mock<IWorkTrackingConnector> tracker = null!;
         private TaskCompletionSource trackerMayAnswer = null!;
         private int lastHistoryEntryBeforeTheSave;
@@ -141,6 +141,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
             AnUnfinishedWriteBackMapping,
         }
 
+        // Starting a host costs more than most scenarios take, so a fixture starts one and every scenario gets
+        // its own database, clock, licence answer, tracker and connection inside it instead.
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            var licenceService = licence.Object;
+            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactory
+                .Setup(factory => factory.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(() => tracker.Object);
+
+            rootFactory = new TestWebApplicationFactory<Program>();
+            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory).WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<ILicenseService>();
+                    services.AddScoped(_ => licenceService);
+
+                    services.RemoveAll<IWorkTrackingConnectorFactory>();
+                    services.AddScoped(_ => connectorFactory.Object);
+
+                    services.RemoveAll<IForecastService>();
+                    services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
+                });
+            });
+
+            Factory.StartServer();
+        }
+
         [SetUp]
         public async Task Init()
         {
@@ -159,37 +191,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
             trackerMayAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             trackerMayAnswer.SetResult();
 
-            licence = new Mock<ILicenseService>();
+            licence.Reset();
             licence.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
 
             tracker = ATrackerThatAnswersWithOneItemEach();
-            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactory
-                .Setup(factory => factory.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
-                .Returns(tracker.Object);
 
-            rootFactory = new TestWebApplicationFactory<Program>();
-            Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory).WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<ILicenseService>();
-                    services.AddScoped(_ => licence.Object);
-
-                    services.RemoveAll<IWorkTrackingConnectorFactory>();
-                    services.AddScoped(_ => connectorFactory.Object);
-
-                    services.RemoveAll<IForecastService>();
-                    services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
-                });
-            });
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
             Client.AsSystemAdmin();
 
             using var scope = Factory.Services.CreateScope();
             var database = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            await database.Database.EnsureDeletedAsync();
             await database.Database.EnsureCreatedAsync();
 
             foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
@@ -214,9 +229,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
                 await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
             }
 
-            Client.Dispose();
-            Factory.Dispose();
-            rootFactory.Dispose();
+            Client?.Dispose();
+            Client = null!;
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         // --- Given ---
