@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-4172-forecast-backtest-sweep")]
-    [Category("slice-01")]
     public partial class Slice01OneSentenceAboutYourSamplingWindowTest
     {
         // --- The check answers ---
