@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [TestFixture]
     [Category("acceptance")]
     [Category("portfolio-blocked-history")]
-    [Category("slice-04")]
     public partial class Slice04PortfolioBlockedDrillThroughTest
     {
         // (US-04 AC1)
