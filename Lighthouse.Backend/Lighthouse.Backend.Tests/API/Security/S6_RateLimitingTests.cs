@@ -165,6 +165,7 @@ namespace Lighthouse.Backend.Tests.API.Security
             }
 
             Assert.That(statuses, Has.All.Not.EqualTo(HttpStatusCode.TooManyRequests));
+            Assert.That(statuses, Has.All.EqualTo(HttpStatusCode.OK));
         }
 
         // Every other test configures the policy it exercises, so they pass whether or not the shipped file

@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string KeepsProblemsNothingCanEmpty = "reads the problems the host keeps in a buffer that no public call empties, so each test needs a host of its own";
         private const string StopsAndRestartsItsHostInOneTest = "one test stops the host the way a service manager does and starts another, so the fixture builds a host again inside a test";
 
-        private const string RunsEachTestUnderAnotherSetting = "each test starts the host under a different setting that is read only when the host starts, so every test needs a host of its own";
+        private const string StartsHostsUnderSeveralStartupSettings = "its tests start hosts under several settings that are read only at start-up, and grouping the tests by setting is not worth it for a fixture this small";
         private const string CountersArePerHost = "its daily tally lives in the host and cannot be emptied, so a second test would find the first test's allowance already spent";
         private const string StopsOrDrainsItsHostInEachTest = "its tests stop or drain the host they run on, and a host that has been stopped cannot serve the next test";
 
@@ -47,9 +47,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures.Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios"] = StopsAndRestartsItsHostInOneTest,
             ["Lighthouse.Backend.Tests.API.Integration.ForecastFilterTeamSettingsIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ForecastFilterThroughputChartIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ForwardedHeadersIntegrationTest"] = RunsEachTestUnderAnotherSetting,
-            ["Lighthouse.Backend.Tests.API.Integration.HealthCheckIntegrationTest"] = RunsEachTestUnderAnotherSetting,
-            ["Lighthouse.Backend.Tests.API.Integration.MetricsEndpointIntegrationTest"] = RunsEachTestUnderAnotherSetting,
+            ["Lighthouse.Backend.Tests.API.Integration.ForwardedHeadersIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
+            ["Lighthouse.Backend.Tests.API.Integration.HealthCheckIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
+            ["Lighthouse.Backend.Tests.API.Integration.MetricsEndpointIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.OAuthCallbackCsrfIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.OAuthControllerIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.OAuthProviderAbstractionIntegrationTest"] = NotMovedYet,

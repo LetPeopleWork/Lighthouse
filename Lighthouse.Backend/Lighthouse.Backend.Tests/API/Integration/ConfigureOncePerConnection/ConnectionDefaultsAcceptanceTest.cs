@@ -256,15 +256,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            await TheQueueGoesIdle();
-
-            using (var scope = Factory.Services.CreateScope())
+            try
             {
-                await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                await TheQueueGoesIdle();
             }
+            finally
+            {
+                using (var scope = Factory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
 
-            Client?.Dispose();
-            Client = null!;
+                Client?.Dispose();
+                Client = null!;
+            }
         }
 
         [OneTimeTearDown]

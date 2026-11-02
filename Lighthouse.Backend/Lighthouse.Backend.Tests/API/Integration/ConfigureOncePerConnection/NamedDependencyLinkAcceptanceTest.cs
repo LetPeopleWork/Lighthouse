@@ -248,6 +248,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             jiraLinkTypes.AddRange([Blocks, Dependency, Relates]);
             jiraFieldNames.Clear();
             requestsJiraAnswered.Clear();
+            RequestsJiraAnsweredDuringTheLastRefresh = 0;
             jiraRefusesToListItsLinkTypes = false;
             jiraAnswersItsLinkTypeListUnreadably = false;
             organisations.Clear();
