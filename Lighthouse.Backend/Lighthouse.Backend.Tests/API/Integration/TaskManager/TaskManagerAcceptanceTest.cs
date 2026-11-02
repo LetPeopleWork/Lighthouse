@@ -6,8 +6,8 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
     /// <summary>
-    /// The harness with a host of its own for every test. The scenario families outside the Task Manager
-    /// folder still stand on it; the Task Manager scenarios themselves use
+    /// The harness with a host of its own for every test. Only the scenarios that read the problems the host
+    /// keeps in a buffer no public call empties stand on it; every other family uses
     /// <see cref="TaskManagerHostPerFixtureAcceptanceTest"/>.
     /// </summary>
     public abstract class TaskManagerAcceptanceTest : TaskManagerHarness

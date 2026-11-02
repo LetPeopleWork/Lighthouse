@@ -16,6 +16,8 @@ namespace Lighthouse.Backend.Tests.TestDoubles
     /// </summary>
     public sealed class CountedDrawStream(int runsInTenThatDrawTheFirstDay = 10) : IDrawStreamFactory, IDrawStream, IDisposable
     {
+        private readonly int theShareItStartedWith = runsInTenThatDrawTheFirstDay;
+
         private int runsInTen = runsInTenThatDrawTheFirstDay;
 
         private int heldNow;
@@ -94,6 +96,24 @@ namespace Lighthouse.Backend.Tests.TestDoubles
             => SpinWait.SpinUntil(() => Volatile.Read(ref heldNow) >= runs, wait);
 
         public void LetItCarryOn() => mayCarryOn.Set();
+
+        /// <summary>
+        /// Puts the source back as it was when it was made, for a fixture that keeps one source on its host
+        /// across scenarios. Call it when no forecast is drawing from it.
+        /// </summary>
+        public void Reset()
+        {
+            mayCarryOn.Set();
+            aRunIsBeingHeld.Reset();
+            runsBegun.Clear();
+            Volatile.Write(ref holdEveryRunAfter, int.MaxValue);
+            Volatile.Write(ref runsInTen, theShareItStartedWith);
+            Volatile.Write(ref heldNow, 0);
+            Volatile.Write(ref mostHeldAtOnce, 0);
+            Volatile.Write(ref drawingNow, 0);
+            Volatile.Write(ref mostDrawingAtOnce, 0);
+            Volatile.Write(ref furthestDay, 0);
+        }
 
         public int Draw(int trial, int team, int day, int ordinal, int maxExclusive)
         {

@@ -61,33 +61,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         protected HttpClient Client = null!;
         protected Mock<ILicenseService> LicenseServiceMock = null!;
         protected Mock<IWorkTrackingConnector> ConnectorMock = null!;
-        protected CapturedLogMessages CapturedLogs = null!;
-        protected CapturedMaterialisations Materialised = null!;
+        protected CapturedLogMessages CapturedLogs = new();
+        protected CapturedMaterialisations Materialised = new();
 
         private readonly List<HttpClient> clientsHandedOut = [];
 
         private int nextOrder;
 
-        [SetUp]
-        public void Init()
+        /// <summary>
+        /// One host for the whole fixture: building it costs more than most scenarios take. What a scenario can
+        /// change is put back in <see cref="GiveTheScenarioItsOwnState"/>; the captures stay the same objects
+        /// because the host's singletons hold on to the ones they were built with.
+        /// </summary>
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
-            CapturedLogs = new CapturedLogMessages();
-            Materialised = new CapturedMaterialisations();
-            nextOrder = 0;
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             RootFactory = new TestWebApplicationFactory<Program>();
-
-            LicenseServiceMock = new Mock<ILicenseService>();
-            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
-
-            ConnectorMock = new Mock<IWorkTrackingConnector>();
-            ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => []);
+            PutTheMocksBack();
 
             var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
             connectorFactoryMock
                 .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
-                .Returns(ConnectorMock.Object);
+                .Returns(() => ConnectorMock.Object);
 
             var forecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
 
@@ -122,6 +119,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
                 });
 
             Client = Factory.CreateClient().AsSystemAdmin();
+            Factory.StartServer();
+        }
+
+        [SetUp]
+        public void GiveTheScenarioItsOwnState()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            CapturedLogs.Clear();
+            nextOrder = 0;
+            PutTheMocksBack();
+
+            RootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             using var setupScope = Factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -137,6 +148,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
         [TearDown]
         public void Cleanup()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
             using (var teardownScope = Factory.Services.CreateScope())
             {
                 teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
@@ -148,9 +161,28 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
             }
 
             clientsHandedOut.Clear();
-            Client.Dispose();
-            Factory.Dispose();
-            RootFactory.Dispose();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Client?.Dispose();
+            Factory?.Dispose();
+            RootFactory?.Dispose();
+        }
+
+        /// <summary>The host reads the licence and the tracker through these fields, so a new double is enough.</summary>
+        private void PutTheMocksBack()
+        {
+            LicenseServiceMock = new Mock<ILicenseService>();
+            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            ConnectorMock = new Mock<IWorkTrackingConnector>();
+            ConnectorMock
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => []);
         }
 
         // --- The Northwind instance (preconditions only, never the expected output) ---

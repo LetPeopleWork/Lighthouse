@@ -34,6 +34,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
 
         private int TheForecastThreads => Math.Max(1, coresTheHostHas / 2);
 
+        [SetUp]
+        public void ForgetTheThreadsOfTheScenarioBefore() => round.Forget();
+
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
             base.ConfigureAdditionalServices(services);
@@ -158,7 +161,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
             return Task.Run(host.Dispose);
         }
 
-        /// <summary>A fresh host on the same database, so what the stop left behind is read as the next start finds it.</summary>
-        private void WhenLighthouseStartsAgain() => Factory = RootFactory.WithWebHostBuilder(_ => { });
+        /// <summary>
+        /// A fresh host on the same database, so what the stop left behind is read as the next start finds it. It is
+        /// built the way the fixture's host was, because the scenarios after this one run on it.
+        /// </summary>
+        private void WhenLighthouseStartsAgain()
+        {
+            BuildTheHost();
+            Factory.StartServer();
+        }
     }
 }

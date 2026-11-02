@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
     /// service's own tested behaviour, unchanged here; what this feature promises is that a change in the
     /// throughput as the forecast is handed it is never confirmed as unchanged.
     /// </summary>
-    public abstract class SkipUnchangedForecastsAcceptanceTest : TaskManagerAcceptanceTest
+    public abstract class SkipUnchangedForecastsAcceptanceTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         protected const string PaymentsPlatform = "Payments Platform";
 
@@ -70,13 +70,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 
         private static readonly int[] OrionDelivers = [1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1];
 
-        protected FakeLighthouseClock Clock { get; private set; } = null!;
+        protected FakeLighthouseClock Clock { get; } = new(TenOClock);
 
-        protected DrawsCountedAndHeld Draws { get; private set; } = null!;
+        protected DrawsCountedAndHeld Draws { get; } = new();
 
-        protected CapturedDomainEvents RaisedSignals { get; private set; } = null!;
+        protected CapturedDomainEvents RaisedSignals { get; } = new();
 
-        protected WhatTheTrackerHolds Tracker { get; private set; } = null!;
+        protected WhatTheTrackerHolds Tracker { get; private set; } = new();
 
         protected int PaymentsPlatformId { get; private set; }
 
@@ -90,56 +90,74 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 
         protected int OrionId { get; private set; }
 
-        private Mock<ITeamMetricsService> teamMetrics = null!;
+        private Mock<ITeamMetricsService> teamMetrics = new();
 
         private int connectionId;
 
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
-            var draws = new DrawsCountedAndHeld();
-            var signals = new CapturedDomainEvents();
-            var tracker = new WhatTheTrackerHolds();
-            var metrics = new Mock<ITeamMetricsService> { DefaultValue = DefaultValue.Mock };
-            var clock = new FakeLighthouseClock(TenOClock);
-
-            Draws = draws;
-            RaisedSignals = signals;
-            Tracker = tracker;
-            teamMetrics = metrics;
-            Clock = clock;
-
             services.RemoveAll<IForecastService>();
             services.AddScoped<IForecastService, ForecastService>();
 
             services.RemoveAll<IDrawStreamFactory>();
-            services.AddSingleton<IDrawStreamFactory>(draws);
+            services.AddSingleton<IDrawStreamFactory>(Draws);
 
             services.RemoveAll<ForecastSimulationLimits>();
             services.AddSingleton(new ForecastSimulationLimits(TheRunsAForecastMakes, TheDaysARunMayCover) { CoresSeen = 4 });
 
             services.RemoveAll<ITeamMetricsService>();
-            services.AddScoped(_ => metrics.Object);
+            services.AddScoped(_ => teamMetrics.Object);
 
             services.RemoveAll<ILighthouseClock>();
-            services.AddSingleton<ILighthouseClock>(clock);
+            services.AddSingleton<ILighthouseClock>(Clock);
 
-            services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>>(_ => new CapturingDomainEventHandler<PortfolioForecastsUpdated>(signals));
+            services.AddScoped<IDomainEventHandler<PortfolioForecastsUpdated>>(_ => new CapturingDomainEventHandler<PortfolioForecastsUpdated>(RaisedSignals));
+        }
 
+        /// <summary>
+        /// The host keeps the draw source, the clock and the signal capture for the whole fixture, so each scenario
+        /// starts them over. The tracker and the throughput are looked up through the fields (the tracker through
+        /// the connector, which the harness has just replaced), so a new one is enough.
+        /// </summary>
+        [SetUp]
+        public void GiveTheScenarioItsOwnForecastState()
+        {
+            Draws.Reset();
+            RaisedSignals.Clear();
+            Clock.SetInstant(TenOClock);
+            teamMetrics = new Mock<ITeamMetricsService> { DefaultValue = DefaultValue.Mock };
+
+            var tracker = new WhatTheTrackerHolds();
+            Tracker = tracker;
             ConnectorMock
                 .Setup(connector => connector.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Team team, CancellationToken _) => tracker.WorkItemsOf(team));
             ConnectorMock
                 .Setup(connector => connector.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Portfolio portfolio, CancellationToken _) => tracker.FeaturesOf(portfolio));
+
+            connectionId = 0;
+            PaymentsPlatformId = 0;
+            OnboardingId = 0;
+            LoyaltyId = 0;
+            FssId = 0;
+            AtlasId = 0;
+            OrionId = 0;
         }
 
+        /// <summary>
+        /// Runs before the harness checks the queue and deletes the database. A forecast left held would otherwise
+        /// stall the next scenario on this host.
+        /// </summary>
         [TearDown]
         public async Task LetAnyHeldForecastFinish()
         {
             Draws.LetItCarryOn();
             await TheQueueGoesIdle();
-            Draws.Dispose();
         }
+
+        [OneTimeTearDown]
+        public void ReleaseTheDrawSource() => Draws.Dispose();
 
         // --- Given: Payments Platform as the work tracking system holds it ---
 
@@ -758,6 +776,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
             public bool IsHeldWithin(TimeSpan wait) => draws.IsHeldWithin(wait);
 
             public void LetItCarryOn() => draws.LetItCarryOn();
+
+            public void Reset()
+            {
+                draws.Reset();
+                Interlocked.Exchange(ref numbersDrawn, 0);
+            }
 
             public void Dispose() => draws.Dispose();
         }

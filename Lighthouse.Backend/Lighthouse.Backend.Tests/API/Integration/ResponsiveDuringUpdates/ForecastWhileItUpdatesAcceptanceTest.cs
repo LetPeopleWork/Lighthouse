@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
     /// Faked, as the infrastructure policy says: the tracker, the licence, the measured throughput a
     /// Team is forecast from (an input to this feature rather than part of it) and the instance clock.
     /// </summary>
-    public abstract class ForecastWhileItUpdatesAcceptanceTest : TaskManagerAcceptanceTest
+    public abstract class ForecastWhileItUpdatesAcceptanceTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         protected const int TheRunsAForecastMakes = 400;
 
@@ -50,17 +50,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
 
         protected const string TheForecastFieldInTheTracker = "Custom.Forecast85";
 
-        protected CountedDrawStream Draws { get; private set; } = null!;
+        protected CountedDrawStream Draws { get; } = new();
 
-        protected FakeLighthouseClock Clock { get; private set; } = null!;
+        protected FakeLighthouseClock Clock { get; } = new(Now);
 
-        private Mock<ITeamMetricsService> teamMetrics = null!;
+        private Mock<ITeamMetricsService> teamMetrics = new();
 
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
-            Draws = new CountedDrawStream();
-            teamMetrics = new Mock<ITeamMetricsService> { DefaultValue = DefaultValue.Mock };
-
             services.RemoveAll<IForecastService>();
             services.AddScoped<IForecastService, ForecastService>();
 
@@ -74,21 +71,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
             services.AddScoped(_ => teamMetrics.Object);
 
             services.RemoveAll<ILighthouseClock>();
-            Clock = new FakeLighthouseClock(Now);
             services.AddSingleton<ILighthouseClock>(Clock);
         }
 
         /// <summary>
-        /// Runs before the harness tears the host down. A forecast left parked would otherwise still hold its
-        /// workers while the database underneath it is deleted.
+        /// The host keeps the draw source and the clock for the whole fixture, so each scenario starts them over.
+        /// The throughput the host reads is looked up through the field, so a new double is enough.
+        /// </summary>
+        [SetUp]
+        public void GiveTheScenarioItsOwnForecastState()
+        {
+            Draws.Reset();
+            Clock.SetInstant(Now);
+            teamMetrics = new Mock<ITeamMetricsService> { DefaultValue = DefaultValue.Mock };
+        }
+
+        /// <summary>
+        /// Runs before the harness checks the queue and deletes the database. A forecast left parked would
+        /// otherwise still hold its workers, and would stall the next scenario on this host.
         /// </summary>
         [TearDown]
         public async Task LetAnyHeldForecastFinish()
         {
             Draws.LetItCarryOn();
             await TheQueueGoesIdle();
-            Draws.Dispose();
         }
+
+        [OneTimeTearDown]
+        public void ReleaseTheDrawSource() => Draws.Dispose();
 
         // --- Given ---
 

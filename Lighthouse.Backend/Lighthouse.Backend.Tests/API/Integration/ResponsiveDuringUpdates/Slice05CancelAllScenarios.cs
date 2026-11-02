@@ -7,6 +7,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.API.Integration.TaskManager;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
@@ -26,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
     [Category("epic-6311-responsive-during-updates")]
     [Category("slice-05")]
     [Category("us-04")]
-    public class Slice05CancelAllScenarios : TaskManagerAcceptanceTest
+    public class Slice05CancelAllScenarios : TaskManagerHostPerFixtureAcceptanceTest
     {
         private const string CancelAllRoute = "/api/latest/update/tasks/cancel";
 
@@ -41,6 +42,41 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         private TaskCompletionSource theRemovalFinished = null!;
 
         private TaskCompletionSource whatWasHeldWasLetGo = null!;
+
+        private WebApplicationFactory<Program> hostForSomebodyWhoIsNotAnAdministrator = null!;
+
+        /// <summary>
+        /// Everything but system administration is granted, so a route guarded by anything weaker would let
+        /// this caller through and the scenario would say so.
+        /// </summary>
+        [OneTimeSetUp]
+        public void BuildTheHostForSomebodyWhoIsNotAnAdministrator()
+        {
+            hostForSomebodyWhoIsNotAnAdministrator = DeriveAHost(services =>
+            {
+                var refuses = new Mock<IRbacAdministrationService>();
+                refuses
+                    .Setup(s => s.CanSatisfyRequirementAsync(
+                        It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                        It.IsAny<RbacGuardRequirement>(),
+                        It.IsAny<int?>(),
+                        It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(true);
+                refuses
+                    .Setup(s => s.CanSatisfyRequirementAsync(
+                        It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
+                        RbacGuardRequirement.SystemAdmin,
+                        It.IsAny<int?>(),
+                        It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(false);
+
+                services.RemoveAll<IRbacAdministrationService>();
+                services.AddScoped(_ => refuses.Object);
+            });
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHostForSomebodyWhoIsNotAnAdministrator() => hostForSomebodyWhoIsNotAnAdministrator?.Dispose();
 
         [SetUp]
         public void TheTrackerAnswersOnePageAtATimeUntilWeSaySo()
@@ -253,32 +289,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates
         [Category("contract-shape:unbounded-preservation")]
         public async Task Cancel_all_is_refused_to_somebody_who_is_not_a_system_administrator()
         {
-            using var factory = RootFactory.WithWebHostBuilder(builder =>
-                builder.ConfigureServices(services =>
-                {
-                    // Everything but system administration is granted, so a route guarded by anything weaker
-                    // would let this caller through and the test would say so.
-                    var refuses = new Mock<IRbacAdministrationService>();
-                    refuses
-                        .Setup(s => s.CanSatisfyRequirementAsync(
-                            It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
-                            It.IsAny<RbacGuardRequirement>(),
-                            It.IsAny<int?>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(true);
-                    refuses
-                        .Setup(s => s.CanSatisfyRequirementAsync(
-                            It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
-                            RbacGuardRequirement.SystemAdmin,
-                            It.IsAny<int?>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(false);
-
-                    services.RemoveAll<IRbacAdministrationService>();
-                    services.AddScoped(_ => refuses.Object);
-                }));
-
-            using var client = factory.CreateClient();
+            using var client = hostForSomebodyWhoIsNotAnAdministrator.CreateClient();
             using var cancelAll = await client.PostAsync(new Uri(CancelAllRoute, UriKind.Relative), null);
 
             Assert.That(cancelAll.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden),
