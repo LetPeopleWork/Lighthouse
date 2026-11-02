@@ -36,8 +36,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
         ];
 
-        // Catches a call with the list inline. A call through a variable or a parameter (the ServiceNow mapper
-        // passes one down) is caught by the second test, which allows only the files that read settings naming a group.
+        // Catches a call with the list inline. A call through a variable or a parameter (the metrics service passes a
+        // cycle time boundary through a list) is caught by OnlyCodeThatReadsSettingsNamingAGroupCallsTheExpansion,
+        // which allows only the files that read settings naming a group.
         [GeneratedRegex(@"GetRawStatesForCategory\(\s*[\w.]*\b(ToDoStates|DoingStates|DoneStates)\b", RegexOptions.CultureInvariant)]
         private static partial Regex ExpandsACategoryList();
 
@@ -97,7 +98,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Select(file => Path.GetRelativePath(root, file).Replace(Path.DirectorySeparatorChar, '/'))
                 .ToList();
 
-            Assert.That(callers.Except(FilesThatReadSettingsNamingAGroup), Is.Empty);
+            Assert.That(callers.Except(FilesThatReadSettingsNamingAGroup), Is.Empty, "These files turn a mapping's name into its states, but do not read a setting that names a group.");
         }
     }
 }

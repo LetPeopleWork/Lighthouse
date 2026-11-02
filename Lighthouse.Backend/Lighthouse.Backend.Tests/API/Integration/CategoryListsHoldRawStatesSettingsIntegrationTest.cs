@@ -548,7 +548,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName()
+        public async Task SuggestingStatesWhileAnOwnersStoredListHoldsRawStates_OffersTheStatesAndNotTheGroupsName()
         {
             SeedOwner(mappings: [Review()], doing: ["Analysis", "Code Review", "Testing"]);
 
@@ -565,7 +565,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         // An owner the start-up pass has not rewritten (skipped, not yet reached, or saved by an older instance)
-        // reads through the classifier, so its pages and suggestions already show the states.
+        // reads through the classifier, so its settings already show the group's states.
         [Test]
         public async Task ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupsStatesAndTheGroupOnDisplay()
         {
