@@ -6,10 +6,29 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [Category("epic-5305-k8s-readiness")]
     public class McpInboundAuthIntegrationTest
     {
+        private McpInboundAuthTestHost host = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            host = new McpInboundAuthTestHost();
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
+            host.BeginTest();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            host.Dispose();
+        }
+
         [Test]
         public async Task ApiKeyAuth_TwoCallersDistinctKeys_EachSeesOnlyOwnScopedData()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var teamB = await host.SeedTeamAsync("Team B");
@@ -33,7 +52,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ApiKeyAuth_ForwardedCallerKey_ResolvesToCallerOwnerNotBakedKey()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var teamB = await host.SeedTeamAsync("Team B");
@@ -53,7 +71,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ApiKeyAuth_KeyScopeNarrowerThanOwner_KeyRestrictsBeyondOwnerGrants()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var teamB = await host.SeedTeamAsync("Team B");
@@ -72,7 +89,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ApiKeyAuth_KeyClaimsScopeOwnerLacks_ExcessScopeDropped()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var teamB = await host.SeedTeamAsync("Team B");
@@ -91,7 +107,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ApiKeyAuth_SystemAdminOwnerWithTeamScopedKey_KeyRestrictsBelowSystemWide()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var teamB = await host.SeedTeamAsync("Team B");
@@ -110,7 +125,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ApiKeyAuth_KeyClaimsSystemScopeOwnerLacks_NoPrivilegeEscalation()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var escalatingKey = await host.SeedCallerWithSystemScopedKeyAsync("owner-a", ownerTeamId: teamA);
@@ -123,7 +137,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ApiKeyAuth_CallerWithoutScope_ForbiddenOnOutOfScopeResource()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var teamB = await host.SeedTeamAsync("Team B");
@@ -137,7 +150,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ApiKeyAuth_SingleKeyDevPath_StillWorks()
         {
-            using var host = new McpInboundAuthTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var legacyKey = await host.SeedCallerAsync("owner-legacy", ownerTeamIds: [teamA], keyScopeTeamIds: null);
