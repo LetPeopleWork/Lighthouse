@@ -1037,3 +1037,10 @@ Slice 5 stays optional. The first conversions are S8_EmbedEntryPoint (6.5 s), De
 (4.7 s), WorkItemEstimateApi (3.7 s) and Slice03AzureDevOpsRelationTypeAccepted (3.7 s).
 **Honest read:** host construction is about 40 % of all fixture set-up and teardown time measured. The story's total win depends
 as much on slice 2's database template as on the moves.
+
+## Wave: DELIVER / [REF] Slice 1 review (2026-11-02)
+
+- **Verdict:** conditionally_approved, 0 blockers.
+- **Conditions cleared by the lead:** (1) no assertion line changed in the two converted bases (checked by diff 5c095942a..58703b04a); (2) the cluster probe test asserted registration and tags only before the move, and still asserts the same three things.
+- **Fixed in this revision:** `TheQueueGoesIdle` in both converted bases now fails loudly when the update queue has not gone idle by the deadline; the connection-defaults base resets the licence mock before arming it, like the field-change base; the clock and host-build comments in `TestWebApplicationFactory.cs` say what is true, and `ResettableFakeTimeProvider` documents that Reset shifts reported time only; the "Host lifecycles" entry in `docs/ci-learnings.md` names the reasons that exist, the guard's reach, and the singleton-state check.
+- **Carried notes:** the guard does not follow interface dispatch (no fixture relies on it). The singleton maps `UpdateQueueService` awaiters/pendingReruns/heldUpdates and `OverTimeHistoryFiller.alreadyAsked` must be checked before slice 3/4 converts a chart-reading or history-fill fixture (checklist item for 03-xx and 04-xx). Timers are not rewound by Reset. The timing hook counts builds through derived factories (the 01-01 spot check showed 15 HostBuild rows for one ConnectionFieldChange fixture).

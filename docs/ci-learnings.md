@@ -291,11 +291,14 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   the compiled test assembly and fails when a type starts a host in `[SetUp]` or in a test body. Its
   allow-list only shrinks: a new offender fails, an entry whose type no longer offends fails, and the
   ceiling `MostTypesTheListMayHold` drops with every entry removed. A type stays listed only with a
-  written reason (it tests the host itself, it runs on a Postgres server, the counters it checks live per
-  host). Still by hand: a shared host may hold per-test state only in objects the fixture resets in
+  written reason (it tests the host itself, it runs on a Postgres server, it has a single test); types not
+  yet converted carry a "not moved yet" entry. The guard follows calls through the base-class chain and
+  overrides, not through interface calls. Still by hand: a shared host may hold per-test state only in objects the fixture resets in
   `[SetUp]` (the factory's `Clock.Reset()`, a fresh database via `UseFreshDatabase()`, re-armed mocks),
   never in a DI registration that closes over a per-test field; resolve the `DbContext` from a scope,
-  never the root provider; resolve every service you will assert on before `StopApplication()`. Check a
+  never the root provider; resolve every service you will assert on before `StopApplication()`. Singleton in-memory state in the app (for example the
+  update queue's per-key maps and the history filler's "already asked" set) survives between tests on a
+  shared host; check it before converting a fixture that reads charts or triggers history fills. Check a
   converted fixture by running it three times in a row and its first and last test alone. Not automated
   because: what counts as per-test state differs from fixture to fixture.
 - **FK-dependent behaviour runs on SQLite**: EF InMemory does not enforce foreign keys or cascades.
