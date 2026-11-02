@@ -8,10 +8,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 {
     public class CsvDemoJourneyWithStateMappingTest() : IntegrationTestBase
     {
-        private const string Pending = "pending: category lists hold raw states";
-
         [Test]
-        [Ignore(Pending)]
         public async Task DemoJourney_TeamGroupsTwoOfItsDoingStates_NeverMovesAnItemFromTheGroupToItself()
         {
             var team = ADemoTeamWithAReviewGroup();
@@ -32,7 +29,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task DemoJourney_GroupSitsFirstInDoing_StartsTheJourneyInTheGroup()
         {
             var team = ADemoTeamWithAReviewGroup();

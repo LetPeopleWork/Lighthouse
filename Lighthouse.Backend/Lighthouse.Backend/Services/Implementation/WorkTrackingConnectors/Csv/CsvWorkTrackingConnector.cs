@@ -298,7 +298,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private static IReadOnlyList<WorkItemStateTransition> BuildInterpolatedDoneJourney(
             IWorkItemQueryOwner owner, DateTime startedDate, DateTime closedDate)
         {
-            var doingStates = owner.DoingStates;
+            var doingStates = owner.DisplayStatesFor(StateCategories.Doing);
 
             if (doingStates.Count == 0)
             {
@@ -322,8 +322,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 .Zip(doingStates.Skip(1).Select((state, index) => (state, enteredAt: enteredAt[index + 1])),
                     (fromState, to) => new WorkItemStateTransition
                     {
-                        FromState = owner.MapRawStateToMappedName(fromState),
-                        ToState = owner.MapRawStateToMappedName(to.state),
+                        FromState = fromState,
+                        ToState = to.state,
                         TransitionedAt = to.enteredAt,
                     });
 
@@ -332,7 +332,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 .. exitTransitions,
                 new WorkItemStateTransition
                 {
-                    FromState = owner.MapRawStateToMappedName(doingStates[^1]),
+                    FromState = doingStates[^1],
                     ToState = MappedDoneState(owner),
                     TransitionedAt = closed,
                 }

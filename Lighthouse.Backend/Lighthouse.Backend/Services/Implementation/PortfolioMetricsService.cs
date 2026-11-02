@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedFeatures);
                 var cycleTimePercentiles = GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, portfolio.DoingStates, DefaultPacePercentiles, cycleTimePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, portfolio.DisplayStatesFor(StateCategories.Doing), DefaultPacePercentiles, cycleTimePercentiles).ToList();
             }, logger);
         }
 
@@ -493,7 +493,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static List<string> BuildCumulativeWorkflowStateOrder(Portfolio portfolio)
         {
-            return [.. portfolio.DoingStates];
+            return portfolio.DisplayStatesFor(StateCategories.Doing);
         }
 
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> completedFeatures)
@@ -740,7 +740,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(portfolio);
                 var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
 
-                var expandedWaitStates = portfolio.GetRawStatesForCategory(portfolio.WaitStates);
+                var expandedWaitStates = portfolio.GetRawStatesForCategory(portfolio.WaitStates).Select(portfolio.MapRawStateToMappedName).ToList();
                 return ComputeFlowEfficiency(doingStateRows, expandedWaitStates, portfolio.WaitStates.Count > 0);
             }, logger);
         }

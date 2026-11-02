@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         private Mock<IFeatureRepository> featureRepositoryMock;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
+        private Mock<IWorkItemStateTransitionRepository> workItemStateTransitionRepositoryMock;
 
         private Team testTeam;
 
@@ -36,6 +37,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             featureRepositoryMock.Holds([]);
             forecastServiceMock = new Mock<IForecastService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
+            workItemStateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
             SetupEffectiveBlackoutDays();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
@@ -52,7 +54,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>())).Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
-            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodServiceMock.Object, forecastFilterRuleServiceMock.Object, Mock.Of<IWorkItemStateTransitionRepository>(), TestToday.Clock);
+            subject = new TeamMetricsService(Mock.Of<ILogger<TeamMetricsService>>(), workItemRepositoryMock.Object, featureRepositoryMock.Object, appSettingsServiceMock.Object, serviceProvider.Object, blackoutPeriodServiceMock.Object, forecastFilterRuleServiceMock.Object, workItemStateTransitionRepositoryMock.Object, TestToday.Clock);
 
             workItems = new List<WorkItem>();
 
@@ -2662,6 +2664,101 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             subject.GetMultiItemForecastPredictabilityScoreForTeam(testTeam, startDate, endDate);
 
             forecastServiceMock.Verify(x => x.HowMany(It.Is<RunChartData>(t => t.History == 7), It.IsAny<int>()), Times.Once);
+        }
+
+        #endregion
+
+        #region State mappings in the state-time charts
+
+        private const string Analyzing = "Analyzing";
+        private const string Building = "Building";
+        private const string Validating = "Validating";
+        private const string Review = "Review";
+
+        private static readonly DateTime MappedWindowEnd = new(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime MappedWindowStart = MappedWindowEnd.AddDays(-180);
+
+        private static readonly string[] GroupThenBuildingColumns = ["Review", "Building"];
+
+        [Test]
+        public void GetCumulativeStateTimeForTeam_MappingGroupsTwoNonAdjacentDoingStates_ShowsTheGroupOnceAtItsFirstMembersPosition()
+        {
+            var team = ATeamGroupingAnalyzingAndValidatingAsReview();
+
+            var result = subject.GetCumulativeStateTimeForTeam(team, MappedWindowStart, MappedWindowEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.States.Select(row => row.State), Is.EqualTo(GroupThenBuildingColumns));
+                Assert.That(result.States[0].CompletedContributionDays, Is.EqualTo(20.0).Within(0.1));
+            }
+        }
+
+        [Test]
+        public void GetAgeInStatePercentilesForTeam_MappingGroupsTwoNonAdjacentDoingStates_ShowsTheGroupOnceAtItsFirstMembersPosition()
+        {
+            var team = ATeamGroupingAnalyzingAndValidatingAsReview();
+
+            var result = subject.GetAgeInStatePercentilesForTeam(team, MappedWindowStart, MappedWindowEnd).ToList();
+
+            Assert.That(result.Select(column => column.State), Is.EqualTo(GroupThenBuildingColumns));
+        }
+
+        [Test]
+        public void GetFlowEfficiencyInfoForTeam_MappingGroupsTwoNonAdjacentDoingStates_CountsTheTimeSpentInTheGroup()
+        {
+            var team = ATeamGroupingAnalyzingAndValidatingAsReview();
+            team.WaitStates = [Building];
+
+            var result = subject.GetFlowEfficiencyInfoForTeam(team, MappedWindowStart, MappedWindowEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.TotalDoingDays, Is.EqualTo(30.0).Within(0.1));
+                Assert.That(result.WaitDays, Is.EqualTo(10.0).Within(0.1));
+            }
+        }
+
+        private Team ATeamGroupingAnalyzingAndValidatingAsReview()
+        {
+            var team = new Team
+            {
+                Id = 42,
+                Name = "Mapped Team",
+                ToDoStates = ["New"],
+                DoingStates = [Analyzing, Building, Validating],
+                DoneStates = ["Done"],
+                StateMappings = [new StateMapping { Name = Review, States = [Analyzing, Validating] }],
+            };
+
+            var started = MappedWindowStart.AddDays(20);
+            var item = new WorkItem
+            {
+                Id = 4201,
+                ReferenceId = "MAP-1",
+                Name = "Mapped item",
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                Team = team,
+                TeamId = team.Id,
+                CreatedDate = started.AddDays(-1),
+                StartedDate = started,
+                ClosedDate = started.AddDays(30),
+            };
+            workItems.Add(item);
+
+            // After a sync, the transitions carry the mapping's name, never the raw states it groups.
+            List<WorkItemStateTransition> transitions =
+            [
+                new() { WorkItemId = item.Id, FromState = Review, ToState = Building, TransitionedAt = started.AddDays(5) },
+                new() { WorkItemId = item.Id, FromState = Building, ToState = Review, TransitionedAt = started.AddDays(15) },
+                new() { WorkItemId = item.Id, FromState = Review, ToState = "Done", TransitionedAt = started.AddDays(30) },
+            ];
+            workItemStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItemStateTransition, bool>>>()))
+                .Returns((Expression<Func<WorkItemStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+
+            return team;
         }
 
         #endregion

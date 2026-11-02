@@ -460,7 +460,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedItems);
                 var cycleTimePercentiles = GetCycleTimePercentilesForTeam(team, startDate, endDate).ToList();
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, team.DoingStates, DefaultPacePercentiles, cycleTimePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, team.DisplayStatesFor(StateCategories.Doing), DefaultPacePercentiles, cycleTimePercentiles).ToList();
             }, logger);
         }
 
@@ -492,7 +492,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
                 var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
 
-                var expandedWaitStates = team.GetRawStatesForCategory(team.WaitStates);
+                var expandedWaitStates = team.GetRawStatesForCategory(team.WaitStates).Select(team.MapRawStateToMappedName).ToList();
                 return ComputeFlowEfficiency(doingStateRows, expandedWaitStates, team.WaitStates.Count > 0);
             }, logger);
         }
@@ -581,7 +581,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static List<string> BuildCumulativeWorkflowStateOrder(Team team)
         {
-            return [.. team.DoingStates];
+            return team.DisplayStatesFor(StateCategories.Doing);
         }
 
         private static IReadOnlyList<string> ResolveCumulativeStateOrder(Team team, CycleTimeDefinition? scopedDefinition)

@@ -79,9 +79,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetFlowEfficiency_PortfolioWithKnownWaitTime_ReturnsSameShapeAndArithmeticAsTeamScope()
         {
-            // US-03 parity / ADR-055: portfolio efficiency = active / total Doing-time over features in scope.
-            // Total Doing 400d: Analyzing 180d (active), Awaiting Approval 120d + Queued for Build 100d (wait
-            // 220d via the "Waiting" mapping) → 180/400 = 45%, identical arithmetic to the team mapping case.
+            // Portfolio efficiency is active over total Doing time, as for a team. The mapping "Waiting" groups
+            // "Awaiting Approval" and "Queued for Build" and is marked as wait; a sync stores visits to either
+            // under the name "Waiting". Analyzing 180d active, 120d + 100d waiting → 180/400 = 45%.
             var portfolioId = SeedPortfolioWithMappingNameMarkedAsWaitState();
 
             client.AsPortfolioAdmin(portfolioId);
@@ -92,11 +92,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(IsConfigured(body), Is.True,
-                    $"US-03 parity: a configured portfolio reports IsConfigured=true. Body: {body}");
+                    $"A configured portfolio reports IsConfigured=true. Body: {body}");
                 Assert.That(HasDataInScope(body), Is.True,
-                    $"US-03 parity: with Doing-time in scope, HasDataInScope=true. Body: {body}");
+                    $"With Doing-time in scope, HasDataInScope=true. Body: {body}");
                 Assert.That(EfficiencyPercent(body), Is.EqualTo(45.0).Within(PercentTolerance),
-                    $"US-03/D11 parity: 'Waiting' expands to both raw states (120+100=220d wait); 180/400 = 45%. Body: {body}");
+                    $"All 220d spent in the 'Waiting' mapping count as wait; 180/400 = 45%. Body: {body}");
             }
         }
 
@@ -192,8 +192,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 visits: new[]
                 {
                     (Analyzing, 180.0),
-                    (AwaitingApproval, 120.0),
-                    (QueuedForBuild, 100.0),
+                    ("Waiting", 120.0),
+                    ("Waiting", 100.0),
                 });
         }
 

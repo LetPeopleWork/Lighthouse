@@ -127,15 +127,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        public async Task GetFlowEfficiency_TeamWithMappingNameMarkedWait_CountsAllUnderlyingRawStatesAsWaitTime()
+        public async Task GetFlowEfficiency_TeamWithMappingNameMarkedWait_CountsAllTimeInTheMappingAsWaitTime()
         {
-            // THE critical correctness AT — US-01 / D11 / ADR-056.
-            // A State Mapping "Waiting" → ["Waiting for Review", "Blocked - External"] exists; the admin marks
-            // the MAPPING NAME "Waiting" as a single wait state (one click, no enumeration). The efficiency
-            // must expand it via GetRawStatesForCategory(WaitStates), so time in BOTH underlying raw states
-            // counts as wait. Fixture: "Waiting for Review" 120d + "Blocked - External" 100d = 220d wait of
-            // 400d total Doing → active 180d → 180/400 = 45%. If the expansion is skipped (literal "Waiting"
-            // string match), wait would be 0d and efficiency a wrong 100%.
+            // A state mapping "Waiting" groups "Waiting for Review" and "Blocked - External", and the admin
+            // marks the mapping name as a single wait state. All time spent in the mapping, whichever grouped
+            // state the item was in, counts as wait: 120d + 100d = 220d wait of 400d total Doing → 45%.
+            // A wrong 100% would mean the mapping name was not recognised as a wait state.
             var teamId = SeedTeamWithMappingNameMarkedAsWaitState();
 
             client.AsTeamAdmin(teamId);
@@ -146,9 +143,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
                 Assert.That(IsConfigured(body), Is.True,
-                    $"D11: marking a mapping name as wait counts as configured. Body: {body}");
+                    $"Marking a mapping name as wait counts as configured. Body: {body}");
                 Assert.That(EfficiencyPercent(body), Is.EqualTo(45.0).Within(PercentTolerance),
-                    $"D11/ADR-056: 'Waiting' expands to both raw states' time (120+100=220d wait); 180/400 = 45%, NOT 100% from a literal match. Body: {body}");
+                    $"All 220d spent in the 'Waiting' mapping count as wait; 180/400 = 45%, not 100%. Body: {body}");
             }
         }
 
@@ -459,17 +456,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private int SeedTeamWithMappingNameMarkedAsWaitState()
         {
-            // Mapping "Waiting" → ["Waiting for Review", "Blocked - External"]. Mark the MAPPING NAME as wait.
-            // Total Doing 400d: InProgress 180d (active), Waiting for Review 120d + Blocked - External 100d
-            // (wait 220d via expansion) → 180/400 = 45%.
+            // Mapping "Waiting" groups "Waiting for Review" and "Blocked - External", and the mapping name is
+            // marked as wait. A sync stores a visit to either grouped state under the name "Waiting", so the
+            // two items that waited (120d and 100d) both carry it. Total Doing 400d, wait 220d → 180/400 = 45%.
             return SeedTeam(
                 waitStates: ["Waiting"],
                 stateMappings: [("Waiting", [WaitingForReview, BlockedExternal])],
                 visits: new[]
                 {
                     (InProgress, 180.0),
-                    (WaitingForReview, 120.0),
-                    (BlockedExternal, 100.0),
+                    ("Waiting", 120.0),
+                    ("Waiting", 100.0),
                 });
         }
 
