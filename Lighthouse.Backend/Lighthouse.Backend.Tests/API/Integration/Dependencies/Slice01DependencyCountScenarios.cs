@@ -9,8 +9,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-4365-dependencies")]
-    [Category("slice-01")]
     public partial class Slice01DependencyCountTest
     {
         private static readonly string[] TheTwoItWaitsOn = ["F-1", "F-2"];

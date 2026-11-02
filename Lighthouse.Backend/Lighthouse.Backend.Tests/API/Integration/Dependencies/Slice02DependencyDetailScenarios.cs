@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-4365-dependencies")]
-    [Category("slice-02")]
     public partial class Slice02DependencyDetailTest
     {
         private static readonly string[] TheSearchIndex = ["F-1"];

@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     /// </summary>
     [TestFixtureSource(typeof(TrackerPayloadSources), nameof(TrackerPayloadSources.EveryTrackerThatCanExpressADependency))]
     [Category("acceptance")]
-    [Category("epic-4365-dependencies")]
-    [Category("slice-03")]
     public class Slice03ConnectorParityScenarios(DependenciesAcceptanceTest.ITrackerPayloadSource tracker) : DependenciesAcceptanceTest
     {
         private const string Checkout = "Checkout redesign";
