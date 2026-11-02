@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-6301-only-features-as-parent-candidates")]
-    [Category("slice-03")]
     public class Slice03PortfolioOldestLinkTest : ParentPlacementAcceptanceTest
     {
         private const string TheFeature = "PAY-88";

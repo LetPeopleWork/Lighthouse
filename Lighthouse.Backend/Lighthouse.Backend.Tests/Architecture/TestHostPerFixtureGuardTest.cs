@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string StopsOrDrainsItsHostInEachTest = "its tests stop or drain the host they run on, and a host that has been stopped cannot serve the next test";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 82;
+        private const int MostTypesTheListMayHold = 79;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -52,9 +52,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.OAuthCallbackCsrfIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.OAuthControllerIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.OAuthProviderAbstractionIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidates.Slice01NarrowToFeaturesTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidates.Slice02OldestLinkWinsTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidates.Slice03PortfolioOldestLinkTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks.Slice03AmbiguityRefusalTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.PortfolioConcurrencyTokenIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.PortfolioDeleteSerialisationTests"] = NotMovedYet,
