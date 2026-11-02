@@ -1,0 +1,86 @@
+# environments.yaml — epic-6473-settings-split (ADO #6473)
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+# Frontend-only navigation change. Nothing new is deployed; the "environments" are the
+# contexts in which the suites run and the configurations a customer can run the SPA in.
+
+target_environments:
+  - name: local-dev
+    description: "pnpm test + pnpm build in Lighthouse.Frontend; Playwright against Start-DevServer.ps1 with demo data"
+    platform: [linux, macos, windows]
+    auth: off
+    rbac: off
+    database: sqlite
+    browser: chromium
+    viewport: "1920x1080"
+
+  - name: ci-e2e-sqlite
+    description: "ci.yml -> ci_verifysqlite.yml, default E2E (grep-invert @screenshot|@auth|@rbac|@proxyauth)"
+    platform: [linux]
+    auth: off
+    rbac: off
+    database: sqlite
+    browser: chromium
+    viewport: "1920x1080"
+
+  - name: ci-e2e-postgres
+    description: "ci.yml -> ci_verifypostgres.yml, same default E2E against Postgres"
+    platform: [linux]
+    auth: off
+    rbac: off
+    database: postgres
+    browser: chromium
+    viewport: "1920x1080"
+
+  - name: ci-e2e-auth-rbac
+    description: "ci.yml -> ci_verifyauth.yml: test:auth then test:rbac with Authorization__Enabled=true"
+    platform: [linux]
+    auth: on
+    rbac: on
+    roles: [system-admin, portfolio-admin, portfolio-reader, team-admin, team-reader]
+    browser: chromium
+    viewport: "1920x1080"
+
+  - name: unit-vitest
+    description: "pnpm test in ci_frontend.yml (Vitest + React Testing Library, TZ=Europe/Zurich)"
+    covers:
+      - "resolver: 14 legacy keys, both cases, unknown/earlier slugs, hidden tab, hidden area, access loading (Wait), access failed (permissive fallback)"
+      - "DD14 source-scan: no /settings or /connections literal outside settingsAreas.ts and settingsRoutes.tsx"
+      - "usage data: settings and connection paths open no page event"
+      - "e2eTestIds: POMs vs app test ids"
+      - "looks: Wait spinner, Connections loading/403/failed, behaviour rows loading/failed, Calendar licence unknown"
+      - "mobile: scrollable tabs, drawer lists three areas"
+
+  - name: customer-runtime
+    description: "Where the shipped SPA runs; identical bundle, no backend change"
+    platform: [docker, helm, standalone-tauri]
+    auth_modes: [off, on-rbac-off, on-rbac-on]
+    verified_by: [ci_verifysqlite, ci_verifypostgres, ci_verifyauth, ci_verifymacos, ci_verifywindows]
+
+access_matrix:
+  rbac_off: "everyone is System Admin: all areas and tabs; Access -> System Admins hidden"
+  rbac_on_system_admin: "all areas and tabs"
+  rbac_on_other: "Organization hidden; Access -> API Keys; System -> System Info (no Log Level); License read-only (slice 03)"
+  access_call_failed: "permissive fallback: all areas and tabs visible"
+
+coexistence_matrix:
+  - tool: "legacy bookmarks /settings?tab=<14 keys>, /settings/license, /connections/new, /connections/:id/edit"
+    must_not_break: true   # redirects with replace; unit-tested
+  - tool: "E2E specs via POMs (LighthousePage, SettingsPage, RbacSettingsPage, OverviewPage, SystemConnectionsPage)"
+    must_not_break: true
+  - tool: "docs file names/anchors (encryption.html, usagedata.html, configuration.html)"
+    must_not_break: true
+  - tool: "website hot-links of docs/assets from @main (jsDelivr): screenshot file names stay"
+    must_not_break: true
+  - tool: "licenseStatusOneAsker enforcement test"
+    must_not_break: true
+  - tool: "usageDataRouteKeys (settings paths stay event-free)"
+    must_not_break: true
+  - tool: "Stryker per-feature frontend config"
+    must_not_break: true
+
+usage_data_event: "N/A, because it is a navigation reorganisation; no outcome an event would count better than support questions"
+
+platform_coverage:
+  Browser: [chromium]
+  CI: [GitHub Actions ubuntu-latest]
+  Database: [sqlite, postgres]

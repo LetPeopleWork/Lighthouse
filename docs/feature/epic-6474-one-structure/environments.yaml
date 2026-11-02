@@ -1,0 +1,94 @@
+# Environment inventory — epic-6474-one-structure (ADO Epic #6474), DEVOPS wave
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+#
+# Product is self-hosted: customers upgrade by installing a release (Docker image, Standalone desktop app,
+# Helm chart); the startup migrator runs on first start of the new version. Rollback = install N-1.
+# Axes DISTILL must parametrize over (not ceremony): provider x install-state x install-shape.
+
+target_environments:
+  - name: local-dev
+    description: >
+      Developer workstation via Lighthouse.Backend/Start-DevServer.ps1 (dev key ring outside the repo).
+      Dev instance :5169 with demo data (Ocean Explorer multi-team Features). Backups restorable with
+      Restore-DbBackup.ps1 to replay an upgrade from a realistic pre-upgrade database.
+    platform: [linux, macos, windows, wsl]
+    preconditions:
+      - ".NET 10 SDK, Node.js 24 + pnpm"
+      - "gitignored valid_not_expired_license.json copied from the main checkout (worktrees)"
+      - "dotnet test excludes live-connector categories (see CLAUDE.md filter)"
+
+  - name: ci-backend
+    description: >
+      ci_backend.yml: dotnet build (TreatWarningsAsErrors), dotnet test -c Release with the computed category filter
+      (Category!=Integration always). Runs the migration-proof harness, the N-1 read test, ArchUnit rules and the
+      emission tests. Postgres runs through the shared Testcontainers instance (SharedPostgresContainer).
+    platform: [linux]
+    preconditions:
+      - "Docker available on ubuntu-latest for Testcontainers Postgres"
+      - "New tests carry NO Integration category (they use fakes/containers, never a live tracker), so they run on every push"
+
+  - name: ci-verify-sqlite
+    description: "ci_verifysqlite.yml: packaged linux-x64 build boots on SQLite, CI licence uploaded, Playwright walking skeletons."
+    platform: [linux]
+    preconditions: ["Packaged build from ci_packageapp", "CI licence from Scripts/generate_license.py"]
+
+  - name: ci-verify-postgres
+    description: "ci_verifypostgres.yml: same suite on a Postgres service container."
+    platform: [linux]
+    preconditions: ["Packaged build", "Postgres service container"]
+
+  - name: ci-verify-auth
+    description: "ci_verifyauth.yml: @auth/@rbac/@proxyauth suites (authentication ON)."
+    platform: [linux]
+    preconditions: ["Authentication__* settings as the workflow sets them"]
+
+  - name: release-artefacts
+    description: "Docker image, Standalone desktop app (Linux/macOS/Windows), Helm chart. Each starts the same migrator."
+    platform: [linux, macos, windows, kubernetes]
+    preconditions: ["Upgrade from the immediately previous release (N-1 to N); downgrade N to N-1 is the rollback"]
+
+axes:
+  provider: [sqlite, postgres]          # case folding differs (NOCASE ASCII-only vs case-sensitive text); planner folds in C#
+  install_state: [fresh_install, upgrade_from_current_release, rollback_N_to_N-1]
+  licence: [community, premium]         # free tier 3 leaf units / 1 Feature-level unit; renaming levels free (M7)
+  auth: ["off (every caller one subject)", "on (System Admin vs Team Admin vs member)"]
+
+install_shapes:   # upgrade fixtures for the slice 01 harness and slice 02 migration tests (expected group = planner output)
+  - name: demo-data
+    expected: "all units unchanged (the OUT-1 oracle on the shipped demo install)"
+  - name: single-tracker-jira
+    expected: "unchanged"
+  - name: two-tracker
+    description: "Jira Team and Azure DevOps Team on one level"
+    expected: "level lists union of both; each unit keeps its own subset"
+  - name: customer-a
+    description: "Change used as a Feature type (M12)"
+    expected: "migrated as is; no unit loses a type"
+  - name: linear-servicenow-no-types
+    description: "units with no types (Linear, ServiceNow)"
+    expected: "not flagged (M11); keep reading what they read"
+  - name: existing-empty-jira-ado-csv
+    description: "Jira/Azure DevOps/CSV unit that ticks no types (MA8)"
+    expected: "flagged NeedsItemTypes, refresh paused, in the upgrade notice; the only intended behaviour change"
+  - name: jira-team-reading-only-epic
+    expected: "needs-item-types group (MD7), reported with before/after numbers, upgrade does not fail"
+  - name: case-differing-types
+    description: "Story vs story across units"
+    expected: "one level entry (ordinal-ignore-case, M6); unit subsets respelled -> new fingerprint, same numbers (exception i)"
+  - name: lost-a-type
+    expected: "exception ii: recorded in UnitTypeLossNotices, reported, upgrade does not fail"
+  - name: custom-terminology
+    description: "Team/Portfolio/Feature words renamed under Terminology before upgrade"
+    expected: "level names equal the old Terminology values; Terminology still serves the 8 keys"
+  - name: fresh-install
+    expected: "two levels seeded with defaults; set-up offers Teams only (slice 15)"
+  - name: teams-only
+    description: "Feature level switched off, with and without existing Portfolios"
+    expected: "Portfolios hidden, data kept; /portfolios empty, /portfolios/{id} 404 level-switched-off"
+
+environment_variables_and_config:
+  new: []   # no new env var, chart value or configuration key; the structure lives in the database
+  note: "Startup migrator is automatic; there is no flag to skip it."
+
+dependencies_added: []
+credentials_added: []

@@ -544,6 +544,13 @@ of those levels today; initiatives would be the next). A CSV file carries no hie
 by hand. Whether each connector can deliver this, and how, is that Epic's DISCUSS. "Teams only" (one level) is
 one of the set-up's choices (#6474 M13).
 
+**Future direction: connection-level mapping moves to the level** (maintainer, 2026-11-02, not scheduled). The
+settings that sit on the connection today and describe how the hierarchy is wired (Parent Override Field,
+dependency fields and similar) belong with the level's configuration, next to its item types. Open: installs with
+two connections, where a level would need one value per tracker or a per-connection override on the level (the
+same question as ADR-270's "organisation default or per-tracker default"). To be placed when a level Epic or #6349
+next touches these settings.
+
 ### Proposed, not locked
 
 - Guided first-run set-up that picks an initial structure, changeable later (maintainer idea, 2026-11-02).

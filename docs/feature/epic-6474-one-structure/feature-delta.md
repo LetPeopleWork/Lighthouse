@@ -1548,3 +1548,253 @@ scan for `/levels` on the frontend.
 | **S02 Metrics pilot** | **Prerequisite of #6474 DELIVER** (from slice 02); fixes folder names and spelling |
 | S03i | Keeps blackouts, refresh cadence, ordering policy, connection defaults; the units, levels and terminology split are already in `Modules/OrganisationSetup/` (no move left for them) |
 | others | as in the re-cut table above |
+
+---
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+Full inventory in `environments.yaml`. Self-hosted product: customers install a release (Docker, Standalone, Helm);
+the startup migrator runs on first start. Nothing new is deployed, no env var, chart value, credential or
+dependency is added.
+
+| Axis | Values | Where proven |
+|---|---|---|
+| Provider | SQLite, PostgreSQL | `ci_backend` (harness, Testcontainers Postgres via `SharedPostgresContainer`); E2E in `ci_verifysqlite` / `ci_verifypostgres` |
+| Install state | fresh; upgrade from current release; rollback N to N-1 | harness (upgrade), N-1 read test (rollback), one E2E walking skeleton per provider |
+| Install shape (upgrade fixtures) | demo data; single tracker; **two-tracker** (Jira + Azure DevOps Teams); **Customer-A** (Change as Feature type); **Linear/ServiceNow units with no types** (not flagged, M11); **existing empty Jira/ADO/CSV units** (flagged, MA8); Jira Team reading only Epic (MD7); **case-differing types** (M6); custom Terminology; lost-a-type | slice 01 harness (groups: unchanged / respelled / lost a type / needs item types) and slice 02 migration tests |
+| Licence | Community (free tier 3 + 1 units, MA5 messages), Premium | unit/WAF tests for slice 13; Playwright runs with the CI Premium licence, so Community behaviour is a WAF test, not E2E |
+| Auth | off (one shared subject), on | WAF tests with and without auth; `RbacGuard(SystemAdmin)` on level writes in `ci_verifyauth` @rbac only if a spec is added (maintainer's E2E-minimalism rule: unit/WAF first) |
+| Switch state | two levels; Teams only | slice 15 WAF tests; one walking skeleton |
+
+Tier-1 rule held: no new Integration-category test. Everything above uses fakes, SQLite, or the shared Postgres
+container, so none of it needs a tracker token and all of it runs on every push.
+
+---
+
+## Wave: DEVOPS / [REF] CI/CD outline
+
+Existing pipeline reused: `ci.yml` -> `ci_backend.yml` (build with `TreatWarningsAsErrors`, `dotnet test`, Sonar),
+`ci_frontend.yml`, `ci_e2e.yml` (compile only), `ci_verifysqlite` / `ci_verifypostgres` (E2E run). **No new
+workflow, no new job** (rejected: a dedicated "migration" job, because the harness is an ordinary NUnit class and the
+backend job already fans out over providers through the shared container; a separate job would pay a second build).
+
+| Gate | Stage | Slice | Runs in | Blocking | Added cost |
+|---|---|---|---|---|---|
+| Migration-proof harness (fixtures + demo data through the real migrator, refresh against connector doubles, per-group assertions, both providers) | CI commit stage | 01 (test-only), re-run by every later slice | `ci_backend` `dotnet test` (`Category!=Integration`) | yes | about 1-2 min on the already-warm shared Postgres container; SQLite part under 30 s. Estimate, re-measure at slice 01 |
+| Planner unit tests (every ADR-274 rule, pure, no I/O) | commit | 02 | `ci_backend` | yes | seconds |
+| Self-check failure test (migrator refuses to start on a broken result, transaction rolled back) | commit | 02 | `ci_backend` | yes | seconds |
+| **N-1 rollback test** (below) | commit | 04 (extended by 03/08/09 saves) | `ci_backend`, both providers | yes | seconds to 1 min |
+| ArchUnit rules (Domain/Application/Adapters direction, read ports have no writers, single publisher of level events, store reachable only by the migrator and `OrganisationStructureStore`, OUT-4 ratchet, `ITeamUpdater`/`IPortfolioUpdater` caller ratchet) | commit | 02 onward, per slice that creates the thing | `ci_backend` (Release, so use `IlDependencies` for async edges, per the memory note) | yes | seconds, existing `Architecture/` project |
+| Frontend source scans (`/levels` literal only in `LevelService.ts`, `["levels"]` key only in `useLevels.ts`, only `index.ts` imported from outside the module) | commit | 05 | `ci_frontend` (Vitest) | yes | seconds |
+| Emission tests for `LevelRenamed` / `LevelSwitchedOff` (agreed browser: one name-only event; refused/never asked/veto: none; payload carries no name, id, count or free text) | commit | 06, 15 | `ci_backend` | yes | seconds |
+| E2E walking skeleton: upgraded demo install shows two levels with the old words (01 -> 02 -> 05) | acceptance | 05 | `ci_verifysqlite`, `ci_verifypostgres` | yes | one spec per provider (E2E minimalism); no new job |
+| Stryker.NET (per-feature) and StrykerJS | last, on frozen code | after 14 | local, per CLAUDE.md | gate before close | hours; excludes the acceptance suite |
+| Local pre-push | local | all | `pnpm build` + `dotnet build` + the filtered `dotnet test` | developer | no new hook |
+
+**The N-1 rollback test.** Goal: after slice 04 onward, a database written by the new release still reads
+correctly when the previous release's code reads it.
+1. Frozen reader: a small test-only class in the backend test project reproducing what release N-1 does with the
+   `Teams` and `Portfolios` tables (reads the `WorkItemTypes` column and the five discriminators the way N-1's
+   mapping does; no `ItemTypeSubset`, no `Levels`). It is a captured copy, not a build of the old release.
+2. Scenario per provider: migrate a fixture to N; then save through the real use cases (create a unit; narrow
+   its subset; change a level's types; flag a unit as needs-item-types); then assert the frozen reader sees, per
+   unit, the effective list (flagged units: their last list, MA9) and that no row N-1 requires is null or renamed.
+3. Reverse step: the reader (N-1) edits `WorkItemTypes`; the next start of N re-derives the subset from it
+   (ADR-275 decision 3). Asserted as a second start of the migrator on the same database.
+4. Real-binary check, not per push: at `/release`, before tagging, the maintainer starts the previous published
+   image against a copy of a database upgraded by the candidate (the dev-instance backup via
+   `Restore-DbBackup.ps1`) and checks it boots and shows the pinned counts. Added to the release checklist as one
+   line. Open item OI-3 (does the previous release's `MigrationsAppliedHealthCheck` tolerate an unknown migration).
+
+Branch strategy: unchanged (trunk-based, push to main). The migration is expand-only, so there is nothing to gate
+by feature flag; slice 04's server release and slice 14's client release ship together by release timing, not by
+branch.
+
+---
+
+## Wave: DEVOPS / [REF] Monitoring and KPI contracts
+
+Self-hosted: the operator sees structured logs; the vendor sees only opt-in usage data (never personal data) and
+the repository. Each KPI below gets its `measurement_scope`; nothing phones home without consent.
+
+| KPI | Instrument | Scope | Gate |
+|---|---|---|---|
+| OUT-1 upgrade keeps every number | slice 01 harness in CI on fixtures and demo data (pinned counts, 90-day throughput, forecast percentiles). Field half: migrator summary line (below) shows per-group counts to the operator; the "0 reports in 30 days" half is read by the maintainer from the support channel | `vendor_repository` (harness) + `per_instance` (log) | hard on every push |
+| OUT-1 named exceptions | exception (i) respelled and (ii) lost-a-type are asserted as groups in the harness, never as failures; at run time they are `Warning` lines with type and unit kind | same | hard |
+| OUT-2 pick types instead of typing | name-only: none. Walk-through at slice 09. Event rejected (see below) | maintainer walk-through | soft |
+| OUT-3 find level names first try | walk-through plus a term-coverage test: every screen that renders the 8 terms renders the level word | `vendor_repository` | hard (test) |
+| OUT-4 no Team/Portfolio branching in set-up and refresh | ArchUnit ratchet count may only go down; target 0 after 12b | `vendor_repository` | hard ratchet |
+
+**Usage-data events (maintainer decision, appended to `UsageDataEventName`; re-check at DELIVER that 22 and 23 are
+still free):**
+- `LevelRenamed = 22`: an admin renames a level's unit or item word. Name-only: never the old or new word. Emitted
+  in slice 06; listed in `docs/settings/usagedata.md` in that slice.
+- `LevelSwitchedOff = 23`: an install switches to Teams only. Name-only: no Portfolio count. Emitted in slice 15;
+  listed in the same file in that slice.
+- Rejected: `LevelItemTypesChanged` (DISCUSS candidate): no outcome KPI needs it; OUT-2 is a walk-through. `LevelSwitchedOn`
+  (the reverse): derivable later if the question arises; a property would be a closed enum at most, but the
+  name-only form is enough today.
+- Emission tests assert: one event from an agreed browser, none from a refused or never-asked one, none under the
+  administrator's veto, and that the serialised message holds the event name only (no level word, unit name, id, count).
+
+### Proposed `docs/product/kpi-contracts.yaml` block (not applied; append at DELIVER finalisation)
+
+```yaml
+  - id: OUT-6474-1-upgrade-keeps-every-number
+    feature: epic-6474-one-structure
+    title: Every upgraded install's units read the same items and show the same numbers
+    target: "100% of units identical (counts, 90-day throughput, forecast percentiles on pinned draws) on the fixtures and demo data; 0 'my forecasts changed after the upgrade' reports in the 30 days after release. Named exceptions: a respelled type (new fingerprint, same numbers) and a lost type (reported, never failed)."
+    measurement_scope: vendor_repository
+    measured_by: >
+      Slice 01 harness in CI on SQLite and PostgreSQL. Per instance, the operator sees the migrator summary line
+      (groups and counts, no names). The 30-day report count is read by the maintainer from the support channel at
+      the release check point; no scheduled job.
+    log_fields:
+      organisation-structure-migrated: ["Levels", "UnitsUnchanged", "UnitsRespelled", "UnitsLostAType", "UnitsNeedingItemTypes", "ElapsedMs"]
+    measurement_window: every push (harness); 30 days after release (reports)
+    gate: hard
+    alerting:
+      - condition: "harness group assertion fails"
+        action: "backend build fails (red)"
+    status: designed-not-shipped
+    caveat: "The harness proves the fixtures, not every real install; the field half is a count of reports, not a measurement."
+
+  - id: OUT-6474-4-no-unit-kind-branching
+    feature: epic-6474-one-structure
+    title: No place outside adapters branches on Team versus Portfolio in Organisation set-up and the refresh
+    target: "Ratchet only goes down; 0 after slice 12b"
+    measurement_scope: vendor_repository
+    measured_by: "ArchUnit ratchet test in Lighthouse.Backend.Tests/Architecture"
+    log_fields: {}
+    measurement_window: every push
+    gate: hard
+    alerting:
+      - condition: "count rises"
+        action: "backend build fails (red)"
+    status: designed-not-shipped
+
+  - id: OUT-6474-E1-level-events
+    feature: epic-6474-one-structure
+    title: How often levels are renamed and how many installs go Teams only
+    target: "No target; descriptive. Held to a rule is the pipe: one event per accepted action from an agreeing browser, none for a refused or vetoed one, never a name."
+    measurement_scope: opt_in_telemetry_required
+    measurement_plan:
+      data_collection:
+        - "Usage data events LevelRenamed (22) and LevelSwitchedOff (23), name only."
+      derivation: "Events per 90-day window, vendor instance excluded."
+      surfacing:
+        - "A PostHog insight built by the maintainer after release."
+    alerting: []
+    status: live-on-release
+    caveat: "Counts browsers that agreed, not installations."
+```
+
+### Proposed `docs/settings/usagedata.md` lines (not applied; slice 06 and slice 15 each add theirs)
+
+- `LevelRenamed`: "An administrator renamed a level's unit or item word. Nothing about which level or what word."
+- `LevelSwitchedOff`: "An installation switched to Teams only. Nothing about how many Portfolios were hidden."
+
+### Operator signals (startup migrator and the refuse-to-start failure)
+
+Structured lines, counts and kinds only, never a unit, Team, Portfolio or type name in a field except where the
+operator needs the type to act (the lost-type Warning carries stored kind, unit number, type, as `UnitTypeLossNotices`
+does; this is not usage data and stays in the operator's own log).
+
+| Event | Level | Fields | Operator meaning |
+|---|---|---|---|
+| `organisation-structure-migration-skipped` | Information | reason `structure-exists` | normal on every start after the first |
+| `organisation-structure-migrated` | Information | Levels, UnitsUnchanged, UnitsRespelled, UnitsLostAType, UnitsNeedingItemTypes, ElapsedMs | upgrade done; read this first when "my numbers changed" |
+| `unit-type-lost` | Warning | StoredKind, UnitNumber, Type | exception ii; recoverable from `UnitTypeLossNotices` |
+| `unit-needs-item-types` | Warning | StoredKind, UnitNumber | paused refresh until a type is ticked (MA8, MD7) |
+| `organisation-structure-self-check-failed` | **Fatal** (stderr `FATAL: ...`, exit non-zero, transaction rolled back) | Check name, expected, actual | **the install refuses to start**; operator action: stop, restore the pre-upgrade backup or reinstall N-1 (safe: nothing was written), report with the line |
+| `organisation-structure-migration-raced` | Information | | second instance lost the row on PostgreSQL and re-read; no action |
+
+The Fatal path reuses the key-ring check's existing `FATAL:` convention in `Program.cs`, so container
+orchestrators (restart loop, Helm `CrashLoopBackOff`) and the Standalone app surface it the same way. Test: the
+self-check failure scenario asserts the line, the non-zero exit and the unchanged database. The readiness check
+`MigrationsAppliedHealthCheck` stays; no new health check (rejected: the process does not start on failure, so a
+probe adds nothing).
+
+---
+
+## Wave: DEVOPS / [REF] Deployment strategy and rollback contract
+
+**Strategy: release-based, no staged rollout.** Rejected simpler alternatives are moot (this is already the
+simplest); rejected richer ones: a feature flag on the new structure (the migration is expand-only and the old
+columns stay readable, a flag would be a second code path in every reader, ADR-275 option M-C), and a pre-start
+dry-run mode (the planner is pure and the harness runs it on every push).
+
+**Rollback first. Contract:**
+1. Rollback = install the previous release (N-1) over the upgraded data (Docker tag, Standalone installer, Helm
+   `rollback`/previous chart version).
+2. Schema is expand-only: N adds tables and columns, removes and renames nothing, so N-1 starts on N's database.
+3. `WorkItemTypes` is dual-written by N on every save (the flagged unit keeps its last list) so N-1 reads what each
+   unit reads now; `UnitTypeLossNotices` is the recovery record for types a unit lost.
+4. Ids, URLs, scopes, report owners and snapshot rows never change, so N-1 and bookmarks keep working.
+5. N-1 edits made after a rollback are re-derived into the subset on the next start of N.
+6. What rollback does NOT restore: level renames made in N. After slice 06 N stops writing the 8 Terminology keys,
+   so N-1 shows the words as they were before the rename. Documented in the release note as the one visible rollback effect; not a data loss. Open item OI-2 asks whether
+   to keep writing Terminology until the contract step.
+7. CI proves 2-5 with the N-1 read test; a pre-start database backup is advised in the release note (the migrator
+   rolls its own transaction back on a failed self-check, so a failed upgrade leaves the data as it was).
+
+**Pre-release checklist (added to `/release`):** harness green on both providers; N-1 read test green; manual
+real-image N-1 boot against an upgraded copy of the dev backup; release note carries the MA8 behaviour change (empty
+Jira/ADO/CSV units pause), the MA5 free-tier wording change, and the breaking-change list for the clients (M1,
+A-D11 level keys, A-D17); slice 04's server and slice 14's clients released together.
+
+Post-deploy validation (operator): the `organisation-structure-migrated` line present with `UnitsUnchanged` equal to the
+unit count minus the three exception groups; Organization shows two levels; one unit's forecast date unchanged.
+
+---
+
+## Wave: DEVOPS / [REF] Mutation testing and observability
+
+- **Mutation: per-feature, unchanged** (CLAUDE.md `## Mutation Testing Strategy`), Stryker.NET + StrykerJS, kill rate
+  >= 80%. Runs last on frozen code (any edit shifts the mutants). Scope: the planner (`OrganisationStructureMigrationPlan`),
+  `LevelAdministration`, `UnitSettingsSave`, the effective-types computation, `OrganisationStructure`/`Level` rules.
+  The planner is the high-value target: every ADR-274 rule is a mutant (case fold, subset containment, empty
+  handling). **Stryker excludes the acceptance suite** (80 min versus 3); the harness is acceptance-class, so the
+  planner's own unit tests must kill planner mutants without it. Survivors are killed with targeted tests, not long reruns.
+- **Observability:** existing structured logs plus the lines above; no new metric, dashboard, tracing or alert.
+  SLOs: none new for this Epic. Guardrail on cost: refresh and page-load times must not regress from the extra
+  structure read (effective types computed in memory from a two-row structure, quality attribute Performance); read by
+  hand on the dev instance before/after slice 12 (throttled once, per the slow-connection rule).
+- **DORA:** no change to the pipeline; the added CI time is the harness (est. 1-2 min on a pipeline that already runs
+  Testcontainers). Watch the backend job duration at slice 01; if it adds more than 3 min, mark the harness's
+  Postgres half for the shared-container reuse already used by `BlockedRuleSetMigrationTests`.
+
+---
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+| Counterpart | Relation | Decision |
+|---|---|---|
+| Lighthouse-Clients CLI/MCP | `/teams`, `/portfolios` keep routes, ids, payload shape. Breaking: unknown type -> 400 (M1); level keys refused by `PUT /terminology` (A-D11); `/portfolios` empty and `/portfolios/{id}` 404 `level-switched-off` while Teams only (A-D17); free-tier text changes (MA5). | Major version bump of the clients with a breaking-change note and a new `levels` read (slice 14, M9), released together with the server release that carries slice 04. Repo not in this checkout: usage unread (open item OI-4). An old client against the new server still works except those cases. |
+| New client against old server | `levels` read 404s | Clients must say "server too old for levels" rather than a raw 404 (slice 14 AC; check at DELIVER). |
+| Terminology API | `GET /terminology/all` keeps its 8 keys | served from the levels (slice 02) |
+| Website | N/A, because Teams and Portfolios keep their names; marketable story is #6455's | no change |
+| Website docs/screenshots (jsDelivr hot-links `docs/assets` from main) | docs change at feature finalisation, per feature, not batched | before-and-after screenshots land only when the screens ship (05 on); docs wait for the code (memory: docs after code confirmation); file list is the DISCUSS checklist |
+| #6473 (Organization settings) | slice 05 needs its Organization shell; Terminology tab imports the module's `index.ts`; spelling "Organization" | pre-requisite below |
+| Epic 6264 | S02 (Metrics pilot) fixes `Modules/` folder names | pre-requisite below |
+| Standalone / Helm / Docker | same migrator on every start; no chart or env change | same process |
+
+### Pre-requisites (DELIVER)
+1. Epic 6264 S02 (Metrics pilot) merged before slice 02; slice 01 (test-only) may start earlier.
+2. #6473's Organization shell before slice 05 (M5); slices 02, 03, 04, 07, 10, 12, 13 are decoupled from it.
+3. Re-check `UsageDataEventName` still ends at 21 before appending 22 and 23.
+4. `HistoricalSchemaPatch` learns every new table and column (else fixtures go red naming the column).
+5. Migrations generated with the `CreateMigration` script for both providers, expand-only; build before `dotnet ef`.
+
+---
+
+## Wave: DEVOPS / [REF] Open items
+
+- **OI-1.** CI time of the harness is estimated; measure at slice 01 and report.
+- **OI-2.** After slice 06 N-1 would show pre-rename words after a rollback (N stops writing the 8 Terminology keys). Options: accept and note it (chosen as default), or keep dual-writing the keys until a contract step. Maintainer to confirm.
+- **OI-3.** Whether N-1's `MigrationsAppliedHealthCheck` and startup tolerate a database with an unknown newer migration: verify with the real-image check on the first release carrying slice 02.
+  - *Checked 2026-11-02:* `MigrationsAppliedHealthCheck` only compares `GetPendingMigrationsAsync()`, so an applied migration that N-1 does not know is not reported as pending; the startup path still needs the real-image check.
+- **OI-4.** Lighthouse-Clients repo usage of `/teams`/`/portfolios` writes with types not on the level is unread; verify before the major bump.
+- **OI-5.** Whether the Standalone updater can downgrade over the user data directory the same way Docker and Helm can; check at the first release.
+- **OI-6.** `LevelItemTypesChanged` dropped from the event candidates; confirm no KPI needs it.
+- **OI-6 note.** Only the *usage-data* candidate is dropped; the *domain* event `LevelItemTypesChanged` stays as DESIGN decided.

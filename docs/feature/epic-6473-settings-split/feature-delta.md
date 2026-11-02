@@ -1078,3 +1078,170 @@ wherever they disagree.
 - L-1, L-5, L-6 accepted as noted (out of scope, diagram detail, test ids in the definition left to DISTILL).
 
 Re-review (iteration 2) was not run inside this DESIGN; the orchestrator may run it before DISTILL.
+
+---
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+Frontend only, no backend change, nothing new deployed. The "environments" are where the E2E and unit suites run and the
+configurations a customer may run the shipped SPA in. Detail in `environments.yaml`.
+
+| Axis | Values | Covered by |
+|---|---|---|
+| Browser | Chromium only (Playwright project `chromium`) | all E2E |
+| Viewport | 1920x1080 in E2E. Mobile (scrollable tabs, drawer listing the three areas) has no E2E: Vitest + React Testing Library only | E2E thin by policy |
+| Database | SQLite (`ci_verifysqlite`) and Postgres (`ci_verifypostgres`); the feature touches no persistence, both runs only prove the deep-link walking skeleton on each | existing jobs |
+| Auth off, RBAC off (default) | everyone is System Admin: all three areas and every tab | `pnpm test` (default E2E, grep-invert of `@auth|@rbac|@screenshot|@proxyauth`) |
+| Auth on, RBAC on (`Authorization__Enabled`) | System Admin sees all; non-admin sees Organization hidden, Access API Keys, System Info only; deep link to a hidden tab redirects | `@rbac` run inside `ci_verifyauth` (`RoleBasedAccessControl.spec.ts`, `RbacSettingsPage`) |
+| Auth on, RBAC off | API Keys shows its "auth off" state | unit test of the resolver and the tab rules |
+| Access call failing | permissive fallback: every area and tab visible (A7) | resolver unit test (Vitest) |
+| Slow connection | Wait state: lone spinner, no tab row; Connections tab spinner then list | Vitest looks; manual throttled-browser check at DELIVER review (CLAUDE.md rule) |
+| Delivery form | Docker image, Helm chart, Standalone (Tauri webview, same SPA, same router) | the SPA is identical; Standalone gets the verifymacos / verifywindows runs of ci.yml |
+
+## Wave: DEVOPS / [REF] CI/CD outline
+
+No new workflow, job or step. Everything runs in the existing pipeline; trunk-based push to `main`.
+
+| Gate | Where | What it catches here |
+|---|---|---|
+| Local, pre-push | `pnpm test`, `pnpm build` (prebuild = `biome check --write`, then `tsc -b`, `vite build`) | resolver cases (all 14 legacy keys, both cases, A7 fallback), `e2eTestIds.test.ts` (POMs vs app ids), DD14 source-scan test, usage-data page-opening test, `licenseStatusOneAsker` allow-list edit |
+| Local, E2E | Playwright run by Claude/maintainer before commit of any spec or POM (memory rule) | the POM menu navigation really reaches each tab |
+| Commit stage | `ci.yml` -> `ci_frontend.yml` (Vitest, Biome, fallow, Sonar gate) | same as local, plus fallow zone check (definition in `models`, Header may import it) and Sonar new-issue gate |
+| Acceptance | `ci_verifysqlite`, `ci_verifypostgres` (default E2E) | deep-link `page.goto` and menu walking skeleton |
+| Auth/RBAC | `ci_verifyauth` (`test:auth`, `test:rbac`) | gating: hidden tabs, redirect to first visible |
+| Release | `ci_release.yml` via `ci.yml` needs-list | nothing new |
+
+The DD14 source-scan enforcement test needs no CI change: it is an ordinary Vitest file, so it runs in `pnpm test` and
+`ci_frontend.yml`. Its exemption list is `settingsAreas.ts` and `settingsRoutes.tsx` only; the DELIVER crafter must not
+widen it. No new ledger rule in `docs/ci-learnings.md` (automated instead, per CLAUDE.md).
+
+Order constraint for `main`: slice 01 ships the Configuration panel unchanged and the behaviour-row loading/failure gap
+(DISCUSS "Loading and failure looks") stays until slice 02. No release is cut between; DEVOPS records this as a
+**release precondition**: do not run `/release` with slice 01 only on `main`. Epic order: this Epic is
+releasable after slice 02 (slices 03-05 add License and Connections; each leaves `main` consistent).
+
+## Wave: DEVOPS / [REF] Monitoring contracts (outcome KPIs without a usage event)
+
+Lighthouse is self-hosted; no vendor pipeline. Maintainer decided: **usage-data event N/A, because it is a navigation
+reorganisation; no outcome an event would count better than support questions.** Consequence: DD14 keeps settings paths
+event-free (`usageDataRouteKeys` unchanged, test asserts no page opening for settings or connection paths), and
+`UsageDataEventName` and `docs/settings/usagedata.md` are not touched.
+
+| KPI | Measure | Scope (kpi-contracts vocabulary) | Check point | Alert |
+|---|---|---|---|---|
+| K1 Right area | maintainer walkthrough, 5 named settings x 3 testers, target 5/5 | vendor_repository (human check, no instrument) | DELIVER review, before `/release` | any miss: fix labels/descriptions in the menu before release |
+| K2 No misplaced setting | inventory table in DISCUSS compared to `settingsAreas.ts` tab list; 0 instance settings in Organization, 0 organization settings in System | vendor_repository | finalize (`nw-finalize`) | any hit blocks finalize |
+| K3 No broken link | Vitest: 14 of 14 legacy keys plus `/settings/license`, `/connections/new`, `/connections/:id/edit` resolve; E2E walking skeleton | automated, every CI run (hard gate) | every push | red build |
+| K4 Support | count of "where is X in settings?" questions in maintainer inbox and Slack, release after vs before; baseline "not counted today" is stated as unknown, so the check is "no visible rise" | vendor_repository (maintainer reads) | one release after shipping | a rise: add Terminology-style redirect hints or revisit menu descriptions; reconsider an event only if the questions cannot be triaged |
+
+Proposed block for `docs/product/kpi-contracts.yaml` (not applied; append under `outcomes:`; maintainer decides):
+
+```yaml
+  - id: OUT-settings-split-by-who-decides
+    feature: epic-6473-settings-split
+    title: Settings found by who decides
+    target: "K1 5/5 named settings found first try; K2 0 misplaced; K3 all legacy links resolve; K4 no rise in where-is-X questions"
+    measurement_scope: vendor_repository
+    measurement_plan:
+      data_collection:
+        - "K3: Vitest resolver cases and E2E deep-link skeleton, run in every CI build"
+        - "K1/K2: maintainer walkthrough and inventory check at DELIVER review and finalize"
+        - "K4: maintainer's support inbox and Slack, one release after"
+      usage_data_event: "N/A, because it is a navigation reorganisation; no outcome an event would count better than support questions"
+```
+
+## Wave: DEVOPS / [REF] Deployment strategy and rollback
+
+- **Strategy:** release-based. The change is frontend routing, no data, no migration, no config. It ships in the next
+  release as Docker image, Standalone installer and Helm chart together; nothing is deployed by this Epic itself.
+  Rejected simpler alternative: none needed (no component added). Rejected heavier ones: a feature flag for the old
+  page (two Settings UIs to keep; redirects already give compatibility), staged rollout (customers choose when to
+  upgrade).
+- **Rollback (designed first):** install the previous release. Safe because there is no persisted state: the only
+  stored thing touched is the DataGrid column state under the unchanged `storageKey="overview-connection-table"` and
+  the `["configuredConnections"]` cache, both client-side. Old bookmarks of the new layout (`/settings/system/...`)
+  break after a rollback; accepted (they are three days old at most and never published; the release notes name old
+  links, not new ones).
+- **Smoke test after release (maintainer, 5 minutes):** header Settings menu lists the areas; open each tab once as
+  System Admin; with RBAC on, open one tab as a non-admin; `?tab=rbac` and `/connections/new` redirect.
+- **Release-note points** (written at `/release`, not finalize): `?tab=configuration` opens Terminology; the usage-data
+  veto now sits in System -> Usage Data (A16); connections list moved to System -> Connections.
+
+## Wave: DEVOPS / [REF] Mutation testing strategy
+
+Per-feature, as in CLAUDE.md (not rewritten): Stryker for the frontend, kill rate >= 80%, run LAST on frozen code
+(any later edit shifts the line numbers). Backend: no C# change, so Stryker.NET is N/A, because no backend file
+changes. Frontend scope to mutate: `src/models/Settings/settingsAreas.ts` (resolver and key map; the highest-value
+target), `pages/Settings/settingsRoutes.tsx`, `SettingsAreaPage`, `SettingsMenu`, `useBehaviourSettings`,
+`useConfiguredConnections`. Follow the existing config precedent
+(`Lighthouse.Frontend/stryker.config.story-6249-chart-loading-indicators.mjs`) and the Stryker traps in memory (the
+acceptance suite is excluded; read per-file scores). Survivors are killed by tests, not by long reruns. Declarative
+data tables (labels, slugs) may survive as string mutants; a resolver test that names each slug kills them.
+
+## Wave: DEVOPS / [REF] Observability
+
+Existing structured logs and the opt-in usage data pipe; nothing added. No backend change, so no new log events, no
+new SLO, no new alert. Frontend failures show as the in-page looks defined in DESIGN (Wait spinner, Connections
+failed alert, behaviour-row failed alert); there is no client error telemetry in the product and none is added.
+Detection after release is human (K4). Continuous learning: no new capability.
+
+## Wave: DEVOPS / [REF] Branching
+
+Trunk-based, push directly to `main` after the local gates (`pnpm test`, `pnpm build`, Playwright on touched specs)
+are green. One focused commit per step, conventional scopes (`feat(settings): ...`, `refactor(settings): ...`, refactor
+separate from feature, e.g. DD9 commit 1 vs 2). Slices land in order 01 -> 05 (Epic ships on its own; no
+interleaving with #6474 slices on shared files except via the additive Organization tab list, DD16). #6474 runs in
+parallel in another worktree: both edit `Settings` files, so whoever pushes second does not rebase autonomously;
+stop and report if trunk moved.
+
+## Wave: DEVOPS / [REF] Coexistence matrix
+
+| Existing thing | Must keep working | How | Verified by |
+|---|---|---|---|
+| Bookmarks `/settings?tab=<14 keys>`, any case | yes | resolver `Redirect` (replace) | resolver unit test, 14 x 2 cases |
+| `/settings` bare | yes | first visible area | unit + E2E |
+| `/settings/license` (dead today) | resolves | redirect to `/settings/system` (slice 01), `/settings/system/license` (slice 03) | unit |
+| `/connections/new`, `/connections/:id/edit` | yes | `<Navigate replace>` keeping id (slice 05); until then unchanged | unit + `RoleBasedAccessControl.spec.ts` line ~855 |
+| Back button | no loop | `replace` on every redirect and tab click | unit |
+| Docs links in app (`encryption.html`, `usagedata.html`, `configuration.html#...`) | yes | docs file names and anchors stay | finalize checklist |
+| Website hot-links `docs/assets/**` from `@main` via jsDelivr | yes | screenshot file names stay; only content refreshes, which reaches the website live on push of `main` | see below |
+| E2E specs | yes | change only through POMs (`LighthousePage.goToSettings`, `SettingsPage.goTo*`, `RbacSettingsPage`, new `SystemConnectionsPage`); test ids kept (DD13) | `e2eTestIds.test.ts`, E2E in verify jobs |
+| `licenseStatusOneAsker` | green | no new asker; `SystemSettingsTab.tsx` leaves allow-list in the deleting commit (A15) | existing test |
+| Usage data | no event for settings paths | `usageDataRouteKeys` untouched | test (DD14.4) |
+| Saved Overview connection-table column state | yes | same `storageKey` | manual |
+| Standalone (Tauri) | yes | same SPA and router | verifymacos / verifywindows |
+
+**Screenshots (website hot-link):** because the website serves `docs/assets` live from `main`, a screenshot regenerated
+at finalize is public the moment it is pushed. Order at finalize: code released/merged first, docs and screenshots
+after the maintainer confirms (memory rule), all `@screenshot` specs reach views through POMs so the file names do not
+change. Specs that change content: the Settings shots (`docs/assets/settings/*.png`: configuration, system settings
+becoming Terminology/Calendar/Refresh & ordering, rbac, apikeys, databasemanagement, demodata, encryption, systeminfo,
+usagedata) and the Overview shot (Connections section leaves it in slice 04). New shots: System -> Connections, System
+-> License. Regeneration traps: pixel threshold keeps the OLD PNG when the diff is under the threshold; the
+`@screenshot` run needs a premium licence fixture (gitignored; copy from the main checkout). One `@screenshot` per
+theme. A file whose view no longer exists (`configuration` for the retired tab) is NOT deleted until the docs and the
+website no longer reference it; DEVOPS lists it as a finalize check, answered "keep until the references are gone".
+
+## Wave: DEVOPS / [REF] Usage-data event decision
+
+N/A, because it is a navigation reorganisation; no outcome an event would count better than support questions.
+No `UsageDataEventName` entry, no `docs/settings/usagedata.md` change, no DELIVER emission step.
+
+## Wave: DEVOPS / [REF] Pre-requisites and open items
+
+Pre-requisites for DELIVER:
+1. Playwright runnable locally (Chromium installed, backend started with `Start-DevServer.ps1`, demo data loaded);
+   RBAC specs need the `ci_verifyauth` setup, so run `@rbac` locally only if the auth fixture can be reproduced,
+   otherwise rely on CI and say so.
+2. Premium licence fixture copied from the main checkout before the `@screenshot` run (finalize).
+3. Docs-only pushes start no CI run (`ci.yml` paths filter): the code commit's run is the signal.
+4. Maintainer-attended UI sketch approvals are recorded in DISTILL; DELIVER only re-sketches what DISTILL left open.
+5. Throttled-browser check of the Wait spinner and Connections loading look (manual, at DELIVER review).
+
+Open items (uncertain, decided by default):
+- OI-1 `job-operator-run-the-instance-apart-from-how-we-work` in `jobs.yaml` still to be confirmed before DISTILL (DESIGN carry-over).
+- OI-2 The `kpi-contracts.yaml` block above is proposed, not applied; apply at finalize if the maintainer wants K1-K4 tracked there.
+- OI-3 K4 has no baseline; "no rise" is judged by the maintainer's memory of the inbox. Accepted.
+- OI-4 Mobile viewport has no E2E coverage (E2E is a thin sanity check); covered by Vitest only.
+- OI-5 No E2E for the RBAC-on non-admin path of the new Connections hidden tab beyond `RoleBasedAccessControl.spec.ts`; DISTILL decides if one assertion is added there.
+- OI-6 `/release` guard: do not cut a release with only slice 01 on `main` (behaviour-row gap).
