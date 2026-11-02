@@ -1,0 +1,83 @@
+# Environment inventory - story-6457-fe7-fast-frontend-tests
+# Consumed by DISTILL for environmental realism.
+#
+# Behaviour-free test infrastructure (a time-budget Vitest reporter with a ratcheting allow-list, a failing per-file
+# budget, test-configuration candidates, and test rewrites). Nothing deploys; no route, DTO or response changes.
+
+target_environments:
+  - name: local-quiet
+    description: >
+      The 12-core, 31 GB Linux reference machine with no other session running, LIGHTHOUSE_TEST_WORKERS=6,
+      pnpm test (plain run, reporter on), measure.sh as the sampler. Where the alternating A/B pairs, the planted-test
+      proof and the 3 consecutive green full runs happen. Arms are two checkouts (baseline worktree and candidate
+      worktree), never a toggled config; test-results.json is copied out after every run.
+    platform: [linux]
+    preconditions:
+      - "LIGHTHOUSE_TEST_WORKERS=6 exported in both arms"
+      - "No other pnpm test or dotnet test running; dotnet build-server shutdown beforehand"
+      - "pnpm install --frozen-lockfile --ignore-scripts in each worktree"
+  - name: local-default
+    description: >
+      Any developer or agent session, worker cap per story 6461 (half the cores when unset and CI is not 'true').
+      The reporter runs as part of pnpm test; IDE (Vitest) runs load vitest.config.ts and so load it too.
+    platform: [linux, macos, windows]
+    preconditions:
+      - "Node per .nvmrc, pnpm per Lighthouse.Frontend/package.json"
+  - name: ci
+    description: >
+      GitHub Actions ubuntu-latest (runner size not set in the workflow; 4 cores recorded by the T2 workspace, to be
+      confirmed by the reporter's start line in slice 1), CI=true so bail=1 and the worker cap is off. The only
+      Vitest run is the coverage run, pnpm run sonarreport = vitest run --coverage, inside the composite action
+      .github/actions/build-frontend (ONE step in the jobs API). The reporter is listed in vitest.config.ts and runs
+      in that step; no new step or workflow. Publishes the test-timings-frontend artifact (file, test_name,
+      duration_ms, outcome) on every run whose frontend job ran: the source of the after-measurement.
+    platform: [linux]
+    preconditions:
+      - "CI=true"
+      - "LIGHTHOUSE_TEST_WORKERS unset"
+      - "frontend job runs only when the diff since the last green main run touches Lighthouse.Frontend/, .nvmrc, Scripts/test-timings/ or a ci*.yml"
+  - name: ci-candidate-branch
+    description: >
+      Slice 2's CI arm: a throwaway features/** branch (or workflow_dispatch on it) whose tip commit changes
+      vitest.config.ts, so the frontend job runs. Compared against the latest qualifying main run and the 5-run
+      median. Lead step (it pushes); the branch is deleted afterwards.
+    platform: [linux]
+    preconditions:
+      - "Tip commit touches a frontend path (non-main refs diff against HEAD^)"
+
+coexistence_matrix:
+  - tool: ci.yml / ci_frontend.yml / build-frontend action
+    must_not_break: true
+    note: "Only ci_frontend.yml line 60 changes (--warn-only removed from the frontend call, slice 1); no new step, job or workflow. That edit sets github_changes in ci_changes.yml, so slice 1's push runs the full backend, E2E and live connector suites"
+  - tool: check_budget.py / test-time-budget.json (frontend section)
+    must_not_break: true
+    note: "Made failing in slice 1; ceilings re-derived if it does not pass on the 7 saved artifacts. Stale entries already fail under --warn-only. The backend call keeps --warn-only (T4)"
+  - tool: vitest_to_csv.py and the test-timings-frontend CSV columns
+    must_not_break: true
+    note: "Columns unchanged: check_budget.py refuses any other header. A trailing position_in_file column is the documented fallback only"
+  - tool: Existing Vitest reporters (default, vitest-sonar-reporter, json)
+    must_not_break: true
+    note: "sonar-report.xml feeds SonarCloud, test-results.json feeds the CSV. The new reporter is added beside them; pnpm test's --reporter=default flag must not silently drop them (D2 spike question 2)"
+  - tool: Stryker (frontend, vitest-runner)
+    must_not_break: true
+    note: "Reporter is off under Stryker (marker unverified, spike question 3); mutate list and runner include checked before the end-of-Story run"
+  - tool: Story 6461 (T3) worker cap and resolveTestWorkers
+    must_not_break: true
+    note: "Reused unchanged; every local measurement fixes LIGHTHOUSE_TEST_WORKERS=6"
+  - tool: T4 (test budgets fail the build)
+    must_not_break: true
+    note: "T4 loses its frontend half at its pick-up (slice-44 brief); keeps the backend"
+  - tool: Playwright E2E and @screenshot tests
+    must_not_break: true
+    note: "No spec or screenshot file in any slice diff"
+  - tool: Biome (pnpm build prebuild, biome check --write ./src)
+    must_not_break: true
+    note: "Slice 1 enables noSkippedTests and noFocusedTests; offenders fixed or listed by name in the same change"
+
+deployment_assumptions:
+  - "Nothing deploys; ships with the next regular push to main. Trunk-based: one push per slice, each green first, no branches or PRs (features/** throwaway branch for slice 2's CI arm only)"
+  - "Rollback is git revert of the slice commit; nothing is persisted. The reporter has a one-option switch (LIGHTHOUSE_TIME_BUDGET=warn|off) that avoids reverting the guard; the per-file half re-adds --warn-only"
+  - "Rigor standard for every slice (D11), thorough for slices 1 and 3 if the maintainer prefers; agent model and reviewer model passed explicitly on every dispatch"
+  - "CI after-measurement owned by the lead: artifact test-timings-frontend, at least 5 main runs whose frontend job ran (counted by artifact presence, no Failed rows, row count not below the baseline), against measurement/ci-artifacts-2026-11-02"
+  - "Observability: N/A, no running service touched; the test-timings-frontend artifact and the Vitest Duration line are the instrument"
+  - "Usage-data event: N/A, behaviour-free test infrastructure with no user-facing feature"
