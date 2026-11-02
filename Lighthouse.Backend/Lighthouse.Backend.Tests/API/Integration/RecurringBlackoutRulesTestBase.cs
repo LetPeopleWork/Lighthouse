@@ -2,7 +2,6 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -103,13 +102,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(Factory.Services);
             }
             finally
             {
+                await SharedHostCleanup.ForgetOwners(Factory.Services, [(SeededTeamId, OwnerType.Team)]);
+
                 using (var teardownScope = Factory.Services.CreateScope())
                 {
                     var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();

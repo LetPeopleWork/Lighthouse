@@ -2,7 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
@@ -106,10 +105,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(factory.Services);
             }
             finally
             {

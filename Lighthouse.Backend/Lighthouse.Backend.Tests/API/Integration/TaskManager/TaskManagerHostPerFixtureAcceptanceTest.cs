@@ -52,7 +52,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
             try
             {
-                await TheQueueGoesIdleOrFails();
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(Factory.Services);
             }
             finally
             {

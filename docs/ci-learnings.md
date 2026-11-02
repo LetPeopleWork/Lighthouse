@@ -289,9 +289,11 @@ carries a `// biome-ignore lint/plugin: <reason>`.
 - **Host lifecycles in `WebApplicationFactory` tests**: build the host once per fixture in `[OneTimeSetUp]`
   and dispose it in `[OneTimeTearDown]`; reset per-test state in `[SetUp]` (the factory's `Clock.Reset()`,
   `UseFreshDatabase()`, `ForgetTheCachedMetrics()`, a new client) and clean up in `[TearDown]` through
-  `SharedHostCleanup`. Three architecture tests enforce the mechanics: `TestHostPerFixtureGuardTest`
-  (a host started per test needs a written reason on its shrinking list), `DbContextComesFromAScopeGuardTest`
-  and `SharedHostsDrainTheUpdateQueueGuardTest`. Still by hand (not automated because what counts as per-test state
+  `SharedHostCleanup`. Three architecture tests check part of it: `TestHostPerFixtureGuardTest` (a host started
+  per test needs a written reason on its shrinking list), `DbContextComesFromAScopeGuardTest` (a context
+  asked straight from a host's root provider; one first stored in a variable is not seen) and
+  `SharedHostsDrainTheUpdateQueueGuardTest` (a fixture that keeps its host waits for the update queue in
+  `[TearDown]`). Disposal and the per-test resets are not checked. Still by hand (not automated because what counts as per-test state
   differs from fixture to fixture):
   - App singletons survive between tests on a shared host: the update queue's maps and status store, the
     history filler's "already asked" set, the reconstruction memo (`SharedHostCleanup.ForgetOwners`), the

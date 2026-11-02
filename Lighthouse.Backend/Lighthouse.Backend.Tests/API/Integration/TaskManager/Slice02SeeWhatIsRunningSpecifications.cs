@@ -14,7 +14,7 @@ using System.Text.Json;
 namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 {
     /// <summary>
-    /// DISTILL step definitions (Specifications) for Epic #5511 slice 02 — see what is running.
+    /// Step definitions for seeing what the Task Manager is running.
     ///
     /// The contract these steps fix, which is what DELIVER has to build:
     ///

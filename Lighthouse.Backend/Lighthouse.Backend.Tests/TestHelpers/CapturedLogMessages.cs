@@ -6,7 +6,7 @@ using System.Globalization;
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     /// <summary>
-    /// ADR-137 D72: <c>Program.cs</c> calls <c>UseSerilog(logger, true)</c> — the positional argument
+    /// <c>Program.cs</c> calls <c>UseSerilog(logger, true)</c> — the positional argument
     /// is <c>dispose</c>, and <c>writeToProviders</c> defaults to <c>false</c>, so every
     /// <see cref="Microsoft.Extensions.Logging.ILoggerProvider"/> added through <c>AddProvider</c> is
     /// dropped. Serilog is the pipeline, so a test that wants log messages has to attach a sink.

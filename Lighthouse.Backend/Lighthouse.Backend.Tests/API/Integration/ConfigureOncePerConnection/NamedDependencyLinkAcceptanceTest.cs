@@ -10,7 +10,6 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Models.Events;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
@@ -274,10 +273,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(services);
             }
             finally
             {

@@ -30,10 +30,10 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-137, viewer-identity embed session.
+    /// Hosts for driving the viewer-identity embed session through its three hops.
     ///
     /// There is deliberately no TestAuthHandler here. Hop 1 only counts a principal authenticated on
-    /// the ordinary cookie scheme (D56), and a header-borne test scheme never reaches that branch —
+    /// the ordinary cookie scheme, and a header-borne test scheme never reaches that branch —
     /// so an interactive session here is a real <c>.Lighthouse.Session</c> cookie, protected with the
     /// host's own data protector and read back by the production cookie handler.
     /// </summary>
@@ -93,10 +93,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public WebApplicationFactory<Program> LicenceBlocked { get; }
 
-        /// <summary>Authentication enabled with no authority — <see cref="AuthMode.Misconfigured"/> (DQ-7).</summary>
+        /// <summary>Authentication enabled with no authority — <see cref="AuthMode.Misconfigured"/>.</summary>
         public WebApplicationFactory<Program> Misconfigured { get; }
 
-        /// <summary>What every instance gets by default: no embed surface at all (Epic #5674).</summary>
+        /// <summary>What every instance gets by default: no embed surface at all.</summary>
         public WebApplicationFactory<Program> EmbedDisabled { get; }
 
         public CapturedLogEvents LogEvents { get; } = new();
@@ -328,6 +328,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             root.Clock.Reset();
             root.UseFreshDatabase();
+            root.ForgetTheCachedMetrics();
+            foreach (var host in derivedHosts)
+            {
+                host.ForgetTheCachedMetrics();
+            }
+
             LogEvents.Clear();
         }
 
@@ -475,7 +481,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             var host = root.WithWebHostBuilder(builder =>
             {
-                // Epic #5674: the shipped default is off, so every host that drives the hops opts in.
+                // The shipped default is off, so every host that drives the hops opts in.
                 builder.UseSetting(EmbedEnabledConfigurationKey, embedEnabled ? "true" : "false");
                 builder.UseSetting("Authentication:Enabled", authenticationEnabled ? "true" : "false");
                 builder.UseSetting("Authentication:ClientId", "lighthouse-viewer-embed-test");

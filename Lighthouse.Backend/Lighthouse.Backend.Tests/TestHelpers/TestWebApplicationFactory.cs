@@ -134,9 +134,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public ResettableFakeTimeProvider Clock { get; } = new(TestToday.FrozenNow);
 
         // Work that outlives its request can still hold a connection to the previous test's database. A
-        // recreated database at the same path shares that connection's -wal and -shm files, and the two
-        // corrupt each other's locks: SQLite error 15 ('locking protocol'), 'disk I/O error', or a
-        // malformed database, in whichever test runs next. A path no earlier test used cannot be shared.
+        // recreated database at the same path shares that connection's file locks and its -journal rollback
+        // file (test databases do not use the write-ahead log), and the two corrupt each other's locks:
+        // SQLite error 15 ('locking protocol'), 'disk I/O error', or a malformed database, in whichever
+        // test runs next. A path no earlier test used cannot be shared.
         public void UseFreshDatabase()
         {
             usedDatabaseFileNames.Add(databaseFileName);

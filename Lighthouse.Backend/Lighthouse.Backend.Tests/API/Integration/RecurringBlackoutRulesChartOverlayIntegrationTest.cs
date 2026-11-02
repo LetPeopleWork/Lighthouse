@@ -5,7 +5,6 @@ using System.Text.Json.Serialization;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -94,13 +93,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
             try
             {
-                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
-                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
-                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(factory.Services);
             }
             finally
             {
+                await SharedHostCleanup.ForgetOwners(factory.Services, [(seededTeamId, OwnerType.Team)]);
+
                 using (var scope = factory.Services.CreateScope())
                 {
                     await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();

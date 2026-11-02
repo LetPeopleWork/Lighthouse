@@ -2,7 +2,7 @@
   "roadmap": {
     "project_id": "story-6460-t2-backend-host-per-fixture",
     "created_at": "2026-11-02",
-    "total_steps": 32,
+    "total_steps": 34,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "Story 6460 (T2): backend tests build one application host per fixture instead of one per test, and a guard keeps it that way. Test infrastructure only: same test ids (additions only where a step names them), no test deleted, skipped, ignored or weakened, no new NonParallelizable, product behaviour unchanged (the single product-side edit is one visibility keyword on Program.ConfigureHealthChecks, step 01-07). Five slices, each shippable alone: (1) guard already live, host-build timing, first move, cluster-substrate leftover; (2) schema template database, kept only if its A/B passes; (3) four biggest untimed families; (4) mid-size bases, the families the guard found that the classifier did not see, and the rate-limit fixtures; (5, mandatory) long tail. Payoff is measured by the lead after each push (CI step median, summed time of moved classes), never asserted by a test. Savings in the workspace are unmeasured ceilings.",
