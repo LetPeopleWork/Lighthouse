@@ -779,6 +779,46 @@
           "implementation_notes": "See Roadmap notes 05-01 to 05-03."
         },
         {
+          "id": "05-04",
+          "name": "Automate two of the manual shared-host rules",
+          "description": "Add checks that fail when a test resolves the DbContext from the root service provider, and when a base that builds its host in OneTimeSetUp has no teardown waiting for the update queue to go idle. Allow-list with reasons where needed.",
+          "criteria": [
+            "Each check fails on a planted offender and passes on the tree",
+            "Addition-aware id check: the additions are exactly the new checks and their planted cases",
+            "dotnet build zero warnings; no Ignore, Explicit or NonParallelizable added; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ (new checks)",
+          "scenario_name": "Planted offender fails, tree passes",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Maintainer decision 2026-11-02: automate first, ledger last."
+        },
+        {
+          "id": "05-05",
+          "name": "Refresh the host-lifecycle ledger entry and the acceptance-designer briefing",
+          "description": "Rewrite the ci-learnings host-lifecycle entry once with what the slices taught (per-test state, app singletons, test doubles that stop on release), drop what the new checks now enforce, and check whether the acceptance-designer briefing should name the shared-host bases as the default.",
+          "criteria": [
+            "The entry lists only rules no check enforces, each with why it cannot be automated",
+            "No story, decision, ADR, slice or scenario id in the text; CLAUDE.md unchanged",
+            "Briefing change made or a written N/A with the reason"
+          ],
+          "test_file": "None (documentation)",
+          "scenario_name": "Documentation",
+          "files_to_modify": [
+            "docs/ci-learnings.md"
+          ],
+          "dependencies": [
+            "05-04"
+          ],
+          "estimated_size": "XS",
+          "implementation_notes": "Maintainer decision 2026-11-02."
+        },
+        {
           "id": "05-03",
           "name": "Finish the ratchet; lead pre-push checks and push",
           "description": "If the list is empty, replace it with a plain 'no type starts a host for every test' assertion; otherwise keep only reasoned entries with the ceiling equal to the size. Then the lead checks, pushes and starts the CI after-measurement.",
@@ -794,7 +834,8 @@
             "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)"
           ],
           "dependencies": [
-            "05-02"
+            "05-02",
+            "05-05"
           ],
           "estimated_size": "S (about 0.5 day plus lead checks)",
           "implementation_notes": "See Roadmap notes 05-01 to 05-03."

@@ -1114,3 +1114,19 @@ Verdict: conditionally_approved, 0 blockers.
   environmental failures, 1 skipped; build 0 warnings.
 - **`behaviour-preserved.sh 12419728b`**: checks 2 and 3 print nothing; check 1 lists only the new template and copy tests and the
   daily date-named case. Frontend and E2E untouched; frontend gates not run.
+
+## Wave: DELIVER / [REF] Maintainer decision: automate the shared-host rules (2026-11-02)
+
+The maintainer approved two extra steps before slice 5's lead checks: **05-04** adds checks for a DbContext resolved from the
+root service provider and for a shared-host base without a queue-drain teardown; **05-05** rewrites the ci-learnings host-lifecycle
+entry once with what the slices taught (keeping only rules no check enforces) and checks the acceptance-designer briefing.
+CLAUDE.md stays unchanged: it points at the ledger, and the guard enforces itself. The roadmap now has 34 steps.
+
+## Wave: DELIVER / [REF] Follow-up candidate: per-test seeding (maintainer, 2026-11-02)
+
+Not planned anywhere yet. The seeded template variant was dropped by the pre-registered A/B rule (02-03), T4 sets budgets rather
+than cutting cost, and #6469 moves tests to the service port without removing seeding. In the seeded acceptance suites, per-test
+set-up is still about **210 ms with the schema template on** (ConnectionDefaults family, 02-03). That figure covers the seeders,
+the client, the mocks and the clock reset; how much of it is the seeders alone has not been measured. The maintainer wants it
+looked at later if it proves to be the bottleneck: a first step would be the seeders' share (the fixture timer can time them as a
+kind of their own, like `HostBuild`), then a seeded template per seed profile if the share is large.
