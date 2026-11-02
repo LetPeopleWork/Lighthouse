@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Tests.TestHelpers;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using static Lighthouse.Backend.Tests.Architecture.TestHostScanning;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -64,8 +65,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         ];
 
         private static readonly string PlantedPrefix = typeof(PlantedFixtures).FullName!.Replace('+', '/');
-
-        private static readonly string[] FactoryTypeNamePrefixes = ["TestWebApplicationFactory", "WebApplicationFactory"];
 
         private ModuleDefinition module = null!;
         private IReadOnlyList<string> typesFoundNotDrainingTheQueue = [];
@@ -164,43 +163,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 {
                     yield return current;
                 }
-            }
-
-            private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
-                => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
-
-            private static string KeyOf(MethodDefinition method)
-                => method.DeclaringType.FullName + "::" + method.Name + "/" + method.Parameters.Count;
-
-            private static string KeyOf(MethodReference method)
-            {
-                var declared = method is GenericInstanceMethod generic ? generic.ElementMethod : method;
-                return declared.DeclaringType.GetElementType().FullName + "::" + declared.Name + "/" + declared.Parameters.Count;
-            }
-
-            private static bool NamesAFactory(TypeReference type)
-                => FactoryTypeNamePrefixes.Any(prefix => type.GetElementType().Name.StartsWith(prefix, StringComparison.Ordinal));
-
-            private static HashSet<string> FactoryTypesIn(List<TypeDefinition> allTypes)
-            {
-                var factories = allTypes.Where(type => type.BaseType is not null && NamesAFactory(type.BaseType))
-                    .Select(type => type.FullName)
-                    .ToHashSet(StringComparer.Ordinal);
-
-                bool grew;
-
-                do
-                {
-                    grew = false;
-
-                    foreach (var type in allTypes.Where(type => type.BaseType is not null && factories.Contains(type.BaseType.GetElementType().FullName)))
-                    {
-                        grew |= factories.Add(type.FullName);
-                    }
-                }
-                while (grew);
-
-                return factories;
             }
 
             private bool IsAFactoryType(TypeReference type)

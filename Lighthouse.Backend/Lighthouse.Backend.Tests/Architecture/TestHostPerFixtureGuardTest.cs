@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Tests.TestHelpers;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using static Lighthouse.Backend.Tests.Architecture.TestHostScanning;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -246,8 +247,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "NUnit.Framework.TheoryAttribute",
             ];
 
-            private static readonly string[] FactoryTypeNamePrefixes = ["TestWebApplicationFactory", "WebApplicationFactory"];
-
             private readonly List<MethodDefinition> allMethods;
             private readonly Dictionary<string, List<MethodDefinition>> methodsByKey;
             private readonly Dictionary<string, TypeDefinition> typesByName;
@@ -267,46 +266,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             public IReadOnlyList<MethodDefinition> OffendingRoots(Func<MethodDefinition, bool> pickRoots)
                 => [.. allMethods.Where(IsPerTestMethod).Where(pickRoots).Where(ReachesAHostStart)];
 
-            private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
-                => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
-
-            private static string KeyOf(MethodDefinition method)
-                => method.DeclaringType.FullName + "::" + method.Name + "/" + method.Parameters.Count;
-
-            private static string KeyOf(MethodReference method)
-            {
-                var declared = method is GenericInstanceMethod generic ? generic.ElementMethod : method;
-                return declared.DeclaringType.GetElementType().FullName + "::" + declared.Name + "/" + declared.Parameters.Count;
-            }
-
             private static bool IsPerTestMethod(MethodDefinition method)
                 => !method.DeclaringType.Name.StartsWith('<')
                     && method.CustomAttributes.Any(attribute => PerTestAttributes.Contains(attribute.AttributeType.FullName));
-
-            private static bool NamesAFactory(TypeReference type)
-                => FactoryTypeNamePrefixes.Any(prefix => type.GetElementType().Name.StartsWith(prefix, StringComparison.Ordinal));
-
-            private static HashSet<string> FactoryTypesIn(List<TypeDefinition> allTypes)
-            {
-                var factories = allTypes.Where(type => type.BaseType is not null && NamesAFactory(type.BaseType))
-                    .Select(type => type.FullName)
-                    .ToHashSet(StringComparer.Ordinal);
-
-                bool grew;
-
-                do
-                {
-                    grew = false;
-
-                    foreach (var type in allTypes.Where(type => type.BaseType is not null && factories.Contains(type.BaseType.GetElementType().FullName)))
-                    {
-                        grew |= factories.Add(type.FullName);
-                    }
-                }
-                while (grew);
-
-                return factories;
-            }
 
             private bool IsAFactoryType(TypeReference type)
                 => NamesAFactory(type) || factoryTypeNames.Contains(type.GetElementType().FullName);

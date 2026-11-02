@@ -3,6 +3,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using static Lighthouse.Backend.Tests.Architecture.TestHostScanning;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -17,8 +18,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class DbContextComesFromAScopeGuardTest
     {
-        private static readonly string[] FactoryTypeNamePrefixes = ["TestWebApplicationFactory", "WebApplicationFactory"];
-
         private static readonly string PlantedPrefix = typeof(PlantedMethods).FullName!.Replace('+', '/');
 
         private static readonly string[] ProviderLookups = ["GetRequiredService", "GetService"];
@@ -153,34 +152,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 return null;
             }
-        }
-
-        private static bool NamesAFactory(TypeReference type)
-            => FactoryTypeNamePrefixes.Any(prefix => type.GetElementType().Name.StartsWith(prefix, StringComparison.Ordinal));
-
-        private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
-            => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
-
-        private static HashSet<string> FactoryTypesIn(List<TypeDefinition> allTypes)
-        {
-            var factories = allTypes.Where(type => type.BaseType is not null && NamesAFactory(type.BaseType))
-                .Select(type => type.FullName)
-                .ToHashSet(StringComparer.Ordinal);
-
-            bool grew;
-
-            do
-            {
-                grew = false;
-
-                foreach (var type in allTypes.Where(type => type.BaseType is not null && factories.Contains(type.BaseType.GetElementType().FullName)))
-                {
-                    grew |= factories.Add(type.FullName);
-                }
-            }
-            while (grew);
-
-            return factories;
         }
 
         // Methods that exist only so the scan can be pointed at something. They are never called.
