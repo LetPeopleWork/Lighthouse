@@ -5,6 +5,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.UsageData;
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -27,6 +28,10 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// sending degrades without complaint by specification. Every fixture built on this is pointed
     /// at an address that cannot resolve and is checked on the way out. Copied per fixture, that
     /// check drifts: somebody tightens one and the other quietly stops guarding anything.
+    ///
+    /// One host serves the whole fixture, and every scenario gets its own database, clock, client and
+    /// empty recorder inside it. Whatever a scenario handed in and never asked about is sent and
+    /// forgotten at the end of it, and the update queue has to be idle by then.
     /// </summary>
     public abstract class UsageDataCollectorObservationTest
     {
@@ -64,10 +69,15 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         protected HttpClient Client = null!;
         protected CapturedOutboundRequests Outbound = null!;
 
-        [SetUp]
-        public void StartWatchingWhatLeaves()
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             RootFactory = new TestWebApplicationFactory<Program>();
+
+            // The recording filter holds this recorder for the life of the host, so it is one object
+            // that each scenario empties rather than a new one.
             Outbound = new CapturedOutboundRequests();
 
             Factory = RootFactory.WithWebHostBuilder(builder =>
@@ -89,6 +99,19 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
                 });
             });
 
+            _ = Factory.Services;
+        }
+
+        [SetUp]
+        public void StartWatchingWhatLeaves()
+        {
+            using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            RootFactory.Clock.Reset();
+            RootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
+            Outbound.Clear();
+
             Client = Factory.CreateClient();
 
             using var scope = Factory.Services.CreateScope();
@@ -103,9 +126,18 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
         /// already done the damage by the time anybody reads its other assertions.
         /// </summary>
         [TearDown]
-        public void StopWatchingAndCheckNothingReachedTheCensus()
+        public async Task StopWatchingAndCheckNothingReachedTheCensus()
         {
+            using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
             var reachedTheCensus = Outbound.ThatReached(TheLiveCensusHost);
+
+            // Batches a scenario handed in and never asked about would otherwise be sent by the next
+            // scenario, against its database.
+            await Factory.Services.GetRequiredService<UsageDataForwardingService>()
+                .SendWhatIsWaitingAsync(CancellationToken.None);
+
+            var idle = await TheUpdateQueueGoesIdle();
 
             using (var scope = Factory.Services.CreateScope())
             {
@@ -113,13 +145,39 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             }
 
             Client.Dispose();
-            Factory.Dispose();
-            RootFactory.Dispose();
 
-            Assert.That(reachedTheCensus, Is.Empty,
-                "a scenario in this fixture contacted the real collector. The host is told to send "
-                + "somewhere that cannot exist, so reaching it means something ignored where it was "
-                + "told to send - and the events it invented are now in the live numbers");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(reachedTheCensus, Is.Empty,
+                    "a scenario in this fixture contacted the real collector. The host is told to send "
+                    + "somewhere that cannot exist, so reaching it means something ignored where it was "
+                    + "told to send - and the events it invented are now in the live numbers");
+
+                Assert.That(idle, Is.True,
+                    "The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            RootFactory?.Dispose();
+        }
+
+        private async Task<bool> TheUpdateQueueGoesIdle()
+        {
+            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+
+            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+
+            return !store.HasActiveWork();
         }
 
         /// <summary>

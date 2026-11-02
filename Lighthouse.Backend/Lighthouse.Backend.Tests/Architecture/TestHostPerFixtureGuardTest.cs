@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string StopsAndRestartsItsHostInOneTest = "one test stops the host the way a service manager does and starts another, so the fixture builds a host again inside a test";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 115;
+        private const int MostTypesTheListMayHold = 114;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -128,7 +128,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Integration.Containers.LighterRoundsOnPostgresTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.ScalabilityTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataCollectorAddressTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataCollectorObservationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.LighthouseAppContextConcurrencyTest"] = NotMovedYet,
