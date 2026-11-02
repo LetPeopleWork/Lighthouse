@@ -558,3 +558,156 @@ Unchanged from DESIGN D9 and the project's `per-feature` strategy: Stryker (fron
 7. Under `bail: 1` only offenders that ran before the bail are named; the reporter reports at `onTestRunEnd`, and whether that hook fires with the full list on a bailed run is slice 1a's spike question 1. The stale check is skipped for a bailed run (D3).
 8. The slice-2 CI arm is a full verify run with live connectors (fact 8): one run, lead-scheduled.
 9. DISTILL: no nWave scenario tags in code; reviewers treat an untagged scenario as correct.
+
+## Wave: DISTILL / [REF] Scope and rules (2026-11-02, maintainer AFK)
+
+- Shape: test infrastructure plus behaviour-free rewrites. The acceptance scenarios pin the **guard** and the **configuration adoption**; no product behaviour is specified.
+- Reconciliation: DESIGN and DEVOPS agree on every decision read (D1-D11, the 1a/1b split, the `LIGHTHOUSE_TIME_BUDGET` rollback); 0 contradictions. DISCUSS decisions are the brief and Epic, already reconciled in PICK-UP.
+- UI sketches: N/A, because nothing a user sees changes.
+- nWave scenario tags: none in code (project rule); classification is kept in this section only.
+- Mechanism: Vitest in-process for the pure steps; the reporter shell and the shell checks below are real-run checks owned by DELIVER.
+
+## Wave: DISTILL / [REF] Driving ports and signatures chosen
+
+DESIGN left the compare-step signature open (`compareToAllowList(durations, slowTests)`); chosen, minimal, in `Lighthouse.Frontend/src/tests/timeBudget/`:
+
+| Port | File | Signature |
+|---|---|---|
+| Compare step (pure) | `compareToAllowList.ts` | `compareToAllowList(run: ObservedRun, allowList: readonly AllowListEntry[], options: TimeBudgetOptions): Verdict` |
+| Options (pure) | `timeBudgetOptions.ts` | `resolveTimeBudgetOptions(env, argv): { mode: "off" \| "warn" \| "fail"; runKind: "plain" \| "coverage" }` |
+
+- `ObservedRun = { tests: ObservedTest[]; complete: boolean; fileExists(file): boolean }`; `ObservedTest = { file, name, seconds, state: passed|failed|skipped, firstInFile }`. The reporter builds this from Vitest's per-test results and the collected-file set; `fileExists` is injected so the step stays pure.
+- `AllowListEntry = { file, name, reason, ceilingSeconds }` (quiet-local seconds, as D3/D4).
+- `TimeBudgetOptions = { mode, runKind, budgetSeconds (B), firstTestAllowanceSeconds (A), coverageFactor (F) }`. The real numbers come from slice 1a's calibration; the tests use made-up B=2, A=0.5, F=2.
+- `Verdict = { findings, failing, lines }`; findings are `over-budget`, `over-ceiling` or `stale` (`file-gone`, `test-absent`, `ran-far-under-budget`). `failing` is true only in `fail` mode with a finding. `lines` is one `file :: test` line per finding with seconds and limit.
+- Limit rule asserted: `B x F`, plus `A` (unscaled) for a file's first test; a listed ceiling is scaled the same way. "Under a quarter of the budget" is read as `B / 4` unscaled (conservative: only an unambiguously fast run retires an entry). If DELIVER finds a scaled quarter is needed it changes the test with a recorded reason.
+- Options values: `LIGHTHOUSE_TIME_BUDGET` unset or empty = `fail`, `warn`, `off`, anything else throws naming variable and value. A Stryker marker (`STRYKER_MUTATOR_WORKER`, **unverified until the 1a spike**) or watch (`--watch`, or no `run`/`--run` argument) forces `off`. `--coverage` in argv = coverage kind. The DEVOPS contingency (default `warn` under `CI` until the `vars` context is confirmed in the composite action) would change the "CI with the switch unset" row: edit that one row then, with the reason.
+- `compareToAllowList.ts` and `timeBudgetOptions.ts` are throwing stubs with a `__SCAFFOLD__` marker (the RED walking skeleton); DELIVER replaces both bodies and removes the marker.
+
+## Wave: DISTILL / [REF] Scenario list (executable, all activate in slice 1a)
+
+Files: `Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts` (30 tests at first writing) and `timeBudgetOptions.test.ts` (13); see the revision section below for the current counts. Both are wrapped in `describe.skip` with a reason; DELIVER removes the skip and works through the failures one test at a time. RED for the right reason, verified: unskipped, 30 of 30 compare tests fail with the stub's "Not yet implemented" (no import or setup errors).
+
+| Group | Tests | Kind |
+|---|---|---|
+| Unlisted test over budget names file :: test, duration, limit; under passes; exactly at budget passes; every offender named; failed test judged alike | 5 | happy + error |
+| First test of a file gets allowance A (3 rows) | 3 | boundary |
+| Coverage run scales by F, first test plus A (4 rows) and the reported limit | 5 | boundary |
+| Table rows judged individually | 1 | edge |
+| Listed test within ceiling passes; over ceiling fails naming it; ceiling scaled in coverage; allowance on a first test; same title in another file judged on budget | 5 | happy + error |
+| Stale: test absent, ran under a quarter, at a quarter stays, file gone from disk, file not in run ignored, skipped by filter ignored, bailed run not judged, bailed run still names a slow test | 8 | error + edge |
+| Mode: off judges nothing, warn reports but does not fail, clean run in fail mode passes | 3 | mode |
+| Options: variable name; unset/empty/CI-unset = fail (3); warn/off (2); unknown value throws; plain vs coverage (2); Stryker marker off; watch off (2); `--run` stays on | 13 | options |
+
+Error/edge share is well above the 40 % target. The limit rule is a finite table (parametrised rows), not an unbounded domain, so no property test.
+
+## Wave: DISTILL / [REF] Walking skeleton for slice 1a (shell checks run by DELIVER, not code)
+
+The pure tests are the inner loop; the user-visible skeleton is the guard working through the real reporter. Record each run's output in `measurement/slice-01a-proof.md`.
+
+| # | Check | Expected |
+|---|---|---|
+| WS1 | Plant a test that sleeps past T in a scratch file under `src/`; `pnpm test` | Run fails; output names `file :: test`, duration and limit; exit code non-zero |
+| WS2 | Same planted test; `CI=true pnpm run sonarreport` | Fails the same way; `sonar-report.xml` and `test-results.json` still written (no reporter dropped) |
+| WS3 | Planted test under the Stryker marker (the env var the spike verified) | Nothing judged, run green |
+| WS4 | Planted test in watch mode (one cycle, then quit) | Nothing judged |
+| WS5 | `LIGHTHOUSE_TIME_BUDGET=warn` with the planted test | Reported as `::warning::` lines, exit 0 |
+| WS6 | `LIGHTHOUSE_TIME_BUDGET=off` | Nothing judged, exit 0 |
+| WS7 | Planted test on the allow-list with a low ceiling, then exceeded | Fails naming it as over its ceiling |
+| WS8 | Allow-list entry for a deleted test | Full run fails naming the stale entry; a filtered run (`-t`, one file) does not |
+| WS9 | Plain `pnpm test` | `sonar-report.xml` and `test-results.json` both written (spike question 2, `--reporter=default`) |
+| WS10 | `CI=true` with bail on and a planted failing test | Offenders that ran before the bail are named; stale check skipped |
+
+The planted file is removed after each check; none of it is committed.
+
+## Wave: DISTILL / [REF] Slice 1a remaining acceptance checks
+
+- Calibration recorded (B, F, A, ratio, spread) with the D4 rule applied; stop and ask if fewer than 5 CI artifacts.
+- Allow-list seeded from calibration: zero unlisted tests over T in the calibration samples; every entry has a reason and ceiling.
+- `summarise.py`: top-N shares and counts over thresholds on the existing sample CSV; the existing `Scripts/test-timings/tests` still pass.
+- Biome `noSkippedTests` and `noFocusedTests` enabled, offenders fixed or listed by name. The `describe.skip` in `src/tests/timeBudget/` must be gone first (it is the first thing 1a removes).
+- `pnpm test` and `pnpm build` clean; ADR-268 and ADR-269 status notes; `docs/ci-learnings.md` entry.
+
+## Wave: DISTILL / [REF] Slice 2 and 3 acceptance (checks, not tests)
+
+Slice 2 (measure only): one table row per D5 candidate, each showing:
+1. Alternating A/B, at least 5 pairs, same machine, quiet, fixed `LIGHTHOUSE_TEST_WORKERS`.
+2. Median wall falls at least 10 % and the ranges do not overlap.
+3. Sorted test-id list identical, every test passes (8,970 at last count).
+4. Peak memory not more than 10 % above baseline.
+5. 3 consecutive green full runs.
+6. 3 green runs with `sequence.shuffle` and different seeds, for every candidate.
+7. CI arm: one CI run green and not slower than the baseline CI run (lead-scheduled push).
+8. happy-dom only: DataGrid, dialog and user-event tests pass unmodified.
+9. A candidate needing test edits is adopted per file or glob and every edit is listed.
+10. Nothing is adopted in slice 2.
+
+Slice 3 (adopt): only candidates that passed 1-7 and 9; identical sorted test-id list before and after; all green; 3 green full runs plus 3 shuffled; the node project has its own trimmed setup file if `projects` is adopted; the guard still loads (WS2 and WS9 re-run, since a config edit that drops a reporter is the named bug class); allow-list entries still pass or are re-ceilinged with a reason; `@screenshot` and Playwright untouched.
+
+## Wave: DISTILL / [REF] Slices 4-11 behaviour-free contract (per slice)
+
+Each slice writes `measurement/slice-NN-moved-assertions.md` before its first rewrite commit:
+
+```
+Universe: extracted functions/hooks (named); test files edited; allow-list entries deleted. Nothing else.
+Preserved set: sorted test ids of touched files before the slice, minus ids listed below as replaced.
+Delta: summed seconds of touched files before/after; tests added/removed; entries deleted from slowTests.ts.
+
+| Old test (file :: test) | Assertion text | New location (file) | New test (name) |
+|---|---|---|---|
+```
+
+Rules for every slice 4-11:
+1. Every removed or shrunk `expect(` has a row; an unlisted removal is a defect.
+2. Test-id diff before/after: every missing id is in the list; additions are listed.
+3. Preserved test ids are unchanged: a surviving test keeps its `file :: name`.
+4. An extraction commit changes no test; the unmodified page tests pass at that commit; its diff is a move into a named function or hook.
+5. A grep over the slice diff finds no added `.skip`, `.todo`, `.only`, `it.fails`, loosened matcher or longer timeout.
+6. Coverage (`--coverage` over the touched directory): line and branch not lower than before; run apart from timing runs.
+7. No new product behaviour: no Playwright spec or `@screenshot` file in the diff; no production file beyond the named extractions.
+8. Slice close reports summed seconds before/after, allow-list length and wall median (D10).
+9. Stryker once at the end (slice 12) over the extracted files: kill rate not lower than before, at least 80 % for new code; frozen code, mutate list and runner include checked first.
+
+Slice pins: 4 and 10 move the real sleeps (600/500 ms) to a fake clock; 6 does the same for the 350 and 300 ms waits; 7 keeps the 143-row render in one test; 9 points the 108 cases at `workItemsDialogContexts`; 11 names its extractions after profiling and keeps the loading and failure looks pinned.
+
+## Wave: DISTILL / [REF] Handoff
+
+DELIVER removes the `describe.skip` of the compare tests and works through them, then the options tests. Pre-DELIVER RED classification: compare tests MISSING_FUNCTIONALITY (30/30); options tests 12 of 13 fail the same way (the variable-name constant test already passes) (superseded: see "Revision after review", 78 of 79). Tier B and the Mandate-12 domain-types module: N/A (no Gherkin or stateful journey in this project).
+
+## Wave: DISTILL / [REF] Revision after review (2026-11-02) - supersedes earlier DISTILL counts and wording where they differ
+
+Test files now in `Lighthouse.Frontend/src/tests/timeBudget/`: `compareToAllowList.test.ts` (47 tests), `timeBudgetOptions.test.ts` (21), `observedRunFromVitest.test.ts` (11): 79 tests, all under `describe.skip`, all activate in slice 1a. Stubs: `compareToAllowList.ts`, `timeBudgetOptions.ts`, `observedRunFromVitest.ts` (throw "Not yet implemented -- RED scaffold"). Unskipped copies: 78 fail on the stub, 1 passes on purpose (the `LIGHTHOUSE_TIME_BUDGET` variable-name constant test, because the constant exists in the stub; the unknown-value test fails with the stub's error rather than the expected message, which is the right RED).
+
+Changes to the signatures and rules recorded above:
+
+- **Vitest-result mapping is its own pure function** `observeVitestRun(outcome: VitestRunOutcome, fileExists): ObservedRun`, with `VitestRunOutcome = { files: { file, tests: { name, state: passed|failed|skipped|pending, durationMs }[] }[]; reason: passed|failed|interrupted }`. It maps `pending` to `skipped`, ms to seconds, marks `firstInFile` on the first test that ran (not skipped) per file, lists every collected file including ones with no tests, and sets `complete = false` only for `interrupted` (bail). The reporter is then a thin shell: Vitest data in, `observeVitestRun`, `compareToAllowList`, print, exit code.
+- `ObservedRun` gained `collectedFiles`. A listed test whose file was collected but reported zero tests is stale (`test-absent`); a listed test whose file was not collected is ignored.
+- **Matching is on the exact key** `file :: name`: a listed name that a run's name merely starts or ends with, or a listed path that a run's path merely extends, does not match (pinned with table rows, including a listed row beside an unlisted slow row of the same table).
+- **Limit semantics:** a test offends only when it takes strictly more than its limit; exactly at the limit passes (pinned at budget, budget plus allowance, ceiling, scaled limit plus allowance, and a listed first test under coverage: ceiling x F + A). A failed test is judged like a passed one, listed or not.
+- **Printed lines are pinned exactly:** `<file> :: <test> took <s> s, limit <s> s`; stale: `<file> :: <test> stale allow-list entry (<reason>)`.
+- **Annotation lives in the options function:** `resolveTimeBudgetOptions` also returns `annotation`: `::error::` when `GITHUB_ACTIONS` is set and the mode is `fail`, `::warning::` when set and the mode is `warn`, otherwise `none` (also `none` under off, under the Stryker marker, and on a developer machine). All six combinations are pinned.
+- **`off` means the reporter judges nothing** (DISTILL's reading). This **supersedes DEVOPS's "off loads nothing"**: `vitest.config.ts` cannot cheaply avoid listing a reporter whose mode is decided from the environment at config time without a second code path, and a reporter that judges nothing is equivalent for the run (no output, exit code untouched). WS6 below checks the equivalent: nothing reported, exit 0.
+- **`CI` set means never watch** (safe reading): a CI command with no `run` argument still enforces; on a developer machine, no `run`/`--run` argument means watch and the guard is off. Pinned both ways.
+- **Consequence of "under a quarter" = B/4 unscaled, also under coverage:** a test that takes 0.5 s plain and about 1.0 s under coverage is not retired by a coverage run (pinned: 0.8 s in a coverage run stays listed), so entries are retired by plain `pnpm test` runs only; the coverage run can only keep them, never delete them. This is the safe direction (load and coverage only make tests slower). **An incomplete run skips every stale check, including "file gone from disk"** (pinned).
+
+### Slice 2 CI arm (decision, M5)
+
+Adoption rests on the **local alternating A/B** (rule items 1-6). The CI arm is a sanity check plus a direction, not an adoption proof, because one CI run cannot separate a candidate from CI noise: its Vitest `Duration` is compared with the **930.9 s median of the 7 saved baseline runs** under the same 10 % rule (a candidate run more than 10 % above 930.9 s blocks adoption; a run at or below it is consistent; a single run in between is "direction only" and does not block). Adopting on CI evidence alone would need at least 3 candidate runs; this Story does not ask for that, and says so in the slice-2 table.
+
+### Preserved-id lists (M6)
+
+Preserved-id lists come **from a run, never from source**: after a run that writes `test-results.json`, the list is `file :: fullName` for every `assertionResults[].fullName` (file = the enclosing result's relative path), sorted, saved before and after the slice. Names of `it.each` rows and template-string titles exist only in a run, so a source scan is not accepted.
+
+### Slice 2 and 3 refinements (m9)
+
+- Item 8 (happy-dom fidelity): the list is every test file matching `**/*DataGrid*`, `**/*Dialog*` and the user-event suites (`grep -l "userEvent" src --include=*.test.tsx`), recorded by name in the slice-2 table, run unmodified. Per D5, happy-dom is measured last and only if (a)+(b) leave environment cost above 10 % of worker time.
+- Peak memory (item 4) is sampled with `measurement/scripts/measure.sh` (the sampler of the DESIGN measurement), the same one for A and B.
+
+### Slices 4-11 rules, sharpened (m9)
+
+- Rule 1 counting method: per touched test file, `git diff -U0 <before> -- <file> | grep -c '^-.*expect('` must be matched by rows in the moved-assertions list for that file. The **"Assertion text" column is the removed `expect(...)` line verbatim**.
+- Rule 5, "loosened matcher", is this set: `toEqual` to `toMatchObject` or `objectContaining`; an exact `toBe`/`toEqual` to `toContain` or a regex; an exact count to `toBeGreaterThan`/`toBeGreaterThanOrEqual`; a removed `not.`; plus any other weakening a reviewer judges so.
+
+### Walking-skeleton note
+
+WS6 (`LIGHTHOUSE_TIME_BUDGET=off`): nothing reported and exit 0; the reporter is loaded and judges nothing. WS5 adds: under `GITHUB_ACTIONS=true` the lines carry `::warning::`; in the enforcing case `::error::`.
