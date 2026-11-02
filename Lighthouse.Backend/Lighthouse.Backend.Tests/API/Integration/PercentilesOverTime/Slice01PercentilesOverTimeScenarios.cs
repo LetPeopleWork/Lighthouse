@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5427-percentiles-over-time")]
-    [Category("slice-01")]
     public partial class Slice01PercentilesOverTimeTest
     {
         // (team read path)
