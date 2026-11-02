@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
@@ -53,11 +54,30 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private int plainPortfolioId;
         private int parentFeatureId;
 
+        // The memo keeps notes per owner id for as long as the host lives, and every test's fresh
+        // database numbers its owners from one again, so each test hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            rootFactory = new TestWebApplicationFactory<Program>();
+            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
+        }
+
         [SetUp]
         public void Init()
         {
-            rootFactory = new TestWebApplicationFactory<Program>();
-            factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            factory.ForgetTheCachedMetrics();
+
             client = factory.CreateClient();
             client.AsSystemAdmin();
 
@@ -80,23 +100,44 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = factory.Services.CreateScope())
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
+            try
             {
-                var dbContext = teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
-                var portfolioMetricsService = teardownScope.ServiceProvider.GetRequiredService<IPortfolioMetricsService>();
-                foreach (var portfolio in dbContext.Portfolios.ToList())
+                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(factory.Services, ownersSeeded);
+
+                using (var teardownScope = factory.Services.CreateScope())
                 {
-                    portfolioMetricsService.InvalidatePortfolioMetrics(portfolio);
+                    var dbContext = teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
+                    var portfolioMetricsService = teardownScope.ServiceProvider.GetRequiredService<IPortfolioMetricsService>();
+                    foreach (var portfolio in dbContext.Portfolios.ToList())
+                    {
+                        portfolioMetricsService.InvalidatePortfolioMetrics(portfolio);
+                    }
+
+                    await dbContext.Database.EnsureDeletedAsync();
                 }
 
-                dbContext.Database.EnsureDeleted();
+                client.Dispose();
             }
+        }
 
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         [Test]
@@ -410,6 +451,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             teamRepository.Save().GetAwaiter().GetResult();
 
             estimatedTeamId = estimatedTeam.Id;
+            ownersSeeded.Add((estimatedTeam.Id, OwnerType.Team));
+            ownersSeeded.Add((plainTeam.Id, OwnerType.Team));
             plainTeamId = plainTeam.Id;
 
             var workItemRepository = serviceProvider.GetRequiredService<IWorkItemRepository>();
@@ -439,6 +482,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             portfolioRepository.Save().GetAwaiter().GetResult();
 
             estimatedPortfolioId = estimatedPortfolio.Id;
+            ownersSeeded.Add((estimatedPortfolio.Id, OwnerType.Portfolio));
+            ownersSeeded.Add((plainPortfolio.Id, OwnerType.Portfolio));
             plainPortfolioId = plainPortfolio.Id;
 
             var featureRepository = serviceProvider.GetRequiredService<IRepository<Feature>>();
