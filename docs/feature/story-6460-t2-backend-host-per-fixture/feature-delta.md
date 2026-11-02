@@ -1130,3 +1130,81 @@ set-up is still about **210 ms with the schema template on** (ConnectionDefaults
 the client, the mocks and the clock reset; how much of it is the seeders alone has not been measured. The maintainer wants it
 looked at later if it proves to be the bottleneck: a first step would be the seeders' share (the fixture timer can time them as a
 kind of their own, like `HostBuild`), then a seeded template per seed profile if the share is large.
+
+## Wave: DELIVER / [REF] Slice 3 review (2026-11-02)
+
+**Verdict: needs_revision.** One blocker, introduced by this slice's own change to the tracker double; fixed and proven below.
+
+**Blocker.** Commit `39b41cbf8` made the "one page at a time" tracker double stop paging as soon as the scenario released the
+tracker, so a shared host is not left with a refresh paging for ever. `ThenThatRefreshStopsBeforeItHasReadEveryPage` released
+the tracker and only then compared page counts, and the loop exits on that same release, so the assertion held even if Cancel
+did nothing. Fix, all in `Slice04StopARefreshSpecifications.cs`:
+
+- The double now ends on a separate teardown-only signal (`theTeardownEndsAnyPaging`, set only in `[TearDown]`). Releasing the
+  tracker means what it meant before `39b41cbf8` again.
+- Before cancelling, the scenario waits until the tracker has given its first page, and the cancel step records the page count.
+  The Then step asserts paging had advanced, does not release the tracker, waits 150 ms for the refresh to notice the ask,
+  samples, waits 400 ms, samples again, and requires the two counts to be equal.
+- `ThenTheWriteBackRoundWasAccountedFor` and `ThenWhatWasHeldBehindItWasLetGo` no longer release the tracker before observing.
+
+**Proof (cancel made a no-op locally: `cancellation.Cancel();` in `AdmittedCancellations.Stop` replaced, not committed, restored
+with `git checkout`, `git status` showed no product change).** Failure lines, verbatim:
+
+```
+Failed A_refresh_that_is_running_stops_instead_of_running_to_completion [789 ms]
+  A refresh that carried on paging after being cancelled is a button that does not work - and the pages it reads after the click are exactly the ones an operator pressed it to stop.
+  Expected: 9
+  But was:  29
+
+Failed A_cancelled_refresh_still_finishes_the_write_back_round_it_opened [31 s]
+  A round that never finishes drops every write it staged, silently. A cancelled run owes its round the same report a run that finished does - the same invariant a failed run carries, reached through a different door.
+  Expected: greater than 0
+  But was:  0
+```
+
+The same no-op run also failed `A_cancelled_refresh_tells_the_browser_it_was_cancelled` ("Team 1 was still admitted 30s after
+being cancelled; ..."), `A_refresh_that_runs_after_a_cancelled_one_finishes_normally` and
+`A_refresh_that_is_still_waiting_is_cancelled_without_the_tracker_ever_being_asked`. Restored product file: Slice04 12/12 green,
+three runs.
+
+**Not provable, and why: `A_cancelled_refresh_still_lets_go_of_the_work_held_behind_it` passed under the no-op cancel.** It cannot
+fail on a cancel, before or after this pass. The hold waits for *queued* work (`IUpdateStatusStore.HasQueuedWork` is true only for
+`Queued`), and the scenario places it behind a team that is already `InProgress`, so `HoldUntilQueuedWorkClears` releases it
+inside its own call. Making it discriminate means holding behind a waiting key, and then the release also happens without any
+cancel once that key runs; the release is driven by queue transitions, not by the cancel. Left as a finding for the
+acceptance-designer (a scenario that can fail on a broken cancel needs a different observable), not edited further here.
+
+**Notes fixed.**
+
+- Usage-data teardown (`StopWatchingAndCheckNothingReachedTheCensus`): the census snapshot is now read after the forwarding drain
+  and the idle wait, so a batch sent during teardown is checked too.
+- Teardowns in `TaskManagerHostPerFixtureAcceptanceTest`, `FasterUpdatesAcceptanceTest` and
+  `ReconstructOverTimeHistoryAcceptanceTest`: forgetting the owners and deleting the database run in a `finally`, so a failed
+  drain or idle wait still fails the scenario loudly but cannot poison the next one on the host.
+- `ReconstructOverTimeHistoryAcceptanceTest` drains the filler with the 5-minute pass bound instead of the 60 s guard. The
+  `SharedHostCleanup` comment (and the two harness class comments) now say the drain *runs* the queued passes, into the
+  scenario's database, which is deleted right after.
+- `FasterUpdatesAcceptanceTest` clears its captured events and work-item writes in place (one instance per fixture), as the
+  comment already claimed; both types already had `Clear`.
+- Internal references in comments rewritten or dropped in the files this slice touched (story and epic numbers, AC ids, probe
+  ids, the architecture-policy pointer). The nWave scenario `[Category(...)]` tags (`epic-*`, `slice-*`, `us-*`, `story-6404`,
+  `kpi-*`, `contract-shape:*`, `ac-*`, `walking_skeleton`, `driving_port`, `error`, `edge`) were removed from the Slice01
+  ForecastRounds, Slice05 CancelAll and Slice04 StopARefresh scenario classes. Only `acceptance` is kept. Grep for a filter using
+  any of them (.github, scripts, csproj, runsettings, every `stryker*.json`, package scripts, docs): none; the Stryker filters
+  use `FullyQualifiedName~` or the unrelated `epic-5427-percentiles-over-time` and `story-5876-behaviour-settings` categories.
+  No `Assert.` line was removed; no test id changed.
+
+**Recorded, no code.**
+
+- Note 6: the fixture-lifetime fields in Slice04 (`pagesTheTrackerWasAskedFor`, `teamsTheTrackerWasAskedAbout`, the tracker
+  gate) are reset per scenario by the Given steps and the teardown; harmless today.
+- Note 7: the usage-data gate's daily tallies and once-per-day flags persist across scenarios on the shared host. Not measured
+  against `DailyEventBudget` (1000): no per-fixture event counter exists, so it is not a cheap number; open.
+- Reviewer's question: `A_forecast_held_until_a_Team_finishes_is_let_go_without_running` asserts that the held forecast never
+  ran and that it was held before the click. It does not assert that the hold was released (`IsHeld` false afterwards), so the
+  "let go" half of its name is only implied. Name left as it is (it predates this story).
+- Guard reasons verified true by the reviewer; the `periodLastOpened` carry-over between scenarios is not relied on.
+
+**Gates.** `dotnet build` 0 warnings. The agreed filter (TaskManager, ResponsiveDuringUpdates, SkipUnchangedForecasts,
+FastWithManyFeatures, PercentilesOverTime, FasterUpdates, Integration.UsageData, TestHostPerFixtureGuard): 843 passed, 1 skipped,
+0 failed, twice. Slice04StopARefresh alone: 12/12 three times.
