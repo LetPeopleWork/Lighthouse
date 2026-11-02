@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-10-30
+updated: 2026-11-02
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -71,6 +71,8 @@ feature_context:
   - epic-6400-fast-with-many-features
   - story-6398-jira-release-loads-once
   - epic-6455-deeper-hierarchies
+  - epic-6474-one-structure
+  - epic-6473-settings-split
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8820,3 +8822,63 @@ jobs:
       rationale: >
         Importance 4 - blocks Load from board for any non-English token account on Jira Cloud. Satisfaction 1 -
         the only workaround is guessing translated names, which the board load still cannot fill.
+
+  - id: job-config-admin-find-how-we-work-in-one-place
+    title: Find how my organisation works in one place, apart from running the server
+    persona: config-admin
+    created_in_feature: epic-6473-settings-split
+    job_story: >
+      When I change how my organisation works in Lighthouse (our words, the days that do not count,
+      how often data refreshes, who orders the Features),
+      I want all of it in one place named for that,
+      so I do not wade past backups and encryption keys, and I can leave the server to someone else.
+    dimensions:
+      functional: Reach Terminology, blackout periods, refresh cadence and Feature ordering from one area
+      emotional: Feel that the area is mine and nothing in it can break the server
+      social: Hand the instance's running to IT without handing over how we work
+    forces:
+      push: One Configuration tab mixes four groups for two audiences; seven tabs in one row
+      pull: The area's name says whether it is mine
+      anxiety: My bookmark and the docs link stop working; I cannot find Terminology any more
+      habit: Tabs learned by position
+    opportunity_score: { importance: 3, current_satisfaction: 2, gap: 1 }
+
+  - id: job-operator-run-the-instance-apart-from-how-we-work
+    title: Run the instance without touching the organisation's settings
+    persona: platform-operator
+    created_in_feature: epic-6473-settings-split
+    job_story: >
+      When I look after the Lighthouse instance (backups, encryption key, demo data, log level, usage data),
+      I want those in one place apart from the organisation's settings,
+      so I know what is mine and cannot rename a Team by accident.
+    dimensions:
+      functional: Reach database, encryption, demo data, usage-data veto, system info and licence from one area
+      emotional: Feel safe changing what is mine
+      social: Not be the person who changed the organisation's words by mistake
+    forces:
+      push: Usage-data veto sits between Feature ordering and Terminology
+      pull: One System area that matches the job
+      anxiety: Links in runbooks to /settings?tab=database break
+      habit: Bookmarked tabs
+    opportunity_score: { importance: 3, current_satisfaction: 2, gap: 1 }
+
+  - id: job-config-admin-say-item-types-once
+    title: Say once which tracker types each level holds, and let each unit only narrow them
+    persona: config-admin
+    feature_context: epic-6474-one-structure
+    ado: "Epic #6474"
+    created: 2026-11-02
+    note: >
+      NEW in DISCUSS of epic-6474-one-structure. Maintainer D8/D12 (6455 DISCUSS): item types are owned by the
+      level and a unit only narrows them; the maintainer sees this as an improvement. Desk estimates.
+    job_story: >
+      When I set up many Teams and Portfolios on the same trackers,
+      I want to say once which tracker types count as Work Items and as Features, and let each unit untick
+      what it does not read,
+      so a new unit takes a minute and no unit silently reads a type the rest of the organisation does not count.
+    forces:
+      push: Every Team and Portfolio types or loads its own list; nothing shows which units read which type.
+      pull: The lists are mostly identical already; Load from board finds them.
+      anxiety: "Will my Teams' numbers move when the list moves? Not on upgrade; only on an explicit, previewed removal."
+      habit: Copying a working Team's settings by hand.
+    opportunity_score: {importance: 3, current_satisfaction: 2, gap: 1, rationale: "Desk estimate; preparation value dominates (D8)."}

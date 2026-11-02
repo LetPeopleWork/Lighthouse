@@ -537,6 +537,13 @@ touch a context hard; Forecasting may matter for building dates up from the leve
 
 Links: all Related to #6455; #6474 precedes #6455, #6476 and #6477; #6455 precedes #6475; #6473 precedes #6349.
 
+**Input for the guided set-up (#6475), maintainer, 2026-11-02.** Set-up connects to the tracker first, then
+proposes the levels and their item types from what the tracker already knows: Jira's issue type hierarchy levels,
+Azure DevOps' backlog levels and work item types, Linear's issues, projects and initiatives (Lighthouse reads two
+of those levels today; initiatives would be the next). A CSV file carries no hierarchy, so its levels are entered
+by hand. Whether each connector can deliver this, and how, is that Epic's DISCUSS. "Teams only" (one level) is
+one of the set-up's choices (#6474 M13).
+
 ### Proposed, not locked
 
 - Guided first-run set-up that picks an initial structure, changeable later (maintainer idea, 2026-11-02).
