@@ -1,5 +1,5 @@
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Time.Testing;
 
 namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
 {
@@ -151,7 +151,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SkipUnchangedForecasts
         /// </summary>
         private DateTime TheHostClockMovesOnAQuarterOfAnHour()
         {
-            var hostClock = (FakeTimeProvider)Factory.Services.GetRequiredService<TimeProvider>();
+            var hostClock = (ResettableFakeTimeProvider)Factory.Services.GetRequiredService<TimeProvider>();
             hostClock.Advance(AQuarterOfAnHour);
 
             return hostClock.GetUtcNow().UtcDateTime;

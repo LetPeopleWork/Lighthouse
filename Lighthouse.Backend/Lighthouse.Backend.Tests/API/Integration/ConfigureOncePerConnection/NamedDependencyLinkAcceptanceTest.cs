@@ -25,7 +25,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Time.Testing;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models;
 using Microsoft.VisualStudio.Services.Common;
@@ -787,7 +786,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         /// moment and could not be told apart in the refresh history.
         /// </summary>
         protected void AMinutePasses()
-            => ((FakeTimeProvider)TheRunningLighthouse().GetRequiredService<TimeProvider>()).Advance(TimeSpan.FromMinutes(1));
+            => ((ResettableFakeTimeProvider)TheRunningLighthouse().GetRequiredService<TimeProvider>()).Advance(TimeSpan.FromMinutes(1));
 
         private async Task TheRefreshOf(Action<IServiceProvider> trigger)
         {

@@ -96,7 +96,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// <summary>
     /// A fake clock only ever moves forward, which a host shared by many tests cannot live with. This one
     /// can be put back at its starting instant by shifting what it reports; the host keeps the same
-    /// instance, so nothing has to be re-registered.
+    /// instance, so nothing has to be re-registered. Move it with Advance only: the inherited SetUtcNow
+    /// knows nothing of the shift, so after a Reset it would land at the wrong instant.
     /// </summary>
     public sealed class ResettableFakeTimeProvider : FakeTimeProvider
     {
@@ -110,8 +111,6 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
 
         public override DateTimeOffset GetUtcNow() => base.GetUtcNow() - shift;
-
-        public new void SetUtcNow(DateTimeOffset value) => base.SetUtcNow(value + shift);
 
         public void Reset() => shift = base.GetUtcNow() - start;
     }
