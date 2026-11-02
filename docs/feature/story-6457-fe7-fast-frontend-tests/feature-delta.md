@@ -6,7 +6,10 @@ brief: [`slice-40-fe7-fast-frontend-tests.md`](../epic-6264-modular-monolith/sli
 
 DISCUSS: covered at Epic level (D-6264-3, D-6264-4); waves start at DESIGN. This file holds PICK-UP, the measurement and
 DESIGN (propose mode, maintainer AFK: the recommended option was taken for every engineering choice and is recorded).
-Raw material: `measurement/baseline-2026-11-02/` (`profile-summary.txt`, `vitest-run2.json`).
+Raw material: `measurement/baseline-2026-11-02/`: `runs.txt` (sampler lines and Vitest summary lines for both runs; the
+figures below point at it), `profile-summary.txt`, `fe-base-1.log.gz`, `fe-base-2.log.gz`, `vitest-run2.json.gz`. The JSON of
+run 1 was overwritten by run 2, so per-file and per-test figures come from run 2 only; run 1 contributes wall, memory and the
+Vitest split.
 
 ## Wave: PICK-UP / [REF] Inherited
 
@@ -22,6 +25,9 @@ From the Epic's `feature-delta.md`, by heading. Linked, not copied:
   touched area, pixels unchanged (`@screenshot`), CI wall time not worse, zero new Sonar issues, Biome zero warnings.
 - [REF] Definition of Done (Epic), frontend bullet. [REF] Wave Decisions: D-6264-3/4/5 (catalogue, carpaccio at DESIGN,
   composition gate waived), D-6264-8 (TanStack Query migration stays out).
+- **T4 hand-off:** FE7 owns the whole frontend budget (D1). The T4 brief
+  (`slices/slice-44-t4-test-budgets-fail-the-build.md`) must lose its frontend half (`ci_frontend.yml`, the frontend ceilings)
+  at T4 pick-up and keep the backend.
 - [REF] Cross-Cutting Impact Checklist (answered below). [REF] Improvement log: read at pick-up. Lessons that bind this
   Story: FE1 "list unit is the file pair, `pnpm test` not slower, alternating runs"; S11 "reproduce the CI sequence when
   claiming behaviour-free"; the T-track entries as they land.
@@ -53,7 +59,8 @@ Slice composition: waived at Epic level (D-6264-5). JTBD: infrastructure-only.
 ## Wave: PICK-UP / [REF] Baseline re-count (2026-11-02, `main` at `208926f7b`)
 
 Measured by the orchestrator, 12-core quiet machine, default local cap (half the cores = 6 workers), `pnpm test`, two
-runs. Brief figures against today:
+runs; sampler and Vitest lines in `measurement/baseline-2026-11-02/runs.txt` (sampler wall 267 s and 246 s, which includes
+start-up; Vitest's own duration 252.50 s and 244.32 s; peak RSS 4,620 and 4,819 MB). Brief figures against today:
 
 | Brief says | Today | Note |
 |---|---|---|
@@ -64,7 +71,7 @@ runs. Brief figures against today:
 | `ModifyTeamSettings.refinement.test.tsx` still sleeps 600 ms of real time | **Still true.** `AUTOSAVE_DELAY_AND_MARGIN_MS = 600` (line 175), awaited by `pastTheAutosaveDelay` (line 177), used once (line 298) | Cheap fix in one test; slice 4. |
 | (not in the brief) other real sleeps in tests | `setTimeout` waits of 500 ms x5 (`ModifyProjectSettings.test.tsx` 590, 617, 722; `ModifyTeamSettings.test.tsx` 436, 471), 1,300 ms (`useLicenseRestrictions.status.test.tsx` 305), 350 ms (`BulkReportWizard.openings.test.tsx` 55), 300 ms (`BulkReportWizard.test.tsx` 919), 200 ms (`ProgressIndicator.test.tsx` 71), 50 ms x3 (`TeamDetail`, `PortfolioDetail`) | About 5.5 s of pure waiting in total across the suite: real, but small next to 691 s. They sit in slow files, so they go with those slices. |
 | Local run uses 11 workers on 12 cores; `maxWorkers` unset | Half the cores locally (`resolveTestWorkers`, T3); CI untouched | The baseline below is at 6 workers. Memory: **peak 4,620 and 4,819 MB** (sampler, whole run). |
-| (not in the brief) a per-file frontend budget already exists | `Scripts/test-timings/test-time-budget.json`: 63 s per file, nine allow-listed files with CI-second ceilings (77-182 s), checked by `check_budget.py --stack frontend --warn-only` in `ci_frontend.yml` | Built by #6302, warn-only until T4. See "Brief and Epic disagreement" in Decisions (D1). The ceilings are CI seconds and sit 3-9 times above the local figures for the same files (`WorkItemsDialog.contexts`: ceiling 182 s CI, 19.0 s here), so CI runs these tests much slower than this machine. |
+| (not in the brief) a per-file frontend budget already exists | `Scripts/test-timings/test-time-budget.json`: 63 s per file, nine allow-listed files with CI-second ceilings (77-182 s), checked by `check_budget.py --stack frontend --warn-only` in `ci_frontend.yml` | Built by #6302, warn-only until T4. See D1 and "Brief and Epic disagreements". The ceilings are CI seconds and sit up to 3-9 times above the local figures for the same files (`WorkItemsDialog.contexts`: ceiling 182 s CI, 19.0 s here). That is an **upper bound, not a measurement**: a ceiling carries margin, and CI runs the coverage command. Slice 1 measures the real CI/local ratio. |
 
 ## Wave: PICK-UP / [REF] Cross-cutting re-check
 
@@ -79,7 +86,8 @@ No silent N/A; each answer carries its reason.
   loading and failure looks of existing views (for example `BaseMetricsView.loading.test.tsx`) must keep pinning them.
 - Terminology: N/A, because no user-facing words change. Rewritten tests keep asserting the seeded default terms.
 - Context map (ADR-270) and ARCHITECTURE.md: see "Context-map placement" below. No change expected; ARCHITECTURE.md line
-  372 names the test stack and stays true unless the environment changes (D8 would then edit that line in slice 3).
+  372 names the test stack and stays true unless the environment changes (slice 3 would then edit that line).
+- Data display / visualization skill: N/A, because no data is shown to a user; no chart, widget, tile or report text changes.
 - Docs/screenshots/demo data/release notes: N/A, because no user-facing behaviour; no release notes at finalize (rule).
 
 ## Wave: PICK-UP / Checklist
@@ -191,11 +199,11 @@ made by a rule written down now, so the result cannot be argued after the fact.
 
 | # | Decision | Options | Chosen (recommended) | Why / trade-off |
 |---|---|---|---|---|
-| D1 | Who owns the budget (FE7 ratchet against T4) | (a) FE7 owns a **per-test** ratchet that fails inside `pnpm test`; T4 keeps the **per-file** CI budget (`check_budget.py`) and removes its `--warn-only`. (b) FE7 takes over the whole `check_budget` frontend half. (c) Only extend the per-file budget file. | (a) | The Epic says whichever lands first owns the shared budget. FE7 lands first and owns the per-test one; the per-file CI budget already exists, runs in CI seconds and is T4's. Two lists exist (per file with CI ceilings, per test with a name) because they answer different questions: "which file grew" against "which test is slow". T4 may later retire the per-file list; recorded as a coordination point, not a blocker. Rejected (b): drags the Python script and CI workflow into a Story that wants tests only; (c): a per-file ceiling cannot say which test in a 129-test file is slow, and the brief's AC wants the test named. |
-| D2 | How the budget is enforced | (a) A **custom Vitest reporter** (`onTestRunEnd`) that reads each finished test's duration and fails the run naming the test, with the compare step as a pure function. (b) A setup-file `afterEach` hook timing each test. (c) Vitest's `slowTestThreshold` or a lowered `testTimeout`. (d) A post-run script over `test-results.json`. | (a) | The reporter sees the duration Vitest itself measured (hooks and set-up included), works for any invocation of Vitest (full, filtered, IDE), and keeps all logic in one place. (b) measures only part of a test and is test-file plumbing. (c) `slowTestThreshold` only colours the reporter and fails nothing; `testTimeout` kills a test (an abort, not a ratchet), cannot take a name list and would turn every slow-but-passing test red at once; it stays at the 5 s default as the hard backstop. (d) runs only through `pnpm test`, not an IDE or a filtered run. Risk to verify in slice 1: the reporter must not fail Stryker's runs, coverage runs or `--watch`, where durations are inflated; it is switched off for those (Stryker's environment marker, coverage, watch), proven by a test of the switch. |
-| D3 | Where the allow-list lives, its key, how it shrinks | (a) A TypeScript data module beside the reporter. (b) JSON in `Scripts/test-timings/` next to the T4 file. (c) Inline in an enforcement test like `ALLOWED_LEAKS`. | (a): `Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts`; key = `relative file path :: full test name`; each entry carries a one-line reason | The reporter runs in the frontend project and imports it; ADR-269's list is data inside the frontend too. The key is the test, as the AC says; where `it.each` yields duplicate names, the entry covers the name and uses the slowest. **Two directions, adapted for noise (an honest change to ADR-268):** (1) an unlisted test over the budget fails the run and is named; (2) an entry fails the run, named, when its test **no longer exists**, or when it ran in **under a quarter of the budget** in this run. Slow-side noise (a loaded runner) can make a fast test look slow, but load never makes a slow test look fast, so the fast-side rule is safe where a plain "ran under budget" rule would flake. Entries are deleted by the slice that fixes them, in the same change (checklist). |
-| D4 | The budget value | 1 s / 2 s / 3 s / 5 s | **Set in slice 1 by a rule, provisionally 2 s.** Rule: take the smallest value in {1, 2, 3, 5} s for which the allow-list built from the union of (the quiet local run) and (at least 5 CI main runs of `test-timings-frontend`) has at most 60 entries, and 3 further runs with the machine oversubscribed (workers = cores) add no unlisted test over the value. | CI is 3-9x slower than this machine for the same files (budget file ceilings), so a value calibrated only locally would flake there. Local data: 4 tests over 2 s, 50 over 1 s, 252 over 0.5 s. A budget under 1 s would list hundreds and shrink only by whole families; above 5 s it equals the timeout. 2 s catches the tests that matter now; it tightens (to 1 s) in the last slice if the list is then empty. The measured value replaces "2 s" in this table when slice 1 lands. |
-| D5 | Environment and pool options | (a) `projects` split: a `node`-environment project for tests that touch no DOM (candidates: the 184 `.test.ts` files; the DOM-free ones to be found), the rest on jsdom. (b) Stop inlining MUI (`server.deps.inline`), or let `deps.optimizer` pre-bundle it. (c) happy-dom in place of jsdom for the DOM project (new dependency, MIT). (d) `isolate: false` for the node project only. (e) `pool: forks` or `vmThreads`. | **All five are measured in slice 2, none adopted before.** Order of expected payoff against risk: (a), (b), (d), (e), (c). | Each is a one-line configuration change measured against the unchanged baseline. **A/B rule, decided now:** alternating A and B runs, at least 5 pairs, same machine, quiet, same worker count; adopt a candidate only if (1) median wall falls at least **10 %** (the two baseline runs differ by 3.3 %, so 10 % is three times the noise) and the ranges do not overlap, (2) the sorted test-id list is identical and every test passes, (3) peak memory is not more than 10 % higher than baseline, (4) 3 consecutive green full runs. A candidate that needs any test edited is adopted per file or glob, not suite-wide, and each edit is listed. Fidelity gate for (c) (the riskiest): the `@screenshot` suite is Playwright and unaffected, but the DataGrid, dialog and user-event tests must pass unmodified; run last, and only if (a)+(b) leave environment cost above 10 % of worker time. (b)'s inline reason is not in the repo; the slice reads the commit that added it before touching it. |
+| D1 | Who owns the frontend budget (FE7 against T4) | (a) FE7 owns the **whole** frontend budget: the new per-test ratchet **and** the existing per-file budget (`test-time-budget.json`, `check_budget.py --stack frontend`), made failing. (b) The per-test ratchet replaces the per-file budget. (c) FE7 owns only the per-test ratchet; T4 flips the per-file one. | (a) | The brief and the Epic say whichever lands first owns the frontend budget; FE7 lands first. Both halves stay because they guard different costs. A per-test duration does not include import, module-level code or `beforeAll` (they run outside any test), which is the other half of worker time; the per-file budget sees them, and cannot name the slow test in a 129-test file, which the per-test one does. (b) leaves the fixed-overhead half unguarded; (c) splits one budget across two Stories, against the brief. **How the per-file half becomes failing:** in slice 1, `--warn-only` is removed from the **frontend** call in `ci_frontend.yml` once `check_budget.py` passes on the CSVs of at least 5 main runs; if it does not, the nine ceilings are re-derived from those runs (highest value seen plus the noise margin slice 1 measures) in the same change. The backend call keeps `--warn-only` (T4). **T4 consequence:** T4 drops its frontend half and keeps the backend. The T4 brief (`slices/slice-44-t4-test-budgets-fail-the-build.md`, lines 12-30: it names `ci_frontend.yml` and says "whichever lands first owns") needs its frontend half removed at T4 pick-up; recorded here and in the hand-off. |
+| D2 | How the budget is enforced, and where | (a) A **custom Vitest reporter** that reads each finished test's duration and fails the run naming the test, around a pure compare step. (b) A setup-file `afterEach` hook. (c) `slowTestThreshold` or a lowered `testTimeout`. (d) A post-run script over `test-results.json`. | (a) | The reporter sees the duration Vitest measured (hooks included), works for any invocation (full, filtered, IDE) and keeps the logic in one place. (b) times only part of a test; (c) `slowTestThreshold` only colours output, `testTimeout` aborts a test and cannot take a name list (it stays at 5 s as the backstop); (d) runs only through a script, not an IDE or filtered run. **Which CI step enforces:** CI's only Vitest run is the "Test Frontend and Sonar report" step of `.github/actions/build-frontend/action.yml`, which runs `pnpm run sonarreport` = `vitest run --coverage` with `CI=true`. So the guard is **on in `pnpm test` and in that coverage run**; it is **off only under Stryker and in watch mode**. (An earlier idea, off under coverage, would never have enforced anywhere in CI.) The per-file half is enforced by the "Check test-time budget" step in `ci_frontend.yml`, reading the CSV that the coverage run's JSON reporter wrote. **Options, not environment:** the reporter takes its mode as plain options (`enabled`, `runKind` plain or coverage, budget, factors); `vitest.config.ts` computes them with a small pure function of (environment, argv), unit-tested the way `resolveTestWorkers` is. **Slice-1 spike questions, answered before any other work:** (1) the Vitest 5 hook that delivers per-test duration and the end-of-run set (`onTestCaseResult` and `onTestRunEnd` are the candidates) and how the failing exit code is set (`process.exitCode` or an error handed back); (2) whether the `--reporter=default` that `pnpm test` passes **replaces** the reporters in the config (if so, the guard, and the Sonar and JSON reporters, are not loaded by `pnpm test`; the fix is to drop the flag from the script, or add the guard on the command line); (3) the marker Stryker's worker sets (candidate `STRYKER_MUTATOR_WORKER`, **unverified**); (4) `bail: 1` is on when `CI` is set, so a failing run is incomplete: the stale check (D3) is skipped for a bailed run. **Proof demanded of slice 1:** a planted slow test fails the run through `pnpm test` **and** through `CI=true pnpm run sonarreport`, and does not fail under the Stryker marker or in watch. |
+| D3 | Where the allow-list lives, its key, how it shrinks | (a) A TypeScript data module beside the reporter. (b) JSON in `Scripts/test-timings/`. (c) Inline in an enforcement test like `ALLOWED_LEAKS`. | (a): `Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts`; key = `relative file path :: full test name`; each entry has a one-line reason and a **ceiling** (quiet-local seconds) | The reporter runs in the frontend project and imports it. Every `it.each` row is its own test with its own name, listed and checked individually. **Failure directions:** (1) an unlisted test over the threshold fails, named. (2) A listed test over its own ceiling fails, named (a slow test may not get slower). (3) Stale entry, defined **against what ran, not against the source** (recommended; a source scan cannot expand `it.each` titles and template strings): for an entry whose file was part of this run, the test must have run, and not in under a quarter of the budget; an entry whose file no longer exists on disk is stale; entries for files outside a filtered run are ignored; a bailed or incomplete run skips the check. "Under a quarter" is safe because load only makes tests slower, never faster. The alternative, running the stale check only on full runs, was rejected: it needs the reporter to know a run was unfiltered, which Vitest does not tell it reliably. **How a reviewer sees growth:** an added entry is a line in `slowTests.ts`, with its reason and ceiling, in the PR diff; nothing else can add one. **Departure from the ADRs, recorded:** ADR-268 says "file or type" and fails on a stale entry; here the key is a test, the stale rule is the one above, and an entry has a ceiling. ADR-269 puts the list in an enforcement test over a tool's output; here a reporter reads the run itself. Slice 1 writes this as a status note on ADR-268 and ADR-269 (or one short new ADR, next free number, if the note grows past a paragraph). |
+| D4 | The budget model and its value | 1 s / 2 s / 3 s / 5 s | **Rule fixed now, value derived in slice 1; provisionally 2 s.** B is the budget in seconds on a quiet machine under `pnpm test`. The enforced threshold in a run is `T = B x F (+ A for the first test in its file)`. F = 1 for local `pnpm test`; for the CI coverage run F is the 90th percentile of the per-test ratio (CI coverage-run duration over local plain-run duration) over tests that took at least 0.1 s locally, rounded up to the next 0.5. A is the measured extra cost of the first test of a file (cold module and first render), taken as the 90th percentile over files. Slice 1 measures: the ratio of local `--coverage` to local plain on the same machine (separates the coverage effect from the machine effect), the CI ratio from at least 5 CI artifacts, and A. **Value of B:** the smallest of {1, 2, 3} s for which every test over T in the calibration samples (the quiet local run, 3 oversubscribed local runs with workers = cores, the 5 CI artifacts) sits in a file that slices 4-11 name, so each entry has a slice that retires it; entries outside those families carry their own reason. (The earlier cap of 60 entries is dropped: it had no reason; the rule above ties the list's length to the work planned.) 5 s is excluded (it is the timeout). **Flake bound:** T is raised until the calibration samples show **zero** unlisted tests over it; a residual single-sample false failure on an unmeasured machine is possible, and is answered by a re-run, not by a retry in the reporter; the raised value and the observed spread are written into the guard's comment. **If the CI artifacts are missing or fewer than 5, slice 1 stops and asks for them; there is no fallback value.** | Local data: 4 tests over 2 s, 50 over 1 s, 252 over 0.5 s. The old "CI is 3-9x slower" was an **upper bound read off the budget file's ceilings** (they carry margin and are CI coverage-run seconds), not a measurement; slice 1 measures the ratio. CI artifacts come from the coverage run, so they calibrate the CI run kind directly. The value in this row is replaced by the measured one when slice 1 lands. |
+| D5 | Environment and pool options | (a) `projects` split: a `node`-environment project for tests that touch no DOM (candidates: at most the 184 `.test.ts` files, an **upper bound**: some use `renderHook`, `localStorage` or the DOM). (b) Stop inlining MUI (`server.deps.inline`), or let `deps.optimizer` pre-bundle it. (c) happy-dom in place of jsdom for the DOM project (new dependency, MIT). (d) `isolate: false` for the node project only. (e) `pool: forks` or `vmThreads`. | **All five are measured in slice 2, none adopted before.** Order of expected payoff against risk: (a), (b), (d), (e), (c). | Each is a configuration change measured against the unchanged baseline. **A/B rule, decided now:** alternating A and B runs, at least 5 pairs, same machine, quiet, same worker count; adopt a candidate only if (1) median wall falls at least **10 %** (the two baseline runs differ by 3.3 %) and the ranges do not overlap, (2) the sorted test-id list is identical and every test passes, (3) peak memory is not more than 10 % higher than baseline, (4) 3 consecutive green full runs, (5) **for `isolate: false` (d), also 3 green runs with `sequence.shuffle` and different seeds**, because shared module state shows only when order changes, (6) **a CI arm**: one CI run with the candidate (the push or workflow dispatch is a lead step, not an AFK one) is green and not slower than the baseline CI run before the candidate is adopted. **Node project:** `setupTests.ts` also patches DOM things (`Element.prototype.scrollIntoView`, `ResizeObserver`, a `localStorage` mock) that do not exist in a node environment, so the node project needs its own trimmed setup file (locale pins and console mocks only), written and measured in slice 2. **Unknowns slice 2 reads from the workflow and records, not guesses:** the CI runner's vCPU count and memory (`runs-on` in `ci_frontend.yml`) and how many workers CI's default gives, since CI sets no cap. A candidate that needs any test edited is adopted per file or glob, and each edit is listed. Fidelity gate for (c): DataGrid, dialog and user-event tests must pass unmodified; run last, and only if (a)+(b) leave environment cost above 10 % of worker time. The reason `@mui/` is inlined is not in the repo; the slice reads the commit that added it first. |
 | D6 | Which hotspots go first | By measured summed seconds, after configuration | Reports (68 s), ModifyTeamSettings (59 s), RefinementView (31 s), Overview + BaseMetricsView (30 s), EditConnection + CreateConnectionWizard (29 s), WorkItemsDialog (27 s), ModifyProjectSettings (27 s) | Configuration first because it multiplies across every later slice and tells us how much of the 691 s is still worth rewriting. Within families, "estimated saving" is the assumption of half the summed seconds, to be replaced by the measured saving at each slice's close. `BaseMetricsView` goes last: FE5 will split it, and an extraction now could collide (soft dependency, either order). |
 | D7 | How a rewrite is done | (a) Extract the logic the slow test checks into a function or hook (production refactor, no test change), test it directly in milliseconds, then shrink the page-level tests to one or two wiring tests with small fixtures. (b) Only make the page-level tests cheaper (smaller fixtures, cheaper queries, fake timers). (c) Delete low-value tests. | (a) where the logic is genuinely in the component; (b) where it is not (pure DataGrid or wiring cost); never (c) | The brief's own prescription. (c) violates "every assertion still made". The per-slice proof is in D8. Query choice follows the ci-learnings rule (cheap query unless the role is the assertion). Real sleeps go to `vi.useFakeTimers` as the siblings already do. |
 | D8 | Behaviour-free proof, per slice | see the section below | | |
@@ -206,18 +214,20 @@ made by a rule written down now, so the result cannot be argued after the fact.
 ### Brief and Epic disagreements found
 
 1. **A per-file frontend budget already exists and is wired into CI** (`test-time-budget.json`, `check_budget.py`,
-   `ci_frontend.yml`, warn-only). The brief and the Epic describe the ratchet as new. Resolved in D1: FE7 adds the
-   per-test half inside `pnpm test`; T4 flips the per-file half. KPI 14 ("no test over the budget") is read as the
-   per-test budget; KPI 16 stays the CI step median.
+   `ci_frontend.yml`, warn-only). The brief and the Epic describe the ratchet as new. Resolved in D1: FE7 lands first and
+   owns the whole frontend budget (per-test ratchet plus the per-file budget made failing); T4 drops its frontend half and
+   keeps the backend. KPI 14 ("no test over the budget") is read as the per-test budget; KPI 16 stays the CI step median.
+   The T4 brief needs its frontend half removed at T4 pick-up.
 2. **The hypothesis's disproof condition is half met** (see Measurement); the brief itself says DESIGN then re-scopes
    towards configuration. Taken: both.
 3. **The Epic text says FE7 "profiles the suite" and the AC says "which cost dominates"**; the answer is not one
    cost but two halves of similar size. Recorded plainly above.
 4. **The brief's "11 workers" baseline is stale**: T3 made it 6 locally. All new numbers are at 6 workers.
-5. **The ratchet's "stale entry" direction cannot be a plain duration rule** (noise); adapted in D3. ADR-268 is not
-   amended; if the maintainer wants the adaptation recorded as a status note on ADR-268 or ADR-269 it is a one-line
-   edit in slice 1.
-6. **The Epic's checklist says "existing tests stay green unmodified"**; for FE7 that is replaced, per the brief, by the
+5. **The ratchet's "stale entry" direction cannot be a plain duration rule** (noise), and the list is keyed by test with
+   a ceiling; adapted in D3. Slice 1 writes the departure from ADR-268 and ADR-269 as status notes (or one short ADR).
+6. **CI's only Vitest run is the coverage command**, so any guard that is off under coverage never enforces in CI, and
+   the CI timing artifacts are coverage-slowed. The first design had both wrong; D2 and D4 are corrected.
+7. **The Epic's checklist says "existing tests stay green unmodified"**; for FE7 that is replaced, per the brief, by the
    moved-assertions list. No conflict.
 
 ## Wave: DESIGN / [REF] Hexagonal sketch
@@ -242,15 +252,16 @@ production code.
  test files  ---- page-level tests (shrink to 1-2 wiring tests per flow)
       \--------- unit tests of functions/hooks (NEW or grown)  <-- extracted from components (production, behaviour-free)
 
- Scripts/test-timings/summarise.py (EXTEND: top-N shares, counts over thresholds)   check_budget.py (T4)
+ Scripts/test-timings/summarise.py (EXTEND: top-N shares, counts over thresholds)
+ ci_frontend.yml -> check_budget.py --stack frontend (per-file half, no longer --warn-only; EXTEND)
 ```
 
 Touched: `Lighthouse.Frontend/vitest.config.ts` (modified), `src/tests/timeBudget/` (new: reporter, pure compare step,
 allow-list, tests), `Scripts/test-timings/summarise.py` (modified), about 25 hotspot test files (modified), new unit-test
 files beside the production code they cover, a few production components (modified only by extracting a function or hook
 whose behaviour is identical), `docs/ci-learnings.md` (edited). Unchanged: all production behaviour, `@screenshot` and
-Playwright, `setupTests.ts` (unless the spike finds setup cost, 4 %), the Python budget script and CI workflow (T4), the
-`MockApiServiceProvider` and test kits, except where a slice adds a cheaper render helper.
+Playwright, `setupTests.ts` (unless the spike finds setup cost, 4 %), the Python budget script and the backend half of
+the CI budget step (T4; the frontend `--warn-only` is removed here, D1), the `MockApiServiceProvider` and test kits, except where a slice adds a cheaper render helper.
 
 ## Wave: DESIGN / [REF] Component decomposition
 
@@ -263,32 +274,41 @@ Playwright, `setupTests.ts` (unless the spike finds setup cost, 4 %), the Python
 | Vitest config | `Lighthouse.Frontend/vitest.config.ts` | EXTEND (reporter; `projects` and options as slice 2 and 3 decide) |
 | Hotspot test files | per slice | EXTEND (shrink, rewrite) |
 | Extracted functions/hooks | beside their component | CREATE NEW only where the logic lives in a component; each justified in the slice |
+| Per-file budget wiring | `.github/workflows/ci_frontend.yml`, `Scripts/test-timings/test-time-budget.json` | EXTEND (D1) |
+| Standing skip/focus check | `Lighthouse.Frontend/biome.json` | EXTEND (slice 1) |
+| ADR notes | ADR-268, ADR-269 | EXTEND (status notes, D3) |
 | Ledger | `docs/ci-learnings.md` frontend Tests | EXTEND |
 
 ## Wave: DESIGN / [REF] Reuse Analysis
 
 | Need | Existing thing | Decision / contract shape |
 |---|---|---|
-| Ratchet list, both directions, pure compare step | `layerBoundaries.enforcement.test.ts` (`ALLOWED_LEAKS`, counted, planted lists); ADR-268/269 | EXTEND the pattern. The compare step is a pure function (return-only: takes durations and a list, returns offenders); the reporter is the only impure part (reads Vitest, sets the exit code) |
-| Per-test durations and CSV | `Scripts/test-timings/vitest_to_csv.py`, `summarise.py`, the `test-timings-frontend` CI artifact, `test-results.json` from the existing json reporter | REUSE for calibration; EXTEND `summarise.py` for the repeatable profile (no second script) |
-| Per-file budget | `test-time-budget.json`, `check_budget.py` | UNCHANGED (T4). Cited so the two lists are not confused |
-| Worker count | `src/tests/testWorkers.ts` (`resolveTestWorkers`) | REUSE; A/B runs fix the worker count with `LIGHTHOUSE_TEST_WORKERS` |
-| Cheap queries, fake timers | ci-learnings rules; siblings of `ModifyTeamSettings.refinement.test.tsx` already use a fake clock | REUSE |
-| Test kits (`BulkReportsTestKit`, `ReportsTestKit`, `MockApiServiceProvider`) | `src/tests/` | EXTEND only to add a cheaper render helper where a slice proves the provider stack costs; no replacement |
+| Ratchet list, three directions, pure compare step | `layerBoundaries.enforcement.test.ts` (`ALLOWED_LEAKS`, counted, planted lists); ADR-268/269 | EXTEND the pattern. **Shape: pure function** (return-only: durations, run kind and a list in; offenders out; asserted by planted lists, no I/O). The reporter is the only impure part (reads Vitest, sets the exit code); it receives its mode as options |
+| Options for the reporter from environment and argv | `src/tests/testWorkers.ts` (`resolveTestWorkers`) | EXTEND the pattern. **Shape: pure function** (environment and argv in, options out; unit-tested with fake environments) |
+| Per-test durations and CSV | `Scripts/test-timings/vitest_to_csv.py`, `summarise.py`, the `test-timings-frontend` CI artifact, `test-results.json` from the existing json reporter | REUSE for calibration. EXTEND `summarise.py` for the repeatable profile (no second script). **Shape: pure function** (file in, text out) |
+| Per-file budget | `test-time-budget.json`, `check_budget.py`, `ci_frontend.yml` | EXTEND (D1): `--warn-only` removed from the frontend call, ceilings re-derived if needed. **Shape: bounded change**: the universe is the nine frontend entries and one workflow line; the backend half is untouched (asserted by the existing `Scripts/test-timings/tests` and by the backend call keeping its flag) |
+| Worker count | `src/tests/testWorkers.ts` | REUSE; A/B runs fix the worker count with `LIGHTHOUSE_TEST_WORKERS`. **Shape: pure function** |
+| Cheap queries, fake timers | ci-learnings rules; siblings of `ModifyTeamSettings.refinement.test.tsx` already use a fake clock | REUSE. **Shape: bounded change** per rewrite slice (see "Universe and delta") |
+| Test kits (`BulkReportsTestKit`, `ReportsTestKit`, `MockApiServiceProvider`) | `src/tests/` | EXTEND only to add a cheaper render helper where a slice proves the provider stack costs; no replacement. **Shape: bounded change** (additive helpers; existing exports unchanged) |
+| Extracted functions and hooks in production code | the components of each hotspot | CREATE NEW only where the logic lives in a component. **Shape: pure function** for functions; hooks keep their existing effects (**bounded change**, same effects as before, asserted by the unmodified page tests passing at the extraction commit) |
 | Function-level tests already present | `workItemsDialogContexts.test.ts`, `useModifySettings*.test.ts`, `reportOwner.test.ts` | REUSE as the destination for moved assertions |
+| The suite's global behaviour (config, setup) | `vitest.config.ts`, `setupTests.ts` | EXTEND (slices 1 and 3). **Shape: bounded change**: the universe is the reporter entry and, if slice 3 adopts it, the `projects` entry; asserted by an identical sorted test-id list before and after and 3 green full runs. Nothing in it may be unbounded-preservation: a config edit that silently drops a reporter (the `--reporter=default` question in D2) is exactly the bug class slice 1 proves absent |
 
 ## Wave: DESIGN / [REF] Rejected alternatives
 
 - **Rewrite everything to unit tests and drop page-level tests.** Rejected: the brief keeps one or two wiring tests per
   flow; providers, routing and RBAC gating are only proven by a rendered page.
 - **Raise `testTimeout` or retry flaky tests.** Rejected: hides the cost and the flake; the CI flake needs cheaper tests.
-- **A budget on whole-file seconds only.** Rejected for FE7 (D1): names a file, not the slow test; already exists for T4.
+- **A budget on whole-file seconds only.** Rejected (D1): names a file, not the slow test. It stays as the per-file half,
+  because per-test durations cannot see import or `beforeAll` cost.
+- **A guard that is off under coverage.** Rejected (D2): CI's only Vitest run is the coverage command.
+- **A fallback budget of 5 s when CI data is missing.** Rejected (D4): equals the timeout and guards nothing; slice 1 stops.
 - **Fail on any test over 100 ms.** Rejected: 1,893 tests today; the list would be the suite.
 - **Snapshot of durations as the baseline (a golden file of all timings).** Rejected: regenerated without review, noisy.
 - **Run the budget only in CI.** Rejected: the AC is "when `pnpm test` runs"; a local run must also name the test.
 - **Switch the whole suite to happy-dom or `isolate: false` first.** Rejected: the largest fidelity and state-leak risk
   for an unmeasured gain; both are measured in slice 2 behind the A/B rule, and the node-only variant is cheaper.
-- **Parallelise further (more workers).** Rejected: T3 caps local workers on purpose; CI is T4's concern.
+- **Parallelise further (more workers).** Rejected: T3 caps local workers on purpose; CI worker counts are not changed here.
 
 ## Wave: DESIGN / [REF] Behaviour-free proof
 
@@ -317,9 +337,9 @@ ends with `pnpm test` and `pnpm build` clean, a payoff note (D10) and the ledger
 
 | # | Slice | Delivers | Seconds it works on | Estimated saving |
 |---|---|---|---|---|
-| 1 | **Time-budget ratchet + profile report** | Reporter, pure compare step with planted-list tests for both directions, allow-list seeded from the calibration (D4), switch-off for Stryker/coverage/watch, `summarise.py` extended (top-N shares, counts over thresholds), `docs/ci-learnings.md` entry "where to test" | none (no speed change) | 0; the guard is the product. Fails a planted slow test naming it. Calibration needs 5 CI artifacts from the orchestrator |
-| 2 | **Configuration spike (measure only)** | One table: each D5 candidate, alternating A/B, the A/B rule applied; per-file import/environment/transform split; a CPU profile of two slow files. No adoption. Scripts in `measurement/scripts/` | about 800 worker-seconds of fixed overhead | 0 now; produces the number for slice 3 |
-| 3 | **Adopt the winning configuration** | Only candidates that passed the A/B rule: `projects` with a node environment, MUI inlining change, etc., plus any per-file edits it needs, listed | the candidates that won | to be measured; derived upper guide for the node environment alone: 184 `.test.ts` files x about 0.5 s = up to 90 worker-seconds, about 15 s wall |
+| 1 | **Time-budget guard + failing per-file budget + profile report** | In order: (1) the four spike questions of D2; (2) calibration: local plain against local `--coverage` on the same machine, 3 oversubscribed local runs, CI artifacts (at least 5; stop if missing), first-test-in-file allowance A, CI/local ratio F; (3) reporter (options, not environment), pure compare step with planted-list tests for all three directions of D3, allow-list seeded from the calibration with reasons and ceilings; (4) **proof**: a planted slow test fails through `pnpm test` and through `CI=true pnpm run sonarreport`, and not under the Stryker marker or in watch; (5) `--warn-only` removed from the frontend call in `ci_frontend.yml` (ceilings re-derived if the check does not pass on the 5 runs); (6) `summarise.py` extended (top-N shares, counts over thresholds); (7) `docs/ci-learnings.md` entry "where to test"; (8) status notes on ADR-268 and ADR-269 (D3); (9) a standing check for skipped and focused tests: Biome has `suspicious/noSkippedTests` and `noFocusedTests`, neither enabled in `biome.json` today; the slice counts current offenders and enables them (offenders fixed or listed by name), which makes the per-slice grep a second line rather than the only one | none (no speed change) | 0; the guard is the product. If calibration does not fit one day, split: 1a spike + calibration, 1b guard + CI wiring |
+| 2 | **Configuration spike (measure only)** | One table: each D5 candidate, alternating A/B, the A/B rule applied (including the shuffled arm for `isolate: false` and the CI arm); a trimmed node-project setup file measured; per-file import/environment/transform split; a CPU profile of two slow files; CI runner facts read from the workflow. No adoption. Scripts in `measurement/scripts/` | about 800 worker-seconds of fixed overhead | 0 now; produces the number for slice 3 |
+| 3 | **Adopt the winning configuration** | Only candidates that passed the A/B rule: `projects` with a node environment, MUI inlining change, etc., plus any per-file edits it needs, listed | the candidates that won | to be measured; derived upper guide for the node environment alone: at most 184 `.test.ts` files (an upper bound; some need the DOM) x about 0.5 s = up to 90 worker-seconds, about 15 s wall |
 | 4 | **ModifyTeamSettings family** (`.test`, `.refinement`, `.refinementNeed`, `.readiness`, `.queryCommit`) | Autosave and rule-gating logic tested as hooks/functions; the 600 ms real sleep in `.refinement` and the 500 ms ones in `.test` move to a fake clock; 300 ms debounce waits fake-timed | at least 58.7 (`.refinement` not in the top 25) | about 30 s |
 | 5 | **Reports pages**: `ReportsPage.removal`, `.combinedPdf` | Pick limit (50), selected count and "Select all" as functions over a row list; page keeps wiring tests with small fixtures | 31.2 | about 16 s |
 | 6 | **Reports tab and wizards**: `ReportsTab`, `ReportsTab.createWizard`, `BulkReportWizard`, `ReportView` | Wizard step/validation logic as functions; fewer user-event walks; the 350 ms and 300 ms real waits to fake timers | 37.0 | about 18 s |
@@ -327,13 +347,32 @@ ends with `pnpm test` and `pnpm build` clean, a payoff note (D10) and the ledger
 | 8 | **EditConnection and CreateConnectionWizard** | Field-change and default-resolution logic as functions | 29.2 | about 15 s |
 | 9 | **WorkItemsDialog** (`.contexts`, `.test`, `.paging`) | The 108-case context table against `workItemsDialogContexts` (a function test exists); one render per distinct panel behaviour; paging arithmetic direct | at least 27.0 (`.paging` not in the top 25) | about 14 s |
 | 10 | **ModifyProjectSettings** (`.test`, `.queryCommit`) | Shares the form pattern of slice 4: reuse its helpers; the three 500 ms sleeps to a fake clock | 26.8 | about 13 s |
-| 11 | **OverviewDashboard and BaseMetricsView** (`.loading`, `.test`) | Loading/failure looks stay pinned; cost profiled first (the budget file says "not profiled yet"); `BaseMetricsView` waits for or coordinates with FE5 | 30.3 | about 12 s (low confidence) |
+| 11 | **OverviewDashboard and BaseMetricsView** (`.loading`, `.test`) | Loading/failure looks stay pinned; cost profiled first (the budget file says "not profiled yet"); `BaseMetricsView` waits for or coordinates with FE5 | 30.3 | about 15 s (low confidence) |
 | 12 | **Sweep and close** | Allow-list review: delete what is fixed; tighten the budget if the list allows; DataGridBase.paging, featureChildItemsDialog, tail; final alternating before/after runs (median of at least 5); Stryker once (D9); finalize notes | the rest | measured |
 
-Sums (derived): slices 4-11 work on about 271 of the 691 summed seconds; at half, about 135 s summed, about 23 s of wall,
-**about 9 %**. Adding slice 12's two named files (17 s more) gives the 288 s and the 10 % in the Measurement section. The wall effect of slice 3 is the unknown that decides whether this Story reaches
+Sums (derived): slices 4-11 work on about 271 of the 691 summed seconds; the estimates in the table add to about 136 s
+summed (half, per row), about 23 s of wall, **about 9 %**. Adding slice 12's two named files (17 s more) gives the 288 s and the
+10 % in the Measurement section. The wall effect of slice 3 is the unknown that decides whether this Story reaches
 "minutes off CI"; hence it comes before the hotspot slices. The slices after 3 may be reordered or dropped by their
 measured payoff; the maintainer's rule from the T-track holds: kill the survivors, do not chase hours of runs.
+
+### Universe and delta of a rewrite slice (slices 4-11)
+
+Every rewrite slice declares, at its start, in `measurement/slice-NN-moved-assertions.md`:
+
+- **Universe (what may change):** the production functions or hooks it extracts (named then; each is a move with the
+  component calling it, no behaviour change), the test files it edits, the allow-list entries it deletes. Nothing else:
+  no other production file, no Playwright spec, no `setupTests.ts`.
+- **Must stay green (the preserved set):** the sorted test ids of the touched files before the slice, except ids listed in
+  the moved-assertions file as replaced by a named new test; the whole suite stays green.
+- **Delta (what it changes):** summed seconds of the touched files, tests added and removed, entries deleted from
+  `slowTests.ts`.
+
+Extractions: slice 4 (autosave debounce and rule gating), 5 (pick limit and selected count), 6 (wizard step validation),
+7 (paging and filter arithmetic), 8 (field-change and default resolution) are named from the files read above. Slice 9
+needs none expected: `workItemsDialogContexts` already exists and is tested, so the work is to point the 108 cases at it;
+slice 10 reuses slice 4's helpers; **slice 11's extractions are named at slice start after profiling**, as the budget file
+says the cost "has not been profiled yet".
 
 Soft ordering notes: slices 4 and 10 share helpers (do 4 first). Slice 11 follows FE5's split of `BaseMetricsView` if
 FE5 has landed; otherwise it leaves that file and ratchets it. Slices 5-11 are independent of each other.
@@ -343,12 +382,16 @@ FE5 has landed; otherwise it leaves that file and ratchets it. Slices 5-11 are i
 Genuine questions for the maintainer: **none.** Engineering choices took the recommended option. Inputs the orchestrator
 must supply or confirm (not decisions):
 
-- Slice 1 needs the `test-timings-frontend` artifact of at least 5 recent main runs (`gh run download`), to calibrate D4 on
-  CI durations. If unavailable, D4 falls back to 5 s (equal to the timeout, guarding little) and says so.
-- Whether to record D3's adaptation of the "stale entry" direction as a status note on ADR-268: proposed no, because the
-  rule is a refinement ("fails both ways" holds), written in the guard's own comment.
+- Slice 1 needs the `test-timings-frontend` artifacts of at least 5 recent main runs (`gh run download`; they come from the
+  coverage run), to measure the CI/local ratio and calibrate D4. **If they are missing, slice 1 stops and asks for them;
+  there is no fallback value.**
+- Slice 2's CI arm (one CI run with a candidate configuration) needs a push or a workflow dispatch: a lead step, not an
+  AFK one. CI runner vCPU, memory and worker count are unknowns slice 2 reads from `ci_frontend.yml`.
 - The reason `@mui/` and `react-transition-group` are inlined is not written in the repo; slice 2 reads the commit that
   added it before testing its removal.
+- Slice 1's spike answers (Vitest 5 reporter hook and exit code, the effect of `--reporter=default`, the Stryker marker)
+  can change D2's mechanics but not its outcome (guard on in `pnpm test` and the CI coverage run, off under Stryker and
+  watch); if (2) shows the flag drops config reporters, the script edit is part of slice 1.
 
 ## Architecture summary for the maintainer
 
@@ -387,7 +430,10 @@ Playwright, `@screenshot`. New external call: none.
   A/B rule passes in slice 2.
 - Fake clock instead of real sleeps (test double for time): **chosen**; real sleeps are about 5.5 s of the suite and the
   cause of the timing coupling.
-- Stale-entry check by duration: **rejected** (a loaded runner makes tests look slow, never fast); replaced by "no longer
-  exists or ran under a quarter of the budget".
+- Stale-entry check by plain duration: **rejected** (a loaded runner makes tests look slow, never fast); replaced by "did
+  not run in a file that ran, or ran in under a quarter of the budget", plus a per-entry ceiling so a listed test cannot
+  get slower.
+- One budget guarding both per-test and per-file cost: **rejected**; two halves (reporter and the failing per-file CI check)
+  because import and `beforeAll` time belongs to no test.
 - Domain events, outbox, unit of work, value objects, optimistic concurrency, JSON column against child table:
   **not applicable**; no domain or persistence change.

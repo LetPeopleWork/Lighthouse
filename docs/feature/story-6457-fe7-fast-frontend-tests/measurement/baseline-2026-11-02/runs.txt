@@ -1,0 +1,12 @@
+# sampler: label,exit,seconds,peak_rss_mb,min_avail_mb,peak_threads
+fe-base-1,0,267,4620,15559,139
+fe-base-2,0,246,4819,15860,116
+# vitest summary lines
+run1:  ✓ src/utils/date/formatDuration.test.ts (17 tests) 7ms
+run1:  Test Files  578 passed (578)
+run1:       Tests  8970 passed (8970)
+run1:    Duration  252.50s (tests 48%, import 23%, environment 18%, transform 7%, setup 4%)
+run2:  ✓ src/utils/date/formatDuration.test.ts (17 tests) 8ms
+run2:  Test Files  578 passed (578)
+run2:       Tests  8970 passed (8970)
+run2:    Duration  244.32s (tests 49%, import 24%, environment 19%, setup 4%, transform 4%)
