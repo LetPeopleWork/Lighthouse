@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -153,19 +154,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task Cleanup()
         {
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            using (var teardownScope = Factory.Services.CreateScope())
+            try
             {
-                teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                // Deleting the owner a report was made for publishes an event whose handlers start refreshes.
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
             }
+            finally
+            {
+                using (var teardownScope = Factory.Services.CreateScope())
+                {
+                    teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                }
 
-            // When set-up failed before this scenario's client was made, there is none to dispose, and the
-            // previous scenario's client is already gone.
-            Client?.Dispose();
-            Client = null!;
+                // When set-up failed before this scenario's client was made, there is none to dispose, and the
+                // previous scenario's client is already gone.
+                Client?.Dispose();
+                Client = null!;
+            }
         }
 
         [OneTimeTearDown]

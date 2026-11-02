@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,31 +15,24 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// instance lives on PostgreSQL: the Portfolios list, the Teams list, one Team, one Portfolio and its settings.
     /// </summary>
     [TestFixture]
-    [Category("epic-6400-fast-with-many-features")]
-    [Category("slice-02")]
     public class CatalogueBodiesOnPostgresTests : FastWithManyFeaturesAcceptanceTest
     {
         private const string AConcurrencyToken = "concurrencyToken";
 
         private SharedPostgresContainer? postgres;
+        private WebApplicationFactory<Program>? hostOnSqlite;
+        private WebApplicationFactory<Program>? hostOnPostgres;
 
-        [OneTimeTearDown]
-        public async Task StopPostgres()
+        // The base class built its host in its own one-time set-up, which has run by now. The fixture keeps that
+        // host for the base's per-test reset and builds one more, on a Postgres database, for the tests to use.
+        [OneTimeSetUp]
+        public async Task BuildTheHostOnPostgres()
         {
-            if (postgres is not null)
-            {
-                await postgres.DisposeAsync();
-            }
-        }
-
-        [SetUp]
-        public async Task MoveTheInstanceToPostgres()
-        {
-            postgres ??= await SharedPostgresContainer.StartAsync();
+            postgres = await SharedPostgresContainer.StartAsync();
             var connectionString = await postgres.ConnectionStringToANewCreatedDatabaseAsync();
 
-            Client.Dispose();
-            Factory = Factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            hostOnSqlite = Factory;
+            hostOnPostgres = Factory.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
             {
                 services.RemoveAll<DbContextOptions<LighthouseAppContext>>();
                 services.RemoveAll<IDbContextOptionsConfiguration<LighthouseAppContext>>();
@@ -48,16 +42,41 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     npgsql.MigrationsAssembly("Lighthouse.Migrations.Postgres");
                 }));
             }));
+        }
+
+        [OneTimeTearDown]
+        public async Task StopPostgres()
+        {
+            hostOnPostgres?.Dispose();
+
+            if (postgres is not null)
+            {
+                await postgres.DisposeAsync();
+            }
+        }
+
+        [SetUp]
+        public async Task MoveTheInstanceToPostgres()
+        {
+            Client.Dispose();
+            Factory = hostOnPostgres!;
+            Factory.ForgetTheCachedMetrics();
             Client = Factory.CreateClient().AsSystemAdmin();
 
             using var scope = Factory.Services.CreateScope();
-            await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.MigrateAsync();
+            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            await dbContext.Database.EnsureDeletedAsync();
+            await dbContext.Database.MigrateAsync();
 
             foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
             {
                 await seeder.Seed();
             }
         }
+
+        // The base class's own per-test reset and clean-up work on the host it built.
+        [TearDown]
+        public void HandTheBaseItsOwnHostBack() => Factory = hostOnSqlite!;
 
         [TestCase("/api/latest/portfolios", "portfolios")]
         [TestCase("/api/latest/teams", "teams")]

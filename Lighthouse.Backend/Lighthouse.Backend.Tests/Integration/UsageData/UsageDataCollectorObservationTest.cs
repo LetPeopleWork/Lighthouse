@@ -135,27 +135,26 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             await Factory.Services.GetRequiredService<UsageDataForwardingService>()
                 .SendWhatIsWaitingAsync(CancellationToken.None);
 
-            var idle = await TheUpdateQueueGoesIdle();
-
-            // Read last, so a batch sent by the drain above is checked as well.
-            var reachedTheCensus = Outbound.ThatReached(TheLiveCensusHost);
-
-            using (var scope = Factory.Services.CreateScope())
+            try
             {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
             }
-
-            Client.Dispose();
-
-            using (Assert.EnterMultipleScope())
+            finally
             {
+                // Read last, so a batch sent by the drain above is checked as well.
+                var reachedTheCensus = Outbound.ThatReached(TheLiveCensusHost);
+
+                using (var scope = Factory.Services.CreateScope())
+                {
+                    scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                }
+
+                Client.Dispose();
+
                 Assert.That(reachedTheCensus, Is.Empty,
                     "a scenario in this fixture contacted the real collector. The host is told to send "
                     + "somewhere that cannot exist, so reaching it means something ignored where it was "
                     + "told to send - and the events it invented are now in the live numbers");
-
-                Assert.That(idle, Is.True,
-                    "The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
             }
         }
 
@@ -167,9 +166,6 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
             Factory?.Dispose();
             RootFactory?.Dispose();
         }
-
-        private async Task<bool> TheUpdateQueueGoesIdle()
-            => await SharedHostCleanup.WaitUntilTheQueueIsIdle(Factory.Services, TimeSpan.FromSeconds(30));
 
         /// <summary>
         /// For a fixture that needs more of the host than the recorder. Called while the host is

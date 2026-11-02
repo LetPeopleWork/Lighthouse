@@ -1,4 +1,5 @@
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -38,6 +39,29 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             return factories;
         }
+
+        /// <summary>Whether the instruction builds a host: a new factory, or a host derived from one.</summary>
+        public static bool IsAHostStart(Instruction instruction, HashSet<string> factoryTypeNames)
+            => instruction.Operand is MethodReference called
+                && IsAFactoryType(called.DeclaringType, factoryTypeNames)
+                && (instruction.OpCode.Code == Code.Newobj
+                    || instruction.OpCode.Code is Code.Call or Code.Callvirt && called.Name is "WithWebHostBuilder" or "WithTestAuthentication");
+
+        private static bool IsAFactoryType(TypeReference type, HashSet<string> factoryTypeNames)
+            => NamesAFactory(type) || factoryTypeNames.Contains(type.GetElementType().FullName);
+
+        /// <summary>What a list of type names says against the names a scan found: the ones missing from the list, and the ones on it that were not found.</summary>
+        public static ListComparison Compare(IEnumerable<string> listed, IEnumerable<string> found)
+        {
+            var listedNames = listed.ToHashSet(StringComparer.Ordinal);
+            var foundNames = found.ToHashSet(StringComparer.Ordinal);
+
+            return new ListComparison(
+                [.. foundNames.Except(listedNames).Order(StringComparer.Ordinal)],
+                [.. listedNames.Except(foundNames).Order(StringComparer.Ordinal)]);
+        }
+
+        public sealed record ListComparison(IReadOnlyList<string> Newcomers, IReadOnlyList<string> Stale);
 
         public static string KeyOf(MethodDefinition method)
             => method.DeclaringType.FullName + "::" + method.Name + "/" + method.Parameters.Count;

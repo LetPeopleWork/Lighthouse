@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -10,9 +11,10 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// starts a refresh leaves work on the host's update queue, and that work would run against the next test's
     /// data unless something waits for the queue to empty. This guard reads the compiled test assembly and fails
     /// for every type that builds a host in [OneTimeSetUp] (itself or through the methods it calls) and has no
-    /// [TearDown], its own or inherited, that waits for the queue: through SharedHostCleanup or by asking the
-    /// update status store whether work is active. Fixtures whose tests never put work on the queue are listed
-    /// below with the reason.
+    /// [TearDown], its own or inherited, that waits for the queue: through SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail,
+    /// or by asking the update status store whether work is active inside a loop. A single look at the store, or a
+    /// wait whose answer is thrown away, does not hold anything back. Fixtures whose tests never put work on the
+    /// queue are listed below with the reason.
     /// </summary>
     [TestFixture]
     public class SharedHostsDrainTheUpdateQueueGuardTest
@@ -39,7 +41,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.NamedCycleTimeReadApiIntegrationTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.NamedCycleTimeTrendInfoApiIntegrationTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.Refinement.RefinementAcceptanceTest"] = NeverStartsARefresh,
-            ["Lighthouse.Backend.Tests.API.Integration.Reports.ReportsAcceptanceTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.ViewerEmbedSessionJourneyTests"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.WorkItemAgePercentilesPortfolioReadApiIntegrationTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.WorkItemAgePercentilesReadApiIntegrationTest"] = NeverStartsARefresh,
@@ -54,15 +55,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.Services.Implementation.Repositories.FeatureListReaderRegistrationTest"] = NeverStartsARefresh,
+            ["Lighthouse.Backend.Tests.Integration.Containers.CatalogueBodiesOnPostgresTests"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.Startup.EncryptionBootstrapOrderTests"] = NeverStartsARefresh,
         };
-
-        private static readonly HashSet<string> QueueWaits =
-        [
-            "SharedHostCleanup::WaitUntilTheQueueIsIdle",
-            "SharedHostCleanup::WaitUntilTheQueueIsIdleOrFail",
-            "IUpdateStatusStore::HasActiveWork",
-        ];
 
         private static readonly string PlantedPrefix = typeof(PlantedFixtures).FullName!.Replace('+', '/');
 
@@ -84,7 +79,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void EveryTypeThatKeepsAHostForItsWholeRunWaitsForTheUpdateQueueAfterEachTest()
         {
-            var offenders = typesFoundNotDrainingTheQueue.Except(TypesAllowedToKeepAHostWithoutDrainingTheQueue.Keys, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+            var offenders = Compare(TypesAllowedToKeepAHostWithoutDrainingTheQueue.Keys, typesFoundNotDrainingTheQueue).Newcomers;
 
             Assert.That(
                 offenders,
@@ -98,7 +93,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void EveryTypeOnTheListStillKeepsAHostWithoutDrainingTheQueue()
         {
-            var stale = TypesAllowedToKeepAHostWithoutDrainingTheQueue.Keys.Except(typesFoundNotDrainingTheQueue, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+            var stale = Compare(TypesAllowedToKeepAHostWithoutDrainingTheQueue.Keys, typesFoundNotDrainingTheQueue).Stale;
 
             Assert.That(
                 stale,
@@ -113,7 +108,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase(nameof(PlantedFixtures.WaitsOnlyInOneTimeTearDown), true)]
         [TestCase(nameof(PlantedFixtures.KeepsAHostAndWaitsInTearDown), false)]
         [TestCase(nameof(PlantedFixtures.KeepsAHostAndWaitsThroughAHelper), false)]
-        [TestCase(nameof(PlantedFixtures.KeepsAHostAndAsksTheStatusStore), false)]
+        [TestCase(nameof(PlantedFixtures.KeepsAHostAndAsksTheStatusStore), true)]
+        [TestCase(nameof(PlantedFixtures.KeepsAHostAndDiscardsTheResultOfTheWait), true)]
+        [TestCase(nameof(PlantedFixtures.KeepsAHostAndReadsTheStatusStoreBesideAnUnrelatedLoop), true)]
+        [TestCase(nameof(PlantedFixtures.KeepsAHostAndPollsTheStatusStoreInALoop), false)]
+        [TestCase(nameof(PlantedFixtures.KeepsAHostAndPollsTheStatusStoreInAnAsyncLoop), false)]
         [TestCase(nameof(PlantedFixtures.KeepsAHostAndInheritsTheWait), false)]
         [TestCase(nameof(PlantedFixtures.KeepsNoHost), false)]
         public void TheScanSeesAHostKeptWithoutWaitingForTheQueueHoweverTheTearDownIsWritten(string plantedType, bool shouldBeFound)
@@ -125,9 +124,37 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(found.Contains(PlantedPrefix + "/" + plantedType), Is.EqualTo(shouldBeFound));
         }
 
+        private static string[] Names(params string[] names) => names;
+
+        [Test]
+        public void ANewcomerOutsideTheListIsReportedAndNothingElse()
+        {
+            var comparison = Compare(["Alpha", "Beta"], ["Alpha", "Beta", "Gamma"]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(comparison.Newcomers, Is.EqualTo(Names("Gamma")));
+                Assert.That(comparison.Stale, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void AStaleEntryOnTheListIsReportedAndNothingElse()
+        {
+            var comparison = Compare(["Alpha", "Beta", "Gamma"], ["Alpha", "Gamma"]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(comparison.Stale, Is.EqualTo(Names("Beta")));
+                Assert.That(comparison.Newcomers, Is.Empty);
+            }
+        }
+
         /// <summary>
         /// Finds the types that declare a [OneTimeSetUp] from which a host start can be reached, and keeps those
-        /// that have no [TearDown], their own or inherited, from which a wait for the update queue can be reached.
+        /// that have no [TearDown], their own or inherited, from which a wait that holds can be reached: a call to
+        /// SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail, or a look at the update status store inside a loop. The methods
+        /// of SharedHostCleanup are not entered, so the loop in its own non-failing wait does not count.
         /// Calls are followed into methods written in the same assembly and into the bodies the compiler makes
         /// for lambdas and async methods.
         /// </summary>
@@ -165,23 +192,41 @@ namespace Lighthouse.Backend.Tests.Architecture
                 }
             }
 
-            private bool IsAFactoryType(TypeReference type)
-                => NamesAFactory(type) || factoryTypeNames.Contains(type.GetElementType().FullName);
-
-            private bool IsAHostStart(Instruction instruction)
+            private static bool IsTheFailingWait(Instruction instruction)
                 => instruction.Operand is MethodReference called
-                    && IsAFactoryType(called.DeclaringType)
-                    && (instruction.OpCode.Code == Code.Newobj
-                        || instruction.OpCode.Code is Code.Call or Code.Callvirt && called.Name is "WithWebHostBuilder" or "WithTestAuthentication");
+                    && called.DeclaringType.GetElementType().Name == nameof(SharedHostCleanup)
+                    && called.Name == nameof(SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail);
 
-            private static bool IsAQueueWait(Instruction instruction)
-                => instruction.Operand is MethodReference called && QueueWaits.Contains(called.DeclaringType.GetElementType().Name + "::" + called.Name);
+            private static bool IsALookAtTheStatusStore(Instruction instruction)
+                => instruction.Operand is MethodReference called
+                    && called.DeclaringType.GetElementType().Name == nameof(IUpdateStatusStore)
+                    && called.Name == nameof(IUpdateStatusStore.HasActiveWork);
 
-            private bool ReachesAHostStart(MethodDefinition root) => Reaches(root, IsAHostStart);
+            // A branch back to a point at or before the look, taken from a point at or after it, puts the look in a loop.
+            private static bool IsInALoop(Instruction look, IEnumerable<Instruction> instructions)
+                => instructions.Any(branch => branch.Offset >= look.Offset && TargetsOf(branch).Any(target => target.Offset <= look.Offset));
 
-            private bool ReachesAQueueWait(MethodDefinition root) => Reaches(root, IsAQueueWait);
+            private static Instruction[] TargetsOf(Instruction branch)
+                => branch.Operand switch
+                {
+                    Instruction target => [target],
+                    Instruction[] targets => targets,
+                    _ => [],
+                };
 
-            private bool Reaches(MethodDefinition root, Func<Instruction, bool> isTheTarget)
+            private static bool Holds(MethodDefinition method)
+                => method.HasBody
+                    && (method.Body.Instructions.Any(IsTheFailingWait)
+                        || method.Body.Instructions.Where(IsALookAtTheStatusStore).Any(look => IsInALoop(look, method.Body.Instructions)));
+
+            private bool StartsAHost(MethodDefinition method)
+                => method.HasBody && method.Body.Instructions.Any(instruction => IsAHostStart(instruction, factoryTypeNames));
+
+            private bool ReachesAHostStart(MethodDefinition root) => Reaches(root, StartsAHost);
+
+            private bool ReachesAQueueWait(MethodDefinition root) => Reaches(root, Holds);
+
+            private bool Reaches(MethodDefinition root, Func<MethodDefinition, bool> isTheTarget)
             {
                 var visited = new HashSet<MethodDefinition>();
                 var pending = new Stack<MethodDefinition>([root]);
@@ -195,7 +240,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                         continue;
                     }
 
-                    if (method.HasBody && method.Body.Instructions.Any(isTheTarget))
+                    if (isTheTarget(method))
                     {
                         return true;
                     }
@@ -221,7 +266,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             private IEnumerable<MethodDefinition> MethodsStartedBy(Instruction instruction)
                 => instruction.Operand is MethodReference called
                     && instruction.OpCode.Code is Code.Call or Code.Callvirt or Code.Newobj or Code.Ldftn or Code.Ldvirtftn
-                    ? methodsByKey.GetValueOrDefault(KeyOf(called)) ?? []
+                    ? (methodsByKey.GetValueOrDefault(KeyOf(called)) ?? []).Where(method => method.DeclaringType.Name != nameof(SharedHostCleanup))
                     : [];
         }
 
@@ -288,7 +333,63 @@ namespace Lighthouse.Backend.Tests.Architecture
                     await WaitForTheQueue();
                 }
 
-                private static Task<bool> WaitForTheQueue() => SharedHostCleanup.WaitUntilTheQueueIsIdle(null!, TimeSpan.FromSeconds(1));
+                private static Task WaitForTheQueue() => SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(null!, TimeSpan.FromSeconds(1));
+            }
+
+            internal abstract class KeepsAHostAndDiscardsTheResultOfTheWait
+            {
+                [OneTimeSetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+
+                [TearDown]
+                public async Task CleanUp() => _ = await SharedHostCleanup.WaitUntilTheQueueIsIdle(null!, TimeSpan.FromSeconds(1));
+            }
+
+            internal abstract class KeepsAHostAndReadsTheStatusStoreBesideAnUnrelatedLoop
+            {
+                [OneTimeSetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+
+                [TearDown]
+                public bool CleanUp()
+                {
+                    for (var count = 0; count < 3; count++)
+                    {
+                        _ = count + 1;
+                    }
+
+                    return ((IUpdateStatusStore)null!).HasActiveWork();
+                }
+            }
+
+            internal abstract class KeepsAHostAndPollsTheStatusStoreInALoop
+            {
+                [OneTimeSetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+
+                [TearDown]
+                public void CleanUp()
+                {
+                    while (((IUpdateStatusStore)null!).HasActiveWork())
+                    {
+                        Thread.Sleep(1);
+                    }
+                }
+            }
+
+            internal abstract class KeepsAHostAndPollsTheStatusStoreInAnAsyncLoop
+            {
+                [OneTimeSetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+
+                [TearDown]
+                public async Task CleanUp()
+                {
+                    while (((IUpdateStatusStore)null!).HasActiveWork())
+                    {
+                        await Task.Delay(1);
+                    }
+                }
             }
 
             internal abstract class KeepsAHostAndAsksTheStatusStore
@@ -297,7 +398,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
 
                 [TearDown]
-                public bool WaitForTheQueue() => ((Lighthouse.Backend.Services.Interfaces.Update.IUpdateStatusStore)null!).HasActiveWork();
+                public bool WaitForTheQueue() => ((IUpdateStatusStore)null!).HasActiveWork();
             }
 
             internal abstract class AnyBaseThatWaits

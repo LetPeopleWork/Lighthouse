@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string OnlyAFewTestsStartAHost = "only one or two of its tests start a host, each under its own settings, so sharing a host would save at most one host build";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 54;
+        private const int MostTypesTheListMayHold = 53;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -73,7 +73,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Architecture.TestHostsRunWithoutRateLimitingByDefaultTest"] = ChecksTheTestHostItself,
             ["Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Integration.Containers.BulkReportOwnerDeletedMidRunOnPostgresTests"] = OnAPostgresServer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.CatalogueBodiesOnPostgresTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.EmbedSessionSingleUseConcurrencyTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.LighterRoundsOnPostgresTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.ScalabilityTests"] = OnAPostgresServer,
@@ -215,20 +214,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string[] Names(params string[] names) => names;
 
-        private static ListComparison Compare(IEnumerable<string> listed, IEnumerable<string> found)
-        {
-            var listedNames = listed.ToHashSet(StringComparer.Ordinal);
-            var foundNames = found.ToHashSet(StringComparer.Ordinal);
-
-            return new ListComparison(
-                [.. foundNames.Except(listedNames).Order(StringComparer.Ordinal)],
-                [.. listedNames.Except(foundNames).Order(StringComparer.Ordinal)]);
-        }
-
         private static string TopLevelTypeOf(TypeDefinition type)
             => type.DeclaringType is null ? type.FullName : TopLevelTypeOf(type.DeclaringType);
-
-        private sealed record ListComparison(IReadOnlyList<string> Newcomers, IReadOnlyList<string> Stale);
 
         /// <summary>
         /// Walks the call tree below every set-up, test and test-case method in an assembly and answers which of
@@ -270,15 +257,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 => !method.DeclaringType.Name.StartsWith('<')
                     && method.CustomAttributes.Any(attribute => PerTestAttributes.Contains(attribute.AttributeType.FullName));
 
-            private bool IsAFactoryType(TypeReference type)
-                => NamesAFactory(type) || factoryTypeNames.Contains(type.GetElementType().FullName);
-
-            private bool IsAHostStart(Instruction instruction)
-                => instruction.Operand is MethodReference called
-                    && IsAFactoryType(called.DeclaringType)
-                    && (instruction.OpCode.Code == Code.Newobj
-                        || instruction.OpCode.Code is Code.Call or Code.Callvirt && called.Name is "WithWebHostBuilder" or "WithTestAuthentication");
-
             private bool ReachesAHostStart(MethodDefinition root)
             {
                 var visited = new HashSet<MethodDefinition>();
@@ -293,7 +271,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                         continue;
                     }
 
-                    if (method.HasBody && method.Body.Instructions.Any(IsAHostStart))
+                    if (method.HasBody && method.Body.Instructions.Any(instruction => IsAHostStart(instruction, factoryTypeNames)))
                     {
                         return true;
                     }
