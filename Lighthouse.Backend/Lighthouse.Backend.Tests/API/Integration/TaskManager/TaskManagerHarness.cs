@@ -1,0 +1,433 @@
+using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.WriteBack;
+using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Services.Interfaces.Seeding;
+using Lighthouse.Backend.Services.Interfaces.Update;
+using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Moq;
+using NUnit.Framework;
+using Serilog;
+using Serilog.Events;
+using Serilog.Extensions.Logging;
+using System.Net;
+using System.Text.Json;
+
+namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
+{
+    /// <summary>
+    /// DISTILL acceptance harness for Epic #5511 (Task Manager). The driving port is the one the whole
+    /// Epic is observed through: a refresh triggered on an updater and run by the production update
+    /// queue in its own DI scope.
+    ///
+    /// The observable this Epic turns on is what the browser is told, so the harness replaces the SignalR
+    /// hub context with one that records the pushes. Everything on the path between the updater and that
+    /// push stays production: the queue, the status store, the execution lock, the write-back round and
+    /// the refresh log.
+    ///
+    /// Faked: the work-tracking connector, <see cref="IForecastService"/> and the licence service — the
+    /// external and non-deterministic driven ports per docs/architecture/atdd-infrastructure-policy.md.
+    /// </summary>
+    public abstract class TaskManagerHarness
+    {
+        protected TestWebApplicationFactory<Program> RootFactory = null!;
+        protected WebApplicationFactory<Program> Factory = null!;
+
+        protected Mock<ILicenseService> LicenseServiceMock = null!;
+        protected Mock<IWorkTrackingConnector> ConnectorMock = null!;
+        protected Mock<IForecastService> ForecastServiceMock = null!;
+
+        protected CapturedUpdateNotifications TheBrowserWasTold = new();
+
+        /// <summary>
+        /// Makes every push to the browser fail, the way a hub whose connection has gone does. Volatile
+        /// because the queue pushes from its own threads, and a scenario sets this from the test's.
+        /// </summary>
+        protected volatile bool TellingTheBrowserFails;
+        protected CapturedLogMessages CapturedLogs = new();
+        protected FlushCount WriteBackFlushes = new();
+
+        /// <summary>
+        /// Puts everything a test can change back to how the next test expects to find it. The captures are
+        /// emptied rather than replaced, because the host's singletons hold on to the instances they were
+        /// built with; the mocks are replaced, because the host reads them through the fields.
+        /// </summary>
+        protected void ResetTheTestState()
+        {
+            // NUnit runs every test in a fixture on one instance, so a scenario that broke the push would
+            // otherwise leave it broken for the rest of the class.
+            TellingTheBrowserFails = false;
+            TheBrowserWasTold.Clear();
+            CapturedLogs.Clear();
+            WriteBackFlushes.Reset();
+
+            LicenseServiceMock = new Mock<ILicenseService>();
+            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            ConnectorMock = new Mock<IWorkTrackingConnector>();
+            ConnectorMock.Setup(c => c.SupportsTransitionHistory(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            ConnectorMock.Setup(c => c.SupportsIncrementalSync(It.IsAny<WorkTrackingSystemConnection>())).Returns(false);
+            ConnectorMock.Setup(c => c.GetPredefinedAdditionalFields(It.IsAny<WorkTrackingSystemConnection>())).Returns([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<IReadOnlyCollection<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepFeaturesForPortfolio(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock.Setup(c => c.SweepParentFeatures(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>())).ReturnsAsync([]);
+            ConnectorMock
+                .Setup(c => c.WriteFieldsToWorkItems(It.IsAny<WorkTrackingSystemConnection>(), It.IsAny<IReadOnlyList<WriteBackFieldUpdate>>()))
+                .ReturnsAsync(new WriteBackResult());
+
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
+        }
+
+        protected void BuildTheHost()
+        {
+            var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactoryMock
+                .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(() => ConnectorMock.Object);
+
+            Factory = RootFactory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<ILicenseService>();
+                    services.AddScoped(_ => LicenseServiceMock.Object);
+
+                    services.RemoveAll<IWorkTrackingConnectorFactory>();
+                    services.AddScoped(_ => connectorFactoryMock.Object);
+
+                    services.RemoveAll<IForecastService>();
+                    services.AddScoped(_ => ForecastServiceMock.Object);
+
+                    services.RemoveAll<IHubContext<UpdateNotificationHub>>();
+                    services.AddSingleton(_ => RecordingHubContext());
+
+                    // Wraps the real collector: the staging and flushing under test stays production, and
+                    // only the fact that an execution reported itself finished is recorded on the way past.
+                    services.RemoveAll<IWriteBackCollector>();
+                    services.AddScoped<WriteBackCollector>();
+                    services.AddScoped<IWriteBackCollector>(sp =>
+                        new FlushRecordingWriteBackCollector(sp.GetRequiredService<WriteBackCollector>(), WriteBackFlushes));
+
+                    // Serilog is the pipeline, so an ILoggerProvider added here would be inert; replacing
+                    // the factory is what makes the refresh's own log readable. The framework overrides
+                    // mirror appsettings.json so that "operator-visible" means the stream operators read.
+                    services.RemoveAll<ILoggerFactory>();
+                    services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(
+                        new LoggerConfiguration()
+                            .MinimumLevel.Verbose()
+                            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+                            .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+                            .WriteTo.Sink(CapturedLogs)
+                            .CreateLogger(),
+                        dispose: true));
+
+                    ConfigureAdditionalServices(services);
+                });
+            });
+        }
+
+        protected void GiveTheTestAnEmptySeededDatabase()
+        {
+            using var setupScope = Factory.Services.CreateScope();
+            var dbContext = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            dbContext.Database.EnsureDeleted();
+            dbContext.Database.EnsureCreated();
+
+            foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
+            {
+                seeder.Seed().GetAwaiter().GetResult();
+            }
+        }
+
+        /// <summary>
+        /// Registered last, so a slice can replace something the harness itself set up. Slice 03 pins the
+        /// instance clock here: elapsed time is only assertable if the test decides what "now" is.
+        /// </summary>
+        protected virtual void ConfigureAdditionalServices(IServiceCollection services)
+        {
+        }
+
+        private IHubContext<UpdateNotificationHub> RecordingHubContext()
+        {
+            var clientProxy = new Mock<IClientProxy>();
+            clientProxy
+                .Setup(proxy => proxy.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), It.IsAny<CancellationToken>()))
+                .Returns((string _, object[] arguments, CancellationToken _) =>
+                {
+                    if (TellingTheBrowserFails)
+                    {
+                        return Task.FromException(new InvalidOperationException("The browser cannot be reached."));
+                    }
+
+                    if (arguments.Length > 0 && arguments[0] is UpdateStatus status)
+                    {
+                        TheBrowserWasTold.Record(status);
+                    }
+
+                    return Task.CompletedTask;
+                });
+
+            var hubContext = new Mock<IHubContext<UpdateNotificationHub>>();
+            hubContext.Setup(context => context.Clients.Group(It.IsAny<string>())).Returns(clientProxy.Object);
+
+            return hubContext.Object;
+        }
+
+        // --- Seeding (preconditions only — never the expected output) ---
+
+        /// <summary>
+        /// A team this instance knows about, and the name an operator would recognise it by. Every slice
+        /// asserts on the name rather than the id, so the two travel together.
+        /// </summary>
+        protected readonly record struct SeededTeam(int Id, string Name);
+
+        /// <summary>
+        /// The name is unique per call because these fixtures assert on names: two teams sharing one would
+        /// let an assertion pass against the wrong row.
+        /// </summary>
+        protected SeededTeam GivenATeamThatIsRefreshedOnSchedule()
+        {
+            var teamName = $"Team {Guid.NewGuid():N}";
+            return new SeededTeam(SeedTeam(SeedConnection(), teamName), teamName);
+        }
+
+        /// <summary>
+        /// Waits until the queue reports nothing active, bounded so a wedged fixture fails rather than
+        /// hangs. Teardown needs it: a refresh still running while the database beneath it is deleted is
+        /// what it exists to prevent.
+        /// </summary>
+        protected async Task TheQueueGoesIdle()
+        {
+            var store = Factory.Services.GetRequiredService<IUpdateStatusStore>();
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+
+            while (store.HasActiveWork() && DateTime.UtcNow < deadline)
+            {
+                await Task.Delay(20);
+            }
+        }
+
+        protected async Task TheQueueGoesIdleOrFails()
+        {
+            await TheQueueGoesIdle();
+
+            if (Factory.Services.GetRequiredService<IUpdateStatusStore>().HasActiveWork())
+            {
+                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
+            }
+        }
+
+        protected int SeedConnection(WorkTrackingSystems system = WorkTrackingSystems.Jira)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>();
+
+            var connection = new WorkTrackingSystemConnection { Name = $"Connection {Guid.NewGuid():N}", WorkTrackingSystem = system };
+            repository.Add(connection);
+            repository.Save().GetAwaiter().GetResult();
+
+            return connection.Id;
+        }
+
+        protected int SeedTeam(int connectionId, string name)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var team = new Team
+            {
+                Name = name,
+                WorkTrackingSystemConnection = sp.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(connectionId)!,
+                DoneItemsCutoffDays = 365,
+                DataRetrievalValue = "project = TEST",
+                WorkItemTypes = ["Story"],
+                ToDoStates = ["New"],
+                DoingStates = ["In Progress"],
+                DoneStates = ["Done"],
+                ThroughputHistory = 30,
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
+            };
+
+            var repository = sp.GetRequiredService<IRepository<Team>>();
+            repository.Add(team);
+            repository.Save().GetAwaiter().GetResult();
+
+            return team.Id;
+        }
+
+        protected int SeedPortfolio(int connectionId, string name)
+        {
+            using var scope = Factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var portfolio = new Portfolio
+            {
+                Name = name,
+                WorkTrackingSystemConnection = sp.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(connectionId)!,
+                DoneItemsCutoffDays = 365,
+                DataRetrievalValue = "project = TEST",
+                WorkItemTypes = ["Epic"],
+                ToDoStates = ["New"],
+                DoingStates = ["In Progress"],
+                DoneStates = ["Done"],
+                UpdateTime = sp.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime,
+            };
+
+            var repository = sp.GetRequiredService<IRepository<Portfolio>>();
+            repository.Add(portfolio);
+            repository.Save().GetAwaiter().GetResult();
+
+            return portfolio.Id;
+        }
+
+        // --- The tracker ---
+
+        protected void TheTrackerIsUnreachable(Exception failure)
+        {
+            ConnectorMock.Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+            ConnectorMock.Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>())).ThrowsAsync(failure);
+        }
+
+        // --- Driving port: the scheduled refresh ---
+
+        protected Task TheTeamRefreshRuns(int teamId)
+            => RunUpdate(sp => sp.GetRequiredService<ITeamUpdater>().TriggerUpdate(teamId));
+
+        protected Task ThePortfolioRefreshRuns(int portfolioId)
+            => RunUpdate(sp => sp.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolioId));
+
+        /// <summary>
+        /// Triggers one refresh and waits for the queue to go idle. Admission is synchronous inside
+        /// <c>EnqueueUpdate</c>, so the key is already active when this starts polling.
+        /// </summary>
+        protected async Task RunUpdate(Action<IServiceProvider> trigger)
+        {
+            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
+
+            // Host startup and fixture seeding push and log through the same seams; every promise here is
+            // about one refresh, so observation starts at the trigger.
+            TheBrowserWasTold.Clear();
+            CapturedLogs.Clear();
+            WriteBackFlushes.Reset();
+
+            trigger(Factory.Services);
+
+            var deadline = DateTime.UtcNow.AddSeconds(30);
+            while (statusStore.HasActiveWork())
+            {
+                if (DateTime.UtcNow > deadline)
+                {
+                    Assert.Fail("The update queue did not go idle within 30s — the refresh never finished. "
+                        + $"The browser was told: {TheBrowserWasTold.Describe()}");
+                }
+
+                await Task.Delay(20);
+            }
+
+            // The terminal push is raised after the key leaves the store, so an idle queue is not yet
+            // proof the browser has been told. Give the push the moment it needs to land.
+            await WaitForTheTerminalPush();
+        }
+
+        private async Task WaitForTheTerminalPush()
+        {
+            var deadline = DateTime.UtcNow.AddSeconds(5);
+
+            while (DateTime.UtcNow < deadline)
+            {
+                if (TheBrowserWasTold.Describe().Contains("Completed", StringComparison.Ordinal)
+                    || TheBrowserWasTold.Describe().Contains("Failed", StringComparison.Ordinal))
+                {
+                    return;
+                }
+
+                await Task.Delay(20);
+            }
+        }
+
+        // --- Observation ---
+
+        protected RefreshLog? TheRecordedRefreshFor(RefreshType type, int entityId)
+        {
+            using var scope = Factory.Services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IRefreshLogService>()
+                .GetRefreshLogs()
+                .Where(log => log.Type == type && log.EntityId == entityId)
+                .OrderByDescending(log => log.ExecutedAt)
+                .ThenByDescending(log => log.Id)
+                .FirstOrDefault();
+        }
+
+        protected IReadOnlyList<string> TheOperatorVisibleLines => CapturedLogs.AtOrAbove(LogEventLevel.Information);
+
+        // --- Reading the task list ---
+
+        protected const string TaskListRoute = "/api/latest/update/tasks";
+
+        protected async Task<JsonElement> TheRowFor(UpdateType updateType, int id)
+        {
+            var rows = await TheTaskList();
+
+            var matches = rows
+                .Where(candidate => Text(candidate, "updateType") == updateType.ToString() && Number(candidate, "id") == id)
+                .ToList();
+
+            Assert.That(matches, Has.Count.EqualTo(1),
+                $"Expected exactly one row for {updateType} {id}. Got: {Describe(rows)}");
+
+            return matches[0];
+        }
+
+        protected async Task<IReadOnlyList<JsonElement>> TheTaskList()
+        {
+            using var client = Factory.CreateClient();
+            using var response = await client.GetAsync(new Uri(TaskListRoute, UriKind.Relative));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
+                $"The task list is the driving port for this whole slice; {TaskListRoute} answered {(int)response.StatusCode}.");
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(body);
+
+            Assert.That(document.RootElement.ValueKind, Is.EqualTo(JsonValueKind.Array),
+                $"The popover renders a list of rows, so the endpoint answers an array. Got: {body}");
+
+            return [.. document.RootElement.EnumerateArray().Select(element => element.Clone())];
+        }
+
+        protected static string? Text(JsonElement row, string property)
+            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.String
+                ? value.GetString()
+                : null;
+
+        protected static int? Number(JsonElement row, string property)
+            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.Number
+                ? value.GetInt32()
+                : null;
+
+        protected static bool? Bool(JsonElement row, string property)
+            => row.TryGetProperty(property, out var value) && value.ValueKind is JsonValueKind.True or JsonValueKind.False
+                ? value.GetBoolean()
+                : null;
+
+        protected static string Describe(IReadOnlyList<JsonElement> rows)
+            => rows.Count == 0 ? "(an empty list)" : string.Join(" | ", rows.Select(row => row.ToString()));
+    }
+}

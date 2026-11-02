@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.Testing;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Encryption;
 using Lighthouse.Backend.Models.OAuth;
@@ -31,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// <c>POST /api/latest/connectionhealth/{connectionId}/test</c>, same guard, answering the single row
     /// for that connection, or 404 when no connection has that id.
     /// </summary>
-    public partial class Slice05AnyBrokenCredentialSaysSoTest : TaskManagerAcceptanceTest
+    public partial class Slice05AnyBrokenCredentialSaysSoTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         private const string HealthRoute = "/api/latest/connectionhealth";
         private const string RefreshLogRoute = "/api/latest/systeminfo/refreshlog";
@@ -64,6 +65,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// outwards. A scenario that left the tracker gated would otherwise leave a refresh parked in the
         /// queue while the database underneath it is deleted.
         /// </summary>
+        private WebApplicationFactory<Program> theInstanceThatRefusesNonAdministrators = null!;
+
+        [OneTimeSetUp]
+        public void BuildTheInstanceThatRefusesNonAdministrators()
+            => theInstanceThatRefusesNonAdministrators = DeriveAHostRefusingNonAdministrators();
+
+        [OneTimeTearDown]
+        public void StopTheDerivedHost() => theInstanceThatRefusesNonAdministrators.Dispose();
+
         [TearDown]
         public async Task LetAnyGatedRefreshFinish()
         {
@@ -298,23 +308,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private async Task ThenBothConnectionHealthRoutesRefuseANonAdministratorTheWayTheRefreshLogDoes()
         {
-            using var factory = RootFactory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    var refuses = new Mock<IRbacAdministrationService>();
-                    refuses
-                        .Setup(s => s.CanSatisfyRequirementAsync(
-                            It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
-                            It.IsAny<Lighthouse.Backend.Models.Authorization.RbacGuardRequirement>(),
-                            It.IsAny<int?>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(false);
-
-                    services.RemoveAll<IRbacAdministrationService>();
-                    services.AddScoped(_ => refuses.Object);
-                });
-            });
+            var factory = theInstanceThatRefusesNonAdministrators;
 
             using var client = factory.CreateClient();
             using var read = await client.GetAsync(new Uri(HealthRoute, UriKind.Relative));

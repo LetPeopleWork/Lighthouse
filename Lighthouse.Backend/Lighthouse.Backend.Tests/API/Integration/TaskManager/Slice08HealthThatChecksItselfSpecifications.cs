@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// rather than deleted, because the behaviour it guards — a failure recorded before a good refresh
     /// must not outlive it — is still a promise; only the state it lands on changed.
     /// </summary>
-    public partial class Slice08HealthThatChecksItselfTest : TaskManagerAcceptanceTest
+    public partial class Slice08HealthThatChecksItselfTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         private const string HealthRoute = "/api/latest/connectionhealth";
 
@@ -88,15 +88,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         protected override void ConfigureAdditionalServices(IServiceCollection services)
         {
-            // NUnit builds one fixture instance for the whole class, so anything a scenario sets here
-            // outlives it. Left alone, the one scenario that makes recording throw makes it throw for
-            // every scenario that runs after it alphabetically — which reds them for a reason that has
-            // nothing to do with what they assert.
-            recordingHealthRefuses = false;
-            trackerCallsWhenWatchingBegan = 0;
-            whatTheTestAnswered = default;
-            theTrackerMayAnswer = null!;
-
             theInstanceClock = new FakeLighthouseClock(TheInstantTheInstanceBelievesIn);
             services.RemoveAll<ILighthouseClock>();
             services.AddSingleton<ILighthouseClock>(theInstanceClock);
@@ -112,6 +103,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             services.AddScoped<IConnectionHealthService>(provider => new HealthServiceThatCanRefuseToRecord(
                 provider.GetRequiredService<ConnectionHealthService>(),
                 () => recordingHealthRefuses));
+        }
+
+        /// <summary>
+        /// Anything a scenario sets here outlives it, because the fixture is one instance on one host. Left
+        /// alone, the one scenario that makes recording throw makes it throw for every scenario that runs
+        /// after it, which reds them for a reason that has nothing to do with what they assert.
+        /// </summary>
+        [SetUp]
+        public void PutBackWhatTheLastScenarioChanged()
+        {
+            recordingHealthRefuses = false;
+            trackerCallsWhenWatchingBegan = 0;
+            whatTheTestAnswered = default;
+            theTrackerMayAnswer = null!;
+            theInstanceClock.SetInstant(TheInstantTheInstanceBelievesIn);
         }
 
         /// <summary>
@@ -596,8 +602,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// DevOps connector or in the classification above it. This factory keeps the production
         /// connectors and shares the database with the rest of the fixture.
         /// </summary>
-        private WebApplicationFactory<Program> TheInstanceWithItsRealConnectors()
-            => RootFactory.WithWebHostBuilder(_ => { });
+        private WebApplicationFactory<Program> theInstanceWithItsRealConnectors = null!;
+
+        [OneTimeSetUp]
+        public void BuildTheInstanceWithItsRealConnectors()
+            => theInstanceWithItsRealConnectors = DeriveAHost(_ => { });
+
+        [OneTimeTearDown]
+        public void StopTheDerivedHost() => theInstanceWithItsRealConnectors.Dispose();
 
         private SeededConnection GivenARealAzureDevOpsConnectionPointingNowhere()
             => NewAzureDevOpsConnection(url: "https://dev.azure.com/lighthouse-acceptance-no-such-organisation");
@@ -607,7 +619,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private async Task<HttpStatusCode> WhenTheAdministratorTestsThatConnectionForReal(SeededConnection connection)
         {
-            using var factory = TheInstanceWithItsRealConnectors();
+            var factory = theInstanceWithItsRealConnectors;
             using var client = factory.CreateClient();
             using var response = await client.PostAsync(TestRouteFor(connection.Id), null);
 

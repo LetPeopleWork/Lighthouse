@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// waiting on a forecast trigger to fire — timing, for a claim that is not about timing. The
     /// production-data scenario is the one that drives the real path end to end.
     /// </summary>
-    public partial class Story6055ActivityNamesTheWorkTest : TaskManagerAcceptanceTest
+    public partial class Story6055ActivityNamesTheWorkTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         private const string ProductionData =
             "production data — needs a real connection on the dogfood instance; run by hand at slice close";

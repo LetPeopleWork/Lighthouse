@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// precisely what AC-03.4 forbids — the reader's clock is wrong by whatever their laptop is wrong by,
     /// so two people looking at one instance would read different answers off the same row.
     /// </summary>
-    public partial class Slice03HowLongHasItBeenGoingTest : TaskManagerAcceptanceTest
+    public partial class Slice03HowLongHasItBeenGoingTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         /// <summary>
         /// Far enough from any real "now" that a duration accidentally computed against the wall clock
@@ -58,6 +58,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             services.RemoveAll<ILighthouseClock>();
             services.AddSingleton<ILighthouseClock>(theInstanceClock);
         }
+
+        [SetUp]
+        public void PutTheInstanceClockBack() => theInstanceClock.SetInstant(TheInstantTheInstanceBelievesIn);
 
         /// <summary>
         /// Runs before the harness tears the host down, because NUnit unwinds from the derived class

@@ -19,9 +19,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string OnAPostgresServer = "needs a Postgres server (or a Redis store) and a host of its own per test; those tests are not part of this move";
         private const string HasOneTestOnly = "has a single test, so a host per fixture would save no host";
         private const string ChecksTheTestHostItself = "tests how the test host starts and stops, so it has to start hosts itself";
+        private const string KeepsProblemsNothingCanEmpty = "keeps the problems it reports in a buffer inside the host that no public call empties, so each test needs a host of its own";
+        private const string StillTheBaseOfScenariosOutsideItsFolder = "the base of scenario families in other folders that still need a host per test; they move to the one-host base in the next step";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 123;
+        private const int MostTypesTheListMayHold = 119;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -94,12 +96,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.Staleness.StaleWorkItemsAcceptanceTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.SystemInfoAuthVisibilityCrossLayerTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.SystemInfoWireFormatRegressionTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice02SeeWhatIsRunningTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice04StopARefreshTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice05AnyBrokenCredentialSaysSoTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice08HealthThatChecksItselfTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest"] = KeepsProblemsNothingCanEmpty,
+            ["Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest"] = StillTheBaseOfScenariosOutsideItsFolder,
             ["Lighthouse.Backend.Tests.API.Integration.TeamConcurrencyTokenIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TeamDeleteSerialisationTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize.TeamFeatureSizeAcceptanceTest"] = NotMovedYet,

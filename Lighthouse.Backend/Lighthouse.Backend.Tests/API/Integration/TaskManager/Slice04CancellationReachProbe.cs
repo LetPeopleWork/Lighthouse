@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     [Category("acceptance")]
     [Category("epic-5511-task-manager")]
     [Category("slice-04-probe")]
-    public class Slice04CancellationReachProbe : TaskManagerAcceptanceTest
+    public class Slice04CancellationReachProbe : TaskManagerHostPerFixtureAcceptanceTest
     {
         [Test]
         public async Task TheAmbientContextTheQueueAlreadySets_IsReadableInsideAConnectorCall()

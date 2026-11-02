@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// line, the write-back round and the callers of the refresh endpoints all behave exactly as before —
     /// which is most of what these steps assert, because that is where the risk in this change lives.
     /// </summary>
-    public partial class Slice01FailedRefreshTest : TaskManagerAcceptanceTest
+    public partial class Slice01FailedRefreshTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         private const string SummaryMarker = "Update completed";
 

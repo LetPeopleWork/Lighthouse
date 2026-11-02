@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.Testing;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -31,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// the wall-clock actually is, and AC-04.8 asks for a refresh long enough to be cancelled mid-flight
     /// rather than one arranged to be.
     /// </summary>
-    public partial class Slice04StopARefreshTest : TaskManagerAcceptanceTest
+    public partial class Slice04StopARefreshTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         private TaskCompletionSource theTrackerMayAnswer = null!;
 
@@ -44,6 +45,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// outwards. A scenario that left the tracker gated would otherwise leave a refresh parked in the
         /// queue while the database underneath it is deleted.
         /// </summary>
+        private WebApplicationFactory<Program> theInstanceThatRefusesNonAdministrators = null!;
+
+        [OneTimeSetUp]
+        public void BuildTheInstanceThatRefusesNonAdministrators()
+            => theInstanceThatRefusesNonAdministrators = DeriveAHostRefusingNonAdministrators();
+
+        [OneTimeTearDown]
+        public void StopTheDerivedHost() => theInstanceThatRefusesNonAdministrators.Dispose();
+
         [TearDown]
         public async Task LetAnyGatedRefreshFinish()
         {
@@ -103,13 +113,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                     // A tracker with more to give than this refresh will ever ask for. Each turn of the loop
                     // is a page, and a page is where a real connector notices it has been told to stop - so
                     // a refresh that carries on looping here is one that ignored the ask.
-                    for (var page = 0; page < PagesTheTrackerCouldGiveForever; page++)
+                    // The teardown releases the tracker, which also ends a refresh the scenario left running, so
+                    // it cannot go on asking for pages on a host the next scenario shares.
+                    for (var page = 0; page < PagesTheTrackerCouldGiveForever && !theTrackerMayAnswer.Task.IsCompleted; page++)
                     {
                         stopping.ThrowIfCancellationRequested();
                         Interlocked.Increment(ref pagesTheTrackerWasAskedFor);
                         await Task.Delay(20, CancellationToken.None);
                     }
 
+                    stopping.ThrowIfCancellationRequested();
                     await theTrackerMayAnswer.Task;
                     return [];
                 });
@@ -360,23 +373,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// </summary>
         private async Task ThenCancellingRefusesANonAdministratorTheSameWayTheTaskListDoes(SeededTeam team)
         {
-            using var factory = RootFactory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    var refuses = new Mock<IRbacAdministrationService>();
-                    refuses
-                        .Setup(s => s.CanSatisfyRequirementAsync(
-                            It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
-                            It.IsAny<Lighthouse.Backend.Models.Authorization.RbacGuardRequirement>(),
-                            It.IsAny<int?>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(false);
-
-                    services.RemoveAll<IRbacAdministrationService>();
-                    services.AddScoped(_ => refuses.Object);
-                });
-            });
+            var factory = theInstanceThatRefusesNonAdministrators;
 
             using var client = factory.CreateClient();
             using var cancel = await client.PostAsync(CancelRouteFor(UpdateType.Team, team.Id), null);

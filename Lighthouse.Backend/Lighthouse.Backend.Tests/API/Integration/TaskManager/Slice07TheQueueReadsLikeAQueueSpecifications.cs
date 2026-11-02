@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// No store change, no schema change: <c>QueuedAt</c> and <c>StartedAt</c> are already on
     /// <c>UpdateStatus</c>, put there for the duration that slice 07 removes from the rows.
     /// </summary>
-    public partial class Slice07TheQueueReadsLikeAQueueTest : TaskManagerAcceptanceTest
+    public partial class Slice07TheQueueReadsLikeAQueueTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         /// <summary>
         /// Far enough from any real "now" that a moment accidentally taken from the wall clock sorts
@@ -60,6 +60,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             services.RemoveAll<ILighthouseClock>();
             services.AddSingleton<ILighthouseClock>(theInstanceClock);
         }
+
+        [SetUp]
+        public void PutTheInstanceClockBack() => theInstanceClock.SetInstant(TheInstantTheInstanceBelievesIn);
 
         /// <summary>
         /// Runs before the harness tears the host down, because NUnit unwinds from the derived class

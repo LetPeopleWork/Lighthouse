@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Mvc.Testing;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -24,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// has gone. <c>waitingBehind</c> describes the piece of work holding the lane, and is absent for
     /// work that is running.
     /// </summary>
-    public partial class Slice02SeeWhatIsRunningTest : TaskManagerAcceptanceTest
+    public partial class Slice02SeeWhatIsRunningTest : TaskManagerHostPerFixtureAcceptanceTest
     {
         private const string RefreshLogRoute = "/api/latest/systeminfo/refreshlog";
 
@@ -41,6 +42,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// outwards. A scenario that left the tracker gated would otherwise leave a refresh parked in the
         /// queue while the database underneath it is deleted.
         /// </summary>
+        private WebApplicationFactory<Program> theInstanceThatRefusesNonAdministrators = null!;
+
+        [OneTimeSetUp]
+        public void BuildTheInstanceThatRefusesNonAdministrators()
+            => theInstanceThatRefusesNonAdministrators = DeriveAHostRefusingNonAdministrators();
+
+        [OneTimeTearDown]
+        public void StopTheDerivedHost() => theInstanceThatRefusesNonAdministrators.Dispose();
+
         [TearDown]
         public async Task LetAnyGatedRefreshFinish()
         {
@@ -297,23 +307,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         /// </summary>
         private async Task ThenTheTaskListRefusesANonAdministratorTheSameWayTheRefreshLogDoes()
         {
-            using var factory = RootFactory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
-                {
-                    var refuses = new Mock<IRbacAdministrationService>();
-                    refuses
-                        .Setup(s => s.CanSatisfyRequirementAsync(
-                            It.IsAny<System.Security.Claims.ClaimsPrincipal>(),
-                            It.IsAny<Lighthouse.Backend.Models.Authorization.RbacGuardRequirement>(),
-                            It.IsAny<int?>(),
-                            It.IsAny<CancellationToken>()))
-                        .ReturnsAsync(false);
-
-                    services.RemoveAll<IRbacAdministrationService>();
-                    services.AddScoped(_ => refuses.Object);
-                });
-            });
+            var factory = theInstanceThatRefusesNonAdministrators;
 
             using var client = factory.CreateClient();
             using var taskList = await client.GetAsync(new Uri(TaskListRoute, UriKind.Relative));
