@@ -1232,3 +1232,76 @@ Recorded, not fixed (pre-existing, for slice 5 or close-out): m1 the S6 shared-h
 ### 04-07 evidence
 
 Full run (6 workers): 354 s, peak 3,467 MB (threshold 4,976 MB, criterion 4.73 GB), only the two known publish-output scans failing; `measurement/slice4-2026-11-02/`. Guard 18/18 under `-c Release`. Behaviour check vs 6ce884324: ids differ only by the named isolation pairs (TeamFeatureSize, clock, S6) and two ids that embed today's date; no Ignore, Explicit or NonParallelizable added; no assertion-count drop. Allow-list 105 → 76. Slice 5 confirmed (maintainer, mandatory): the 76 entries are triaged against their reasons, `NotMovedYet` to zero.
+
+### 05-01 triage (2026-11-02)
+
+Rule: convert when host-build share is 25 percent or more of the class's time; keep with a written reason otherwise, or when a true structural reason applies.
+
+Formula: share = host-build seconds (from `measurement/d1-2026-11-02/fixture-setup-timings.csv`, measured at story start) divided by the class's summed per-test durations in one trx-logged run of all 58 `NotMovedYet` classes (6 workers, Debug, run on 2026-11-02). The trx per-test duration includes the per-test set-up, so it contains the host build. Two sources, two loads: where the CSV was measured under heavier load than the trx run the share can exceed 100 (W1, DataProtectionKeyRing); those entries are decided on code, not on the number. The three abstract bases (`QuietWriteBackAcceptanceTest`, `SleRiskAcceptanceTest`, `StaleWorkItemsAcceptanceTest`) carry no tests themselves, so their rows sum their subclasses (`Slice01WriteBackCollectionTest` and `Slice04QuietWriteBackTest`; `Slice01SleRiskReadTest`; `Slice01ServerMarksStaleTest`), run in a second trx. `ReportCreationTimingProbe` is a `[Explicit]` by-hand probe with one test and no class time in a normal run.
+
+Result: 58 entries = 24 convert (queued for 05-02) + 34 keep (HasOneTestOnly 4, MostOfItsTimeIsInTheTestBodies 18, OnlyAFewTestsStartAHost 5, StartsHostsUnderSeveralStartupSettings 7). Two new reason constants: `MostOfItsTimeIsInTheTestBodies`, `OnlyAFewTestsStartAHost`.
+
+Judgement calls over the bare number (keep although share is 25 percent or more): S1_AllowedOriginsEnvVarBinding, S1_CorsFailClosed, S3, W1, UsageDataCollectorAddress, RecentProblemsCapacityConfiguration and EncryptionControllerTests start hosts under settings that are read only at start-up; the single-test classes have no host to share; DataProtectionKeyRing, TestClockBoundary, LighthouseClock, OAuthProviderRegistry and EncryptionBootstrapOrder start a host in only one or two tests.
+
+| Type | Tests | Host builds | Host build s | Class s | Share % | Decision |
+|---|---|---|---|---|---|---|
+| `AgeInStatePercentilesPortfolioReadApiIntegrationTest` | 2 | 2 | 0.3 | 1.7 | 15.6 | keep: MostOfItsTimeIsInTheTestBodies |
+| `ArchivedDeliveryReadStabilityIntegrationTest` | 4 | 4 | 0.6 | 3.4 | 17.1 | keep: MostOfItsTimeIsInTheTestBodies |
+| `ArchivedDeliveryStaleAggregateRaceIntegrationTest` | 7 | 7 | 1.1 | 3.8 | 28.7 | convert |
+| `ArchivedDeliveryWriteRefusalIntegrationTest` | 11 | 11 | 2.1 | 6.6 | 32.2 | convert |
+| `ConnectionSecretStatePayloadTests` | 13 | 13 | 1.4 | 5.8 | 24.9 | keep: MostOfItsTimeIsInTheTestBodies |
+| `ConnectionValidationUnreadableSecretTests` | 4 | 4 | 0.5 | 2.2 | 21.4 | keep: MostOfItsTimeIsInTheTestBodies |
+| `CycleTimeDefinitionSettingsIntegrationTest` | 8 | 8 | 0.8 | 3.8 | 21.1 | keep: MostOfItsTimeIsInTheTestBodies |
+| `CycleTimeDefinitionValidityIntegrationTest` | 6 | 6 | 0.6 | 4.0 | 16.0 | keep: MostOfItsTimeIsInTheTestBodies |
+| `DeliveryArchiveClosurePinIntegrationTest` | 10 | 10 | 1.2 | 4.8 | 25.5 | convert |
+| `DeliveryMetricsHistoryReadApiIntegrationTest` | 14 | 14 | 2.1 | 5.3 | 39.1 | convert |
+| `Slice00OneForecastPerBatchScenarios` | 7 | 7 | 0.8 | 13.8 | 5.9 | keep: MostOfItsTimeIsInTheTestBodies |
+| `EncryptionControllerTests` | 26 | 8 | 0.9 | 2.5 | 36.0 | keep: StartsHostsUnderSeveralStartupSettings |
+| `ForecastFilterTeamSettingsIntegrationTest` | 9 | 9 | 1.0 | 3.3 | 31.4 | convert |
+| `ForecastFilterThroughputChartIntegrationTest` | 12 | 12 | 1.5 | 5.6 | 25.7 | convert |
+| `OAuthCallbackCsrfIntegrationTest` | 1 | 1 | 0.1 | 0.3 | 25.1 | keep: HasOneTestOnly |
+| `OAuthControllerIntegrationTest` | 12 | 1 | 0.1 | 1.5 | 6.6 | keep: MostOfItsTimeIsInTheTestBodies |
+| `OAuthProviderAbstractionIntegrationTest` | 1 | 1 | 0.1 | 0.4 | 29.3 | keep: HasOneTestOnly |
+| `PortfolioConcurrencyTokenIntegrationTest` | 2 | 2 | 0.2 | 0.8 | 26.3 | convert |
+| `PortfolioDeleteSerialisationTests` | 6 | 6 | 0.6 | 4.3 | 12.9 | keep: MostOfItsTimeIsInTheTestBodies |
+| `PortfolioStalenessThresholdSettingsIntegrationTest` | 7 | 7 | 0.6 | 2.6 | 21.8 | keep: MostOfItsTimeIsInTheTestBodies |
+| `PortfolioTimeInStateReadApiIntegrationTest` | 2 | 2 | 0.2 | 1.1 | 15.5 | keep: MostOfItsTimeIsInTheTestBodies |
+| `QuietWriteBackAcceptanceTest` (through its subclasses) | 15 | 15 | 1.5 | 17.3 | 8.7 | keep: MostOfItsTimeIsInTheTestBodies |
+| `RbacGroupMappingConcurrencyTokenIntegrationTest` | 2 | 3 | 0.3 | 0.9 | 33.2 | convert |
+| `ReportCreationTimingProbe` | 1 | 1 | 0.1 | 0.0 | n/a | keep: HasOneTestOnly |
+| `RunChartPayloadContractIntegrationTest` | 27 | 27 | 2.9 | 14.4 | 20.4 | keep: MostOfItsTimeIsInTheTestBodies |
+| `ServiceNowConnectionAcceptanceTest` | 6 | 6 | 0.7 | 2.4 | 27.1 | convert |
+| `SleRiskAcceptanceTest` (through its subclasses) | 22 | 22 | 2.5 | 12.4 | 20.1 | keep: MostOfItsTimeIsInTheTestBodies |
+| `StaleWorkItemsAcceptanceTest` (through its subclasses) | 21 | 21 | 2.4 | 10.4 | 22.7 | keep: MostOfItsTimeIsInTheTestBodies |
+| `SystemInfoAuthVisibilityCrossLayerTest` | 2 | 2 | 0.2 | 0.5 | 44.0 | convert |
+| `SystemInfoWireFormatRegressionTests` | 3 | 3 | 0.4 | 0.9 | 46.9 | convert |
+| `TeamConcurrencyTokenIntegrationTest` | 3 | 3 | 0.4 | 1.4 | 29.4 | convert |
+| `TeamDeleteSerialisationTests` | 2 | 2 | 0.3 | 2.6 | 10.2 | keep: MostOfItsTimeIsInTheTestBodies |
+| `TeamStalenessThresholdSettingsIntegrationTest` | 6 | 6 | 0.7 | 2.3 | 30.9 | convert |
+| `TeamThroughputHistoryValidationIntegrationTest` | 7 | 7 | 0.9 | 3.0 | 29.0 | convert |
+| `TimeInStateReadApiIntegrationTest` | 4 | 4 | 0.5 | 2.1 | 24.7 | keep: MostOfItsTimeIsInTheTestBodies |
+| `WorkItemEstimateApiIntegrationTest` | 27 | 27 | 3.9 | 13.6 | 28.4 | convert |
+| `WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest` | 2 | 2 | 0.3 | 0.9 | 29.3 | convert |
+| `WriteBackMappingForNewAdditionalFieldIntegrationTest` | 3 | 3 | 0.4 | 1.3 | 32.0 | convert |
+| `F_BE_1_GroupSnapshotInheritanceTests` | 7 | 14 | 1.9 | 5.1 | 37.4 | convert |
+| `S1_AllowedOriginsEnvVarBindingTests` | 8 | 8 | 2.4 | 2.5 | 96.9 | keep: StartsHostsUnderSeveralStartupSettings |
+| `S1_CorsFailClosedTests` | 4 | 4 | 0.3 | 0.4 | 59.0 | keep: StartsHostsUnderSeveralStartupSettings |
+| `S3_UpdateNotificationHubAuthorizeTests` | 3 | 4 | 0.6 | 0.8 | 79.5 | keep: StartsHostsUnderSeveralStartupSettings |
+| `S4_DeliveriesDeleteGuardInversionTests` | 3 | 4 | 0.6 | 0.8 | 67.5 | convert |
+| `S5_ApiKeyScopesTests` | 6 | 12 | 1.7 | 4.5 | 37.1 | convert |
+| `W1_VersionEndpointAuthorizationTests` | 12 | 5 | 2.6 | 1.3 | 194.3 | keep: StartsHostsUnderSeveralStartupSettings |
+| `OptionalFeatureApplierSeamArchUnitTest` | 5 | 5 | 1.0 | 2.5 | 41.8 | convert |
+| `DataProtectionKeyRingTest` | 2 | 1 | 0.6 | 0.2 | 237.8 | keep: OnlyAFewTestsStartAHost |
+| `UsageDataCollectorAddressTests` | 5 | 5 | 0.9 | 2.4 | 35.9 | keep: StartsHostsUnderSeveralStartupSettings |
+| `LighthouseAppContextConcurrencyTest` | 4 | 4 | 0.7 | 1.6 | 41.7 | convert |
+| `DeliveryMetricSnapshotRecordingHandlerTest` | 23 | 23 | 4.9 | 6.9 | 70.2 | convert |
+| `SnapshotRecordedDayInstanceZoneTest` | 4 | 2 | 0.4 | 2.2 | 16.3 | keep: MostOfItsTimeIsInTheTestBodies |
+| `LighthouseClockTest` | 24 | 2 | 0.1 | 0.2 | 60.8 | keep: OnlyAFewTestsStartAHost |
+| `OAuthProviderRegistryTest` | 5 | 2 | 0.2 | 0.2 | 81.7 | keep: OnlyAFewTestsStartAHost |
+| `OAuthStateSecretPersistenceTest` | 1 | 2 | 0.4 | 0.5 | 82.4 | keep: HasOneTestOnly |
+| `FeatureListReaderRegistrationTest` | 2 | 2 | 0.4 | 0.6 | 64.0 | convert |
+| `EncryptionBootstrapOrderTests` | 27 | 2 | 0.3 | 0.7 | 46.2 | keep: OnlyAFewTestsStartAHost |
+| `RecentProblemsCapacityConfigurationTest` | 2 | 2 | 0.4 | 0.4 | 90.5 | keep: StartsHostsUnderSeveralStartupSettings |
+| `TestClockBoundaryTest` | 7 | 1 | 0.2 | 0.2 | 75.7 | keep: OnlyAFewTestsStartAHost |
+
+Never-read types: the roadmap names 13 but the workspace does not list them, so every entry without a timing row, without tests of its own or with fewer host builds than tests was examined. None is removable. The guard's stale check was green at the start of this step, so the IL scan finds every listed type reaching a host start from a set-up or test method; the four that show no tests of their own (`QuietWriteBackAcceptanceTest`, `SleRiskAcceptanceTest`, `StaleWorkItemsAcceptanceTest`, `ReportCreationTimingProbe`) are abstract bases whose subclasses run per-test set-ups that start a host, and a by-hand probe whose one test starts one. Removed: none; the ceiling stays at 76.
