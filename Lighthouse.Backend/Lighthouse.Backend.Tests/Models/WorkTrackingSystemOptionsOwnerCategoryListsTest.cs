@@ -409,5 +409,38 @@ namespace Lighthouse.Backend.Tests.Models
 
             Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Code Review", "Testing", "Done")));
         }
+
+        private static Team ATeamWaitingIn(params string[] waitStates)
+        {
+            var team = new Team { ToDoStates = ["Backlog"], DoingStates = ["Analyzing", "Building", "Validating"], DoneStates = ["Done"], WaitStates = [.. waitStates] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = ["Analyzing", "Validating"] });
+            return team;
+        }
+
+        [Test]
+        public void WaitStatesAsDisplayed_WaitStateNamesAMapping_IsTheMappingsName()
+        {
+            var team = ATeamWaitingIn("Review");
+
+            Assert.That(team.WaitStatesAsDisplayed(), Is.Not.Empty.And.All.EqualTo("Review"));
+        }
+
+        // The charts show the group as one row, so a wait state naming any one of its states turns the whole
+        // group's time into wait. Pinned as it behaves today, not as a settled choice.
+        [Test]
+        public void WaitStatesAsDisplayed_WaitStateNamesOneStateOfAMapping_CountsAllTimeInTheGroupAsWait()
+        {
+            var team = ATeamWaitingIn("Validating");
+
+            Assert.That(team.WaitStatesAsDisplayed(), Is.EqualTo(Listed("Review")));
+        }
+
+        [Test]
+        public void WaitStatesAsDisplayed_WaitStateOutsideEveryMapping_IsItself()
+        {
+            var team = ATeamWaitingIn("Building");
+
+            Assert.That(team.WaitStatesAsDisplayed(), Is.EqualTo(Listed("Building")));
+        }
     }
 }

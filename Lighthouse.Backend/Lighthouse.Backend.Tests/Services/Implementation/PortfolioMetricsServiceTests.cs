@@ -1605,7 +1605,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetFlowEfficiencyInfoForPortfolio_MappingGroupsTwoNonAdjacentDoingStates_CountsTheTimeSpentInTheGroup()
+        public void GetFlowEfficiencyInfoForPortfolio_MappingGroupsTwoNonAdjacentDoingStates_GroupTimeCountsInTheTotalButNotAsWait()
         {
             var mappedPortfolio = APortfolioGroupingAnalyzingAndValidatingAsReview();
             mappedPortfolio.WaitStates = ["Building"];

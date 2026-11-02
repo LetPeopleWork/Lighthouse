@@ -2706,7 +2706,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         [Test]
-        public void GetFlowEfficiencyInfoForTeam_MappingGroupsTwoNonAdjacentDoingStates_CountsTheTimeSpentInTheGroup()
+        public void GetFlowEfficiencyInfoForTeam_MappingGroupsTwoNonAdjacentDoingStates_GroupTimeCountsInTheTotalButNotAsWait()
         {
             var team = ATeamGroupingAnalyzingAndValidatingAsReview();
             team.WaitStates = [Building];
