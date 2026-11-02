@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -16,12 +17,29 @@ namespace Lighthouse.Backend.Tests.API.Integration
     public class RbacGroupMappingConcurrencyTokenIntegrationTest
     {
         private TestWebApplicationFactory<Program> factory = null!;
+        private WebApplicationFactory<Program> authFactory = null!;
+        private HttpClient client = null!;
         private int seededMappingId;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            factory = new TestWebApplicationFactory<Program>();
+            authFactory = TestWebApplicationFactory<Program>.WithTestAuthentication(factory);
+        }
 
         [SetUp]
         public void Init()
         {
-            factory = new TestWebApplicationFactory<Program>();
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            factory.Clock.Reset();
+            factory.UseFreshDatabase();
+            factory.ForgetTheCachedMetrics();
+
+            client = authFactory.CreateClient();
 
             using var setupScope = factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
@@ -32,15 +50,35 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = factory.Services.CreateScope())
-            {
-                var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                dbContext.Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            factory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                using (var teardownScope = factory.Services.CreateScope())
+                {
+                    await teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            authFactory?.Dispose();
+            factory?.Dispose();
         }
 
         [Test]
@@ -80,9 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task UnauthorizedActor_EditingGroupMappingRole_Returns403_NotConflated_With409()
         {
-            using var authRootFactory = new TestWebApplicationFactory<Program>();
-            var authFactory = TestWebApplicationFactory<Program>.WithTestAuthentication(authRootFactory);
-            using var client = authFactory.CreateClient();
 
             client.AsViewer();
 

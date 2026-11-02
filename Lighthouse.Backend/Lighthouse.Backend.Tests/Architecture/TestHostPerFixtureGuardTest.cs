@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string OnlyAFewTestsStartAHost = "only one or two of its tests start a host, each under its own settings, so sharing a host would save at most one host build";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 70;
+        private const int MostTypesTheListMayHold = 65;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -52,12 +52,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.OAuthCallbackCsrfIntegrationTest"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.API.Integration.OAuthControllerIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.OAuthProviderAbstractionIntegrationTest"] = HasOneTestOnly,
-            ["Lighthouse.Backend.Tests.API.Integration.PortfolioConcurrencyTokenIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.PortfolioDeleteSerialisationTests"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.PortfolioStalenessThresholdSettingsIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.PortfolioTimeInStateReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.QuietWriteBack.QuietWriteBackAcceptanceTest"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.API.Integration.RbacGroupMappingConcurrencyTokenIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.Reports.ReportCreationTimingProbe"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.API.Integration.RunChartPayloadContractIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.ServiceNowConnectionAcceptanceTest"] = NotMovedYet,
@@ -68,13 +66,11 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.SystemInfoWireFormatRegressionTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest"] = KeepsProblemsNothingCanEmpty,
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest"] = KeepsProblemsNothingCanEmpty,
-            ["Lighthouse.Backend.Tests.API.Integration.TeamConcurrencyTokenIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TeamDeleteSerialisationTests"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.TeamStalenessThresholdSettingsIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TeamThroughputHistoryValidationIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.TimeInStateReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.WorkItemEstimateApiIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.WriteBackMappingForNewAdditionalFieldIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.F_BE_1_GroupSnapshotInheritanceTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S1_AllowedOriginsEnvVarBindingTests"] = StartsHostsUnderSeveralStartupSettings,
@@ -94,7 +90,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataCollectorAddressTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = CountersArePerHost,
-            ["Lighthouse.Backend.Tests.LighthouseAppContextConcurrencyTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.Services.Implementation.LighthouseClockTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthProviderRegistryTest"] = OnlyAFewTestsStartAHost,
