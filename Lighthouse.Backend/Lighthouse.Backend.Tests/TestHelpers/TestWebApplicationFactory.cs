@@ -108,6 +108,38 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public static string Path => ForThisProcess.Value;
 
+        private const int CopyAttempts = 5;
+
+        // Only the main file is copied: the template is checkpointed to a single file, and a copied log
+        // file would not belong to the copy. Another process scanning the directory can hold the file for
+        // a moment, so a failed copy is tried again a few times before giving up.
+        internal static void CopyTo(string destination, Action<string, string>? copyFile = null)
+        {
+            copyFile ??= (source, target) => File.Copy(source, target);
+            for (var attempt = 1; attempt < CopyAttempts; attempt++)
+            {
+                try
+                {
+                    copyFile(Path, destination);
+                    return;
+                }
+                catch (IOException)
+                {
+                    File.Delete(destination);
+                    Thread.Sleep(20 * attempt);
+                }
+            }
+
+            try
+            {
+                copyFile(Path, destination);
+            }
+            catch (IOException exception)
+            {
+                throw new IOException($"Could not copy the schema template to '{destination}' after {CopyAttempts} attempts.", exception);
+            }
+        }
+
         // Built under a temporary name and moved into place only when complete, so the final name never
         // exists half written. When another process has already moved its copy in, ours is thrown away.
         internal static string EnsureBuilt(string directory)
@@ -195,6 +227,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         private string databaseFileName = NewDatabaseFileName();
 
+        private readonly object templateCopyLock = new();
+
+        // When on, the first scope to see a new database path starts from a copy of the prebuilt schema
+        // instead of an empty file. Off by default.
+        public bool UseSchemaTemplate { get; set; }
+
         // The host's registered TimeProvider is this clock. A fixture that keeps one host for all its tests moves it
         // freely and calls Clock.Reset() before each test to put it back at TestToday.FrozenNow.
         public ResettableFakeTimeProvider Clock { get; } = new(TestToday.FrozenNow);
@@ -256,10 +294,27 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
                 services.AddDbContext<LighthouseAppContext>(options =>
                 {
-                    options.UseSqlite($"DataSource={databaseFileName};Pooling=False", DatabaseConfigurator.ConfigureSqlite);
+                    var path = databaseFileName;
+                    if (UseSchemaTemplate)
+                    {
+                        CopyTemplateOnFirstUse(path);
+                    }
+
+                    options.UseSqlite($"DataSource={path};Pooling=False", DatabaseConfigurator.ConfigureSqlite);
                     options.AddInterceptors(NoWaitingForTheDisk.Instance);
                 });
             });
+        }
+
+        private void CopyTemplateOnFirstUse(string path)
+        {
+            lock (templateCopyLock)
+            {
+                if (!File.Exists(path))
+                {
+                    TestDatabaseTemplate.CopyTo(path);
+                }
+            }
         }
 
         private static void RemoveServices(IServiceCollection services)

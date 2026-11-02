@@ -79,6 +79,87 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
 
         [Test]
+        public void WithTheSwitchOffADatabaseStartsWithoutTheSchema()
+        {
+            using var factory = new TestWebApplicationFactory<Program>();
+
+            var path = PathOfCurrentDatabase(factory);
+
+            Assert.That(SchemaOf(path), Is.Empty);
+        }
+
+        [Test]
+        public void WithTheSwitchOnEachNewDatabaseStartsAsACompleteCopyAndAnEarlierScopeKeepsItsOwn()
+        {
+            using var factory = new TestWebApplicationFactory<Program> { UseSchemaTemplate = true };
+            var template = SchemaOf(TestDatabaseTemplate.Path);
+
+            using var earlierScope = factory.Services.CreateScope();
+            var earlier = earlierScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.GetDbConnection().DataSource;
+            factory.UseFreshDatabase();
+            var later = PathOfCurrentDatabase(factory);
+            factory.UseFreshDatabase();
+            var last = PathOfCurrentDatabase(factory);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(new[] { earlier, later, last }.Distinct().Count(), Is.EqualTo(3));
+                Assert.That(SchemaOf(earlier), Is.EqualTo(template));
+                Assert.That(SchemaOf(later), Is.EqualTo(template));
+                Assert.That(SchemaOf(last), Is.EqualTo(template));
+            }
+        }
+
+        [Test]
+        public void AFailedCopyIsRetriedAFewTimesAndThenFailsNamingTheDestination()
+        {
+            var attempts = 0;
+            var destination = Path.Combine(Path.GetTempPath(), $"never-written-{Guid.NewGuid():N}.db");
+
+            var failure = Assert.Throws<IOException>(() => TestDatabaseTemplate.CopyTo(destination, (_, _) =>
+            {
+                attempts++;
+                throw new IOException("locked");
+            }));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attempts, Is.InRange(2, 10));
+                Assert.That(failure.Message, Does.Contain(destination));
+            }
+        }
+
+        [Test]
+        public void ACopyThatSucceedsAfterATransientFailureLeavesTheDestinationComplete()
+        {
+            var attempts = 0;
+            var destination = Path.Combine(Path.GetTempPath(), $"retried-{Guid.NewGuid():N}.db");
+
+            try
+            {
+                TestDatabaseTemplate.CopyTo(destination, (template, target) =>
+                {
+                    if (++attempts < 3)
+                    {
+                        throw new IOException("locked");
+                    }
+
+                    File.Copy(template, target);
+                });
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(attempts, Is.EqualTo(3));
+                    Assert.That(SchemaOf(destination), Is.EqualTo(SchemaOf(TestDatabaseTemplate.Path)));
+                }
+            }
+            finally
+            {
+                File.Delete(destination);
+            }
+        }
+
+        [Test]
         public async Task ManyCallersBuildingTheTemplateAtOnceAllGetOneCompleteDatabase()
         {
             using var directory = new TemporaryDirectory();
