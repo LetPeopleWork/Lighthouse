@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Tests.TestHelpers;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using static Lighthouse.Backend.Tests.Architecture.TestHostScanning;
 
 namespace Lighthouse.Backend.Tests.Architecture
 {
@@ -15,7 +16,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class TestHostPerFixtureGuardTest
     {
-        private const string NotMovedYet = "not moved yet: starts an application host for every test";
         private const string OnAPostgresServer = "needs a Postgres server (or a Redis store) and a host of its own per test; those tests are not part of this move";
         private const string HasOneTestOnly = "has a single test, so a host per fixture would save no host";
         private const string ChecksTheTestHostItself = "tests how the test host starts and stops, so it has to start hosts itself";
@@ -26,87 +26,67 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string CountersArePerHost = "its daily tally lives in the host and cannot be emptied, so a second test would find the first test's allowance already spent";
         private const string StopsOrDrainsItsHostInEachTest = "its tests stop or drain the host they run on, and a host that has been stopped cannot serve the next test";
 
+        private const string MostOfItsTimeIsInTheTestBodies = "building its host takes less than a quarter of its run time, so sharing the host would save little";
+        private const string OnlyAFewTestsStartAHost = "only one or two of its tests start a host, each under its own settings, so sharing a host would save at most one host build";
+
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 76;
+        private const int MostTypesTheListMayHold = 53;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
         {
-            ["Lighthouse.Backend.Tests.API.Integration.AgeInStatePercentilesPortfolioReadApiIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryReadStabilityIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryStaleAggregateRaceIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryWriteRefusalIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ConnectionSecretStatePayloadTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ConnectionValidationUnreadableSecretTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.CycleTimeDefinitionSettingsIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.CycleTimeDefinitionValidityIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.DeliveryArchiveClosurePinIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.DeliveryMetricsHistoryReadApiIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting.Slice00OneForecastPerBatchScenarios"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.EncryptionControllerTests"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.API.Integration.AgeInStatePercentilesPortfolioReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryReadStabilityIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.ConnectionSecretStatePayloadTests"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.ConnectionValidationUnreadableSecretTests"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.CycleTimeDefinitionSettingsIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.CycleTimeDefinitionValidityIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting.Slice00OneForecastPerBatchScenarios"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.EncryptionControllerTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures.Slice01ForecastRoundsRunOnTheirOwnThreadsScenarios"] = StopsAndRestartsItsHostInOneTest,
-            ["Lighthouse.Backend.Tests.API.Integration.ForecastFilterTeamSettingsIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ForecastFilterThroughputChartIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ForwardedHeadersIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.HealthCheckIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.MetricsEndpointIntegrationTest"] = StartsHostsUnderSeveralStartupSettings,
-            ["Lighthouse.Backend.Tests.API.Integration.OAuthCallbackCsrfIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.OAuthControllerIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.OAuthProviderAbstractionIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.PortfolioConcurrencyTokenIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.PortfolioDeleteSerialisationTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.PortfolioStalenessThresholdSettingsIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.PortfolioTimeInStateReadApiIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.QuietWriteBack.QuietWriteBackAcceptanceTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RbacGroupMappingConcurrencyTokenIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.Reports.ReportCreationTimingProbe"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RunChartPayloadContractIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.ServiceNowConnectionAcceptanceTest"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.API.Integration.OAuthCallbackCsrfIntegrationTest"] = HasOneTestOnly,
+            ["Lighthouse.Backend.Tests.API.Integration.OAuthControllerIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.OAuthProviderAbstractionIntegrationTest"] = HasOneTestOnly,
+            ["Lighthouse.Backend.Tests.API.Integration.PortfolioDeleteSerialisationTests"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.PortfolioStalenessThresholdSettingsIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.PortfolioTimeInStateReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.QuietWriteBack.QuietWriteBackAcceptanceTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.Reports.ReportCreationTimingProbe"] = HasOneTestOnly,
+            ["Lighthouse.Backend.Tests.API.Integration.RunChartPayloadContractIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.ShutdownIntegrationTest"] = StopsOrDrainsItsHostInEachTest,
-            ["Lighthouse.Backend.Tests.API.Integration.SleRisk.SleRiskAcceptanceTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.Staleness.StaleWorkItemsAcceptanceTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoAuthVisibilityCrossLayerTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoWireFormatRegressionTests"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.API.Integration.SleRisk.SleRiskAcceptanceTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.Staleness.StaleWorkItemsAcceptanceTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoAuthVisibilityCrossLayerTest"] = StartsHostsUnderSeveralStartupSettings,
+            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoWireFormatRegressionTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest"] = KeepsProblemsNothingCanEmpty,
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest"] = KeepsProblemsNothingCanEmpty,
-            ["Lighthouse.Backend.Tests.API.Integration.TeamConcurrencyTokenIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TeamDeleteSerialisationTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TeamStalenessThresholdSettingsIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TeamThroughputHistoryValidationIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.TimeInStateReadApiIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.WorkItemEstimateApiIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.WriteBackMappingForNewAdditionalFieldIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.F_BE_1_GroupSnapshotInheritanceTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S1_AllowedOriginsEnvVarBindingTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S1_CorsFailClosedTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S3_UpdateNotificationHubAuthorizeTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S4_DeliveriesDeleteGuardInversionTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.S5_ApiKeyScopesTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Security.W1_VersionEndpointAuthorizationTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.API.Integration.TeamDeleteSerialisationTests"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Integration.TimeInStateReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.API.Security.S1_AllowedOriginsEnvVarBindingTests"] = StartsHostsUnderSeveralStartupSettings,
+            ["Lighthouse.Backend.Tests.API.Security.S1_CorsFailClosedTests"] = StartsHostsUnderSeveralStartupSettings,
+            ["Lighthouse.Backend.Tests.API.Security.S3_UpdateNotificationHubAuthorizeTests"] = StartsHostsUnderSeveralStartupSettings,
+            ["Lighthouse.Backend.Tests.API.Security.W1_VersionEndpointAuthorizationTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = ChecksTheTestHostItself,
             ["Lighthouse.Backend.Tests.Architecture.TestHostsRunWithoutRateLimitingByDefaultTest"] = ChecksTheTestHostItself,
-            ["Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Integration.Containers.BulkReportOwnerDeletedMidRunOnPostgresTests"] = OnAPostgresServer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.CatalogueBodiesOnPostgresTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.EmbedSessionSingleUseConcurrencyTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.LighterRoundsOnPostgresTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.ScalabilityTests"] = OnAPostgresServer,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataCollectorAddressTests"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataCollectorAddressTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = CountersArePerHost,
-            ["Lighthouse.Backend.Tests.LighthouseAppContextConcurrencyTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.DeliveryMetricSnapshotRecordingHandlerTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Services.Implementation.LighthouseClockTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthProviderRegistryTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthStateSecretPersistenceTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Services.Implementation.Repositories.FeatureListReaderRegistrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Startup.EncryptionBootstrapOrderTests"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.Startup.RecentProblemsCapacityConfigurationTest"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest"] = MostOfItsTimeIsInTheTestBodies,
+            ["Lighthouse.Backend.Tests.Services.Implementation.LighthouseClockTest"] = OnlyAFewTestsStartAHost,
+            ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthProviderRegistryTest"] = OnlyAFewTestsStartAHost,
+            ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthStateSecretPersistenceTest"] = HasOneTestOnly,
+            ["Lighthouse.Backend.Tests.Startup.EncryptionBootstrapOrderTests"] = OnlyAFewTestsStartAHost,
+            ["Lighthouse.Backend.Tests.Startup.RecentProblemsCapacityConfigurationTest"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.Startup.ServiceProviderValidationTest"] = HasOneTestOnly,
-            ["Lighthouse.Backend.Tests.TestClockBoundaryTest"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.TestClockBoundaryTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.TestHelpers.TestWebApplicationFactoryTest"] = ChecksTheTestHostItself,
         };
 
@@ -234,20 +214,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static string[] Names(params string[] names) => names;
 
-        private static ListComparison Compare(IEnumerable<string> listed, IEnumerable<string> found)
-        {
-            var listedNames = listed.ToHashSet(StringComparer.Ordinal);
-            var foundNames = found.ToHashSet(StringComparer.Ordinal);
-
-            return new ListComparison(
-                [.. foundNames.Except(listedNames).Order(StringComparer.Ordinal)],
-                [.. listedNames.Except(foundNames).Order(StringComparer.Ordinal)]);
-        }
-
         private static string TopLevelTypeOf(TypeDefinition type)
             => type.DeclaringType is null ? type.FullName : TopLevelTypeOf(type.DeclaringType);
-
-        private sealed record ListComparison(IReadOnlyList<string> Newcomers, IReadOnlyList<string> Stale);
 
         /// <summary>
         /// Walks the call tree below every set-up, test and test-case method in an assembly and answers which of
@@ -265,8 +233,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "NUnit.Framework.TestCaseSourceAttribute",
                 "NUnit.Framework.TheoryAttribute",
             ];
-
-            private static readonly string[] FactoryTypeNamePrefixes = ["TestWebApplicationFactory", "WebApplicationFactory"];
 
             private readonly List<MethodDefinition> allMethods;
             private readonly Dictionary<string, List<MethodDefinition>> methodsByKey;
@@ -287,55 +253,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             public IReadOnlyList<MethodDefinition> OffendingRoots(Func<MethodDefinition, bool> pickRoots)
                 => [.. allMethods.Where(IsPerTestMethod).Where(pickRoots).Where(ReachesAHostStart)];
 
-            private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
-                => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
-
-            private static string KeyOf(MethodDefinition method)
-                => method.DeclaringType.FullName + "::" + method.Name + "/" + method.Parameters.Count;
-
-            private static string KeyOf(MethodReference method)
-            {
-                var declared = method is GenericInstanceMethod generic ? generic.ElementMethod : method;
-                return declared.DeclaringType.GetElementType().FullName + "::" + declared.Name + "/" + declared.Parameters.Count;
-            }
-
             private static bool IsPerTestMethod(MethodDefinition method)
                 => !method.DeclaringType.Name.StartsWith('<')
                     && method.CustomAttributes.Any(attribute => PerTestAttributes.Contains(attribute.AttributeType.FullName));
-
-            private static bool NamesAFactory(TypeReference type)
-                => FactoryTypeNamePrefixes.Any(prefix => type.GetElementType().Name.StartsWith(prefix, StringComparison.Ordinal));
-
-            private static HashSet<string> FactoryTypesIn(List<TypeDefinition> allTypes)
-            {
-                var factories = allTypes.Where(type => type.BaseType is not null && NamesAFactory(type.BaseType))
-                    .Select(type => type.FullName)
-                    .ToHashSet(StringComparer.Ordinal);
-
-                bool grew;
-
-                do
-                {
-                    grew = false;
-
-                    foreach (var type in allTypes.Where(type => type.BaseType is not null && factories.Contains(type.BaseType.GetElementType().FullName)))
-                    {
-                        grew |= factories.Add(type.FullName);
-                    }
-                }
-                while (grew);
-
-                return factories;
-            }
-
-            private bool IsAFactoryType(TypeReference type)
-                => NamesAFactory(type) || factoryTypeNames.Contains(type.GetElementType().FullName);
-
-            private bool IsAHostStart(Instruction instruction)
-                => instruction.Operand is MethodReference called
-                    && IsAFactoryType(called.DeclaringType)
-                    && (instruction.OpCode.Code == Code.Newobj
-                        || instruction.OpCode.Code is Code.Call or Code.Callvirt && called.Name is "WithWebHostBuilder" or "WithTestAuthentication");
 
             private bool ReachesAHostStart(MethodDefinition root)
             {
@@ -351,7 +271,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                         continue;
                     }
 
-                    if (method.HasBody && method.Body.Instructions.Any(IsAHostStart))
+                    if (method.HasBody && method.Body.Instructions.Any(instruction => IsAHostStart(instruction, factoryTypeNames)))
                     {
                         return true;
                     }

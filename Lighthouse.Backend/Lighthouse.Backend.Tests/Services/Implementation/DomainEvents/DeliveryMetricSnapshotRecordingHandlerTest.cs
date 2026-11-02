@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
@@ -48,9 +49,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         private IServiceScope scope = null!;
         private FakeLighthouseClock clock = null!;
 
-        [SetUp]
-        public void Init()
+        // The memo keeps notes per owner id for as long as the host lives, and every test's fresh
+        // database numbers its owners from one again, so each test hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             clock = new FakeLighthouseClock(FixedInstant, TimeZoneInfo.Utc);
             factory = new TestWebApplicationFactory<Program>();
             clockedFactory = factory.WithWebHostBuilder(builder =>
@@ -59,6 +66,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
                     services.RemoveAll<ILighthouseClock>();
                     services.AddSingleton<ILighthouseClock>(clock);
                 }));
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+            clock.SetInstant(FixedInstant);
+
+            factory.Clock.Reset();
+            factory.UseFreshDatabase();
+            clockedFactory.ForgetTheCachedMetrics();
 
             scope = clockedFactory.Services.CreateScope();
 
@@ -68,13 +88,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            dbContext.Database.EnsureDeleted();
-            scope.Dispose();
-            clockedFactory.Dispose();
-            factory.Dispose();
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(clockedFactory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    clockedFactory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(clockedFactory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(clockedFactory.Services, ownersSeeded);
+
+                var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                await dbContext.Database.EnsureDeletedAsync();
+                scope.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            clockedFactory?.Dispose();
+            factory?.Dispose();
         }
 
         [Test]
@@ -887,6 +928,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             var portfolioRepository = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
             portfolioRepository.Add(portfolio);
             await portfolioRepository.Save();
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             return (portfolio, team);
         }

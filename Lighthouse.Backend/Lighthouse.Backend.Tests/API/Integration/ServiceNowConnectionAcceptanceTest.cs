@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -36,9 +37,11 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private WebApplicationFactory<Program> factory;
         private HttpClient client;
 
-        [SetUp]
-        public void Init()
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             rootFactory = new TestWebApplicationFactory<Program>();
 
             var licenseService = new Mock<ILicenseService>();
@@ -50,27 +53,53 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     services.RemoveAll<ILicenseService>();
                     services.AddScoped(_ => licenseService.Object);
                 }));
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            factory.ForgetTheCachedMetrics();
 
             client = factory.CreateClient();
 
             using var scope = factory.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
-            dbContext.Database.EnsureDeleted();
             dbContext.Database.EnsureCreated();
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var scope = factory.Services.CreateScope())
-            {
-                var dbContext = scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
-                dbContext.Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
+            try
+            {
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                using (var scope = factory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         // AC1. Slice 01's whole promise starts here: a ServiceNow shop can find their system in
