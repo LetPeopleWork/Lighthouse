@@ -15,6 +15,9 @@ using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Time.Testing;
 using System.Data.Common;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
+using System.Text;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
@@ -90,6 +93,75 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             await using var pragma = connection.CreateCommand();
             pragma.CommandText = CommitWithoutWaitingForTheDisk;
             await pragma.ExecuteNonQueryAsync(cancellationToken);
+        }
+    }
+
+    /// <summary>
+    /// A database with the product's schema already in it, built once and meant to be copied for each test
+    /// instead of creating the schema again every time. The file name carries a hash of the schema, so a
+    /// change to the model never picks up a template from an earlier build.
+    /// </summary>
+    internal static class TestDatabaseTemplate
+    {
+        private static readonly Lazy<string> ForThisProcess =
+            new(() => EnsureBuilt(AppContext.BaseDirectory), LazyThreadSafetyMode.ExecutionAndPublication);
+
+        public static string Path => ForThisProcess.Value;
+
+        // Built under a temporary name and moved into place only when complete, so the final name never
+        // exists half written. When another process has already moved its copy in, ours is thrown away.
+        internal static string EnsureBuilt(string directory)
+        {
+            Directory.CreateDirectory(directory);
+            var finalPath = System.IO.Path.Combine(directory, $"template_{SchemaHash()}.db");
+            if (File.Exists(finalPath))
+            {
+                return finalPath;
+            }
+
+            var temporaryPath = System.IO.Path.Combine(directory, $"template_{Guid.NewGuid():N}.tmp");
+            try
+            {
+                using (var context = NewContext(temporaryPath))
+                {
+                    context.Database.EnsureCreated();
+                    context.Database.ExecuteSqlRaw("PRAGMA wal_checkpoint(TRUNCATE)");
+                }
+
+                File.Move(temporaryPath, finalPath, overwrite: false);
+            }
+            catch (IOException) when (File.Exists(finalPath))
+            {
+            }
+            finally
+            {
+                DeleteWithLogFiles(temporaryPath);
+            }
+
+            return finalPath;
+        }
+
+        private static string SchemaHash()
+        {
+            using var context = NewContext(":memory:");
+            var script = context.Database.GenerateCreateScript();
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(script)))[..16].ToLowerInvariant();
+        }
+
+        private static LighthouseAppContext NewContext(string path)
+        {
+            var options = new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseSqlite($"DataSource={path};Pooling=False", DatabaseConfigurator.ConfigureSqlite)
+                .Options;
+            return new LighthouseAppContext(options, new FakeCryptoService(), NullLogger<LighthouseAppContext>.Instance);
+        }
+
+        private static void DeleteWithLogFiles(string path)
+        {
+            foreach (var file in new[] { path, $"{path}-wal", $"{path}-shm", $"{path}-journal" })
+            {
+                File.Delete(file);
+            }
         }
     }
 
