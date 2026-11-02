@@ -12,9 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6303-configure-once-per-connection")]
-    [Category("story-6300")]
-    [Category("slice-01")]
     public class Slice01JiraDependenciesFromANamedLinkScenarios : NamedDependencyLinkAcceptanceTest
     {
         private static readonly string[] PAY98 = ["PAY-98"];

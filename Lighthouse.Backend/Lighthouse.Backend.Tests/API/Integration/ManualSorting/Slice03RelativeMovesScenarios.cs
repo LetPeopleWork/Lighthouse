@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5375-manual-sorting")]
-    [Category("slice-03")]
     public partial class Slice03RelativeMovesTest
     {
         private const string SearchIndex = "Rebuild the search index";

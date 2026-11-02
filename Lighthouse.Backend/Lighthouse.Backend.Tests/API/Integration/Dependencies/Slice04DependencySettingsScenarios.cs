@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     /// that nothing is acted on.
     /// </summary>
     [TestFixture]
-    [Category("epic-4365-dependencies")]
-    [Category("slice-04")]
     public partial class Slice04DependencySettingsTest
     {
         private static readonly string[] TheOneItWaitsOn = ["Retire the legacy importer"];

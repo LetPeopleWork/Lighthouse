@@ -1219,3 +1219,16 @@ FastWithManyFeatures, PercentilesOverTime, FasterUpdates, Integration.UsageData,
   **move** verified by the lead: the two `Assert.Fail` queue-idle checks moved into `SharedHostCleanup` with the same message, and the
   four assertions of the old `TaskManagerAcceptanceTest` moved into `TaskManagerHarness`.
 - **Allow-list**: 123 -> 114 in this slice. Trunk moved by two frontend-only dependency commits; rebased, no backend re-run needed.
+
+### Slice 4 review (2026-11-02)
+
+Reviewer (haiku): NEEDS_REVISION, no blockers. Fixed in 86f4c969d:
+- M1 the reason text for ForwardedHeaders, HealthCheck and MetricsEndpoint claimed every test needs its own host; some tests share settings. Reworded truthfully (`StartsHostsUnderSeveralStartupSettings`); grouping by setting left for slice 5 triage.
+- M2 `S6_NonAuthAdjacentEndpoint_NotThrottled_Regression` asserted only "not 429"; now also asserts every answer is 200 (proven to bite: a missing path fails with NotFound).
+- m4 ConnectionDefaults tear-down deletes the database and disposes the client in `finally`. m5 `RequestsJiraAnsweredDuringTheLastRefresh` reset per test.
+
+Recorded, not fixed (pre-existing, for slice 5 or close-out): m1 the S6 shared-host pair proves only a partitioned limiter, address uniqueness is a convention, and four requests inside a 2-second window can flake on a loaded runner; m2 UsageDataConsentRateLimit and UsageDataEventCeiling never dispose their root factory, so database files stay behind; m3 UsageDataEventCeiling's second-browser assertion has no positive control. RED was captured after conversion for PercentilesOverTime, Dependencies (04-03), Jwt and Mcp (04-05); the guard's mechanics were proven on every other family.
+
+### 04-07 evidence
+
+Full run (6 workers): 354 s, peak 3,467 MB (threshold 4,976 MB, criterion 4.73 GB), only the two known publish-output scans failing; `measurement/slice4-2026-11-02/`. Guard 18/18 under `-c Release`. Behaviour check vs 6ce884324: ids differ only by the named isolation pairs (TeamFeatureSize, clock, S6) and two ids that embed today's date; no Ignore, Explicit or NonParallelizable added; no assertion-count drop. Allow-list 105 → 76. Slice 5 confirmed (maintainer, mandatory): the 76 entries are triaged against their reasons, `NotMovedYet` to zero.

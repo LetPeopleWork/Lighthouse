@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5074-blocked-items")]
-    [Category("slice-01")]
     public partial class Slice01RuleBasedBlockedTest
     {
         [Test]

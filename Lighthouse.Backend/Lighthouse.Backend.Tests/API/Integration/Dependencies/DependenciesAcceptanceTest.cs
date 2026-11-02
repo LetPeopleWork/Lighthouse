@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -70,31 +71,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             string WaitsOnReferenceId,
             DependencySource Source);
 
-        [SetUp]
-        public void Init()
+        // The memo keeps notes per owner id for as long as the host lives, and every scenario's fresh
+        // database numbers its owners from one again, so each scenario hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        private Mock<IWorkTrackingConnectorFactory> connectorFactoryMock = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
-            CapturedLogs = new CapturedLogMessages();
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             RootFactory = new TestWebApplicationFactory<Program>();
 
-            LicenseServiceMock = new Mock<ILicenseService>();
-            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
-
-            ConnectorMock = new Mock<IWorkTrackingConnector>();
-            ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => []);
-            ConnectorMock
-                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => []);
-
-            // A Monte Carlo run over seeded throughput would make every scenario here time against a
-            // simulation it says nothing about.
-            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
-
-            var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactoryMock
-                .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
-                .Returns(ConnectorMock.Object);
+            // The log sink is held by a host singleton for the life of the host, so each scenario empties
+            // it in place instead of replacing it. The doubles are replaced per scenario and read through
+            // the fields, so the host's scoped services always get the current scenario's double.
+            CapturedLogs = new CapturedLogMessages();
 
             Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(RootFactory)
                 .WithWebHostBuilder(builder =>
@@ -119,6 +112,40 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
                             dispose: true));
                     });
                 });
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+            CapturedLogs.Clear();
+            TheTracker = new PayloadBuiltHere();
+
+            LicenseServiceMock = new Mock<ILicenseService>();
+            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            ConnectorMock = new Mock<IWorkTrackingConnector>();
+            ConnectorMock
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => []);
+            ConnectorMock
+                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => []);
+
+            // A Monte Carlo run over seeded throughput would make every scenario here time against a
+            // simulation it says nothing about.
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
+
+            connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactoryMock
+                .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(ConnectorMock.Object);
+
+            RootFactory.Clock.Reset();
+            RootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             // Scenarios here are about what a Feature waits on, not about who may read it, so the client
             // reads everything. A narrower identity would make a count come back short for a reason no
@@ -137,17 +164,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = Factory.Services.CreateScope())
-            {
-                var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                dbContext.Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            Client.Dispose();
-            Factory.Dispose();
-            RootFactory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
+
+                using (var teardownScope = Factory.Services.CreateScope())
+                {
+                    var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                    await dbContext.Database.EnsureDeletedAsync();
+                }
+
+                Client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            RootFactory?.Dispose();
         }
 
         // --- Seeding (preconditions only - never the expected output) ---
@@ -176,6 +224,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
             var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
             portfolioRepository.Add(portfolio);
             portfolioRepository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             return portfolio.Id;
         }
@@ -246,6 +296,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
 
             context.Teams.Add(team);
             context.SaveChanges();
+
+            ownersSeeded.Add((team.Id, OwnerType.Team));
 
             feature.AddOrUpdateWorkForTeam(team, remainingWorkItems, totalItems: 5);
             context.SaveChanges();

@@ -4,8 +4,10 @@ using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -31,7 +33,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// with a region of windows that behaved alike rather than a winner.
     ///
     /// The app is the production app: the real ASP.NET host over a real SQLite file, real EF, real DI,
-    /// the real metrics service reading real finished Work Items. The clock is pinned, because every
+    /// the real metrics service reading real finished Work Items. One host serves the whole fixture; every
+    /// scenario gets its own database, clock reading, scripted forecast and log capture inside it, and ends
+    /// by leaving the host idle. The clock is pinned, because every
     /// check ends today and a drifting today would move every date these scenarios name. The licence is
     /// granted, because it is external.
     ///
@@ -94,10 +98,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
 
-        protected ForecastScript Forecasts { get; private set; } = null!;
+        /// <summary>
+        /// Every Team the current scenario seeded. The memo keeps notes per owner id for as long as the host
+        /// lives, and every fresh database numbers its Teams from one again, so these are the ids it has to be
+        /// told to forget when the scenario is over.
+        /// </summary>
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
 
-        /// <summary>What the host logged at the level an operator sees by default, and above.</summary>
-        protected CapturedLogMessages CapturedLogs { get; private set; } = null!;
+        /// <summary>
+        /// The host's forecast service reads this one script for the life of the host, so each scenario
+        /// starts by putting it back to what a new one says.
+        /// </summary>
+        protected ForecastScript Forecasts { get; } = new();
+
+        /// <summary>
+        /// What the host logged at the level an operator sees by default, and above. The host's logger
+        /// factory holds this sink for the life of the host, so each scenario empties it rather than
+        /// replacing it.
+        /// </summary>
+        protected CapturedLogMessages CapturedLogs { get; } = new();
 
         protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
 
@@ -115,13 +134,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             EveryLevel,
         }
 
-        [SetUp]
-        public void StartTheApplication()
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             rootFactory = new TestWebApplicationFactory<Program>();
-            Forecasts = new ForecastScript();
             var script = Forecasts;
-            CapturedLogs = new CapturedLogMessages();
             var capturedLogs = CapturedLogs;
 
             Factory = TestWebApplicationFactory<Program>
@@ -164,6 +183,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                             dispose: true));
                     });
                 });
+        }
+
+        [SetUp]
+        public void GiveTheScenarioItsOwnState()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            CapturedLogs.Clear();
+            Forecasts.Reset();
+            ownersSeeded.Clear();
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
 
@@ -179,16 +212,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [TearDown]
-        public void StopTheApplication()
+        public async Task LeaveTheHostIdle()
         {
-            using (var scope = Factory.Services.CreateScope())
-            {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            Client.Dispose();
-            Factory.Dispose();
-            rootFactory.Dispose();
+            try
+            {
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                // A failed wait above must not leave the memo's notes or the database behind for the next
+                // scenario on this host; the failure itself still propagates.
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
+
+                using (var scope = Factory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                Client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         // --- Teams and their finished work ---
@@ -354,6 +409,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             configure(team);
             dbContext.Teams.Add(team);
             dbContext.SaveChanges();
+
+            ownersSeeded.Add((team.Id, OwnerType.Team));
 
             return team.Id;
         }
@@ -579,6 +636,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
             /// <summary>How every check the scenario did not script behaves: the 95% and 85% levels hold.</summary>
             public HeldUpTo Otherwise { get; set; } = HeldUpTo.EightyFive;
+
+            public void Reset()
+            {
+                lock (handingOver)
+                {
+                    checks.Clear();
+                    windows.Clear();
+                    windows.UnionWith(StandardWindowDays);
+                    historyLengthsHandedOver.Clear();
+                }
+
+                shippedEngine = false;
+                Otherwise = HeldUpTo.EightyFive;
+            }
 
             public void AlsoSweeps(int samplingWindowDays)
             {

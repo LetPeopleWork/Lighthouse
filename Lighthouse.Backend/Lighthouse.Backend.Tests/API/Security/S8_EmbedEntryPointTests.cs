@@ -1,8 +1,8 @@
 using System.Net;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Time.Testing;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
@@ -21,18 +21,40 @@ namespace Lighthouse.Backend.Tests.API.Security
             "http://evil.example",
         ];
 
+        private static readonly int[] NonPositiveLifetimesSeconds = [0, -30];
+
         private ViewerEmbedTestHost host = null!;
+        private ResettableFakeTimeProvider shortLivedClock = null!;
+        private WebApplicationFactory<Program> shortLivedHost = null!;
+        private Dictionary<int, WebApplicationFactory<Program>> misconfiguredHosts = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            host = new ViewerEmbedTestHost();
+
+            shortLivedClock = new ResettableFakeTimeProvider(DateTimeOffset.UtcNow);
+            shortLivedHost = host.WithTokenLifetime(ShortTokenLifetimeSeconds)
+                .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+                {
+                    services.RemoveAll<TimeProvider>();
+                    services.AddSingleton<TimeProvider>(shortLivedClock);
+                }));
+            misconfiguredHosts = NonPositiveLifetimesSeconds.ToDictionary(seconds => seconds, host.WithTokenLifetime);
+        }
 
         [SetUp]
         public void SetUp()
         {
-            host = new ViewerEmbedTestHost();
+            host.BeginTest();
+            shortLivedClock.Reset();
             host.SeedRbacFixture();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void StopTheHost()
         {
+            shortLivedHost.Dispose();
             host.Dispose();
         }
 
@@ -136,16 +158,9 @@ namespace Lighthouse.Backend.Tests.API.Security
         [Test]
         public async Task S8_Enter_ExpiredToken_RefusedLegibly()
         {
-            var clock = new FakeTimeProvider(DateTimeOffset.UtcNow);
-            var shortLivedHost = host.WithTokenLifetime(ShortTokenLifetimeSeconds)
-                .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<TimeProvider>();
-                    services.AddSingleton<TimeProvider>(clock);
-                }));
             var token = await host.MintTokenAsync(shortLivedHost, ViewerEmbedTestHost.ExplicitViewerSubject);
 
-            clock.Advance(TimeSpan.FromSeconds(ShortTokenLifetimeSeconds + 1));
+            shortLivedClock.Advance(TimeSpan.FromSeconds(ShortTokenLifetimeSeconds + 1));
 
             using var response = await ViewerEmbedTestHost.EnterAsync(shortLivedHost, token);
             var body = await response.Content.ReadAsStringAsync();
@@ -182,7 +197,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         [TestCase(-30)]
         public async Task S8_Enter_TokenLifetimeConfiguredNonPositive_FallsBackToTheDefaultWindow(int configuredLifetimeSeconds)
         {
-            var misconfiguredHost = host.WithTokenLifetime(configuredLifetimeSeconds);
+            var misconfiguredHost = misconfiguredHosts[configuredLifetimeSeconds];
             var token = await host.MintTokenAsync(misconfiguredHost, ViewerEmbedTestHost.ExplicitViewerSubject);
 
             using var response = await ViewerEmbedTestHost.EnterAsync(misconfiguredHost, token);

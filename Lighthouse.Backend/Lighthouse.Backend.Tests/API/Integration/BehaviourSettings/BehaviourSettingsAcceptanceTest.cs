@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -84,14 +85,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         protected Mock<IForecastUpdater> ForecastUpdaterMock = null!;
         protected CapturedLogMessages CapturedLogs = null!;
 
-        [SetUp]
-        public void Init()
+        // The memo keeps notes per owner id for as long as the host lives, and every scenario's fresh
+        // database numbers its owners from one again, so each scenario hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             RootFactory = new TestWebApplicationFactory<Program>();
 
-            LicenseServiceMock = new Mock<ILicenseService>();
-            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
-
+            // The forecast runner and the log sink are held by host singletons for the life of the host, so
+            // each scenario empties these in place instead of replacing them.
             ForecastUpdaterMock = new Mock<IForecastUpdater>();
             CapturedLogs = new CapturedLogMessages();
 
@@ -135,6 +141,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
                             dispose: true));
                     });
                 });
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+            CapturedLogs.Clear();
+            ForecastUpdaterMock.Reset();
+
+            LicenseServiceMock = new Mock<ILicenseService>();
+            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            RootFactory.Clock.Reset();
+            RootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
 
@@ -147,17 +170,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = Factory.Services.CreateScope())
-            {
-                var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                dbContext.Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            Client.Dispose();
-            Factory.Dispose();
-            RootFactory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
+
+                using (var teardownScope = Factory.Services.CreateScope())
+                {
+                    var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                    await dbContext.Database.EnsureDeletedAsync();
+                }
+
+                Client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            RootFactory?.Dispose();
         }
 
         // --- Seeding (preconditions only - never the expected output) ---
@@ -195,6 +239,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
             var portfolioRepository = scope.ServiceProvider.GetRequiredService<IRepository<Portfolio>>();
             portfolioRepository.Add(portfolio);
             portfolioRepository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             return portfolio.Id;
         }

@@ -35,6 +35,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
 
         private HowTheLastReleaseLeftTheFill? whatTheBackupHeld;
 
+        [SetUp]
+        public void ForgetTheBackupOfTheLastScenario() => whatTheBackupHeld = null;
+
         private readonly record struct SettingAsTheAdminReadsIt(
             string Key, bool Enabled, string Name, string Description, bool IsPreview, bool IsPremium);
 

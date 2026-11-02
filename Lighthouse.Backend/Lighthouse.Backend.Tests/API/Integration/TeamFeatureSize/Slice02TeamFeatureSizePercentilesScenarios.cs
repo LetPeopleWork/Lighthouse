@@ -9,8 +9,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-6251-team-feature-size")]
-    [Category("slice-02")]
     public partial class Slice02TeamFeatureSizePercentilesTest
     {
         // Gravity's parts of the ten Features closed in the last 30 days are 1 to 10. Sort the sizes

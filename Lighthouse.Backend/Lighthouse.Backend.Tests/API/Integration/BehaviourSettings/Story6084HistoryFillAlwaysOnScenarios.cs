@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-6084-over-time-history-fill-always-on")]
     public partial class Story6084HistoryFillAlwaysOnTest
     {
         // Nobody has anything to decide about the fill, so there is nothing to show them.

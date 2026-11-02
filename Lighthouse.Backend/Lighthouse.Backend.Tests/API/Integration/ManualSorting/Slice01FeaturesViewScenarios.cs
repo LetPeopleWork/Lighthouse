@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5375-manual-sorting")]
-    [Category("slice-01")]
     public partial class Slice01FeaturesViewTest
     {
         private static readonly string[] PlatformOnly = ["Feature ranked 4", "Feature ranked 17"];

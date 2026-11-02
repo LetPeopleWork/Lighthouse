@@ -72,6 +72,18 @@ namespace Lighthouse.Backend.Tests.TestHelpers.JwtBearerAuth
 
             client = factory.CreateClient();
 
+            BeginTest();
+        }
+
+        /// <summary>
+        /// For a fixture that keeps this host across tests: the next test starts on a database file no
+        /// earlier test used, so nothing seeded before is there.
+        /// </summary>
+        public void BeginTest()
+        {
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+
             using var scope = factory.Services.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
             db.Database.EnsureDeleted();

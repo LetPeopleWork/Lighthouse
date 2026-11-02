@@ -14,7 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5427-percentiles-over-time")]
-    [Category("slice-03")]
     public partial class Slice03ThroughputProcessBehaviorTest
     {
         // (the dated limit triple — three lines plotted across the date range)

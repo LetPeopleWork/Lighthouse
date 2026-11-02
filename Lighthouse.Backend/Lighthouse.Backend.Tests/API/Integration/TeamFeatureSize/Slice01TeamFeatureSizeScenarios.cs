@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-6251-team-feature-size")]
-    [Category("slice-01")]
     public partial class Slice01TeamFeatureSizeTest
     {
         // OE-002 holds 8 of Equinox's Work Items, 4 of Gravity's, 4 of Lightspeed's and 3 of

@@ -22,14 +22,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [SetUp]
         public void Init()
         {
-            StartApplicationWithDeterministicForecast();
             UseLikelihoodSensitiveToWorkingDays();
-        }
-
-        [TearDown]
-        public void Cleanup()
-        {
-            StopApplication();
         }
 
         [Test]

@@ -6,10 +6,29 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [Category("epic-5305-k8s-readiness")]
     public class JwtBearerAuthIntegrationTest
     {
+        private JwtBearerTestHost host = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            host = new JwtBearerTestHost();
+        }
+
+        [SetUp]
+        public void SetUp()
+        {
+            host.BeginTest();
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            host.Dispose();
+        }
+
         [Test]
         public async Task ValidToken_AuthenticatedUserWithTeamScope_Returns200()
         {
-            using var host = new JwtBearerTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             await host.SeedTeamAdminUserAsync("owner-a", teamA);
@@ -23,7 +42,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task TwoTokensDistinctSubjects_EachSeesOnlyOwnTeamScope()
         {
-            using var host = new JwtBearerTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             var teamB = await host.SeedTeamAsync("Team B");
@@ -49,7 +67,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task WrongAudienceToken_Rejected401()
         {
-            using var host = new JwtBearerTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             await host.SeedTeamAdminUserAsync("owner-a", teamA);
@@ -67,7 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task ExpiredToken_Rejected401()
         {
-            using var host = new JwtBearerTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             await host.SeedTeamAdminUserAsync("owner-a", teamA);
@@ -81,7 +97,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task BadSignatureToken_Rejected401()
         {
-            using var host = new JwtBearerTestHost();
             await host.SeedSystemAdminAsync("system-admin");
             var teamA = await host.SeedTeamAsync("Team A");
             await host.SeedTeamAdminUserAsync("owner-a", teamA);

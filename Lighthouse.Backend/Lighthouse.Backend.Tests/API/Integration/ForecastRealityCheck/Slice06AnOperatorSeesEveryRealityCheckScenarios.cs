@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-4172-forecast-backtest-sweep")]
-    [Category("slice-06a")]
     public partial class Slice06AnOperatorSeesEveryRealityCheckTest
     {
         [TestCase(NoOptions, "none", LatestRoute)]

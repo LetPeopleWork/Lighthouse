@@ -13,8 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5074-blocked-items")]
-    [Category("slice-08")]
     public partial class Slice08BlockedDrilldownTest : BlockedItemsAcceptanceTest
     {
         // (happy: reconstruct membership at a past date from transition intervals)

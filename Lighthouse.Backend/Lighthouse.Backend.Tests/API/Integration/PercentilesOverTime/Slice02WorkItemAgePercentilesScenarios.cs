@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5427-percentiles-over-time")]
-    [Category("slice-02")]
     public partial class Slice02WorkItemAgePercentilesTest
     {
         // (read-after-record — the shared pipeline's age rows are served back)

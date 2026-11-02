@@ -2,7 +2,9 @@ using System.Net;
 using System.Text;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
@@ -92,34 +94,93 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private string whatTheParentOverrideNames = string.Empty;
 
-        private TestWebApplicationFactory<Program>? theHostTheRefreshRanIn;
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
 
-        private WebApplicationFactory<Program>? theRunningLighthouse;
+        private TestWebApplicationFactory<Program> theHostTheRefreshRanIn = null!;
+
+        private WebApplicationFactory<Program> theRunningLighthouse = null!;
+
+        private JiraWorkTrackingConnector theConnector = null!;
+
+        // Set once this scenario has filled the database; until then nothing was written to it.
+        private bool theDatabaseIsFilled;
+
+        [OneTimeSetUp]
+        public void StartTheLighthouseEveryScenarioRunsOn()
+        {
+            using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            theHostTheRefreshRanIn = new TestWebApplicationFactory<Program>();
+
+            // The host asks for the connector through this, and each scenario hands over its own.
+            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactory
+                .Setup(factory => factory.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(() => theConnector);
+
+            var licensed = new Mock<ILicenseService>();
+            licensed.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
+
+            theRunningLighthouse = theHostTheRefreshRanIn.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
+            {
+                services.RemoveAll<IWorkTrackingConnectorFactory>();
+                services.AddScoped(_ => connectorFactory.Object);
+
+                services.RemoveAll<ILicenseService>();
+                services.AddScoped(_ => licensed.Object);
+
+                services.RemoveAll<IForecastService>();
+                services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
+            }));
+
+            _ = theRunningLighthouse.Services;
+        }
+
+        [OneTimeTearDown]
+        public void StopTheLighthouse()
+        {
+            using var timing = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            theRunningLighthouse?.Dispose();
+            theHostTheRefreshRanIn?.Dispose();
+        }
 
         [SetUp]
         public void ForgetTheInstanceTheLastScenarioDescribed()
         {
+            theHostTheRefreshRanIn.Clock.Reset();
+            theDatabaseIsFilled = false;
+
             issuesTheInstanceServes.Clear();
+            ownersSeeded.Clear();
             whatTheRefreshWroteToTheLog = new Mock<ILogger<JiraWorkTrackingConnector>>();
             whatTheParentOverrideNames = string.Empty;
         }
 
         [TearDown]
-        public void StopTheLighthouseThisScenarioStarted()
+        public async Task LeaveTheLighthouseIdle()
         {
-            if (theRunningLighthouse is not null)
+            if (!theDatabaseIsFilled)
             {
-                using (var scope = theRunningLighthouse.Services.CreateScope())
-                {
-                    scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-                }
-
-                theRunningLighthouse.Dispose();
-                theRunningLighthouse = null;
+                return;
             }
 
-            theHostTheRefreshRanIn?.Dispose();
-            theHostTheRefreshRanIn = null;
+            var services = theRunningLighthouse.Services;
+
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(services, ownersSeeded);
+
+                using var scope = services.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+            }
         }
 
         /// <summary>
@@ -179,6 +240,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             var services = TheRunningLighthouse();
             SeedIntoStorage(services, team);
+            ownersSeeded.Add((team.Id, OwnerType.Team));
 
             await TheRefreshRuns(services, provider => provider.GetRequiredService<ITeamUpdater>().TriggerUpdate(team.Id));
 
@@ -196,6 +258,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
             var services = TheRunningLighthouse();
             SeedIntoStorage(services, portfolio);
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             await TheRefreshRuns(services, provider => provider.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolio.Id));
 
@@ -209,7 +272,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// </summary>
         private RefreshLog TheRowTheRefreshRecorded(RefreshType type, int entityId)
         {
-            using var scope = theRunningLighthouse!.Services.CreateScope();
+            using var scope = theRunningLighthouse.Services.CreateScope();
 
             var recorded = scope.ServiceProvider.GetRequiredService<IRefreshLogService>()
                 .GetRefreshLogs()
@@ -230,43 +293,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// </summary>
         private IServiceProvider TheRunningLighthouse()
         {
-            if (theRunningLighthouse is not null)
+            if (theDatabaseIsFilled)
             {
                 return theRunningLighthouse.Services;
             }
 
-            theHostTheRefreshRanIn = new TestWebApplicationFactory<Program>();
+            theConnector = JiraConnectorTestSetup.AConnectorOver(
+                AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object);
 
-            var connectorFactory = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactory
-                .Setup(factory => factory.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
-                .Returns(JiraConnectorTestSetup.AConnectorOver(
-                    AJiraAnsweringForThatInstance(), whatTheRefreshWroteToTheLog.Object));
-
-            var licensed = new Mock<ILicenseService>();
-            licensed.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
-
-            theRunningLighthouse = theHostTheRefreshRanIn.WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-            {
-                services.RemoveAll<IWorkTrackingConnectorFactory>();
-                services.AddScoped(_ => connectorFactory.Object);
-
-                services.RemoveAll<ILicenseService>();
-                services.AddScoped(_ => licensed.Object);
-
-                services.RemoveAll<IForecastService>();
-                services.AddScoped(_ => ForecastServiceDoubles.AnsweringComputed().Object);
-            }));
+            theHostTheRefreshRanIn.UseFreshDatabase();
+            theRunningLighthouse.ForgetTheCachedMetrics();
 
             using var setupScope = theRunningLighthouse.Services.CreateScope();
             var database = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            database.Database.EnsureDeleted();
             database.Database.EnsureCreated();
 
             foreach (var seeder in setupScope.ServiceProvider.GetServices<ISeeder>())
             {
                 seeder.Seed().GetAwaiter().GetResult();
             }
+
+            theDatabaseIsFilled = true;
 
             return theRunningLighthouse.Services;
         }
@@ -287,19 +334,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// </summary>
         private static async Task TheRefreshRuns(IServiceProvider services, Action<IServiceProvider> trigger)
         {
-            var statusStore = services.GetRequiredService<IUpdateStatusStore>();
-
             trigger(services);
 
-            var deadline = DateTime.UtcNow.AddSeconds(60);
-            while (statusStore.HasActiveWork())
+            if (!await SharedHostCleanup.WaitUntilTheQueueIsIdle(services, TimeSpan.FromSeconds(60)))
             {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue never went idle, so the refresh this scenario describes never finished.");
-                }
-
-                await Task.Delay(20);
+                Assert.Fail("The update queue never went idle, so the refresh this scenario describes never finished.");
             }
         }
 

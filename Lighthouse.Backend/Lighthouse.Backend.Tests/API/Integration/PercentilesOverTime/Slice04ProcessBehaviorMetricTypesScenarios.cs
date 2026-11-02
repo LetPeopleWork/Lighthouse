@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5427-percentiles-over-time")]
-    [Category("slice-04")]
     public partial class Slice04ProcessBehaviorMetricTypesTest
     {
         // (US-05 AC1 — each team family reads back its OWN dated triple)

@@ -12,15 +12,21 @@ namespace Lighthouse.Backend.Tests.API.Security
     {
         private ViewerEmbedTestHost host = null!;
 
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            host = new ViewerEmbedTestHost();
+        }
+
         [SetUp]
         public void SetUp()
         {
-            host = new ViewerEmbedTestHost();
+            host.BeginTest();
             host.SeedRbacFixture();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void StopTheHost()
         {
             host.Dispose();
         }

@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5074-blocked-items")]
-    [Category("slice-05")]
     public partial class Slice05PredefinedFieldTest
     {
         // GREEN today: proves the connection additional-field read/write round-trip wiring slice-05 extends.

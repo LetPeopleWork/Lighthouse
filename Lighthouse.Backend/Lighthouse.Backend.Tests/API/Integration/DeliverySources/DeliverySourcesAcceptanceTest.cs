@@ -5,7 +5,9 @@ using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.DeliverySources;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
@@ -26,6 +28,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
     /// licence guard and the real source resolver all take part. A scenario that called the controller
     /// method directly would say nothing about any of them, and every one of them can refuse a request
     /// on its own.
+    ///
+    /// One host serves the whole fixture, and every scenario gets its own database, clock reading, doubles
+    /// and client inside it. The memo of what earlier refreshes found out lives as long as the host and is
+    /// keyed by owner id, while every fresh database numbers its owners from one again, so a scenario ends
+    /// by running out the history filler and making the memo forget each owner it seeded.
     ///
     /// Real: EF over SQLite, the routing and authorization pipeline, the delivery source resolver, and
     /// the connectors of every tracker other than Jira. Faked: the Jira connector and the licence.
@@ -63,15 +70,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         /// </summary>
         protected Mock<IJiraWorkTrackingConnector> JiraConnector = null!;
 
-        [SetUp]
-        public void Init()
+        /// <summary>
+        /// Every Team and Portfolio the current scenario seeded: the ids the memo has to be told to forget
+        /// when the scenario is over.
+        /// </summary>
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             RootFactory = new TestWebApplicationFactory<Program>();
-
-            LicenseServiceMock = new Mock<ILicenseService>();
-            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
-
-            JiraConnector = new Mock<IJiraWorkTrackingConnector>();
 
             Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(RootFactory)
                 .WithWebHostBuilder(builder =>
@@ -91,6 +101,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
                         AlsoSwap(services);
                     });
                 });
+        }
+
+        [SetUp]
+        public void GiveTheScenarioItsOwnState()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+
+            LicenseServiceMock = new Mock<ILicenseService>();
+            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            JiraConnector = new Mock<IJiraWorkTrackingConnector>();
+
+            RootFactory.Clock.Reset();
+            RootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient().AsSystemAdmin();
 
@@ -115,17 +142,42 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = Factory.Services.CreateScope())
-            {
-                teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            Client.Dispose();
-            Factory.Dispose();
-            RootFactory.Dispose();
+            try
+            {
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                // A failed wait above must not leave the memo's notes or the database behind for the next
+                // scenario on this host; the failure itself still propagates.
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
+
+                using (var teardownScope = Factory.Services.CreateScope())
+                {
+                    await teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                Client.Dispose();
+            }
         }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            RootFactory?.Dispose();
+        }
+
+        /// <summary>Notes an owner the scenario seeded, so the host forgets it when the scenario ends.</summary>
+        protected void RememberTheTeam(int teamId) => ownersSeeded.Add((teamId, OwnerType.Team));
 
         // --- Seeding ---
 
@@ -161,6 +213,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             portfolioRepository.Add(portfolio);
             portfolioRepository.Save().GetAwaiter().GetResult();
 
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
+
             return portfolio.Id;
         }
 
@@ -191,6 +245,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
             var teamRepository = serviceProvider.GetRequiredService<IRepository<Team>>();
             teamRepository.Add(team);
             teamRepository.Save().GetAwaiter().GetResult();
+
+            RememberTheTeam(team.Id);
 
             var feature = new Feature(team, 5)
             {
@@ -272,19 +328,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
         /// </summary>
         protected async Task ThePortfolioRefreshRuns(int portfolioId)
         {
-            var statusStore = Factory.Services.GetRequiredService<IUpdateStatusStore>();
-
             Factory.Services.GetRequiredService<IPortfolioUpdater>().TriggerUpdate(portfolioId);
 
-            var deadline = DateTime.UtcNow.AddSeconds(30);
-            while (statusStore.HasActiveWork())
+            if (!await SharedHostCleanup.WaitUntilTheQueueIsIdle(Factory.Services, TimeSpan.FromSeconds(30)))
             {
-                if (DateTime.UtcNow > deadline)
-                {
-                    Assert.Fail("The update queue did not go idle within 30s - the refresh never completed.");
-                }
-
-                await Task.Delay(20);
+                Assert.Fail("The update queue did not go idle within 30s - the refresh never completed.");
             }
         }
 

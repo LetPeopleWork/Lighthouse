@@ -16,9 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-6303-configure-once-per-connection")]
-    [Category("story-6312")]
-    [Category("slice-03")]
     public class Slice03AzureDevOpsRelationTypeAcceptedScenarios : NamedDependencyLinkAcceptanceTest
     {
         private const int Item4711 = 4711;

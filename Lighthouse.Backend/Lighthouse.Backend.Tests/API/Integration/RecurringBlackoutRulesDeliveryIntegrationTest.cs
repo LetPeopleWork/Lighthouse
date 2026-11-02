@@ -25,18 +25,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
             Converters = { new JsonStringEnumConverter() },
         };
 
-        [SetUp]
-        public void Init()
-        {
-            StartApplicationWithDeterministicForecast();
-        }
-
-        [TearDown]
-        public void Cleanup()
-        {
-            StopApplication();
-        }
-
         [Test]
         public async Task GetDelivery_FeatureWithRecurringRuleDays_FeaturePercentileDateStepsOverTheRecurringSpan()
         {

@@ -3,6 +3,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Factories;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
@@ -43,35 +44,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         protected Mock<IWorkTrackingConnector> ConnectorMock = null!;
         protected Mock<IForecastUpdater> ForecastUpdaterMock = null!;
 
-        [SetUp]
-        public void Init()
+        // The memo keeps notes per owner id for as long as the host lives, and every scenario's fresh
+        // database numbers its owners from one again, so each scenario hands back the owners it seeded.
+        private readonly List<(int OwnerId, OwnerType OwnerType)> ownersSeeded = [];
+
+        private Mock<IWorkTrackingConnectorFactory> connectorFactoryMock = null!;
+
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             RootFactory = new TestWebApplicationFactory<Program>();
-
-            LicenseServiceMock = new Mock<ILicenseService>();
-            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
-
-            // The work-tracking connector is the one driven port a refresh scenario may not reach for real
-            // (external/non-deterministic, per docs/architecture/atdd-infrastructure-policy.md). Everything
-            // between it and the read port - WorkItemService, EF, the ordering seam - stays production.
-            ConnectorMock = new Mock<IWorkTrackingConnector>();
-            ConnectorMock
-                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => []);
-            ConnectorMock
-                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(() => []);
 
             // The forecast runner is a background queue, so a scenario that waited for it would be timing
             // against a thread rather than asserting a promise. Faking it turns ADR-133's "a move triggers a
-            // run" into something a test can see the moment the move commits.
+            // run" into something a test can see the moment the move commits. A host singleton holds it for
+            // the life of the host, so each scenario wipes it in place instead of replacing it.
             ForecastUpdaterMock = new Mock<IForecastUpdater>();
 
-            var connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
-            connectorFactoryMock
-                .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
-                .Returns(ConnectorMock.Object);
-
+            // The doubles a scenario sets up are replaced per scenario and read through the fields, so the
+            // host's scoped services always get the current scenario's double.
             Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(RootFactory)
                 .WithWebHostBuilder(builder =>
                 {
@@ -87,6 +80,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                         services.AddSingleton(_ => ForecastUpdaterMock.Object);
                     });
                 });
+        }
+
+        [SetUp]
+        public void Init()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ownersSeeded.Clear();
+            ForecastUpdaterMock.Reset();
+
+            LicenseServiceMock = new Mock<ILicenseService>();
+            LicenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            // The work-tracking connector is the one driven port a refresh scenario may not reach for real
+            // (external/non-deterministic, per docs/architecture/atdd-infrastructure-policy.md). Everything
+            // between it and the read port - WorkItemService, EF, the ordering seam - stays production.
+            ConnectorMock = new Mock<IWorkTrackingConnector>();
+            ConnectorMock
+                .Setup(c => c.GetFeaturesForProject(It.IsAny<Portfolio>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => []);
+            ConnectorMock
+                .Setup(c => c.GetParentFeaturesDetails(It.IsAny<Portfolio>(), It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() => []);
+
+            connectorFactoryMock = new Mock<IWorkTrackingConnectorFactory>();
+            connectorFactoryMock
+                .Setup(f => f.GetWorkTrackingConnector(It.IsAny<WorkTrackingSystems>()))
+                .Returns(ConnectorMock.Object);
+
+            RootFactory.Clock.Reset();
+            RootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
 
@@ -102,17 +127,38 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = Factory.Services.CreateScope())
-            {
-                var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                dbContext.Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            Client.Dispose();
-            Factory.Dispose();
-            RootFactory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                await SharedHostCleanup.ForgetOwners(Factory.Services, ownersSeeded);
+
+                using (var teardownScope = Factory.Services.CreateScope())
+                {
+                    var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                    await dbContext.Database.EnsureDeletedAsync();
+                }
+
+                Client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            RootFactory?.Dispose();
         }
 
         // --- Seeding (preconditions only — never the expected output; No Fixture Theater) ---
@@ -141,6 +187,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
             portfolioRepository.Add(portfolio);
             portfolioRepository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
 
             return portfolio.Id;
         }
@@ -173,6 +221,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             var teamRepository = sp.GetRequiredService<IRepository<Team>>();
             teamRepository.Add(team);
             teamRepository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((team.Id, OwnerType.Team));
 
             return team.Id;
         }

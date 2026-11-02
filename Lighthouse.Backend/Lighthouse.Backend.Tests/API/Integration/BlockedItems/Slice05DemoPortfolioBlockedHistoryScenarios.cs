@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     [TestFixture]
     [Category("acceptance")]
     [Category("portfolio-blocked-history")]
-    [Category("slice-05")]
     public partial class Slice05DemoPortfolioBlockedHistoryTest
     {
         // (US-05 AC1)

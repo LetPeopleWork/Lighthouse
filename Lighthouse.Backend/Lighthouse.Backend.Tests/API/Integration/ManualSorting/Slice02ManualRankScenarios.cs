@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5375-manual-sorting")]
-    [Category("slice-02")]
     public partial class Slice02ManualRankTest
     {
         /// <summary>
