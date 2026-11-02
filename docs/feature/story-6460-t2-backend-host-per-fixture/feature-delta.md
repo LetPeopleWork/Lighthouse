@@ -1311,3 +1311,17 @@ Never-read types: the roadmap names 13 but the workspace does not list them, so 
 The ci-learnings host-lifecycle entry is rewritten once: the mechanics now enforced by `TestHostPerFixtureGuardTest`, `DbContextComesFromAScopeGuardTest` and `SharedHostsDrainTheUpdateQueueGuardTest` are named, not restated; what stays by hand is the per-test-state judgement the slices taught (app singletons, rate-limit buckets and tallies, test doubles stopping on a tear-down-only signal, captured collections cleared in place, the queue-drain list's "never starts a refresh" judgement, the isolation pair and the three-runs check).
 
 Acceptance-designer briefing: N/A. The project briefs DISTILL through CLAUDE.md (unchanged by maintainer decision) and the ci-learnings ledger, which DISTILL reads before writing tests; the ledger entry above is the change. Turning the convention into a briefing or skill is the separate follow-up the maintainer asked for once the test-infra track settles.
+
+### Slice 5 review (2026-11-02)
+
+Reviewer (haiku): NEEDS_REVISION, one blocker, three majors. Fixed in 9ed974f89:
+- Blocker: the queue-drain check counted a single `HasActiveWork()` read, or an awaited `WaitUntilTheQueueIsIdle` whose result was thrown away, as a drain. It now counts only `WaitUntilTheQueueIsIdleOrFail` or a `HasActiveWork` call inside a loop; planted cases for both false shapes, bite proofs recorded. `UsageDataCollectorObservationTest` moved to the failing wait (its `Assert.That(idle, Is.True)` is replaced by the `Assert.Fail` inside `OrFail`, the one assertion-line drop in slice 5, a strengthening).
+- The queue-drain check's newcomer/stale comparison had no synthetic test; `Compare` now lives in `TestHostScanning` with tests for both directions in both guards.
+- `CatalogueBodiesOnPostgresTests` built a derived host per test and disposed only the last; it now builds its Postgres host once (and leaves the per-test host list, ceiling 53).
+- `ReportsAcceptanceTest` deleted a team (which can trigger portfolio refreshes) with no wait in its tear-down; it now drains and is off the queue-drain list.
+Recorded, not fixed: method keys use arity only (an overload collision is theoretical); the DbContext check sees only a root provider used directly.
+The 33-entry queue-drain list was checked by reading 9 entries (no refresh started); the rest were checked by grep only.
+
+### 05-03 evidence (2026-11-02)
+
+`CatalogueBodiesOnPostgresTests` (Docker) 5/5 three runs in a row. Full run (6 workers): 361 s, peak 3,705 MB, only the two known publish-output scans failing; `measurement/slice5-2026-11-02/`. The three host guards 45/45 under `-c Release`. Behaviour check vs 585300d5f: ids differ only by the guards' new planted cases and comparison tests and the two date-embedding ids; nothing disabled; one assertion-count drop, `UsageDataCollectorObservationTest` 3 → 1, which is the `EnterMultipleScope` line and the idle assertion now enforced by `WaitUntilTheQueueIsIdleOrFail` (the census assertion stays). Leftover `IntegrationTests_*.db` files: 10 new in `bin/` after the run, the known undisposed root factories of two usage-data fixtures (slice 4 review m2), not yet fixed. Allow-list 76 → 53, no "not moved yet" entry left.
