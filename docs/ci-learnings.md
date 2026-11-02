@@ -286,9 +286,17 @@ carries a `// biome-ignore lint/plugin: <reason>`.
 - **A Monte Carlo test on a fixed dataset uses pinned randomness**: `SeededRandomNumberService` plus
   `DrawsFromAPinnedStartingNumber`. Never re-run a ±1 `Is.InRange` miss or tighten the range to chase a
   seed. Not automated because: whether a test is meant to be a golden baseline is intent.
-- **Host lifecycles in `WebApplicationFactory` tests**: resolve every service you will assert on before
-  `StopApplication()`. A host shared by a fixture may hold per-test state only in objects the fixture
-  resets in `[SetUp]`, never in a DI registration that closes over a per-test field. Not automated
+- **Host lifecycles in `WebApplicationFactory` tests**: build the host once per fixture in `[OneTimeSetUp]`
+  and dispose it in `[OneTimeTearDown]`, before the database files go. `TestHostPerFixtureGuardTest` reads
+  the compiled test assembly and fails when a type starts a host in `[SetUp]` or in a test body. Its
+  allow-list only shrinks: a new offender fails, an entry whose type no longer offends fails, and the
+  ceiling `MostTypesTheListMayHold` drops with every entry removed. A type stays listed only with a
+  written reason (it tests the host itself, it runs on a Postgres server, the counters it checks live per
+  host). Still by hand: a shared host may hold per-test state only in objects the fixture resets in
+  `[SetUp]` (the factory's `Clock.Reset()`, a fresh database via `UseFreshDatabase()`, re-armed mocks),
+  never in a DI registration that closes over a per-test field; resolve the `DbContext` from a scope,
+  never the root provider; resolve every service you will assert on before `StopApplication()`. Check a
+  converted fixture by running it three times in a row and its first and last test alone. Not automated
   because: what counts as per-test state differs from fixture to fixture.
 - **FK-dependent behaviour runs on SQLite**: EF InMemory does not enforce foreign keys or cascades.
   Fix: a test asserting an FK violation or a cascade must not use `UseInMemoryDatabase`. Not automated
