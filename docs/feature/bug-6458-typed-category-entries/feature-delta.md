@@ -532,7 +532,7 @@ The classification column is a reading of the test name, not a tag.
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingAGroupWithNoStatesAlongsideLists_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | green | error path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SavingTwoGroupsWithTheSameName_IsRefused | settings HTTP: write path and read model (Team and Portfolio) | green | error path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
-| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName | settings HTTP: write path and read model (Team and Portfolio) | green | happy path |
+| `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | SuggestingStatesWhileAnOwnersStoredListHoldsRawStates_OffersTheStatesAndNotTheGroupsName | settings HTTP: write path and read model (Team and Portfolio) | green | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupsStatesAndTheGroupOnDisplay | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerWhoseGroupHasNoStates_KeepsTheEntryAsAStateAndDoesNotFail | settings HTTP: write path and read model (Team and Portfolio) | pending | error path |
 | `Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs` | ReadingAnOwnerWhoseStoredListHoldsAGroupNameBesideOneOfItsStates_ShowsTheGroupOnceAsTheOldExpansionDid | settings HTTP: write path and read model (Team and Portfolio) | pending | happy path |
@@ -677,7 +677,7 @@ it also fails until the new seeder is registered in `Program.cs`. No separate re
 **Suggestions endpoint.** The RCA cited `SuggestionsController.cs:70-72` and `:87-89`; today they read each owner's
 stored lists directly. Under D12 the endpoint reads the normalised owner lists, so the controller does change and
 the design's component row ("stops returning mapping names") stands. Two scenarios:
-`SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName` (raw stored lists, green) and
+`SuggestingStatesWhileAnOwnersStoredListHoldsRawStates_OffersTheStatesAndNotTheGroupsName` (raw stored lists, green) and
 `SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName` (collapsed stored list,
 pending: today it offers the group name).
 
@@ -761,7 +761,7 @@ the widget status. A mapping spec would only repeat what the Vitest and NUnit sc
 |---|---|
 | Team settings PUT and GET (`v1` and `latest` share the controller) | HTTP fixture, owner kind Team |
 | Portfolio settings PUT and GET | the same fixture, owner kind Portfolio |
-| Suggestions endpoint | `SuggestingStatesAfterSavingRawStatesWithAGroup_OffersTheStatesAndNotTheGroupsName` (Team and Portfolio route, raw stored lists, green) and `SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName` (collapsed stored list, pending); under D12 the controller reads the normalised owner lists, see "Suggestions endpoint" under the inventory |
+| Suggestions endpoint | `SuggestingStatesWhileAnOwnersStoredListHoldsRawStates_OffersTheStatesAndNotTheGroupsName` (Team and Portfolio route, raw stored lists, green) and `SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName` (collapsed stored list, pending); under D12 the controller reads the normalised owner lists, see "Suggestions endpoint" under the inventory |
 | Metrics endpoints | no HTTP scenario: the shape is unchanged; the as-of lookup and the column order are pinned at the service, the page and the widget frame |
 | Settings editor, States list, metrics pages | Vitest scenarios (UI1-UI6) |
 
@@ -997,38 +997,61 @@ rows, so moving it buys nothing.
 | 05-07 | Aging frame and Team page loading and failure looks (UI5) | 6 |
 | 05-08 | Portfolio page aging looks; zero scaffold markers; final gates | 3 |
 
-## Wave: DELIVER / [REF] Progress and resume (2026-11-01)
+## Wave: DELIVER / [REF] Progress and resume (2026-11-02)
 
-**Slices 1-3 are done, reviewed and fixed** (steps 01-01..03-02, each slice refactored and double-reviewed). They are
-pushed to the branch `bug-6458-typed-category-entries`, **not to main**: on their own they would break charts for
-anyone with state mappings (see below), and the seeder rewrites stored lists for good, so a rollback would not undo it.
-Main gets the whole fix once slices 4 and 5 are in. **Resume at slice 4, step 04-01**, from that branch, with the
-same rigor (thorough), slice wrap-up (refactor + double review) and final gates (refactor, review, mutation once).
+**Slices 1-4 are done, reviewed and fixed** (steps 01-01..04-03; every slice refactored and double-reviewed). They are
+pushed to the branch `bug-6458-typed-category-entries`, **not to main**. Without slice 5 the settings page shows raw
+states where it used to show the mapping chip, and the frontend flow-efficiency figure would read wait time wrong. The
+startup pass also rewrites stored lists for good, so a rollback would not undo it. Main gets the whole fix once slice 5
+is in. **Resume at slice 5, step 05-01**, from that branch, with the same rigor (thorough: crafter opus, reviewer
+sonnet), slice wrap-up (refactor + double review) and final gates (refactor, review, mutation once).
 
-Last gate: filtered backend suite 11981 passed / 0 failed / 19 skipped (before the rebase onto main; the
-maintainer chose to skip the checks after the rebase, so run them first when resuming).
+Last gate (slice 4 pushed): filtered backend suite 12134 passed / 0 failed / 2 skipped, `dotnet build` clean; frontend
+8989 passed, `pnpm build` clean; live AdoIntegration 104 passed at 04-02.
 
-**What slice 4 and 5 must close before anything reaches main** (from the slice-3 correctness review, checked):
+The DES execution log is gitignored and was lost with the first worktree, so it holds steps from 04-01 on only;
+`des-verify-integrity` will not see 01-01..03-02.
+
+**Decisions taken in slice 4:**
+
+- The settings GET returns the normalised (raw) lists beside the display lists. A client that changes only the
+  mappings and sends the lists back now gets a 400 when the change moves a state into another category: it must move
+  the raw state between lists too. Release-note line.
+- A legacy chained mapping (A = [B, C], B = [X, Y], Doing = [B]) reads B as a state, not as X and Y, so the reads agree
+  with the display (A) and with the raw-state lookup.
+- Transitions carry the mapping's name, so fixtures that stored raw member names under a mapping were changed, not the
+  code.
+- A wait state naming one state inside a mapping counts **all** time in the group as wait, because a transition only
+  records the group. Pinned by `WaitStatesAsDisplayed_WaitStateNamesOneStateOfAMapping_CountsAllTimeInTheGroupAsWait`;
+  **the maintainer decides** whether that stays, is refused by the validator, or is documented.
+
+**What slice 5 must close before anything reaches main:**
 
 - The Work Item Aging chart indexes its columns by `settings.doingStates` (`WorkItemAgingChart.tsx`, fed from
-  `TeamMetricsView.tsx` and `PortfolioMetricsView.tsx`) while items carry the mapping's name, so items in a mapped
-  state are skipped without a word once the lists hold raw states. It must read the display list.
-- Age in state, cumulative state time and flow efficiency take `team.DoingStates` / `portfolio.DoingStates`
-  (`TeamMetricsService`, `PortfolioMetricsService`) and match them against transitions mapped at sync time, so the
-  mapped states get no rows and the numbers are wrong. 04-03 switches them to the display states; add tests with a
-  mapped Doing state.
-- The settings page shows the raw states where it used to show the mapping chip, and its help text still says the
-  mapping replaces its states in the Doing list (slice 5).
-- A legacy chained mapping whose name is also a state of another mapping (A = [B, C], B = [X, Y], Doing = [B]):
-  today's reads expand B to X, Y, the normaliser keeps B. The validator forbids creating it, so only old rows can
-  hit it; 04-01 pins one behaviour with a test.
+  `TeamMetricsView.tsx` and `PortfolioMetricsView.tsx`). It must read the display list.
+- `Lighthouse.Frontend/src/utils/flowEfficiency.ts` expands a mapping-name wait state into its raw members and matches
+  them against rows, but rows now carry the mapping's name, so a mapped wait state counts 0 wait days.
+  `CumulativeStateTime.test.tsx` only passes because its rows use raw names. Check whether the figure uses this util on
+  live data and align it with `WaitStatesAsDisplayed`.
+- The settings page shows raw states where it used to show the mapping chip, and its help text still says the mapping
+  replaces its states in the Doing list.
+
+**Must be decided before main (pre-existing, verified on main):** charts and named cycle times scoped to a cycle-time
+definition take their columns from `AllStates` (raw) and resolve boundaries to raw states (`ResolveBoundaryState`),
+while transitions carry mapped names, so items in a mapped state get no time and drop out of named percentiles. Main
+already expands `AllStates` the same way, so this is not a regression of this branch, but it is the same class of
+wrong numbers. Fix in this feature (an extra step after 05-08) or raise a Bug.
 
 **Follow-ups, not in this feature:** SyncStates is duplicated between Team and Portfolio; three different "stored
 value" mechanisms should become one; the validate-only endpoints skip StateMappingValidator and Portfolio has no
 cycle-time validation (both pre-existing); the seeder's detach loop repeats the private
-`LostRaceTolerantSave.DropFromTheStagingArea`.
+`LostRaceTolerantSave.DropFromTheStagingArea`; `IWorkItemQueryOwner.NormalisedStatesFor(list)` could become a
+category-based `NormalisedStatesOf(category)`; `MapStateToStateCategory` and `CategoryOfRawState` ask the same question;
+connectors normalise the lists per item (no snapshot); a mapping with no states reads as a state in lists but as
+nothing in a wait-state reference; a mapping named like a real state in another list is read as a collapsed chip
+(rare); a legacy chained name used as a wait state or cycle-time boundary no longer matches.
 
-**Owed at finalize:** release-note lines (lists now hold raw states in v1, shadowing refused with 400, a rollback
-re-collapses nothing, owners the seeder skipped, the rolling-update overlap, one full resync per rewritten owner
-after the upgrade); `docs/concepts/api-versioning.md`; the Lighthouse-Clients skill text, and a check that the CLI/MCP
-do not echo the display lists back.
+**Owed at finalize:** release-note lines (lists now hold raw states in v1, shadowing refused with 400, mapping-only
+edits that move a state refused with 400, a rollback re-collapses nothing, owners the seeder skipped, the
+rolling-update overlap, one full resync per rewritten owner after the upgrade); `docs/concepts/api-versioning.md`; the
+Lighthouse-Clients skill text, and a check that the CLI/MCP do not echo the display lists back.
