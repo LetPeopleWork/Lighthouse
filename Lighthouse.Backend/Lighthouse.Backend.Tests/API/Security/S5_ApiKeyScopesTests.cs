@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Auth;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Authentication;
@@ -33,20 +34,56 @@ namespace Lighthouse.Backend.Tests.API.Security
         private WebApplicationFactory<Program> factory = null!;
         private HttpClient apiClient = null!;
 
+        [OneTimeSetUp]
+        public void StartTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
+            rootFactory = new TestWebApplicationFactory<Program>();
+            factory = WithS5Authentication(rootFactory);
+        }
+
         [SetUp]
         public void SetUp()
         {
-            rootFactory = new TestWebApplicationFactory<Program>();
-            factory = WithS5Authentication(rootFactory);
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            factory.ForgetTheCachedMetrics();
+
             apiClient = factory.CreateClient();
         }
 
         [TearDown]
-        public void TearDown()
+        public async Task LeaveTheHostIdle()
         {
-            apiClient.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
+
+            try
+            {
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                using (var scope = rootFactory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                apiClient.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         [Test]

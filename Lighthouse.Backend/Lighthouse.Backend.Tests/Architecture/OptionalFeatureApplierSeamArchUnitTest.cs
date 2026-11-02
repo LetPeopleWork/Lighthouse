@@ -20,9 +20,12 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private TestWebApplicationFactory<Program> factory = null!;
 
-        [SetUp]
-        public void Init()
+        // The tests only read what the seeders wrote, so the host and its database are made once.
+        [OneTimeSetUp]
+        public void StartTheHostAndSeed()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             factory = new TestWebApplicationFactory<Program>();
 
             using var scope = factory.Services.CreateScope();
@@ -37,15 +40,25 @@ namespace Lighthouse.Backend.Tests.Architecture
             }
         }
 
-        [TearDown]
-        public void Cleanup()
+        [OneTimeTearDown]
+        public void StopTheHost()
         {
-            using (var scope = factory.Services.CreateScope())
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            if (factory is null)
             {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+                return;
             }
 
-            factory.Dispose();
+            try
+            {
+                using var scope = factory.Services.CreateScope();
+                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
+            }
+            finally
+            {
+                factory.Dispose();
+            }
         }
 
         [Test]

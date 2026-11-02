@@ -16,16 +16,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
     {
         private TestWebApplicationFactory<Program> factory = null!;
 
-        [SetUp]
-        public void SetUp()
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             factory = new TestWebApplicationFactory<Program>();
         }
 
-        [TearDown]
-        public void TearDown()
+        [OneTimeTearDown]
+        public void StopTheHost()
         {
-            factory.Dispose();
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
         }
 
         [Test]

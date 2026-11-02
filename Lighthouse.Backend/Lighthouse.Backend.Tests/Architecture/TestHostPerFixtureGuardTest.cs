@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class TestHostPerFixtureGuardTest
     {
-        private const string NotMovedYet = "not moved yet: starts an application host for every test";
         private const string OnAPostgresServer = "needs a Postgres server (or a Redis store) and a host of its own per test; those tests are not part of this move";
         private const string HasOneTestOnly = "has a single test, so a host per fixture would save no host";
         private const string ChecksTheTestHostItself = "tests how the test host starts and stops, so it has to start hosts itself";
@@ -30,7 +29,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string OnlyAFewTestsStartAHost = "only one or two of its tests start a host, each under its own settings, so sharing a host would save at most one host build";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 59;
+        private const int MostTypesTheListMayHold = 54;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -56,23 +55,19 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.QuietWriteBack.QuietWriteBackAcceptanceTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.Reports.ReportCreationTimingProbe"] = HasOneTestOnly,
             ["Lighthouse.Backend.Tests.API.Integration.RunChartPayloadContractIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.API.Integration.ServiceNowConnectionAcceptanceTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ShutdownIntegrationTest"] = StopsOrDrainsItsHostInEachTest,
             ["Lighthouse.Backend.Tests.API.Integration.SleRisk.SleRiskAcceptanceTest"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.Staleness.StaleWorkItemsAcceptanceTest"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoAuthVisibilityCrossLayerTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoWireFormatRegressionTests"] = NotMovedYet,
+            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoAuthVisibilityCrossLayerTest"] = StartsHostsUnderSeveralStartupSettings,
+            ["Lighthouse.Backend.Tests.API.Integration.SystemInfoWireFormatRegressionTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.Slice06TheWarningsWithoutTheLogTest"] = KeepsProblemsNothingCanEmpty,
             ["Lighthouse.Backend.Tests.API.Integration.TaskManager.TaskManagerAcceptanceTest"] = KeepsProblemsNothingCanEmpty,
             ["Lighthouse.Backend.Tests.API.Integration.TeamDeleteSerialisationTests"] = MostOfItsTimeIsInTheTestBodies,
             ["Lighthouse.Backend.Tests.API.Integration.TimeInStateReadApiIntegrationTest"] = MostOfItsTimeIsInTheTestBodies,
-            ["Lighthouse.Backend.Tests.API.Security.F_BE_1_GroupSnapshotInheritanceTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.S1_AllowedOriginsEnvVarBindingTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Security.S1_CorsFailClosedTests"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.API.Security.S3_UpdateNotificationHubAuthorizeTests"] = StartsHostsUnderSeveralStartupSettings,
-            ["Lighthouse.Backend.Tests.API.Security.S5_ApiKeyScopesTests"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Security.W1_VersionEndpointAuthorizationTests"] = StartsHostsUnderSeveralStartupSettings,
-            ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = ChecksTheTestHostItself,
             ["Lighthouse.Backend.Tests.Architecture.TestHostsRunWithoutRateLimitingByDefaultTest"] = ChecksTheTestHostItself,
             ["Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest"] = OnlyAFewTestsStartAHost,
@@ -88,7 +83,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Services.Implementation.LighthouseClockTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthProviderRegistryTest"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthStateSecretPersistenceTest"] = HasOneTestOnly,
-            ["Lighthouse.Backend.Tests.Services.Implementation.Repositories.FeatureListReaderRegistrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Startup.EncryptionBootstrapOrderTests"] = OnlyAFewTestsStartAHost,
             ["Lighthouse.Backend.Tests.Startup.RecentProblemsCapacityConfigurationTest"] = StartsHostsUnderSeveralStartupSettings,
             ["Lighthouse.Backend.Tests.Startup.ServiceProviderValidationTest"] = HasOneTestOnly,
