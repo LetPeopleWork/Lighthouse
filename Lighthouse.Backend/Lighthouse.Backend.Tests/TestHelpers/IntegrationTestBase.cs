@@ -20,6 +20,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         protected IntegrationTestBase(TestWebApplicationFactory<Program> webApplicationFactory)
         {
             this.webApplicationFactory = webApplicationFactory;
+
+            // Copying the prebuilt schema is much cheaper than creating it for every test. Fixtures that
+            // seed heavily gain little from it, so the factory leaves it off and each group opts in.
+            webApplicationFactory.UseSchemaTemplate = true;
             Client = webApplicationFactory.CreateClient();
         }
 
