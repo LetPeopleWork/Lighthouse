@@ -64,6 +64,19 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             Assert.That(relationalOptions.QuerySplittingBehavior, Is.EqualTo(QuerySplittingBehavior.SplitQuery));
         }
 
+        [Test]
+        public void TheHostReadsTheFactoryClockAndResettingItRestoresTheFrozenInstant()
+        {
+            using var factory = new TestWebApplicationFactory<Program>();
+            var hostClock = factory.Services.GetRequiredService<TimeProvider>();
+
+            factory.Clock.Advance(TimeSpan.FromDays(3));
+            Assert.That(hostClock.GetUtcNow(), Is.EqualTo(TestToday.FrozenNow.AddDays(3)));
+
+            factory.Clock.Reset();
+            Assert.That(hostClock.GetUtcNow(), Is.EqualTo(TestToday.FrozenNow));
+        }
+
         private static string PathOfCurrentDatabase(TestWebApplicationFactory<Program> factory)
         {
             using var scope = factory.Services.CreateScope();

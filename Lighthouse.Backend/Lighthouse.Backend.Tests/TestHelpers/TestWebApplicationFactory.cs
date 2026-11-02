@@ -93,11 +93,38 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
     }
 
+    /// <summary>
+    /// A fake clock only ever moves forward, which a host shared by many tests cannot live with. This one
+    /// can be put back at its starting instant by shifting what it reports; the host keeps the same
+    /// instance, so nothing has to be re-registered.
+    /// </summary>
+    public sealed class ResettableFakeTimeProvider : FakeTimeProvider
+    {
+        private readonly DateTimeOffset start;
+
+        private TimeSpan shift = TimeSpan.Zero;
+
+        public ResettableFakeTimeProvider(DateTimeOffset start) : base(start)
+        {
+            this.start = start;
+        }
+
+        public override DateTimeOffset GetUtcNow() => base.GetUtcNow() - shift;
+
+        public new void SetUtcNow(DateTimeOffset value) => base.SetUtcNow(value + shift);
+
+        public void Reset() => shift = base.GetUtcNow() - start;
+    }
+
     public class TestWebApplicationFactory<T> : WebApplicationFactory<T> where T : class
     {
         private readonly List<string> usedDatabaseFileNames = [];
 
         private string databaseFileName = NewDatabaseFileName();
+
+        // The host reads this clock and no other. A fixture that keeps one host for all its tests moves it
+        // freely and calls Clock.Reset() before each test to put it back at TestToday.FrozenNow.
+        public ResettableFakeTimeProvider Clock { get; } = new(TestToday.FrozenNow);
 
         // Work that outlives its request can still hold a connection to the previous test's database. A
         // recreated database at the same path shares that connection's -wal and -shm files, and the two
@@ -152,7 +179,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 services.ConfigureAll<HttpClientFactoryOptions>(options => options.HandlerLifetime = TimeSpan.FromSeconds(1));
 
                 services.RemoveAll<TimeProvider>();
-                services.AddSingleton<TimeProvider>(new FakeTimeProvider(TestToday.FrozenNow));
+                services.AddSingleton<TimeProvider>(Clock);
 
                 services.AddDbContext<LighthouseAppContext>(options =>
                 {
