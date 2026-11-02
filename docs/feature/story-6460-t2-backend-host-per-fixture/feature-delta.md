@@ -955,3 +955,54 @@ Owed at the start of DELIVER (before slice 1's first conversion commit), none of
 - Forge: a per-test memory trace across one converted fixture in slice 1's checks; re-measure main's peak if the base
   moved since `b573b1924`; each slice lowers `MostTypesTheListMayHold`; `behaviour-preserved.sh` writes to a per-run
   temp path; DoR "16 passed" becomes 17 (19 with the parallelization guard).
+
+## Wave: DELIVER / [REF] Roadmap notes
+
+Rationale and implementation detail for `deliver/roadmap.json`, keyed by step id (the roadmap keeps step descriptions short). Rigor `standard` was agreed
+by the maintainer on 2026-11-01 for T1, T2 and FE7. The owed gate-round-2 items are committed (`53e6d4686`). The maintainer chose one push per slice, so slice 1's
+forced-full CI run (Program.cs edit, 268 extra live-connector tests, Linear key shared with CI) is accepted.
+
+**Conversion pattern (all conversion steps).** Remove the converted types' entries from `TypesAllowedToBuildAHostPerTest` first (newcomer test goes RED naming them),
+convert (host in `[OneTimeSetUp]`, disposed in `[OneTimeTearDown]` before database files are deleted; per-test inputs reset in `[SetUp]` through fixture-owned objects; the
+database file name is read per scope so `UseFreshDatabase()` is seen only by scopes created after it; nothing resolves `LighthouseAppContext` or its options from the root
+provider), then lower `MostTypesTheListMayHold` in the same commit. An entry left behind after a conversion is the opposite RED (stale test). A fixture that cannot be made
+safe stays listed with a written reason; it is never excused. State leaking across tests of a shared host shows as a flake in the run-alone-3-times check.
+Code rules: comments rare and plain, no internal ids; no nWave scenario tags in code or test names; `dotnet build` zero warnings; git commands prefixed `LEAN_CTX_DISABLED=1`.
+
+**Id check where tests are added.** Steps that add tests use an addition-aware check: sorted ids before are a subset of ids after, and the additions are exactly the named new
+tests. All other steps: ids equal. Steps with additions: 01-03, 02-01, 02-02, 03-01, 04-04, 04-06, and the lead steps 01-10, 02-05, 03-07, 04-07.
+
+**01-01.** Extend, no new class beyond the enum member. Contains nothing else, so 01-02 measures the tree before any change. Override is bounded-change (reads a stopwatch only).
+**01-02.** No conversion commit is made before this run. Also records main's peak memory (re-measure if the base moved since `b573b1924`) and the disk high-water mark of `IntegrationTests_*.db*`.
+**01-03.** Fixtures that move the host's own clock: `NamedDependencyLinkAcceptanceTest` and `Slice02ConfirmedNowScenarios` only (grep recorded in D3). Neither converts here.
+**01-04.** Precedents: `ReportsAcceptanceTest.StartTheHost`, `RefinementAcceptanceTest`, the read-API fixtures; no shared default base. Subclasses whose only host start was the base's `[SetUp]` leave the list here.
+**01-05.** `NamedDependencyLinkAcceptanceTest` (Slice01 to Slice04 in the same folder) is not part of this family; it is converted in 04-05.
+**01-06.** `Slice01FieldChangeUpdatesItsOwners` has the largest group-A teardown (2.4 s): check files go once at fixture end after the host is disposed.
+**01-07.** The only product-side edit of the track; mutation N/A (no access-modifier mutator, body untouched). Slice 1's push runs the forced-full filter.
+**01-08.** Written after the first conversions so the entry says what was learnt. ARCHITECTURE.md and ADR-270: no change. No release notes.
+**01-09.** Expected to be a no-op: every conversion step already lowers the ceiling, so the likely report is "already exact, N entries". The dictionary as committed is the truth; the workspace quotes the reason counts as 117/5/3/1 in one place and 120/3/3 in another.
+**01-10.** Slice 1 is pushed as ONE unit: `827ab7eb8`, `e795f94c8`, `95a46eca5`, `5c095942a`, `53e6d4686` and every 01-xx commit. Records "IL-guard noise fallback: not triggered" (or triggered, with the reason and the source-scan fallback used).
+**02-01.** Rejected (do not reopen): template per host, in-memory SQLite (FK, WAL, file semantics differ), EF InMemory. Template logic is test code, not mutated; its proof is these tests and the A/B.
+**02-02.** Reuse the factory's delete-retry loop. The switch exists only so the A/B compares both ways in the same code and so the template can ship per group.
+**02-03 branches.** (Pass) at least 30 % fall in set-up mean in a group: continue 02-04, 02-05 for the passing groups. (Fail in both groups) revert the 02-01 and 02-02 commits with `git revert` so no dead switch ships, record the A/B numbers and the failed prediction here, slice 2 ends with NO push, and slice 3's first step depends on 02-03. Seeded variant is considered only if both groups pass.
+**02-04.** Find the migration and health fixtures and every direct caller of `EnsureCreated` or `Migrate` first. Opt-outs need a written reason.
+**03-01.** TaskManager base `Init()` builds `RootFactory`; derived hosts per distinct configuration built in `[OneTimeSetUp]`. Clock-isolation pair named to run in order: one advances the clock, the next asserts `TestToday.FrozenNow`. Reaches `Slice02ConfirmedNowScenarios` through `SkipUnchangedForecastsAcceptanceTest`.
+**03-02.** Partials `Slice02SeeWhatIsRunningTest`, `Slice04StopARefreshTest`, `Slice05AnyBrokenCredentialSaysSoTest`, `Slice06TheWarningsWithoutTheLogTest`, `Slice08HealthThatChecksItselfTest` derive from `RootFactory.WithWebHostBuilder`. Re-sized after 01-02.
+**03-03.** The 53 s proxy is a ceiling (its cheapest test is a real scenario).
+**03-04.** Same `LongRunning` pattern as `CacheTest`; the 60 s guard stays; check with `DOTNET_PROCESSOR_COUNT=4` beside another class. Flake cure, not a saving.
+**03-06.** Captured events are fixture-owned and reset in `[SetUp]`. `UsageDataEventCeilingTests` is not here (it tests a rate limit; 04-06).
+**03-07 / 04-07.** Re-size the next slice on the guard's list and the updated measurement before its first step starts.
+**04-04.** The SQL-command counter is the reason an earlier story left this fixture alone; the new pair adds tests, so the id check is addition-aware.
+**04-05 (mandatory).** The families from "The 34 types the classifier did not see": Blackout forecast bases (8, base `StartApplicationWithDeterministicForecast()`), Viewer embed (`S9_EmbedCookiePolicyTests`, `S13_ViewerEmbedHandshakeTests`, `S14_ViewerEmbedSubjectValidatorTests`, `S15_EmbedSurfaceOptInTests`; `S9b_EmbedCookieConcurrencyTests` goes to 04-06), Named dependency link (4, advances the host clock: carries the clock-isolation proof), Parent placement (3, lazy `TheRunningLighthouse()`), Parent from issue links (1, `Slice03AmbiguityRefusalTest`). Each is converted or stays listed with a written reason; no `NotMovedYet` entry may remain for them. The six integration fixtures `ForwardedHeaders`, `HealthCheck`, `Shutdown`, `JwtBearerAuth`, `McpInboundAuth` and `MetricsEndpoint` (`*IntegrationTest`) are listed as `NotMovedYet` today, not with a reason, so 04-05 owns them too: each is converted, or relabelled with a written reason (for example `ChecksTheTestHostItself` where it configures the host per test). The Task manager partials are 03-02.
+**04-06.** Rate-limit fixtures: `S6_RateLimitingTests`, `UsageDataConsentRateLimitTests`, `UsageDataEventCeilingTests`, `S9b_EmbedCookieConcurrencyTests` (through `ViewerEmbedTestHost`, so it follows 04-05's viewer embed work). Rule: ONE derived host per configuration built in `[OneTimeSetUp]` (never a derived host per test), and rate-limiter partitions are reset only by choosing a configuration whose counters cannot collide across the fixture's tests; otherwise the fixture stays listed with the reason "counters are per host". Proof for DB-3 (the second test must not hit the first test's limit) is the converted fixtures' own tests, plus one named test pair per converted fixture if the fixture has a limit assertion.
+**05-01 to 05-03.** Optional. If the maintainer declines slice 5, the phase and its three steps drop and the total falls by 3. Rule: a file whose measured host-build share is under 25 % of class time stays listed with "body-bound: ...".
+**Lead checks (01-10, 02-05, 03-07, 04-07, 05-03).** `behaviour-preserved.sh <base-ref>`; run-alone-3-times plus first-named and last-named test alone for every converted fixture; recorded root-provider grep prints nothing; `ls` shows no `IntegrationTests_*.db*`; guard filter green under Debug and `-c Release` after a fresh build of each (same offender list); one full standard-filter run at 6 workers green apart from the two known publish-output scans and under the 4.73 GB stop threshold; evidence block; then push and start the CI after-measurement (n = 7, decision rule as fixed in DEVOPS and Gate revision 1 C3).
+
+### Roadmap review (2026-11-02)
+
+Reviewer (Haiku, standard profile): round 1 **needs_revision**, 5 blockers (B1 id check not addition-aware, B2 21 types unowned unless
+optional slice 5 ran, B3 A/B failure path dangling, B4 owed items unverified, B5 descriptions too long). B4 was already done
+(53e6d4686); the rest were revised in one pass. Round 2: one blocker left (04-05 adds tests but used the equal-ids check), fixed by the
+lead together with NOTE N-a (01-08 depends on the slice-1 conversions) and N-e (slice 3 is pushed only after slice 2 is pushed or recorded
+as reverted). NOTE N-b showed that the six `*IntegrationTest` host fixtures are `NotMovedYet`, not reasoned; 04-05 now owns them.
+Carried NOTEs: 01-10 has six criteria; 03-03, 03-06 and 04-01..04-03 are coarse and are split before they start. **Roadmap approved.**

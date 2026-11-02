@@ -1,0 +1,808 @@
+{
+  "roadmap": {
+    "project_id": "story-6460-t2-backend-host-per-fixture",
+    "created_at": "2026-11-02",
+    "total_steps": 32,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Story 6460 (T2): backend tests build one application host per fixture instead of one per test, and a guard keeps it that way. Test infrastructure only: same test ids (additions only where a step names them), no test deleted, skipped, ignored or weakened, no new NonParallelizable, product behaviour unchanged (the single product-side edit is one visibility keyword on Program.ConfigureHealthChecks, step 01-07). Five slices, each shippable alone: (1) guard already live, host-build timing, first move, cluster-substrate leftover; (2) schema template database, kept only if its A/B passes; (3) four biggest untimed families; (4) mid-size bases, the families the guard found that the classifier did not see, and the rate-limit fixtures; (5, optional) long tail. Payoff is measured by the lead after each push (CI step median, summed time of moved classes), never asserted by a test. Savings in the workspace are unmeasured ceilings.",
+    "rigor": "standard for all five slices (crafter sonnet, reviewer haiku), agreed with the maintainer on 2026-11-01 for T1, T2 and FE7; the model is passed explicitly on every dispatch.",
+    "preconditions": [
+      "P-prereq (done, no step): the gate-round-2 owed items are committed as 53e6d4686. The scaffold 827ab7eb8 is the first local commit of slice 1.",
+      "Push rule: the maintainer chose one push per slice, so slice 1's forced-full CI run (Program.cs edit, 268 extra live-connector tests, Linear key shared with CI) is accepted; the lead announces it. Slice 1 is pushed as ONE unit: 827ab7eb8, e795f94c8, 95a46eca5, 5c095942a, 53e6d4686 and every 01-xx commit. The scaffold is never pushed alone. Crafters push nothing.",
+      "P-D1 (lead): the host-build timing run needs a quiet machine (LIGHTHOUSE_FIXTURE_TIMING=1, LIGHTHOUSE_TEST_WORKERS=6, standard filter). Its result re-sizes slices 3, 4 and 5, which is why those phases are coarse.",
+      "P-after (lead, after each push): wait for 7 successful main runs containing the slice (slice-1 run excluded), download test-timings-backend, compute per-class medians with measurement/scripts/cistats.py, compare with the saved baseline. Win rule fixed in advance: step median down 60 s, or moved classes down 50 percent of the slice ceiling (slice 1: 33 s, 2: 75 s, 3: 90 s, 4: 75 s, 5: 25 s); otherwise a failed prediction reported with the numbers.",
+      "P-memory (lead): a full run above 4.73 GB (4.3 GB reference at 6 workers, commit b573b1924, +10 percent) stops the track.",
+      "P-end (lead, after the last slice that ships): 3 consecutive green full standard-filter runs at 6 workers plus one at 4 workers. Green = only the two known publish-output scans fail. BackendTestParallelizationGuardTest stays green and unchanged. Standard filter: TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration.",
+      "P-hold (maintainer): a full backend run on Windows after slice 1 and after slice 2 if the template ships.",
+      "Mutation: not owed (Stryker mutates the product assembly only; the one product edit is an access modifier).",
+      "Id check: steps that add tests (01-03, 02-01, 02-02, 03-01, 04-04, 04-05, 04-06 and lead steps 01-10, 02-05, 03-07, 04-07) use an addition-aware check: ids before are a subset of ids after and the additions are exactly the named new tests. All other steps: ids equal.",
+      "Rationale and implementation detail per step is in feature-delta.md, section 'Wave: DELIVER / [REF] Roadmap notes'. Slices 3 to 5 are re-sized by the lead after step 01-02 and their steps are coarse until then."
+    ],
+    "review_resolutions": [
+      "B1 addition-aware id check added to every step that adds tests. B2 mandatory step 04-05 for the classifier-unseen families. B3 slice 2 A/B-fail branch: revert 02-01 and 02-02, no push, slice 3 depends on 02-03. B4 P-prereq cites 53e6d4686. B5 step descriptions cut to 50 words or fewer; detail moved to feature-delta.md. N1 dependencies fixed. N2 rate-limit fixtures own step 04-06 (one derived host per configuration only). N3 TaskManager split per base. N6 rigor cited. N7 IL-guard fallback recorded in 01-10. N8 01-09 expected no-op. N9 slice 1 push unit listed. 01-07 no longer has a decline fallback."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 1: host-build timing, first move to a host per fixture, cluster-substrate leftover, ledger entry, ratchet",
+      "description": "Crafter steps in the main checkout; 01-02 and 01-10 are the lead's. The guard TestHostPerFixtureGuardTest (126 types on TypesAllowedToBuildAHostPerTest, ceiling MostTypesTheListMayHold) is live: it is the RED of every conversion. Conversion pattern and code rules are in the workspace Roadmap notes. Pushed as one unit.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Report host-build time per fixture (measurement-only commit)",
+          "description": "Add a CreateHost override to TestWebApplicationFactory that reports host-build time to FixtureSetupTimer under a new HostBuild kind, attributed to the running fixture. Active only with LIGHTHOUSE_FIXTURE_TIMING set. No fixture edited, nothing else in the commit.",
+          "criteria": [
+            "With LIGHTHOUSE_FIXTURE_TIMING unset nothing is measured or written; with it set, a fixture that builds its own host in SetUp shows HostBuild rows attributed to its class",
+            "A host build outside any test uses a readable fallback label and never throws",
+            "Test ids equal before and after; allow-list unchanged (126); guard fixtures green; dotnet build zero warnings",
+            "No internal references in comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None new; spot check on Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs with timing on",
+          "scenario_name": "Measurement-only (host-build time is reported for the untimed fixtures)",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FixtureSetupTimer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/FixtureTimingReporter.cs"
+          ],
+          "dependencies": [],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-01."
+        },
+        {
+          "id": "01-02",
+          "name": "Lead: run the timing once on a quiet machine and record the untimed set-up shares",
+          "description": "Lead-owned, no code. Run the standard filter at 6 workers with timing on at the 01-01 commit; save the CSV and summary; record host-build shares of the untimed fixtures, memory and disk baselines, and re-size slices 3 to 5. No conversion commit before this run.",
+          "criteria": [
+            "Timing CSV and run summary saved under measurement/ with commit hash and worker count",
+            "Host-build share recorded for the previously untimed fixtures before any conversion exists in the tree",
+            "Slices 3, 4 and 5 re-sized on measured numbers, with files marked body-bound by the 25 percent rule",
+            "Main's peak memory and the disk high-water mark recorded; the run is green apart from the two known scans"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "Measurement before any change (set-up share per harness)",
+          "files_to_modify": [
+            "docs/feature/story-6460-t2-backend-host-per-fixture/measurement/ (timing CSV, summary)",
+            "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "S (one run plus analysis)",
+          "implementation_notes": "See Roadmap notes 01-02."
+        },
+        {
+          "id": "01-03",
+          "name": "The test factory owns one clock that a converted fixture can reset",
+          "description": "Refactor TestWebApplicationFactory to own one FakeTimeProvider, register that same instance and expose it, so a converted fixture can reset it to TestToday.FrozenNow in SetUp. Add one factory test for advance and reset. No fixture converted.",
+          "criteria": [
+            "The factory registers exactly one FakeTimeProvider and exposes it; none is created inline",
+            "A new factory test shows advancing the clock moves the host's TimeProvider and resetting to TestToday.FrozenNow restores it",
+            "Addition-aware id check: ids before are a subset of ids after and the only addition is that factory test",
+            "Existing clock-using classes green with counts recorded; no Ignore, Explicit or NonParallelizable added; no Assert. line removed",
+            "Allow-list unchanged; dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactoryTest.cs (one new test)",
+          "scenario_name": "One new factory test (RED until the factory exposes the shared clock) plus preservation of existing tests",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactoryTest.cs"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-03."
+        },
+        {
+          "id": "01-04",
+          "name": "ConnectionDefaultsAcceptanceTest base and Slice05b on one host per fixture",
+          "description": "Convert the ConnectionDefaultsAcceptanceTest base and Slice05b (32 tests, 15.5 s set-up) to build the host once in OneTimeSetUp, resetting database, clock, licence and counters in SetUp. Remove the entries first (RED), convert (GREEN), lower the ceiling in the same commit.",
+          "criteria": [
+            "Host built once per fixture and disposed before database files are deleted; no IntegrationTests_*.db* left behind",
+            "Per-test inputs reset in SetUp through base-owned objects; no root-provider resolution of the DbContext (recorded grep prints nothing)",
+            "Ids equal before and after; converted classes pass alone 3 times in a row; first and last test of Slice05b pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; entries removed and ceiling lowered by the same number in this commit; guard green both directions",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs and Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs",
+          "scenario_name": "Same ids, run alone 3 times, no weakening, entries leave the list in the same commit",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/ConnectionDefaultsAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05bReferencedFieldsAndOlderPayloadsScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "01-02",
+            "01-03"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 01-04 and the conversion pattern."
+        },
+        {
+          "id": "01-05",
+          "name": "The other seven ConnectionDefaults classes on one host per fixture",
+          "description": "Convert Slice05a, Slice06, Slice08, Slice09, Slice10, Slice11 and Slice12 to the converted base, or keep a class listed with a written reason. Remove entries first, convert, lower the ceiling in the same commit.",
+          "criteria": [
+            "Each class runs on a host built once per fixture or stays listed with a written reason",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test of each pass alone; counts recorded",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered by exactly the entries removed; guard green both directions",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the seven files under Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/",
+          "scenario_name": "Same checks as 01-04 for the remaining classes of the family",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice05aTeamsParentOverrideDefaultScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice06DefaultChangeUpdatesTheFollowersScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice08PortfoliosParentOverrideDefaultScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice09PortfoliosDependencyFieldDefaultScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice10PortfoliosSizeEstimateFieldDefaultScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice11PortfoliosFeatureOwnerFieldDefaultScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/Slice12EstimationDefaultScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 01-05."
+        },
+        {
+          "id": "01-06",
+          "name": "ConnectionFieldChange classes on one host per fixture",
+          "description": "Convert ConnectionFieldChangeAcceptanceTest and its six classes (field change, saves that start nothing, who uses connections; scenarios and specifications) to one host per fixture. Remove entries first, convert, lower the ceiling in the same commit.",
+          "criteria": [
+            "Base and each class run on a host built once per fixture or stay listed with a written reason",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test pass alone; counts recorded",
+            "Disposal order host first, then files; no IntegrationTests_*.db* left after the fixtures finish",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered by exactly the entries removed; guard green both directions",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the files under Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/",
+          "scenario_name": "Same checks as 01-04 for the ConnectionFieldChange family",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/ConnectionFieldChangeAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01FieldChangeUpdatesItsOwnersSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01SavesThatStartNothingScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice01SavesThatStartNothingSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice02ConnectionsSayWhoUsesThemScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConnectionFieldChange/Slice02ConnectionsSayWhoUsesThemSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 01-06."
+        },
+        {
+          "id": "01-07",
+          "name": "ClusterSubstrateProbeRegistrationTest builds only the registration it inspects",
+          "description": "Widen Program.ConfigureHealthChecks from private to internal static (body unchanged). The test builds an empty web application builder with ConnectionStrings:Redis set, calls it and reads the registrations. Same assertions; the test starts no host, so its entry leaves the list.",
+          "criteria": [
+            "Program.cs diff is the one keyword on ConfigureHealthChecks",
+            "The test still asserts: check registered, startup tag present, ready tag absent; it starts no application host",
+            "Test id unchanged; entry removed and ceiling lowered by one in the same commit; guard green both directions",
+            "Health-check tests green with counts recorded; no Ignore, Explicit or NonParallelizable added; no Assert. line removed",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Health/ClusterSubstrateProbeRegistrationTest.cs",
+          "scenario_name": "Cluster-substrate registration still asserted; test no longer boots the app (guard is the RED)",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Health/ClusterSubstrateProbeRegistrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (one entry and the ceiling)"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-07."
+        },
+        {
+          "id": "01-08",
+          "name": "Ledger entry says what the guard now automates",
+          "description": "Edit docs/ci-learnings.md, backend Tests, host lifecycles: name the ratcheting guard, the allow-list rule and what to do instead; state what stays manual (state leaking across a shared host, root-provider resolution). Plain words, no feature ids.",
+          "criteria": [
+            "The entry no longer says the host-per-test half is not automated and names the guard and the allow-list rule",
+            "It states what stays manual and how to check it",
+            "No story, decision, ADR, slice or scenario id in the text; no code file changes"
+          ],
+          "test_file": "None (documentation)",
+          "scenario_name": "Ledger kept true in the same change",
+          "files_to_modify": [
+            "docs/ci-learnings.md"
+          ],
+          "dependencies": [
+            "01-04",
+            "01-05",
+            "01-06",
+            "01-07"
+          ],
+          "estimated_size": "S (under half a day)",
+          "implementation_notes": "See Roadmap notes 01-08."
+        },
+        {
+          "id": "01-09",
+          "name": "Check the allow-list ceiling equals the list size (expected no-op)",
+          "description": "Count the entries left on TypesAllowedToBuildAHostPerTest after 01-04 to 01-07 and compare with MostTypesTheListMayHold. Expected to be a no-op, since each conversion already lowered the ceiling; commit only if they differ.",
+          "criteria": [
+            "Ceiling equals the number of entries, or the step reports 'already exact' with the count and makes no commit",
+            "Every remaining entry has a reason; none for a converted type",
+            "Guard green both directions; BackendTestParallelizationGuardTest green and unchanged"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs",
+          "scenario_name": "The list only shrinks",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (ceiling only, only if needed)"
+          ],
+          "dependencies": [
+            "01-04",
+            "01-05",
+            "01-06",
+            "01-07"
+          ],
+          "estimated_size": "XS (minutes)",
+          "implementation_notes": "See Roadmap notes 01-09."
+        },
+        {
+          "id": "01-10",
+          "name": "Lead: slice 1 pre-push checks and memory trace",
+          "description": "Lead-owned. Run the lead checks from the Roadmap notes, plus a per-test memory trace across one converted fixture. Push slice 1 as one unit with the announced forced-full CI run, then start the CI after-measurement.",
+          "criteria": [
+            "behaviour-preserved.sh output recorded; addition-aware id check: ids before are a subset of ids after and the only addition is the 01-03 factory test",
+            "Every converted fixture passes alone 3 times in a row; first and last tests pass alone; counts recorded",
+            "Guard green both directions under Debug and under -c Release with the same offender list; BackendTestParallelizationGuardTest unchanged and green",
+            "Per-test memory trace of one converted fixture shows the host released at fixture end; full run green apart from the two known scans and below 4.73 GB",
+            "IL-guard noise fallback recorded: 'not triggered', or triggered with the reason",
+            "Pushed as one unit: 827ab7eb8, e795f94c8, 95a46eca5, 5c095942a, 53e6d4686 and every 01-xx commit; CI after-measurement started"
+          ],
+          "test_file": "None (lead-run gates)",
+          "scenario_name": "Behaviour preserved per converted fixture; memory stop threshold",
+          "files_to_modify": [
+            "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)",
+            "docs/feature/story-6460-t2-backend-host-per-fixture/measurement/ (outputs)"
+          ],
+          "dependencies": [
+            "01-08",
+            "01-09"
+          ],
+          "estimated_size": "M (about 0.5 day of lead time)",
+          "implementation_notes": "See Roadmap notes 01-10 and Lead checks."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 2: schema template database, kept only if the A/B passes",
+      "description": "A process-wide SQLite schema template, copied per fresh database, behind a per-base-class switch. If the A/B (02-03) fails in both groups the template is reverted and slice 2 ends with no push; otherwise it ships for the groups that passed. Detail in the Roadmap notes.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Build the schema template once, safely across threads and processes",
+          "description": "Add a Lazy static template builder inside TestWebApplicationFactory: build under a temporary name, run EnsureCreated, checkpoint the WAL, close, then move atomically to the final name. Nothing uses it yet. Add concurrency tests.",
+          "criteria": [
+            "Built once per process under concurrent callers; final file name exists only when complete; no -wal or -shm left",
+            "A test starting the build from two tasks and one subprocess finds identical complete schemas",
+            "Addition-aware id check: ids before are a subset of ids after and the additions are exactly the new template tests",
+            "No default behaviour changes; allow-list unchanged; no Ignore, Explicit or NonParallelizable added; no sleeps; dotnet build zero warnings",
+            "No internal references or nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactoryTest.cs (new tests)",
+          "scenario_name": "Two builders at once give complete identical copies (new tests are the RED)",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactoryTest.cs"
+          ],
+          "dependencies": [
+            "01-10"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 02-01."
+        },
+        {
+          "id": "02-02",
+          "name": "Copy the template on first use, behind a per-base-class switch (off by default)",
+          "description": "In the per-scope options callback, copy the finished template when a scope first sees a database path that does not exist yet. Bounded retry on IOException, then fail naming the path. Switch off by default; add tests.",
+          "criteria": [
+            "Switch off: nothing changes. Switch on: the first scope on a new path gets a complete copy; a scope created before UseFreshDatabase() keeps the old file, one created after sees the new",
+            "A failed copy is retried a bounded number of times, then fails with a message naming the path; no two uses share a destination",
+            "Addition-aware id check: ids before are a subset of ids after and the additions are exactly the new copy tests",
+            "Recorded root-provider grep prints nothing; no Ignore, Explicit or NonParallelizable added; dotnet build zero warnings",
+            "No internal references or nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactoryTest.cs (two-scope, unique-copy, retry tests)",
+          "scenario_name": "A scope after UseFreshDatabase() sees the new file; copy is unique and retried (new tests are the RED)",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactoryTest.cs"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 02-02."
+        },
+        {
+          "id": "02-03",
+          "name": "Lead: one-fixture A/B per group; decide ship or revert",
+          "description": "Lead-owned. Per group, one group-B and one group-C fixture, median of at least 5 runs per arm at 6 workers. Pass at 30 percent or more fall in set-up mean. Pass: continue 02-04. Fail in both groups: revert 02-01 and 02-02, record, no push.",
+          "criteria": [
+            "At least 5 runs per fixture per arm with raw values and medians recorded in feature-delta.md",
+            "Verdict per group stated against the 30 percent threshold, and which groups the template ships for",
+            "If both groups fail: the 02-01 and 02-02 commits are reverted so no dead switch ships, the failed prediction is recorded, 02-04 and 02-05 are cancelled, slice 2 is not pushed",
+            "If any group passes: 02-04 and 02-05 proceed for the passing groups; seeded variant decision stated"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "Pre-registered A/B gate",
+          "files_to_modify": [
+            "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)",
+            "docs/feature/story-6460-t2-backend-host-per-fixture/measurement/ (timing files)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "estimated_size": "M (about 0.5 day of lead time)",
+          "implementation_notes": "See Roadmap notes 02-03 branches."
+        },
+        {
+          "id": "02-04",
+          "name": "Make the template the default for the groups that passed",
+          "description": "Switch the template on for the base classes of every group that passed; remove the switch if both passed. Check migration and health fixtures and callers of EnsureCreated; fix in the test or opt out with a written reason. Skipped if the A/B failed in both groups.",
+          "criteria": [
+            "Template on for exactly the passing groups and none that failed; a plain comment says so",
+            "Fixtures that expect an empty database at first use are green with counts recorded, or opt out with a written reason",
+            "Ids equal before and after; no Ignore, Explicit or NonParallelizable added; no Assert. line removed; guard green; dotnet build zero warnings",
+            "No internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactoryTest.cs; migration and health fixtures",
+          "scenario_name": "A test expecting a database without tables at first use still passes",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/TestWebApplicationFactory.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/IntegrationTestBase.cs",
+            "the harness bases of the passing group"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_size": "S to M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 02-04."
+        },
+        {
+          "id": "02-05",
+          "name": "Lead: slice 2 pre-push checks and push (only if the template ships)",
+          "description": "Lead-owned. Run the lead checks, sample 5 database-per-test fixtures alone 3 times, push slice 2 (test project only, no forced-full CI) and start the CI after-measurement. Not run if 02-03 reverted the template.",
+          "criteria": [
+            "Addition-aware id check: ids before are a subset of ids after and the additions are exactly the 02-01 and 02-02 tests",
+            "Full run green apart from the two known scans and below 4.73 GB; guard green under Debug and -c Release",
+            "Slice 2 pushed as one unit; CI after-measurement started; Windows run left as a maintainer hold item"
+          ],
+          "test_file": "None (lead-run gates)",
+          "scenario_name": "Per-slice local checks",
+          "files_to_modify": [
+            "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "estimated_size": "S (about 0.5 day of lead time)",
+          "implementation_notes": "See Roadmap notes Lead checks."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 3: the four biggest untimed families (coarse; re-sized after step 01-02)",
+      "description": "COARSE: files, order and days are the design-time ranking and are superseded by step 01-02. Every step runs after the 02-03 decision. Same conversion mechanics and checks as slice 1. The held-pass thread change stays a separate commit from the host move.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "TaskManager base and its clock-reading classes on one host per fixture",
+          "description": "Convert TaskManagerAcceptanceTest (builds RootFactory in SetUp today) and the classes that reach Slice02ConfirmedNowScenarios, resetting the factory clock in SetUp. Add a clock-isolation test pair. Derived hosts per configuration built once.",
+          "criteria": [
+            "Converted types leave the list or stay with a written reason; ceiling lowered in the same commit",
+            "A test pair shows a clock Advance in one test is not visible in the next",
+            "Addition-aware id check: ids before are a subset of ids after and the additions are exactly that pair",
+            "Each converted class passes alone 3 times in a row; first and last test pass alone; no Ignore, Explicit or NonParallelizable added; no Assert. line removed",
+            "Guard green; dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/",
+          "scenario_name": "Same checks as slice 1 plus clock isolation",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/ (the base and the clock-reading classes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_size": "M to L (about 2 days; re-sized)",
+          "implementation_notes": "See Roadmap notes 03-01."
+        },
+        {
+          "id": "03-02",
+          "name": "Remaining TaskManager classes and partials on one host per fixture",
+          "description": "Convert the other TaskManager classes and the five partials that derive hosts from RootFactory, on the converted base. Remove entries first, convert, lower the ceiling in the same commit.",
+          "criteria": [
+            "Each class runs on a host built once per fixture or stays listed with a written reason",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered by exactly the entries removed; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/",
+          "scenario_name": "Same checks as slice 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TaskManager/ (remaining classes and partials)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_size": "M (about 1.5 days; re-sized)",
+          "implementation_notes": "See Roadmap notes 03-02."
+        },
+        {
+          "id": "03-03",
+          "name": "ReconstructOverTimeHistory family on one host per fixture",
+          "description": "Convert ReconstructOverTimeHistoryAcceptanceTest and its seven classes (54 tests) to one host per fixture. The held-pass thread change is not in this commit.",
+          "criteria": [
+            "Family runs on a host built once per fixture or stays listed with a written reason",
+            "Ids equal before and after; passes alone 3 times in a row; first and last test pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered in the same commit; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/",
+          "scenario_name": "Same checks as slice 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ (the base and its classes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_size": "M (about 1 day; re-sized)",
+          "implementation_notes": "See Roadmap notes 03-03."
+        },
+        {
+          "id": "03-04",
+          "name": "Run the held pass on its own thread",
+          "description": "In ReconstructOverTimeHistoryAcceptanceTest replace Task.Run for the held pass and replica pair with Task.Factory.StartNew LongRunning plus Unwrap, as CacheTest does. The 60 s guard stays. Separate commit from 03-03.",
+          "criteria": [
+            "Held pass and replica pair run on dedicated long-running threads; the 60 s guard unchanged",
+            "Class passes alone 3 times in a row and with DOTNET_PROCESSOR_COUNT=4 beside another class; counts recorded",
+            "Ids equal; no Assert. line removed; no Ignore, Explicit or NonParallelizable added; dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs",
+          "scenario_name": "Held pass on its own thread; 60 s guard stays",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/ReconstructOverTimeHistoryAcceptanceTest.cs"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 03-04."
+        },
+        {
+          "id": "03-05",
+          "name": "FasterUpdates family on one host per fixture",
+          "description": "Convert FasterUpdatesAcceptanceTest and its seven classes (94 tests) to one host per fixture. Remove entries first, convert, lower the ceiling in the same commit.",
+          "criteria": [
+            "Family runs on a host built once per fixture or stays listed with a written reason",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered in the same commit; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/",
+          "scenario_name": "Same checks as slice 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FasterUpdates/ (the base and its classes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_size": "M (about 1 day; re-sized)",
+          "implementation_notes": "See Roadmap notes 03-05."
+        },
+        {
+          "id": "03-06",
+          "name": "UsageDataCollectorObservation family on one host per fixture",
+          "description": "Convert UsageDataCollectorObservationTest and its 14 classes (279 tests) to one host per fixture; captured events are fixture-owned and reset in SetUp. UsageDataEventCeilingTests is not included (see 04-06).",
+          "criteria": [
+            "Family runs on a host built once per fixture or stays listed with a written reason; no event leaks from one test into the next",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered in the same commit; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); Lighthouse.Backend/Lighthouse.Backend.Tests/UsageData/",
+          "scenario_name": "Same checks as slice 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/UsageData/ (the observation base and its classes)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_size": "M (about 1.5 days; re-sized)",
+          "implementation_notes": "See Roadmap notes 03-06."
+        },
+        {
+          "id": "03-07",
+          "name": "Lead: slice 3 pre-push checks and re-size slice 4",
+          "description": "Lead-owned. Run the lead checks, the DOTNET_PROCESSOR_COUNT=4 held-pass check and a per-test memory sample; push slice 3 (plus slice 2 if it shipped), start the CI after-measurement, and re-size slice 4.",
+          "criteria": [
+            "Addition-aware id check: ids before are a subset of ids after and the only addition is the 03-01 clock pair",
+            "Full run green apart from the two known scans and below 4.73 GB; guard green under Debug and -c Release",
+            "Slice 3 pushed; CI after-measurement started; slice 4 re-sized on measured numbers",
+            "Slice 3 is pushed only after slice 2 is pushed or recorded as reverted"
+          ],
+          "test_file": "None (lead-run gates)",
+          "scenario_name": "Per-slice local checks",
+          "files_to_modify": [
+            "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)",
+            "docs/feature/story-6460-t2-backend-host-per-fixture/deliver/roadmap.json (phase 04 re-sized, by the lead)"
+          ],
+          "dependencies": [
+            "03-01",
+            "03-02",
+            "03-03",
+            "03-04",
+            "03-05",
+            "03-06"
+          ],
+          "estimated_size": "S (about 0.5 day of lead time)",
+          "implementation_notes": "See Roadmap notes 03-07 / 04-07."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 4: mid-size bases, the families the classifier did not see, and the rate-limit fixtures (coarse; re-sized after 03-07)",
+      "description": "COARSE: re-sized by the lead after 01-02 and 03-07. Same conversion mechanics and checks as slice 1. 04-05 and 04-06 are mandatory: no NotMovedYet entry may remain for their types.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "FastWithManyFeatures, ForecastRealityCheck and DeliverySources on one host per fixture",
+          "description": "Convert the three acceptance bases and their classes (5, 3 and 5 classes) to one host per fixture. One commit per base if a diff is not reviewable.",
+          "criteria": [
+            "Each base runs on a host built once per fixture or stays listed with a written reason",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered in the same commit; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the three base folders under Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/",
+          "scenario_name": "Same checks as slice 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliverySources/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "03-07"
+          ],
+          "estimated_size": "L (about 2 days; re-sized)",
+          "implementation_notes": "Coarse; find folders with ctx_search."
+        },
+        {
+          "id": "04-02",
+          "name": "BlockedItems (two bases) and BehaviourSettings on one host per fixture",
+          "description": "Convert BlockedItemsAcceptanceTest (6 classes), PortfolioBlockedHistoryAcceptanceTest (5) and BehaviourSettingsAcceptanceTest (4) to one host per fixture.",
+          "criteria": [
+            "Each base runs on a host built once per fixture or stays listed with a written reason",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered in the same commit; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the BlockedItems and BehaviourSettings folders",
+          "scenario_name": "Same checks as slice 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BlockedItems/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/BehaviourSettings/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "03-07"
+          ],
+          "estimated_size": "M (about 1.5 days; re-sized)",
+          "implementation_notes": "Coarse; independent of 04-01."
+        },
+        {
+          "id": "04-03",
+          "name": "ManualSorting, PercentilesOverTime bases and Dependencies on one host per fixture",
+          "description": "Convert ManualSorting, the PercentilesOverTime bases not done in 03-03, and Dependencies to one host per fixture.",
+          "criteria": [
+            "Each base runs on a host built once per fixture or stays listed with a written reason",
+            "Ids equal before and after; each class passes alone 3 times in a row; first and last test pass alone",
+            "No Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered in the same commit; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the three folders",
+          "scenario_name": "Same checks as slice 1",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Dependencies/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "03-07"
+          ],
+          "estimated_size": "M (about 1.5 days; re-sized)",
+          "implementation_notes": "Coarse; independent of 04-01 and 04-02."
+        },
+        {
+          "id": "04-04",
+          "name": "TeamFeatureSize with a fixture-owned SQL-command counter",
+          "description": "Convert TeamFeatureSizeAcceptanceTest and its classes to one host per fixture; the SQL-command counter becomes a fixture-owned object registered once and reset in SetUp. Add a pair proving a count does not leak into the next test.",
+          "criteria": [
+            "Counter owned by the fixture, reset in SetUp; tests asserting on counts see only their own commands",
+            "Addition-aware id check: ids before are a subset of ids after and the additions are exactly the new pair",
+            "Each class passes alone 3 times in a row; first and last test pass alone; no Ignore, Explicit or NonParallelizable added; no Assert. line removed",
+            "Ceiling lowered in the same commit; guard green; dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/",
+          "scenario_name": "Fixture-owned counter reset in SetUp",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/TeamFeatureSize/",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "03-07"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 04-04."
+        },
+        {
+          "id": "04-05",
+          "name": "Mandatory: the families the classifier did not see (blackout forecast, viewer embed, named dependency link, parent placement, parent from issue links)",
+          "description": "Convert each family to one host per fixture, or keep it listed with a written reason; no NotMovedYet may remain for them. Viewer embed excludes S9b (04-06). Named dependency link carries the clock-isolation proof. One commit per family.",
+          "criteria": [
+            "Each of the five families is converted or listed with a written reason; none has a NotMovedYet entry left",
+            "Addition-aware id check: ids before are a subset of ids after; the only addition allowed is the named dependency link family's clock-isolation pair, named",
+            "Each converted class passes alone 3 times in a row; first and last test pass alone; no Ignore, Explicit or NonParallelizable added; no Assert. line removed",
+            "Ceiling lowered in the same commit; guard green; dotnet build zero warnings; no internal references or nWave scenario tags in code",
+            "The six host integration fixtures (ForwardedHeaders, HealthCheck, Shutdown, JwtBearerAuth, McpInboundAuth, MetricsEndpoint) are converted or relabelled with a written reason"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the family folders",
+          "scenario_name": "Same checks as slice 1 for the classifier-unseen families",
+          "files_to_modify": [
+            "the blackout forecast integration bases (8 types)",
+            "the viewer embed tests S9, S13, S14, S15 and ViewerEmbedTestHost",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ConfigureOncePerConnection/NamedDependencyLinkAcceptanceTest.cs and Slice01 to Slice04 named link scenarios",
+            "the parent placement tests (ParentPlacementAcceptanceTest, Slice01 to Slice03)",
+            "Slice03AmbiguityRefusalTest",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "03-07"
+          ],
+          "estimated_size": "L (about 3 days; coarse, re-sized)",
+          "implementation_notes": "See Roadmap notes 04-05; split per family into commits."
+        },
+        {
+          "id": "04-06",
+          "name": "Mandatory: the four rate-limit fixtures, one derived host per configuration",
+          "description": "S6_RateLimitingTests, UsageDataConsentRateLimitTests, UsageDataEventCeilingTests and S9b_EmbedCookieConcurrencyTests: one derived host per configuration built in OneTimeSetUp, never per test, or stay listed with the reason 'counters are per host'.",
+          "criteria": [
+            "Each fixture is converted with one derived host per configuration, or stays listed with the written reason; none uses a derived host per test",
+            "The second test of a converted fixture does not hit the first test's limit",
+            "Addition-aware id check: ids before are a subset of ids after and the additions are exactly any named test pairs",
+            "Each converted class passes alone 3 times in a row; no Ignore, Explicit or NonParallelizable added; no Assert. line removed; ceiling lowered in the same commit; guard green",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the four fixture files (find with ctx_search)",
+          "scenario_name": "A fixture that tests rate limiting gets no counter carried over between its tests",
+          "files_to_modify": [
+            "S6_RateLimitingTests, UsageDataConsentRateLimitTests, UsageDataEventCeilingTests, S9b_EmbedCookieConcurrencyTests (paths found with ctx_search)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "04-05"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 04-06."
+        },
+        {
+          "id": "04-07",
+          "name": "Lead: slice 4 pre-push checks and slice 5 decision",
+          "description": "Lead-owned. Run the lead checks, push slice 4, start the CI after-measurement, and decide with the maintainer whether slice 5 runs, by the 25 percent rule on measured numbers.",
+          "criteria": [
+            "Addition-aware id check: ids before are a subset of ids after and the additions are exactly the 04-04 pair, any 04-05 isolation pair and any 04-06 pairs",
+            "Full run green apart from the two known scans and below 4.73 GB; guard green under Debug and -c Release",
+            "Slice 4 pushed; CI after-measurement started; slice 5 confirmed with a file list or declared not worth running"
+          ],
+          "test_file": "None (lead-run gates)",
+          "scenario_name": "Per-slice local checks",
+          "files_to_modify": [
+            "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)"
+          ],
+          "dependencies": [
+            "04-01",
+            "04-02",
+            "04-03",
+            "04-04",
+            "04-05",
+            "04-06"
+          ],
+          "estimated_size": "S (about 0.5 day of lead time)",
+          "implementation_notes": "If slice 5 is not run, P-end still runs after this step."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 5 (OPTIONAL): the long tail by the 25 percent rule, ending with reasoned entries or an empty list",
+      "description": "OPTIONAL and COARSE: skippable at any file; decided at 04-07. Value is either the tail's CI target (25 s win rule) or a list where every entry carries a written reason. If the maintainer declines, this phase and its three steps drop.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Triage the tail: apply the 25 percent rule and write the reasons",
+          "description": "For each remaining entry decide convert (host-build share 25 percent or more of class time) or keep with a written reason (body-bound, runs on a Postgres server, checks the test host itself, one test only). Examine the 13 never-read types.",
+          "criteria": [
+            "Every entry has a plain-words reason or is queued for 05-02 with its measured share recorded",
+            "Any of the 13 never-read types that does not start a host per test is removed and the ceiling lowered in the same commit",
+            "Guard green both directions; dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (reason text, entries, ceiling only)",
+          "scenario_name": "An entry that stays gets a written reason",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs"
+          ],
+          "dependencies": [
+            "04-07"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 05-01 to 05-03."
+        },
+        {
+          "id": "05-02",
+          "name": "Convert the tail files that pass the rule, in batches",
+          "description": "Convert the files queued by 05-01 in batches of related files, one commit per batch, with the full per-conversion checks. Stop at any file when the saving is not worth the risk; it stays listed with a reason.",
+          "criteria": [
+            "Each batch: host once per fixture, ids equal, passes alone 3 times in a row, first and last test alone, no weakening, ceiling lowered in the same commit",
+            "Files not converted stay listed with a written reason; guard green after every batch",
+            "dotnet build zero warnings; no internal references or nWave scenario tags in code"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (the RED); the tail fixtures",
+          "scenario_name": "Same checks as slice 1, per file",
+          "files_to_modify": [
+            "the tail fixtures queued by 05-01 (named by the lead)",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs (list entries and ceiling only)"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "estimated_size": "L (1 to 3 days; coarse, split by batch once 05-01 names the queue)",
+          "implementation_notes": "See Roadmap notes 05-01 to 05-03."
+        },
+        {
+          "id": "05-03",
+          "name": "Finish the ratchet; lead pre-push checks and push",
+          "description": "If the list is empty, replace it with a plain 'no type starts a host for every test' assertion; otherwise keep only reasoned entries with the ceiling equal to the size. Then the lead checks, pushes and starts the CI after-measurement.",
+          "criteria": [
+            "Final guard shape is the empty-list rule, or every entry has a written reason and the ceiling equals the size",
+            "BackendTestParallelizationGuardTest green and unchanged (no entry added by the whole track)",
+            "Lead checks recorded and green; slice 5 pushed; CI after-measurement started"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs",
+          "scenario_name": "Slice 5 end state and end-of-track checks",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs",
+            "docs/feature/story-6460-t2-backend-host-per-fixture/feature-delta.md (evidence block, by the lead)"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "estimated_size": "S (about 0.5 day plus lead checks)",
+          "implementation_notes": "See Roadmap notes 05-01 to 05-03."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}
