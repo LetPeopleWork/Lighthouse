@@ -971,6 +971,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
             {
                 await Task.Delay(20);
             }
+
+            if (store.HasActiveWork())
+            {
+                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
+            }
         }
 
         private static bool SameNames(List<string> listed, string[] expected)

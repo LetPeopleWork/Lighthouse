@@ -98,6 +98,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// can be put back at its starting instant by shifting what it reports; the host keeps the same
     /// instance, so nothing has to be re-registered. Move it with Advance only: the inherited SetUtcNow
     /// knows nothing of the shift, so after a Reset it would land at the wrong instant.
+    /// Reset shifts the reported time only: timers and GetTimestamp stay on the underlying timeline, so a
+    /// fixture that keeps timers across tests must not rely on Reset for them.
     /// </summary>
     public sealed class ResettableFakeTimeProvider : FakeTimeProvider
     {
@@ -121,7 +123,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         private string databaseFileName = NewDatabaseFileName();
 
-        // The host reads this clock and no other. A fixture that keeps one host for all its tests moves it
+        // The host's registered TimeProvider is this clock. A fixture that keeps one host for all its tests moves it
         // freely and calls Clock.Reset() before each test to put it back at TestToday.FrozenNow.
         public ResettableFakeTimeProvider Clock { get; } = new(TestToday.FrozenNow);
 
@@ -140,8 +142,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             return $"IntegrationTests_{Path.GetRandomFileName().Replace(".", "")}.db";
         }
 
-        // Hosts are built lazily, often inside a test's SetUp, so the time lands under the running
-        // fixture rather than under any setup phase the fixture measures itself.
+        // Hosts are built lazily, in a test's SetUp or in a fixture's OneTimeSetUp, so the time is
+        // credited to the running fixture rather than to any setup phase the fixture measures itself.
         protected override IHost CreateHost(IHostBuilder builder)
         {
             using var _ = FixtureSetupTimer.Measure(RunningFixtureName(), FixtureSetupTimer.MeasurementKind.HostBuild);

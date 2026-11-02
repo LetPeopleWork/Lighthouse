@@ -230,6 +230,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             SaveAnswerBody = string.Empty;
 
             whatWasLogged.Clear();
+            licence.Reset();
             licence.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
             rootFactory.Clock.Reset();
             rootFactory.UseFreshDatabase();
@@ -1304,6 +1305,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             while (store.HasActiveWork() && DateTime.UtcNow < deadline)
             {
                 await Task.Delay(20);
+            }
+
+            if (store.HasActiveWork())
+            {
+                Assert.Fail("The update queue did not go idle in time; a stalled update would leak into the next test on this host.");
             }
         }
 
