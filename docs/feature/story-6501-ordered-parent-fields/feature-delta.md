@@ -189,7 +189,7 @@ stored Feature **yields nothing**, so the next entry is read (maintainer decisio
 | A1 | "First wins" means: the first entry that **yields a parent**; later entries are not read for that record. A field with a value yields it (even if it names a non-Feature, as today); a link entry yields only a Feature Lighthouse holds; the own Parent yields when the tracker reports one | n/a, decided |
 | A2 | "Is caused by" is typed as a Jira link phrase in an Additional Field, exactly as `docs/portfolios/edit.md:293` documents; no new kind of entry for links | If a link needs its own entry kind, DESIGN adds one; the Story's shape holds |
 | A3 | Teams and Portfolios get the list together (shared base, shared UI component) | Split Team from Portfolio in slice 01 |
-| A4 | Migration writes today's behaviour explicitly: override X -> `[X, own Parent]`; no override -> `[own Parent]`; the migration itself must not queue a refetch (the resolved result is identical) | If another default is wanted, change only the mapping |
+| A4 | Migration writes today's behaviour explicitly: override X -> `[X, own Parent]`; no override -> `[own Parent]`; the upgrade queues one re-read of every Jira owner and every Azure DevOps override owner, and the items AC-1.6 names move once (UPGRADE-1 (A), DD-4) | If another default is wanted, change only the mapping |
 | A5 | Five entries is generous for "odd configs" and keeps fetch cost bounded | Raise or remove; one number in DESIGN |
 | A6 | Linear, CSV and ServiceNow keep ignoring the setting, as documented | A later Story, or hide the control under 6473/6474 |
 | A7 | Azure DevOps entries are fields plus the native parent link when listed; relation types as parent sources stay unsupported | A separate Story |
@@ -286,7 +286,7 @@ Backbone (config-admin): **notice items are in the wrong place or nowhere** -> *
 ### Priority Rationale
 
 - **01 first**: the maintainer's customer case (Jira), releasable alone, carries the model, the migration and the UI.
-  Existing installs keep their result through the explicit migration.
+  Existing installs keep their result through the explicit migration, except the items AC-1.6 names.
 - **02 and 03 depend on slice 01** (its model, migration, API and list control) and **can only be released after it**.
   Neither is needed for 01 to be valuable, so dropping either is safe.
 - **02 after 01**: same rule on the other connector that reads the setting; adds only the ADO read.
@@ -303,9 +303,10 @@ Backbone (config-admin): **notice items are in the wrong place or nowhere** -> *
 
 ## Wave: DISCUSS / [REF] User Stories
 
-System constraints (all stories): one parent per record; installs that do not touch the list keep **the same
-`ParentReferenceId` per Work Item** before and after the upgrade; the migration is expand-only and writes today's
-behaviour explicitly; the migration queues no refetch; the tracker's own parent is read only when it is in the list;
+System constraints (all stories): one parent per record; installs keep **the same `ParentReferenceId` per Work Item**
+before and after the upgrade, except the items named in AC-1.6 (UPGRADE-1 (A)); the migration is expand-only and writes
+today's behaviour explicitly; the upgrade queues one re-read of every Jira owner and every Azure DevOps override owner;
+the tracker's own parent is read only when it is in the list;
 no new request on the fetch path for installs with one source.
 
 ### US-01 — A Jira Team or Portfolio reads its parent from the first source that yields one (slice 01, ADO #6501)
@@ -340,7 +341,8 @@ missing children.
    Program Ref PAY-12. The link entry yields nothing after the Story 6301 narrowing, so the next entry gives PAY-12.
 5. **Portfolio.** Feature PAY-7 has no Program Ref and a Caused-by link to PRG-2 -> parent row PRG-2, same rule.
 6. **Existing install.** Hans Weber's Team has Parent Override Field = Caused by. After the upgrade the list reads
-   "Is caused by", then "Parent (Jira's own)"; every Work Item has the parent it had. A Team with no override reads
+   "Is caused by", then "Parent (Jira's own)"; every Work Item whose override yielded a parent has the parent it had, and an
+   item with no Caused-by link and a Jira Parent now hangs under that Parent. A Team with no override reads
    `[Parent (Jira's own)]` and changes nothing.
 
 #### Acceptance Criteria
@@ -355,7 +357,11 @@ missing children.
 - AC-1.5 Within a link entry, several candidates are narrowed and placed exactly as Story 6301 does; when no candidate
   is a Feature Lighthouse holds, the next entry is read. A field with a value wins even when it names a non-Feature.
 - AC-1.6 A Team or Portfolio the upgrade migrated shows exactly one visible list (`[X, Parent (Jira's own)]` for override
-  X, `[Parent (Jira's own)]` for none) and every Work Item keeps the parent it had; the upgrade queues no refetch.
+  X, `[Parent (Jira's own)]` for none) and every Work Item whose override yields a parent, or whose owner had no override,
+  keeps the parent it had. The upgrade re-reads every Jira owner and every Azure DevOps override owner once, and these
+  items move: an item whose override is empty or names nothing usable now hangs under Jira's own Parent (on Data Center,
+  the instance's parent field; on Azure DevOps, its native parent), and an item whose only link candidate is no stored
+  Feature falls through to the next entry.
 - AC-1.7 Saving a different list (an entry added, removed or moved) refetches the owner's items on the next refresh.
 - AC-1.8 An entry matching nothing on this tracker is reported in Refresh History per entry and does not stop the next
   entries being read.
@@ -398,14 +404,16 @@ Scenario: Without Jira's own Parent in the list a native-only Work Item has no F
   Then the settings say that Work Items whose only parent is Jira's own get no Feature
   And after the Team refreshes PAY-160 has no Feature and nothing is guessed
 
-Scenario: An existing install keeps every parent after the upgrade
+Scenario: An existing install keeps the parents it had and moves only the items named
   Given Hans Weber's Team named "Caused by" as its only Parent Override Field
   And another Team had no Parent Override Field
+  And one item of Hans Weber's Team has no Caused-by link and has a Jira Parent
   When both Teams refresh after the upgrade
-  Then every Work Item has the parent it had before
+  Then every Work Item whose override yielded a parent, and every Work Item of the other Team, has the parent it had before
+  And the item with no Caused-by link and a Jira Parent now shows under that Parent
   And Hans Weber's list reads "Is caused by" then "Parent (Jira's own)"
   And the other Team's list reads "Parent (Jira's own)"
-  And the upgrade queued no refetch
+  And the upgrade queued one re-read of each Jira owner
 
 Scenario: A source that matches nothing is named and the next one is still read
   Given Maria listed an Additional Field whose reference matches no field or link type on the Jira site
@@ -451,8 +459,8 @@ scenario 2 (the move refetches) and by the fingerprint test in DISTILL; 1.8 scen
 - **Does what**: have Work Items resolve to the Feature the tracker names for them, instead of a fallback or nothing.
 - **By how much**: hypothesis until measured: on the first adopting instance, Work Items that name a Feature in a
   listed place but sit elsewhere drop to 0%. Baseline from the reporter (Q7, to be measured); illustrative 29 of 120
-  Payments Core items. Guardrail: **the same `ParentReferenceId` per Work Item for installs that do not touch the list**
-  (AC-1.6).
+  Payments Core items. Guardrail: **the same `ParentReferenceId` per Work Item for installs that do not touch the list,
+  except the items AC-1.6 names**.
 - **Measured by**: the reporter's Team before and after (count of items under the Feature they name), and the acceptance
   suite for the guardrail.
 - **Baseline**: to be measured on the reporter's Team (Q7); illustrative 29 of 120 under the wrong parent.
@@ -481,13 +489,15 @@ Decision enabled: Tomas stops copying parents into one field with a pipeline.
    Parent (Azure DevOps' own)]` -> 9050.
 4. A relation type listed as a source reads nothing and Refresh History says so, as today (A7).
 5. Existing install: a Team with override `Custom.EpicLink` reads `[Custom.EpicLink, Parent (Azure DevOps' own)]` after
-   the upgrade, with the same results.
+   the upgrade; items whose override yields a parent keep it, and an item of that Team with no override value and a native
+   parent now hangs under the native parent (one re-read).
 
 #### Acceptance Criteria
 
 - AC-2.1 The ordered list works on an Azure DevOps connection with fields and "Parent (Azure DevOps' own)".
 - AC-2.2 The first entry that yields a value wins; the native parent is read only when listed; a Team with an unchanged
-  single override or none has the same parents after the upgrade (migration, as AC-1.6).
+  single override or none has the same parents after the upgrade, except the items AC-1.6 names (migration, one re-read
+  of the override Teams).
 - AC-2.3 A relation type listed as a source is reported in Refresh History, per entry, and skipped.
 - AC-2.4 A Team whose list names only fields shows the same dependencies as before the upgrade, and a Team that lists
   the native parent shows its items under their native parents; neither makes more requests than before for an install
@@ -516,10 +526,12 @@ Scenario: A relation type in the list is named, not guessed
   Then Refresh History says that entry reads nothing as a parent
   And the other entries still give parents
 
-Scenario: An existing install keeps every parent after the upgrade
+Scenario: An existing install keeps the parents it had and moves only the items named
   Given a Team named "Custom.EpicLink" as its only Parent Override Field before the upgrade
+  And item 4713 has no "Custom.EpicLink" value and the native parent 9050
   When it refreshes after the upgrade
-  Then every item has the parent it had before
+  Then every item whose "Custom.EpicLink" gave a parent has the parent it had before
+  And item 4713 now shows under 9050
   And its list reads "Custom.EpicLink" then "Parent (Azure DevOps' own)"
 
 Scenario: A Team that reads only fields keeps its dependencies
@@ -751,7 +763,7 @@ One row per finding of the first DISCUSS review, and where it is addressed in th
 | M1 | Missing UAT scenarios for AC-1.9, AC-1.10, AC-2.5 and AC-3.5 | The scenarios under US-01 (AC-1.9, AC-1.10), US-02 (AC-2.5) and US-03 (AC-3.5) |
 | M2 | Slice dependency versus independence | "Story Map & Slices" and each slice file's "Release order": slice 01 first and standalone, slices 02 and 03 depend on it and are droppable |
 | M3 | DoR count and size inconsistency | "Definition of Ready (8 items, KPIs as an extra check)" and "Scope Assessment"; slice sizes (2-3 days, 1, 1) match the Story total of 4-5 days |
-| M4 | KPI measurability and the byte-identical guardrail | The "Outcome KPIs" under each story; the guardrail is now a stated test (golden fingerprints, migration test) and, for one case, depends on the HELD legacy decision (DD-4) |
+| M4 | KPI measurability and the byte-identical guardrail | The "Outcome KPIs" under each story; the guardrail is now a stated test (golden fingerprints, migration test) and its one exception is the set of items AC-1.6 names (UPGRADE-1 (A), DD-4) |
 | M5 | 6028/6203 evidence | "Prior-Wave Reading Confirmation": the feature folders are absent, so the evidence is the shipped code and `docs/portfolios/edit.md` |
 | m1 | Cross-Epic D-ids | "Standalone Story: relationship to Epics 6455, 6473 and 6474": decisions cited by title, not by id |
 | m2 | Q-range references | "Resolved and still open": the numbering is the maintainer table's own |
@@ -892,7 +904,7 @@ behaviour with no override).
 | Serialiser | `JsonSerializer.Serialize(value, (JsonSerializerOptions?)null)`, i.e. default options, exactly as those two converters call it: PascalCase member names in declaration order, no indentation, `null` written, **enums as integers** |
 | The other precedent | `RefinementSettings` uses `JsonSerializerDefaults.General` (camelCase). Not chosen: the data step would have to hand-write camelCase, and the two list-valued settings that move with the owner (and that Epic 6474 copies) use null options |
 | Column type | text, **not `jsonb`**: SQLite `TEXT`, PostgreSQL `text`. `jsonb` would normalise key order and spacing and break byte equality with the serialiser |
-| Element | `ParentSourceEntry`: `Kind` (enum `ParentSourceKind`: `TrackerParent` = 0, `AdditionalField` = 1, append-only like `SettingSource`) then `AdditionalFieldDefinitionId` (int, null for `TrackerParent`). Under UPGRADE-1 (B) a per-owner legacy-mode flag is stored beside the list (DD-4), never as a member of the entry |
+| Element | `ParentSourceEntry`: `Kind` (enum `ParentSourceKind`: `TrackerParent` = 0, `AdditionalField` = 1, append-only like `SettingSource`) then `AdditionalFieldDefinitionId` (int, null for `TrackerParent`) |
 | Examples | `[{"Kind":1,"AdditionalFieldDefinitionId":12},{"Kind":0,"AdditionalFieldDefinitionId":null}]` and `[{"Kind":0,"AdditionalFieldDefinitionId":null}]` |
 | Converter (M-1) | A `ValueConverter<ParentSources?, string?>` on a **nullable** property. **NULL stays NULL**: it means "no own value" (a follower) and is never turned into an empty list, unlike the two precedents, whose converters map a blank value to `new List<...>()` (`LighthouseAppContext.cs:630-633`, `:654-657`) because for them "empty" is a legal value. Here an empty list is *not* a legal value (1..5 entries) and an empty list read for a follower would silently turn "follow the default" into "own, nothing". Write: `value.Entries` serialised with null options. Read: `null` stays `null`; blank text is read as `null`; any other text deserialises to `List<ParentSourceEntry>` and goes through the validating factory (`ParentSources.Of`), and a text the factory refuses **throws rather than being repaired**, because a silently repaired list changes where parents come from. Writes of such text are only possible through the migration's data step (proved by the round trip) or a hand edit. A test reads a row with NULL and asserts `null`, and a row with a bad text and asserts the loud failure |
 | Comparer (M-1) | `ValueComparer<ParentSources?>`: both null are equal, null versus a value is unequal, otherwise equal when the serialised texts are equal (as the precedents compare). Hash: `0` for null, else the text's hash. Snapshot: the value itself, because `ParentSources` is immutable (the precedents deserialise a copy only because their lists are mutable) |
@@ -910,7 +922,7 @@ provider projects, the same SQL text in both, the way the precedent migrations d
 `Lighthouse.Migrations.Postgres`: `migrationBuilder.Sql` with a raw string literal, quoted identifiers). The integer is
 cast explicitly, because `||` between text and an integer is not portable.
 
-Data step (the list text is the same in both branches of UPGRADE-1), per owner table (`"Teams"` shown; `"Portfolios"` is the same with the table name changed):
+Data step, per owner table (`"Teams"` shown; `"Portfolios"` is the same with the table name changed):
 
 ```sql
 UPDATE "Teams" SET "ParentSources" =
@@ -929,9 +941,7 @@ UPDATE "WorkTrackingSystemConnections" SET "ParentSourcesForTeams" =
 WHERE "ParentOverrideForTeams" IS NOT NULL;
 ```
 
-and the same for `ParentSourcesForPortfolios` from `ParentOverrideForPortfolios`. Followers get NULL. Under UPGRADE-1 (B)
-the same statements also set the legacy-mode flag (one more nullable boolean column per owner table and per connection
-default, true on the rows the first statement touches, false elsewhere); the list text is identical. `CAST(x
+and the same for `ParentSourcesForPortfolios` from `ParentOverrideForPortfolios`. Followers get NULL. `CAST(x
 AS TEXT)` renders the integer with digits only on both providers, and the serialiser writes an int the same way; the
 round-trip test (DD-9) proves it on both providers rather than relying on that sentence.
 
@@ -949,7 +959,7 @@ parent (B is lost); `[TrackerParent, A]` reads A first (the order is lost); `[A,
 decision not to use the own parent is lost). Edits made on the older build are not carried forward: rolling forward
 again restores each list as it was when the rollback happened. The rollback test (DD-9) pins both halves.
 
-**Down step.** `Down` drops the new columns (four; under UPGRADE-1 (B) also the legacy-mode flags) and nothing else; because the legacy columns were written through,
+**Down step.** `Down` drops the new columns (four) and nothing else; because the legacy columns were written through,
 they already hold what the older schema needs, so no data step is run on the way down. The migration test runs `Down`
 and asserts the legacy values still equal the projection. A later release drops the legacy columns (contract), not this
 one.
@@ -1002,11 +1012,10 @@ fetch, where `TheFieldTheInstanceHangsParentsOn` is called now, `:327` and `:133
 contains a `TrackerParent` entry (own list while `Own`, else the connection default, else `[TrackerParent]`). It stays the
 one question every consumer asks (what to fetch, which field name to look up, whether relations are read on ADO).
 
-**Consequence for Data Center (UPGRADE-1, DD-4).** Today an owner that names an override X has the Data Center parent
+**Consequence for Data Center (UPGRADE-1 (A), DD-4).** Today an owner that names an override X has the Data Center parent
 field *not* read (`:1964-1967` returns empty), so only `ParentKey` stands behind X. The migrated `[X, TrackerParent]` reads
 the field after `ParentKey`, as AFK-8 defines it, so an item with an empty X, an empty `ParentKey` and a set Epic Link /
-Parent Link gains a parent after the upgrade. UPGRADE-1 (A) accepts that; (B) keeps the old reading for the legacy-mode
-owner (no field read while an override is named).
+Parent Link gains a parent after the upgrade. The maintainer accepted that (UPGRADE-1 (A)).
 
 **What the record keeps after the connector pass (the fall-through needs it).** Today the Jira connector writes the link
 key straight into `ParentReferenceId` (`JiraWorkTrackingConnector.cs:1879`, `:1928`, `:1932`, `HangUnder`), and the record
@@ -1049,15 +1058,14 @@ stated once:
   `TrackersOwn` yields when the tracker reported a parent. `LinkCandidates` yields when `ParentResolution.Place`
   places a candidate. For a Team **every** candidate must be a stored Feature, the oldest link wins (Story 6301; with two
   or more Feature candidates the winner is the oldest link, then the earliest-created Feature, then the lowest key, as
-  `ParentResolution.cs:57-74` ranks them). **Whether a single candidate is subject to that test is UPGRADE-1's decision
-  (DD-4): `Place` judges a single candidate like several, for every list; the one exception is a legacy-mode owner under
-  UPGRADE-1 (B), whose single candidate is taken as it is.** A link entry with no stored Feature behind it yields nothing and
+  `ParentResolution.cs:57-74` ranks them). **`Place` judges a single candidate like several, for every list
+  (UPGRADE-1 (A), DD-4).** A link entry with no stored Feature behind it yields nothing and
   the walk continues. `CannotBeRead`
   and `NoValue` yield nothing. For a Portfolio the narrowing is `DoNotNarrow` (its parents are stored only once read),
   so any candidate yields and fall-through on links is a Team matter. DISTILL pins both.
 - **Provisional call** `ChooseProvisionally(readings, narrowing)`, used by the connector (which has no Feature
   knowledge): the same walk, but it **stops at the first link reading that needs a Feature test** (Team: one or more
-  candidates, except for a legacy-mode owner under UPGRADE-1 (B) with exactly one; Portfolio: two or more) and returns
+  candidates; Portfolio: two or more) and returns
   `NeedsStoredFeatures`. Its `Key` is only so that a caller with no second pass still gets a value: the single
   candidate's key (face value) or empty when several. The connector **returns this choice to the one helper, `HangUnder`,
   and assigns nothing itself** (H-4, below).
@@ -1095,8 +1103,6 @@ needs all four to change:
   with whatever the full call chose, so a provisional key that failed the Feature test is retracted. A test: a download
   of single links gives zero counts and no warning lines. `IsAmbiguous` and `IsResolved` stay on `ParentResolution` for
   this report.
-- **Legacy mode (UPGRADE-1 (B) only).** `Place` changes identically under both branches. The legacy-mode branch sits in the
-  selector, before `Place` is called (DD-4); an owner that is not in legacy mode always goes to `Place`.
 
 **Retraction: how the full call overwrites and clears (H-2).** Today `HangUnder` writes `ParentReferenceId` only when the key
 is non-empty (`ParentSourceSelector.cs:70-78`) and only the one override field's shown value, so a face-value key that fails
@@ -1118,7 +1124,7 @@ else. So "the connector writes that key" in the earlier text means "the connecto
 today: `CouldNotTellWhatItNames`, `AzureDevOpsWorkTrackingConnector.cs:1399-1401`), `TrackersOwn` (the native Hierarchy-Reverse
 parent, read from the relations only when the list holds `TrackerParent`) and `CannotBeRead` (a relation-type entry, plus
 the finding) only, so an ADO record never needs stored Features and the second pass never runs for it. Relations-skip
-rule and the migration question (UPGRADE-1): see the reader table.
+rule and the migration (UPGRADE-1 (A)): see the reader table.
 
 #### DD-4 Refetch trigger, and the upgrade (UPGRADE-1)
 
@@ -1130,61 +1136,44 @@ string always starts with `F` or `P`, so it can never equal a legacy digit strin
 
 **Legacy shapes.** `[TrackerParent]` renders as `-` (no override, so no link entry is possible and its meaning cannot have
 moved), named in the code by that reason. Both render the **effective** list, so a follower of a default renders what the
-default renders. `[X, TrackerParent]` renders as the old single id `X` **only** for a legacy-mode owner or default under
-UPGRADE-1 (B); under (A) it renders in the new form (`F:<X>,P`), which is what queues the one-time re-read of every
-override owner, Jira and ADO alike. Any other shape renders in the new form (golden test, DD-9).
+default renders. Every other shape, `[X, TrackerParent]` included, renders in the new form (`F:<X>,P`), which is what
+queues the one-time re-read of every override owner, Jira and ADO alike (golden test, DD-9).
 
-#### UPGRADE-1: what the upgrade does to parents that are read today (ONE maintainer decision)
+#### UPGRADE-1: what the upgrade does to parents that are read today (DECIDED: (A), 2026-11-02)
 
-What the review established. No static migration reproduces today's parent results exactly, because whether the
-tracker's own parent is today's fallback is decided at read time: on Azure DevOps it depends on the grain and on the
-dependency setup (`AzureDevOpsWorkTrackingConnector.cs:71-83`, `:139`, `:1398-1403`; `DependencySourceSelector.cs:32-33`),
-and on Jira Data Center an override owner does not read the instance's parent field today while a `TrackerParent` entry
-does. Writing `[X]` instead of `[X, TrackerParent]` does not preserve them either: it drops the `ParentKey` fallback on
-Jira (Cloud and Data Center), and it renders a new fingerprint (a re-read), so "ADO byte-identical" is false for `[X]`.
-A single link candidate that is no stored Feature is held today and falls through under the new rule. The AFK-1, HELD-A
-and HELD-B rows are superseded by this one decision (the AFK table is left as written). Until it is decided, no sentence
-in this design, the ADR draft or the slices treats (A) or (B) as the default.
+No static migration reproduces today's parent results exactly, because whether the tracker's own parent is today's
+fallback is decided at read time: on Azure DevOps it depends on the grain and on the dependency setup
+(`AzureDevOpsWorkTrackingConnector.cs:71-83`, `:139`, `:1398-1403`; `DependencySourceSelector.cs:32-33`), and on Jira Data
+Center an override owner does not read the instance's parent field today while a `TrackerParent` entry does. Writing `[X]`
+instead of `[X, TrackerParent]` does not preserve them either: it drops the `ParentKey` fallback on Jira (Cloud and Data
+Center), and it renders a new fingerprint (a re-read). The maintainer decided **(A) Accept the change**; it closes AFK-1,
+HELD-A and HELD-B.
 
-- **(A) Accept the change.** The data step migrates every override owner to `[X, TrackerParent]` and every other owner to
-  `[TrackerParent]`, and the new fall-through rule applies everywhere, with a one-time re-read (Jira-wide through
+- **(A) Accept the change (decided).** The data step migrates every override owner to `[X, TrackerParent]` and every other
+  owner to `[TrackerParent]`, and the new fall-through rule applies everywhere, with a one-time re-read (Jira-wide through
   `JiraReadingVersion`, `FetchFingerprint.ForConnection`, `FetchFingerprint.cs:113-116`, `:129`, because whether `X` is a
-  link type is known only when reading; ADO override owners as needed, through the new fingerprint form above). Golden
-  constants at `JiraReadingVersionFingerprintTest.cs:34-36` are regenerated.
-  - Results that change: on upgrade, some items whose override names nothing (or names only a non-Feature) newly hang
-    under their own Parent, or on Data Center under the instance's parent field, and may start counting towards a
-    Feature; Feature sizes and forecasts move once. A **release note is required**.
-  - Refetch cost: one re-read of every Jira owner, plus every ADO override owner, on its next refresh; ADO owners with
-    an override also read relations on every refresh from then on (more requests) because `TrackerParent` is listed.
-  - Design complexity: **removed**. No legacy-mode flag (called `AtFaceValue` in the DEVOPS section) and no per-option
-    branch in the selector, either connector or the fingerprint; one rule for every list.
-  - Slice 01 done-when: parents identical for owners whose override yields a parent or that have none; the cases above
-    re-read once and move; the DISCUSS identical-results criterion (AC-1.6) and "the migration queues no refetch" are
-    amended.
-- **(B) Preserve until edited.** A stored **legacy-mode flag per owner** (and per connection default list; a nullable
-  boolean beside the list, set by the data step on every override owner and default, cleared when the owner saves the
-  list once; a PUT whose list equals the stored one keeps the flag) reproduces today's read-time behaviour exactly until
-  then. For a legacy-mode owner the flag must reproduce:
-  - the override, else the tracker's own parent only where today's code would fall back: Jira, `ParentKey` after an empty
-    override; Azure DevOps, the native parent only when today's grain and dependency setup read the relations
-    (`:71-83`, `:139`, `:1398-1403`, `DependencySourceSelector.cs:32-33`), otherwise the field alone decides;
-  - a single link candidate at face value, without the Feature test (several are narrowed as today);
-  - no Data Center parent-field read for an override owner (`JiraWorkTrackingConnector.cs:1964-1967`).
+  link type is known only when reading; ADO override owners through the new fingerprint form above). Golden constants at
+  `JiraReadingVersionFingerprintTest.cs:34-36` are regenerated.
+  - Items that move, once, on the re-read: (1) an item whose override field is empty or names nothing usable and that has
+    Jira's own Parent (`ParentKey`) now hangs under it; (2) on Data Center, the same item hangs under the instance's
+    parent field, which an override owner did not read before; (3) on Azure DevOps, an item of an override owner with no
+    override value now hangs under its native Hierarchy-Reverse parent; (4) an item whose only link candidate is no stored
+    Feature, held today, falls through to the next entry. They may start counting towards a Feature, so Feature sizes and
+    forecasts move once. Items whose override yields a parent, and every item of an owner with no override, keep their
+    parent. A **release note is required** (finalize checklist).
+  - Refetch cost: one re-read of every Jira owner, plus every ADO override owner, on its next refresh (watch for 429
+    back-off, DEVOPS section 3); ADO owners with an override also read relations on every refresh from then on (more
+    requests) because `TrackerParent` is listed.
+  - Design complexity: none added. No legacy-mode flag and no per-option branch in the selector, either connector, the
+    fingerprint or the tests; one rule for every list.
+  - Slice 01 done-when: parents identical for owners whose override yields a parent and for owners with no override; the
+    items named above re-read once and move; the DISCUSS identical-results criterion (AC-1.6) and "the migration queues no
+    refetch" are amended to this.
+- **(B) Preserve until edited: rejected**, because a hidden per-owner legacy flag would have to match a conditional Azure
+  DevOps read path exactly, adding a stored flag, clear-on-save rules, a selector branch and a cleanup migration to spare
+  a one-time move of items whose configured sources already named nothing usable.
 
-  Results that change: none at upgrade; from the owner's first save the new rule applies. Refetch cost: none at upgrade
-  (a legacy-mode `[X, TrackerParent]` renders `X`, fingerprints byte-identical, nothing queued); one re-read for that
-  owner on its first save. Design complexity: **added**: a flag in the stored shape, the clear-on-save and
-  PUT-keeps-flag rules, a read-time branch in the selector, the Jira reader and the ADO reader (the ADO branch depends on
-  a computed condition, so its test matrix is grain x dependency setup), a second behaviour to document, a visible
-  "legacy parent reading" hint so an admin can see why two owners differ, and a later cleanup migration. Slice 01
-  done-when: all parents identical including the cases above; no refetch; the DISCUSS criteria stand as written.
-- **Recommendation: (A)**, because the items that move are those whose configured sources already named nothing usable, and
-  one rule everywhere beats a hidden per-owner mode that must match a conditional Azure DevOps read path exactly. The
-  maintainer decides.
-
-Tests: (A) golden fingerprints (new form, `-`, regenerated Jira constants) and the re-read case; (B) golden fingerprints
-(legacy mode renders `X`), flagged versus cleared round trip, the PUT-keeps-flag case, and the grain x dependency matrix
-on ADO.
+Tests: golden fingerprints (new form, `-`, regenerated Jira constants) and the re-read case.
 
 
 #### DD-5 Validation: domain first, UI mirrors
@@ -1302,7 +1291,7 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
 | Transient readings on the record (two-pass choice) | Chosen | The second pass runs in the same refresh on the same records; nothing to store, nothing to go stale |
 | Persisted readings on the work item | Rejected | A column, a migration and staleness rules for data only the same refresh uses |
 | Write-through projection to the legacy columns | Chosen (one release) | Keeps the build one release back honest for legacy-shaped lists; frozen columns would silently resolve every edited owner differently on rollback |
-| Legacy-mode flag per owner | Held (UPGRADE-1 (B), DD-4) | Reproduces today's read-time behaviour until the owner saves; costs a stored flag and read-time branches in the selector and both connectors |
+| Legacy-mode flag per owner | Rejected (UPGRADE-1 (B), DD-4) | A stored flag, clear-on-save rules and read-time branches in the selector and both connectors, to spare a one-time move of items whose sources already named nothing usable |
 
 #### DD-9 Test strategy (high level; DISTILL turns it into scenarios, untagged)
 
@@ -1324,11 +1313,11 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
   likewise). A rollback test reads only the legacy column through a minimal stand-in for the previous build's rule
   (value, else the tracker's own parent) and asserts it equals the new rule for both legacy shapes, and equals the
   documented limited result for every other shape.
-- **Fingerprint**: order and entry sensitivity; golden values (a) UPGRADE-1 (B): a legacy-mode owner with its own `[X, TrackerParent]` renders `X`; under (A) the same list renders in the new form,
-  (b) UPGRADE-1 (B): a follower of a legacy-mode default renders `X` (the effective list, not the owner's own NULL),
+- **Fingerprint**: order and entry sensitivity; golden values (a) `[X, TrackerParent]` renders in the new form (`F:<X>,P`, which queues the one-time re-read),
+  (b) a follower of a default renders what the default renders (the effective list, not the owner's own NULL),
   (c) `[TrackerParent]` renders `-`, (d) a property test over every list of up to five entries from fields 1..3 plus
   the own Parent: no new-form string matches the legacy pattern (a digit string or `-`), because a new-form string always
-  starts with `F` or `P`; and two different lists never render alike except the deliberate legacy collapses (`[TrackerParent]` as `-`; under UPGRADE-1 (B) also a legacy-mode `[X, TrackerParent]` as `X`).
+  starts with `F` or `P`; and two different lists never render alike except the deliberate legacy collapse (`[TrackerParent]` as `-`).
   `FetchShapingPropertyGuardTest` updated with the reason.
 - **Record readings and the second pass**: a download of mixed records (field winner before a link entry, link entry
   with a single non-Feature then a field, link entry with several candidates, no link candidates, Portfolio single
@@ -1339,7 +1328,7 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
   choice; a winner moving between two link entries clears the first one's shown value; applying twice is a no-op) (H-2);
   readings surviving the `WorkItem` and `Feature` wrap (H-3); a Data Center record with an empty `ParentKey` and a set
   parent field reads the field, a Cloud record does not look for one, and a list without `TrackerParent` never looks
-  (H-5); the NULL-stays-NULL, bad-text and invalid-entry serialiser tests (M-1); a single-link download gives zero counts and no warning lines, while an ambiguous one still counts and warns (H-2); a Portfolio lone candidate logs `OnlyCandidate`, never `OnlyFeatureAmongLinks` (M-3); the Jira clear runs after `PopulateAdditionalFieldValues` so a cleared link-entry value stays cleared; behaviour tests (not a source scan) for a link entry's shown value: it shows the winner's key, and is empty for a losing link entry and when no link entry wins (this covers the writes Jira `:2004` and `WriteBackService.cs:259` make legitimately); a `[JsonConstructor]` round trip with null options through the private entry constructor (M-1); upgrade tests per branch of UPGRADE-1 (DD-4).
+  (H-5); the NULL-stays-NULL, bad-text and invalid-entry serialiser tests (M-1); a single-link download gives zero counts and no warning lines, while an ambiguous one still counts and warns (H-2); a Portfolio lone candidate logs `OnlyCandidate`, never `OnlyFeatureAmongLinks` (M-3); the Jira clear runs after `PopulateAdditionalFieldValues` so a cleared link-entry value stays cleared; behaviour tests (not a source scan) for a link entry's shown value: it shows the winner's key, and is empty for a losing link entry and when no link entry wins (this covers the writes Jira `:2004` and `WriteBackService.cs:259` make legitimately); a `[JsonConstructor]` round trip with null options through the private entry constructor (M-1); upgrade tests for UPGRADE-1 (A) (DD-4): the named items move once, the others keep their parent.
 - **Save and API**: `ConnectionSaveService` guard names the owner for any entry (including a second field of a list)
   and the default; refusals for 6 entries, duplicate, unknown field; echo of an old GET does not overwrite a richer
   list; approved snapshots regenerated.
@@ -1383,7 +1372,7 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
 Maintainability: one ordering rule, one place. Reliability: for an untouched install the same `ParentReferenceId`, by
 golden fingerprint and migration test, with the exceptions UPGRADE-1 names (DD-4). Testability: pure
 selector. Operability: no new tracker request, no new event, one finding per failing entry; one extra database read per
-fetch for an install with a link entry (UPGRADE-1 (B): not for a legacy-mode owner with a single candidate). Earned Trust: no new external dependency; the one
+fetch for an install with a link entry. Earned Trust: no new external dependency; the one
 environmental assumption is that the data step writes the same bytes on SQLite and Postgres, probed by the migration
 round-trip test on both (the only place a provider can "lie"). External integrations: Jira and Azure DevOps already read
 these settings; contract tests recommended for both connectors' recorded payloads (consumer-driven, Pact-style), no new
@@ -1426,7 +1415,7 @@ were. Also: `FetchShapingPropertyGuardTest` records why `ParentSources` replaced
 | M-3 ADO `CouldNotTellWhatItNames` | Reader table (ADO row); DD-3 "ADO" paragraph; UPGRADE-1 |
 | M-4 rule 5 allow-list | "Rule 5's allow-list, and the legacy members that stay or go"; enforcement table row 5 |
 | M-5 readers of `ParentCandidatesFromLinks` | "Every reader of `ParentCandidatesFromLinks`" table |
-| M-6 no default for AFK-1 | UPGRADE-1 (DD-4), DD-3 full-call bullet, slices and ADR refer to it with both branches; no sentence presents (A) or (B) as the default |
+| M-6 no default for AFK-1 | Closed by the maintainer's decision UPGRADE-1 (A) (DD-4); DD-3, the slices and the ADR state (A) |
 | m-A line numbers | Reader table and DD-5 (`ConnectionSaveService.cs:91-124`, `PortfoliosOwningAnyOf` at 100-124) |
 | m-B owners-per-connection | DD-5 "Bound on the owners of one connection" (a measured DELIVER check) |
 | m-C Portfolio with 2+ candidates | DD-3 full-call bullet (`ParentResolution.cs:57-74`: oldest link, then earliest-created Feature, then lowest key) |
@@ -1441,7 +1430,7 @@ were. Also: `FetchShapingPropertyGuardTest` records why `ParentSources` replaced
 | m-2 | Jira citation range | The choice is `JiraWorkTrackingConnector.cs:1907-1936` and the resolution of the named field is `:1944-1952`; both are cited as such in the reader table and DD-3 |
 | m-3 | Internal references in the ADR | The ADR draft cites only ADRs and files that resolve (ADR-193, ADR-241, ADR-242); no archived feature ids or finding ids |
 | m-4 | Migration `Down` step | DD-1 "Down step" and DD-9 (the Down is run in the migration test) |
-| m-5 | Golden fingerprint follower path and digit-string property | DD-9 fingerprint bullet, goldens (b) a follower of a default renders `X` and (d) no new-form string matches a legacy digit string or `-` |
+| m-5 | Golden fingerprint follower path and digit-string property | DD-9 fingerprint bullet, goldens (b) a follower of a default renders what the default renders and (d) no new-form string matches a legacy digit string or `-` |
 | m-6 | List-to-legacy-int projection | DD-9 write-through bullet, the golden projection table |
 
 ### Third review closure (round 3)
@@ -1454,37 +1443,34 @@ were. Also: `FetchShapingPropertyGuardTest` records why `ParentSources` replaced
 | M-2 rule 2 | Enforcement row 2 (reads the parent-source list: Jira and ADO) |
 | M-3 Place decision name | DD-3, `Place` change: `OnlyCandidate` for a Portfolio lone candidate |
 | Minors | `HangUnder` order (component table); entry constructor throws and the converter does not swallow it (DD-1); Linear- and CSV-shaped records (DD-9) |
-| Held questions | One decision, UPGRADE-1 (DD-4), replacing AFK-1, HELD-A and HELD-B in this text |
+| Held questions | Closed: UPGRADE-1 (A) (DD-4), replacing AFK-1, HELD-A and HELD-B |
 
 ### Slice impact
 
 Slice 01: model, JSON storage and migration, selector, the record's readings and the widened placement step, Jira, API
 with write-through, list control, fingerprint, save guard (still the top of the band; the split, if needed, is Team vs
 Portfolio as DISCUSS said). Slice 02: ADO readings and the relations-skip restatement (ADO never needs stored Features,
-so it adds no second pass). Slice 03: connection defaults (registry `FieldsOn` replacing the two legacy-int registry rows, DTO members, the same list control). Slice 01 also owns, per the re-review: `Place` and its test, `HangUnder`, the copy constructor, the Data Center reading, the serialiser pins, and (under UPGRADE-1 (A) only) the regenerated Jira goldens in `JiraReadingVersionFingerprintTest`.
-Slice 01's migration and done-when exist in two forms until UPGRADE-1 is decided (DD-4). Per the third review: rule 5 lands in slice 01 with the two `ConnectionFieldDefaults.cs` rows allow-listed, and slice 03 migrates them and drops the allow-list entry (M-1); slice 02 routes the ADO writes through `HangUnder` (H-1).
+so it adds no second pass). Slice 03: connection defaults (registry `FieldsOn` replacing the two legacy-int registry rows, DTO members, the same list control). Slice 01 also owns, per the re-review: `Place` and its test, `HangUnder`, the copy constructor, the Data Center reading, the serialiser pins, and the regenerated Jira goldens in `JiraReadingVersionFingerprintTest`.
+Slice 01's migration and done-when follow UPGRADE-1 (A) (DD-4). Per the third review: rule 5 lands in slice 01 with the two `ConnectionFieldDefaults.cs` rows allow-listed, and slice 03 migrates them and drops the allow-list entry (M-1); slice 02 routes the ADO writes through `HangUnder` (H-1).
 
 ### Risks added by DESIGN
 
 | # | Risk | Response |
 |---|---|---|
-| D1 | Fall-through changes a result for an existing Jira Team whose single link candidate is not a stored Feature (UPGRADE-1) | Both branches are designed (DD-4); golden pin of whichever the maintainer chooses |
+| D1 | Fall-through changes a result for an existing Jira Team whose single link candidate is not a stored Feature (UPGRADE-1) | Accepted by the maintainer (UPGRADE-1 (A), DD-4); one re-read, release note required, golden pin of the new rule |
 | D2 | Autosave can drop a newer edit while a save is in flight (known open item in `useModifySettings`) | Whole-list value; test two quick reorders; do not widen the debounce |
 | D3 | The data step writes JSON text that the serialiser does not read back identically | Exact text pinned (DD-1), round-trip test through the serialiser on both providers |
 | D4 | Legacy columns tempt a reader (the concrete `Own...` property and the connection ints have readers the compiler does not name) | Reader list in "Constraint and priority data", architecture rule 5 |
 | D5 | Rollback to the previous build resolves some lists differently | Write-through keeps legacy-shaped lists exact; the limit is stated (DD-1) and tested |
 | D6 | A record reaches the second pass without its readings (a connector forgets to set them, or the wrap's copy constructor drops them) | The record's readings default to empty, which never needs stored Features; the connector tests pin that Jira sets them for every record; a wrap test per `WorkItem` and `Feature` pins the copy constructor (DD-3) |
 | D7 | A provisional face-value key is never retracted, or a stale shown key stays on a link entry that lost | `HangUnder` always writes the key (empty clears) and clears the other link entries' shown values; retraction table (DD-3, DD-9) |
-| D8 | The migrated `[X, TrackerParent]` changes results for Azure DevOps or for a Data Center owner with an override | UPGRADE-1 (DD-4); surfaced in the reader table and DD-3; not decided here; the migration and tests exist for each branch |
+| D8 | The migrated `[X, TrackerParent]` changes results for Azure DevOps or for a Data Center owner with an override | Accepted by the maintainer (UPGRADE-1 (A), DD-4); surfaced in the reader table and DD-3; release note required; upgrade tests pin the items that move |
 
 ### Open questions for the maintainer (also in the hand-off message)
 
-- **UPGRADE-1 (HELD; replaces Q1, HELD-A and HELD-B)** One decision for the maintainer: accept the change (A, with a
-  one-time re-read and a release note) or preserve today's behaviour per owner until it is edited (B, a legacy-mode flag).
-  Both branches, their consequences and the recommendation (A) are in DD-4. Either way, the DISCUSS acceptance criterion
-  about identical results for migrated lists (AC-1.6) and the DISCUSS sentences "the migration queues no refetch" (US-01
-  summary, AC-1.6 and its scenario) are true only under (B); they are aligned with the choice at the start of DISTILL and
-  are left as written until then.
+- **UPGRADE-1 (decided: (A), replaces Q1, HELD-A and HELD-B)** The maintainer accepted the change: a one-time re-read and
+  a release note (DD-4). The DISCUSS acceptance criterion AC-1.6, its scenario and the "no refetch" sentences are amended
+  to name the items that move.
 - **Q2 (decided, AFK-2)** A list default names only saved fields; a field added in the same save is picked on the next
   save.
 
@@ -1492,26 +1478,26 @@ Slice 01's migration and done-when exist in two forms until UPGRADE-1 is decided
 
 | Topic | Decision |
 |---|---|
-| Q1 single non-Feature link candidate | **HELD for the maintainer** (AFK, blast radius: existing installs). No default; both options are designed (DD-4). See AFK-1. |
+| Q1 single non-Feature link candidate | **Decided (A), 2026-11-02:** the fall-through applies to migrated lists too; one re-read on upgrade; release note required (DD-4). |
 | Q2 same-save fields in a list default | **(a), AFK decision:** a list default names only saved fields; a field added in the same save is picked on the next save. See AFK-2. |
 
 ## AFK decisions (2026-11-02, orchestrator; the maintainer reviews them on return)
 
 | # | Decision | Why |
 |---|---|---|
-| AFK-1 (DESIGN Q1) | **HELD, not decided; no default.** Option (a): a link entry whose only candidate is not a stored Feature yields nothing and the chain falls through, also for migrated lists. | This changes results for **existing installs on upgrade without anyone touching the setting**: a Team with override = a link phrase whose single candidate is not a Feature today stores that key (so the item sits under no Feature); after the upgrade the item falls through to the own Parent and may start counting towards a Feature, moving Feature sizes and forecasts. That breaks the stated guardrail ("same ParentReferenceId for installs that do not touch the list"). The alternative that keeps the guardrail: the migration writes legacy lists in a "legacy" mode where a last-entry single candidate keeps today's result; or (b) from the DESIGN options. Needs the maintainer. |
+| AFK-1 (DESIGN Q1) | **Decided (A) by the maintainer, 2026-11-02:** a link entry whose only candidate is not a stored Feature yields nothing and the chain falls through, also for migrated lists. | This changes results for existing installs on upgrade without anyone touching the setting: a Team with override = a link phrase whose single candidate is not a Feature today stores that key (so the item sits under no Feature); after the upgrade the item falls through to the own Parent and may start counting towards a Feature, moving Feature sizes and forecasts once. Accepted; release note required. The per-owner legacy-mode alternative was rejected. |
 | AFK-2 (DESIGN Q2) | **(a)**: a list default can name only saved fields. | Bounded; one extra save in a rare flow; no new pending-resolution step. |
 | ~~AFK-3~~ (superseded by the revised AFK-3 below) | ~~**Accepted as decided by DESIGN:** legacy int columns frozen~~ (not kept in sync) for one release; old int members stay on the wire for one release as deprecated projections, with the ADR-241 "only act if it differs" rule. | Expand-only and rollback-safe; Lighthouse-Clients has no usages. |
 | AFK-4 | **No domain event** for a changed list; the fingerprint drives the refetch (ADR-242). | A second path to the same refetch; a deliberate exception to prefer-events, recorded in the ADR draft. |
 | AFK-3 (revised after the DESIGN review, M-2) | ~~Legacy int columns frozen~~ **Legacy int columns are kept in sync for one release (write-through projection):** a list of shape `[X, TrackerParent]` writes X; `[TrackerParent]` writes NULL; any other shape writes its first AdditionalField id (or NULL) and is documented as the **rollback limit** ("a list a pre-upgrade build cannot express resolves as its first field, then the tracker's own parent"). Drop the word "rollback-safe". | A one-release rollback must not silently resolve parents differently for every owner edited after the upgrade; write-through is cheap and keeps the old build honest for every legacy-shaped list. |
 | AFK-8 (DESIGN re-review H-5) | **On Jira Data Center, the `TrackerParent` entry means exactly today's own-parent reading: `issue.ParentKey` first, then the instance's parent field (EpicLink / ParentLink, `TheFieldTheInstanceHangsParentsOn`) when the key is empty.** On Cloud it is `ParentKey`. | Keeps DISCUSS example 6 ("a Team with no override changes nothing") true on every Jira flavour; the DC field is part of "the tracker's own parent" as users know it. |
-| AFK-7 (DESIGN review B-2) | **Until the maintainer decides AFK-1, the DESIGN presents both legacy options with their consequences and makes migration, fingerprint and slice-01 done-when consistent with EACH**: (a) fall-through applies to migrated lists too, so the upgrade must queue a refetch for owners whose list contains a link entry (otherwise stored parents stay stale); (b) migrated lists keep today's result for a last-entry single candidate. Slice 01's done-when and the ADR draft must not present either as final. | The review showed the "no refetch" claim is inconsistent with (a); the maintainer decides, the design must be ready for both. |
+| AFK-7 (DESIGN review B-2) | **Fall-through applies to migrated lists too (UPGRADE-1 (A)), so the upgrade queues a refetch for every Jira owner and every Azure DevOps override owner** (otherwise stored parents stay stale). Migration, fingerprint and the slice 01 done-when are consistent with that. | The review showed the "no refetch" claim was inconsistent with fall-through for migrated lists. |
 
 ## Wave: DEVOPS (Apex, PROPOSE, 2026-11-02)
 
 Scope: delivery and operations of an existing platform; no new infrastructure, no new pipeline, no deployment topology
-change. Nothing committed, ADO untouched, no file outside this folder edited. AFK-1 stays HELD; both options are costed
-below so the maintainer can pick without a further round.
+change. Nothing committed, ADO untouched, no file outside this folder edited. UPGRADE-1 is decided as (A); its
+operational cost is in section 3.
 
 ### 1. Usage-data event (answers DISCUSS Q6)
 
@@ -1568,18 +1554,19 @@ below so the maintainer can pick without a further round.
   and asserts the legacy columns still hold the projection and the new columns are gone. The rollback plan is written
   first in the runbook for the release: restore previous image, no data step to undo, edits made on the older build are
   not carried forward (lists return as they were when rolling forward again).
-- **Option (a) vs (b), operational cost (AFK-1 stays HELD).**
-
-| | (a) fall-through for migrated lists, `JiraReadingVersion` bump | (b) `AtFaceValue` flag, no re-read |
-|---|---|---|
-| Load at upgrade | Every Jira Team and Portfolio is re-read **once**, on its next scheduled refresh, as a full download instead of a delta. Refreshes are already scheduled and spread by the update loop, not fired at once, so the burst is bounded by the existing refresh cadence and worker concurrency; the cost is one full read per Jira owner, the same as after any fetch-fingerprint change (it happened on the original-names bump) | None |
-| Jira rate limits | Jira Cloud's cost-based limits throttle with 429 and `Retry-After`; the existing connector retry/back-off applies. The exposure is a large Jira install (hundreds of Teams on one site and token) whose first refresh round after upgrade is heavier. Mitigation without code: the install can stagger by refresh interval; not blocking. Release note must say "first refresh after upgrading re-reads Jira data once" | None |
-| Visible change | A Team with a link-phrase source and one non-Feature candidate moves from "under no Feature" to its own Parent once | None until the list is edited |
-| Carrying cost | One rule everywhere; the flag never exists | A stored flag, one rule branch, and a later cleanup migration; the fingerprint stays byte-identical, so no queue |
-| DEVOPS lean | Operationally acceptable if the maintainer prefers one rule; announce in the release notes | Operationally the safest for the upgrade night; costs a follow-up cleanup |
-
-  This DEVOPS does not decide it. Either way the ADO, Linear, CSV and ServiceNow owners are byte-identical and queue
-  nothing.
+- **UPGRADE-1 (A): operational cost of the one re-read (`JiraReadingVersion` bump).**
+  - Load at upgrade: every Jira Team and Portfolio, and every Azure DevOps owner with an override, is re-read **once**,
+    on its next scheduled refresh, as a full download instead of a delta. Refreshes are already scheduled and spread by
+    the update loop, not fired at once, so the burst is bounded by the existing refresh cadence and worker concurrency;
+    the cost is one full read per owner, the same as after any fetch-fingerprint change (it happened on the
+    original-names bump). Azure DevOps override owners also read relations on every refresh from then on.
+  - Jira rate limits: Jira Cloud's cost-based limits throttle with 429 and `Retry-After`; the existing connector
+    retry/back-off applies. The exposure is a large Jira install (hundreds of Teams on one site and token) whose first
+    refresh round after upgrade is heavier. Mitigation without code: the install can stagger by refresh interval; not
+    blocking.
+  - Visible change: some existing items newly hang under their own Parent (see UPGRADE-1 in DD-4). The release note
+    says so and says "first refresh after upgrading re-reads your data once".
+  - Linear, CSV and ServiceNow owners ignore the setting and queue nothing.
 
 ### 4. Observability
 
@@ -1596,8 +1583,7 @@ below so the maintainer can pick without a further round.
   entry shows a full download for that owner (existing behaviour of ADR-242). The connection save already logs the
   owners it queued. Add to that existing log call the count of owners moved by the parent-sources list; no new line.
 - **Two checks after release (smoke, not monitoring):** (1) the reporter's Team (Q7): the items that name a Feature in a
-  listed place now sit under it; (2) after upgrade, one Jira owner's first refresh shows a full download once (option
-  a) or a delta (option b).
+  listed place now sit under it; (2) after upgrade, one Jira owner's first refresh shows a full download once.
 
 ### 5. Lighthouse-Clients
 
@@ -1623,12 +1609,12 @@ Run last, on frozen code, with the acceptance suite excluded (it takes 80 minute
 | `docs/portfolios/edit.md` | Yes | "Parent Override Field" becomes Parent sources: the order rule, the optional own Parent, follow or own, the migration |
 | `docs/teams/edit.md` | Yes | Same for Teams (also `docs/teams/detail.md` and `docs/portfolios/detail.md` if they mention the old name; grep at finalize) |
 | `docs/settings/worktrackingsystems.md` | Yes | Connection defaults for the list |
-| `docs/concepts/worktrackingsystems/jira.md` | Yes | Link-phrase entry, fall-through with no stored Feature, the one-time re-read (if option a) |
+| `docs/concepts/worktrackingsystems/jira.md` | Yes | Link-phrase entry, fall-through with no stored Feature, the one-time re-read |
 | `docs/concepts/worktrackingsystems/azuredevops.md` (line ~222) | Yes | Custom field entries, relation-type entry, the relations-read condition |
 | `docs/settings/systeminfo.md` | Yes | The per-entry refresh finding in Refresh History |
 | `docs/settings/usagedata.md` | Yes | The row in section 1, in the slice that emits it |
 | Per-feature screenshots, demo data (a Team with two sources) | Yes | At finalize, per feature, not at `/release` |
-| Release notes | No, because release notes are written at `/release`; the ADO Story carries the `Release Notes` tag (the maintainer decides) | |
+| Release notes | Not written at finalize (they are written at `/release`), but **release note required: some existing items may newly hang under their own Parent on upgrade** (UPGRADE-1 (A), DD-4); also say the first refresh re-reads data once. The ADO Story carries the `Release Notes` tag | Checklist item for finalize and `/release` |
 | ADR promotion, ADR-270 and `ARCHITECTURE.md` section 4, `jobs.yaml` | Yes | As DESIGN listed |
 
 ### AFK decisions (DEVOPS)
@@ -1642,4 +1628,15 @@ Run last, on frozen code, with the acceptance suite excluded (it takes 80 minute
 | AFK-D5 | Observability: one debug line per fetch per owner with position counts, no per-item log, no metric, no alert; the existing connection-save log gains an owners-moved count | Cheap; small |
 | AFK-D6 | Lighthouse-Clients: no consumers, no release step | Verified by grep; small |
 | AFK-D7 | Mutation targets and docs list as in sections 6 and 7 | Process; small |
-| AFK-1 | **Still HELD** (option a vs b). The operational costs are in section 3 | Existing installs change results on upgrade under (a) |
+| AFK-1 | Decided (A) by the maintainer. The (A) refetch cost and the 429 back-off note are in section 3 | Existing installs change results once on upgrade; release note required |
+
+## Maintainer decision on UPGRADE-1 (2026-11-02, evening)
+
+Binding; it closes AFK-1, HELD-A and HELD-B.
+
+**UPGRADE-1 = (A) Accept the change.** The data step migrates every override owner to `[X, TrackerParent]` and every
+other owner to `[TrackerParent]`; the new fall-through rule applies everywhere; one re-read on upgrade (Jira-wide via
+`JiraReadingVersion`; Azure DevOps override owners through the new fingerprint form). Some items whose override named
+nothing usable newly hang under their own Parent (or the Data Center parent field) and may start counting towards a
+Feature, so Feature sizes and forecasts move once; **a release note is required**. Option (B), the per-owner legacy
+flag (`AtFaceValue`), is rejected and removed from the design, the ADR draft, the slices and DEVOPS.

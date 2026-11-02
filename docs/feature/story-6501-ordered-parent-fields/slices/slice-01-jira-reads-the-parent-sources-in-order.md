@@ -12,20 +12,20 @@ an order).
   override X becomes `[X, own Parent]`, no override becomes `[own Parent]`, followers hold none. The legacy integer
   columns are written through for one release; the rollback limit (a list of any other shape resolves as its first field
   and then the own Parent on the previous build) is stated and tested. What the upgrade does to parents that are read today
-  is the maintainer's decision **UPGRADE-1** (see Done when). Architecture rule 5 lands here, with the two
+  is settled by the maintainer's decision **UPGRADE-1 (A), accept the change** (see Done when). Architecture rule 5 lands here, with the two
   `ConnectionFieldDefaults.cs` registry rows allow-listed until slice 03 migrates them.
 - The record keeps the ordered readings for the refresh, so a link entry whose candidates hold no stored Feature lets
   the next entry be read; the placement step runs for every record with a link reading ahead of its winner.
 - Jira resolution: field entries, link-type entries (narrowing per Story 6301; a single candidate is judged by
-  it too (a legacy-mode owner under UPGRADE-1 (B) excepted), and no Feature held means the next entry), the tracker's own Parent
+  it too, and no Feature held means the next entry), the tracker's own Parent
   only when listed: the parent key, and on Data Center the instance's own parent field after it. One helper alone writes
   the stored parent (an empty choice clears it); the placement function judges a single candidate like several; the
   record's copy constructor carries the readings across the wrap. The helper's clear runs after the Jira connector's
   populate step for the Additional Field values, so a cleared value is not written back. The count and warning lines of
   the placement step cover ambiguous links only.
-- UPGRADE-1 (what the upgrade does where today's own-parent fallback is decided at read time: Azure DevOps, Data
-  Center, a single non-Feature link candidate) is settled by the maintainer before this slice's migration step; neither
-  branch is assumed here.
+- UPGRADE-1 (A): where today's own-parent fallback is decided at read time (Azure DevOps, Data Center, a single
+  non-Feature link candidate) the migrated list is `[X, own Parent]` and the new rule applies; one rule, no legacy-mode
+  flag and no per-option branch.
 - Settings list control (see sketch in feature-delta.md) with the "not in the list" consequence copy; save refuses a
   sixth entry and a duplicate.
 - Fetch fingerprint (legacy shapes render as before), connection-save guard (loads the connection's owners and scans
@@ -34,17 +34,17 @@ an order).
 **Out:** connection default (slice 03), Azure DevOps (slice 02), levels, multi-parent.
 
 **Done when:** US-01 UAT passes (seven scenarios); Refresh History names an unmatched entry; the migration, round trip
-and write-through tests are green on SQLite and Postgres; and the migration scenario holds in the form of the maintainer's
-decision **UPGRADE-1** (two branches, neither is the default; full text in the design's DD-4):
+and write-through tests are green on SQLite and Postgres; and the migration scenario holds as the maintainer decided in
+**UPGRADE-1 (A), accept the change** (full text in the design's DD-4):
 
-- **If (A), accept the change:** every override owner is `[X, TrackerParent]`, every other owner `[TrackerParent]`; the
-  fall-through rule applies everywhere; a one-time re-read follows (every Jira owner through the Jira reading version,
-  with `JiraReadingVersionFingerprintTest` goldens regenerated; ADO override owners through the new fingerprint form).
-  Some items whose override names nothing, or only a non-Feature, move under their own Parent; a release note is
-  required; the DISCUSS "identical results" criterion is amended.
-- **If (B), preserve until edited:** a legacy-mode flag per owner reproduces today's read-time behaviour until the owner
-  saves the list once; parents are identical for every owner; nothing is queued at the upgrade; the fingerprint is
-  byte-identical.
+- every override owner is `[X, TrackerParent]`, every other owner `[TrackerParent]`; the fall-through rule applies
+  everywhere; a one-time re-read follows (every Jira owner through the Jira reading version, with
+  `JiraReadingVersionFingerprintTest` goldens regenerated; ADO override owners through the new fingerprint form);
+- parents are identical for owners whose override yields a parent and for owners with no override; the items that move,
+  once, are: an item whose override is empty or names nothing usable and that has Jira's own Parent (on Data Center, the
+  instance's parent field), and an item whose only link candidate is no stored Feature (it falls through to the next
+  entry);
+- a release note is required; the DISCUSS identical-results criterion (AC-1.6) is amended to this.
 
 **Size:** 2-3 days (the same figure as in feature-delta.md; total for the Story 4-5 days). Split Team from Portfolio if
 it overruns.

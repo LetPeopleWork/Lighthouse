@@ -16,9 +16,9 @@ restated for a list without extra requests on installs that use one source.
 - The connector's direct writes of the stored parent (`AzureDevOpsWorkTrackingConnector.cs:148` and `:694`) go through
   the one helper `ParentSourceSelector.HangUnder`, so the scan rule on parent assignments has no ADO exception.
 - Single/none results pinned; request count pinned for the migrated list. What the migration does for an Azure DevOps
-  field override (which today reads relations only for the dependency setup) is the maintainer's decision UPGRADE-1 in
-  the design (DD-4): under (A) override owners are re-read once and read relations from then on; under (B) a legacy-mode
-  owner keeps today's reading. Neither is assumed here.
+  field override (which today reads relations only for the dependency setup) follows UPGRADE-1 (A) in the design (DD-4):
+  override owners are re-read once and read relations from then on (more requests, watch for 429 back-off); an item of
+  such an owner with no override value and a native parent newly hangs under it.
 
 **Out:** relation types as parent sources (a separate Story), connection default.
 

@@ -968,3 +968,8 @@ None. Nothing here has a large blast radius: no infrastructure, no migration, no
 
 Handoff to DISTILL: the placement and category rules (DO-2), the 5xx-body search for E2E (DO-4), the mutation globs and config paths (DO-9), and the sketch walk-through at the start of DISTILL per CLAUDE.md. No nWave scenario tags in code.
 
+## Maintainer decision on the follow-up (2026-11-02, evening)
+
+The follow-up Bug for the unpaced retry loop (Q4, "Pause between failed update retries") is **not created**. The draft
+stays here for reference only; it is not tracked in ADO.
+

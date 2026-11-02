@@ -2,8 +2,8 @@
 
 **Status**: Draft (2026-11-02, Morgan, DESIGN wave, PROPOSE; revised after the DESIGN review). Promoted to
 `docs/product/architecture/` with the next free ADR number in DELIVER. Story 6501. Extends ADR-193 (the selector is the
-one tracker-neutral home of the rule) and ADR-241 (own value plus source); relies on ADR-242 for the refetch. One part is
-**not decided** and is marked UPGRADE-1 below.
+one tracker-neutral home of the rule) and ADR-241 (own value plus source); relies on ADR-242 for the refetch. What the upgrade does to
+parents read today is decided and recorded as UPGRADE-1 below.
 
 ## Context
 
@@ -11,7 +11,7 @@ Parent Override Field holds one Additional Field id per owner and always falls b
 whose parents sit in two or more non-native places, or whose own parent is not a Feature, cannot be expressed. The
 maintainer decided: one to five ordered sources, the first that yields a parent wins, the tracker's own parent is an
 optional entry (not an implicit last fallback), a link entry with no stored Feature behind it yields nothing and the next
-entry is read, a duplicate is refused, and the migration writes today's behaviour explicitly. Epic 6474 will restructure
+entry is read, a duplicate is refused, and the migration writes today's list shapes explicitly. Epic 6474 will restructure
 the owner tables after this ships. The settings DTOs are the public `api/v1` surface.
 
 ## Decision
@@ -44,7 +44,7 @@ the owner tables after this ships. The settings DTOs are the public `api/v1` sur
    value, field value, link candidates, the tracker's own parent, cannot be read) and attach the ordered readings to the
    record as a transient, unpersisted value for the duration of one refresh. `ParentSourceSelector` alone orders them:
    first entry that yields wins; a link entry yields only a Feature Lighthouse holds (Teams narrow; a Portfolio does not),
-   a single candidate included, except for a legacy-mode owner if UPGRADE-1 (B) is chosen; the tracker's own parent only
+   a single candidate included; the tracker's own parent only
    when listed. The selector only **returns** a choice; one helper (`HangUnder`) is the single place that assigns the stored
    parent and the shown link values, and an empty choice clears them. The connector runs a provisional pass without Feature
    knowledge and stops at the first link reading that needs a Feature test; the work item refresh then runs the full pass,
@@ -53,34 +53,33 @@ the owner tables after this ships. The settings DTOs are the public `api/v1` sur
    "not asked"), and the record's copy constructor carries the readings across the wrap that happens between the two passes.
    On Jira the tracker's own parent is the parent key, then, on Data Center, the instance's own parent field.
 6. **Refetch.** The fetch fingerprint renders the ordered effective list in a form that can never equal a legacy
-   rendering; `[TrackerParent]` renders as the old `-`. What the upgrade queues depends on UPGRADE-1 below: under (A)
-   every Jira owner and every Azure DevOps override owner is re-read once (the Jira reading version moves every Jira
-   owner's fingerprint, because SQL cannot tell which owners hold a link entry); under (B) nothing is queued.
+   rendering; `[TrackerParent]` renders as the old `-`. The upgrade queues a one-time re-read of
+   every Jira owner and every Azure DevOps override owner (the Jira reading version moves every Jira owner's fingerprint,
+   because SQL cannot tell which owners hold a link entry); see UPGRADE-1 below.
 7. **API.** Additive `parentSources` and `parentSourcesDefault` on the owner settings; `parentSourcesForTeams/Portfolios`
    on the connection defaults. The old integer members stay on the wire for one release as deprecated projections; an
    old client's echo cannot overwrite a richer list (act only if different, as in ADR-241).
 
-### UPGRADE-1 (not decided): what the upgrade does to parents that are read today
+### UPGRADE-1 (decided: accept the change): what the upgrade does to parents that are read today
 
 No static migration reproduces today's parent results exactly, because whether the tracker's own parent is today's
 fallback is decided at read time: on Azure DevOps by the grain and the dependency setup, on Jira Data Center by a field
 read that an override owner does not make today. Writing `[X]` does not preserve them either: it drops the `ParentKey`
 fallback on Jira, and renders a new fingerprint (a re-read). A single link candidate that is no Feature is held today
-and falls through under the new rule. One decision for the maintainer; neither branch is the default.
+and falls through under the new rule. The maintainer decided to accept the change.
 
-- **(A) Accept the change.** Every override owner becomes `[X, TrackerParent]`, every other owner `[TrackerParent]`, and
+- **Accept the change (decided).** Every override owner becomes `[X, TrackerParent]`, every other owner `[TrackerParent]`, and
   the fall-through rule applies everywhere, with a one-time re-read (every Jira owner through the Jira reading version,
-  Azure DevOps override owners through the new fingerprint form). Some items whose override names nothing, or only a
-  non-Feature, newly hang under their own Parent (on Data Center, the instance's parent field) and may start counting
-  towards a Feature; a release note is required. No flag and no per-option branch.
-- **(B) Preserve until edited.** A legacy-mode flag per owner reproduces today's read-time behaviour until the owner saves
-  the list once: the override, else the tracker's own parent only where today's code would fall back; a single link
-  candidate at face value; no Data Center field read for an override owner. Nothing is queued at the upgrade. Cost: the
-  stored flag, read-time branches in the selector and both connectors (the Azure DevOps one depends on a computed
-  condition), a second behaviour to document and test, and a later cleanup migration.
+  Azure DevOps override owners through the new fingerprint form). Items that move once: an item whose override is empty or
+  names nothing usable and that has the tracker's own Parent (on Data Center, the instance's parent field; on Azure
+  DevOps, its native parent) now hangs under it, and an item whose only link candidate is no stored Feature falls
+  through to the next entry. They may start counting towards a Feature; a release note is required. No flag and no
+  per-option branch.
+- **Preserve until edited (rejected).** A per-owner legacy-mode flag would have to match a conditional Azure DevOps read
+  path exactly and adds a stored flag, clear-on-save rules, selector and connector branches and a cleanup migration, to
+  spare a one-time move of items whose configured sources already named nothing usable.
 
-Recommendation: (A); the items that move are those whose configured sources already named nothing usable, and one rule
-beats a hidden per-owner mode that must match a conditional Azure DevOps read path exactly. Full text: the DESIGN's DD-4.
+Full text: the DESIGN's DD-4.
 
 ## Alternatives considered
 
@@ -110,8 +109,7 @@ Negative, stated honestly: the "field in use" guard loads one connection's owner
 legacy column holds only a list's first field, so it cannot serve as a filter); the data step builds JSON text in SQL on
 two providers (probed by a round-trip test on both); the rollback is exact only for the two legacy shapes; two
 fingerprint renderings coexist for one release; and an install with a link entry reads the stored Features once per
-fetch where it read them only for ambiguous links before (under UPGRADE-1 (B) not for a legacy-mode owner with a single
-candidate). What the upgrade does to already-configured owners is UPGRADE-1 (above).
+fetch where it read them only for ambiguous links before. What the upgrade does to already-configured owners is UPGRADE-1 (above): some existing items move once.
 
 ## Enforcement
 

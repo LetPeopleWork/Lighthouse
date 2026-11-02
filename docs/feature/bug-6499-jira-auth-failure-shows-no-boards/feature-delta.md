@@ -409,14 +409,14 @@ the end of DISTILL).
 
 ## Wave: DISCUSS / [REF] Out of scope
 
-Linear (Q2); a failed refresh's reason in Refresh History or on the Team page (Q6, follow-up below); an
+Linear (Q2); a failed refresh's reason in Refresh History or on the Team page (Q6, not tracked; draft below); an
 architecture rule against `catch { return []; }` (Q8); widening who may open the picker (ADR-126 decision 4);
 guarding the Jira search against an "answered as a stranger" empty result (RCA Direction 2; settled by Q1's
 follow-up evidence, not this Bug); ServiceNow.
 
-## Follow-up Story (Q6, to be created after confirmation)
+## Follow-up Story draft (Q6, not created)
 
-Not created in ADO. Proposed, for the maintainer to approve:
+Not created in ADO, by the maintainer's decision; kept here for reference only:
 
 - **Title**: Show why a refresh failed, where the person looking at the data can see it
 - **Description 1**: A Team or Portfolio whose refresh failed (refused credential, Jira down, a rejected
@@ -452,9 +452,10 @@ Mode: PROPOSE. Scope: application (one bounded context, Tracker integration; no 
 external system, so the C4 L1 and L2 in `docs/product/architecture/brief.md` are unchanged and no new C4 is
 drawn). Paradigm: object-oriented, ports and adapters. ADR drafts in this folder, applied in DELIVER:
 `adr-draft-credential-verdict-per-connector.md` (decisions 1 and 2) and
-`adr-draft-ado-board-list-fails-whole.md` (decision 3; the file name is kept, but it now records the three
-options and the open choice, HELD-1). Nothing outside this folder was edited. Revised after the DESIGN review
-against the AFK decisions at the end of this file (AFK-1 held, AFK-2 reversed, AFK-5, AFK-6).
+`adr-draft-ado-board-list-fails-whole.md` (decision 3: fail the whole list, decided by the maintainer as HELD-1).
+Nothing outside this folder was edited. Revised after the DESIGN review
+against the AFK decisions at the end of this file (AFK-2 reversed, AFK-5 re-confirmed, AFK-6) and the maintainer's
+decisions on the held items.
 
 ### [REF] Existing-system analysis (reuse first)
 
@@ -606,26 +607,29 @@ five that return an empty value: Jira `GetBoards` (line 511) and
 `GetBoardInformation` (line 532), ADO `GetBoards` (line 400), `GetBoardInformation` (line 443) and
 `GetBoardsForProject` (lines 637-640).
 
-### [REF] Decision 3: Azure DevOps, a failing project in a multi-project list (HELD-1: maintainer to decide)
+### [REF] Decision 3: Azure DevOps, a failing project in a multi-project list (decided: fail the whole list)
 
-**Fixed under every option.** D10 stands: the swallow in `GetBoardsForProject` (the `catch (Exception)` that
-returns `[]`, `AzureDevOpsWorkTrackingConnector.cs` lines 637-640) goes; a per-project read returns an outcome
-(its boards, or its failure), never `[]` for a failure, and the aggregate decides. A project with zero boards is a
-genuine empty contribution. **A credential refusal (401, `VssUnauthorizedException`) on any project, or on the
-project list, always fails the whole list with C6**, whichever option is chosen: a refused PAT is never skipped
-and never partial. Each failing project keeps its Error-level log line. The options differ only in what a
-**non-credential** per-project failure (Boards service disabled, 404, a 403 on one project, a timeout) does:
+**Decided by the maintainer (2026-11-02): Option A, fail the whole list** (D10 as written). The swallow in
+`GetBoardsForProject` (the `catch (Exception)` that returns `[]`, `AzureDevOpsWorkTrackingConnector.cs` lines
+637-640) goes; a per-project read returns an outcome (its boards, or its failure), never `[]` for a failure, and the
+aggregate decides. A project with zero boards is a genuine empty contribution. **A credential refusal (401,
+`VssUnauthorizedException`) on any project, or on the project list, fails the whole list with C6.** Any other
+per-project failure (Boards service disabled, 404, a timeout) fails the list with C7 naming the failing project(s)
+(first one plus "and N more"); a 403 on a project gives C10. Each failing project keeps its Error-level log line.
+Holds "a failing project never reads as having no boards" by construction; no wire change, no new UI state.
+Accepted consequence: a picker that works today (a PAT that cannot see one project, a project with Boards disabled)
+becomes unusable for every project; the Team's query can still be typed by hand. Test pins: one of two projects
+failing fails the list naming it; a refused credential on any project gives C6; a 403 on one project gives C10.
 
-| Option | What the picker does | Consequences |
-|---|---|---|
-| **A. Fail the whole list** (D10 as written) | Any per-project failure fails the list: C10 for a 403, otherwise C7 naming the first failing project and "and N more". | Holds "a failing project never reads as having no boards" by construction; no wire change, no new UI state. Regression: a picker that works today (a PAT that cannot see one project, a project with Boards disabled) becomes unusable for every project. The Team's query can still be typed by hand. Test pins: one of two projects failing fails the list naming it; a 403 on one project gives C10. |
-| **AFK-1. Skip non-credential failures while others answer** | The failing project is left out with a Warning log line naming it, as long as at least one project answered; if none answered the list fails with C7 (or C10 when every failure was a 403) naming the failing project(s). | No regression for pickers that work today; no wire or UI change. The list silently lacks the skipped project, which the admin cannot tell from "that project has no boards", so D10 and US-02 example 4 / UAT 5 are only kept for the case where all projects fail. Test pins: one of two failing, the other answers: list holds the other's boards and the Warning names the project; both failing: C7; zero projects. |
-| **B. Partial list plus a notice** ("Contoso's boards could not be read") | The picker shows the boards that answered and a notice naming the projects that did not; if none answered it fails as in A. | Honest and no regression. The list endpoint answers a bare array, so a notice needs a new response envelope (`{boards, notices}`), a `wizardService` change, a new picker state with loading/failure/partial sketches, and a wire break on a UI-only endpoint; DISCUSS would need to cover the new state. Test pins: envelope shape, notice copy, the partial state in `BoardWizard`. |
+Rejected, one line each:
 
-No option is recommended here. The three trade a regression risk (A), a silent omission (AFK-1) and a larger
-change (B). **Maintainer to decide (HELD).** DISTILL leaves the multi-project failing-project scenarios open
-until then; the fixed part above is already designed and testable. Rejected outright: "fail only when every
-project fails, otherwise partial and silent" (it is AFK-1 without the log line and without the credential rule).
+- **AFK-1 (skip non-credential failures while others answer):** the list silently lacks the skipped project, which
+  the admin cannot tell from "that project has no boards", contradicting D10 and US-02 example 4 / UAT 5.
+- **B (partial list plus a notice):** needs a new response envelope (`{boards, notices}`), a `wizardService` change
+  and a new picker state, a wire break on a UI-only endpoint, for a regression the hand-typed query already covers.
+
+Also rejected outright: "fail only when every project fails, otherwise partial and silent" (it is AFK-1 without the
+log line and without the credential rule).
 
 ADO classifiers (revised after the AFK-2 reversal; an ADO 403 is **not** a credential verdict anywhere):
 
@@ -733,11 +737,12 @@ same with "for this board".
   unreadable body (`validation_failed`, kept); field list 401/403 (C1) versus 500 (today's text).
   `JiraFieldLookupTest.cs` line 157 (`browse at least one project` asserted on a 403 field list) **is expected to
   change** with D4; it is rewritten to the C1 sentence, not deleted. ADO: project list unauthorized, a
-  credential refusal on any project (C6 for the whole list, under every Decision 3 option), a 403 on the board
+  credential refusal on any project (C6 for the whole list, Decision 3), a 403 on the board
   list (C10, never C6; Test connection for the same 403 keeps today's text and a health state of `Unreachable`,
   pinned), zero projects, board information failures, **a malformed board id gives a typed failure (C11),
-  never an empty `BoardInformation`**. The multi-project failing-project scenarios follow Decision 3 (HELD-1) and
-  are written only after it is decided. DELIVER confirms the exact SDK exception type an ADO 403 raises (a
+  never an empty `BoardInformation`**. The multi-project failing-project scenarios follow Decision 3 (fail the whole
+  list: one of two projects failing gives C7 naming the failing project, a refused credential on any gives C6) and
+  are written now. DELIVER confirms the exact SDK exception type an ADO 403 raises (a
   `VssServiceException` with a status, or an HTTP exception) with a recorded fake before writing the classifier.
 - **Driving port**: `WizardsController` test that a `JiraReadException` and an `AzureDevOpsReadException` from the
   provider answer `400` with the verdict body, and that `200 []` stays `200`. One end-to-end API test through the
@@ -807,11 +812,11 @@ Jira classifier note; both edits are listed in the two ADR drafts.
 
 ### [REF] HELD for the maintainer
 
-- **HELD-1, ADO multi-project list (Decision 3): maintainer to decide.** Three options, none recommended here;
-  a credential refusal on any project fails the whole list with C6 under all three. DISTILL leaves the
-  multi-project scenario open until this is decided; every other ADO scenario can be written now.
-- Not blocking, flagged (AFK-5): N3 (Jira 401 = 403 on the board list) stands, and diverges from ADR-126's
-  ServiceNow 403 rung (`insufficient_permissions`). The maintainer may re-confirm it with that precedent in view.
+- **HELD-1, ADO multi-project list (Decision 3): decided, fail the whole list (Option A).** A refused credential on
+  any project gives C6, any other project failure gives C7 naming the failing project(s). Every ADO scenario can be
+  written now, the multi-project one included.
+- N3 (Jira 401 = 403 on the board list), AFK-5: re-confirmed by the maintainer. It stands, and diverges from
+  ADR-126's ServiceNow 403 rung (`insufficient_permissions`) as a deliberate, recorded divergence.
 
 Closed since the first draft: ADO 403 on Test connection (AFK-2 reversed: today's mapping stays, no
 change) and the Jira timeout (decided in Decision 2).
@@ -866,14 +871,10 @@ deployment unit. Answers below are explicit; nothing is a silent N/A.
      the board line at `:1118`); **both** get the same split (review F3). Jira gains no Error line.
    - Azure DevOps (review F2): today the ADO board reads log at **Error** (`AzureDevOpsWorkTrackingConnector.cs`
      lines 402, 445, 639). Rule: a line where the read fails and the user sees the failure stays **Error**
-     (unchanged); a line where the failure is survived (a project skipped while others answer) is **Warning**.
-     Per HELD-1 option: **A** (fail whole list): :402, :445, :639 all stay Error, no change. **B** (partial list +
-     notice): the same three stay Error for the failing project, since the notice shows the user the failure.
-     **AFK-1** (skip while others answer): :639 for a skipped project drops to Warning (DESIGN Decision 3 says
-     "keeps its Error-level log line"; that holds for A and B, and for AFK-1 only when no project answers and the
-     list fails), :402 and :445 stay Error. So the ADO level change exists only under AFK-1 and counts as an
-     operator-visible change (a skipped project no longer shows in an Error-level filter); DESIGN Decision 3's
-     sentence is to be read with this. Nothing may log the email, token or a header value.
+     (unchanged); a line where the failure is survived would be Warning, and the decided design has none.
+     Decided (HELD-1 = fail the whole list): :402, :445 and :639 all stay Error, no change, because the user sees
+     every one of these failures in the picker. No ADO log level changes, so there is no operator-visible ADO log
+     change. Nothing may log the email, token or a header value.
    - The old text "Authentication is not valid" appears only at `JiraWorkTrackingConnector.cs:442` and `:1118`
      (repo-wide grep done in this wave, hits elsewhere are this folder's own documents). No alert, dashboard or
      test keys on it, so the "grep before removal" deferral is **closed**: the phrase is replaced with no
@@ -930,6 +931,15 @@ deployment unit. Answers below are explicit; nothing is a silent N/A.
 | DEVOPS-6 | Rollback = revert; no feature flag. | No data or schema change; flag would add a branch for a pure correctness fix. |
 | DEVOPS-7 | Mutation targets as listed in answer 5. | Per-feature strategy in CLAUDE.md. |
 
-HELD for the maintainer (big blast radius only): none new from DEVOPS. Still open from DESIGN: AFK-1 (ADO
-multi-project list: fail all, skip non-credential failures, or partial list with a notice) and re-confirming N3
-(AFK-5); DISTILL sketch walk (AFK-6) gates DELIVER.
+HELD for the maintainer: none left. HELD-1 (ADO multi-project list: fail the whole list) and the N3 re-confirmation
+(AFK-5) are decided in the section below; the DISTILL sketch walk (AFK-6) gates DELIVER.
+
+## Maintainer decisions on the held items (2026-11-02, evening)
+
+Binding; they close every HELD item above.
+
+| # | Decision |
+|---|---|
+| HELD-1 (ADO multi-project list) | **Fail the whole list.** Any project whose board read fails makes the picker show the failure sentence naming the failing project(s) (C7); a refused credential on any project shows C6. This is Option A of DESIGN Decision 3 and DISCUSS D10 as originally written; AFK-1 (skip) and Option B (partial + notice) are rejected. Accepted consequence: a project with Boards disabled, or one the token cannot see, blocks the picker for every project; the Team's query can still be typed by hand. ADO board-read log lines keep Error level. |
+| AFK-5 / N3 re-confirmed | **Keep 401 = 403** on the Jira board list: one credential sentence for both, worded without "revoked or expired". Recorded as a deliberate divergence from ADR-126's ServiceNow 403 rung. |
+| Follow-up Story (Q6, "show why a refresh failed") | **Not created.** The draft stays here for reference only; it is not tracked in ADO. |

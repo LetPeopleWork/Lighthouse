@@ -10,7 +10,7 @@ one Team; then drop this slice, nothing else depends on it.
   unset one as `[own Parent]`, and followers keep their parents.
 - The connection save refuses removing a field a default still names. The connection's legacy integer defaults are
   written through for one release (same projection and rollback limit as the owners); a default migrated from a single
-  default behaves as UPGRADE-1 (design DD-4) settles for owners. The two registry rows in `ConnectionFieldDefaults.cs`
+  default behaves as UPGRADE-1 (A) (design DD-4) settles for owners: one rule, one re-read. The two registry rows in `ConnectionFieldDefaults.cs`
   that read and write the legacy integers are migrated to the list-valued default here, and their allow-list entry in
   the legacy-column scan rule is removed in the same slice.
 - Follower count and refresh queueing as today (ADR-242).
