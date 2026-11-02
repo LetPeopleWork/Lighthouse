@@ -1039,7 +1039,7 @@ namespace Lighthouse.Backend
         private static readonly string[] ReadyAndStartupTags = [ReadyHealthTag, StartupHealthTag];
         private static readonly string[] StartupOnlyTags = [StartupHealthTag];
 
-        private static void ConfigureHealthChecks(WebApplicationBuilder builder)
+        internal static void ConfigureHealthChecks(WebApplicationBuilder builder)
         {
             var healthChecks = builder.Services.AddHealthChecks()
                 .AddCheck<DatabaseConnectivityHealthCheck>("database", tags: ReadyTags)

@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string ChecksTheTestHostItself = "tests how the test host starts and stops, so it has to start hosts itself";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 124;
+        private const int MostTypesTheListMayHold = 123;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -127,7 +127,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = ChecksTheTestHostItself,
             ["Lighthouse.Backend.Tests.Architecture.TestHostsRunWithoutRateLimitingByDefaultTest"] = ChecksTheTestHostItself,
-            ["Lighthouse.Backend.Tests.Health.ClusterSubstrateProbeRegistrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.Integration.Containers.BulkReportOwnerDeletedMidRunOnPostgresTests"] = OnAPostgresServer,
             ["Lighthouse.Backend.Tests.Integration.Containers.CatalogueBodiesOnPostgresTests"] = OnAPostgresServer,

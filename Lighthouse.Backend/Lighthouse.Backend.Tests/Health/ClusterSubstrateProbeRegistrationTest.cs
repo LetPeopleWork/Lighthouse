@@ -1,12 +1,6 @@
-using System.Data.Common;
-using Lighthouse.Backend.Data;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.Tests.Health
@@ -23,15 +17,13 @@ namespace Lighthouse.Backend.Tests.Health
         [Test]
         public void ClusterSubstrate_WhenRedisConfigured_IsStartupOnly_NotReadiness()
         {
-            using var factory = new WebApplicationFactory<Program>()
-                .WithWebHostBuilder(builder =>
-                {
-                    builder.UseEnvironment("Testing");
-                    builder.UseSetting("ConnectionStrings:Redis", "localhost:6399");
-                    builder.ConfigureServices(ReplaceWithSqlite);
-                });
+            var builder = WebApplication.CreateBuilder();
+            builder.Configuration["ConnectionStrings:Redis"] = "localhost:6399";
 
-            var registration = factory.Services
+            Program.ConfigureHealthChecks(builder);
+
+            using var provider = builder.Services.BuildServiceProvider();
+            var registration = provider
                 .GetRequiredService<IOptions<HealthCheckServiceOptions>>()
                 .Value.Registrations
                 .SingleOrDefault(r => r.Name == "cluster-substrate");
@@ -42,28 +34,6 @@ namespace Lighthouse.Backend.Tests.Health
                 Assert.That(registration!.Tags, Does.Contain(StartupTag), "substrate must gate startup");
                 Assert.That(registration.Tags, Does.Not.Contain(ReadyTag), "substrate must NOT run on readiness (it is destructive)");
             }
-        }
-
-        private static void ReplaceWithSqlite(IServiceCollection services)
-        {
-            var dbContextOptions = services.SingleOrDefault(d => d.ServiceType == typeof(DbContextOptions<LighthouseAppContext>));
-            if (dbContextOptions != null)
-            {
-                services.Remove(dbContextOptions);
-            }
-
-            var dbConnection = services.SingleOrDefault(d => d.ServiceType == typeof(DbConnection));
-            if (dbConnection != null)
-            {
-                services.Remove(dbConnection);
-            }
-
-            services.RemoveAll<IHostedService>();
-
-            services.AddDbContext<LighthouseAppContext>(options =>
-                options.UseSqlite(
-                    $"DataSource=SubstrateReg_{Path.GetRandomFileName().Replace(".", "")}.db;Pooling=False",
-                    sqlite => sqlite.MigrationsAssembly("Lighthouse.Migrations.Sqlite")));
         }
     }
 }
