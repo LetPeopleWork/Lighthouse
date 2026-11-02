@@ -492,8 +492,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
                 var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
 
-                var expandedWaitStates = team.GetRawStatesForCategory(team.WaitStates).Select(team.MapRawStateToMappedName).ToList();
-                return ComputeFlowEfficiency(doingStateRows, expandedWaitStates, team.WaitStates.Count > 0);
+                return ComputeFlowEfficiency(doingStateRows, WaitStatesAsDisplayed(team), team.WaitStates.Count > 0);
             }, logger);
         }
 

@@ -19,8 +19,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Models/IWorkItemQueryOwner.cs",
             "Services/Implementation/Refinement/RefinementList.cs",
             "Services/Implementation/BaseMetricsService.cs",
-            "Services/Implementation/TeamMetricsService.cs",
-            "Services/Implementation/PortfolioMetricsService.cs",
         ];
 
         // Only the sync of a settings save and the start-up seeder put a list on an owner: both run the owner's
