@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string StopsAndRestartsItsHostInOneTest = "one test stops the host the way a service manager does and starts another, so the fixture builds a host again inside a test";
 
         // Fixing a type lowers this number in the same commit as it removes the type's line. It never goes up.
-        private const int MostTypesTheListMayHold = 104;
+        private const int MostTypesTheListMayHold = 94;
 
         // Keys are full type names, so two types with the same simple name in different namespaces stay apart.
         private static readonly IReadOnlyDictionary<string, string> TypesAllowedToBuildAHostPerTest = new Dictionary<string, string>
@@ -32,8 +32,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryReadStabilityIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryStaleAggregateRaceIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ArchivedDeliveryWriteRefusalIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.BlackoutForecastShiftItemPredictionIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.BlackoutForecastShiftTeamForecastIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice01JiraDependenciesFromANamedLinkScenarios"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice02NamedLinkThatMatchedNothingScenarios"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice03AzureDevOpsRelationTypeAcceptedScenarios"] = NotMovedYet,
@@ -67,14 +65,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.PortfolioTimeInStateReadApiIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.QuietWriteBack.QuietWriteBackAcceptanceTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.RbacGroupMappingConcurrencyTokenIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesByDateForecastIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesChartOverlayIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesDeliveryIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesDownstreamParityIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesIntervalRuleIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesLifecycleIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesWeekendsForeverIntegrationTest"] = NotMovedYet,
-            ["Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesWriteBackIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.Reports.ReportCreationTimingProbe"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.RunChartPayloadContractIntegrationTest"] = NotMovedYet,
             ["Lighthouse.Backend.Tests.API.Integration.ServiceNowConnectionAcceptanceTest"] = NotMovedYet,

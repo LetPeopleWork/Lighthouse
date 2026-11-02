@@ -2,6 +2,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -11,6 +12,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Moq;
+using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
@@ -32,19 +34,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         protected DateTime Today => Factory.Services.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
 
-        protected void StartApplicationWithDeterministicForecast()
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             rootFactory = new TestWebApplicationFactory<Program>();
-
-            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
-            ForecastServiceMock
-                .Setup(s => s.When(It.IsAny<Team>(), It.IsAny<int>(), It.IsAny<ThroughputFilterMode>()))
-                .ReturnsAsync(ForecastCompletingInWorkingDays(WorkingDaysAtAllPercentiles));
-
-            TeamMetricsServiceMock = new Mock<ITeamMetricsService>();
-            TeamMetricsServiceMock
-                .Setup(s => s.GetForecastThroughputStatus(It.IsAny<Team>(), It.IsAny<ThroughputFilterMode>()))
-                .Returns(new ForecastThroughputStatus(new RunChartData(), false, null));
 
             Factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory)
                 .WithWebHostBuilder(builder =>
@@ -57,28 +52,67 @@ namespace Lighthouse.Backend.Tests.API.Integration
                         services.AddScoped(_ => TeamMetricsServiceMock.Object);
                     });
                 });
+        }
+
+        [SetUp]
+        public void PrepareTheHostForTheTest()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            ForecastServiceMock = ForecastServiceDoubles.AnsweringComputed();
+            ForecastServiceMock
+                .Setup(s => s.When(It.IsAny<Team>(), It.IsAny<int>(), It.IsAny<ThroughputFilterMode>()))
+                .ReturnsAsync(ForecastCompletingInWorkingDays(WorkingDaysAtAllPercentiles));
+
+            TeamMetricsServiceMock = new Mock<ITeamMetricsService>();
+            TeamMetricsServiceMock
+                .Setup(s => s.GetForecastThroughputStatus(It.IsAny<Team>(), It.IsAny<ThroughputFilterMode>()))
+                .Returns(new ForecastThroughputStatus(new RunChartData(), false, null));
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            Factory.ForgetTheCachedMetrics();
 
             Client = Factory.CreateClient();
 
             using var setupScope = Factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            dbContext.Database.EnsureDeleted();
             dbContext.Database.EnsureCreated();
 
             SeededTeamId = SeedTeam();
         }
 
-        protected void StopApplication()
+        [TearDown]
+        public async Task LeaveTheHostIdle()
         {
-            using (var teardownScope = Factory.Services.CreateScope())
-            {
-                var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-                dbContext.Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            Client.Dispose();
-            Factory.Dispose();
-            rootFactory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(Factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    Factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(Factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                using (var teardownScope = Factory.Services.CreateScope())
+                {
+                    var dbContext = teardownScope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                    await dbContext.Database.EnsureDeletedAsync();
+                }
+
+                Client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            Factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         protected void ConfigureBlackoutPeriod(DateOnly start, DateOnly end)

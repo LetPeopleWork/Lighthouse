@@ -15,14 +15,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [SetUp]
         public void Init()
         {
-            StartApplicationWithDeterministicForecast();
             StubHowManyEchoingTheDayCount();
-        }
-
-        [TearDown]
-        public void Cleanup()
-        {
-            StopApplication();
         }
 
         [Test]

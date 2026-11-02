@@ -11,18 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [Category("recurring-blackout-events")]
     public class RecurringBlackoutRulesDownstreamParityIntegrationTest : RecurringBlackoutRulesTestBase
     {
-        [SetUp]
-        public void Init()
-        {
-            StartApplicationWithDeterministicForecast();
-        }
-
-        [TearDown]
-        public void Cleanup()
-        {
-            StopApplication();
-        }
-
         [Test]
         public async Task WhenForecast_RecurringRuleDay_ProducesSamePercentileDateAsAnEquivalentOneOffPeriod()
         {

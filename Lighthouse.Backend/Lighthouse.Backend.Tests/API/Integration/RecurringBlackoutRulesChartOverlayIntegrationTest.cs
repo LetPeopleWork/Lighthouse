@@ -5,6 +5,7 @@ using System.Text.Json.Serialization;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -38,18 +39,12 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private static readonly DateTime WindowStart = new(2026, 6, 1, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime WindowEnd = new(2026, 6, 7, 0, 0, 0, DateTimeKind.Utc);
 
-        [SetUp]
-        public void Init()
+        [OneTimeSetUp]
+        public void StartTheHost()
         {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeSetUp);
+
             rootFactory = new TestWebApplicationFactory<Program>();
-
-            teamMetricsServiceMock = new Mock<ITeamMetricsService>();
-            teamMetricsServiceMock
-                .Setup(s => s.GetThroughputProcessBehaviourChart(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
-                .Returns(ThreeDayReadyChart());
-
-            licenseServiceMock = new Mock<ILicenseService>();
-            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
 
             factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory)
                 .WithWebHostBuilder(builder =>
@@ -64,28 +59,64 @@ namespace Lighthouse.Backend.Tests.API.Integration
                         services.AddScoped(_ => licenseServiceMock.Object);
                     });
                 });
+        }
+
+        [SetUp]
+        public void PrepareTheHostForTheTest()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
+
+            teamMetricsServiceMock = new Mock<ITeamMetricsService>();
+            teamMetricsServiceMock
+                .Setup(s => s.GetThroughputProcessBehaviourChart(It.IsAny<Team>(), It.IsAny<DateTime>(), It.IsAny<DateTime>()))
+                .Returns(ThreeDayReadyChart());
+
+            licenseServiceMock = new Mock<ILicenseService>();
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            rootFactory.Clock.Reset();
+            rootFactory.UseFreshDatabase();
+            factory.ForgetTheCachedMetrics();
 
             client = factory.CreateClient();
 
             using var scope = factory.Services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            dbContext.Database.EnsureDeleted();
             dbContext.Database.EnsureCreated();
 
             seededTeamId = SeedTeam();
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task LeaveTheHostIdle()
         {
-            using (var scope = factory.Services.CreateScope())
-            {
-                scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeleted();
-            }
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.TearDown);
 
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
+            try
+            {
+                SharedHostCleanup.ReopenTheMaintenanceGate(factory.Services);
+                await SharedHostCleanup.DrainTheHistoryFillerOrFail(
+                    factory.Services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                using (var scope = factory.Services.CreateScope())
+                {
+                    await scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.EnsureDeletedAsync();
+                }
+
+                client.Dispose();
+            }
+        }
+
+        [OneTimeTearDown]
+        public void StopTheHost()
+        {
+            using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.OneTimeTearDown);
+
+            factory?.Dispose();
+            rootFactory?.Dispose();
         }
 
         [Test]

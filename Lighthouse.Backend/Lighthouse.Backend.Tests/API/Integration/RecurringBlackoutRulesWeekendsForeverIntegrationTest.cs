@@ -10,18 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [Category("recurring-blackout-events")]
     public class RecurringBlackoutRulesWeekendsForeverIntegrationTest : RecurringBlackoutRulesTestBase
     {
-        [SetUp]
-        public void Init()
-        {
-            StartApplicationWithDeterministicForecast();
-        }
-
-        [TearDown]
-        public void Cleanup()
-        {
-            StopApplication();
-        }
-
         [Test]
         public async Task CreateWeekendsForeverRule_AsPremiumSystemAdmin_RuleIsAcceptedAndListedWithHumanReadableSummary()
         {

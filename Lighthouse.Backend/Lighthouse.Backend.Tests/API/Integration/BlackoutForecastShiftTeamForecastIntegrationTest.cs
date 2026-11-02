@@ -9,18 +9,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [TestFixture]
     public class BlackoutForecastShiftTeamForecastIntegrationTest : BlackoutForecastShiftTestBase
     {
-        [SetUp]
-        public void Init()
-        {
-            StartApplicationWithDeterministicForecast();
-        }
-
-        [TearDown]
-        public void Cleanup()
-        {
-            StopApplication();
-        }
-
         [Test]
         public async Task RunManualWhenForecast_TeamWithTwoBlackoutDaysInWindow_PercentileDateStepsOverTheBlackoutSpan()
         {
