@@ -1105,3 +1105,12 @@ Verdict: conditionally_approved, 0 blockers.
   - About 51 `IntegrationTestBase` classes (399 tests) ran green twice with the template on; no migration-based subclass was found and there are no opt-outs.
   - Old `template_*.db` files accumulate in `bin/` (one per schema change); accepted.
   - The template build cost is paid once per process and is not in the per-test means.
+
+## Wave: DELIVER / [REF] 02-05 Slice 2 pre-push evidence (2026-11-02, lead)
+
+- **Full run with sampler** on `408bbbabe`: 387 s (slice 1: 403 s, before any move: 400 s); 11,927 passed, the two environmental
+  failures, 1 skipped; **peak 4,462 MB** (threshold 4,976 MB). Raw: `measurement/slice2-2026-11-02/`.
+- **Final full run** on `fabc537c7` (after the review revision touched the template helpers): 381 s, 11,931 passed, the same two
+  environmental failures, 1 skipped; build 0 warnings.
+- **`behaviour-preserved.sh 12419728b`**: checks 2 and 3 print nothing; check 1 lists only the new template and copy tests and the
+  daily date-named case. Frontend and E2E untouched; frontend gates not run.
