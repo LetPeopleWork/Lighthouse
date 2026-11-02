@@ -39,6 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var workItems = new List<WorkItem>();
 
             using var csv = ReadCsv(team);
+            var knownStates = KnownStatesOf(team);
 
             while (csv.Read())
             {
@@ -46,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 // fetched, so answering with the rows read so far deletes every record on the rest.
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var workItemBase = CreateWorkItemBaseForRow(csv, team);
+                var workItemBase = CreateWorkItemBaseForRow(csv, team, knownStates);
 
                 if (workItemBase == null)
                 {
@@ -71,12 +72,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var features = new List<Feature>();
 
             using var csv = ReadCsv(project);
+            var knownStates = KnownStatesOf(project);
 
             while (csv.Read())
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var workItemBase = CreateWorkItemBaseForRow(csv, project);
+                var workItemBase = CreateWorkItemBaseForRow(csv, project, knownStates);
 
                 if (workItemBase != null)
                 {
@@ -199,7 +201,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             }
         }
 
-        private static WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
+        // Read once per upload rather than per row. An empty state cell is never a known state, even when a
+        // list holds an empty entry.
+        private static HashSet<string> KnownStatesOf(IWorkItemQueryOwner owner)
+            => owner.AllStates.Where(state => !string.IsNullOrEmpty(state)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        private static WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner, HashSet<string> knownStates)
         {
             var referenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
             var name = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
@@ -219,7 +226,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             var order = $"{orderCounter++}";
 
-            if (!owner.AllStates.IsItemInList(state) || !owner.WorkItemTypes.IsItemInList(type))
+            if (!knownStates.Contains(state) || !owner.WorkItemTypes.IsItemInList(type))
             {
                 return null;
             }
