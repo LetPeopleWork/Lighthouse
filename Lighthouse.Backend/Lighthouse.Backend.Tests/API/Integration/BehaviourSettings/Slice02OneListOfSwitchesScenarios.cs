@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-5876-behaviour-settings")]
-    [Category("slice-02")]
     public partial class Slice02OneListOfSwitchesTest
     {
         // the promise the whole slice rests on, and the regression test

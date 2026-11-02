@@ -16,8 +16,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.UsageDataVeto
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("epic-5733-opt-in-usage-data")]
-    [Category("slice-03")]
     public partial class Slice03VetoSettingTest
     {
         // the row itself. Until it exists the master switch reads no

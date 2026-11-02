@@ -14,8 +14,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-5876-behaviour-settings")]
-    [Category("slice-01")]
     public partial class Slice01PremiumRefusalTest
     {
         // the promise of the slice. A refusal that returns 200 carrying
