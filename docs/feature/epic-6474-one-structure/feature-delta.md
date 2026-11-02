@@ -1792,6 +1792,7 @@ unit count minus the three exception groups; Organization shows two levels; one 
 
 - **OI-1.** CI time of the harness is estimated; measure at slice 01 and report.
 - **OI-2.** After slice 06 N-1 would show pre-rename words after a rollback (N stops writing the 8 Terminology keys). Options: accept and note it (chosen as default), or keep dual-writing the keys until a contract step. Maintainer to confirm.
+  - *Decided (maintainer, 2026-11-02):* accept it and say so in the release notes: level renames made after upgrading are not visible if the install goes back to the previous version. No dual-write of the Terminology keys.
 - **OI-3.** Whether N-1's `MigrationsAppliedHealthCheck` and startup tolerate a database with an unknown newer migration: verify with the real-image check on the first release carrying slice 02.
   - *Checked 2026-11-02:* `MigrationsAppliedHealthCheck` only compares `GetPendingMigrationsAsync()`, so an applied migration that N-1 does not know is not reported as pending; the startup path still needs the real-image check.
 - **OI-4.** Lighthouse-Clients repo usage of `/teams`/`/portfolios` writes with types not on the level is unread; verify before the major bump.

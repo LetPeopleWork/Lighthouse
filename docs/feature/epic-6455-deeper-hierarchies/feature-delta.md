@@ -544,6 +544,16 @@ of those levels today; initiatives would be the next). A CSV file carries no hie
 by hand. Whether each connector can deliver this, and how, is that Epic's DISCUSS. "Teams only" (one level) is
 one of the set-up's choices (#6474 M13).
 
+**Customer B session (2026-11-02), maintainer's notes.** Customer B's tracker is linked in many directions with no
+clear hierarchy; neither the maintainer nor the coach in the session could work out how it is meant to fit
+together. Their main problem is a lack of structure, not the missing levels; the maintainer still expects the
+multi-level model to help them, because it asks an organisation to state its structure. The session did **not**
+answer the three questions that waited on it (which level a person lands on, Epics as the items on level 2,
+whether the SAFe Feature level is shown); they stay open for "Levels above" (#6455) and "One page per unit"
+(#6476), to be decided from other evidence or by the maintainer. Two consequences: the DIVERGE assumption about
+Customer B is neither confirmed nor refuted, and the set-up counts ("N items have no {level}") and the guided
+set-up (#6475) matter more than assumed, since they are what shows a messy structure for what it is.
+
 **Future direction: connection-level mapping moves to the level** (maintainer, 2026-11-02, not scheduled). The
 settings that sit on the connection today and describe how the hierarchy is wired (Parent Override Field,
 dependency fields and similar) belong with the level's configuration, next to its item types. Open: installs with
