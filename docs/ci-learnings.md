@@ -287,20 +287,24 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   `DrawsFromAPinnedStartingNumber`. Never re-run a ±1 `Is.InRange` miss or tighten the range to chase a
   seed. Not automated because: whether a test is meant to be a golden baseline is intent.
 - **Host lifecycles in `WebApplicationFactory` tests**: build the host once per fixture in `[OneTimeSetUp]`
-  and dispose it in `[OneTimeTearDown]`, before the database files go. `TestHostPerFixtureGuardTest` reads
-  the compiled test assembly and fails when a type starts a host in `[SetUp]` or in a test body. Its
-  allow-list only shrinks: a new offender fails, an entry whose type no longer offends fails, and the
-  ceiling `MostTypesTheListMayHold` drops with every entry removed. A type stays listed only with a
-  written reason (it tests the host itself, it runs on a Postgres server, it has a single test); types not
-  yet converted carry a "not moved yet" entry. The guard follows calls through the base-class chain and
-  overrides, not through interface calls. Still by hand: a shared host may hold per-test state only in objects the fixture resets in
-  `[SetUp]` (the factory's `Clock.Reset()`, a fresh database via `UseFreshDatabase()`, re-armed mocks),
-  never in a DI registration that closes over a per-test field; resolve the `DbContext` from a scope,
-  never the root provider; resolve every service you will assert on before `StopApplication()`. Singleton in-memory state in the app (for example the
-  update queue's per-key maps and the history filler's "already asked" set) survives between tests on a
-  shared host; check it before converting a fixture that reads charts or triggers history fills. Check a
-  converted fixture by running it three times in a row and its first and last test alone. Not automated
-  because: what counts as per-test state differs from fixture to fixture.
+  and dispose it in `[OneTimeTearDown]`; reset per-test state in `[SetUp]` (the factory's `Clock.Reset()`,
+  `UseFreshDatabase()`, `ForgetTheCachedMetrics()`, a new client) and clean up in `[TearDown]` through
+  `SharedHostCleanup`. Three architecture tests enforce the mechanics: `TestHostPerFixtureGuardTest`
+  (a host started per test needs a written reason on its shrinking list), `DbContextComesFromAScopeGuardTest`
+  and `SharedHostsDrainTheUpdateQueueGuardTest`. Still by hand (not automated because what counts as per-test state
+  differs from fixture to fixture):
+  - App singletons survive between tests on a shared host: the update queue's maps and status store, the
+    history filler's "already asked" set, the reconstruction memo (`SharedHostCleanup.ForgetOwners`), the
+    maintenance gate, the recent-problems sink and the usage-data daily tallies. Rate-limit buckets and
+    those tallies cannot be emptied, so give each test its own partition key or keep a host per test.
+  - Test doubles the host holds are registered as `_ => mock.Object` and re-armed per test; a collection a
+    singleton captured is cleared in place, never replaced; a looping double stops on a signal only the
+    tear-down sets, never on a flag the Then steps also read, or the test can pass without the behaviour.
+  - A fixture goes on the queue-drain check's list only if none of its tests starts a refresh; read the
+    tests to tell, a grep for "refresh" is not enough.
+  - When a fixture shares its host, add one pair of tests that would fail if the state it resets leaked
+    (a count, the clock, a limit), and check the fixture by running it three times in a row and its first
+    and last test alone.
 - **FK-dependent behaviour runs on SQLite**: EF InMemory does not enforce foreign keys or cascades.
   Fix: a test asserting an FK violation or a cascade must not use `UseInMemoryDatabase`. Not automated
   because: telling which tests depend on FKs takes understanding what they assert.

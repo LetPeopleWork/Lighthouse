@@ -1305,3 +1305,9 @@ Judgement calls over the bare number (keep although share is 25 percent or more)
 | `TestClockBoundaryTest` | 7 | 1 | 0.2 | 0.2 | 75.7 | keep: OnlyAFewTestsStartAHost |
 
 Never-read types: the roadmap names 13 but the workspace does not list them, so every entry without a timing row, without tests of its own or with fewer host builds than tests was examined. None is removable. The guard's stale check was green at the start of this step, so the IL scan finds every listed type reaching a host start from a set-up or test method; the four that show no tests of their own (`QuietWriteBackAcceptanceTest`, `SleRiskAcceptanceTest`, `StaleWorkItemsAcceptanceTest`, `ReportCreationTimingProbe`) are abstract bases whose subclasses run per-test set-ups that start a host, and a by-hand probe whose one test starts one. Removed: none; the ceiling stays at 76.
+
+### 05-05 ledger and briefing (2026-11-02)
+
+The ci-learnings host-lifecycle entry is rewritten once: the mechanics now enforced by `TestHostPerFixtureGuardTest`, `DbContextComesFromAScopeGuardTest` and `SharedHostsDrainTheUpdateQueueGuardTest` are named, not restated; what stays by hand is the per-test-state judgement the slices taught (app singletons, rate-limit buckets and tallies, test doubles stopping on a tear-down-only signal, captured collections cleared in place, the queue-drain list's "never starts a refresh" judgement, the isolation pair and the three-runs check).
+
+Acceptance-designer briefing: N/A. The project briefs DISTILL through CLAUDE.md (unchanged by maintainer decision) and the ci-learnings ledger, which DISTILL reads before writing tests; the ledger entry above is the change. Turning the convention into a briefing or skill is the separate follow-up the maintainer asked for once the test-infra track settles.
