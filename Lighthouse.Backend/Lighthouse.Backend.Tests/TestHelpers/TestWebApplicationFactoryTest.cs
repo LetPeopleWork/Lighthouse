@@ -1,10 +1,13 @@
 using Lighthouse.Backend.Data;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
@@ -85,7 +88,29 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
             var path = PathOfCurrentDatabase(factory);
 
-            Assert.That(SchemaOf(path), Is.Empty);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(File.Exists(path), Is.True, $"the database file '{path}' does not exist");
+                Assert.That(SchemaOf(path), Is.Empty);
+            }
+        }
+
+        [Test]
+        public void AHostDerivedFromTheFactoryUsesTheSameDatabaseAndTheSwitchAsTheFactory()
+        {
+            using var root = new TestWebApplicationFactory<Program> { UseSchemaTemplate = true };
+            using var derived = root.WithWebHostBuilder(builder => builder.UseSetting("Unrelated", "value"));
+
+            var before = PathOfCurrentDatabase(derived);
+            root.UseFreshDatabase();
+            var after = PathOfCurrentDatabase(derived);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(before, Is.Not.EqualTo(after));
+                Assert.That(after, Is.EqualTo(PathOfCurrentDatabase(root)));
+                Assert.That(SchemaOf(after), Is.EqualTo(SchemaOf(TestDatabaseTemplate.Path)));
+            }
         }
 
         [Test]
@@ -116,9 +141,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             var attempts = 0;
             var destination = Path.Combine(Path.GetTempPath(), $"never-written-{Guid.NewGuid():N}.db");
 
-            var failure = Assert.Throws<IOException>(() => TestDatabaseTemplate.CopyTo(destination, (_, _) =>
+            var failure = Assert.Throws<IOException>(() => TestDatabaseTemplate.CopyTo(destination, (_, target) =>
             {
                 attempts++;
+                File.WriteAllText(target, "truncated");
                 throw new IOException("locked");
             }));
 
@@ -126,6 +152,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             {
                 Assert.That(attempts, Is.InRange(2, 10));
                 Assert.That(failure.Message, Does.Contain(destination));
+                Assert.That(File.Exists(destination), Is.False);
             }
         }
 
@@ -195,7 +222,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         }
 
         [Test]
-        public void ATemplateAnotherProcessAlreadyMovedIntoPlaceIsKeptAsItIs()
+        public void ATemplateAlreadyInPlaceIsReturnedWithoutBeingBuiltAgain()
         {
             using var directory = new TemporaryDirectory();
             var finalPath = TestDatabaseTemplate.EnsureBuilt(directory.Path);
@@ -214,7 +241,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public void ATemplateAnotherProcessIsStillBuildingIsNeitherUsedNorDisturbed()
         {
             using var directory = new TemporaryDirectory();
-            var unfinished = Path.Combine(directory.Path, "template_0123456789abcdef.tmp");
+            var unfinished = Path.Combine(directory.Path, $"template_{Guid.NewGuid():N}.tmp");
             File.WriteAllText(unfinished, "half written");
 
             var path = TestDatabaseTemplate.EnsureBuilt(directory.Path);
@@ -222,6 +249,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(path, Is.Not.EqualTo(unfinished));
+                Assert.That(File.Exists(unfinished), Is.True);
                 Assert.That(SchemaOf(path), Is.EqualTo(SchemaBuiltDirectly(directory)));
                 Assert.That(File.ReadAllText(unfinished), Is.EqualTo("half written"));
             }
@@ -239,7 +267,71 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(path, Is.Not.EqualTo(stale));
+                Assert.That(Path.GetFileName(path), Is.EqualTo($"template_{HashOfTheCurrentSchema()}.db"));
                 Assert.That(SchemaOf(path), Is.EqualTo(SchemaBuiltDirectly(directory)));
+            }
+        }
+
+        [Test]
+        public void ATemplateAnotherProcessMovesIntoPlaceDuringTheBuildIsKeptAndOursIsDiscarded()
+        {
+            using var directory = new TemporaryDirectory();
+            var theirs = Path.Combine(directory.Path, $"template_{HashOfTheCurrentSchema()}.db");
+
+            var path = TestDatabaseTemplate.EnsureBuilt(directory.Path, (_, _) =>
+            {
+                File.WriteAllText(theirs, "built by another process");
+                throw new IOException("the target exists");
+            });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(path, Is.EqualTo(theirs));
+                Assert.That(File.ReadAllText(theirs), Is.EqualTo("built by another process"));
+                Assert.That(Directory.GetFiles(directory.Path), Is.EqualTo(new[] { theirs }));
+            }
+        }
+
+        [Test]
+        public void ABuildThatFailsToMoveIsTriedAgainAndThenLeavesACompleteTemplate()
+        {
+            using var directory = new TemporaryDirectory();
+            var attempts = 0;
+
+            var path = TestDatabaseTemplate.EnsureBuilt(directory.Path, (source, target) =>
+            {
+                if (++attempts < 3)
+                {
+                    throw new IOException("locked");
+                }
+
+                File.Move(source, target, overwrite: false);
+            });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attempts, Is.EqualTo(3));
+                Assert.That(SchemaOf(path), Is.EqualTo(SchemaBuiltDirectly(directory)));
+                Assert.That(Directory.GetFiles(directory.Path).Where(file => !file.Contains("direct_")), Is.EqualTo(new[] { path }));
+            }
+        }
+
+        [Test]
+        public void ABuildThatNeverSucceedsFailsAfterAFewAttemptsAndLeavesNothingBehind()
+        {
+            using var directory = new TemporaryDirectory();
+            var attempts = 0;
+
+            Assert.Throws<IOException>(() => TestDatabaseTemplate.EnsureBuilt(directory.Path, (_, _) =>
+            {
+                attempts++;
+                throw new IOException("locked");
+            }));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(attempts, Is.InRange(2, 10));
+                Assert.That(Directory.GetFiles(directory.Path), Is.Empty);
             }
         }
 
@@ -255,6 +347,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 Assert.That(second, Is.EqualTo(first));
                 Assert.That(SchemaOf(first), Is.EqualTo(SchemaBuiltDirectly(directory)));
             }
+        }
+
+        private static string HashOfTheCurrentSchema()
+        {
+            var options = new DbContextOptionsBuilder<LighthouseAppContext>()
+                .UseSqlite("DataSource=:memory:", DatabaseConfigurator.ConfigureSqlite)
+                .Options;
+            using var context = new LighthouseAppContext(options, new FakeCryptoService(), NullLogger<LighthouseAppContext>.Instance);
+            var script = context.Database.GenerateCreateScript();
+            return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(script)))[..16].ToLowerInvariant();
         }
 
         private static List<string> SchemaBuiltDirectly(TemporaryDirectory directory)
@@ -302,7 +404,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             }
         }
 
-        private static string PathOfCurrentDatabase(TestWebApplicationFactory<Program> factory)
+        private static string PathOfCurrentDatabase(WebApplicationFactory<Program> factory)
         {
             using var scope = factory.Services.CreateScope();
             return scope.ServiceProvider.GetRequiredService<LighthouseAppContext>().Database.GetDbConnection().DataSource;

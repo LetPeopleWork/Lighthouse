@@ -21,8 +21,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             this.webApplicationFactory = webApplicationFactory;
 
-            // Copying the prebuilt schema is much cheaper than creating it for every test. Fixtures that
-            // seed heavily gain little from it, so the factory leaves it off and each group opts in.
+            // Copying the prebuilt schema is much cheaper than creating it for every test, so every fixture
+            // built on this class starts from it. The flag is read each time a test's database is first used,
+            // so a subclass that needs an empty database sets it to false on WebApplicationFactory after
+            // this constructor. Hosts built directly from the factory leave it off.
             webApplicationFactory.UseSchemaTemplate = true;
             Client = webApplicationFactory.CreateClient();
         }
