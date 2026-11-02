@@ -184,13 +184,6 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
         }
 
-        // A wait state may name a mapping or one of the states a mapping groups, while the chart rows carry the
-        // mapping's name in place of its states, so the wait states are compared in the form the rows use.
-        protected static List<string> WaitStatesAsDisplayed(WorkTrackingSystemOptionsOwner owner)
-        {
-            return owner.GetRawStatesForCategory(owner.WaitStates).Select(owner.MapRawStateToMappedName).ToList();
-        }
-
         protected static FlowEfficiencyInfoDto ComputeFlowEfficiency(
             IReadOnlyList<CumulativeStateTimeStateRowDto> doingStateRows,
             IReadOnlyList<string> waitDisplayStates,

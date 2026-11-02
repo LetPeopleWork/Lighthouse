@@ -740,7 +740,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(portfolio);
                 var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
 
-                return ComputeFlowEfficiency(doingStateRows, WaitStatesAsDisplayed(portfolio), portfolio.WaitStates.Count > 0);
+                return ComputeFlowEfficiency(doingStateRows, portfolio.WaitStatesAsDisplayed(), portfolio.WaitStates.Count > 0);
             }, logger);
         }
 

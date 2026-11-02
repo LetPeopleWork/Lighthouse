@@ -221,6 +221,14 @@ namespace Lighthouse.Backend.Models
 
         public string MapRawStateToMappedName(string rawState) => CategoryLists().MapRawStateToMappedName(rawState);
 
+        // A wait state may name a mapping or one of the states a mapping groups, while the chart rows carry the
+        // mapping's name in place of its states, so the wait states are compared in the form the rows use.
+        public List<string> WaitStatesAsDisplayed()
+        {
+            var lists = CategoryLists();
+            return lists.RawStatesOf(WaitStates).Select(lists.MapRawStateToMappedName).ToList();
+        }
+
         public void ResetUpdateTime()
         {
             UpdateTime = DateTime.MinValue;
