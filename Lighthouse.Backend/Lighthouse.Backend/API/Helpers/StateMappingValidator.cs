@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.API.Helpers
         public static StateMappingValidationResult ValidateSettings(SettingsOwnerDtoBase settings, WorkTrackingSystemOptionsOwner? storedOwner = null)
         {
             var mappings = settings.StateMappingsAsSent();
-            var lists = new StateCategoryLists(settings.ToDoStates, settings.DoingStates, settings.DoneStates, mappings);
+            var lists = settings.CategoryListsAsSent();
             var storedMappings = storedOwner?.StateMappings ?? [];
             bool HasChanged(StateMapping mapping) => IsChanged(mapping, storedMappings);
 
