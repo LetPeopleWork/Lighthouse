@@ -49,7 +49,7 @@
 		<PackageReference Include="Testcontainers.PostgreSql" Version="4.16.0" />
 		<PackageReference Include="Testcontainers.Redis" Version="4.16.0" />
 		<PackageReference Include="TngTech.ArchUnitNET" Version="0.13.5" />
-		<PackageReference Include="TngTech.ArchUnitNET.NUnit" Version="0.13.4" />
+		<PackageReference Include="TngTech.ArchUnitNET.NUnit" Version="0.13.5" />
 	</ItemGroup>
 
 	<ItemGroup>
