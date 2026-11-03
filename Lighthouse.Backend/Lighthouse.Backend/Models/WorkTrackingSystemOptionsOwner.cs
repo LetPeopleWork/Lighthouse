@@ -209,14 +209,14 @@ namespace Lighthouse.Backend.Models
 
         public List<string> GetRawStatesForCategory(List<string> categoryStates) => CategoryLists().RawStatesOf(categoryStates);
 
+        /// <summary>Whether both boundaries of a definition stand for a state of the workflow as the charts show it.</summary>
         public bool IsCycleTimeDefinitionValid(CycleTimeDefinition definition)
         {
-            var states = AllStates.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var startRaw = GetRawStatesForCategory([definition.StartState]);
-            var endRaw = GetRawStatesForCategory([definition.EndState]);
+            var lists = CategoryLists();
+            var statesInOrder = lists.DisplayStatesInWorkflowOrder();
 
-            return startRaw.Count > 0 && endRaw.Count > 0
-                && startRaw.All(states.Contains) && endRaw.All(states.Contains);
+            return lists.WorkflowEntryFor(statesInOrder, definition.StartState) != null
+                && lists.WorkflowEntryFor(statesInOrder, definition.EndState) != null;
         }
 
         public string MapRawStateToMappedName(string rawState) => CategoryLists().MapRawStateToMappedName(rawState);

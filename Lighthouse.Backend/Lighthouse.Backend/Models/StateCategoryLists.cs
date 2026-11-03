@@ -33,6 +33,21 @@ namespace Lighthouse.Backend.Models
         public List<string> DisplayStatesInWorkflowOrder()
             => [.. ListedCategories.SelectMany(DisplayStatesFor)];
 
+        /// <summary>
+        /// The entry of the workflow as the charts show it that a cycle-time boundary stands for, written as the list
+        /// writes it, or null when the boundary stands for none: a state a mapping groups stands for the mapping.
+        /// </summary>
+        public string? WorkflowEntryFor(IReadOnlyList<string> statesInOrder, string? boundary)
+        {
+            if (string.IsNullOrWhiteSpace(boundary))
+            {
+                return null;
+            }
+
+            var displayed = MapRawStateToMappedName(boundary.Trim());
+            return statesInOrder.FirstOrDefault(state => IsSameState(state, displayed));
+        }
+
         /// <summary>The category of a raw tracker state, read through the normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
         public StateCategories CategoryOfRawState(string rawState)
             => ListedCategories.FirstOrDefault(
@@ -171,7 +186,7 @@ namespace Lighthouse.Backend.Models
         public static bool IsSameState(string? left, string? right)
             => string.Equals(left?.Trim(), right?.Trim(), StringComparison.OrdinalIgnoreCase);
 
-        private static List<string> WithoutRepeats(IEnumerable<string> states)
+        public static List<string> WithoutRepeats(IEnumerable<string> states)
             => [.. states.DistinctBy(state => state.Trim(), StringComparer.OrdinalIgnoreCase)];
     }
 }

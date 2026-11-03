@@ -28,12 +28,15 @@ namespace Lighthouse.Backend.Tests.API.Integration
         private const string Waiting = "Waiting";
         private const string Review = "Review";
         private const string Done = "Done";
+        private const string Phase = "Phase";
+        private const string Unlisted = "Ghost";
 
         private const int ReviewToDoneDefinitionId = 1;
         private const int TestingToDoneDefinitionId = 2;
         private const int AnalysisToDoneDefinitionId = 3;
         private const int AnalysisToReviewDefinitionId = 4;
         private const int CodeReviewToDoneDefinitionId = 5;
+        private const int PhaseToDoneDefinitionId = 6;
 
         private static int testDateOffset;
 
@@ -181,6 +184,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
+        [Test]
+        public async Task NamedCycleTimeStartingAtAMappingWithOneStateListedNowhere_CountsFromWhenTheItemEnteredTheMapping()
+        {
+            SeedOwner(
+                [new StateMapping { Name = Phase, States = [CodeReview, Unlisted] }],
+                [(Backlog, Analysis, 2), (Analysis, Phase, 4), (Phase, Done, 10)]);
+
+            Assert.That(await MedianNamedCycleTime(PhaseToDoneDefinitionId), Is.EqualTo(7),
+                "Code Review is listed, so the charts show Phase in Doing and the definition is read over it, although Ghost is listed nowhere.");
+        }
+
         private async Task<int> MedianNamedCycleTime(int definitionId)
         {
             var response = await client.GetAsync($"{MetricsRoute}/cycleTimePercentiles?startDate={windowStart:O}&endDate={windowEnd:O}&definitionId={definitionId}");
@@ -224,6 +238,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             new() { Id = AnalysisToDoneDefinitionId, Name = "Analysis to Done", StartState = Analysis, EndState = Done },
             new() { Id = AnalysisToReviewDefinitionId, Name = "Analysis to Review", StartState = Analysis, EndState = Review },
             new() { Id = CodeReviewToDoneDefinitionId, Name = "Code Review to Done", StartState = CodeReview, EndState = Done },
+            new() { Id = PhaseToDoneDefinitionId, Name = "Phase to Done", StartState = Phase, EndState = Done },
         ];
 
         // The item's history carries the mapping's name, as the connectors record it once the states are grouped.

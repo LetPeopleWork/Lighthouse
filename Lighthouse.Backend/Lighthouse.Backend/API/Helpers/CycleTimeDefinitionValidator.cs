@@ -59,14 +59,8 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static int BoundaryIndex(StateCategoryLists lists, List<string> orderedStates, string boundary)
         {
-            if (string.IsNullOrWhiteSpace(boundary))
-            {
-                return -1;
-            }
-
-            var displayed = lists.MapRawStateToMappedName(boundary.Trim());
-
-            return orderedStates.FindIndex(state => StateCategoryLists.IsSameState(state, displayed));
+            var entry = lists.WorkflowEntryFor(orderedStates, boundary);
+            return entry == null ? -1 : orderedStates.IndexOf(entry);
         }
 
         private static IEnumerable<string> DuplicateNames(IEnumerable<CycleTimeDefinitionDto> definitions)

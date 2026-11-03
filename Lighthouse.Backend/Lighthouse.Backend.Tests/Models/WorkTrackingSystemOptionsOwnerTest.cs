@@ -427,14 +427,16 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [TestCase("New", "Done", true)]
-        [TestCase("Jellybean", "Done", false)]
-        [TestCase("New", "Jellybean", false)]
+        [TestCase("Ghost", "Done", false)]
+        [TestCase("New", "Ghost", false)]
+        [TestCase("Jellybean", "Done", true)]
+        [TestCase("New", "Jellybean", true)]
         [TestCase("Nothing", "Done", false)]
         [TestCase("New", "Nothing", false)]
-        [TestCase("Partly", "Done", false)]
-        [TestCase("New", "Partly", false)]
+        [TestCase("Partly", "Done", true)]
+        [TestCase("New", "Partly", true)]
         [TestCase("Started", "Finished", true)]
-        public void IsCycleTimeDefinitionValid_NeedsBothBoundariesToNameOnlyStatesTheOwnerKnows(string start, string end, bool expected)
+        public void IsCycleTimeDefinitionValid_NeedsBothBoundariesInTheWorkflowAsTheChartsShowIt(string start, string end, bool expected)
         {
             var subject = CreateSubject();
             subject.StateMappings =
