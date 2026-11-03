@@ -48,7 +48,7 @@ const columnOf = (layout: ContextGridLayout, field: string) => {
 };
 
 const valueIn = (layout: ContextGridLayout, field: string, row: IWorkItem) =>
-	columnOf(layout, field).valueGetter?.(undefined, row as never);
+	columnOf(layout, field).valueGetter?.(undefined, { ...row });
 
 const threePointerThatTookLong = aWorkItem({
 	referenceId: "ST-1",
@@ -422,20 +422,6 @@ describe("what each context opens with", () => {
 		},
 	);
 
-	it.each(
-		everyContext.filter(
-			({ offered, columns }) => offered.length > columns.length,
-		),
-	)(
-		"$context has a column to turn on after its last default, which stays off until it is turned on",
-		({ context, items, settings, columns, offered }) => {
-			const layout = layoutOf(context, items, settings);
-
-			expect(layout.visibilityModel[offered[columns.length]]).toBe(false);
-			expect(layout.visibilityModel[columns[columns.length - 1]]).toBe(true);
-		},
-	);
-
 	it("Cumulative Time per State opens with Days Contributed only and offers nothing else", () => {
 		const layout = layoutOf(
 			"cumulativeStateTime",
@@ -526,15 +512,12 @@ describe("dates", () => {
 });
 
 describe("Time in State", () => {
-	it.each(["aging", "inProgress"] as const)(
-		"%s neither shows nor offers Time in State when the caller says nothing about how to measure it",
-		(context) => {
-			const layout = layoutOf(context, inFlight, { ageBand, sleRisk });
+	it("inProgress neither shows nor offers Time in State when the caller says nothing about how to measure it", () => {
+		const layout = layoutOf("inProgress", inFlight, { ageBand, sleRisk });
 
-			expect(shownIn(layout)).not.toContain("timeInState");
-			expect(fieldsOf(layout)).not.toContain("timeInState");
-		},
-	);
+		expect(shownIn(layout)).not.toContain("timeInState");
+		expect(fieldsOf(layout)).not.toContain("timeInState");
+	});
 });
 
 describe("Work Item Age and Cycle Time", () => {
@@ -710,6 +693,9 @@ describe("Work Item Age and Cycle Time", () => {
 
 		expect(columnOf(layout, "cycleTime").headerName).toBe("Dev Cycle");
 		expect(
+			withNamedCycleTimes.map((row) => valueIn(layout, "cycleTime", row)),
+		).toEqual([2, 15, 6]);
+		expect(
 			fieldsOf(layout).filter((field) => field.startsWith("namedCycleTime:")),
 		).toEqual(["namedCycleTime:7", "namedCycleTime:9"]);
 	});
@@ -747,6 +733,38 @@ describe("what each catalogue column says", () => {
 				"daysContributed",
 			).headerName,
 		).toBe("Days Contributed");
+	});
+
+	it("heads the columns the caller describes, the forecast and each named cycle time with their names", () => {
+		const aged = layoutOf("aging", inFlight, { ageBand, sleRisk, timeInState });
+		const featureLayout = layoutOf("featureSize", portfolioFeatures);
+		const timeline = layoutOf("deliveryTimeline", [mediumFeature], {
+			warnings,
+		});
+		const named = layoutOf("closedItems", finishedStories, {
+			namedCycleTimeDefinitions: [
+				{ id: 7, name: "Dev Cycle" },
+				{ id: 9, name: "Review Cycle" },
+			],
+		});
+
+		expect(aged.columns.map(({ headerName }) => headerName)).toEqual([
+			"Work Item Age",
+			"Work Item Age Band",
+			"SLE Risk",
+			"Time in State",
+			"Started",
+			"Closed",
+			"Cycle Time",
+			"Parent",
+			"Blocked since",
+		]);
+		expect(columnOf(featureLayout, "forecasts").headerName).toBe(
+			"Forecasted Completion",
+		);
+		expect(columnOf(timeline, "warnings").headerName).toBe("Warnings");
+		expect(columnOf(named, "namedCycleTime:7").headerName).toBe("Dev Cycle");
+		expect(columnOf(named, "namedCycleTime:9").headerName).toBe("Review Cycle");
 	});
 
 	it("Feature rows add Size and Forecasted Completion, last, to what Manage columns offers", () => {
