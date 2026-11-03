@@ -334,7 +334,7 @@ type RagInputs = {
 
 // A status is only honest once wait states are configured AND there is work in scope; in the two
 // degraded states the widget shows an explanatory body instead, and emitting a footer here would
-// paint a misleading colour on top of it (AC2/AC3).
+// paint a misleading colour on top of it.
 function computeFlowEfficiencyFooter(
 	info: IFlowEfficiencyInfo | null,
 	terms: RagTerms,
