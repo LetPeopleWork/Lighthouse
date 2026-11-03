@@ -373,8 +373,10 @@ export function validateStateMappings(
 	stored?: IStoredStateSettings,
 ): string[] {
 	return [
-		...validateMappingFields(mappings),
-		...mappingRuleErrors(mappings, lists, stored),
+		...new Set([
+			...validateMappingFields(mappings),
+			...mappingRuleErrors(mappings, lists, stored),
+		]),
 	];
 }
 

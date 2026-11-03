@@ -26,6 +26,19 @@ describe("validateStateMappings over lists of raw states", () => {
 		).toEqual([]);
 	});
 
+	it("names each problem once, however often it occurs", () => {
+		expect(
+			validateStateMappings(
+				[
+					{ name: "A", states: ["X"] },
+					{ name: "B", states: ["X"] },
+					{ name: "C", states: ["X"] },
+				],
+				lists(["Analysis"]),
+			),
+		).toEqual(['Source state "X" is used in multiple mappings.']);
+	});
+
 	it("refuses a name that sits beside one of its mapping's states, with the sentence the server sends", () => {
 		expect(
 			validateStateMappings([inArbeit], lists(["In Arbeit", "In Progress"])),
