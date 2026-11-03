@@ -380,18 +380,10 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         protected static List<string> DisplayStatesInOrder(WorkTrackingSystemOptionsOwner owner)
-        {
-            return owner.CategoryLists().DisplayStatesInWorkflowOrder()
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList();
-        }
+            => StateCategoryLists.WithoutRepeats(owner.CategoryLists().DisplayStatesInWorkflowOrder());
 
         protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> statesInOrder, string boundaryState)
-        {
-            var displayedBoundary = owner.MapRawStateToMappedName(boundaryState);
-            return statesInOrder.FirstOrDefault(state => string.Equals(state, displayedBoundary, StringComparison.OrdinalIgnoreCase))
-                ?? boundaryState;
-        }
+            => owner.CategoryLists().WorkflowEntryFor(statesInOrder, boundaryState) ?? boundaryState;
 
         protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
         {
@@ -454,7 +446,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             for (var index = 0; index < allStatesInOrder.Count; index++)
             {
-                if (string.Equals(allStatesInOrder[index], boundaryState, StringComparison.OrdinalIgnoreCase))
+                if (StateCategoryLists.IsSameState(allStatesInOrder[index], boundaryState))
                 {
                     return index;
                 }
@@ -488,7 +480,7 @@ namespace Lighthouse.Backend.Services.Implementation
         {
             for (var index = 0; index < allStatesInOrder.Count; index++)
             {
-                if (string.Equals(allStatesInOrder[index], state, StringComparison.OrdinalIgnoreCase))
+                if (StateCategoryLists.IsSameState(allStatesInOrder[index], state))
                 {
                     return index;
                 }

@@ -195,6 +195,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "Code Review is listed, so the charts show Phase in Doing and the definition is read over it, although Ghost is listed nowhere.");
         }
 
+        [Test]
+        public async Task NamedCycleTimeStartingAtAMappingSavedWithAPaddedName_CountsFromWhenTheItemEnteredTheMapping()
+        {
+            SeedOwner(
+                [new StateMapping { Name = $" {Review} ", States = [CodeReview, Testing] }],
+                [(Backlog, Analysis, 2), (Analysis, Review, 4), (Review, Done, 10)]);
+
+            Assert.That(await MedianNamedCycleTime(ReviewToDoneDefinitionId), Is.EqualTo(7),
+                "Spaces around the mapping's name do not make it a different state from the one the definition names.");
+        }
+
         private async Task<int> MedianNamedCycleTime(int definitionId)
         {
             var response = await client.GetAsync($"{MetricsRoute}/cycleTimePercentiles?startDate={windowStart:O}&endDate={windowEnd:O}&definitionId={definitionId}");
