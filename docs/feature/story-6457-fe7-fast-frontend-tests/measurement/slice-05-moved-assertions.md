@@ -111,23 +111,79 @@ Coverage, apart from timing: `LIGHTHOUSE_TIME_BUDGET=off pnpm exec vitest run sr
 Totals line: `All files | 99.32 | 96.35 | 99.3 | 99.75`. Only `useRowPicks.ts` is below 100 (branch 75, line 15).
 Line coverage (99.75) and branch coverage (96.35) must not be lower at close.
 
-## Delta (fill at close)
+## Delta (close)
+
+Figures are indicative (not quiet): 5 alternating before/after pairs of the touched test files, same minute, same
+worker count (default local cap), `LIGHTHOUSE_TIME_BUDGET=off`, machine shared with a parallel session (load average
+about 14 on 12 cores). Before arm: a worktree of `98b5ca9f5` running the two page files. After arm: this checkout
+running the two page files plus `pickLimit.test.ts` and `pickedReports.test.ts`. Summed test seconds per run:
+
+| Pair | Before (44 tests) | After (62 tests) |
+|---|---|---|
+| 1 | 29.70 | 24.78 |
+| 2 | 34.27 | 27.88 |
+| 3 | 35.19 | 24.23 |
+| 4 | 29.93 | 23.84 |
+| 5 | 28.74 | 21.21 |
+| Sum | 157.83 | 121.94 |
+
+Relative change in summed test seconds: **-22.7 %** (mean 31.57 s to 24.39 s per run).
 
 | Measure | Before | After |
 |---|---|---|
-| Test count (two files) | 44 | |
-| Preserved ids missing | n/a | |
-| Line coverage, Reports directory | 99.75 | |
-| Branch coverage, Reports directory | 96.35 | |
-| Per-test time, allow-listed entries (alternating pairs) | | |
-| File time, two files (summed test seconds) | 29.73 s | |
-| Allow-list entries removed / lowered | 6 | |
+| Test count (two page files) | 44 | 40 |
+| Tests added (two new unit files) | n/a | 22 (14 `pickLimit`, 8 `pickedReports`) |
+| Tests removed | n/a | 4 |
+| Preserved ids missing | n/a | 4 (listed below) |
+| Line coverage, Reports directory | 99.75 | 99.75 |
+| Branch coverage, Reports directory | 96.35 | 96.35 |
+| Statements / functions | 99.32 / 99.3 | 99.32 / 99.31 |
+| Allow-list length | 28 | 23 |
+| Allow-list entries removed / lowered | 6 declared | 5 removed, 0 lowered |
+
+The sixth entry (a coach removes three trial reports) stays: it ran 1.3 s alone but 2.3 s in a whole-directory run,
+over the 2 s budget, so deleting it made the guard report it. It is a removal-flow test, not a pick-limit one.
+
+### Preserved ids
+
+Before 44, after 40. Missing: 4, the tests that rendered 50 to 101 rows only to reach the limit:
+
+- combinedPdf :: One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50
+- combinedPdf :: One PDF of several reports exactly 50 picked may still be exported as one PDF
+- removal :: Picking reports above 50 picked, Remove is disabled and says at most 50
+- removal :: Picking reports exactly 50 picked may still be removed
+
+Added to the two files: 0. Surviving ids are unchanged. `Select all picks every row, on every page` keeps its id; it now
+uses three reports (the 101-row check is in `pickedReports.test.ts`).
+
+### Wiring that stays
+
+The call sites are covered by page tests that remain. Broken one at a time in the component, each makes a test fail
+(then reverted):
+
+| Break | Failing tests |
+|---|---|
+| `useRowPicks`: picked reports built from only the first two ids | `Select all picks every row, on every page` ("Unable to find an element with the text: 3 selected") and 20 more |
+| `useRowPicks`: `onSelectionChange` stores nothing | `Select all picks every row, on every page` and 7+ more |
+| `useSelectionRemoval`: count passed to `removeBlockedBecause` is 0 | `with one picked report on an owner she only reads, Remove is disabled and says why`, `with two picked reports on owners she only reads, the reason says they are` |
+| `useSelectionExport`: count passed to `exportBlockedBecause` is 1 | `with nothing picked Export PDF is disabled and says why` |
+| `ReportsPage`: the sentence is given 0 instead of the picked count | `Select all picks every row, on every page`, `sorting keeps what was picked`, `Escape at the confirmation closes it, removes nothing and keeps what was picked` |
+
+What is no longer proven through a render: that the grid's header checkbox reaches rows beyond the first page of 100
+(the page now selects three rows). The grid's paging behaviour belongs to `DataGridBase`, outside this slice's universe.
 
 ## Moved assertions
 
-Count removed `expect(` per file with `git diff -U0 <extraction-commit> -- <file> | grep -c '^-.*expect('`; every
-row below is one of them.
+Count removed `expect(` per file with `git diff -U0 fdc13fe86 -- <file> | grep -c '^-.*expect('`: removal 3, combinedPdf 3.
+The diff shows the `expect(` of the two multi-line "exactly 50" assertions as the removed line; the Select all
+assertion keeps its `expect(` line and changes only its argument (101 to 3), so it is a row below as well.
 
 | Old test (file :: test) | Assertion text | New location (file) | New test (name) |
 |---|---|---|---|
-| (filled by 06-02) | | | |
+| ReportsPage.removal.test.tsx :: Picking reports above 50 picked, Remove is disabled and says at most 50 | `expect(remove).toBeDisabled();` | pickLimit.test.ts | The most reports that may be picked Remove is held back above 50, at %i picked |
+| ReportsPage.removal.test.tsx :: Picking reports above 50 picked, Remove is disabled and says at most 50 | `expect(await screen.findByRole("tooltip")).toHaveTextContent(` | pickLimit.test.ts | The most reports that may be picked Remove is held back above 50, at %i picked |
+| ReportsPage.removal.test.tsx :: Picking reports exactly 50 picked may still be removed | `expect(` (`removeButton(50)` `toBeEnabled()`) | pickLimit.test.ts | The most reports that may be picked Remove may still remove %i picked reports |
+| ReportsPage.removal.test.tsx :: Picking reports Select all picks every row, on every page | `expect(screen.getByText(selectedCount(101), { exact: true }))` | pickedReports.test.ts | The reports picked Select all over 101 listed reports picks every one, on every page |
+| ReportsPage.combinedPdf.test.tsx :: One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50 | `expect(exportSeveral).toBeDisabled();` | pickLimit.test.ts | The most reports that may be picked Export PDF is held back above 50, at %i picked |
+| ReportsPage.combinedPdf.test.tsx :: One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50 | `expect(await screen.findByRole("tooltip")).toHaveTextContent(` | pickLimit.test.ts | The most reports that may be picked Export PDF is held back above 50, at %i picked |
+| ReportsPage.combinedPdf.test.tsx :: One PDF of several reports exactly 50 picked may still be exported as one PDF | `expect(` (`exportButton(50)` `toBeEnabled()`) | pickLimit.test.ts | The most reports that may be picked Export PDF may still export %i picked reports |

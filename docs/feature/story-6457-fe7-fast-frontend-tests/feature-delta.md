@@ -778,7 +778,8 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
 - **05 (slice 4).** Autosave debounce and rule gating; 600 ms (`.refinement`) and 500 ms x2 (`.test`) sleeps and 300 ms
   debounce waits to a fake clock.
 - **06 (slice 5).** 50-row pick limit, picked count, select-all as functions over a row list; the 101-row render becomes
-  a direct check plus one wiring test.
+  a direct check plus one wiring test. Measured (indicative, not quiet, 5 alternating pairs): summed test seconds of the
+  touched files -22.7 %; allow-list 28 to 23.
 - **07 (slice 6).** Wizard step and validation logic; 350 ms (`BulkReportWizard.openings`) and 300 ms (`BulkReportWizard`) waits
   to fake timers; extraction files may be several, named at `07-01`.
 - **08 (slice 7).** Paging and filter arithmetic; exactly one test renders the 143-row list.
