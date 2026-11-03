@@ -1,6 +1,7 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	ApiServiceContext,
@@ -10,7 +11,6 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
-import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
 vi.mock("../../../hooks/useRbac", () => ({
@@ -33,8 +33,15 @@ vi.mock("../../../hooks/useRbac", () => ({
 	}),
 }));
 
-// Each test waits past the 300 ms debounce in real time, on top of a full page render.
+// A full page render plus a typed query can take several seconds on a loaded machine.
 vi.setConfig({ testTimeout: 20000 });
+
+// The clock is moved on rather than waited out, so a pending autosave has surely fired by the
+// time nothing is checked as saved.
+const pastTheAutosaveDelay = () =>
+	act(async () => {
+		await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 200);
+	});
 
 describe("ModifyTeamSettings query field", () => {
 	const mockSaveTeamSettings = vi.fn();
@@ -89,7 +96,12 @@ describe("ModifyTeamSettings query field", () => {
 		return { query, user: userEvent.setup(), leaveThePage: view.unmount };
 	};
 
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		mockSaveTeamSettings.mockReset();
 		mockSaveTeamSettings.mockResolvedValue(undefined);
 	});
@@ -111,7 +123,7 @@ describe("ModifyTeamSettings query field", () => {
 
 		await user.click(query);
 		await user.tab();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
@@ -121,7 +133,7 @@ describe("ModifyTeamSettings query field", () => {
 
 		await user.click(query);
 		await user.type(query, " AND team = Red");
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
@@ -131,7 +143,7 @@ describe("ModifyTeamSettings query field", () => {
 
 		await user.click(query);
 		await user.type(query, " AND team = Red");
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
 		await user.tab();
@@ -142,7 +154,7 @@ describe("ModifyTeamSettings query field", () => {
 			}),
 		);
 
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
 	});
 
@@ -153,7 +165,7 @@ describe("ModifyTeamSettings query field", () => {
 		await user.type(query, "x");
 		await user.keyboard("{Backspace}");
 		await user.tab();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
@@ -165,7 +177,7 @@ describe("ModifyTeamSettings query field", () => {
 		await user.type(query, " AND team = Red");
 		await user.tab();
 		leaveThePage();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
 		expect(mockSaveTeamSettings).toHaveBeenCalledWith(
@@ -180,7 +192,7 @@ describe("ModifyTeamSettings query field", () => {
 
 		await user.type(screen.getByLabelText("Name"), " Two");
 		leaveThePage();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
 		expect(mockSaveTeamSettings).toHaveBeenCalledWith(
@@ -205,7 +217,7 @@ describe("ModifyTeamSettings query field", () => {
 		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(1);
 
 		finishFirstSave();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).toHaveBeenCalledTimes(2);
 		expect(mockSaveTeamSettings).toHaveBeenLastCalledWith(
@@ -219,7 +231,7 @@ describe("ModifyTeamSettings query field", () => {
 		await user.clear(screen.getByLabelText("Name"));
 		expect(screen.getByLabelText("Name")).toHaveValue("");
 		leaveThePage();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
@@ -230,7 +242,7 @@ describe("ModifyTeamSettings query field", () => {
 		await user.click(query);
 		await user.tab();
 		leaveThePage();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});

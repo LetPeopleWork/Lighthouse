@@ -1,6 +1,6 @@
-import { screen, waitFor, within } from "@testing-library/react";
+import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -175,7 +175,9 @@ const pick = async (state: string) => {
 const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
 
 const pastTheAutosaveDelay = () =>
-	new Promise((resolve) => setTimeout(resolve, AUTOSAVE_DELAY_AND_MARGIN_MS));
+	act(async () => {
+		await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_AND_MARGIN_MS);
+	});
 
 const theChips = () =>
 	Array.from(document.querySelectorAll(".MuiChip-root")).map(
@@ -190,7 +192,12 @@ const removeChip = async (state: string) => {
 };
 
 describe("The Refinement section of a Team's settings", () => {
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		terms.current = { ...defaultTerms };
 		saveTeamSettings.mockReset();
 		saveTeamSettings.mockResolvedValue(undefined);

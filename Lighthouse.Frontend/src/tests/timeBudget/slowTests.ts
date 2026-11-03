@@ -11,8 +11,6 @@ const reportsCombinedPdfFile =
 	"src/pages/Reports/ReportsPage.combinedPdf.test.tsx";
 const teamRefinementNeedFile =
 	"src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx";
-const teamReadinessFile =
-	"src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx";
 
 export const slowTests: readonly AllowListEntry[] = [
 	{
@@ -48,20 +46,6 @@ export const slowTests: readonly AllowListEntry[] = [
 		name: "ModifyTeamSettings query field saves the latest edit after the save already on its way, when the page is left meanwhile",
 		reason:
 			"Renders the whole team settings form and edits twice while a save is in flight, then leaves the page to see the latest edit saved.",
-		ceilingSeconds: 3.0,
-	},
-	{
-		file: teamReadinessFile,
-		name: "Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off",
-		reason:
-			"Renders the team settings form with its refinement rules and toggles a rule off and on again, step by step.",
-		ceilingSeconds: 2.5,
-	},
-	{
-		file: teamReadinessFile,
-		name: "Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold",
-		reason:
-			"Renders the team settings form with its refinement rules, has a rule refused when switched off, then switches it back on.",
 		ceilingSeconds: 3.0,
 	},
 	{

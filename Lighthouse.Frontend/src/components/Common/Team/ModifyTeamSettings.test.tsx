@@ -1,5 +1,12 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	act,
+	fireEvent,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -11,7 +18,6 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
-import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 
 vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
@@ -201,6 +207,13 @@ vi.mock("../Tags/TagsComponent", () => ({
 	),
 }));
 
+// The clock is moved on rather than waited out, so a pending autosave has surely fired by the
+// time nothing is checked as saved.
+const pastTheAutosaveDelay = () =>
+	act(async () => {
+		await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 200);
+	});
+
 describe("ModifyTeamSettings", () => {
 	const mockGetWorkTrackingSystems = vi.fn();
 	const mockGetTeamSettings = vi.fn();
@@ -269,7 +282,12 @@ describe("ModifyTeamSettings", () => {
 		await new Promise((resolve) => setTimeout(resolve, 0));
 	};
 
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		mockGetWorkTrackingSystems.mockClear();
 		mockGetTeamSettings.mockClear();
 		mockSaveTeamSettings.mockClear();
@@ -433,7 +451,7 @@ describe("ModifyTeamSettings", () => {
 
 		await renderModifyTeamSettings();
 
-		await new Promise((resolve) => setTimeout(resolve, 500));
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 	});
@@ -468,7 +486,7 @@ describe("ModifyTeamSettings", () => {
 			await renderModifyTeamSettings();
 
 			fireEvent.click(screen.getByText("Remove ToDo"));
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			await pastTheAutosaveDelay();
 
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 		});
@@ -613,7 +631,7 @@ describe("ModifyTeamSettings", () => {
 					'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
 			fireEvent.change(screen.getByLabelText("Mapping Name"), {
@@ -651,7 +669,7 @@ describe("ModifyTeamSettings", () => {
 					'Mapping "In Arbeit" has the same name as the To Do state "In Arbeit". Choose another name.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
 			fireEvent.change(screen.getByLabelText("Mapping Name"), {
@@ -687,7 +705,7 @@ describe("ModifyTeamSettings", () => {
 					'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Choose another name.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
 			fireEvent.change(screen.getByLabelText("Mapping Name"), {
@@ -725,7 +743,7 @@ describe("ModifyTeamSettings", () => {
 					'Mapping "In Arbeit" has the same name as a state grouped by mapping "Group". Choose another name.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
 			fireEvent.change(screen.getAllByLabelText("Mapping Name")[1], {
@@ -782,7 +800,7 @@ describe("ModifyTeamSettings", () => {
 					'Source state "QA" is used in multiple mappings.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 		});
 
