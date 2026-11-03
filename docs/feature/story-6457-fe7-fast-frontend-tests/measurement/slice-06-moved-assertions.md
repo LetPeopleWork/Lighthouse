@@ -162,23 +162,80 @@ leaves proven.
 
 ## Delta and moved assertions
 
-Empty until 07-02.
+Commits (pre-slice `5003575e5`): `b7a1037f8` extraction only (no test touched; the 830 tests of the two directories
+passed unmodified), `5e160ce73` the unit tests, the fake clocks and the one removed test. RED honestly: the
+extraction came first, as in slices 4 and 5; RED is the first run of the new unit tests (two of the first ten owner
+tests failed on an expectation of mine, fixed in the test; production code was not touched after the extraction).
 
 | Measure | Before | After |
 |---|---|---|
-| Test count (five files) | 246 | |
-| Tests added (new unit files) | n/a | |
-| Tests removed | n/a | |
-| Preserved ids missing | n/a | |
-| Line coverage, `src/pages/Reports` and `src/pages/Common/Reports` | 99.39 | |
-| Branch coverage, same directories | 96.94 | |
-| Allow-list length | 23 | |
+| Test count (five files) | 246 | 245 |
+| Tests added (three new unit files) | n/a | 51 (`ownerLimitOfWindow.test.ts` 11, `bulkWizardSteps.test.ts` 26, `reportWizardRules.test.ts` 14) |
+| Tests removed | n/a | 1 |
+| Preserved ids missing | n/a | 1 (the removed test, row below); 0 added in the five files |
+| Line coverage, `src/pages/Reports` and `src/pages/Common/Reports` | 99.39 | 99.39 |
+| Branch coverage, same directories | 96.94 | 97.03 |
+| Allow-list length | 23 | 23 (none of these files was on it) |
+| `expect(` per file against the extraction commit | | `BulkReportWizard.test.tsx` 87 to 85 (the two in the removed test); `ReportView.test.tsx` 195, `ReportsTab.test.tsx` 116, `ReportsTab.createWizard.test.tsx` 144, `BulkReportWizard.openings.test.tsx` 7: unchanged |
+
+The branch ratio first read 96.93 because the extraction reads the same uncovered 29 branches against a denominator
+four smaller (949 to 945); one unit test now covers a pre-existing uncovered branch of `thenAndNowDraft.ts`
+(`names Then ending today when Now reaches back past the first day the calendar can name`), which gives 97.03.
 
 ### Moved assertions
 
 | Old test (file :: test) | Assertion text | New location (file) | New test (name) |
 |---|---|---|---|
-| | | | |
+| `BulkReportWizard.test.tsx` :: At most 50 Teams and Portfolios in one run exactly 50 picked may still be created, with no ceiling message | `expect(screen.getByRole("button", { name: createCount(50) })).toBeEnabled()` | `BulkReportWizard.test.tsx` (page, same assertion on 30 Teams and 20 Portfolios); `bulkWizardSteps.test.ts` (function) | 30 Teams and 20 Portfolios make exactly 50: Create is enabled, with no ceiling message; is enabled for one pick and for exactly 50, with nothing to describe it |
+| same | `expect(screen.queryByText(OWNERS_AT_MOST_50)).not.toBeInTheDocument()` | same two | same two |
+
+Not removed, though they looked like candidates: every other walk in the five files is the only page test of a row in
+"Wiring to keep" or asserts rendering the extracted functions do not own (step components, copy, the dialog, the
+list). The step order, the Next and Create states and the pick rules are now also asserted on the functions; the walks
+that prove their wiring stay. Walks that reach the owner step go through `toTheOwnerStep` in `BulkReportsTestKit.tsx`,
+which is outside this slice's universe; cutting them further needs that helper changed.
+
+### Wiring to keep: the test that proves each row now
+
+Each row was proven by breaking the call site where marked. Mutations were temporary and reverted
+(`git checkout -- BulkReportWizard.tsx`; the tree is clean).
+
+| Behaviour | Test that fails if the call site breaks |
+|---|---|
+| Next disabled while Then's length is no number of days | `BulkReportWizard.test.tsx` :: Moving through the wizard Next waits while Then's length is no number of days (mutation 1) |
+| Single wizard Next disabled and nothing further for a refused Then/Now | `ReportsTab.createWizard.test.tsx` :: Step two / Step three `... and goes no further` (unchanged, `toBeDisabled()` on Next) |
+| Back and no Back on the first step | `BulkReportWizard.test.tsx` :: Back leads from Then to the Type step...; `ReportsTab.createWizard.test.tsx` :: offers no way back from the first step (unchanged) |
+| Owner step offers Create, not Next; Create disabled before a Team is picked | `BulkReportWizard.test.tsx` :: the owner step offers Create, not Next, and nothing can be created before a Team is picked (unchanged; mutation 4 with the picked count fixed at 0 fails five tests of that describe) |
+| Create enabled at exactly 50, disabled at 51 with the ceiling sentence | `BulkReportWizard.test.tsx` :: 30 Teams and 20 Portfolios make exactly 50...; 30 Teams and 21 Portfolios make 51...; Select all picks all 60 Teams... (mutation 2) |
+| Create disabled while the owners' roles are on their way or could not be read | see Findings below: no page test can fail for it; `bulkWizardSteps.test.ts` :: is held while the owners' roles are loading / failed |
+| A pick the new window cannot hold is dropped for good; Select all leaves out owners that cannot hold it | `BulkReportWizard.ownerLimits.test.tsx` (not edited); function: `ownerLimitOfWindow.test.ts` :: keeps the picks the new window can still hold and drops the rest for good |
+| The created report asks for what each picked owner needs | `BulkReportWizard.test.tsx` :: every Team picked gets the same comparison, in the order the step lists them (unchanged) |
+| Next and Create held until today's bounds are read again | `ReportsTab.createWizard.test.tsx` :: The wizard while its bounds are read (unchanged) |
+| Create disabled and the wizard held while saving; a name or no metric blocks Create | `ReportsTab.createWizard.test.tsx` :: Creating the report holds the wizard open...; Step four ... (unchanged) |
+| Which sentence a save failure gets | `ReportView.editWizard.test.tsx` (not edited); function: `reportWizardRules.test.ts` :: Which sentence a failed save gets |
+| Create Report disabled at the cap / while the list is on its way | `ReportsTab.test.tsx` (unchanged) |
+| Create Report, Edit and Delete only for an Admin | `ReportsTab.test.tsx`, `ReportView.test.tsx` (unchanged) |
+| Export offered only for a report this version can show | `ReportsTab.test.tsx` :: lists a report of a type this version cannot show... (unchanged; `ReportView.tsx` left alone) |
+
+### Mutation proofs (wiring)
+
+1. `BulkReportWizard.tsx`: `next={nextActionOf(activeStep, draft, ...` replaced by `next={nextActionOf(activeStep, type.forOwners.newDraft(), ...`.
+   `vitest -t "Next waits while"`: 1 failed, 39 skipped: `× Next waits while Then's length is no number of days`.
+2. `createActionOf(activeStep, pickedOwners.length, ...` replaced by `Math.min(pickedOwners.length, 50)`.
+   `vitest -t "At most 50"`: 2 failed, 1 passed: `× Select all picks all 60 Teams, the button counts them, and Create says at most 50`, `× 30 Teams and 21 Portfolios make 51: Create is disabled and says at most 50`.
+3. `createActionOf(activeStep, pickedOwners.length, ...` replaced by `0`. `vitest -t "Moving through the wizard"`: 5 failed (a Team picked a second time..., Escape leaves the result open..., one report created is counted in the singular..., two unnamed-Team tests).
+4. `createActionOf(..., ownersStatus, ...` replaced by `"ready"`: **survived**: all 225 tests of `src/pages/Reports` pass.
+
+### Findings
+
+- The wiring row "Create is disabled while the owners' roles are on their way or could not be read" named
+  `BulkReportWizard.test.tsx` :: When Create reports can be pressed. Those tests are about the page's own Create
+  reports button, not the wizard's Create. Mutation 4 survives every page test, and cannot be killed by one: while the
+  roles are not ready the owner step lists no owner, so nothing is picked and Create is disabled for that reason
+  alone. The clause is defensive; `bulkWizardSteps.test.ts` pins it on the function with three picks. This is a
+  finding for the reviewer, not something a page test in this slice can fix.
+- The kit helper `toTheOwnerStep` and `renderWithReports` (retry delay) are outside the universe, so the retry delay was
+  put on a fake clock in the test, not in the kit.
 
 ## Before figures
 
@@ -215,3 +272,31 @@ part of that total.)
 - Coverage: the same command as above, lines and branches of the combined directories.
 - A surviving id keeps file and name; an id that changes file only is listed as moved; an id that disappears is a
   removed test and needs a row in Moved assertions naming where the assertion lives now.
+
+## Close report
+
+All figures indicative (not quiet): a parallel session was running mutation tests throughout. Method: the five
+touched test files only, `LIGHTHOUSE_TIME_BUDGET=off`, default local cap (6 workers on 12 cores), a worktree of
+`5003575e5` for the before side, 5 alternating before/after pairs, summed assertion durations (seconds).
+
+| Pair | Before | After |
+|---|---|---|
+| 1 | 64.35 | 58.31 |
+| 2 | 59.37 | 58.35 |
+| 3 | 61.62 | 58.59 |
+| 4 | 58.74 | 58.18 |
+| 5 | 59.03 | 32.11 |
+| Sum | 303.10 | 265.53 |
+| Mean | 60.62 | 53.11 |
+
+Relative change **-12.4 %** (mean of the five pairs). The load of the parallel session dropped away during pair 5
+(both arms of a pair are not under the same load there); pairs 1 to 4 give 61.02 s to 58.36 s, **-4.4 %**. An
+earlier set of pairs was discarded: its after arm also ran the three new unit files and one pair hit a load spike
+(96 s); the new files add about 0.2 s. Where the seconds went: the report view's three retry tests and the openings
+file (a sleep per test) fell by about 4.5 s and 0.6 s; the other files did not move.
+
+Allow-list: 23 before, 23 after. Tests: 246 before, 245 after in the five files, plus 51 new direct tests.
+Coverage of the two directories: lines 99.39 to 99.39, branches 96.94 to 97.03. `pnpm build` clean (no Biome
+rewrite); `LIGHTHOUSE_TIME_BUDGET=warn pnpm test` 592 files, 9189 tests, passed. The directory run with the guard
+enforcing hit three 5 s timeouts under load (`ReportView.exportPdf.failures`, `ReportsPage.combinedPdf` and the first
+test of `BulkReportWizard.test.tsx`); the three files alone passed (77 tests, 0 offenders).

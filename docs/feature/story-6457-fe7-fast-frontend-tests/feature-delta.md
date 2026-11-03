@@ -781,7 +781,9 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   a direct check plus one wiring test. Measured (indicative, not quiet, 5 alternating pairs): summed test seconds of the
   touched files -22.7 %; allow-list 28 to 23.
 - **07 (slice 6).** Wizard step and validation logic; 350 ms (`BulkReportWizard.openings`) and 300 ms (`BulkReportWizard`) waits
-  to fake timers; extraction files may be several, named at `07-01`.
+  and the report view's one-second retry delay to fake timers; three extraction files with 51 direct tests; one walk removed.
+  Measured (indicative, not quiet, 5 alternating pairs): summed test seconds of the touched files -12.4 % (pairs 1 to 4,
+  before the parallel load fell away: -4.4 %); allow-list 23 to 23.
 - **08 (slice 7).** Paging and filter arithmetic; exactly one test renders the 143-row list.
 - **09 (slice 8).** Field-change and default resolution per tracker type; every tracker field set a test relied on is listed
   at `09-01` so none is lost.
