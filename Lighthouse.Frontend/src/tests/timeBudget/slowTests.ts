@@ -2,6 +2,18 @@
 // An entry whose test now runs well under budget, or no longer exists, fails the run until it is removed.
 import type { AllowListEntry } from "./compareToAllowList.ts";
 
+const refinementPagingFile =
+	"src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx";
+const reportsRemovalFile = "src/pages/Reports/ReportsPage.removal.test.tsx";
+const teamQueryCommitFile =
+	"src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx";
+const reportsCombinedPdfFile =
+	"src/pages/Reports/ReportsPage.combinedPdf.test.tsx";
+const teamRefinementNeedFile =
+	"src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx";
+const teamReadinessFile =
+	"src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx";
+
 export const slowTests: readonly AllowListEntry[] = [
 	{
 		file: "src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
@@ -18,49 +30,49 @@ export const slowTests: readonly AllowListEntry[] = [
 		ceilingSeconds: 3.0,
 	},
 	{
-		file: "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx",
+		file: teamQueryCommitFile,
 		name: "ModifyTeamSettings query field saves a changed name after the debounce without anyone leaving a field",
 		reason:
 			"Renders the whole team settings form and waits out the autosave delay with real timers before the save happens.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx",
+		file: teamQueryCommitFile,
 		name: "ModifyTeamSettings query field saves the edited query once, after the field is left",
 		reason:
 			"Renders the whole team settings form, types a query and leaves the field to see it save once.",
 		ceilingSeconds: 3.0,
 	},
 	{
-		file: "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx",
+		file: teamQueryCommitFile,
 		name: "ModifyTeamSettings query field saves the latest edit after the save already on its way, when the page is left meanwhile",
 		reason:
 			"Renders the whole team settings form and edits twice while a save is in flight, then leaves the page to see the latest edit saved.",
 		ceilingSeconds: 3.0,
 	},
 	{
-		file: "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx",
+		file: teamReadinessFile,
 		name: "Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off",
 		reason:
 			"Renders the team settings form with its refinement rules and toggles a rule off and on again, step by step.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx",
+		file: teamReadinessFile,
 		name: "Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold",
 		reason:
 			"Renders the team settings form with its refinement rules, has a rule refused when switched off, then switches it back on.",
 		ceilingSeconds: 3.0,
 	},
 	{
-		file: "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+		file: teamRefinementNeedFile,
 		name: "Stage rules in the Refinement section of a Team's settings keeps an edited Ready rule when the Yes votes needed change before it is saved",
 		reason:
 			"Renders the team settings form with its stage rules and edits a rule's votes needed before saving.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+		file: teamRefinementNeedFile,
 		name: "Stage rules in the Refinement section of a Team's settings saves a changed Ready rule and leaves the Being refined rule as it was",
 		reason:
 			"Renders the team settings form with its stage rules, edits one rule and saves, checking the other rule is untouched.",
@@ -81,42 +93,42 @@ export const slowTests: readonly AllowListEntry[] = [
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Reports/ReportsPage.combinedPdf.test.tsx",
+		file: reportsCombinedPdfFile,
 		name: "One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50",
 		reason:
 			"Renders the Reports page with more than 50 reports and picks them all before checking the export button.",
 		ceilingSeconds: 3.0,
 	},
 	{
-		file: "src/pages/Reports/ReportsPage.combinedPdf.test.tsx",
+		file: reportsCombinedPdfFile,
 		name: "One PDF of several reports exactly 50 picked may still be exported as one PDF",
 		reason:
 			"Renders the Reports page and picks exactly 50 reports before exporting them as one PDF.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Reports/ReportsPage.removal.test.tsx",
+		file: reportsRemovalFile,
 		name: "Picking reports Select all picks every row, on every page",
 		reason:
 			"Renders the Reports page with a long list and selects every row across all pages.",
 		ceilingSeconds: 4.5,
 	},
 	{
-		file: "src/pages/Reports/ReportsPage.removal.test.tsx",
+		file: reportsRemovalFile,
 		name: "Picking reports above 50 picked, Remove is disabled and says at most 50",
 		reason:
 			"Renders the Reports page with more than 50 reports and picks them all before checking the remove button.",
 		ceilingSeconds: 3.0,
 	},
 	{
-		file: "src/pages/Reports/ReportsPage.removal.test.tsx",
+		file: reportsRemovalFile,
 		name: "Picking reports exactly 50 picked may still be removed",
 		reason:
 			"Renders the Reports page and picks exactly 50 reports before removing them.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Reports/ReportsPage.removal.test.tsx",
+		file: reportsRemovalFile,
 		name: "Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list",
 		reason:
 			"Renders the Reports page, picks three reports across Teams and a Portfolio and removes them, waiting for the list to update.",
@@ -137,70 +149,70 @@ export const slowTests: readonly AllowListEntry[] = [
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it",
 		reason:
 			"Renders 143 Work Items in refinement, pages through them to the 131st and casts a vote on it.",
 		ceilingSeconds: 5.0,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 0 needed, the line sits where it falls in the whole list (page 1: { side: 'above', by: 'GR-0001', …(1) }, page 2: null)",
 		reason:
 			"Renders 143 Work Items in refinement and checks where the threshold line falls with 0 votes needed.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 100 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0100', …(1) }, page 2: null)",
 		reason:
 			"Renders 143 Work Items in refinement and checks where the threshold line falls with 100 votes needed.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 101 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0101', …(1) })",
 		reason:
 			"Renders 143 Work Items in refinement and checks where the threshold line falls with 101 votes needed.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last",
 		reason:
 			"Renders 143 Work Items in refinement, moves to the second page and applies a State filter that leaves 64.",
 		ceilingSeconds: 4.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120",
 		reason:
 			"Renders 143 Work Items in refinement and checks the numbering across two pages with 120 needed.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0120', …(1) })",
 		reason:
 			"Renders 143 Work Items in refinement and checks where the threshold line falls with 120 votes needed.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 143 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', …(1) })",
 		reason:
 			"Renders 143 Work Items in refinement and checks where the threshold line falls with 143 votes needed.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 150 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', …(1) })",
 		reason:
 			"Renders 143 Work Items in refinement and checks where the threshold line falls with 150 votes needed.",
 		ceilingSeconds: 2.5,
 	},
 	{
-		file: "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+		file: refinementPagingFile,
 		name: "Team Gravity's 143 Work Items in refinement can all be reached with 20 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0020', …(1) }, page 2: null)",
 		reason:
 			"Renders 143 Work Items in refinement and checks where the threshold line falls with 20 votes needed.",
