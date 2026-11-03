@@ -356,24 +356,24 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static List<(int Id, string StartState, string EndState)> ResolveValidNamedDefinitions(
             WorkTrackingSystemOptionsOwner owner,
-            IReadOnlyList<string> allStatesInOrder)
+            IReadOnlyList<string> statesInOrder)
         {
             return owner.CycleTimeDefinitions
                 .Where(owner.IsCycleTimeDefinitionValid)
                 .Select(definition => (
                     definition.Id,
-                    StartState: ResolveBoundaryState(owner, allStatesInOrder, definition.StartState),
-                    EndState: ResolveBoundaryState(owner, allStatesInOrder, definition.EndState)))
+                    StartState: ResolveBoundaryState(owner, statesInOrder, definition.StartState),
+                    EndState: ResolveBoundaryState(owner, statesInOrder, definition.EndState)))
                 .ToList();
         }
 
         protected static List<NamedCycleTimeValue> NamedValuesForItem(
             WorkItem item,
-            IReadOnlyList<string> allStatesInOrder,
+            IReadOnlyList<string> statesInOrder,
             IReadOnlyList<(int Id, string StartState, string EndState)> definitions)
         {
             return definitions
-                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, allStatesInOrder, definition.StartState, definition.EndState)))
+                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, statesInOrder, definition.StartState, definition.EndState)))
                 .Where(entry => entry.days.HasValue)
                 .Select(entry => new NamedCycleTimeValue(entry.Id, entry.days!.Value))
                 .ToList();
@@ -385,9 +385,9 @@ namespace Lighthouse.Backend.Services.Implementation
         protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> statesInOrder, string boundaryState)
             => owner.CategoryLists().WorkflowEntryFor(statesInOrder, boundaryState) ?? boundaryState;
 
-        protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
-            var window = NamedCycleTimeWindow(item, allStatesInOrder, startState, endState);
+            var window = NamedCycleTimeWindow(item, statesInOrder, startState, endState);
             if (window == null)
             {
                 return null;
@@ -396,16 +396,16 @@ namespace Lighthouse.Backend.Services.Implementation
             return (int)(window.Value.End.Date - window.Value.Start.Date).TotalDays + 1;
         }
 
-        protected static (DateTime Start, DateTime End)? NamedCycleTimeWindow(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        protected static (DateTime Start, DateTime End)? NamedCycleTimeWindow(WorkItem item, IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
-            var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
-            var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
+            var startThreshold = BoundaryThresholdIndex(statesInOrder, startState);
+            var endThreshold = BoundaryThresholdIndex(statesInOrder, endState);
             if (startThreshold < 0 || endThreshold <= startThreshold)
             {
                 return null;
             }
 
-            var stateEntries = OrderedStateEntries(item, allStatesInOrder).ToList();
+            var stateEntries = OrderedStateEntries(item, statesInOrder).ToList();
 
             var startMoment = stateEntries
                 .Where(entry => entry.Rank >= startThreshold)
