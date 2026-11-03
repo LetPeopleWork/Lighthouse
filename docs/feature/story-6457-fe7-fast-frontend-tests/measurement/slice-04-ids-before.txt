@@ -1,0 +1,153 @@
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name after the debounce without anyone leaving a field
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name when the page is left before the debounce runs out
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the page is left while the form is invalid
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the page is left without an edit
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the query is edited back to what was saved before the field is left
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the query is focused and left without a change
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing while the query is being typed and the field is still focused
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query once, after the field is left
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query when the page is left straight after the field
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the latest edit after the save already on its way, when the page is left meanwhile
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings does not let any of its numbers step below one vote
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings keeps the chosen refinement states when readiness changes
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks No votes that send to discussion as refused, describes it by why, and leaves “Yes, if…” votes that send to discussion unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks Voters needed as refused and leaves Yes votes needed unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks Yes votes needed as refused and leaves Voters needed unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks “Yes, if…” votes that send to discussion as refused, describes it by why, and leaves No votes that send to discussion unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings names readiness as what keeps the settings from being saved
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '' in No votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '' in “Yes, if…” votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '0' in No votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '0' in “Yes, if…” votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses fewer than one Yes vote, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses fewer voters than Yes votes, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves a changed number of Yes votes with the rest of readiness as it was
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves a changed number of “Yes, if…” votes that send to discussion
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves nothing just because the form was opened
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings shows three Yes votes from three voters, and discussion at one No or two “Yes, if…”, until the admin changes them
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings starts a Team that has never chosen refinement at the default readiness, and saves it with no states
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it had before
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches off the No rule on its own, keeping the “Yes, if…” rule
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches on a No rule stored as off at its default threshold
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches on a rule stored as off at its default threshold
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at 0, “Yes, if…” at 2 → A discussion rule needs at least 1 vote / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at 1, “Yes, if…” at -1 → null / A discussion rule needs at least 1 vote
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at 1, “Yes, if…” at 100000000000 → null / A discussion rule needs at least 1 vote
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at 1, “Yes, if…” at 2 → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at 100000000000, “Yes, if…” at 2 → A discussion rule needs at least 1 vote / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at 2147483647, “Yes, if…” at 2147483647 → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at 5, “Yes, if…” at 1 → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at NaN, “Yes, if…” at NaN → A discussion rule needs at least 1 vote / A discussion rule needs at least 1 vote
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at null, “Yes, if…” at 0 → null / A discussion rule needs at least 1 vote
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at null, “Yes, if…” at null → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server checks a readiness stored without discussion rules as if it had the defaults
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server -1 Yes from 0 voters → At least one Yes vote is needed / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 0 Yes from 3 voters → At least one Yes vote is needed / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 1 Yes from 0 voters → null / Voters needed cannot be fewer than Yes …
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 1 Yes from 1 voters → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 100000000000 Yes from 100000000000 voters → At least one Yes vote is needed / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 2 Yes from 5 voters → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 2147483647 Yes from 2147483647 voters → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 3 Yes from 100000000000 voters → null / Voters needed cannot be fewer than Yes …
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 3 Yes from 2 voters → null / Voters needed cannot be fewer than Yes …
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 3 Yes from 3 voters → null / null
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server 3 Yes from NaN voters → null / Voters needed cannot be fewer than Yes …
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server NaN Yes from 3 voters → At least one Yes vote is needed / null
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings adds nothing when a state that is not suggested is typed
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings drops a chosen state from the chips and the save once it stops being a Doing state
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings keeps the other chosen states when one chip is removed
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings offers only the Team's To Do and Doing states as suggestions
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings saves no refinement states once the last chip is removed
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings saves the added states as the Team's refinement states
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings says the Team's own word for Refinement as the section's title and in the state input
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows no chip and no flag for a chosen state that is no longer To Do or Doing
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows no loading indicator in the state input
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows no note about Doing states
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows the states already chosen as chips
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings keeps an edited Ready rule when the Yes votes needed change before it is saved
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings offers optional stages, a Ready rule and a Being refined rule, each with nothing set
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings saves a changed Ready rule and leaves the Being refined rule as it was
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings saves nothing while a new rule is still incomplete
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings shows the Ready rule the Team stored
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings switches the Ready rule off when its last condition is removed
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own asks for a day in the week of a Refinement when every second week has no starting week
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own does not mark a valid number of weeks as invalid
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own drops a ticked weekday when it is ticked again and keeps the others
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own keeps the starting week when a weekday is ticked
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own saves just the ticked weekday for a Team without a cadence
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own says Refinements are at least one week apart for fewer than one week
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings asks for the starting week once Refinements are more than a week apart, and saves it
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings leaves the Team without a cadence when the last weekday is unticked
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings offers the weekdays Monday to Sunday and every week, with no starting week asked for
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves Thursdays every week
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves nothing for fewer than one week between Refinements
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves nothing for more than 52 weeks between Refinements, and says why
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves nothing while every second week names no starting week, and marks the field
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement states when the To Do and Doing states change leaves the chosen states alone while every one of them is still offered
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the band as last edited when only the low end changed
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the band as last edited, not as it was when the form opened
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the high end at 95 as reached with only 5% likelihood
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the range as a How Many forecast between the next Refinement and the one after, in the Team's word
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings heads the band with the Team's words for work items and Refinement
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings keeps explaining the last valid band while the low end is cleared
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings marks neither end while the band is valid, and shows each end in percent
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings marks only the low end when it is out of range above the high end, since that is not an inverted band
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings marks the high end being typed in when it falls below the low end, and explains why there
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses High end likelihood at 96, outside 50 to 95, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses Low end likelihood at 49, outside 50 to 95, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses a decimal likelihood instead of saving it rounded, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses a low end of 85 against a high end of 85, naming both, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses a low end of 90 against a high end of 85, naming both, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings saves a changed high end with the low end as it was
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings shows a cleared low end as empty, not as 0, and says what it takes
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings shows the range read at 50% and 85% until the admin changes it
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team asks for no fields and offers no stages for a Team that is not saved yet
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team ignores the fields of a Team the form has already moved away from
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team offers no stages when the fields of the Team cannot be fetched
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team saves a stage rule switched to match any condition
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team saves the first condition of an empty stage as matching all conditions
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team says what each empty stage would do, in the Team's word for work items
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team stops offering stages once the form is for a Team that is not saved yet
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as a condition that needs no value saves as the rule shown and blocks the save only while unfinished
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as a condition without a value saves as the rule shown and blocks the save only while unfinished
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as a finished condition beside an unfinished one saves as the rule shown and blocks the save only while unfinished
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as finished conditions only saves as the rule shown and blocks the save only while unfinished
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as holds nothing back for a Team without stage rules
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as no conditions saves as the rule shown and blocks the save only while unfinished
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What holds back the save of the Refinement settings names an unfinished stage rule and a cadence with a mistake, in the Team's word
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What holds back the save of the Refinement settings names likelihoods with the low end not below the high end
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior auto-saves without work item types when schema says not required
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior hides WorkItemTypesComponent when schema says isWorkItemTypesRequired is false
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior shows WorkItemTypesComponent when schema says isWorkItemTypesRequired is true
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings a Team following the Teams' Estimation default shows it, and picking a field of its own saves that choice
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings auto-saves a valid change after the debounce window
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a Done state, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a To Do state, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a state another mapping groups, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while two complete mappings share a source state
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback names the work item types field when the schema requires them and none are set
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback offers only complete mappings as state options
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback renders no warning while the form can be saved
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback shows no warning for a mapping that was just added, and other edits still save
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback tells the user which source state is used in more than one mapping
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Doing States is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Done States is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Feature WIP is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Name is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Throughput History is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when To Do States is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Work Item Types is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save while no field has been edited
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not render a Save button
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles adding and removing states
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles adding and removing work item types
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles team settings change
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles work tracking system change
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings renders components correctly after loading
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings renders loading state initially
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings staleness opt-in seeds the revealed field with the team default of 5 on opt-in
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings the Parent Override Field reads the Teams' default of the connection now chosen
