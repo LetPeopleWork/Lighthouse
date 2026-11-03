@@ -17,13 +17,15 @@ import {
 	isAWholeNumber,
 	shownNumber,
 } from "../../../utils/numberField";
-
-type DiscussionRule = keyof IDiscussWhenSetting;
-
-const DEFAULT_DISCUSS_WHEN: Record<DiscussionRule, number> = {
-	no: 1,
-	yesIf: 2,
-};
+import {
+	DEFAULT_DISCUSS_WHEN,
+	type DiscussionRule,
+	initialRememberedThresholds,
+	isUsableThreshold,
+	rememberOnSwitchOff,
+	thresholdAfterToggle,
+	withThreshold,
+} from "./discussionRules";
 
 export const DEFAULT_READINESS: IReadinessSetting = {
 	minYes: 3,
@@ -48,7 +50,9 @@ const discussWhenOf = (readiness: IReadinessSetting): IDiscussWhenSetting =>
 	readiness.discussWhen ?? DEFAULT_DISCUSS_WHEN;
 
 const discussionRuleError = (threshold: number | null) =>
-	threshold === null || isAtLeastOne(threshold) ? null : DISCUSSION_RULE_ERROR;
+	threshold === null || isUsableThreshold(threshold)
+		? null
+		: DISCUSSION_RULE_ERROR;
 
 interface ReadinessErrors {
 	minYes: string | null;
@@ -164,23 +168,26 @@ const ReadinessSettings: React.FC<ReadinessSettingsProps> = ({
 	};
 
 	// A rule switched off and on again comes back at the threshold it had, not at the default.
-	const [rememberedThresholds, setRememberedThresholds] = useState(() => ({
-		no: discussWhen.no ?? DEFAULT_DISCUSS_WHEN.no,
-		yesIf: discussWhen.yesIf ?? DEFAULT_DISCUSS_WHEN.yesIf,
-	}));
+	const [rememberedThresholds, setRememberedThresholds] = useState(() =>
+		initialRememberedThresholds(discussWhen),
+	);
 
 	const changeDiscussWhen = (rule: DiscussionRule, threshold: number | null) =>
 		onChange({
 			...readiness,
-			discussWhen: { ...discussWhen, [rule]: threshold },
+			discussWhen: withThreshold(discussWhen, rule, threshold),
 		});
 
 	const toggleRule = (rule: DiscussionRule) => (on: boolean) => {
-		const current = discussWhen[rule];
-		if (!on && current !== null && discussionRuleError(current) === null) {
-			setRememberedThresholds({ ...rememberedThresholds, [rule]: current });
+		if (!on) {
+			setRememberedThresholds(
+				rememberOnSwitchOff(rememberedThresholds, rule, discussWhen[rule]),
+			);
 		}
-		changeDiscussWhen(rule, on ? rememberedThresholds[rule] : null);
+		changeDiscussWhen(
+			rule,
+			thresholdAfterToggle(rememberedThresholds, rule, on),
+		);
 	};
 
 	return (
