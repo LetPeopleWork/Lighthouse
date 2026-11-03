@@ -930,3 +930,33 @@ Pushed `45db5ed30..c98f49b05` (slices 1a and 1b). CI run 41619566770, frontend j
   locally (no load scaling, no local warn default).
 - Maintainer decision (2026-11-03): with no quiet window available, the rewrite slices start before the configuration spike; their
   figures are indicative, and the spike later measures on top of them.
+
+## Wave: DELIVER / [REF] Slice 2 verdict: no configuration change passes (steps 03-01 to 03-05, 2026-11-03, quiet machine)
+
+Measured on a quiet machine from 17:00 to 20:00, both arms at `614772515` (main with rewrite slices 4 to 6), 6 workers.
+Full table, raw data and notes: `measurement/slice-02-ab-table.md`; facts, split and profiles: `measurement/slice-02-facts.md`.
+
+**Fixed overhead, measured:** of 1,608 s summed worker time in one full baseline run (593 files, 9,191 tests, 279 s wall),
+53 % is fixed cost per file before a test runs (collect, i.e. import, 30.3 %; jsdom set-up 18.5 %; setup files 4.5 %) and
+46.4 % is the tests themselves.
+
+| Candidate | Verdict | Failing rule item and the figure |
+|---|---|---|
+| a node project for DOM-free `.ts` files | Rejected | Wall: +2.0 % median over 5 pairs (ranges overlap). Memory -0.7 %, ids identical, 3 plain runs green |
+| b0 MUI not inlined | Rejected | Wall: +10.5 % (first pass) |
+| b1 only `@mui/x-*` inlined | Rejected | Wall: +10.1 % (first pass) |
+| b2 MUI pre-bundled by the optimizer | Rejected | Wall: +13.3 % (first pass) |
+| d node project with `isolate: false` | Rejected | Ids: 173 failing tests in its smoke run, never timed |
+| e1 `pool: "forks"` | Rejected | Wall: +8.9 % (first pass) |
+| e2 `pool: "vmThreads"` | Rejected | Ids: 22 missing, 68 failed; memory +298 % (17.1 GB). Wall was -41 % |
+| f 12 workers | Rejected | Memory: +63 %; wall -5.7 %, short of -10 %, and CI has 4 cores |
+| g `fsModuleCache` | Rejected | Wall: 0.0 % median over 3 pairs once the cache is warm |
+| c happy-dom (03-03, measured because environment was 18.5 % > 10 %) | Rejected | Ids: 28 missing, 77 failed in 21 files; memory +30 %. Wall -7.9 % on one pair |
+
+**Saving available from the winners: none.** Slice 3 adopts nothing: 04-01 records that and makes no change, 04-02 has no
+configuration to verify, 04-03 has no CI payoff to read. The CI arm (03-04) was skipped for the same reason.
+The speed of this suite is in what the tests do: in CI run 41691382136, `.tsx` component tests (median 74 ms) take 97 % of the
+summed test time and `.ts` logic tests (median 0.3 ms) 3 %. The rewrite slices are where the remaining payoff is.
+
+Found in passing (follow-ups, not in this Story's scope): two order-dependent tests in `PortfolioDetail.test.tsx` fail under
+`--sequence.shuffle` seeds 11 and 33; four Reports and settings tests hit the 5 s test timeout only on a heavily loaded machine.

@@ -84,3 +84,7 @@ slices, which move rules from component tests into logic tests.
   reader's sort and column filter when a search opens the first page") and `ReportsPage.combinedPdf` ("when part of
   the page cannot be loaded no PDF is made and it says so") ran into the 5 s test timeout. All passed in every
   undisturbed run. Candidates for the flaky-test watch.
+
+## CI arm (03-04)
+
+Skipped: no candidate passed the local rule, so there is nothing to run on CI. No branch was pushed.
