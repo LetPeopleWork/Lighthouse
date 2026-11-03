@@ -124,15 +124,63 @@ must not be lower at close.
 
 | Measure | Before | After |
 |---|---|---|
-| Test count (five files) | 153 | |
-| Preserved ids missing | n/a | |
-| Line coverage, Team directory | 94.96 | |
-| Branch coverage, Team directory | 83.73 | |
-| Per-test time, allow-listed entries (indicative, alternating pairs) | | |
-| File time, five files (indicative, alternating pairs) | | |
-| Allow-list entries removed / lowered | 7 | |
+| Test count (five files) | 153 | 122 (plus 68 in four new unit-test files) |
+| Preserved ids missing | n/a | 0 of the surviving; 31 gone, all in the table below |
+| Line coverage, Team directory | 94.96 | 96.26 |
+| Branch coverage, Team directory | 83.73 | 86.23 |
+| Per-test time, allow-listed entries (indicative, not quiet; mean of 5 alternating runs, before -> after) | | name change after debounce 1.56 -> 2.18 s; query saved once 2.09 -> 0.99 s; latest edit while save in flight 2.00 -> 1.36 s; Ready rule with Yes votes 1.85 -> 2.71 s; changed Ready rule 1.76 -> 1.69 s; two readiness entries removed with their tests (1.75 s and 2.38 s before). The machine was loaded and the spread between runs is large (summed 61-104 s before, 58-80 s after), so single-test figures say little. |
+| File time, five files (indicative, not quiet; summed test seconds, mean of 5 alternating pairs, 6 workers, budget off) | 82.31 s (104.4 88.3 88.2 61.4 69.2) | 71.44 s (79.8 70.1 72.0 58.5 76.8), -13.2 % |
+| Allow-list entries removed / lowered | 7 | 2 removed, 0 lowered, 5 kept |
 
 ## Moved assertions
 
 | Old test (file :: test) | Assertion text | New location (file) | New test (name) |
 |---|---|---|---|
+| ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished | `expect(stageRuleOf(conditions, "or")).toEqual(rule);` | refinementSettingsBlockers.test.ts | What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished |
+| ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished | `expect(hasIncompleteStageRule({ ready: null, beingRefined: rule })).toBe(` | refinementSettingsBlockers.test.ts | What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished |
+| ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished | `expect(hasIncompleteStageRule({ ready: rule, beingRefined: null })).toBe(` | refinementSettingsBlockers.test.ts | What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished |
+| ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as holds nothing back for a Team without stage rules | `expect(hasIncompleteStageRule(undefined)).toBe(false);` | refinementSettingsBlockers.test.ts | What a stage rule saves as holds nothing back for a Team without stage rules |
+| ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as holds nothing back for a Team without stage rules | `expect(hasIncompleteStageRule(null)).toBe(false);` | refinementSettingsBlockers.test.ts | What a stage rule saves as holds nothing back for a Team without stage rules |
+| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to remembers the threshold a rule was changed to when it is switched off |
+| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to remembers the threshold a rule was changed to when it is switched off |
+| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to remembers the threshold a rule was changed to when it is switched off |
+| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to keeps the last allowed threshold when the rule is switched off at one that is refused |
+| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to keeps the last allowed threshold when the rule is switched off at one that is refused |
+| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to keeps the last allowed threshold when the rule is switched off at one that is refused |
+| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to keeps the last allowed threshold when the rule is switched off at one that is refused |
+| ModifyTeamSettings.readiness.test.tsx :: the readiness rule the form shares with the server $minYes Yes from $minVoters voters → $minYesError / $minVotersError | `expect(` | readinessErrors.test.ts | the readiness rule the form shares with the server $minYes Yes from $minVoters voters → $minYesError / $minVotersError |
+| ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at $no, “Yes, if…” at $yesIf → $noError / $yesIfError | `expect(` | readinessErrors.test.ts | the discussion rules the form shares with the server No at $no, “Yes, if…” at $yesIf → $noError / $yesIfError |
+| ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server checks a readiness stored without discussion rules as if it had the defaults | `expect(readinessErrors({ minYes: 3, minVoters: 3 })).toEqual({` | readinessErrors.test.ts | the discussion rules the form shares with the server checks a readiness stored without discussion rules as if it had the defaults |
+
+Rows per file, against `git diff -U0 c0d7cfeff -- <file> | grep -c '^-.*expect('`: refinementNeed 5 / 5,
+readiness 10 / 10, test.tsx 0 / 0, refinement 0 / 0, queryCommit 0 / 0. The `expect(` rows of the two
+`it.each` readiness blocks are one line each in the diff (the call is on the next line); the other rows
+quote the removed line as it was. Every moved block was moved verbatim except the two removed readiness
+page tests, whose rule logic is covered by `discussionRules.test.ts`; the page file keeps
+"switches a rule back on at the threshold it had before" as the wiring test for the same rule.
+
+### Preserved ids
+
+Before 153 ids, after 122 (the five files). Missing: 31, all listed above by their old test (2 removed readiness
+tests, 23 readiness-rule cases moved to `readinessErrors.test.ts`, 6 stage-rule cases moved to
+`refinementSettingsBlockers.test.ts`, kept with the same test names). Added to the five files: 0. Surviving
+ids are unchanged.
+
+### New unit tests
+
+`teamAutoSaveBlockers.test.ts` 18, `discussionRules.test.ts` 14, `refinementSettingsBlockers.test.ts` 13 (6 moved,
+7 new), `readinessErrors.test.ts` 23 (all moved). Net new tests: 39. Moved: 29. Removed outright: 2.
+
+### Fake clock
+
+`ModifyTeamSettings.refinement.test.tsx` `pastTheAutosaveDelay` (600 ms), `ModifyTeamSettings.test.tsx` the 500 ms sleeps
+(one test and the 7-scenario loop) and every `waitPastTheDebounce()` in `ModifyTeamSettings.test.tsx` and
+`ModifyTeamSettings.queryCommit.test.tsx` now move a fake clock (`vi.useFakeTimers({ shouldAdvanceTime: true })` plus
+`advanceTimersByTimeAsync`). Left as it was: the `setTimeout(resolve, 0)` flush at `ModifyTeamSettings.test.tsx:269`
+and the 3000 ms `waitFor` ceiling.
+
+### Allow-list
+
+Seven entries before, five after. Removed: the two readiness entries whose tests were removed. Kept: the three
+queryCommit entries and the two refinementNeed entries; each still renders the whole form and none runs under
+0.5 s, so none is stale (a time-budget run reports 0 offenders).
