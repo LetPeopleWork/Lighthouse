@@ -109,9 +109,9 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 	return (
 		<InputGroup title="State Mappings">
 			<Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-				Combine multiple Doing states into one named group. When you add a
-				group, its states are removed from your Doing list and replaced by the
-				group name. Removing a group restores the original states.
+				Combine several Doing states into one named group. The group shows as
+				one chip in your Doing list and in the charts; its states are still read
+				from your tracker. Delete the group to see its states separately again.
 			</Typography>
 			{validationErrors.length > 0 && (
 				<Stack spacing={1} sx={{ mb: 2 }}>

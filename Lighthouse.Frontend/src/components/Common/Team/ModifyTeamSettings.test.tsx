@@ -317,8 +317,7 @@ describe("ModifyTeamSettings", () => {
 		expect(screen.getByText("Loading...")).toBeInTheDocument();
 	});
 
-	// Pending: the editor passes hasError={false} to the loading frame, so a failed fetch shows no words today.
-	it.skip("shows the could-not-load words when the settings cannot be fetched", async () => {
+	it("shows the could-not-load words when the settings cannot be fetched", async () => {
 		mockGetTeamSettings.mockRejectedValue(new Error("offline"));
 
 		render(

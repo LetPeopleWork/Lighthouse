@@ -151,6 +151,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 	const {
 		loading,
+		loadFailed,
 		settings: projectSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
@@ -200,7 +201,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		handleWorkTrackingSystemChange(e.target.value);
 
 	return (
-		<LoadingAnimation isLoading={loading} hasError={false}>
+		<LoadingAnimation isLoading={loading} hasError={loadFailed}>
 			<Container maxWidth={false}>
 				{projectSettings && (
 					<Grid container spacing={3}>

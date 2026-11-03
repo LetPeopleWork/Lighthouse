@@ -146,6 +146,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const [saveState, setSaveState] = useState<SaveState>("idle");
 	const [refreshFailed, setRefreshFailed] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [loadFailed, setLoadFailed] = useState(false);
 	const lastSavePayloadRef = useRef<TSettings | null>(null);
 	const requestSeqRef = useRef(0);
 	const hasInteractedRef = useRef(false);
@@ -395,7 +396,10 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				const [fetchedSettings, systems] = await Promise.all([
 					getSettingsRef.current(),
 					getWorkTrackingSystemsRef.current(),
-				]);
+				]).catch((error: unknown) => {
+					setLoadFailed(true);
+					throw error;
+				});
 				const system =
 					systems.find(
 						(s) => s.id === fetchedSettings.workTrackingSystemConnectionId,
@@ -508,6 +512,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 
 	return {
 		loading,
+		loadFailed,
 		settings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,

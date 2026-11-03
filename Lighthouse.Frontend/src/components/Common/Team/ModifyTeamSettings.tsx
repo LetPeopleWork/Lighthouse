@@ -71,6 +71,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 	const {
 		loading,
+		loadFailed,
 		settings: teamSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
@@ -122,7 +123,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		});
 
 	return (
-		<LoadingAnimation isLoading={loading} hasError={false}>
+		<LoadingAnimation isLoading={loading} hasError={loadFailed}>
 			<Container maxWidth={false}>
 				{teamSettings && (
 					<Grid container spacing={3}>
