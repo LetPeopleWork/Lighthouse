@@ -202,13 +202,19 @@ describe("time-budget comparison", () => {
 				"a listed name that the run's name only starts with",
 				[aTest({ name: `${slowOne} (later)`, seconds: 5 })],
 				listed(),
-				[{ kind: "over-budget", name: `${slowOne} (later)` }],
+				[
+					{ kind: "over-budget", name: `${slowOne} (later)` },
+					{ kind: "stale", name: slowOne, why: "test-absent" },
+				],
 			],
 			[
 				"a listed name that the run's name only ends with",
 				[aTest({ name: `later ${slowOne}`, seconds: 5 })],
 				listed(),
-				[{ kind: "over-budget", name: `later ${slowOne}` }],
+				[
+					{ kind: "over-budget", name: `later ${slowOne}` },
+					{ kind: "stale", name: slowOne, why: "test-absent" },
+				],
 			],
 			[
 				"a listed file path that the run's path extends at the end",
