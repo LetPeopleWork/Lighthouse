@@ -134,8 +134,10 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 									color="primary"
 									variant={groupTooltip === undefined ? "outlined" : "filled"}
 									// A mapping chip has no action of its own, so without this a keyboard user never reaches its tooltip.
-									tabIndex={groupTooltip === undefined ? undefined : 0}
-									aria-label={groupTooltip === undefined ? undefined : item}
+									// A plain div may not carry a name, so the chip is a group named after the mapping.
+									{...(groupTooltip === undefined
+										? {}
+										: { tabIndex: 0, role: "group", "aria-label": item })}
 									draggable={!!onReorderItems}
 									onDragStart={(e) => handleDragStart(e, index)}
 									onDragOver={handleDragOver}
