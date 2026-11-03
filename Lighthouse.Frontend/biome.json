@@ -189,7 +189,9 @@
 				"useGetterReturn": "error",
 				"useNamespaceKeyword": "error",
 				"noIdenticalTestTitle": "error",
-				"noReactStringRefs": "error"
+				"noReactStringRefs": "error",
+				"noSkippedTests": "error",
+				"noFocusedTests": "error"
 			}
 		}
 	},
