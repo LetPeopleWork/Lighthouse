@@ -4,10 +4,7 @@ import { useCallback, useMemo, useState } from "react";
 import { useErrorSnackbar } from "../../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useRbac } from "../../../../hooks/useRbac";
 import { useVoterIdentity } from "../../../../hooks/useVoterIdentity";
-import type {
-	IRefinementRow,
-	IRefinementView,
-} from "../../../../models/Refinement/Refinement";
+import type { IRefinementRow } from "../../../../models/Refinement/Refinement";
 import type { Team } from "../../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import { useTerminology } from "../../../../services/TerminologyContext";
@@ -17,8 +14,8 @@ import NeedVerdict, { shownVerdict, showsNeedMessage } from "./NeedVerdict";
 import NextRefinement, { NEXT_REFINEMENT_SLOT } from "./NextRefinement";
 import { describeNextRefinement } from "./nextRefinementWording";
 import RefinementGrid from "./RefinementGrid";
+import { describeHeading } from "./refinementHeading";
 import { describeLogFailure } from "./sizingLogWording";
-import { describeStageBreakdown } from "./stageBreakdown";
 import { useCommentAdding } from "./useCommentAdding";
 import { useRefinement } from "./useRefinement";
 import { useSizingLog } from "./useSizingLog";
@@ -44,28 +41,6 @@ const TAB_LAYOUT: SxProps<Theme> = {
 		gridRow: "1",
 		justifySelf: "end",
 	},
-};
-
-type GetTerm = (key: string) => string;
-
-const describeReadyByVotes = (refinement: IRefinementView): string =>
-	refinement.readyByVotesCount === undefined
-		? ""
-		: ` · ${refinement.readyByVotesCount} ready by votes`;
-
-// A Team with stage rules reads its Work Items by stage; any other Team by how many there are.
-const describeHeading = (
-	refinement: IRefinementView,
-	getTerm: GetTerm,
-): string => {
-	if (refinement.stagesConfigured) {
-		return describeStageBreakdown(refinement.workItems);
-	}
-	const count = refinement.workItems.length;
-	const workItemsTerm = getTerm(
-		count === 1 ? TERMINOLOGY_KEYS.WORK_ITEM : TERMINOLOGY_KEYS.WORK_ITEMS,
-	);
-	return `${count} ${workItemsTerm} in ${getTerm(TERMINOLOGY_KEYS.REFINEMENT)}${describeReadyByVotes(refinement)}`;
 };
 
 const describeWorkItem = (

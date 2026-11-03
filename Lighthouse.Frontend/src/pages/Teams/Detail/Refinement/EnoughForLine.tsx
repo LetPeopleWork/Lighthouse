@@ -2,7 +2,6 @@ import { Box, Typography, useTheme } from "@mui/material";
 import {
 	GridRow,
 	type GridRowProps,
-	type GridRowSpacing,
 	gridExpandedRowCountSelector,
 	useGridApiContext,
 	useGridSelector,
@@ -19,6 +18,13 @@ import {
 	lineBeside,
 } from "./enoughForPlacement";
 import type { ShownVerdict } from "./NeedVerdict";
+import {
+	LINE_HEIGHT_PX,
+	neededNumberAt,
+	shownCountOf,
+	shownRowOf,
+	spaceKeptFor,
+} from "./refinementPaging";
 
 /** How many rows are needed before the next Refinement, and what the line says about them. */
 export interface EnoughForMarking {
@@ -43,26 +49,6 @@ export const markEnoughFor = (
 export const EnoughForContext = createContext<EnoughForMarking | null>(null);
 
 const ShownIndexContext = createContext(-1);
-
-const LINE_HEIGHT_PX = 36;
-
-const SPACE_FOR_THE_LINE: Record<LineSide, GridRowSpacing> = {
-	above: { top: LINE_HEIGHT_PX },
-	below: { bottom: LINE_HEIGHT_PX },
-};
-
-/**
- * The grid lays its rows out from the heights it knows about, so the line lives in space the grid reserves
- * as row spacing; otherwise every row after it would be drawn a line lower than the grid thinks it is.
- * Both the space and the line are placed from the row's place in the whole list, sorted and filtered,
- * so they agree on every page.
- */
-const spaceForTheLine =
-	(high: number) =>
-	(row: RowInWholeList): GridRowSpacing => {
-		const line = lineBeside(high, row);
-		return line === null ? {} : SPACE_FOR_THE_LINE[line.side];
-	};
 
 /** The line pulls itself back into the space reserved for it rather than pushing the next row down. */
 const INTO_THE_RESERVED_SPACE: Record<
@@ -106,17 +92,16 @@ const EnoughForRow = forwardRef<HTMLDivElement, Readonly<GridRowProps>>(
 		if (marking === null) {
 			return <GridRow ref={ref} {...props} />;
 		}
-		const beside = lineBeside(marking.high, {
-			index: props.index,
-			isLastShown: props.index === shownCount - 1,
-			isOutOfSight: props.isNotVisible,
-		});
+		const beside = lineBeside(
+			marking.high,
+			shownRowOf(props.index, shownCount, props.isNotVisible),
+		);
 		const line =
 			beside === null ? null : (
 				<Line
 					side={beside.side}
 					sentence={describeEnoughFor(beside.says, {
-						shown: props.index + 1,
+						shown: shownCountOf(props.index),
 						highPercentile: marking.highPercentile,
 						terms: marking.terms,
 					})}
@@ -141,7 +126,10 @@ const ROW_SLOTS = { row: EnoughForRow };
 export const useEnoughForLine = (marking: EnoughForMarking | null) => {
 	const high = marking?.high;
 	const getRowSpacing = useMemo(
-		() => (high === undefined ? undefined : spaceForTheLine(high)),
+		() =>
+			high === undefined
+				? undefined
+				: (row: RowInWholeList) => spaceKeptFor(high, row),
 		[high],
 	);
 	return { slots: ROW_SLOTS, getRowSpacing };
@@ -151,10 +139,10 @@ export const useEnoughForLine = (marking: EnoughForMarking | null) => {
 export const NeededNumber: React.FC = () => {
 	const marking = useContext(EnoughForContext);
 	const index = useContext(ShownIndexContext);
-	if (marking === null || !isNumbered(marking.high, index)) {
+	const number = marking === null ? null : neededNumberAt(marking.high, index);
+	if (marking === null || number === null) {
 		return null;
 	}
-	const number = index + 1;
 	return (
 		<Box
 			component="span"
