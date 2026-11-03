@@ -176,6 +176,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							stateMappingNames={withoutIncompleteMappings(
 								teamSettings.stateMappings ?? [],
 							).map((m) => m.name)}
+							stateMappings={teamSettings.stateMappings || []}
 						/>
 
 						<StateMappingsEditor

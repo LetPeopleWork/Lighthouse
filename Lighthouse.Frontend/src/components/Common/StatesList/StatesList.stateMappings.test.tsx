@@ -78,7 +78,7 @@ describe("StatesList with state mappings over raw states", () => {
 		onReorderDoingStates.mockClear();
 	});
 
-	it.skip("shows a mapping as one chip with a group icon where its first state is", async () => {
+	it("shows a mapping as one chip with a group icon where its first state is", async () => {
 		await renderDoing(["Analysis", "Code Review", "Testing", "Waiting"]);
 
 		const chips = screen
@@ -94,7 +94,7 @@ describe("StatesList with state mappings over raw states", () => {
 		);
 	});
 
-	it.skip("shows a mapping whose states are apart at the position of its first state", async () => {
+	it("shows a mapping whose states are apart at the position of its first state", async () => {
 		await renderDoing(["Code Review", "Analysis", "Testing", "Waiting"]);
 
 		const chips = screen
@@ -103,7 +103,7 @@ describe("StatesList with state mappings over raw states", () => {
 		expect(chips).toEqual(["Review", "Analysis", "Waiting"]);
 	});
 
-	it.skip("names the mapping's states in a tooltip that says how to remove it", async () => {
+	it("names the mapping's states in a tooltip that says how to remove it", async () => {
 		await renderDoing(["Analysis", "Code Review", "Testing"]);
 
 		await userEvent.hover(chipOf("Review"));
@@ -113,7 +113,7 @@ describe("StatesList with state mappings over raw states", () => {
 		);
 	});
 
-	it.skip("offers no way to remove a mapping chip, and still one for a plain state", async () => {
+	it("offers no way to remove a mapping chip, and still one for a plain state", async () => {
 		await renderDoing(["Analysis", "Code Review", "Testing"]);
 
 		expect(
@@ -178,7 +178,7 @@ describe("StatesList with state mappings over raw states", () => {
 		).toBeInTheDocument();
 	});
 
-	it.skip("does not offer a state named like one of the mappings as a suggestion", async () => {
+	it("does not offer a state named like one of the mappings as a suggestion", async () => {
 		await renderDoing(["Analysis", "Code Review", "Testing"]);
 
 		await userEvent.click(screen.getByLabelText("New Doing States"));

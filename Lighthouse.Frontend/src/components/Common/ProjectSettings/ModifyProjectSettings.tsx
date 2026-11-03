@@ -249,6 +249,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							stateMappingNames={withoutIncompleteMappings(
 								projectSettings.stateMappings ?? [],
 							).map((m) => m.name)}
+							stateMappings={projectSettings.stateMappings || []}
 						/>
 
 						<StateMappingsEditor

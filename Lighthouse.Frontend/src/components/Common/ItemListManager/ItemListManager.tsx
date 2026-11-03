@@ -1,9 +1,11 @@
+import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import {
 	Autocomplete,
 	Chip,
 	CircularProgress,
 	Stack,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -18,6 +20,8 @@ interface ItemListManagerProps {
 	onReorderItems?: (newOrder: string[]) => void;
 	suggestions?: string[];
 	isLoading?: boolean;
+	/** Items that stand for a group, each with the tooltip it shows; they cannot be removed here. */
+	groupedItems?: ReadonlyMap<string, string>;
 }
 
 const ItemListManager: React.FC<ItemListManagerProps> = ({
@@ -28,6 +32,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	onReorderItems,
 	suggestions = [],
 	isLoading = false,
+	groupedItems,
 }) => {
 	const [inputValue, setInputValue] = useState<string>("");
 	const [highlightedOption, setHighlightedOption] = useState<string | null>(
@@ -104,27 +109,51 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 				<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
 					{items
 						.filter((item) => item.trim())
-						.map((item, index) => (
-							<Chip
-								key={item}
-								label={item}
-								onDelete={() => onRemoveItem(item)}
-								color="primary"
-								variant="outlined"
-								draggable={!!onReorderItems}
-								onDragStart={(e) => handleDragStart(e, index)}
-								onDragOver={handleDragOver}
-								onDrop={(e) => handleDrop(e, index)}
-								onDragEnd={handleDragEnd}
-								sx={{
-									cursor: onReorderItems ? "grab" : "default",
-									"&:active": {
-										cursor: onReorderItems ? "grabbing" : "default",
-									},
-									opacity: draggedIndex === index ? 0.5 : 1,
-								}}
-							/>
-						))}
+						.map((item, index) => {
+							const groupTooltip = groupedItems?.get(item);
+							const chip = (
+								<Chip
+									key={item}
+									label={item}
+									onDelete={
+										groupTooltip === undefined
+											? () => onRemoveItem(item)
+											: undefined
+									}
+									icon={
+										groupTooltip === undefined ? undefined : (
+											<WorkspacesIcon data-testid="state-mapping-chip-icon" />
+										)
+									}
+									data-testid={
+										groupTooltip === undefined
+											? undefined
+											: "state-mapping-chip"
+									}
+									color="primary"
+									variant={groupTooltip === undefined ? "outlined" : "filled"}
+									draggable={!!onReorderItems}
+									onDragStart={(e) => handleDragStart(e, index)}
+									onDragOver={handleDragOver}
+									onDrop={(e) => handleDrop(e, index)}
+									onDragEnd={handleDragEnd}
+									sx={{
+										cursor: onReorderItems ? "grab" : "default",
+										"&:active": {
+											cursor: onReorderItems ? "grabbing" : "default",
+										},
+										opacity: draggedIndex === index ? 0.5 : 1,
+									}}
+								/>
+							);
+							return groupTooltip === undefined ? (
+								chip
+							) : (
+								<Tooltip key={item} title={groupTooltip}>
+									{chip}
+								</Tooltip>
+							);
+						})}
 				</Stack>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
