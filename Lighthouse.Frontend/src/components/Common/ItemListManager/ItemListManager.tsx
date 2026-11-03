@@ -108,8 +108,9 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 			<Grid size={{ xs: 12 }}>
 				<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
 					{items
-						.filter((item) => item.trim())
-						.map((item, index) => {
+						.map((item, index) => ({ item, index }))
+						.filter(({ item }) => item.trim())
+						.map(({ item, index }) => {
 							const groupTooltip = groupedItems?.get(item);
 							const chip = (
 								<Chip

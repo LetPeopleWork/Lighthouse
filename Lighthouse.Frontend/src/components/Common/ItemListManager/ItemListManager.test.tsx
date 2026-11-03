@@ -221,6 +221,29 @@ describe("ItemListManager", () => {
 		]);
 	});
 
+	it("moves the dragged item itself when a blank entry sits before it", () => {
+		const mockOnReorderItems = vi.fn();
+		render(
+			<ItemListManager
+				title={title}
+				items={["Item 1", " ", "Item 3"]}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+				onReorderItems={mockOnReorderItems}
+			/>,
+		);
+
+		fireEvent.dragStart(screen.getByText("Item 3"), {
+			dataTransfer: { effectAllowed: "move", setData: vi.fn() },
+		});
+		fireEvent.dragOver(screen.getByText("Item 1"));
+		fireEvent.drop(screen.getByText("Item 1"), {
+			dataTransfer: { dropEffect: "move", getData: vi.fn() },
+		});
+
+		expect(mockOnReorderItems).toHaveBeenCalledWith(["Item 3", "Item 1", " "]);
+	});
+
 	it("makes chips draggable when onReorderItems is provided", () => {
 		const mockOnReorderItems = vi.fn();
 		render(
