@@ -1055,3 +1055,25 @@ nothing in a wait-state reference; a mapping named like a real state in another 
 edits that move a state refused with 400, a rollback re-collapses nothing, owners the seeder skipped, the
 rolling-update overlap, one full resync per rewritten owner after the upgrade); `docs/concepts/api-versioning.md`; the
 Lighthouse-Clients skill text, and a check that the CLI/MCP do not echo the display lists back.
+
+## Maintainer decisions: open questions after slice 4 (2026-11-03)
+
+- **A wait state that names one state inside a mapping is refused.** The validator refuses it and asks for the
+  mapping's name. The test `WaitStatesAsDisplayed_WaitStateNamesOneStateOfAMapping_CountsAllTimeInTheGroupAsWait`
+  changes to pin the refusal. It runs as an extra step after 05-08 (with the backend validator and its frontend mirror).
+- **The cycle-time-definition columns and boundaries are fixed in this feature**, not raised as a Bug. Charts and named
+  cycle times scoped to a definition take their columns from the display list and resolve boundaries to display names,
+  so items in a mapped state keep their time and named percentiles. This is an extra step after 05-08. It is
+  pre-existing on main, so it gets a release-note line of its own.
+- **Slice 5 resumes under AFK with the same options**: thorough (crafter opus, reviewer sonnet, double review), slice
+  wrap-up as refactor plus review, no 5-minute windows, mutation once at the final gate, push to the feature branch only.
+  Main is 107 commits ahead of the branch, so the branch is rebased only with the maintainer, before main.
+
+Taken in AFK mode when the two steps were added (05-09, 05-10; tests in 477667ed1). The maintainer may revisit these:
+
+- The wait-state refusal judges only what a save adds or changes, as the validator does for every other rule. A stored
+  wait state sent back unchanged over an unchanged mapping is not refused, so owners saved before the rule can still
+  save unrelated changes, and they keep reading the whole group as wait until someone edits the wait state.
+- The refusal sentence shows where the mapping editor's errors already show. It does not move next to the Wait States
+  list, because that would be a new placement that needs a sketch. The copy is: `Wait state "{state}" is part of the
+  mapping "{mapping}". Use "{mapping}" as the wait state instead.`
