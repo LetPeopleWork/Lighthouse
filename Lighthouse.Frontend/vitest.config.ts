@@ -1,10 +1,10 @@
 import { availableParallelism } from "node:os";
 import { defineConfig } from "vitest/config";
 import { EXPECTED_TEST_FAILURE } from "./src/tests/ExpectedTestFailure.ts";
+import { resolveTestWorkers } from "./src/tests/testWorkers.ts";
 import { slowTests } from "./src/tests/timeBudget/slowTests.ts";
 import { resolveTimeBudgetOptions } from "./src/tests/timeBudget/timeBudgetOptions.ts";
 import { TimeBudgetReporter } from "./src/tests/timeBudget/timeBudgetReporter.ts";
-import { resolveTestWorkers } from "./src/tests/testWorkers.ts";
 
 // Per-test budget in seconds on a quiet machine.
 const BUDGET_SECONDS = 2;
