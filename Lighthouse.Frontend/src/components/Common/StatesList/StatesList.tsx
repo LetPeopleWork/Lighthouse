@@ -5,7 +5,11 @@ import { useContext, useEffect, useMemo, useState } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { StatesCollection } from "../../../models/StatesCollection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import { displayStatesFor, foldKey } from "../../../utils/stateMappingView";
+import {
+	displayNameOf,
+	displayStatesFor,
+	foldKey,
+} from "../../../utils/stateMappingView";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 
@@ -26,7 +30,6 @@ interface StatesListComponentProps {
 	onReorderDoneStates?: (newOrder: string[]) => void;
 
 	isForTeam?: boolean;
-	stateMappingNames?: string[];
 	/** The lists above hold raw states; the mappings only group them on display. */
 	stateMappings?: IStateMapping[];
 }
@@ -44,14 +47,6 @@ function mappingTooltipsFor(
 	);
 }
 
-function groupKeyOf(rawState: string, mappings: IStateMapping[]): string {
-	const key = foldKey(rawState);
-	const group = mappings.find((mapping) =>
-		mapping.states.some((state) => foldKey(state) === key),
-	);
-	return foldKey(group?.name ?? rawState);
-}
-
 /** Turns a reordered display list back into raw states, each mapping's states together in their stored order. */
 function rawOrderFor(
 	displayOrder: string[],
@@ -61,7 +56,7 @@ function rawOrderFor(
 	return displayOrder.flatMap((entry) => {
 		const entryKey = foldKey(entry);
 		return rawStates.filter(
-			(state) => groupKeyOf(state, mappings) === entryKey,
+			(state) => foldKey(displayNameOf(state, mappings)) === entryKey,
 		);
 	});
 }
@@ -90,7 +85,6 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 	onRemoveDoneState,
 	onReorderDoneStates,
 	isForTeam = true,
-	stateMappingNames = [],
 	stateMappings = NO_MAPPINGS,
 }) => {
 	const [statesSuggestions, setStatesSuggestions] =
@@ -168,45 +162,30 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [
-			...stateMappingNames,
-			...toDoArray,
-			...doingArray,
-			...doneArray,
-		];
+		const allStates = [...toDoArray, ...doingArray, ...doneArray];
 
 		return Array.from(new Set(allStates)).filter(isOfferable);
-	}, [statesSuggestions, isOfferable, stateMappingNames]);
+	}, [statesSuggestions, isOfferable]);
 
 	const doingSuggestions = useMemo(() => {
 		const toDoArray = statesSuggestions?.toDoStates ?? [];
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [
-			...stateMappingNames,
-			...doingArray,
-			...toDoArray,
-			...doneArray,
-		];
+		const allStates = [...doingArray, ...toDoArray, ...doneArray];
 
 		return Array.from(new Set(allStates)).filter(isOfferable);
-	}, [statesSuggestions, isOfferable, stateMappingNames]);
+	}, [statesSuggestions, isOfferable]);
 
 	const doneSuggestions = useMemo(() => {
 		const toDoArray = statesSuggestions?.toDoStates ?? [];
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [
-			...stateMappingNames,
-			...doneArray,
-			...toDoArray,
-			...doingArray,
-		];
+		const allStates = [...doneArray, ...toDoArray, ...doingArray];
 
 		return Array.from(new Set(allStates)).filter(isOfferable);
-	}, [statesSuggestions, isOfferable, stateMappingNames]);
+	}, [statesSuggestions, isOfferable]);
 
 	return (
 		<InputGroup title="States">

@@ -20,10 +20,8 @@ import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSetting
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
-import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
 	validateStateMappings,
-	withoutIncompleteMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -173,24 +171,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onRemoveDoneState={doneHandlers.onRemove}
 							onReorderDoneStates={doneHandlers.onReorder}
 							isForTeam={true}
-							stateMappingNames={withoutIncompleteMappings(
-								teamSettings.stateMappings ?? [],
-							).map((m) => m.name)}
 							stateMappings={teamSettings.stateMappings || []}
 						/>
 
 						<StateMappingsEditor
 							stateMappings={teamSettings.stateMappings || []}
 							doingStates={teamSettings.doingStates || []}
-							onChange={(nextMappings) => {
-								const reconciledDoing = reconcileDoingStates(
-									teamSettings.stateMappings || [],
-									nextMappings,
-									teamSettings.doingStates || [],
-								);
-								updateSettings("stateMappings", nextMappings);
-								updateSettings("doingStates", reconciledDoing);
-							}}
+							onChange={(nextMappings) =>
+								updateSettings("stateMappings", nextMappings)
+							}
 							validationErrors={stateMappingErrors}
 							refreshFailed={refreshFailed}
 							onReloadDependentData={reloadDependentData}

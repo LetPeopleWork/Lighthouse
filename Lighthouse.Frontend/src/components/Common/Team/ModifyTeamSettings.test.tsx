@@ -152,9 +152,7 @@ vi.mock("../StatesList/StatesList", () => ({
 		onRemoveDoingState,
 		onAddDoneState,
 		onRemoveDoneState,
-		stateMappingNames,
 	}: {
-		stateMappingNames?: string[];
 		onAddToDoState: (state: string) => void;
 		onRemoveToDoState: (state: string) => void;
 		onAddDoingState: (state: string) => void;
@@ -164,9 +162,6 @@ vi.mock("../StatesList/StatesList", () => ({
 	}) => (
 		<div>
 			<div>StatesList</div>
-			<div data-testid="state-mapping-names">
-				{(stateMappingNames ?? []).join("|")}
-			</div>
 			<button type="button" onClick={() => onAddToDoState("New ToDo")}>
 				Add ToDo
 			</button>
@@ -666,7 +661,7 @@ describe("ModifyTeamSettings", () => {
 			await waitFor(() =>
 				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
 					expect.objectContaining({
-						doingStates: ["In Arbeit", "Active Work"],
+						doingStates: ["In Arbeit", "In Progress"],
 						stateMappings: [{ name: "Active Work", states: ["In Progress"] }],
 					}),
 				),
@@ -676,7 +671,7 @@ describe("ModifyTeamSettings", () => {
 			).not.toBeInTheDocument();
 		});
 
-		it("holds back autosave while a mapping's name hides one of its states in To Do, and saves once the mapping is removed", async () => {
+		it("holds back autosave while a mapping's name hides one of its states in To Do, and saves once it is renamed", async () => {
 			mockGetTeamSettings.mockResolvedValueOnce({
 				...createMockTeamSettings(),
 				toDoStates: ["In Arbeit", "In Progress"],
@@ -697,19 +692,22 @@ describe("ModifyTeamSettings", () => {
 			await pastTheAutosaveDelay();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
-			fireEvent.click(screen.getByLabelText("remove mapping"));
+			fireEvent.change(screen.getByLabelText("Mapping Name"), {
+				target: { value: "Active Work" },
+			});
 
 			await waitFor(() =>
 				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
 					expect.objectContaining({
 						toDoStates: ["In Arbeit", "In Progress"],
-						stateMappings: [],
+						doingStates: ["Active"],
+						stateMappings: [{ name: "Active Work", states: ["In Progress"] }],
 					}),
 				),
 			);
 		});
 
-		it("holds back autosave while a mapping's name hides one of its states in Done, and saves once the mapping is removed", async () => {
+		it("holds back autosave while a mapping's name hides one of its states in Done, and saves once it is renamed", async () => {
 			mockGetTeamSettings.mockResolvedValueOnce({
 				...createMockTeamSettings(),
 				doingStates: ["Active"],
@@ -730,13 +728,16 @@ describe("ModifyTeamSettings", () => {
 			await pastTheAutosaveDelay();
 			expect(mockSaveTeamSettings).not.toHaveBeenCalled();
 
-			fireEvent.click(screen.getByLabelText("remove mapping"));
+			fireEvent.change(screen.getByLabelText("Mapping Name"), {
+				target: { value: "Active Work" },
+			});
 
 			await waitFor(() =>
 				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
 					expect.objectContaining({
 						doneStates: ["In Arbeit", "In Progress"],
-						stateMappings: [],
+						doingStates: ["Active"],
+						stateMappings: [{ name: "Active Work", states: ["In Progress"] }],
 					}),
 				),
 			);
@@ -745,7 +746,7 @@ describe("ModifyTeamSettings", () => {
 		it("holds back autosave while a mapping is named after a state another mapping groups, and saves once it is renamed", async () => {
 			mockGetTeamSettings.mockResolvedValueOnce({
 				...createMockTeamSettings(),
-				doingStates: ["In Progress", "Group", "In Arbeit"],
+				doingStates: ["In Progress", "In Arbeit"],
 				stateMappings: [
 					{ name: "Group", states: ["In Arbeit"] },
 					{ name: "In Arbeit", states: ["Review"] },
@@ -772,7 +773,7 @@ describe("ModifyTeamSettings", () => {
 			await waitFor(() =>
 				expect(mockSaveTeamSettings).toHaveBeenCalledWith(
 					expect.objectContaining({
-						doingStates: ["In Progress", "Group", "Active Work"],
+						doingStates: ["In Progress", "In Arbeit"],
 						stateMappings: [
 							{ name: "Group", states: ["In Arbeit"] },
 							{ name: "Active Work", states: ["Review"] },
@@ -843,22 +844,6 @@ describe("ModifyTeamSettings", () => {
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
-		});
-
-		it("offers only complete mappings as state options", async () => {
-			mockGetTeamSettings.mockResolvedValueOnce({
-				...createMockTeamSettings(),
-				stateMappings: [
-					{ name: "First", states: ["Review"] },
-					{ name: "Half", states: [] },
-				],
-			});
-
-			await renderModifyTeamSettings();
-
-			expect(screen.getByTestId("state-mapping-names")).toHaveTextContent(
-				/^First$/,
-			);
 		});
 
 		it("renders no warning while the form can be saved", async () => {

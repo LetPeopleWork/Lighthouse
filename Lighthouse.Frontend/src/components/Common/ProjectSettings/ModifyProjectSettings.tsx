@@ -21,11 +21,9 @@ import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/Advanc
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
-import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
 	mappingAutoSaveBlockers,
 	validateStateMappings,
-	withoutIncompleteMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -246,24 +244,15 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onRemoveDoneState={doneHandlers.onRemove}
 							onReorderDoneStates={doneHandlers.onReorder}
 							isForTeam={false}
-							stateMappingNames={withoutIncompleteMappings(
-								projectSettings.stateMappings ?? [],
-							).map((m) => m.name)}
 							stateMappings={projectSettings.stateMappings || []}
 						/>
 
 						<StateMappingsEditor
 							stateMappings={projectSettings.stateMappings || []}
 							doingStates={projectSettings.doingStates || []}
-							onChange={(nextMappings) => {
-								const reconciledDoing = reconcileDoingStates(
-									projectSettings.stateMappings || [],
-									nextMappings,
-									projectSettings.doingStates || [],
-								);
-								updateSettings("stateMappings", nextMappings);
-								updateSettings("doingStates", reconciledDoing);
-							}}
+							onChange={(nextMappings) =>
+								updateSettings("stateMappings", nextMappings)
+							}
 							validationErrors={stateMappingErrors}
 							refreshFailed={refreshFailed}
 							onReloadDependentData={reloadDependentData}

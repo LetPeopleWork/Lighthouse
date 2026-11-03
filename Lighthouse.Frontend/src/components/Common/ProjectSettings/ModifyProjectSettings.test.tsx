@@ -125,9 +125,7 @@ vi.mock("../StatesList/StatesList", () => ({
 		onRemoveDoingState,
 		onAddDoneState,
 		onRemoveDoneState,
-		stateMappingNames,
 	}: {
-		stateMappingNames?: string[];
 		onAddToDoState: (state: string) => void;
 		onRemoveToDoState: (state: string) => void;
 		onAddDoingState: (state: string) => void;
@@ -137,9 +135,6 @@ vi.mock("../StatesList/StatesList", () => ({
 	}) => (
 		<div>
 			<div>StatesList</div>
-			<div data-testid="state-mapping-names">
-				{(stateMappingNames ?? []).join("|")}
-			</div>
 			<button type="button" onClick={() => onAddToDoState("New ToDo")}>
 				Add ToDo
 			</button>
@@ -955,7 +950,7 @@ describe("ModifyProjectSettings", () => {
 			await waitFor(() =>
 				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
 					expect.objectContaining({
-						doingStates: ["In Arbeit", "In Progress", "Group"],
+						doingStates: ["In Arbeit", "In Progress"],
 						stateMappings: [{ name: "Group", states: ["Active"] }],
 					}),
 				),
@@ -1141,35 +1136,6 @@ describe("ModifyProjectSettings", () => {
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
-		});
-
-		it("offers only complete mappings as state options", async () => {
-			mockGetProjectSettings.mockResolvedValue({
-				...projectSettings,
-				stateMappings: [
-					{ name: "First", states: ["Review"] },
-					{ name: "Half", states: [] },
-				],
-			});
-
-			render(
-				<ModifyProjectSettings
-					title="Modify Project Settings"
-					getWorkTrackingSystems={mockGetWorkTrackingSystems}
-					getProjectSettings={mockGetProjectSettings}
-					getAllTeams={mockGetAllTeams}
-					saveProjectSettings={mockSaveProjectSettings}
-					validateProjectSettings={mockValidateProjectSettings}
-				/>,
-			);
-
-			await waitFor(() =>
-				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-			);
-
-			expect(screen.getByTestId("state-mapping-names")).toHaveTextContent(
-				/^First$/,
-			);
 		});
 
 		it("renders no warning while the form can be saved", async () => {

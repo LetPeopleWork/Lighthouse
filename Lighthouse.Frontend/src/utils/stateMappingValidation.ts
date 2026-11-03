@@ -1,5 +1,4 @@
 import type { IStateMapping } from "../models/Common/StateMapping";
-import { isApplied, wouldShadow } from "./stateMappingReconciliation";
 import { foldKey, isBlankName, trimAsServer } from "./stateMappingView";
 
 export interface IStateLists {
@@ -165,39 +164,6 @@ function normalisedStatesFor(
 	);
 }
 
-function groupsAnotherMappingsName(
-	mapping: IStateMapping,
-	mappings: IStateMapping[],
-): boolean {
-	return mappings.some(
-		(other) =>
-			other !== mapping && listedAs(mapping.states, other.name) !== undefined,
-	);
-}
-
-// A mapping already taken into Doing legitimately appears there under its own
-// name, so only a mapping whose source states are still listed is a clash. A
-// mapping that itself groups another mapping's name is not reported here: the
-// other mapping's own error already says to rename it.
-function doingClashError(
-	mapping: IStateMapping,
-	mappings: IStateMapping[],
-	doingStates: string[],
-): string[] {
-	if (
-		!wouldShadow(mapping, doingStates) ||
-		isApplied(mapping, doingStates, mappings) ||
-		groupsAnotherMappingsName(mapping, mappings)
-	) {
-		return [];
-	}
-	const name = nameOf(mapping);
-	const listed = trimAsServer(listedAs(doingStates, name) ?? name);
-	return [
-		`Mapping "${name}" has the same name as the Doing state "${listed}". Add "${name}" to this mapping to group it, or choose another name.`,
-	];
-}
-
 function listClashError(
 	mapping: IStateMapping,
 	mappings: IStateMapping[],
@@ -207,10 +173,19 @@ function listClashError(
 	const listed = listedAs(states, mapping.name);
 	return listed !== undefined &&
 		classifyListEntry(listed, states, mappings) === "shadowing"
-		? [
-				`Mapping "${nameOf(mapping)}" has the same name as the ${label} state "${trimAsServer(listed)}". Choose another name.`,
-			]
+		? [shadowingSentence(nameOf(mapping), label, trimAsServer(listed))]
 		: [];
+}
+
+// In Doing the user may have meant to group the state too, so the sentence offers that fix there.
+function shadowingSentence(
+	name: string,
+	label: CategoryLabel,
+	state: string,
+): string {
+	return label === "Doing"
+		? `Mapping "${name}" has the same name as the Doing state "${state}". Add "${name}" to this mapping to group it, or choose another name.`
+		: `Mapping "${name}" has the same name as the ${label} state "${state}". Choose another name.`;
 }
 
 function groupedElsewhereError(
@@ -273,7 +248,7 @@ function stateNameClashErrors(
 	return mappings
 		.filter((m) => membersOf(m).length > 0 && !isBlankName(m.name))
 		.flatMap((m) => [
-			...doingClashError(m, mappings, lists.doingStates),
+			...listClashError(m, mappings, "Doing", lists.doingStates),
 			...listClashError(m, mappings, "To Do", lists.toDoStates),
 			...listClashError(m, mappings, "Done", lists.doneStates),
 			...groupedElsewhereError(m, mappings),

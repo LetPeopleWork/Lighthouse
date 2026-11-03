@@ -14,7 +14,7 @@ import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useRef, useState } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
-import { normalise } from "../../../utils/stateMappingReconciliation";
+import { foldKey } from "../../../utils/stateMappingView";
 import InputGroup from "../InputGroup/InputGroup";
 import ReloadDependentDataAction from "./ReloadDependentDataAction";
 
@@ -51,13 +51,13 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 		const allMappingNames = new Set(
 			stateMappings
 				.filter((_, i) => i !== mappingIndex)
-				.map((m) => normalise(m.name)),
+				.map((m) => foldKey(m.name)),
 		);
 		const currentMappingStates = new Set(
-			(stateMappings[mappingIndex]?.states ?? []).map(normalise),
+			(stateMappings[mappingIndex]?.states ?? []).map(foldKey),
 		);
 		return doingStates.filter((s) => {
-			const lower = normalise(s);
+			const lower = foldKey(s);
 			return !allMappingNames.has(lower) && !currentMappingStates.has(lower);
 		});
 	};
