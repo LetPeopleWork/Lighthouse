@@ -1,0 +1,89 @@
+== a-node-project
+A-1,0,266,4389,15340,130
+A-1:    Duration  264.43s (tests 49%, import 24%, environment 19%, setup 5%, transform 4%)
+B-1,0,253,4200,15605,117
+B-1:    Duration  251.88s (tests 48%, import 25%, environment 15%, transform 8%, setup 4%)
+pairs: baseline 1, candidate 1; non-zero exits: none
+wall s   baseline median 266 (min-max 266-266); candidate median 253 (min-max 253-253)
+1. median change -4.9 %, ranges do not overlap -> FAIL
+2. test ids: 9191 per run, failed tests 0, mismatches none -> PASS
+   peak RSS MB baseline median 4389 (4389-4389); candidate median 4200 (4200-4200)
+3. memory -4.3 % -> PASS
+== b0-inline-off
+A-1,0,247,4349,15543,116
+A-1:    Duration  245.71s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-1,0,273,3722,16268,130
+B-1:    Duration  271.98s (tests 42%, import 34%, environment 18%, setup 4%, transform 1%)
+pairs: baseline 1, candidate 1; non-zero exits: none
+wall s   baseline median 247 (min-max 247-247); candidate median 273 (min-max 273-273)
+1. median change +10.5 %, ranges overlap -> FAIL
+2. test ids: 9191 per run, failed tests 0, mismatches none -> PASS
+   peak RSS MB baseline median 4349 (4349-4349); candidate median 3722 (3722-3722)
+3. memory -14.4 % -> PASS
+== b1-inline-narrow
+A-1,0,247,4821,15062,130
+A-1:    Duration  245.81s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-1,0,272,3820,16195,116
+B-1:    Duration  270.49s (tests 43%, import 32%, environment 18%, setup 4%, transform 2%)
+pairs: baseline 1, candidate 1; non-zero exits: none
+wall s   baseline median 247 (min-max 247-247); candidate median 272 (min-max 272-272)
+1. median change +10.1 %, ranges overlap -> FAIL
+2. test ids: 9191 per run, failed tests 0, mismatches none -> PASS
+   peak RSS MB baseline median 4821 (4821-4821); candidate median 3820 (3820-3820)
+3. memory -20.8 % -> PASS
+== b2-optimizer
+A-1,0,249,4332,15556,116
+A-1:    Duration  248.73s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-1,0,282,4026,15537,109
+B-1:    Duration  280.75s (tests 42%, import 34%, environment 18%, setup 4%, transform 1%)
+pairs: baseline 1, candidate 1; non-zero exits: none
+wall s   baseline median 249 (min-max 249-249); candidate median 282 (min-max 282-282)
+1. median change +13.3 %, ranges overlap -> FAIL
+2. test ids: 9191 per run, failed tests 0, mismatches none -> PASS
+   peak RSS MB baseline median 4332 (4332-4332); candidate median 4026 (4026-4026)
+3. memory -7.1 % -> PASS
+== e1-pool-forks
+A-1,0,246,4475,15404,130
+A-1:    Duration  244.98s (tests 47%, import 24%, environment 19%, setup 5%, transform 4%)
+B-1,0,268,4836,15496,166
+B-1:    Duration  267.41s (tests 45%, import 24%, environment 19%, transform 8%, setup 4%)
+pairs: baseline 1, candidate 1; non-zero exits: none
+wall s   baseline median 246 (min-max 246-246); candidate median 268 (min-max 268-268)
+1. median change +8.9 %, ranges overlap -> FAIL
+2. test ids: 9191 per run, failed tests 0, mismatches none -> PASS
+   peak RSS MB baseline median 4475 (4475-4475); candidate median 4836 (4836-4836)
+3. memory +8.1 % -> PASS
+== e2-pool-vmthreads
+A-1,0,257,4299,15858,130
+A-1:    Duration  256.57s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-1,1,151,17122,5784,109
+B-1:    Duration  147.88s (tests 73%, import 17%, setup 3%, transform 3%, worker 2%, environment 1%)
+pairs: baseline 1, candidate 1; non-zero exits: ['B-1']
+wall s   baseline median 257 (min-max 257-257); candidate median 151 (min-max 151-151)
+1. median change -41.2 %, ranges do not overlap -> PASS
+2. test ids: 9191 per run, failed tests 68, mismatches ['B-1 differs from A-1 (9169 vs 9191 ids)'] -> FAIL
+   peak RSS MB baseline median 4299 (4299-4299); candidate median 17122 (17122-17122)
+3. memory +298.3 % -> FAIL
+== g-fs-module-cache
+A-1,1,313,4439,17012,116
+A-1:    Duration  310.84s (tests 45%, import 23%, environment 22%, transform 6%, setup 5%)
+B-1,0,264,4715,13293,130
+B-1:    Duration  262.67s (tests 47%, import 24%, environment 18%, transform 7%, setup 4%)
+pairs: baseline 1, candidate 1; non-zero exits: ['A-1']
+wall s   baseline median 313 (min-max 313-313); candidate median 264 (min-max 264-264)
+1. median change -15.7 %, ranges do not overlap -> PASS
+2. test ids: 9191 per run, failed tests 3, mismatches none -> FAIL
+   peak RSS MB baseline median 4439 (4439-4439); candidate median 4715 (4715-4715)
+3. memory +6.2 % -> PASS
+== f-workers-12
+A-1,0,246,4511,17381,116
+A-1:    Duration  245.14s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-1,0,232,7367,14331,137
+B-1:    Duration  231.88s (tests 42%, import 21%, transform 17%, environment 16%, setup 4%)
+pairs: baseline 1, candidate 1; non-zero exits: none
+wall s   baseline median 246 (min-max 246-246); candidate median 232 (min-max 232-232)
+1. median change -5.7 %, ranges do not overlap -> FAIL
+2. test ids: 9191 per run, failed tests 0, mismatches none -> PASS
+   peak RSS MB baseline median 4511 (4511-4511); candidate median 7367 (7367-7367)
+3. memory +63.3 % -> FAIL
+done

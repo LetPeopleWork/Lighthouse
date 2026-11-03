@@ -1,0 +1,19 @@
+== a (a-node-project)
+pairs: baseline 5, candidate 5; non-zero exits: ['A-5']
+wall s   baseline median 249 (min-max 247-381); candidate median 254 (min-max 236-315)
+1. median change +2.0 %, ranges overlap -> FAIL
+2. test ids: 9191 per run, failed tests 1, mismatches none -> FAIL
+   peak RSS MB baseline median 4556 (4380-4709); candidate median 4524 (4322-4595)
+3. memory -0.7 % -> PASS
+plain-1,0,255,4409,15385,117
+plain-2,0,252,4480,15688,130
+plain-3,0,255,4616,15807,116
+shuffle-11,1,261,4138,15740,116
+shuffle-22,1,274,4257,15488,116
+shuffle-33,1,269,4284,15285,116
+plain-1.log:       Tests  9191 passed (9191)
+plain-2.log:       Tests  9191 passed (9191)
+plain-3.log:       Tests  9191 passed (9191)
+shuffle-11.log:       Tests  2 failed | 9189 passed (9191)
+shuffle-22.log:       Tests  9191 passed (9191)
+shuffle-33.log:       Tests  2 failed | 9189 passed (9191)

@@ -1,0 +1,2 @@
+ Lighthouse.Frontend/vitest.config.ts | 40 ++++++++++++++++++++++++++++--------
+ 1 file changed, 31 insertions(+), 9 deletions(-)

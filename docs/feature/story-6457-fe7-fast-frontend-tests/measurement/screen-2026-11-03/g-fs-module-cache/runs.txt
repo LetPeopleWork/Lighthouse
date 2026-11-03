@@ -1,0 +1,4 @@
+A-1,1,313,4439,17012,116
+A-1:    Duration  310.84s (tests 45%, import 23%, environment 22%, transform 6%, setup 5%)
+B-1,0,264,4715,13293,130
+B-1:    Duration  262.67s (tests 47%, import 24%, environment 18%, transform 7%, setup 4%)

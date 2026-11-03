@@ -94,3 +94,43 @@ So (f) can show a local gain that does not carry to CI, and it extends the plann
 ## What blocks the timed runs
 
 Nothing found. Open points for the lead: the candidate worktree is uncommitted (commit it or leave it, `git diff` shows the draft); run 41619566770's frontend job was still running; candidates (b), (d), (e) are not yet written into the candidate config.
+
+## Timed part (quiet machine, 2026-11-03, 17:00)
+
+Both worktrees were moved to `614772515` (main with slices 4 to 6) and reinstalled with `pnpm install --frozen-lockfile --ignore-scripts`; every candidate patch still applies there.
+The new `.test.ts` files of slices 4 to 6 are all DOM-free (one only says "window" in its data), so the node-project candidate needs no change to its DOM list.
+
+### Per-file split of one full baseline run
+
+Command and output: `split-2026-11-03/summary.txt` (the split reporter's `per-file-split.json` and the run log are next to it).
+6 workers, time budget off: 593 files, 9,191 tests, all passed, wall 279 s, peak tree memory 4.1 GB.
+
+| Part (summed over all files) | Seconds | Share |
+|---|---|---|
+| Environment set-up (jsdom) | 297.5 | 18.5 % |
+| Collect (import of the test file and everything it pulls in, plus suite bodies) | 487.7 | 30.3 % |
+| Setup files | 72.6 | 4.5 % |
+| Tests and hooks | 746.4 | 46.4 % |
+| Prepare | 3.8 | 0.2 % |
+| Total worker time | 1,608 | |
+
+So more than half of all worker time (53 %) is fixed cost per file before a test runs. Environment set-up is about 0.5 s per jsdom file;
+a file that needs no DOM pays it for nothing, which is what the node-project candidate removes. Import is the larger part and is what the
+MUI-inlining, optimizer and module-cache candidates attack.
+
+The slowest files split two ways: most are dominated by their tests (`WorkItemsDialog.contexts` 23.5 of 25.1 s, `ModifyProjectSettings` 21.1 of 22.4 s,
+`RefinementView.paging` 19.2 of 21.0 s), which only the rewrite slices can shrink; a few are dominated by import (`GeneralSettingsComponent`
+19.1 s of collect in a 22.5 s file, `EditConnection.defaults` 9.3 s).
+
+### CPU profile of two slow files
+
+Command per file in `profile-2026-11-03/<file>/command.txt`, one fork, one worker; summary per file in `summary.txt`, the gzipped `.cpuprofile` next to it.
+
+- **`WorkItemsDialog.contexts.test.tsx`** (heavy in tests; 108 tests, 18.6 s alone): jsdom 27.8 % of self time, React and react-dom 23.5 %, `@asamuzakjp/dom-selector` 6.2 %,
+  the MUI DataGrid 3.9 %. The top function is jsdom's `collectCandidateStylesFrom` (7.5 %), which is jsdom computing styles; that is what
+  `getByRole` and visibility checks call for every element they test. Rendering fewer rows and asking fewer role queries is the lever,
+  not configuration.
+- **`GeneralSettingsComponent.test.tsx`** (heavy in import; 33 tests, 10.4 s alone, with transform 41 % and import 31 %): 43 % of samples are idle, i.e. the
+  worker waits for Vite to transform modules; of the busy time most is module evaluation (`Script`, Vitest's `_runInlinedModule`, `wrapSafe`).
+  Alone it collects in a few seconds; in the full run its collect took 19 s, so the cost is the transform queue it shares with the other workers.
+  This is the case the inlining, optimizer and module-cache candidates are for.

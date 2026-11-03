@@ -1,0 +1,20 @@
+A-1,0,249,4380,17332,130
+A-1:    Duration  246.93s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-1,0,315,4582,14750,116
+B-1:    Duration  313.44s (tests 51%, import 23%, environment 14%, transform 9%, setup 3%)
+A-2,0,263,4709,16630,117
+A-2:    Duration  262.00s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-2,0,254,4322,16800,116
+B-2:    Duration  252.35s (tests 51%, import 25%, environment 15%, transform 5%, setup 4%)
+A-3,0,247,4556,16710,130
+A-3:    Duration  246.24s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-3,0,236,4595,16532,130
+B-3:    Duration  234.79s (tests 50%, import 26%, environment 16%, transform 4%, setup 4%)
+A-4,0,248,4381,16755,116
+A-4:    Duration  247.43s (tests 47%, import 25%, environment 19%, setup 5%, transform 4%)
+B-4,0,250,4524,16607,116
+B-4:    Duration  248.24s (tests 49%, import 26%, environment 16%, transform 5%, setup 4%)
+A-5,1,381,4634,12825,112
+A-5:    Duration  379.41s (tests 48%, import 22%, environment 18%, transform 7%, setup 4%)
+B-5,0,254,4432,15331,130
+B-5:    Duration  253.15s (tests 50%, import 26%, environment 15%, transform 5%, setup 4%)

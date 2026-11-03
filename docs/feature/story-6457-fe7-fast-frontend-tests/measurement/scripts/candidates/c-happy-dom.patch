@@ -1,0 +1,25 @@
+diff --git a/Lighthouse.Frontend/package.json b/Lighthouse.Frontend/package.json
+index ca24f6074..b8b5ec1ac 100644
+--- a/Lighthouse.Frontend/package.json
++++ b/Lighthouse.Frontend/package.json
+@@ -68,6 +68,7 @@
+ 		"@vitest/spy": "5.0.5",
+ 		"cross-env": "^10.1.0",
+ 		"fallow": "3.36.0",
++		"happy-dom": "^21.0.4",
+ 		"jsdom": "^30.1.3",
+ 		"parse5": "^8.0.1",
+ 		"typescript": "^7.0.2",
+diff --git a/Lighthouse.Frontend/vitest.config.ts b/Lighthouse.Frontend/vitest.config.ts
+index 20e86091c..6424dfe95 100644
+--- a/Lighthouse.Frontend/vitest.config.ts
++++ b/Lighthouse.Frontend/vitest.config.ts
+@@ -20,7 +20,7 @@ export default defineConfig({
+ 	test: {
+ 		globals: true,
+ 		onUnhandledError: (error) => error.name !== EXPECTED_TEST_FAILURE,
+-		environment: "jsdom",
++		environment: "happy-dom",
+ 		setupFiles: ["./setupTests.ts"],
+ 		env: {
+ 			VITE_API_SERVICE_TYPE: "DEMO",

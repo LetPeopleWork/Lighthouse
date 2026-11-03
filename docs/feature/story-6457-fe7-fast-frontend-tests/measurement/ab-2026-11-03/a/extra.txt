@@ -1,0 +1,12 @@
+plain-1,0,255,4409,15385,117
+plain-2,0,252,4480,15688,130
+plain-3,0,255,4616,15807,116
+shuffle-11,1,261,4138,15740,116
+shuffle-22,1,274,4257,15488,116
+shuffle-33,1,269,4284,15285,116
+plain-1.log:       Tests  9191 passed (9191)
+plain-2.log:       Tests  9191 passed (9191)
+plain-3.log:       Tests  9191 passed (9191)
+shuffle-11.log:       Tests  2 failed | 9189 passed (9191)
+shuffle-22.log:       Tests  9191 passed (9191)
+shuffle-33.log:       Tests  2 failed | 9189 passed (9191)

@@ -1,0 +1,1 @@
+Stopped by the lead after 3 pairs at 18:37: warm runs equal the baseline (247/247 against 248/246), so the -10 % bar is out of reach. The screening's -15.7 % came from a baseline run slowed by the vmThreads run before it.

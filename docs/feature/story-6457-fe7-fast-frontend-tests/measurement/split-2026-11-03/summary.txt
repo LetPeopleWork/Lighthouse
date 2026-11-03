@@ -1,0 +1,29 @@
+$ SPLIT_OUT=<out>/per-file-split.json pnpm exec vitest run --reporter=default --reporter=json --outputFile.json=<out>/test-results.json --reporter=<scripts>/perFileSplitReporter.mjs   (baseline 614772515, 6 workers, budget off, TZ=Europe/Zurich)
+label,exit,wall_s,peak_tree_rss_mb,min_mem_available_mb,max_threads
+split-baseline,0,279,4105,14011,130
+ ✓ src/utils/date/formatDuration.test.ts (17 tests) 7ms
+ Test Files  593 passed (593)
+      Tests  9191 passed (9191)
+   Duration  278.98s (tests 46%, import 24%, environment 18%, transform 7%, setup 4%)
+593 files; summed worker time 1608 s
+  environmentSetupMs      297.5 s   18.5 %
+  prepareMs                 3.8 s    0.2 %
+  collectMs               487.7 s   30.3 %
+  setupMs                  72.6 s    4.5 %
+  testsMs                 746.4 s   46.4 %
+top files by total:
+    25.1 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx  (environmentSetup 455 prepare 7 collect 1059 setup 98 tests 23522 ms)
+    22.5 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx  (environmentSetup 629 prepare 6 collect 19072 setup 101 tests 2660 ms)
+    22.4 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx  (environmentSetup 416 prepare 5 collect 814 setup 105 tests 21055 ms)
+    21.0 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx  (environmentSetup 515 prepare 6 collect 1128 setup 131 tests 19212 ms)
+    19.4 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx  (environmentSetup 486 prepare 6 collect 9321 setup 129 tests 9477 ms)
+    17.9 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx  (environmentSetup 446 prepare 6 collect 642 setup 92 tests 16690 ms)
+    17.2 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx  (environmentSetup 534 prepare 7 collect 4238 setup 165 tests 12207 ms)
+    16.5 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx  (environmentSetup 456 prepare 6 collect 3956 setup 116 tests 11937 ms)
+    16.4 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Reports/ReportsPage.combinedPdf.test.tsx  (environmentSetup 510 prepare 6 collect 2138 setup 137 tests 13583 ms)
+    15.9 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx  (environmentSetup 469 prepare 5 collect 2018 setup 114 tests 13317 ms)
+    15.1 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx  (environmentSetup 476 prepare 5 collect 652 setup 109 tests 13859 ms)
+    14.9 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Reports/ReportsPage.removal.test.tsx  (environmentSetup 487 prepare 6 collect 2036 setup 128 tests 12280 ms)
+    14.4 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx  (environmentSetup 452 prepare 6 collect 2091 setup 104 tests 11710 ms)
+    14.2 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx  (environmentSetup 544 prepare 6 collect 5478 setup 181 tests 8008 ms)
+    13.9 s  /storage/repos/Lighthouse-fe7-arms/baseline/Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx  (environmentSetup 539 prepare 6 collect 6779 setup 182 tests 6423 ms)

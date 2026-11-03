@@ -1,0 +1,33 @@
+sampled 18.6 s
+self time by area:
+   27.8 %  pkg jsdom
+   12.1 %  pkg react
+   11.4 %  pkg react-dom
+   10.4 %  (native/vm)
+    6.2 %  pkg @asamuzakjp/dom-selector
+    4.4 %  node core
+    3.9 %  pkg @mui/x-data-grid
+    3.8 %  pkg @mui/material
+    3.0 %  pkg vitest
+    2.2 %  pkg css-tree
+    1.7 %  pkg @emotion/styled
+    1.7 %  pkg @mui/utils
+    1.3 %  pkg @emotion/serialize
+    1.3 %  pkg @babel/runtime
+    1.0 %  pkg @mui/system
+top functions by self time:
+    7.5 %  collectCandidateStylesFrom  pkg jsdom
+    4.5 %  (idle)  (native/vm)
+    4.1 %  process.env.NODE_ENV.exports.createElement  pkg react
+    3.2 %  (garbage collector)  (native/vm)
+    3.1 %  ReactElement  pkg react
+    2.7 %  process.env.NODE_ENV.exports.jsx  pkg react
+    2.2 %  implForWrapperWithInterface  pkg jsdom
+    1.6 %  (anon)  pkg @emotion/styled
+    1.5 %  (anon)  pkg @mui/x-data-grid
+    1.2 %  get  pkg vitest
+    1.2 %  clone  pkg css-tree
+    1.1 %  ruleMightMatchElement  pkg jsdom
+    1.1 %  get  pkg jsdom
+    1.1 %  collectCandidateStyles  pkg jsdom
+    1.0 %  wrapSafe  node core
