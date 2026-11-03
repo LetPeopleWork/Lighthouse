@@ -35,6 +35,14 @@ Unversioned `/api/*` routes are not part of the supported API contract.
 
 All API consumers should call `/api/v1/*` or `/api/latest/*`.
 
+# State Lists on Teams and Portfolios
+
+The `toDoStates`, `doingStates` and `doneStates` lists on a Team's or Portfolio's settings hold the states your work tracking system reports, never the name of a [state mapping](../teams/edit.html#state-mappings). Earlier versions folded a mapping's states into its name; they no longer do.
+
+- To show the lists the way the settings page and the charts do, read `toDoDisplayStates`, `doingDisplayStates` and `doneDisplayStates`. They are read-only: a save ignores them, so sending back the settings you fetched is safe.
+- A save is refused with `400 Bad Request` when a mapping is named like a state that is listed next to the mapping's own states, when a mapping's states sit in more than one category, or when a wait state names only one of a mapping's states. The response names the clash and how to fix it.
+- Lighthouse rewrites lists stored the old way once, on start-up, so a client reads raw states on every owner.
+
 # Dates in the API
 
 This part of the contract is easy to get wrong, so it is stated explicitly.

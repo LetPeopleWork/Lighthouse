@@ -178,24 +178,26 @@ For Jira, the common states are: *To Do* (To Do), *In Progress* (Doing), *Done* 
 While Azure DevOps can handle if you specify states that don't exist, Jira will not execute a query with a state that is not in its system. That means for Jira you have make sure everything you mention does exist exactly as specified, as otherwise the [Validation](#validation-and-save) will fail.
 
 ## State Mappings
-State Mappings let you define Lighthouse-friendly state names and map one or more provider states to each name.
+State Mappings group several of your Doing states under one name. The group shows as one chip in your Doing list and in the charts, while Lighthouse still reads each of its states from your tracker.
 
 This gives you a two-step setup:
-1. Define mappings in the **State Mappings** section.
-2. Use the mapped names in **To Do**, **Doing**, or **Done**.
+1. Add your tracker's states to **Doing**, as usual.
+2. Define a mapping in the **State Mappings** section and pick the Doing states it groups.
+
+The Doing list keeps your tracker's states. A mapping only changes how they are shown: the chip carries a group icon, and its tooltip names the states it groups. A mapping chip has no cross; delete the mapping under **State Mappings** to see its states separately again. Dragging the chip moves all its states together.
 
 ### Examples
 - Single-state rename: map `Active` to `Implementation`.
 - Multi-state grouping: map `In Progress`, `Code Review`, and `QA Review` to `Implementation`.
 - Grouping under the name of one of its own states: map `In Arbeit` and `In Progress` to `In Arbeit`, for a workflow that has the same state in two languages. The mapping may reuse the name because it groups that state.
 
-After mapping, Lighthouse exposes the mapped name as the state value in Lighthouse views and APIs.
+After mapping, Lighthouse shows the mapped name in its charts and Work Item lists. In the API, the `toDoStates`, `doingStates` and `doneStates` lists hold your tracker's states, and `toDoDisplayStates`, `doingDisplayStates` and `doneDisplayStates` show the lists the way the settings page and the charts do.
 
 ### Validation Rules
 - Mapping names must be unique.
 - A mapping must contain at least one source state.
 - A source state can only exist in one mapping.
-- Mapping names can be used in To Do / Doing / Done (this is the intended workflow).
+- A mapping's states must all sit in one category. A mapping that groups a To Do state and a Doing state is refused, and the message names both states.
 - A mapping name must not be the name of a state it does not group: not a state in To Do, Doing or Done, and not a source state of another mapping. Lighthouse would read that name as the mapping, so the state of the same name would stop being counted. The editor names the clash and pauses saving until you rename the mapping, or (for a Doing state) add that state to it.
 
 ### Notes
@@ -267,7 +269,7 @@ Not all *Doing* time is active work. Some states represent waiting — an item q
 
 ![Wait States Editor](../assets/features/metrics/waitStatesEditor.png)
 
-Tick *Configure Wait States* and add the states (or [state mappings](#state-mappings)) that represent idle time. Lighthouse uses this to calculate **Flow Efficiency** — the share of total time work spends actively progressing versus waiting — which surfaces as a dedicated overview tile and as a figure with highlighted wait bars on the [Cumulative Time per State](../metrics/flow-metrics.html#cumulative-time-per-state) chart.
+Tick *Configure Wait States* and add the states (or [state mappings](#state-mappings)) that represent idle time. For a state that a mapping groups, add the mapping's name: a wait state that names only one of a mapping's states is refused, because Lighthouse records time against the mapping as a whole. Lighthouse uses this to calculate **Flow Efficiency** — the share of total time work spends actively progressing versus waiting — which surfaces as a dedicated overview tile and as a figure with highlighted wait bars on the [Cumulative Time per State](../metrics/flow-metrics.html#cumulative-time-per-state) chart.
 
 {: .note}
 Wait states are purely a *metrics* concept — they describe how to interpret time already spent in your existing states. They do not change forecasting, throughput, or which items are considered in progress.
@@ -290,7 +292,7 @@ Refinement states tell Lighthouse which of your states hold work your team is st
 
 Add a state by typing in the *New Refinement State* field and picking one of the suggestions; each chosen state shows as a chip, and the cross on a chip removes it. The suggestions are your Team's **To Do** and **Doing** states, including the names of your [state mappings](#state-mappings); anything else cannot be added. With no chips left, the Team has no refinement states and its Refinement tab switches off.
 
-If you later take a chosen state out of To Do and Doing (or rename the state mapping it came from), it is removed from the refinement states when you save. Add the new name again if you still want it.
+If you later take a chosen state out of To Do and Doing (or rename the state mapping it came from), its chip disappears and Lighthouse removes it from the refinement states when it saves. Add the new name again if you still want it.
 
 {: .recommendation}
 Pick the states your team refines from — typically the top of the backlog such as *Backlog*, *Next* or *Analysing*.
