@@ -128,8 +128,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var board = await english.GetBoardInformation(englishConnection, DemoBoard);
 
-            var inEnglish = await Refreshing(english, englishConnection, board, "project = LGHTHSDMO");
-            var inGerman = await Refreshing(german, germanConnection, board, "project = LGHTHSDMO");
+            // Other live tests create short-lived scratch items in this project and delete them again, so an
+            // item can exist for the first read and be gone for the second. Only items that have been there a while are compared.
+            const string settledDemoItems = "project = LGHTHSDMO AND created <= \"-15m\"";
+            var inEnglish = await Refreshing(english, englishConnection, board, settledDemoItems);
+            var inGerman = await Refreshing(german, germanConnection, board, settledDemoItems);
 
             using (Assert.EnterMultipleScope())
             {
