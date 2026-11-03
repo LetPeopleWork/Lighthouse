@@ -31,8 +31,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
 
         private static string[] Listed(params string[] states) => states;
 
-        [SetUp]
-        public void Init()
+        [OneTimeSetUp]
+        public void OneTimeInit()
         {
             rootFactory = new TestWebApplicationFactory<Program>();
 
@@ -47,7 +47,19 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 }));
 
             client = factory.CreateClient();
+        }
 
+        [OneTimeTearDown]
+        public void OneTimeCleanup()
+        {
+            client.Dispose();
+            factory.Dispose();
+            rootFactory.Dispose();
+        }
+
+        [SetUp]
+        public void Init()
+        {
             using var setupScope = factory.Services.CreateScope();
             var dbContext = setupScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>();
             dbContext.Database.EnsureDeleted();
@@ -55,16 +67,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task Cleanup()
         {
-            using (var teardownScope = factory.Services.CreateScope())
+            try
             {
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                using var teardownScope = factory.Services.CreateScope();
                 teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>().Database.EnsureDeleted();
             }
-
-            client.Dispose();
-            factory.Dispose();
-            rootFactory.Dispose();
         }
 
         [Test]

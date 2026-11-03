@@ -87,10 +87,17 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [TearDown]
-        public void Cleanup()
+        public async Task Cleanup()
         {
-            using var teardownScope = factory.Services.CreateScope();
-            teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>().Database.EnsureDeleted();
+            try
+            {
+                await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(factory.Services, TimeSpan.FromSeconds(30));
+            }
+            finally
+            {
+                using var teardownScope = factory.Services.CreateScope();
+                teardownScope.ServiceProvider.GetRequiredService<Lighthouse.Backend.Data.LighthouseAppContext>().Database.EnsureDeleted();
+            }
         }
 
         [Test]
