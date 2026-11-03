@@ -147,7 +147,7 @@ test asserts `toBeDisabled()` / `toBeEnabled()` on the button itself.
 | Back leads to the earlier step; no Back on the first step | `BulkReportWizard.test.tsx` :: Back leads from Then to the Type step, which offers no Back of its own; `ReportsTab.createWizard.test.tsx` :: The wizard's steps offers no way back from the first step |
 | The owner step offers Create, not Next, and Create is disabled before a Team is picked | `BulkReportWizard.test.tsx` :: the owner step offers Create, not Next, and nothing can be created before a Team is picked |
 | Create is enabled at exactly 50 picked, disabled at 51 with the ceiling sentence as its description | `BulkReportWizard.test.tsx` :: At most 50 ... (30 and 20 make 50; 30 and 21 make 51; Select all picks all 60) - button state asserted |
-| Create is disabled while the owners' roles are on their way or could not be read | `BulkReportWizard.test.tsx` :: When Create reports can be pressed (while permissions are on their way, permissions cannot be loaded) |
+| Create is disabled while the owners' roles are on their way or could not be read | `BulkReportWizard.ownersStatus.test.tsx` :: is held while the owners' roles are on their way or could not be read, with a Team already picked (the wizard through its props; the page cannot reach this state) |
 | A pick the new window cannot hold is dropped for good; Select all leaves out owners that cannot hold it | `BulkReportWizard.ownerLimits.test.tsx` :: a pick made under a short window is dropped when going back...; a dropped pick stays dropped...; Select all picks every Team that can hold the window (file not edited) |
 | The created report asks for what each picked owner needs: the picked owners that can hold the window are the ones sent | `BulkReportWizard.test.tsx` :: every Team picked gets the same comparison, in the order the step lists them |
 | Next and Create stay held until today's bounds have been read again; no Create while bounds are re-read after a refusal | `ReportsTab.createWizard.test.tsx` :: The wizard while its bounds are read (holds Next on reopening...; offers no Create while the bounds are read again...) |
@@ -170,7 +170,7 @@ tests failed on an expectation of mine, fixed in the test; production code was n
 | Measure | Before | After |
 |---|---|---|
 | Test count (five files) | 246 | 245 |
-| Tests added (three new unit files) | n/a | 51 (`ownerLimitOfWindow.test.ts` 11, `bulkWizardSteps.test.ts` 26, `reportWizardRules.test.ts` 14) |
+| Tests added (four new files) | n/a | 53 (`ownerLimitOfWindow.test.ts` 12, `bulkWizardSteps.test.ts` 26, `reportWizardRules.test.ts` 14, `BulkReportWizard.ownersStatus.test.tsx` 1) |
 | Tests removed | n/a | 1 |
 | Preserved ids missing | n/a | 1 (the removed test, row below); 0 added in the five files |
 | Line coverage, `src/pages/Reports` and `src/pages/Common/Reports` | 99.39 | 99.39 |
@@ -207,8 +207,8 @@ Each row was proven by breaking the call site where marked. Mutations were tempo
 | Back and no Back on the first step | `BulkReportWizard.test.tsx` :: Back leads from Then to the Type step...; `ReportsTab.createWizard.test.tsx` :: offers no way back from the first step (unchanged) |
 | Owner step offers Create, not Next; Create disabled before a Team is picked | `BulkReportWizard.test.tsx` :: the owner step offers Create, not Next, and nothing can be created before a Team is picked (unchanged; mutation 4 with the picked count fixed at 0 fails five tests of that describe) |
 | Create enabled at exactly 50, disabled at 51 with the ceiling sentence | `BulkReportWizard.test.tsx` :: 30 Teams and 20 Portfolios make exactly 50...; 30 Teams and 21 Portfolios make 51...; Select all picks all 60 Teams... (mutation 2) |
-| Create disabled while the owners' roles are on their way or could not be read | see Findings below: no page test can fail for it; `bulkWizardSteps.test.ts` :: is held while the owners' roles are loading / failed |
-| A pick the new window cannot hold is dropped for good; Select all leaves out owners that cannot hold it | `BulkReportWizard.ownerLimits.test.tsx` (not edited); function: `ownerLimitOfWindow.test.ts` :: keeps the picks the new window can still hold and drops the rest for good |
+| Create disabled while the owners' roles are on their way or could not be read | `BulkReportWizard.ownersStatus.test.tsx` :: is held while the owners' roles are on their way or could not be read, with a Team already picked (mutation 4); function: `bulkWizardSteps.test.ts` :: is held while the owners' roles are loading / failed |
+| A pick the new window cannot hold is dropped for good; Select all leaves out owners that cannot hold it | `BulkReportWizard.ownerLimits.test.tsx` (not edited); function: `ownerLimitOfWindow.test.ts` :: keeps the picks the new window can still hold and drops the rest. That a dropped pick stays dropped is proven by the page test in `BulkReportWizard.ownerLimits.test.tsx` |
 | The created report asks for what each picked owner needs | `BulkReportWizard.test.tsx` :: every Team picked gets the same comparison, in the order the step lists them (unchanged) |
 | Next and Create held until today's bounds are read again | `ReportsTab.createWizard.test.tsx` :: The wizard while its bounds are read (unchanged) |
 | Create disabled and the wizard held while saving; a name or no metric blocks Create | `ReportsTab.createWizard.test.tsx` :: Creating the report holds the wizard open...; Step four ... (unchanged) |
@@ -224,18 +224,32 @@ Each row was proven by breaking the call site where marked. Mutations were tempo
 2. `createActionOf(activeStep, pickedOwners.length, ...` replaced by `Math.min(pickedOwners.length, 50)`.
    `vitest -t "At most 50"`: 2 failed, 1 passed: `× Select all picks all 60 Teams, the button counts them, and Create says at most 50`, `× 30 Teams and 21 Portfolios make 51: Create is disabled and says at most 50`.
 3. `createActionOf(activeStep, pickedOwners.length, ...` replaced by `0`. `vitest -t "Moving through the wizard"`: 5 failed (a Team picked a second time..., Escape leaves the result open..., one report created is counted in the singular..., two unnamed-Team tests).
-4. `createActionOf(..., ownersStatus, ...` replaced by `"ready"`: **survived**: all 225 tests of `src/pages/Reports` pass.
+4. `createActionOf(..., ownersStatus, ...` replaced by `"ready"`: **survived** every page test (all 225 tests of `src/pages/Reports` passed). After the review it is killed by the new component test: `vitest run BulkReportWizard.ownersStatus.test.tsx` gave `× is held while the owners' roles are on their way or could not be read, with a Team already picked` (1 failed); reverted, the same run gave 1 passed.
 
 ### Findings
 
 - The wiring row "Create is disabled while the owners' roles are on their way or could not be read" named
   `BulkReportWizard.test.tsx` :: When Create reports can be pressed. Those tests are about the page's own Create
-  reports button, not the wizard's Create. Mutation 4 survives every page test, and cannot be killed by one: while the
-  roles are not ready the owner step lists no owner, so nothing is picked and Create is disabled for that reason
-  alone. The clause is defensive; `bulkWizardSteps.test.ts` pins it on the function with three picks. This is a
-  finding for the reviewer, not something a page test in this slice can fix.
+  reports button, not the wizard's Create. Mutation 4 survived every page test, because the page cannot reach the state: while
+  the roles are not ready the owner step lists no owner, so nothing is picked and Create is disabled for that reason
+  alone, and the wizard cannot open while the roles load. It can be killed at component level, and
+  `BulkReportWizard.ownersStatus.test.tsx` does so: it renders the wizard through its props (as `useBulkCreation`
+  does), picks a Team with the roles ready, then rerenders with the roles loading and failed and expects the wizard's
+  Create to be disabled. `bulkWizardSteps.test.ts` pins the same clause on the function with three picks.
 - The kit helper `toTheOwnerStep` and `renderWithReports` (retry delay) are outside the universe, so the retry delay was
   put on a fake clock in the test, not in the kit.
+
+### Review revision
+
+The review found that the wiring row for Create being held on the owners' roles was named after tests that do not
+reach it. A new component test (`BulkReportWizard.ownersStatus.test.tsx`) now does, and mutation 4 is killed by it.
+Smaller fixes: the openings test restores real timers even when the clock advance throws; the pick-pruning unit test
+no longer feeds the already pruned set back in; the press test has its own spy (its `await` stays, since the action's
+`onClick` may return a promise and the linter flags it otherwise); the owner limit tests gained the exact cutoff day (a
+window starting on the first day of the kept history is held, one starting a day before it is refused); the single
+wizard shares one type step constant with its rules. The bulk wizard keeps its own, since it is a different wizard
+whose type step merely sits at index 0. Test ids added by this slice were renamed or added only; no id from before the
+slice changed.
 
 ## Before figures
 
@@ -295,7 +309,7 @@ earlier set of pairs was discarded: its after arm also ran the three new unit fi
 (96 s); the new files add about 0.2 s. Where the seconds went: the report view's three retry tests and the openings
 file (a sleep per test) fell by about 4.5 s and 0.6 s; the other files did not move.
 
-Allow-list: 23 before, 23 after. Tests: 246 before, 245 after in the five files, plus 51 new direct tests.
+Allow-list: 23 before, 23 after. Tests: 246 before, 245 after in the five files, plus 53 new direct tests (the figures above were taken before the review revision, which adds two direct tests; the timing pairs are not repeated).
 Coverage of the two directories: lines 99.39 to 99.39, branches 96.94 to 97.03. `pnpm build` clean (no Biome
 rewrite); `LIGHTHOUSE_TIME_BUDGET=warn pnpm test` 592 files, 9189 tests, passed. The directory run with the guard
 enforcing hit three 5 s timeouts under load (`ReportView.exportPdf.failures`, `ReportsPage.combinedPdf` and the first
