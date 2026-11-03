@@ -78,7 +78,7 @@ export const slowTests: readonly AllowListEntry[] = [
 		file: reportsRemovalFile,
 		name: "Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list",
 		reason:
-			"Renders the Reports page, picks three reports across Teams and a Portfolio and removes them, waiting for the list to update.",
+			"Renders the Reports page, picks three reports across Teams and a Portfolio and removes them, waiting for the list to update. About 1.3 s alone, but over 2 s when the whole directory runs.",
 		ceilingSeconds: 2.5,
 	},
 	{

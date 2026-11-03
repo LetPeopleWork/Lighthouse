@@ -7,7 +7,7 @@ import {
 import { pickedReports, selectedSentence } from "./pickedReports";
 
 describe("The reports picked", () => {
-	it("Select all over 101 listed reports picks every one, on every page", () => {
+	it("returns every listed report when every id is picked", () => {
 		const { reports } = moreReportsThanTheCeiling(ZENITH, 51);
 
 		const picked = pickedReports(

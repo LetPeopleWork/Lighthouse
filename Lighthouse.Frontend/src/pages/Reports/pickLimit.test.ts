@@ -15,7 +15,7 @@ describe("The most reports that may be picked", () => {
 	});
 
 	describe("Remove", () => {
-		it.each([1, 50])("may still remove %i picked reports", (picked) => {
+		it.each([1, 50])("gives no reason to hold back at %i picked", (picked) => {
 			expect(removeWith(picked)).toBe("");
 		});
 
@@ -33,7 +33,7 @@ describe("The most reports that may be picked", () => {
 			);
 		});
 
-		it("says a single picked report is on an owner she is not Admin of", () => {
+		it("says one of the picked reports is on an owner she is not Admin of", () => {
 			expect(removeWith(4, false, 1)).toBe(
 				"1 of the 4 selected reports is on a the team or the portfolio you are not Admin of.",
 			);
@@ -51,7 +51,7 @@ describe("The most reports that may be picked", () => {
 			expect(exportBlockedBecause(0)).toBe("Select at least one report.");
 		});
 
-		it.each([1, 50])("may still export %i picked reports", (picked) => {
+		it.each([1, 50])("gives no reason to hold back at %i picked", (picked) => {
 			expect(exportBlockedBecause(picked)).toBe("");
 		});
 

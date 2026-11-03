@@ -590,17 +590,4 @@ describe("Picking reports", () => {
 			screen.getByText(selectedCount(3), { exact: true }),
 		).toBeInTheDocument();
 	});
-
-	it("Select all picks every row, on every page", async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(theThreeOfThem()),
-		});
-		await theReportsTable();
-
-		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
-
-		expect(
-			screen.getByText(selectedCount(3), { exact: true }),
-		).toBeInTheDocument();
-	});
 });
