@@ -20,7 +20,6 @@ import {
 	isCycleTimeDefinitionValid,
 	resolveWorkflowStates,
 } from "../../../utils/isCycleTimeDefinitionValid";
-import { withoutIncompleteMappings } from "../../../utils/stateMappingValidation";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface CycleTimesEditorProps {
@@ -48,10 +47,6 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 	const labelId = useId();
 	const nextTempId = useRef(-1);
 
-	const mappingNames = withoutIncompleteMappings(stateMappings).map(
-		(mapping) => mapping.name,
-	);
-
 	const workflowStates = resolveWorkflowStates(
 		toDoStates,
 		doingStates,
@@ -59,9 +54,7 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 		stateMappings,
 	);
 
-	const suggestions = [...workflowStates, ...mappingNames].filter(
-		(state, index, all) => all.indexOf(state) === index,
-	);
+	const suggestions = workflowStates;
 
 	if (!licenseStatus?.canUsePremiumFeatures) {
 		return null;

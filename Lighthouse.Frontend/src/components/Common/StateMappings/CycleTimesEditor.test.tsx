@@ -63,7 +63,7 @@ describe("CycleTimesEditor", () => {
 		expect(screen.queryByText("Cycle Times")).not.toBeInTheDocument();
 	});
 
-	it("offers raw states and State-Mapping names in workflow order in a boundary picker", async () => {
+	it("offers the workflow as the charts show it, a mapping's name in place of its states, in a boundary picker", async () => {
 		renderEditor([definition({ startState: "", endState: "" })]);
 
 		await userEvent.click(
@@ -75,9 +75,8 @@ describe("CycleTimesEditor", () => {
 			.querySelectorAll('[role="option"]');
 		expect(Array.from(options).map((option) => option.textContent)).toEqual([
 			"New",
-			"Active",
-			"Done",
 			"Validation",
+			"Done",
 		]);
 	});
 
@@ -102,9 +101,8 @@ describe("CycleTimesEditor", () => {
 			.querySelectorAll('[role="option"]');
 		expect(Array.from(options).map((option) => option.textContent)).toEqual([
 			"New",
-			"Active",
-			"Done",
 			"Validation",
+			"Done",
 		]);
 	});
 
