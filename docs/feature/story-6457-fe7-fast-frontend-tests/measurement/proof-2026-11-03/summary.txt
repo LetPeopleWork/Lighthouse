@@ -1,0 +1,105 @@
+commit fb2747a6ea2ca9744a735a86b77151c92568b8a3 started 2026-11-03T10:31:31+01:00
+=== full-guard-on
+$ pnpm test
+exit 0
+Time budget: fail mode, plain run, 6 workers, 12 processors
+ Test Files  581 passed (581)
+      Tests  9054 passed (9054)
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 0 offenders
+-rw-r--r-- 1 benjamin benjamin 1353561 10:35:38 sonar-report.xml
+-rw-r--r-- 1 benjamin benjamin 3350757 10:35:38 test-results.json
+=== ws1-plain-fails
+$ pnpm test src/fe7scratch/slow.test.ts
+exit 1
+Time budget: fail mode, plain run, 6 workers, 12 processors
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+src/fe7scratch/slow.test.ts :: planted sleeps past the budget took 6.51 s, limit 2 s
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 1 offenders
+=== ws2-coverage-fails
+$ env CI=true pnpm run sonarreport src/fe7scratch/slow.test.ts
+exit 1
+Time budget: fail mode, coverage run, default workers, 12 processors
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+src/fe7scratch/slow.test.ts :: planted sleeps past the budget took 6.51 s, limit 6 s
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 1 offenders
+-rw-r--r-- 1 benjamin benjamin  268 10:35:53 sonar-report.xml
+-rw-r--r-- 1 benjamin benjamin 1086 10:35:53 test-results.json
+=== ws3-stryker-off
+$ env STRYKER_MUTATOR_WORKER=0 pnpm test src/fe7scratch/slow.test.ts
+exit 0
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+=== ws4-watch-off
+$ timeout 45 pnpm exec vitest src/fe7scratch/slow.test.ts
+exit 0
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+=== ws5-warn
+$ env LIGHTHOUSE_TIME_BUDGET=warn GITHUB_ACTIONS=true pnpm test src/fe7scratch/slow.test.ts
+exit 0
+Time budget: warn mode, plain run, 6 workers, 12 processors
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+::warning::src/fe7scratch/slow.test.ts :: planted sleeps past the budget took 6.51 s, limit 2 s
+Time budget: warn mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 1 offenders
+=== ws5-fail-annotated
+$ env GITHUB_ACTIONS=true pnpm test src/fe7scratch/slow.test.ts
+exit 1
+Time budget: fail mode, plain run, 6 workers, 12 processors
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+::error::src/fe7scratch/slow.test.ts :: planted sleeps past the budget took 6.51 s, limit 2 s
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 1 offenders
+=== ws6-off
+$ env LIGHTHOUSE_TIME_BUDGET=off pnpm test src/fe7scratch/slow.test.ts
+exit 0
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+scratch entries added: 2
+=== ws7-over-ceiling
+$ pnpm test src/fe7scratch/slow.test.ts
+exit 1
+Time budget: fail mode, plain run, 6 workers, 12 processors
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+src/fe7scratch/slow.test.ts :: planted sleeps past the budget took 6.51 s, limit 4 s
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 1 offenders
+=== ws8-filtered-not-stale
+$ pnpm test src/fe7scratch/slow.test.ts
+exit 1
+Time budget: fail mode, plain run, 6 workers, 12 processors
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+src/fe7scratch/slow.test.ts :: planted sleeps past the budget took 6.51 s, limit 4 s
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 1 offenders
+=== ws8-full-run-stale
+$ pnpm test
+exit 1
+Time budget: fail mode, plain run, 6 workers, 12 processors
+ Test Files  583 passed (583)
+      Tests  9057 passed (9057)
+src/fe7scratch/slow.test.ts :: planted sleeps past the budget took 6.51 s, limit 4 s
+src/fe7scratch/other.test.ts :: was deleted long ago stale allow-list entry (test-absent)
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 2 offenders
+=== ws10-bail-names-slow
+$ env CI=true pnpm test src/fe7scratch/
+exit 1
+Time budget: fail mode, plain run, default workers, 12 processors
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 2 passed (3)
+src/fe7scratch/slow.test.ts :: planted sleeps a long time took 6.52 s, limit 2.31 s
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 1 offenders
+--- git status after clean-up
+?? docs/feature/story-6457-fe7-fast-frontend-tests/measurement/proof-2026-11-03/
+finished 2026-11-03T10:41:08+01:00
+=== ws10-counter-check-no-bail
+$ pnpm test src/fe7scratch/   (CI unset, so no bail)
+exit 1
+Time budget: fail mode, plain run, 6 workers, 12 processors
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+src/fe7scratch/slow.test.ts :: planted sleeps a long time took 6.53 s, limit 2.31 s
+src/fe7scratch/slow.test.ts :: planted sleeps past the budget stale allow-list entry (test-absent)
+Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 2 offenders
