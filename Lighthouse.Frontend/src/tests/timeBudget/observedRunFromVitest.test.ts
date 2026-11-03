@@ -5,8 +5,6 @@ import {
 	type VitestRunOutcome,
 } from "./observedRunFromVitest";
 
-const pending = "waits for the time-budget guard to be built";
-
 const reportsFile = "src/pages/Reports/ReportsPage.test.tsx";
 const settingsFile = "src/pages/Teams/ModifyTeamSettings.test.tsx";
 
@@ -26,7 +24,7 @@ function aRunOutcome(
 
 const everythingExists = () => true;
 
-describe.skip(`reading a Vitest run (${pending})`, () => {
+describe("reading a Vitest run", () => {
 	it("turns each test into a file, a full name and seconds", () => {
 		const observed = observeVitestRun(
 			aRunOutcome([
