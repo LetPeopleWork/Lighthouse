@@ -900,3 +900,12 @@ The thirty tests the time budget lets through today, each with its ceiling in se
 | src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 150 needed, the lin... | 2.5 | slice 7 |
 | src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 20 needed, the line... | 2.5 | slice 7 |
 | src/pages/Teams/Detail/Refinement/RefinementView.test.tsx | The Refinement tab lists the Work Items in refinement handles three hundred Work Items,... | 3.0 | slice 7 |
+
+## Wave: DELIVER / [REF] Per-file budget made failing (2026-11-03)
+
+The frontend per-file time budget now fails the build; repository variable `LIGHTHOUSE_BUDGET_WARN_ONLY=true` switches it back to a warning.
+
+Headroom evidence. Method: for each of the 7 saved CI coverage-run timing CSVs of 2026-11-02, sum `duration_ms` per test file, take the worst of the 7 runs per file, and compare with `budget_seconds` (63 s default) or the file's `ceiling_seconds` in `Scripts/test-timings/test-time-budget.json`. The budget's seconds are CI coverage-run seconds (derived from those same CI artifacts), so no coverage factor applies.
+
+- Worst unlisted file: `src/pages/Reports/ReportsPage.removal.test.tsx` at 48.0 s of 63 s (76 %).
+- Every listed file is at most 50 % of its ceiling.

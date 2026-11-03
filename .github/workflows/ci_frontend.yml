@@ -12,7 +12,9 @@ jobs:
     if: inputs.frontend == 'true'
     runs-on: ubuntu-latest
     env:
-      # Single test over its time limit: fail (unset), warn, or off. Set the repository variable to switch.
+      # What a single test that runs over its time limit does: LIGHTHOUSE_TIME_BUDGET unset fails the
+      # test, "warn" reports it, "off" skips the check. Set the repository variable to switch.
+      # The per-file budget below has its own switch, LIGHTHOUSE_BUDGET_WARN_ONLY.
       LIGHTHOUSE_TIME_BUDGET: ${{ vars.LIGHTHOUSE_TIME_BUDGET }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -55,14 +57,24 @@ jobs:
           name: sonar-report-frontend
           path: ./Lighthouse.Frontend/.scannerwork/report-task.txt
 
-      # A test file over its time budget fails the build. To report it as a warning instead,
-      # set the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY to true; unset means enforce.
+      # A test file over its time budget fails the build. The budget is in CI coverage-run seconds.
+      # To report it as a warning instead, set the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY
+      # to true; empty, unset or false enforces. Any other value fails this step.
       - name: Check test-time budget
         env:
           BUDGET_WARN_ONLY: ${{ vars.LIGHTHOUSE_BUDGET_WARN_ONLY }}
         run: |
           python3 --version
           python3 -m unittest discover -s Scripts/test-timings/tests
-          WARN=""
-          if [ "$BUDGET_WARN_ONLY" = "true" ]; then WARN="--warn-only"; fi
-          python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv $WARN
+          case "$BUDGET_WARN_ONLY" in
+            true)
+              python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv --warn-only
+              ;;
+            ""|false)
+              python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv
+              ;;
+            *)
+              echo "::error::LIGHTHOUSE_BUDGET_WARN_ONLY must be empty, true or false (got '$BUDGET_WARN_ONLY')"
+              exit 1
+              ;;
+          esac

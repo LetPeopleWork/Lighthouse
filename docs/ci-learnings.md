@@ -433,8 +433,11 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   `[Category("XIntegration")]`, the output in `ci_changes.yml` and the input in `ci_backend.yml`, and
   mirror it in `dev-test.{sh,ps1}`. Not automated because: it is wiring across workflow files.
 - **Test-time budget**: a test file (frontend) or test class (backend) over its budget is a failure to
-  fix, although `check_budget.py --warn-only` only warns today. Not automated because: the
-  maintainer keeps the budget warn-only.
+  fix. The frontend per-file check fails the build (switch: repository variable
+  `LIGHTHOUSE_BUDGET_WARN_ONLY=true`) and the per-test guard fails a single slow test (switch:
+  `LIGHTHOUSE_TIME_BUDGET=warn|off`); the backend per-file check still only warns. Whether a slow
+  test earns a bigger ceiling or a rewrite is a judgement. Not automated because: no tool can decide
+  that.
 - **Installing a just-published package by exact version**: poll the registry first, never a fixed
   sleep. Not automated because: it is a race with an external registry.
 
