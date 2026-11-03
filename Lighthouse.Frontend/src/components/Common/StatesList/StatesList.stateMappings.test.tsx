@@ -132,7 +132,7 @@ describe("StatesList with state mappings over raw states", () => {
 		expect(onRemoveDoingState).toHaveBeenCalledWith("Analysis");
 	});
 
-	it.skip("moves all of a mapping's states together when the chip is dragged ahead of another", async () => {
+	it("moves all of a mapping's states together when the chip is dragged ahead of another", async () => {
 		await renderDoing(["Analysis", "Code Review", "Testing"]);
 
 		drag("Review", "Analysis");
@@ -144,7 +144,7 @@ describe("StatesList with state mappings over raw states", () => {
 		]);
 	});
 
-	it.skip("lands a dragged mapping where it is dropped, even when its states were apart", async () => {
+	it("lands a dragged mapping where it is dropped, even when its states were apart", async () => {
 		await renderDoing(["Code Review", "Analysis", "Testing", "Waiting"]);
 
 		drag("Review", "Waiting");
@@ -157,7 +157,7 @@ describe("StatesList with state mappings over raw states", () => {
 		]);
 	});
 
-	it.skip("drags a plain state ahead of a mapping without splitting the mapping", async () => {
+	it("drags a plain state ahead of a mapping without splitting the mapping", async () => {
 		await renderDoing(["Code Review", "Testing", "Waiting"]);
 
 		drag("Waiting", "Review");

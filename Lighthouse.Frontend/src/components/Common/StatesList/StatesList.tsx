@@ -44,6 +44,38 @@ function mappingTooltipsFor(
 	);
 }
 
+function groupKeyOf(rawState: string, mappings: IStateMapping[]): string {
+	const key = foldKey(rawState);
+	const group = mappings.find((mapping) =>
+		mapping.states.some((state) => foldKey(state) === key),
+	);
+	return foldKey(group?.name ?? rawState);
+}
+
+/** Turns a reordered display list back into raw states, each mapping's states together in their stored order. */
+function rawOrderFor(
+	displayOrder: string[],
+	rawStates: string[],
+	mappings: IStateMapping[],
+): string[] {
+	return displayOrder.flatMap((entry) => {
+		const entryKey = foldKey(entry);
+		return rawStates.filter(
+			(state) => groupKeyOf(state, mappings) === entryKey,
+		);
+	});
+}
+
+function reorderHandlerFor(
+	onReorder: ((newOrder: string[]) => void) | undefined,
+	rawStates: string[],
+	mappings: IStateMapping[],
+): ((newOrder: string[]) => void) | undefined {
+	if (!onReorder) return undefined;
+	return (displayOrder) =>
+		onReorder(rawOrderFor(displayOrder, rawStates, mappings));
+}
+
 const StatesList: React.FC<StatesListComponentProps> = ({
 	toDoStates,
 	onAddToDoState,
@@ -104,6 +136,19 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 	const doneDisplayStates = useMemo(
 		() => displayStatesFor(doneStates, stateMappings),
 		[doneStates, stateMappings],
+	);
+
+	const reorderToDo = useMemo(
+		() => reorderHandlerFor(onReorderToDoStates, toDoStates, stateMappings),
+		[onReorderToDoStates, toDoStates, stateMappings],
+	);
+	const reorderDoing = useMemo(
+		() => reorderHandlerFor(onReorderDoingStates, doingStates, stateMappings),
+		[onReorderDoingStates, doingStates, stateMappings],
+	);
+	const reorderDone = useMemo(
+		() => reorderHandlerFor(onReorderDoneStates, doneStates, stateMappings),
+		[onReorderDoneStates, doneStates, stateMappings],
 	);
 
 	const allUsedStates = useMemo(() => {
@@ -174,7 +219,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 						groupedItems={mappingTooltips}
 						onAddItem={onAddToDoState}
 						onRemoveItem={onRemoveToDoState}
-						onReorderItems={onReorderToDoStates}
+						onReorderItems={reorderToDo}
 						suggestions={todoSuggestions}
 						isLoading={isLoading}
 					/>
@@ -187,7 +232,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 						groupedItems={mappingTooltips}
 						onAddItem={onAddDoingState}
 						onRemoveItem={onRemoveDoingState}
-						onReorderItems={onReorderDoingStates}
+						onReorderItems={reorderDoing}
 						suggestions={doingSuggestions}
 						isLoading={isLoading}
 					/>
@@ -200,7 +245,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 						groupedItems={mappingTooltips}
 						onAddItem={onAddDoneState}
 						onRemoveItem={onRemoveDoneState}
-						onReorderItems={onReorderDoneStates}
+						onReorderItems={reorderDone}
 						suggestions={doneSuggestions}
 						isLoading={isLoading}
 					/>
