@@ -52,3 +52,12 @@ graph, checks zone rules in 0.4 s, and found the same 21 imports as a hand count
   because an unparsed result cannot equal the list.
 - Module zones (packaging the frontend by module) extend the same `.fallowrc.json`.
 - A top-level `src/` folder added later is unconstrained until a zone names it.
+
+## Status notes
+
+- 2026-11-03: the frontend test-time guard follows the ratchet idea of ADR-268 but not this ADR's
+  mechanism. Its list is read by a Vitest reporter from the run itself, not by an enforcement test over
+  a tool's output. The key is a single test (`file :: full test name`), a stale entry is judged against
+  what ran, and every entry has its own ceiling, so a listed slow test may not get slower. Neither this
+  guard nor the per-file budget covers import, environment and transform cost, because those run
+  outside any test.

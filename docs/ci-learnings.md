@@ -117,6 +117,16 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   files. Fix: prove the cause by excluding your new files, then give the marginal tests an explicit
   timeout. Do not decide from their solo runtime. Not automated because: contention depends on the
   whole run, not on any single file.
+- **Where to test**: a test that renders a large list, walks a long `user-event` sequence or waits on a
+  real timer is slow because the logic under test sits inside the component. Fix: put logic (rules,
+  arithmetic, validation, paging, debounce and autosave decisions) in a function or hook and test it
+  directly; keep one or two rendered wiring tests per user flow; render a large list or walk a long
+  sequence only when the rendering itself is what is tested; prefer fake timers over real waits. The
+  frontend time budget (reporter in `src/tests/timeBudget/`, known exceptions in its allow-list
+  `slowTests.ts`) names any single test over 2 s on a quiet machine, and the per-file budget
+  (`Scripts/test-timings/check_budget.py`) sums test time only. Neither covers import, environment or
+  transform cost, which run outside any test. Not automated because: the budget names a slow test
+  after the fact; it cannot tell where the logic should have lived.
 - **Use the cheap query unless the role is what you are testing**: in DataGrid tests, `*ByRole` costs
   1.25–2× the time. Use it only where the role is the assertion, and never inside a per-row loop. MUI's
   `Switch` has `role="switch"`, and MUI-X hides chart SVG from the accessibility tree. Not automated

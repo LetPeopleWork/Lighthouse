@@ -59,3 +59,10 @@ internal reference codes as the explanation.
 - 2026-10-29: the convention now covers the frontend too. ADR-269 applies it to the layer rules in
   `Lighthouse.Frontend/src`: Fallow reports the leaking imports and one enforcement test holds the list. There the unit is one entry per
   leaking file pair (importing file → imported file), a refinement of "file or type".
+- 2026-11-03: the frontend test-time guard follows the ratchet idea but departs from it. The key is a
+  single test (`file :: full test name`), not a file or a type. A stale entry is judged against what
+  ran, not against the source: a listed test that ran in a collected file must have run and must not
+  have taken under a quarter of the budget, an entry whose file is gone is stale, files outside a
+  filtered run are ignored, and a run cut short by bail skips the check. Every entry has its own
+  ceiling, so a listed slow test may not get slower. Neither this guard nor the per-file budget covers
+  import, environment and transform cost, because those run outside any test.
