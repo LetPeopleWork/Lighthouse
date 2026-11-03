@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import StateMappingsEditor from "./StateMappingsEditor";
 
@@ -16,6 +17,28 @@ describe("StateMappingsEditor over raw Doing states", () => {
 		);
 
 		expect(screen.getByText(HELP_TEXT)).toBeInTheDocument();
+	});
+
+	it("offers a second mapping only the Doing states no other mapping groups", async () => {
+		const user = userEvent.setup();
+		render(
+			<StateMappingsEditor
+				stateMappings={[
+					{ name: "Review", states: ["Code Review", "Testing"] },
+					{ name: "Started", states: [] },
+				]}
+				doingStates={["Code Review", "Testing", "Analysis"]}
+				onChange={vi.fn()}
+			/>,
+		);
+
+		await act(async () => {
+			await user.click(screen.getAllByRole("combobox")[1]);
+		});
+
+		expect(
+			screen.getAllByRole("option").map((option) => option.textContent),
+		).toEqual(["Analysis"]);
 	});
 
 	it("says nothing about a mapping state that is in none of the lists", () => {

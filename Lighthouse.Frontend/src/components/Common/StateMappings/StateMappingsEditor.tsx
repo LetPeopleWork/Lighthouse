@@ -42,24 +42,19 @@ const StateMappingsEditor: React.FC<StateMappingsEditorProps> = ({
 
 	const mappingIds = useRef<string[]>([]);
 
-	/** Returns Doing states available as sources for the given mapping index.
-	 *  Excludes the names of the other mappings (they cannot be nested) and
-	 *  states already present in this mapping. A mapping's own name stays
-	 *  offered, so it can group the state it is named after.
+	/** The Doing states a mapping can still add. A state belongs to one mapping only and a mapping cannot
+	 *  hold another, so the states and names of the other mappings are left out, as are the mapping's own
+	 *  states. A mapping's own name stays offered, so it can group the state it is named after.
 	 */
 	const getAvailableSourceOptions = (mappingIndex: number): string[] => {
-		const allMappingNames = new Set(
-			stateMappings
-				.filter((_, i) => i !== mappingIndex)
-				.map((m) => foldKey(m.name)),
+		const taken = new Set(
+			stateMappings.flatMap((mapping, i) =>
+				i === mappingIndex
+					? mapping.states.map(foldKey)
+					: [mapping.name, ...mapping.states].map(foldKey),
+			),
 		);
-		const currentMappingStates = new Set(
-			(stateMappings[mappingIndex]?.states ?? []).map(foldKey),
-		);
-		return doingStates.filter((s) => {
-			const lower = foldKey(s);
-			return !allMappingNames.has(lower) && !currentMappingStates.has(lower);
-		});
+		return doingStates.filter((state) => !taken.has(foldKey(state)));
 	};
 
 	const handleAddMapping = () => {
