@@ -202,4 +202,14 @@ describe("isCycleTimeDefinitionValid", () => {
 			cycleTimeBoundaryIndex("Phase", states, [phaseMapping]),
 		).toBeGreaterThanOrEqual(0);
 	});
+
+	it("finds an end boundary on the first state of the workflow", () => {
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "Implementation", endState: "Backlog" },
+				workflow(),
+				NO_MAPPINGS,
+			),
+		).toBe(true);
+	});
 });

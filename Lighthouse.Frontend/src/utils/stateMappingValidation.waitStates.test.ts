@@ -88,4 +88,28 @@ describe("validateStateMappings for wait states inside a mapping", () => {
 			mappingAutoSaveBlockers([review], settingsWaitingIn("Testing"), stored),
 		).toEqual([]);
 	});
+
+	it("refuses a wait state the edit adds inside an unchanged stored mapping", () => {
+		const stored = {
+			stateMappings: [{ name: "Review", states: ["Code Review", "Testing"] }],
+			waitStates: [],
+		};
+
+		expect(
+			validateStateMappings([review], settingsWaitingIn("Testing"), stored),
+		).toEqual([TESTING_IS_PART_OF_REVIEW]);
+	});
+
+	it("refuses a stored wait state once the edit drops another state from its mapping", () => {
+		const stored = {
+			stateMappings: [
+				{ name: "Review", states: ["Code Review", "Testing", "Sign-off"] },
+			],
+			waitStates: ["Testing"],
+		};
+
+		expect(
+			validateStateMappings([review], settingsWaitingIn("Testing"), stored),
+		).toEqual([TESTING_IS_PART_OF_REVIEW]);
+	});
 });

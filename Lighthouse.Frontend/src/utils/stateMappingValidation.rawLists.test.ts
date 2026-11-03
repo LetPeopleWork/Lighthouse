@@ -175,3 +175,67 @@ describe("validateStateMappings over lists of raw states", () => {
 		).not.toThrow();
 	});
 });
+
+// A list entry naming a mapping stands for the mapping's states, so a state can sit in a category through its
+// mapping's name alone. The category rules read the lists that way, as the server does.
+describe("validateStateMappings reading a mapping's name as its states", () => {
+	it("refuses a mapping whose name stands in Doing while one of its states is listed in Done", () => {
+		expect(
+			validateStateMappings(
+				[{ name: "Review", states: ["Code Review", "Testing"] }],
+				lists(["Review"], ["Backlog"], ["Done", "Testing"]),
+			),
+		).toEqual([
+			'Mapping "Review" groups "Testing", which is in both Doing and Done. Keep a mapping\'s states in one category.',
+		]);
+	});
+
+	it("reads a mapping named after one of its states as that state and the states not listed beside it", () => {
+		expect(
+			validateStateMappings(
+				[{ name: "Active", states: ["Active", "Resolved"] }],
+				lists(["Active"], ["Backlog"], ["Done", "Resolved"]),
+			),
+		).toEqual([
+			'Mapping "Active" groups "Resolved", which is in both Doing and Done. Keep a mapping\'s states in one category.',
+		]);
+	});
+
+	it("reads a mapping's name that another mapping groups as a plain state", () => {
+		expect(
+			validateStateMappings(
+				[
+					{ name: "Review", states: ["Code Review"] },
+					{ name: "QA", states: ["Review", "Testing"] },
+				],
+				lists(["Review"], ["Backlog"], ["Done", "Testing"]),
+			),
+		).toContain(
+			'Mapping "QA" groups states from different categories: "Review" is in Doing and "Testing" is in Done. Keep a mapping\'s states in one category.',
+		);
+	});
+
+	it("names all three categories when a mapping's state is listed in each of them", () => {
+		expect(
+			validateStateMappings(
+				[{ name: "Review", states: ["Code Review"] }],
+				lists(
+					["Code Review"],
+					["Backlog", "Code Review"],
+					["Done", "Code Review"],
+				),
+			),
+		).toEqual([
+			'Mapping "Review" groups "Code Review", which is in To Do, Doing and Done. Keep a mapping\'s states in one category.',
+		]);
+	});
+
+	it("only asks for a name for a nameless mapping whose states sit in different categories", () => {
+		expect(
+			validateStateMappings(
+				[{ name: " ", states: ["Code Review", "Testing"] }],
+				lists(["Testing"], ["Backlog", "Code Review"]),
+			),
+		).toEqual(["Mapping at position 1 has an empty name."]);
+	});
+});

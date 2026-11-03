@@ -277,4 +277,41 @@ describe("ItemListManager", () => {
 			expect(chip.closest('[draggable="true"]')).not.toBeInTheDocument();
 		}
 	});
+
+	it("shows no chip for a blank item", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={["Item 1", "  "]}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
+
+		expect(screen.getAllByTestId("CancelIcon")).toHaveLength(1);
+	});
+
+	it("shows a grouped item filled, with the group icon and named as a group, and a plain item outlined without them", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={["Item 1", "Group 1"]}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+				groupedItems={new Map([["Group 1", "Groups State A and State B"]])}
+			/>,
+		);
+
+		const plain = screen.getByText("Item 1").closest(".MuiChip-root");
+		const grouped = screen.getByRole("group", { name: "Group 1" });
+		expect(plain).toHaveClass("MuiChip-outlined");
+		expect(screen.getAllByRole("group")).toEqual([grouped]);
+		expect(plain).not.toContainElement(
+			screen.getByTestId("state-mapping-chip-icon"),
+		);
+		expect(grouped).toHaveClass("MuiChip-filled");
+		expect(grouped).toContainElement(
+			screen.getByTestId("state-mapping-chip-icon"),
+		);
+	});
 });

@@ -236,4 +236,18 @@ describe("StatesList with state mappings over raw states", () => {
 		);
 		expect(options).toEqual(["Deploy"]);
 	});
+
+	it.each(["To Do", "Doing", "Done"])(
+		"does not offer a mapping's name in %s even where none of its states is listed",
+		async (list) => {
+			await renderDoing(["Analysis"]);
+
+			await userEvent.click(screen.getByLabelText(`New ${list} States`));
+
+			const options = (await screen.findAllByRole("option")).map(
+				(option) => option.textContent,
+			);
+			expect(options).toEqual(["Deploy"]);
+		},
+	);
 });

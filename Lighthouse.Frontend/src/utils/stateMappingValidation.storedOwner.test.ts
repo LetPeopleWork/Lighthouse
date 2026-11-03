@@ -4,6 +4,7 @@ import {
 	type IStateLists,
 	type IStoredStateSettings,
 	mappingAutoSaveBlockers,
+	storedStateSettingsOf,
 } from "./stateMappingValidation";
 
 // An owner saved before these rules existed may already break them. Like the
@@ -130,5 +131,41 @@ describe("mappingAutoSaveBlockers on a stored owner that already breaks a rule",
 		expect(
 			mappingAutoSaveBlockers([split], withNewToDoState(splitLists)),
 		).toEqual([FLOW_SPANS_TWO_CATEGORIES]);
+	});
+});
+
+describe("storedStateSettingsOf", () => {
+	it("has nothing stored before the settings have loaded", () => {
+		expect(storedStateSettingsOf(null)).toBeUndefined();
+	});
+
+	it("keeps the mappings, the wait states and the three lists the server holds", () => {
+		const mappings = [{ name: "Review", states: ["Code Review"] }];
+
+		expect(
+			storedStateSettingsOf({
+				stateMappings: mappings,
+				waitStates: ["Blocked"],
+				toDoStates: ["Backlog"],
+				doingStates: ["Code Review"],
+				doneStates: ["Done"],
+			}),
+		).toEqual({
+			stateMappings: mappings,
+			waitStates: ["Blocked"],
+			toDoStates: ["Backlog"],
+			doingStates: ["Code Review"],
+			doneStates: ["Done"],
+		});
+	});
+
+	it("reads anything the settings leave out as empty", () => {
+		expect(storedStateSettingsOf({})).toEqual({
+			stateMappings: [],
+			waitStates: [],
+			toDoStates: [],
+			doingStates: [],
+			doneStates: [],
+		});
 	});
 });
