@@ -46,7 +46,11 @@ function withoutRepeats(states: string[]): string[] {
 	});
 }
 
-function displayNameOf(rawState: string, mappings: IStateMapping[]): string {
+/** The name the charts show for a raw state: its mapping's name, or the state itself when no mapping groups it. */
+export function displayNameOf(
+	rawState: string,
+	mappings: IStateMapping[],
+): string {
 	const key = foldKey(rawState);
 	const group = mappings.find((mapping) =>
 		mapping.states.some((state) => foldKey(state) === key),

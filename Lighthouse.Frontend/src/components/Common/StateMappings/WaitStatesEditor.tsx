@@ -4,6 +4,7 @@ import type React from "react";
 import { useState } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import { withoutIncompleteMappings } from "../../../utils/stateMappingValidation";
+import { displayStatesFor } from "../../../utils/stateMappingView";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 
@@ -22,11 +23,10 @@ const WaitStatesEditor: React.FC<WaitStatesEditorProps> = ({
 }) => {
 	const [isConfigured, setIsConfigured] = useState(waitStates.length > 0);
 
-	const mappingNames = withoutIncompleteMappings(stateMappings).map(
-		(mapping) => mapping.name,
+	const suggestions = displayStatesFor(
+		doingStates,
+		withoutIncompleteMappings(stateMappings),
 	);
-
-	const suggestions = [...doingStates, ...mappingNames];
 
 	const handleToggle = (checked: boolean) => {
 		setIsConfigured(checked);

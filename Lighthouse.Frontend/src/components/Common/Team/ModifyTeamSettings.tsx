@@ -220,6 +220,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							teamId={teamSettings.id}
 							toDoStates={teamSettings.toDoStates || []}
 							doingStates={teamSettings.doingStates || []}
+							stateMappings={teamSettings.stateMappings || []}
 							refinement={teamSettings.refinement}
 							onChange={changeRefinement}
 						/>

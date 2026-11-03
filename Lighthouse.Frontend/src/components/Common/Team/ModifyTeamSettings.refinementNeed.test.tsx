@@ -956,6 +956,30 @@ describe("The stage rules of a single Team", () => {
 	});
 });
 
+describe("The Refinement states a Team admin can choose from", () => {
+	beforeEach(() => {
+		terms.current = { ...defaultTerms };
+		saveTeamSettings.mockReset();
+		saveTeamSettings.mockResolvedValue(undefined);
+	});
+
+	it("the refinement picker offers a mapping's name, not its states", async () => {
+		await renderGravitysSettingsForm({
+			...gravitysSettings({ states: [] }),
+			stateMappings: [{ name: "Analysis", states: ["Next", "Analysing"] }],
+		});
+
+		await userEvent.click(
+			await screen.findByRole("combobox", { name: /refinement state/i }),
+		);
+
+		const offered = within(await screen.findByRole("listbox"))
+			.getAllByRole("option")
+			.map((option) => option.textContent);
+		expect(offered).toEqual(["Backlog", "Analysis"]);
+	});
+});
+
 describe("The Refinement states when the To Do and Doing states change", () => {
 	beforeEach(() => {
 		terms.current = { ...defaultTerms };
@@ -973,6 +997,7 @@ describe("The Refinement states when the To Do and Doing states change", () => {
 					teamId={0}
 					toDoStates={["Backlog"]}
 					doingStates={["Next"]}
+					stateMappings={[]}
 					refinement={refinement}
 					onChange={onChange}
 				/>,
@@ -985,6 +1010,7 @@ describe("The Refinement states when the To Do and Doing states change", () => {
 					teamId={0}
 					toDoStates={["Backlog"]}
 					doingStates={["Next", "Analysing"]}
+					stateMappings={[]}
 					refinement={refinement}
 					onChange={onChange}
 				/>,

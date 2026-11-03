@@ -1,12 +1,15 @@
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useEffect, useRef } from "react";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type {
 	IRefinementSettings,
 	IRefinementStateSetting,
 } from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { withoutIncompleteMappings } from "../../../utils/stateMappingValidation";
+import { displayStatesFor, foldKey } from "../../../utils/stateMappingView";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 import ReadinessSettings, {
@@ -51,6 +54,7 @@ interface RefinementSettingsSectionProps {
 	teamId: number;
 	toDoStates: string[];
 	doingStates: string[];
+	stateMappings: IStateMapping[];
 	refinement: IRefinementSettings | null | undefined;
 	/** Receives only the part of the settings that changed. */
 	onChange: (change: Partial<IRefinementSettings>) => void;
@@ -63,17 +67,22 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	teamId,
 	toDoStates,
 	doingStates,
+	stateMappings,
 	refinement,
 	onChange,
 }) => {
 	const { getTerm } = useTerminology();
 
 	const chosenStates = refinement?.states ?? [];
-	const suggestions = [...toDoStates, ...doingStates];
-	const offered = new Set(suggestions.map((state) => state.toLowerCase()));
+	const mappings = withoutIncompleteMappings(stateMappings);
+	const suggestions = [
+		...displayStatesFor(toDoStates, mappings),
+		...displayStatesFor(doingStates, mappings),
+	];
+	const offered = new Set(suggestions.map(foldKey));
 	const chosen = chosenStates
 		.map((entry) => entry.state)
-		.filter((state) => offered.has(state.toLowerCase()));
+		.filter((state) => offered.has(foldKey(state)));
 
 	const save = (states: string[]) => onChange({ states: toSettings(states) });
 
@@ -96,8 +105,8 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	// The list accepts free text, but the server refuses anything that is not a To Do or Doing state,
 	// so a typed value only counts when it names one of the suggestions.
 	const add = (typed: string) => {
-		const wanted = typed.trim().toLowerCase();
-		const match = suggestions.find((state) => state.toLowerCase() === wanted);
+		const wanted = foldKey(typed);
+		const match = suggestions.find((state) => foldKey(state) === wanted);
 		if (match && !chosen.includes(match)) {
 			save([...chosen, match]);
 		}
