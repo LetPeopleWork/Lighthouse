@@ -36,7 +36,13 @@ export function isBlankName(value: string): boolean {
 	return foldKey(value) === "";
 }
 
-function withoutRepeats(states: string[]): string[] {
+/** True when two names or states are the same one to the server. */
+export function isSameState(left: string, right: string): boolean {
+	return foldKey(left) === foldKey(right);
+}
+
+/** The states in order, each kept the first time it appears in the server's sense of the same. */
+export function withoutRepeats(states: string[]): string[] {
 	const seen = new Set<string>();
 	return states.filter((state) => {
 		const key = foldKey(state);

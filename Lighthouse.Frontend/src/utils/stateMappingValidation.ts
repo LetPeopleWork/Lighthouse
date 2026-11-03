@@ -1,5 +1,11 @@
 import type { IStateMapping } from "../models/Common/StateMapping";
-import { foldKey, isBlankName, trimAsServer } from "./stateMappingView";
+import {
+	foldKey,
+	isBlankName,
+	isSameState,
+	trimAsServer,
+	withoutRepeats,
+} from "./stateMappingView";
 
 export interface IStateLists {
 	toDoStates: string[];
@@ -45,10 +51,6 @@ function categoriesOf({
 	];
 }
 
-function isSameState(left: string, right: string): boolean {
-	return foldKey(left) === foldKey(right);
-}
-
 function listedAs(states: string[], name: string): string | undefined {
 	return states.find((state) => isSameState(state, name));
 }
@@ -59,16 +61,6 @@ function membersOf(mapping: IStateMapping): string[] {
 
 function nameOf(mapping: IStateMapping): string {
 	return trimAsServer(mapping.name);
-}
-
-function withoutRepeats(states: string[]): string[] {
-	const seen = new Set<string>();
-	return states.filter((state) => {
-		const key = foldKey(state);
-		if (seen.has(key)) return false;
-		seen.add(key);
-		return true;
-	});
 }
 
 function validateMappingFields(mappings: IStateMapping[]): string[] {
