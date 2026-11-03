@@ -863,3 +863,40 @@ their own reason (DashboardHeader popover, ReportsPage.usageData Retry, ThirdPar
 Local coverage alone is 1.35x per test (median); an oversubscribed machine adds 1.66x. Seed for 01-08:
 `measurement/calibration-2026-11-03/seed-allow-list.json` (ceilings 2.5-5.0 s). Detail and the CI log Duration command:
 `measurement/slice-01a-calibration.md`.
+
+## Wave: DELIVER / [REF] Allow-list retirement map (seeded 2026-11-03)
+
+The thirty tests the time budget lets through today, each with its ceiling in seconds on a quiet machine and what is expected to retire it.
+
+| file | test | ceiling (s) | expected to retire it |
+|---|---|---|---|
+| src/components/Common/DataGrid/DataGridBase.paging.test.tsx | Turning a page brings the top of the list into view never scrolls for a page change the... | 3.0 | sweep |
+| src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx | ModifyProjectSettings query field saves the edited query once, after the field is left | 3.0 | slice 10 |
+| src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx | ModifyTeamSettings query field saves a changed name after the debounce without anyone l... | 2.5 | slice 4 |
+| src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx | ModifyTeamSettings query field saves the edited query once, after the field is left | 3.0 | slice 4 |
+| src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx | ModifyTeamSettings query field saves the latest edit after the save already on its way,... | 3.0 | slice 4 |
+| src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx | Readiness in the Refinement section of a Team's settings switches a rule back on at the... | 2.5 | slice 4 |
+| src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx | Readiness in the Refinement section of a Team's settings switches a rule that was refus... | 3.0 | slice 4 |
+| src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx | Stage rules in the Refinement section of a Team's settings keeps an edited Ready rule w... | 2.5 | slice 4 |
+| src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx | Stage rules in the Refinement section of a Team's settings saves a changed Ready rule a... | 2.5 | slice 4 |
+| src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx | A Work Items dialog with more than 100 Work Items Priya, on the second page of 243, fil... | 3.5 | slice 9 |
+| src/pages/Common/MetricsView/DashboardHeader.test.tsx | DashboardHeader shows label and formatted date range and opens popover which calls hand... | 2.5 | stays: renders the dashboard header and opens its date popover, which loads the date picker the first time |
+| src/pages/Reports/ReportsPage.combinedPdf.test.tsx | One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50 | 3.0 | slice 5 |
+| src/pages/Reports/ReportsPage.combinedPdf.test.tsx | One PDF of several reports exactly 50 picked may still be exported as one PDF | 2.5 | slice 5 |
+| src/pages/Reports/ReportsPage.removal.test.tsx | Picking reports Select all picks every row, on every page | 4.5 | slice 5 |
+| src/pages/Reports/ReportsPage.removal.test.tsx | Picking reports above 50 picked, Remove is disabled and says at most 50 | 3.0 | slice 5 |
+| src/pages/Reports/ReportsPage.removal.test.tsx | Picking reports exactly 50 picked may still be removed | 2.5 | slice 5 |
+| src/pages/Reports/ReportsPage.removal.test.tsx | Remove several reports at once a coach removes three trial reports on two Teams and a P... | 2.5 | slice 5 |
+| src/pages/Reports/ReportsPage.usageData.test.tsx | What the Reports page tells the usage data a Retry and a Leave it out on one PDF of sev... | 2.5 | stays: renders the Reports page, picks several reports and walks through a failed export, a retry and leaving a report out |
+| src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx | Third-party packages pages like every other list keeps the reader's sort and column fil... | 2.5 | stays: renders a long list of packages and walks through sorting, a column filter and a search that returns to the first page |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached Jonas pages to GR-0131, ... | 5.0 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 0 needed, the line ... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 100 needed, the lin... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 101 needed, the lin... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, a State... | 4.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, numbers... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, the lin... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 143 needed, the lin... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 150 needed, the lin... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx | Team Gravity's 143 Work Items in refinement can all be reached with 20 needed, the line... | 2.5 | slice 7 |
+| src/pages/Teams/Detail/Refinement/RefinementView.test.tsx | The Refinement tab lists the Work Items in refinement handles three hundred Work Items,... | 3.0 | slice 7 |
