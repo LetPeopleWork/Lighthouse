@@ -6,8 +6,8 @@ export type FlowEfficiencyResult =
 	| { status: "no-data" }
 	| { status: "computed"; efficiencyPercent: number };
 
-const matchesMappingName = (mapping: IStateMapping, entry: string): boolean =>
-	mapping.name.toLowerCase() === entry.toLowerCase();
+const sameState = (left: string, right: string): boolean =>
+	left.toLowerCase() === right.toLowerCase();
 
 export function resolveWaitRawStates(
 	waitStates: string[],
@@ -15,10 +15,31 @@ export function resolveWaitRawStates(
 ): string[] {
 	return waitStates.flatMap((entry) => {
 		const mapping = stateMappings.find((candidate) =>
-			matchesMappingName(candidate, entry),
+			sameState(candidate.name, entry),
 		);
 		return mapping ? mapping.states : [entry];
 	});
+}
+
+const displayNameOf = (
+	rawState: string,
+	stateMappings: IStateMapping[],
+): string =>
+	stateMappings.find((mapping) =>
+		mapping.states.some((state) => sameState(state, rawState)),
+	)?.name ?? rawState;
+
+// The chart rows carry a mapping's name in place of its states, so a wait state is compared in that form:
+// a mapping's name stays itself, and one of a mapping's states stands for the whole mapping.
+export function waitStatesAsDisplayed(
+	waitStates: string[],
+	stateMappings: IStateMapping[],
+): Set<string> {
+	return new Set(
+		resolveWaitRawStates(waitStates, stateMappings).map((rawState) =>
+			displayNameOf(rawState, stateMappings).toLowerCase(),
+		),
+	);
 }
 
 export function flowEfficiency(
@@ -35,13 +56,9 @@ export function flowEfficiency(
 		return { status: "no-data" };
 	}
 
-	const waitRawStates = new Set(
-		resolveWaitRawStates(waitStates, stateMappings).map((state) =>
-			state.toLowerCase(),
-		),
-	);
+	const waitRows = waitStatesAsDisplayed(waitStates, stateMappings);
 	const waitDays = rows
-		.filter((row) => waitRawStates.has(row.state.toLowerCase()))
+		.filter((row) => waitRows.has(row.state.toLowerCase()))
 		.reduce((sum, row) => sum + row.totalDays, 0);
 
 	const activeDays = totalDoingDays - waitDays;

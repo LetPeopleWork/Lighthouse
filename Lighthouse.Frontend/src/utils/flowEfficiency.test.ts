@@ -83,11 +83,10 @@ describe("flowEfficiency fold", () => {
 		}
 	});
 
-	it("expands a mapping-name wait state and counts every underlying raw state's time", () => {
+	it("counts a mapping's time as wait when the wait state is the mapping's name", () => {
 		const rows: ICumulativeStateTimeStateRow[] = [
 			getMockStateRow({ state: "In Progress", totalDays: 180 }),
-			getMockStateRow({ state: "Waiting for Review", totalDays: 120 }),
-			getMockStateRow({ state: "Blocked - External", totalDays: 100 }),
+			getMockStateRow({ state: "Waiting", totalDays: 220 }),
 		];
 		const mappings: IStateMapping[] = [
 			{ name: "Waiting", states: ["Waiting for Review", "Blocked - External"] },
@@ -95,10 +94,21 @@ describe("flowEfficiency fold", () => {
 
 		const result = flowEfficiency(rows, ["Waiting"], mappings);
 
-		expect(result.status).toBe("computed");
-		if (result.status === "computed") {
-			expect(result.efficiencyPercent).toBeCloseTo(45, 0);
-		}
+		expect(result).toEqual({ status: "computed", efficiencyPercent: 45 });
+	});
+
+	it("counts the whole mapping's time as wait when the wait state is one of the mapping's states", () => {
+		const rows: ICumulativeStateTimeStateRow[] = [
+			getMockStateRow({ state: "In Progress", totalDays: 180 }),
+			getMockStateRow({ state: "Waiting", totalDays: 220 }),
+		];
+		const mappings: IStateMapping[] = [
+			{ name: "Waiting", states: ["Waiting for Review", "Blocked - External"] },
+		];
+
+		const result = flowEfficiency(rows, ["blocked - external"], mappings);
+
+		expect(result).toEqual({ status: "computed", efficiencyPercent: 45 });
 	});
 
 	it("recomputes over a narrowed selection of rows (per-item)", () => {

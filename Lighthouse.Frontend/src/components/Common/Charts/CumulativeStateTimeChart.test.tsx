@@ -523,21 +523,21 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-04)", () => {
 		expect(seriesById("completedWait")?.data[activeIdx]).toBeNull();
 	});
 
-	it("colours every underlying raw bar when a mapping name is configured as wait", () => {
+	it("colours a mapping's bar when one of the mapping's states is configured as wait", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
-				waitStates={["Waiting"]}
+				waitStates={["Code Review"]}
 				stateMappings={[
 					{
-						name: "Waiting",
-						states: ["Waiting for Review", "Ready for Test"],
+						name: "Waiting for Review",
+						states: ["Code Review", "Pending Approval"],
 					},
 				]}
 			/>,
 		);
 
-		expect(waitColoured()).toEqual(["Waiting for Review", "Ready for Test"]);
+		expect(waitColoured()).toEqual(["Waiting for Review"]);
 	});
 
 	it("shows a non-clickable wait colour key labelled wait whose swatch matches the red waste colour", () => {
@@ -561,12 +561,12 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-04)", () => {
 		});
 	});
 
-	it("drives the colouring from the same resolveWaitRawStates used by the figure", () => {
+	it("colours the bar and counts the figure alike when a mapping's name is configured as wait", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
-				waitStates={["Waiting"]}
-				stateMappings={[{ name: "Waiting", states: ["Ready for Test"] }]}
+				waitStates={["Ready for Test"]}
+				stateMappings={[{ name: "Ready for Test", states: ["QA"] }]}
 			/>,
 		);
 
