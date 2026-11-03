@@ -909,3 +909,21 @@ Headroom evidence. Method: for each of the 7 saved CI coverage-run timing CSVs o
 
 - Worst unlisted file: `src/pages/Reports/ReportsPage.removal.test.tsx` at 48.0 s of 63 s (76 %).
 - Every listed file is at most 50 % of its ceiling.
+
+## Wave: DELIVER / [REF] First CI run with both frontend budgets enforcing (step 02-02, 2026-11-03)
+
+Pushed `45db5ed30..c98f49b05` (slices 1a and 1b). CI run 41619566770, frontend job 125861697719: **green**.
+
+- Reporter start line: `Time budget: fail mode, coverage run, default workers, 4 processors` (the runner has 4 processors; Vitest's default
+  gives it 3 workers).
+- Reporter last line: `Time budget: fail mode, budget 2 s, coverage factor 3, first-test allowance 0.31 s, 0 offenders`.
+- Vitest `Duration 672.85s` (baseline median of 7 runs 930.9 s, range 677-1,092 s: within the range, no verdict).
+- The per-file budget step ran without `--warn-only` and passed.
+- The run is red on one backend test, `JiraOriginalNamesLiveTest.The_demo_projects_work_items_have_the_same_states_types_and_dates_through_both_accounts`
+  (live Jira: two newly created items seen through the English account but not yet through the German one). It failed the same way on main
+  runs 41541784161, 41571118814 and 41571588500 before this push; unrelated to this Story, reported to the maintainer.
+- Flaky-guard window: the next 5 main runs whose frontend job runs are watched for an unlisted test over the budget; none so far.
+- Maintainer decision (2026-11-03): a local failure that only comes from machine load is answered by a re-run; the guard stays enforcing
+  locally (no load scaling, no local warn default).
+- Maintainer decision (2026-11-03): with no quiet window available, the rewrite slices start before the configuration spike; their
+  figures are indicative, and the spike later measures on top of them.
