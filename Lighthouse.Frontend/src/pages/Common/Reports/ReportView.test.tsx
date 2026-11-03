@@ -1387,6 +1387,16 @@ describe("Values a report cannot show", () => {
 	});
 });
 
+/** The retry delay of a failed read runs on a fake clock that still ticks, so a wait is advanced, not slept. */
+const onAFakeClock = async (body: () => Promise<void>) => {
+	vi.useFakeTimers({ shouldAdvanceTime: true });
+	try {
+		await body();
+	} finally {
+		vi.useRealTimers();
+	}
+};
+
 describe("A report on a slow or failing connection", () => {
 	beforeEach(beforeEachReportTest);
 
@@ -1514,50 +1524,59 @@ describe("A report on a slow or failing connection", () => {
 	});
 
 	it("asks again when a read fails for any other reason", async () => {
-		const getReport = vi
-			.fn()
-			.mockRejectedValueOnce(new Error("the network dropped"))
-			.mockResolvedValue(theEngagementStartReport());
-		renderWithReports(
-			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
-			{ reportService: aReportService({ getReport }), retry: 2 },
-		);
+		await onAFakeClock(async () => {
+			const getReport = vi
+				.fn()
+				.mockRejectedValueOnce(new Error("the network dropped"))
+				.mockResolvedValue(theEngagementStartReport());
+			renderWithReports(
+				<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+				{ reportService: aReportService({ getReport }), retry: 2 },
+			);
 
-		expect(
-			await screen.findByText(ENGAGEMENT_START, undefined, { timeout: 3000 }),
-		).toBeVisible();
-		expect(getReport).toHaveBeenCalledTimes(2);
+			await act(() => vi.advanceTimersByTimeAsync(1000));
+			expect(
+				await screen.findByText(ENGAGEMENT_START, undefined, { timeout: 3000 }),
+			).toBeVisible();
+			expect(getReport).toHaveBeenCalledTimes(2);
+		});
 	});
 
 	it("asks again when the server fails to answer", async () => {
-		const getReport = vi
-			.fn()
-			.mockRejectedValueOnce(aRefusal(500, "unexpected"))
-			.mockResolvedValue(theEngagementStartReport());
-		renderWithReports(
-			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
-			{ reportService: aReportService({ getReport }), retry: 2 },
-		);
+		await onAFakeClock(async () => {
+			const getReport = vi
+				.fn()
+				.mockRejectedValueOnce(aRefusal(500, "unexpected"))
+				.mockResolvedValue(theEngagementStartReport());
+			renderWithReports(
+				<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+				{ reportService: aReportService({ getReport }), retry: 2 },
+			);
 
-		expect(
-			await screen.findByText(ENGAGEMENT_START, undefined, { timeout: 3000 }),
-		).toBeVisible();
-		expect(getReport).toHaveBeenCalledTimes(2);
+			await act(() => vi.advanceTimersByTimeAsync(1000));
+			expect(
+				await screen.findByText(ENGAGEMENT_START, undefined, { timeout: 3000 }),
+			).toBeVisible();
+			expect(getReport).toHaveBeenCalledTimes(2);
+		});
 	});
 
 	it("asks no more often than the instance's usual retries before saying the report could not be loaded", async () => {
-		const getReport = vi
-			.fn()
-			.mockRejectedValue(new Error("the network dropped"));
-		renderWithReports(
-			<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
-			{ reportService: aReportService({ getReport }), retry: 1 },
-		);
+		await onAFakeClock(async () => {
+			const getReport = vi
+				.fn()
+				.mockRejectedValue(new Error("the network dropped"));
+			renderWithReports(
+				<ReportView owner={LIGHTSPEED} reportId={ENGAGEMENT_START_ID} />,
+				{ reportService: aReportService({ getReport }), retry: 1 },
+			);
 
-		expect(
-			await screen.findByText(COULD_NOT_LOAD, undefined, { timeout: 3000 }),
-		).toBeVisible();
-		expect(getReport).toHaveBeenCalledTimes(2);
+			await act(() => vi.advanceTimersByTimeAsync(1000));
+			expect(
+				await screen.findByText(COULD_NOT_LOAD, undefined, { timeout: 3000 }),
+			).toBeVisible();
+			expect(getReport).toHaveBeenCalledTimes(2);
+		});
 	});
 
 	it.each([

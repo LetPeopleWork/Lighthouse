@@ -1,6 +1,6 @@
 import { onlineManager } from "@tanstack/react-query";
 import { act, screen, waitFor, within } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IReportCreationOptions } from "../../models/Reports/ReportsAcrossOwners";
 import {
 	anOwnerToCreateOn,
@@ -51,8 +51,14 @@ const whileThePageHears = (change: () => unknown) =>
  * step changes, so nothing on the page shows when that wait is over. Each test sits it out before it ends;
  * otherwise the last press comes due after the page has been taken down and fails the whole run.
  */
-const theLastPressSettles = () =>
-	act(() => new Promise((resolve) => setTimeout(resolve, 350)));
+const theLastPressSettles = async () => {
+	await act(() => vi.advanceTimersByTimeAsync(350));
+	vi.useRealTimers();
+};
+
+beforeEach(() => {
+	vi.useFakeTimers({ shouldAdvanceTime: true });
+});
 
 afterEach(theLastPressSettles);
 

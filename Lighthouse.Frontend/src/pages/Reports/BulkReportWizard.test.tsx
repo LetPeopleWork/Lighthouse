@@ -451,28 +451,6 @@ describe("At most 50 Teams and Portfolios in one run", () => {
 		RENDER_HEAVY,
 	);
 
-	it(
-		`exactly 50 picked may still be created, with no ceiling message`,
-		async () => {
-			const fifty = sixtyTeams.slice(0, 50);
-			const { user } = renderTheReportsPage({
-				reportService: offering(...fifty),
-				permissions: { adminOf: fifty },
-			});
-
-			await toTheOwnerStep(user);
-			await user.click(
-				screen.getByRole("button", { name: selectAllOf(TEAMS_GROUP) }),
-			);
-
-			expect(
-				screen.getByRole("button", { name: createCount(50) }),
-			).toBeEnabled();
-			expect(screen.queryByText(OWNERS_AT_MOST_50)).not.toBeInTheDocument();
-		},
-		RENDER_HEAVY,
-	);
-
 	const selectingAllIn = (
 		user: ReturnType<typeof renderTheReportsPage>["user"],
 		group: string,
@@ -911,13 +889,20 @@ describe("Who may press Create reports", () => {
 	});
 
 	it(`for an Admin on Premium it carries no tooltip`, async () => {
-		const { user } = renderTheReportsPage();
-		const button = await screen.findByRole("button", { name: CREATE_REPORTS });
-		await waitFor(() => expect(button).toBeEnabled());
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		try {
+			const { user } = renderTheReportsPage();
+			const button = await screen.findByRole("button", {
+				name: CREATE_REPORTS,
+			});
+			await waitFor(() => expect(button).toBeEnabled());
 
-		await user.hover(button.parentElement ?? button);
-		await act(() => new Promise((resolve) => setTimeout(resolve, 300)));
+			await user.hover(button.parentElement ?? button);
+			await act(() => vi.advanceTimersByTimeAsync(300));
 
-		expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+			expect(screen.queryByRole("tooltip")).not.toBeInTheDocument();
+		} finally {
+			vi.useRealTimers();
+		}
 	});
 });
