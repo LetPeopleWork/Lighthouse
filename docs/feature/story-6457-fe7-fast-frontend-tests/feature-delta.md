@@ -854,3 +854,12 @@ Previously listed as not acted on (now acted on, see above): m2, m3, m5 (read as
 4. **Reference correction:** resolution 3 (`--warn-only` becomes variable-controlled) follows the DEVOPS "Pipeline changes per slice" table (about line 474, revised after review in commit a637162de). Open item: **maintainer to confirm: reverses DESIGN D1's removal of `--warn-only`.**
 5. **Rigor citation:** the T1 record (the T1 feature-delta, about line 819) covers the whole test track, FE7 included; no change.
 6. **@sizing-review-needed: 01-05, 01-06, 01-09 (kept whole by lead decision).**
+
+## Wave: DELIVER / [REF] Calibration (step 01-02, 2026-11-03, quiet machine)
+
+B = **2 s** (unchanged; DESIGN's provisional value holds by the D4 rule), F = **3.0** (per-test CI/local p90 2.61),
+A = **0.31 s**. At B = 2 s, 30 tests are over the threshold in some sample: 27 in files a rewrite slice names, 3 with
+their own reason (DashboardHeader popover, ReportsPage.usageData Retry, ThirdPartyPackagesSection.paging sort/filter).
+Local coverage alone is 1.35x per test (median); an oversubscribed machine adds 1.66x. Seed for 01-08:
+`measurement/calibration-2026-11-03/seed-allow-list.json` (ceilings 2.5-5.0 s). Detail and the CI log Duration command:
+`measurement/slice-01a-calibration.md`.

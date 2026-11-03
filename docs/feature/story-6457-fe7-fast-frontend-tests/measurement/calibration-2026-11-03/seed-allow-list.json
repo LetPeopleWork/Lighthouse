@@ -1,0 +1,332 @@
+[
+ {
+  "key": "src/components/Common/DataGrid/DataGridBase.paging.test.tsx :: Turning a page brings the top of the list into view never scrolls for a page change the reader did not ask for with an arrow",
+  "family": "sweep",
+  "first_in_file": false,
+  "plain_median_s": 1.41,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-3",
+   2.7250034369999994
+  ]
+ },
+ {
+  "key": "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves the edited query once, after the field is left",
+  "family": "slice 10",
+  "first_in_file": false,
+  "plain_median_s": 2.02,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-2",
+   2.663424159000002
+  ]
+ },
+ {
+  "key": "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name after the debounce without anyone leaving a field",
+  "family": "slice 4",
+  "first_in_file": true,
+  "plain_median_s": 1.39,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-1",
+   2.533450117
+  ]
+ },
+ {
+  "key": "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query once, after the field is left",
+  "family": "slice 4",
+  "first_in_file": false,
+  "plain_median_s": 1.95,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-1",
+   2.7270838069999956
+  ]
+ },
+ {
+  "key": "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the latest edit after the save already on its way, when the page is left meanwhile",
+  "family": "slice 4",
+  "first_in_file": false,
+  "plain_median_s": 1.77,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-2",
+   2.6395108610000024
+  ]
+ },
+ {
+  "key": "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off",
+  "family": "slice 4",
+  "first_in_file": false,
+  "plain_median_s": 1.55,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-1",
+   2.0266709039999986
+  ]
+ },
+ {
+  "key": "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold",
+  "family": "slice 4",
+  "first_in_file": false,
+  "plain_median_s": 2.2,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-2",
+   2.6845280300000014
+  ]
+ },
+ {
+  "key": "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings keeps an edited Ready rule when the Yes votes needed change before it is saved",
+  "family": "slice 4",
+  "first_in_file": false,
+  "plain_median_s": 1.29,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.1956535540000006
+  ]
+ },
+ {
+  "key": "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings saves a changed Ready rule and leaves the Being refined rule as it was",
+  "family": "slice 4",
+  "first_in_file": false,
+  "plain_median_s": 1.35,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-1",
+   2.129144091
+  ]
+ },
+ {
+  "key": "src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx :: A Work Items dialog with more than 100 Work Items Priya, on the second page of 243, filters to 64 and sees all of them with no footer",
+  "family": "slice 9",
+  "first_in_file": true,
+  "plain_median_s": 2.08,
+  "ceiling_s": 3.5,
+  "worst": [
+   "over-1",
+   3.776453383999993
+  ]
+ },
+ {
+  "key": "src/pages/Common/MetricsView/DashboardHeader.test.tsx :: DashboardHeader shows label and formatted date range and opens popover which calls handlers",
+  "family": null,
+  "first_in_file": true,
+  "plain_median_s": 1.53,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-1",
+   2.8040442230000044
+  ]
+ },
+ {
+  "key": "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50",
+  "family": "slice 5",
+  "first_in_file": false,
+  "plain_median_s": 1.17,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-2",
+   2.746642308999999
+  ]
+ },
+ {
+  "key": "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports exactly 50 picked may still be exported as one PDF",
+  "family": "slice 5",
+  "first_in_file": false,
+  "plain_median_s": 1.08,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.3670965780000004
+  ]
+ },
+ {
+  "key": "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports Select all picks every row, on every page",
+  "family": "slice 5",
+  "first_in_file": false,
+  "plain_median_s": 1.78,
+  "ceiling_s": 4.5,
+  "worst": [
+   "ci41227946204",
+   6.66907
+  ]
+ },
+ {
+  "key": "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports above 50 picked, Remove is disabled and says at most 50",
+  "family": "slice 5",
+  "first_in_file": false,
+  "plain_median_s": 1.15,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-2",
+   2.6514945499999993
+  ]
+ },
+ {
+  "key": "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports exactly 50 picked may still be removed",
+  "family": "slice 5",
+  "first_in_file": false,
+  "plain_median_s": 1.13,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.409378814000003
+  ]
+ },
+ {
+  "key": "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list",
+  "family": "slice 5",
+  "first_in_file": true,
+  "plain_median_s": 1.23,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-3",
+   2.381235069
+  ]
+ },
+ {
+  "key": "src/pages/Reports/ReportsPage.usageData.test.tsx :: What the Reports page tells the usage data a Retry and a Leave it out on one PDF of several reports count nothing more",
+  "family": null,
+  "first_in_file": false,
+  "plain_median_s": 1.23,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-1",
+   2.2806253330000037
+  ]
+ },
+ {
+  "key": "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx :: Third-party packages pages like every other list keeps the reader's sort and column filter when a search opens the first page",
+  "family": null,
+  "first_in_file": false,
+  "plain_median_s": 1.22,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.129536171
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it",
+  "family": "slice 7",
+  "first_in_file": true,
+  "plain_median_s": 2.77,
+  "ceiling_s": 5.0,
+  "worst": [
+   "ci41228644313",
+   7.343924
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 0 needed, the line sits where it falls in the whole list (page 1: { side: 'above', by: 'GR-0001', \u2026(1) }, page 2: null)",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.31,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-3",
+   2.213320911999999
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 100 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0100', \u2026(1) }, page 2: null)",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.2,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-1",
+   2.0282940450000004
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 101 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0101', \u2026(1) })",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.17,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-3",
+   2.165038691
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 2.16,
+  "ceiling_s": 4.5,
+  "worst": [
+   "ci41227946204",
+   6.424922
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.09,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.2569437170000017
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0120', \u2026(1) })",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.13,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.121183531999999
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 143 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', \u2026(1) })",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.19,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.041837143000001
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 150 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', \u2026(1) })",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.14,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-2",
+   2.0560000089999995
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 20 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0020', \u2026(1) }, page 2: null)",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.17,
+  "ceiling_s": 2.5,
+  "worst": [
+   "over-1",
+   2.21595967
+  ]
+ },
+ {
+  "key": "src/pages/Teams/Detail/Refinement/RefinementView.test.tsx :: The Refinement tab lists the Work Items in refinement handles three hundred Work Items, counting all of them and starting at the top of the backlog",
+  "family": "slice 7",
+  "first_in_file": false,
+  "plain_median_s": 1.42,
+  "ceiling_s": 3.0,
+  "worst": [
+   "over-2",
+   2.8478940960000036
+  ]
+ }
+]

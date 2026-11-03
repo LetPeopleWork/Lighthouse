@@ -1,0 +1,16 @@
+commit e1518eab7a6e9cb45ba245c66328fa99cb47a2ac started 2026-11-03T08:29:42+01:00
+plain-1,0,254,5028,15771,116
+plain-1:    Duration  252.08s (tests 49%, import 24%, environment 18%, setup 4%, transform 4%)
+cov-1,0,326,5157,16536,116
+cov-1:   ...edDuration.ts |    92.3 |    85.71 |     100 |     100 | 9                 
+plain-2,0,248,4523,17002,111
+plain-2:    Duration  246.25s (tests 49%, import 24%, environment 18%, setup 4%, transform 4%)
+cov-2,0,319,5230,16038,130
+cov-2:   ...edDuration.ts |    92.3 |    85.71 |     100 |     100 | 9                 
+over-1,0,225,7159,14163,136
+over-1:    Duration  223.57s (tests 46%, import 21%, environment 16%, transform 13%, setup 4%)
+over-2,0,220,7707,13535,136
+over-2:    Duration  219.32s (tests 46%, import 22%, environment 16%, transform 12%, setup 4%)
+over-3,0,222,7570,13724,136
+over-3:    Duration  221.00s (tests 46%, import 22%, environment 16%, transform 13%, setup 4%)
+finished 2026-11-03T08:59:57+01:00

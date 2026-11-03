@@ -1,0 +1,4277 @@
+{
+ "1": {
+  "src/hooks/useLicenseRestrictions.status.test.tsx :: Story 6406 (slice 02): creating a Team or Portfolio waits for the licence check the licence is asked for once, not again a second later": {
+   "samples": [
+    [
+     "plain-1",
+     1.3592117149999976
+    ],
+    [
+     "plain-2",
+     1.3583676060000143
+    ],
+    [
+     "over-1",
+     1.3617644899999868
+    ],
+    [
+     "over-2",
+     1.3632453099999984
+    ],
+    [
+     "over-3",
+     1.3624669260000082
+    ]
+   ],
+   "plain_median_s": 1.358789660500006,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50": {
+   "samples": [
+    [
+     "plain-1",
+     1.2027560499999963
+    ],
+    [
+     "plain-2",
+     1.1429198670000005
+    ],
+    [
+     "over-1",
+     2.4247548210000023
+    ],
+    [
+     "over-2",
+     2.746642308999999
+    ],
+    [
+     "over-3",
+     2.3665314610000023
+    ],
+    [
+     "ci41227946204",
+     3.1563760000000003
+    ],
+    [
+     "ci41228644313",
+     3.68617
+    ],
+    [
+     "ci41428581254",
+     3.572475
+    ]
+   ],
+   "plain_median_s": 1.1728379584999984,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports exactly 50 picked may still be exported as one PDF": {
+   "samples": [
+    [
+     "plain-1",
+     1.1158169469999994
+    ],
+    [
+     "plain-2",
+     1.0393507809999991
+    ],
+    [
+     "over-1",
+     2.1573294129999994
+    ],
+    [
+     "over-2",
+     2.3670965780000004
+    ],
+    [
+     "over-3",
+     2.0122874129999984
+    ],
+    [
+     "ci41227946204",
+     3.345354
+    ],
+    [
+     "ci41228644313",
+     3.281416
+    ],
+    [
+     "ci41428581254",
+     3.457274
+    ]
+   ],
+   "plain_median_s": 1.0775838639999993,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list": {
+   "samples": [
+    [
+     "plain-1",
+     1.4015120120000002
+    ],
+    [
+     "over-1",
+     2.086706685000001
+    ],
+    [
+     "over-2",
+     2.12925641
+    ],
+    [
+     "over-3",
+     2.381235069
+    ]
+   ],
+   "plain_median_s": 1.2316172115000001,
+   "first_in_file": true,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports above 50 picked, Remove is disabled and says at most 50": {
+   "samples": [
+    [
+     "plain-1",
+     1.2583155339999994
+    ],
+    [
+     "plain-2",
+     1.038572693
+    ],
+    [
+     "over-1",
+     2.237373765
+    ],
+    [
+     "over-2",
+     2.6514945499999993
+    ],
+    [
+     "over-3",
+     2.285360101999999
+    ],
+    [
+     "ci41227946204",
+     4.942497
+    ],
+    [
+     "ci41228644313",
+     4.021188
+    ],
+    [
+     "ci41230501832",
+     3.3056840000000003
+    ],
+    [
+     "ci41341400720",
+     3.340411
+    ],
+    [
+     "ci41428581254",
+     4.202122
+    ]
+   ],
+   "plain_median_s": 1.1484441134999996,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports exactly 50 picked may still be removed": {
+   "samples": [
+    [
+     "plain-1",
+     1.1275630959999998
+    ],
+    [
+     "plain-2",
+     1.124531175
+    ],
+    [
+     "over-1",
+     2.1857502490000007
+    ],
+    [
+     "over-2",
+     2.409378814000003
+    ],
+    [
+     "over-3",
+     1.9272304269999987
+    ],
+    [
+     "ci41227946204",
+     3.528323
+    ],
+    [
+     "ci41228644313",
+     3.86312
+    ],
+    [
+     "ci41230501832",
+     3.028512
+    ],
+    [
+     "ci41428581254",
+     3.0181109999999998
+    ]
+   ],
+   "plain_median_s": 1.1260471355,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports Select all picks every row, on every page": {
+   "samples": [
+    [
+     "plain-1",
+     1.8498503029999993
+    ],
+    [
+     "plain-2",
+     1.712636305
+    ],
+    [
+     "over-1",
+     3.634600676000002
+    ],
+    [
+     "over-2",
+     4.233615363000005
+    ],
+    [
+     "over-3",
+     3.549285956
+    ],
+    [
+     "ci41227946204",
+     6.66907
+    ],
+    [
+     "ci41228644313",
+     6.64073
+    ],
+    [
+     "ci41230501832",
+     4.45325
+    ],
+    [
+     "ci41274180320",
+     4.543915
+    ],
+    [
+     "ci41341400720",
+     4.480481
+    ],
+    [
+     "ci41428581254",
+     6.119039
+    ]
+   ],
+   "plain_median_s": 1.7812433039999997,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.usageData.test.tsx :: What the Reports page tells the usage data a Retry and a Leave it out on one PDF of several reports count nothing more": {
+   "samples": [
+    [
+     "plain-1",
+     1.2946698529999994
+    ],
+    [
+     "plain-2",
+     1.1726347220000024
+    ],
+    [
+     "over-1",
+     2.2806253330000037
+    ],
+    [
+     "over-2",
+     1.896943776
+    ],
+    [
+     "over-3",
+     2.175416527000001
+    ],
+    [
+     "ci41228644313",
+     3.148953
+    ]
+   ],
+   "plain_median_s": 1.2336522875000009,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/components/Common/DataGrid/DataGridBase.paging.test.tsx :: Sorting and filtering a long list opens the first page of what a column filter on the second page leaves, when that is still more than 100": {
+   "samples": [
+    [
+     "plain-1",
+     1.035757694
+    ],
+    [
+     "over-1",
+     1.518445633000003
+    ],
+    [
+     "over-2",
+     1.801072822999995
+    ],
+    [
+     "over-3",
+     1.5296943640000027
+    ]
+   ],
+   "plain_median_s": 0.967271506000001,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/DataGrid/DataGridBase.paging.test.tsx :: Turning a page brings the top of the list into view never scrolls for a page change the reader did not ask for with an arrow": {
+   "samples": [
+    [
+     "plain-1",
+     1.513522603999998
+    ],
+    [
+     "plain-2",
+     1.2967532369999972
+    ],
+    [
+     "over-1",
+     2.572478847999999
+    ],
+    [
+     "over-2",
+     2.6424364889999996
+    ],
+    [
+     "over-3",
+     2.7250034369999994
+    ],
+    [
+     "ci41227946204",
+     3.929492
+    ],
+    [
+     "ci41228644313",
+     4.280979
+    ],
+    [
+     "ci41230501832",
+     3.4233670000000003
+    ],
+    [
+     "ci41274180320",
+     3.2878220000000002
+    ],
+    [
+     "ci41428581254",
+     4.003245
+    ]
+   ],
+   "plain_median_s": 1.4051379204999976,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves the edited query once, after the field is left": {
+   "samples": [
+    [
+     "plain-1",
+     1.9518602669999965
+    ],
+    [
+     "plain-2",
+     2.0788175899999914
+    ],
+    [
+     "over-1",
+     2.578901221
+    ],
+    [
+     "over-2",
+     2.663424159000002
+    ],
+    [
+     "over-3",
+     2.497431531000002
+    ],
+    [
+     "ci41227946204",
+     3.31779
+    ],
+    [
+     "ci41228644313",
+     3.247552
+    ],
+    [
+     "ci41428581254",
+     3.194732
+    ]
+   ],
+   "plain_median_s": 2.015338928499994,
+   "first_in_file": false,
+   "family": "slice 10"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves the edited query when the page is left straight after the field": {
+   "samples": [
+    [
+     "plain-1",
+     1.1124997679999942
+    ],
+    [
+     "plain-2",
+     1.1380919339999964
+    ],
+    [
+     "over-1",
+     1.5341677680000065
+    ],
+    [
+     "over-2",
+     1.535276456000007
+    ],
+    [
+     "over-3",
+     1.5634486589999943
+    ]
+   ],
+   "plain_median_s": 1.1252958509999953,
+   "first_in_file": false,
+   "family": "slice 10"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback holds back autosave while a mapping is named after a Doing state it does not group, and saves once the mappings are replaced": {
+   "samples": [
+    [
+     "plain-1",
+     1.032266072000002
+    ],
+    [
+     "plain-2",
+     1.1319734929999996
+    ],
+    [
+     "over-1",
+     1.388660065
+    ],
+    [
+     "over-2",
+     1.188940663999998
+    ],
+    [
+     "over-3",
+     1.2065237870000018
+    ]
+   ],
+   "plain_median_s": 1.0821197825000008,
+   "first_in_file": false,
+   "family": "slice 10"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name after the debounce without anyone leaving a field": {
+   "samples": [
+    [
+     "plain-1",
+     1.4160751629999977
+    ],
+    [
+     "plain-2",
+     1.369042690999995
+    ],
+    [
+     "over-1",
+     2.533450117
+    ],
+    [
+     "over-2",
+     2.3538910009999965
+    ],
+    [
+     "over-3",
+     2.4794875399999947
+    ]
+   ],
+   "plain_median_s": 1.3925589269999965,
+   "first_in_file": true,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query once, after the field is left": {
+   "samples": [
+    [
+     "plain-1",
+     1.9198282319999997
+    ],
+    [
+     "plain-2",
+     1.9762374430000054
+    ],
+    [
+     "over-1",
+     2.7270838069999956
+    ],
+    [
+     "over-2",
+     2.472273258000001
+    ],
+    [
+     "over-3",
+     2.6054217710000014
+    ],
+    [
+     "ci41227946204",
+     3.208658
+    ],
+    [
+     "ci41228644313",
+     3.252678
+    ],
+    [
+     "ci41428581254",
+     3.1686439999999996
+    ]
+   ],
+   "plain_median_s": 1.9480328375000027,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query when the page is left straight after the field": {
+   "samples": [
+    [
+     "plain-1",
+     1.0648123300000008
+    ],
+    [
+     "plain-2",
+     1.0365420299999968
+    ],
+    [
+     "over-1",
+     1.4994050169999973
+    ],
+    [
+     "over-2",
+     1.5224495139999998
+    ],
+    [
+     "over-3",
+     1.5915670589999935
+    ]
+   ],
+   "plain_median_s": 1.0506771799999988,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name when the page is left before the debounce runs out": {
+   "samples": [
+    [
+     "plain-1",
+     1.0278563050000011
+    ],
+    [
+     "plain-2",
+     1.0328483400000041
+    ],
+    [
+     "over-1",
+     1.5766118160000042
+    ],
+    [
+     "over-2",
+     1.5994676610000025
+    ],
+    [
+     "over-3",
+     1.539811407000001
+    ]
+   ],
+   "plain_median_s": 1.0303523225000026,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the latest edit after the save already on its way, when the page is left meanwhile": {
+   "samples": [
+    [
+     "plain-1",
+     1.7561295790000004
+    ],
+    [
+     "plain-2",
+     1.7920192919999973
+    ],
+    [
+     "over-1",
+     2.634355797000004
+    ],
+    [
+     "over-2",
+     2.6395108610000024
+    ],
+    [
+     "over-3",
+     2.567667678999998
+    ],
+    [
+     "ci41227946204",
+     4.119727
+    ],
+    [
+     "ci41228644313",
+     3.862045
+    ],
+    [
+     "ci41230501832",
+     3.3933560000000003
+    ],
+    [
+     "ci41274180320",
+     3.088029
+    ],
+    [
+     "ci41428581254",
+     3.667904
+    ]
+   ],
+   "plain_median_s": 1.7740744354999989,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it had before": {
+   "samples": [
+    [
+     "plain-1",
+     1.0826950700000015
+    ],
+    [
+     "plain-2",
+     1.1163300090000012
+    ],
+    [
+     "over-1",
+     1.5277534649999998
+    ],
+    [
+     "over-2",
+     1.4166859729999997
+    ],
+    [
+     "over-3",
+     1.333988512
+    ]
+   ],
+   "plain_median_s": 1.0995125395000014,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off": {
+   "samples": [
+    [
+     "plain-1",
+     1.5086400229999999
+    ],
+    [
+     "plain-2",
+     1.5986997200000006
+    ],
+    [
+     "over-1",
+     2.0266709039999986
+    ],
+    [
+     "over-2",
+     2.007420277000001
+    ],
+    [
+     "over-3",
+     2.0203785430000027
+    ]
+   ],
+   "plain_median_s": 1.5536698715000004,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold": {
+   "samples": [
+    [
+     "plain-1",
+     2.146780198999997
+    ],
+    [
+     "plain-2",
+     2.2608089409999956
+    ],
+    [
+     "over-1",
+     2.6139278730000006
+    ],
+    [
+     "over-2",
+     2.6845280300000014
+    ],
+    [
+     "over-3",
+     2.6094484489999994
+    ],
+    [
+     "ci41227946204",
+     3.4668449999999997
+    ],
+    [
+     "ci41228644313",
+     3.392654
+    ],
+    [
+     "ci41230501832",
+     3.039739
+    ],
+    [
+     "ci41428581254",
+     3.3619499999999998
+    ]
+   ],
+   "plain_median_s": 2.2037945699999963,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings saves the added states as the Team's refinement states": {
+   "samples": [
+    [
+     "plain-1",
+     1.037374394999999
+    ],
+    [
+     "plain-2",
+     1.1130885909999924
+    ],
+    [
+     "over-1",
+     1.8391090870000044
+    ],
+    [
+     "over-2",
+     1.6883106889999981
+    ],
+    [
+     "over-3",
+     1.8931637340000016
+    ]
+   ],
+   "plain_median_s": 1.0752314929999955,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings saves a changed Ready rule and leaves the Being refined rule as it was": {
+   "samples": [
+    [
+     "plain-1",
+     1.3548013770000003
+    ],
+    [
+     "plain-2",
+     1.3459928859999999
+    ],
+    [
+     "over-1",
+     2.129144091
+    ],
+    [
+     "over-2",
+     1.7258018050000001
+    ],
+    [
+     "over-3",
+     1.9150705849999994
+    ]
+   ],
+   "plain_median_s": 1.3503971315,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings keeps an edited Ready rule when the Yes votes needed change before it is saved": {
+   "samples": [
+    [
+     "plain-1",
+     1.3404392069999995
+    ],
+    [
+     "plain-2",
+     1.2314064099999995
+    ],
+    [
+     "over-1",
+     2.1920649889999995
+    ],
+    [
+     "over-2",
+     2.1956535540000006
+    ],
+    [
+     "over-3",
+     2.1875332679999993
+    ],
+    [
+     "ci41228644313",
+     3.040338
+    ]
+   ],
+   "plain_median_s": 1.2859228084999996,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure": {
+   "samples": [
+    [
+     "plain-1",
+     1.124709918999999
+    ],
+    [
+     "plain-2",
+     1.09135527
+    ],
+    [
+     "over-1",
+     1.6029844420000008
+    ],
+    [
+     "over-2",
+     1.4927418470000011
+    ],
+    [
+     "over-3",
+     1.576626086000002
+    ]
+   ],
+   "plain_median_s": 1.1080325944999996,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed": {
+   "samples": [
+    [
+     "plain-1",
+     1.1459017440000008
+    ],
+    [
+     "plain-2",
+     1.0977487049999999
+    ],
+    [
+     "over-1",
+     1.476898685
+    ],
+    [
+     "over-2",
+     1.4410122420000007
+    ],
+    [
+     "over-3",
+     1.3983833200000009
+    ]
+   ],
+   "plain_median_s": 1.1218252245000002,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a To Do state, and saves once it is renamed": {
+   "samples": [
+    [
+     "plain-1",
+     1.1919000290000004
+    ],
+    [
+     "plain-2",
+     1.1404758980000005
+    ],
+    [
+     "over-1",
+     1.3511995370000005
+    ],
+    [
+     "over-2",
+     1.3762788959999999
+    ],
+    [
+     "over-3",
+     1.4337515829999974
+    ]
+   ],
+   "plain_median_s": 1.1661879635000005,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a Done state, and saves once it is renamed": {
+   "samples": [
+    [
+     "plain-1",
+     1.1566252350000032
+    ],
+    [
+     "plain-2",
+     1.1800372929999994
+    ],
+    [
+     "over-1",
+     1.4192344809999995
+    ],
+    [
+     "over-2",
+     1.4412937600000004
+    ],
+    [
+     "over-3",
+     1.3881444929999998
+    ]
+   ],
+   "plain_median_s": 1.1683312640000012,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a state another mapping groups, and saves once it is renamed": {
+   "samples": [
+    [
+     "plain-1",
+     1.1664447169999985
+    ],
+    [
+     "plain-2",
+     1.131557224
+    ],
+    [
+     "over-1",
+     1.4270195569999997
+    ],
+    [
+     "over-2",
+     1.4342811980000005
+    ],
+    [
+     "over-3",
+     1.4313793450000012
+    ]
+   ],
+   "plain_median_s": 1.1490009704999993,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx :: A Work Items dialog with more than 100 Work Items Priya, on the second page of 243, filters to 64 and sees all of them with no footer": {
+   "samples": [
+    [
+     "plain-1",
+     2.127027434000003
+    ],
+    [
+     "plain-2",
+     2.0301471950000125
+    ],
+    [
+     "over-1",
+     3.776453383999993
+    ],
+    [
+     "over-2",
+     2.9821711050000013
+    ],
+    [
+     "over-3",
+     3.5770979820000064
+    ],
+    [
+     "ci41227946204",
+     4.696085
+    ],
+    [
+     "ci41228644313",
+     4.457787000000001
+    ],
+    [
+     "ci41230501832",
+     3.668939
+    ],
+    [
+     "ci41274180320",
+     3.355672
+    ],
+    [
+     "ci41341400720",
+     3.769898
+    ],
+    [
+     "ci41428581254",
+     4.582656
+    ]
+   ],
+   "plain_median_s": 2.078587314500008,
+   "first_in_file": true,
+   "family": "slice 9"
+  },
+  "src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection asks again when a read fails for any other reason": {
+   "samples": [
+    [
+     "plain-1",
+     1.0571471020000027
+    ],
+    [
+     "plain-2",
+     1.0611448170000004
+    ],
+    [
+     "over-1",
+     1.0815854669999971
+    ],
+    [
+     "over-2",
+     1.1132552630000063
+    ],
+    [
+     "over-3",
+     1.1126429720000015
+    ]
+   ],
+   "plain_median_s": 1.0591459595000017,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection asks again when the server fails to answer": {
+   "samples": [
+    [
+     "plain-1",
+     1.0602926979999974
+    ],
+    [
+     "plain-2",
+     1.0571222740000012
+    ],
+    [
+     "over-1",
+     1.0951377799999973
+    ],
+    [
+     "over-2",
+     1.105341677999997
+    ],
+    [
+     "over-3",
+     1.0885165810000035
+    ]
+   ],
+   "plain_median_s": 1.0587074859999994,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection asks no more often than the instance's usual retries before saying the report could not be loaded": {
+   "samples": [
+    [
+     "plain-1",
+     1.015251952000006
+    ],
+    [
+     "plain-2",
+     1.0175436369999953
+    ],
+    [
+     "over-1",
+     1.0273785630000056
+    ],
+    [
+     "over-2",
+     1.0328773650000003
+    ],
+    [
+     "over-3",
+     1.030730177999998
+    ]
+   ],
+   "plain_median_s": 1.0163977945000007,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/MetricsView/DashboardHeader.test.tsx :: DashboardHeader shows label and formatted date range and opens popover which calls handlers": {
+   "samples": [
+    [
+     "plain-1",
+     1.535793577000004
+    ],
+    [
+     "plain-2",
+     1.5237982749999792
+    ],
+    [
+     "over-1",
+     2.8040442230000044
+    ],
+    [
+     "over-2",
+     2.7529479169999975
+    ],
+    [
+     "over-3",
+     2.5804473759999964
+    ]
+   ],
+   "plain_median_s": 1.5297959259999916,
+   "first_in_file": true,
+   "family": null
+  },
+  "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx :: Third-party packages pages like every other list keeps the reader's sort and column filter when a search opens the first page": {
+   "samples": [
+    [
+     "plain-1",
+     1.3069544790000072
+    ],
+    [
+     "plain-2",
+     1.1427787309999986
+    ],
+    [
+     "over-1",
+     2.108106415000002
+    ],
+    [
+     "over-2",
+     2.129536171
+    ],
+    [
+     "over-3",
+     2.0782723680000053
+    ],
+    [
+     "ci41227946204",
+     3.193299
+    ],
+    [
+     "ci41228644313",
+     3.2391509999999997
+    ],
+    [
+     "ci41428581254",
+     3.094228
+    ]
+   ],
+   "plain_median_s": 1.224866605000003,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it": {
+   "samples": [
+    [
+     "plain-1",
+     3.0442179179999993
+    ],
+    [
+     "plain-2",
+     2.4954894690000002
+    ],
+    [
+     "over-1",
+     4.943913373000001
+    ],
+    [
+     "over-2",
+     4.62215801
+    ],
+    [
+     "over-3",
+     4.855979984
+    ],
+    [
+     "ci41227946204",
+     7.005007
+    ],
+    [
+     "ci41228644313",
+     7.343924
+    ],
+    [
+     "ci41230501832",
+     6.057538999999999
+    ],
+    [
+     "ci41240982700",
+     4.500716000000001
+    ],
+    [
+     "ci41274180320",
+     4.96892
+    ],
+    [
+     "ci41341400720",
+     5.1794899999999995
+    ],
+    [
+     "ci41428581254",
+     6.787662999999999
+    ]
+   ],
+   "plain_median_s": 2.7698536935,
+   "first_in_file": true,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 0 needed, the line sits where it falls in the whole list (page 1: { side: 'above', by: 'GR-0001', \u2026(1) }, page 2: null)": {
+   "samples": [
+    [
+     "plain-1",
+     1.3230193759999993
+    ],
+    [
+     "plain-2",
+     1.2973007749999996
+    ],
+    [
+     "over-1",
+     2.2085013100000013
+    ],
+    [
+     "over-2",
+     2.116165733
+    ],
+    [
+     "over-3",
+     2.213320911999999
+    ],
+    [
+     "ci41227946204",
+     3.7279630000000004
+    ],
+    [
+     "ci41228644313",
+     3.308605
+    ],
+    [
+     "ci41428581254",
+     3.64112
+    ]
+   ],
+   "plain_median_s": 1.3101600754999994,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 20 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0020', \u2026(1) }, page 2: null)": {
+   "samples": [
+    [
+     "plain-1",
+     1.1719214919999994
+    ],
+    [
+     "plain-2",
+     1.158951608000003
+    ],
+    [
+     "over-1",
+     2.21595967
+    ],
+    [
+     "over-2",
+     2.0947734230000004
+    ],
+    [
+     "over-3",
+     2.1706936370000003
+    ],
+    [
+     "ci41227946204",
+     3.5987530000000003
+    ],
+    [
+     "ci41228644313",
+     3.178703
+    ],
+    [
+     "ci41428581254",
+     3.777199
+    ]
+   ],
+   "plain_median_s": 1.1654365500000012,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 100 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0100', \u2026(1) }, page 2: null)": {
+   "samples": [
+    [
+     "plain-1",
+     1.1890713480000012
+    ],
+    [
+     "plain-2",
+     1.2203767119999975
+    ],
+    [
+     "over-1",
+     2.0282940450000004
+    ],
+    [
+     "over-2",
+     1.982650904
+    ],
+    [
+     "over-3",
+     2.008274138000001
+    ],
+    [
+     "ci41227946204",
+     3.873392
+    ],
+    [
+     "ci41228644313",
+     3.498373
+    ],
+    [
+     "ci41230501832",
+     3.048598
+    ],
+    [
+     "ci41428581254",
+     4.058991
+    ]
+   ],
+   "plain_median_s": 1.2047240299999995,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 101 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0101', \u2026(1) })": {
+   "samples": [
+    [
+     "plain-1",
+     1.1029934220000013
+    ],
+    [
+     "plain-2",
+     1.2273985999999968
+    ],
+    [
+     "over-1",
+     2.1315010259999982
+    ],
+    [
+     "over-2",
+     2.0125502540000015
+    ],
+    [
+     "over-3",
+     2.165038691
+    ],
+    [
+     "ci41227946204",
+     3.455895
+    ],
+    [
+     "ci41228644313",
+     3.501274
+    ],
+    [
+     "ci41428581254",
+     3.517551
+    ]
+   ],
+   "plain_median_s": 1.165196010999999,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0120', \u2026(1) })": {
+   "samples": [
+    [
+     "plain-1",
+     1.1006462890000002
+    ],
+    [
+     "plain-2",
+     1.1554207709999973
+    ],
+    [
+     "over-1",
+     1.9942588410000026
+    ],
+    [
+     "over-2",
+     2.121183531999999
+    ],
+    [
+     "over-3",
+     1.9043471819999978
+    ],
+    [
+     "ci41227946204",
+     3.688951
+    ],
+    [
+     "ci41228644313",
+     3.4953960000000004
+    ],
+    [
+     "ci41428581254",
+     3.34104
+    ]
+   ],
+   "plain_median_s": 1.1280335299999988,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 143 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', \u2026(1) })": {
+   "samples": [
+    [
+     "plain-1",
+     1.2003948189999991
+    ],
+    [
+     "plain-2",
+     1.1851331400000018
+    ],
+    [
+     "over-1",
+     2.020740173999999
+    ],
+    [
+     "over-2",
+     2.041837143000001
+    ],
+    [
+     "over-3",
+     2.0167240810000004
+    ],
+    [
+     "ci41227946204",
+     3.9652469999999997
+    ],
+    [
+     "ci41228644313",
+     3.6835999999999998
+    ],
+    [
+     "ci41428581254",
+     3.304064
+    ]
+   ],
+   "plain_median_s": 1.1927639795000005,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 150 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', \u2026(1) })": {
+   "samples": [
+    [
+     "plain-1",
+     1.124971877
+    ],
+    [
+     "plain-2",
+     1.1612376240000013
+    ],
+    [
+     "over-1",
+     1.7883214040000022
+    ],
+    [
+     "over-2",
+     2.0560000089999995
+    ],
+    [
+     "over-3",
+     1.789145792000003
+    ],
+    [
+     "ci41227946204",
+     3.660996
+    ],
+    [
+     "ci41228644313",
+     3.561689
+    ],
+    [
+     "ci41230501832",
+     3.12167
+    ]
+   ],
+   "plain_median_s": 1.1431047505000005,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120": {
+   "samples": [
+    [
+     "plain-1",
+     1.0642586040000006
+    ],
+    [
+     "plain-2",
+     1.1134939059999998
+    ],
+    [
+     "over-1",
+     2.2228318450000004
+    ],
+    [
+     "over-2",
+     2.2569437170000017
+    ],
+    [
+     "over-3",
+     2.0610189940000017
+    ],
+    [
+     "ci41227946204",
+     3.738748
+    ],
+    [
+     "ci41228644313",
+     3.321263
+    ],
+    [
+     "ci41230501832",
+     3.142835
+    ],
+    [
+     "ci41428581254",
+     3.7528029999999997
+    ]
+   ],
+   "plain_median_s": 1.0888762550000002,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last": {
+   "samples": [
+    [
+     "plain-1",
+     2.181308341
+    ],
+    [
+     "plain-2",
+     2.1299178570000006
+    ],
+    [
+     "over-1",
+     3.575536437999999
+    ],
+    [
+     "over-2",
+     4.036036124999999
+    ],
+    [
+     "over-3",
+     3.347825958999998
+    ],
+    [
+     "ci41227946204",
+     6.424922
+    ],
+    [
+     "ci41228644313",
+     6.349953
+    ],
+    [
+     "ci41230501832",
+     4.999895
+    ],
+    [
+     "ci41240982700",
+     3.5171300000000003
+    ],
+    [
+     "ci41274180320",
+     3.8697869999999996
+    ],
+    [
+     "ci41341400720",
+     4.391069000000001
+    ],
+    [
+     "ci41428581254",
+     6.157001
+    ]
+   ],
+   "plain_median_s": 2.155613099,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.test.tsx :: The Refinement tab lists the Work Items in refinement handles three hundred Work Items, counting all of them and starting at the top of the backlog": {
+   "samples": [
+    [
+     "plain-1",
+     1.3899715200000065
+    ],
+    [
+     "plain-2",
+     1.451750470999992
+    ],
+    [
+     "over-1",
+     2.5580979249999944
+    ],
+    [
+     "over-2",
+     2.8478940960000036
+    ],
+    [
+     "over-3",
+     2.8178132359999872
+    ],
+    [
+     "ci41227946204",
+     4.426892
+    ],
+    [
+     "ci41228644313",
+     4.5494889999999995
+    ],
+    [
+     "ci41230501832",
+     3.5164899999999997
+    ],
+    [
+     "ci41428581254",
+     4.294562
+    ]
+   ],
+   "plain_median_s": 1.4208609954999991,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing while the query is being typed and the field is still focused": {
+   "samples": [
+    [
+     "plain-2",
+     1.0482879650000105
+    ],
+    [
+     "over-1",
+     1.4467755479999977
+    ],
+    [
+     "over-2",
+     1.4723884379999945
+    ],
+    [
+     "over-3",
+     1.491119988000006
+    ]
+   ],
+   "plain_median_s": 1.0238838025000079,
+   "first_in_file": false,
+   "family": "slice 10"
+  },
+  "src/pages/Overview/OverviewDashboard.licenseCheck.test.tsx :: Story 6406 (slice 02): the Overview's create actions while the licence is checked while the licence is checked, Add Team and Add Portfolio are disabled and say nothing": {
+   "samples": [
+    [
+     "over-1",
+     1.5416862649999967
+    ],
+    [
+     "over-2",
+     1.5766361089999992
+    ],
+    [
+     "over-3",
+     1.572543755000006
+    ]
+   ],
+   "plain_median_s": 0.8682948209999959,
+   "first_in_file": true,
+   "family": "slice 11"
+  },
+  "src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard renders portfolios section after loading": {
+   "samples": [
+    [
+     "over-1",
+     1.199461174
+    ],
+    [
+     "over-2",
+     1.112224263
+    ],
+    [
+     "over-3",
+     1.307745057
+    ]
+   ],
+   "plain_median_s": 0.6235449594999991,
+   "first_in_file": false,
+   "family": "slice 11"
+  },
+  "src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard what a deletion is reported as reports a deleted Team as a Team": {
+   "samples": [
+    [
+     "over-1",
+     1.0425512990000008
+    ],
+    [
+     "over-3",
+     1.0154112060000007
+    ]
+   ],
+   "plain_median_s": 0.5633507175000013,
+   "first_in_file": false,
+   "family": "slice 11"
+  },
+  "src/pages/Reports/BulkReportWizard.openings.test.tsx :: Once open, the wizard stays until it is closed the network dropping and coming back keeps the wizard and the Team picked, and asks nothing again": {
+   "samples": [
+    [
+     "over-1",
+     1.4320729589999974
+    ],
+    [
+     "over-2",
+     1.6983570120000078
+    ],
+    [
+     "over-3",
+     1.4061392769999947
+    ]
+   ],
+   "plain_median_s": 0.9940127169999978,
+   "first_in_file": true,
+   "family": "slice 6"
+  },
+  "src/pages/Reports/BulkReportWizard.ownerLimits.test.tsx :: Owners that cannot hold the window a dropped pick stays dropped when the window shortens again": {
+   "samples": [
+    [
+     "over-1",
+     1.3731582439999983
+    ],
+    [
+     "over-2",
+     1.5297809149999957
+    ],
+    [
+     "over-3",
+     1.6666671510000015
+    ]
+   ],
+   "plain_median_s": 0.8316122340000002,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a coach creates the same comparison for Zenith and Gravity and finds both listed": {
+   "samples": [
+    [
+     "over-1",
+     1.933924594
+    ],
+    [
+     "over-2",
+     1.6988509590000032
+    ],
+    [
+     "over-3",
+     1.995935082
+    ]
+   ],
+   "plain_median_s": 1.0183040784999993,
+   "first_in_file": true,
+   "family": "slice 6"
+  },
+  "src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams creating the same report twice creates it twice, with no warning": {
+   "samples": [
+    [
+     "over-1",
+     1.068913414999999
+    ],
+    [
+     "over-2",
+     1.284374699
+    ],
+    [
+     "over-3",
+     1.0324389110000012
+    ]
+   ],
+   "plain_median_s": 0.5885042014999999,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a coach exports the reports of two Teams as one PDF, each on a page of its own": {
+   "samples": [
+    [
+     "over-1",
+     2.044597678
+    ],
+    [
+     "over-2",
+     2.0005615160000008
+    ],
+    [
+     "over-3",
+     1.896382901
+    ]
+   ],
+   "plain_median_s": 1.1340770614999984,
+   "first_in_file": true,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports once the print dialog closes the frame goes, Export PDF is ready again, and nothing says a PDF failed": {
+   "samples": [
+    [
+     "over-1",
+     1.3591813629999996
+    ],
+    [
+     "over-2",
+     1.203512014
+    ],
+    [
+     "over-3",
+     1.191524063
+    ]
+   ],
+   "plain_median_s": 0.6626154975000009,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports the reports print in the table's order, as the reader sorted it": {
+   "samples": [
+    [
+     "over-1",
+     1.3341944250000015
+    ],
+    [
+     "over-2",
+     1.3464367679999996
+    ],
+    [
+     "over-3",
+     1.3430655509999996
+    ]
+   ],
+   "plain_median_s": 0.6854176694999996,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports nothing prints while one of the reports is still on its way, and the PDF holds both once it arrives": {
+   "samples": [
+    [
+     "over-1",
+     1.015284608
+    ]
+   ],
+   "plain_median_s": 0.4976036765000017,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports picks and sorting changed while the PDF is prepared leave it as it was when Export PDF was pressed": {
+   "samples": [
+    [
+     "over-1",
+     1.3523115629999993
+    ],
+    [
+     "over-2",
+     1.3427475909999993
+    ],
+    [
+     "over-3",
+     1.3703334900000008
+    ]
+   ],
+   "plain_median_s": 0.7668033540000001,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a report that cannot be loaded stops the PDF and is named": {
+   "samples": [
+    [
+     "over-1",
+     1.0434883689999987
+    ],
+    [
+     "over-2",
+     1.0488189130000027
+    ]
+   ],
+   "plain_median_s": 0.561048572499999,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out unpicks the report that failed and prints the rest": {
+   "samples": [
+    [
+     "over-1",
+     1.8650730199999999
+    ],
+    [
+     "over-2",
+     1.854592643
+    ],
+    [
+     "over-3",
+     1.848876282000001
+    ],
+    [
+     "ci41227946204",
+     3.1035749999999998
+    ]
+   ],
+   "plain_median_s": 0.9150897560000003,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out unpicks every report that failed": {
+   "samples": [
+    [
+     "over-1",
+     1.6371416570000001
+    ],
+    [
+     "over-2",
+     1.5999719369999985
+    ],
+    [
+     "over-3",
+     1.4068700370000007
+    ]
+   ],
+   "plain_median_s": 0.7731955479999988,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out leaves out only the report that failed, not the other report of the same Team": {
+   "samples": [
+    [
+     "over-1",
+     1.2770851580000018
+    ],
+    [
+     "over-2",
+     1.2993894529999999
+    ],
+    [
+     "over-3",
+     1.1090687130000005
+    ]
+   ],
+   "plain_median_s": 0.6568669325000001,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Retry asks for the report again and prints once it arrives": {
+   "samples": [
+    [
+     "over-1",
+     1.277826986
+    ],
+    [
+     "over-2",
+     1.4472017850000012
+    ],
+    [
+     "over-3",
+     1.2206868149999972
+    ]
+   ],
+   "plain_median_s": 0.6924459369999986,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports when part of the page cannot be loaded no PDF is made and it says so": {
+   "samples": [
+    [
+     "over-1",
+     1.1419470800000018
+    ],
+    [
+     "over-2",
+     1.0455301880000005
+    ]
+   ],
+   "plain_median_s": 0.45453403549999893,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.reading.test.tsx :: The Owner column of the Reports page filters whatever the case and the spaces around what was typed": {
+   "samples": [
+    [
+     "over-1",
+     1.0988880630000057
+    ],
+    [
+     "over-2",
+     1.130289294999995
+    ],
+    [
+     "over-3",
+     1.3065500259999971
+    ]
+   ],
+   "plain_median_s": 0.6173839920000028,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Reports/ReportsPage.reading.test.tsx :: The Owner column of the Reports page filters by the Type of a report, which a report of a Type this version cannot show does not have": {
+   "samples": [
+    [
+     "over-1",
+     1.189219597000003
+    ],
+    [
+     "over-2",
+     1.0833352329999908
+    ],
+    [
+     "over-3",
+     1.314509388999999
+    ]
+   ],
+   "plain_median_s": 0.6902712654999996,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Cancel removes nothing": {
+   "samples": [
+    [
+     "over-1",
+     1.1799493609999991
+    ],
+    [
+     "over-2",
+     1.2706261569999988
+    ],
+    [
+     "over-3",
+     1.395932628999999
+    ]
+   ],
+   "plain_median_s": 0.6106839754999996,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once with one picked report on an owner she only reads, Remove is disabled and says why": {
+   "samples": [
+    [
+     "over-1",
+     1.1399057440000016
+    ],
+    [
+     "over-2",
+     1.0456475979999995
+    ]
+   ],
+   "plain_median_s": 0.6677063054999999,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report the server did not remove is named with its reason and stays listed": {
+   "samples": [
+    [
+     "over-1",
+     1.1446294560000005
+    ],
+    [
+     "over-2",
+     1.2598123990000003
+    ],
+    [
+     "over-3",
+     1.1569249499999987
+    ]
+   ],
+   "plain_median_s": 0.599613401,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape on the result closes it and clears what was picked": {
+   "samples": [
+    [
+     "over-1",
+     1.0532446989999988
+    ],
+    [
+     "over-2",
+     1.0274736110000013
+    ]
+   ],
+   "plain_median_s": 0.5593563674999986,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports changing the filter clears what was picked": {
+   "samples": [
+    [
+     "over-1",
+     1.339163577000003
+    ],
+    [
+     "over-2",
+     1.4218398239999988
+    ],
+    [
+     "over-3",
+     1.2772768270000014
+    ]
+   ],
+   "plain_median_s": 0.6865104850000007,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.test.tsx :: Editing from a row a saved edit shows the report's new name on the list": {
+   "samples": [
+    [
+     "over-1",
+     1.1242864010000049
+    ],
+    [
+     "over-2",
+     1.2208315500000027
+    ],
+    [
+     "over-3",
+     1.2472327680000017
+    ]
+   ],
+   "plain_median_s": 0.6347788934999916,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Reports/ReportsPage.usageData.test.tsx :: What the Reports page tells the usage data a bulk removal is told once, and one deleted report per report this run removed": {
+   "samples": [
+    [
+     "over-1",
+     1.4975571789999957
+    ],
+    [
+     "over-2",
+     1.4093833870000017
+    ],
+    [
+     "over-3",
+     1.2757498390000037
+    ]
+   ],
+   "plain_median_s": 0.7030219129999968,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Reports/ReportsPage.usageData.test.tsx :: What the Reports page tells the usage data a bulk removal tells one deleted report for each it removed, and none for one already gone": {
+   "samples": [
+    [
+     "over-1",
+     1.3837260240000033
+    ],
+    [
+     "over-2",
+     1.2572905020000034
+    ],
+    [
+     "over-3",
+     1.1841066040000006
+    ]
+   ],
+   "plain_median_s": 0.675860719999997,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Reports/ReportsPage.usageData.test.tsx :: What the Reports page tells the usage data one PDF of several reports is told once, by name alone, and not as a single export": {
+   "samples": [
+    [
+     "over-1",
+     1.249590719999993
+    ],
+    [
+     "over-2",
+     1.1861639170000053
+    ],
+    [
+     "over-3",
+     1.0942593350000025
+    ]
+   ],
+   "plain_median_s": 0.6731443195000029,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/components/Common/Connection/CreateConnectionWizard.test.tsx :: CreateConnectionWizard Step 2: OAuth premium-gated authentication method advances to step 3 when the OAuth popup resolves with success": {
+   "samples": [
+    [
+     "over-1",
+     1.2443663169999999
+    ],
+    [
+     "over-2",
+     1.502825211999996
+    ],
+    [
+     "over-3",
+     1.1980187020000013
+    ]
+   ],
+   "plain_median_s": 0.5920021324999943,
+   "first_in_file": false,
+   "family": "slice 8"
+  },
+  "src/components/Common/Connection/CreateConnectionWizard.test.tsx :: CreateConnectionWizard Step 2: OAuth premium-gated authentication method renders the popup-blocked alert on step 2 and re-enables Connect when the OAuth popup is blocked": {
+   "samples": [
+    [
+     "over-1",
+     1.0839656399999948
+    ],
+    [
+     "over-2",
+     1.2109494209999976
+    ]
+   ],
+   "plain_median_s": 0.5684692565000041,
+   "first_in_file": false,
+   "family": "slice 8"
+  },
+  "src/components/Common/Connection/CreateConnectionWizard.test.tsx :: CreateConnectionWizard Step 2: OAuth premium-gated authentication method deletes the draft connection when the OAuth popup resolves with cancelled": {
+   "samples": [
+    [
+     "over-1",
+     1.018370504999999
+    ],
+    [
+     "over-2",
+     1.0519495519999982
+    ]
+   ],
+   "plain_median_s": 0.5667477104999962,
+   "first_in_file": false,
+   "family": "slice 8"
+  },
+  "src/components/Common/Connection/CreateConnectionWizard.test.tsx :: CreateConnectionWizard Step 2: OAuth premium-gated authentication method creates a fresh draft on the next Connect click after a non-success popup result": {
+   "samples": [
+    [
+     "over-1",
+     1.036786208999998
+    ],
+    [
+     "over-2",
+     1.0111555540000046
+    ],
+    [
+     "over-3",
+     1.0277777380000044
+    ]
+   ],
+   "plain_median_s": 0.5904820279999985,
+   "first_in_file": false,
+   "family": "slice 8"
+  },
+  "src/components/Common/DataGrid/DataGridBase.defaults.test.tsx :: a grid given default visibility Reset layout lands on the defaults, not on every column shown": {
+   "samples": [
+    [
+     "over-1",
+     1.0621860000000014
+    ],
+    [
+     "over-2",
+     1.0231136179999885
+    ],
+    [
+     "over-3",
+     1.034252569000004
+    ]
+   ],
+   "plain_median_s": 0.48115181049999955,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/components/Common/DataGrid/DataGridBase.paging.test.tsx :: Sorting and filtering a long list shows all 64 rows a column filter on the second page leaves, with no footer": {
+   "samples": [
+    [
+     "over-1",
+     1.265900042000001
+    ],
+    [
+     "over-2",
+     1.3947097439999998
+    ],
+    [
+     "over-3",
+     1.174824784000004
+    ]
+   ],
+   "plain_median_s": 0.799893425000002,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/DataOverviewTable/DataOverviewTable.reportsAndDeliveries.test.tsx :: Reports on the Overview lets a reader hide the Reports column from the column menu": {
+   "samples": [
+    [
+     "over-1",
+     1.215798526999999
+    ],
+    [
+     "over-2",
+     1.1887525070000047
+    ],
+    [
+     "over-3",
+     1.0493107109999982
+    ]
+   ],
+   "plain_median_s": 0.543002056500005,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx :: a Feature's child items, from every list that opens them the Team's Feature list: they are asked for again when the lead closes and reopens after a failure": {
+   "samples": [
+    [
+     "over-1",
+     1.0325900770000007
+    ],
+    [
+     "over-2",
+     1.2474953069999974
+    ],
+    [
+     "over-3",
+     1.155336145000001
+    ]
+   ],
+   "plain_median_s": 0.5849080734999988,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx :: a Feature's child items, from every list that opens them the Team's Feature list: the previous Feature's items never show when their answer arrives late": {
+   "samples": [
+    [
+     "over-1",
+     1.0694182290000027
+    ],
+    [
+     "over-2",
+     1.0868138990000007
+    ]
+   ],
+   "plain_median_s": 0.5059146295000028,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx :: a Feature's child items, from every list that opens them the Portfolio's Feature list: the previous Feature's items never show when their answer arrives late": {
+   "samples": [
+    [
+     "over-1",
+     1.2808268620000016
+    ],
+    [
+     "over-2",
+     1.3285064730000014
+    ],
+    [
+     "over-3",
+     1.3931684370000004
+    ]
+   ],
+   "plain_median_s": 0.6668766324999997,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx :: a Feature's child items, from every list that opens them a Delivery's Features: the previous Feature's items never show when their answer arrives late": {
+   "samples": [
+    [
+     "over-1",
+     1.1272668360000024
+    ],
+    [
+     "over-2",
+     1.3934801020000014
+    ],
+    [
+     "over-3",
+     1.3226540280000045
+    ]
+   ],
+   "plain_median_s": 0.5781363949999977,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing when the query is focused and left without a change": {
+   "samples": [
+    [
+     "over-1",
+     1.6043581380000032
+    ],
+    [
+     "over-2",
+     1.673243961
+    ],
+    [
+     "over-3",
+     1.6403039970000026
+    ]
+   ],
+   "plain_median_s": 1.1616948334999944,
+   "first_in_file": true,
+   "family": "slice 10"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing when the query is edited back to what was saved before the field is left": {
+   "samples": [
+    [
+     "over-1",
+     1.0870244869999952
+    ],
+    [
+     "over-2",
+     1.182891083999988
+    ],
+    [
+     "over-3",
+     1.1097407960000054
+    ]
+   ],
+   "plain_median_s": 0.8479906874999978,
+   "first_in_file": false,
+   "family": "slice 10"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing when the page is left without an edit": {
+   "samples": [
+    [
+     "over-1",
+     1.1071605739999941
+    ],
+    [
+     "over-2",
+     1.0360451260000119
+    ],
+    [
+     "over-3",
+     1.08514652200001
+    ]
+   ],
+   "plain_median_s": 0.7738954249999952,
+   "first_in_file": false,
+   "family": "slice 10"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the query is focused and left without a change": {
+   "samples": [
+    [
+     "over-1",
+     1.1940309399999969
+    ],
+    [
+     "over-2",
+     1.1019589790000028
+    ],
+    [
+     "over-3",
+     1.0867315039999959
+    ]
+   ],
+   "plain_median_s": 0.8342280284999997,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing while the query is being typed and the field is still focused": {
+   "samples": [
+    [
+     "over-1",
+     1.4543245640000022
+    ],
+    [
+     "over-2",
+     1.380166803
+    ],
+    [
+     "over-3",
+     1.455882534000004
+    ]
+   ],
+   "plain_median_s": 0.9561057499999988,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the query is edited back to what was saved before the field is left": {
+   "samples": [
+    [
+     "over-1",
+     1.0345282090000036
+    ],
+    [
+     "over-2",
+     1.1537904100000014
+    ],
+    [
+     "over-3",
+     1.1516978369999997
+    ]
+   ],
+   "plain_median_s": 0.8059286869999996,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the page is left while the form is invalid": {
+   "samples": [
+    [
+     "over-1",
+     1.1174171019999994
+    ],
+    [
+     "over-2",
+     1.1225583490000062
+    ],
+    [
+     "over-3",
+     1.180347056999999
+    ]
+   ],
+   "plain_median_s": 0.785874248,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the page is left without an edit": {
+   "samples": [
+    [
+     "over-1",
+     1.0753577760000044
+    ],
+    [
+     "over-2",
+     1.0330360849999998
+    ]
+   ],
+   "plain_median_s": 0.7915920614999996,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves a changed number of Yes votes with the rest of readiness as it was": {
+   "samples": [
+    [
+     "over-1",
+     1.2119790060000004
+    ],
+    [
+     "over-3",
+     1.0680522169999995
+    ]
+   ],
+   "plain_median_s": 0.8052154645000009,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings keeps the chosen refinement states when readiness changes": {
+   "samples": [
+    [
+     "over-1",
+     1.0174984239999993
+    ]
+   ],
+   "plain_median_s": 0.7043371034999982,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows no chip and no flag for a chosen state that is no longer To Do or Doing": {
+   "samples": [
+    [
+     "over-1",
+     1.1785944480000035
+    ]
+   ],
+   "plain_median_s": 0.7894863490000061,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings drops a chosen state from the chips and the save once it stops being a Doing state": {
+   "samples": [
+    [
+     "over-1",
+     1.069637042999995
+    ],
+    [
+     "over-2",
+     1.0228420079999996
+    ],
+    [
+     "over-3",
+     1.0344043139999994
+    ]
+   ],
+   "plain_median_s": 0.6747035629999955,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings switches the Ready rule off when its last condition is removed": {
+   "samples": [
+    [
+     "over-1",
+     1.0047872459999998
+    ],
+    [
+     "over-2",
+     1.011184056
+    ],
+    [
+     "over-3",
+     1.0982992970000005
+    ]
+   ],
+   "plain_median_s": 0.7369947925000001,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings asks for the starting week once Refinements are more than a week apart, and saves it": {
+   "samples": [
+    [
+     "over-1",
+     1.17202513
+    ],
+    [
+     "over-2",
+     1.1584413910000002
+    ],
+    [
+     "over-3",
+     1.178497069000001
+    ]
+   ],
+   "plain_median_s": 0.7607818389999998,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings saves a changed high end with the low end as it was": {
+   "samples": [
+    [
+     "over-1",
+     1.1328761450000002
+    ],
+    [
+     "over-2",
+     1.0477889379999996
+    ],
+    [
+     "over-3",
+     1.1055694759999988
+    ]
+   ],
+   "plain_median_s": 0.6874158935000005,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the band as last edited, not as it was when the form opened": {
+   "samples": [
+    [
+     "over-1",
+     1.06095161
+    ],
+    [
+     "over-2",
+     1.076793429999998
+    ],
+    [
+     "over-3",
+     1.1920774029999994
+    ]
+   ],
+   "plain_median_s": 0.7421553865000006,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the band as last edited when only the low end changed": {
+   "samples": [
+    [
+     "over-1",
+     1.2899785139999986
+    ],
+    [
+     "over-2",
+     1.2617828369999988
+    ],
+    [
+     "over-3",
+     1.159433158
+    ]
+   ],
+   "plain_median_s": 0.7551215720000009,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings a Team following the Teams' Estimation default shows it, and picking a field of its own saves that choice": {
+   "samples": [
+    [
+     "over-1",
+     1.110068394000001
+    ],
+    [
+     "over-2",
+     1.01398715
+    ],
+    [
+     "over-3",
+     1.0441114439999992
+    ]
+   ],
+   "plain_median_s": 0.6889520755000003,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.layout.test.tsx :: each context remembers its own layout a column hidden in the Estimation dialog is still hidden the next time it opens": {
+   "samples": [
+    [
+     "over-1",
+     1.693891948000004
+    ],
+    [
+     "over-2",
+     1.5485949129999936
+    ],
+    [
+     "over-3",
+     1.769952185999995
+    ]
+   ],
+   "plain_median_s": 1.0005686035000037,
+   "first_in_file": true,
+   "family": "slice 9"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.layout.test.tsx :: each context remembers its own layout a column turned on stays on in its own context only": {
+   "samples": [
+    [
+     "over-1",
+     1.702562401000003
+    ],
+    [
+     "over-2",
+     1.5392241890000005
+    ],
+    [
+     "over-3",
+     1.581195241999987
+    ]
+   ],
+   "plain_median_s": 0.8565313374999969,
+   "first_in_file": false,
+   "family": "slice 9"
+  },
+  "src/pages/Common/Reports/ReportView.editWizard.test.tsx :: Editing a report saves a new name, a new Now and the shown metrics, never Then, over the report as it was read": {
+   "samples": [
+    [
+     "over-1",
+     1.2040331289999886
+    ],
+    [
+     "over-2",
+     1.3285491840000032
+    ],
+    [
+     "over-3",
+     1.3121880779999993
+    ]
+   ],
+   "plain_median_s": 0.6427269580000066,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportView.editWizard.test.tsx :: Editing a report edits the saved report, not the one before, when Edit is chosen again": {
+   "samples": [
+    [
+     "over-1",
+     1.2728358500000032
+    ],
+    [
+     "over-3",
+     1.0085513040000005
+    ]
+   ],
+   "plain_median_s": 0.49333189100000163,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportView.editWizard.test.tsx :: Editing does not count as opening the report again reports the report opened once, however often it is read again after edits": {
+   "samples": [
+    [
+     "over-1",
+     1.2058986290000029
+    ],
+    [
+     "over-2",
+     1.008857845999999
+    ],
+    [
+     "over-3",
+     1.065343191
+    ]
+   ],
+   "plain_median_s": 0.9347908035000073,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx :: The list's print frame goes when it is no longer wanted removes a frame whose dialog never said it closed when the next export starts, so there is only ever one frame": {
+   "samples": [
+    [
+     "over-1",
+     1.1335829139999987
+    ],
+    [
+     "over-2",
+     1.0831917900000043
+    ],
+    [
+     "over-3",
+     1.2953814819999971
+    ]
+   ],
+   "plain_median_s": 0.6596679710000026,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportsTab.exportPdf.test.tsx :: When Export PDF from the list cannot make the PDF says in the snackbar that no PDF was made when the row's report could not be read, and Retry prints it from a fresh frame, counting one export and leaving the reader on the list": {
+   "samples": [
+    [
+     "over-1",
+     1.0260304309999992
+    ],
+    [
+     "over-3",
+     1.2402990169999975
+    ]
+   ],
+   "plain_median_s": 0.6136083454999971,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list lets what went wrong be dismissed, and takes it back when Edit is pressed again": {
+   "samples": [
+    [
+     "over-1",
+     1.335678077000004
+    ],
+    [
+     "over-2",
+     1.4379873149999984
+    ],
+    [
+     "over-3",
+     1.3490194369999953
+    ]
+   ],
+   "plain_median_s": 0.7029433184999998,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting one report after another lets a second report be deleted once the first is gone": {
+   "samples": [
+    [
+     "over-1",
+     1.109223834999997
+    ],
+    [
+     "over-2",
+     1.248296699999999
+    ],
+    [
+     "over-3",
+     1.1109052419999934
+    ]
+   ],
+   "plain_median_s": 0.5649559995,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Portfolios/Detail/PortfolioFeatureList.oneList.test.tsx :: Story 6408 (slice 04): Martin opens Northwind Platform's Features and one answer fills the list a row shows the Teams working on it, from the same answer": {
+   "samples": [
+    [
+     "over-1",
+     1.048442477000004
+    ],
+    [
+     "over-3",
+     1.1539697510000115
+    ]
+   ],
+   "plain_median_s": 0.5216606864999994,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Teams/Detail/TeamFeatureList.rows.test.tsx :: Story 6408 (slice 04): a Team's Features list draws each row from the one answer a row names the Team only when this Team has it in progress, not when another Team does or nobody does": {
+   "samples": [
+    [
+     "over-1",
+     1.5903251239999954
+    ],
+    [
+     "over-2",
+     1.5656592269999965
+    ],
+    [
+     "over-3",
+     1.9877985789999948
+    ]
+   ],
+   "plain_median_s": 1.134825144500006,
+   "first_in_file": true,
+   "family": null
+  },
+  "src/pages/Teams/Detail/TeamFeatureList.test.tsx :: TeamFeatureList component should open work items dialog when Total is clicked": {
+   "samples": [
+    [
+     "over-1",
+     1.2855135989999982
+    ],
+    [
+     "over-3",
+     1.1193263730000036
+    ]
+   ],
+   "plain_median_s": 0.5217684424999971,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx :: Third-party packages pages like every other list shows all 9 packages a search from the second page leaves, with no footer": {
+   "samples": [
+    [
+     "over-1",
+     1.2740765140000003
+    ],
+    [
+     "over-2",
+     1.1661371270000018
+    ],
+    [
+     "over-3",
+     1.2410171670000054
+    ]
+   ],
+   "plain_median_s": 0.7305317715000056,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx :: Third-party packages pages like every other list opens the first page of what a search from the second page leaves, when that is still more than 100": {
+   "samples": [
+    [
+     "over-1",
+     1.4764819520000019
+    ],
+    [
+     "over-2",
+     1.5052516790000081
+    ],
+    [
+     "over-3",
+     1.5779928789999977
+    ]
+   ],
+   "plain_median_s": 0.8258640704999998,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx :: Third-party packages pages like every other list opens the first page of what a search from the third page leaves, when that is two pages and the third is gone": {
+   "samples": [
+    [
+     "over-1",
+     1.8695466599999926
+    ],
+    [
+     "over-2",
+     1.627553912000003
+    ],
+    [
+     "over-3",
+     1.8191633240000082
+    ]
+   ],
+   "plain_median_s": 0.8515358055000033,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx :: Third-party packages pages like every other list opens the first page of the whole list when the search is cleared from the second page of its results": {
+   "samples": [
+    [
+     "over-1",
+     1.248254839000001
+    ],
+    [
+     "over-2",
+     1.1855660780000035
+    ],
+    [
+     "over-3",
+     1.389525597999993
+    ]
+   ],
+   "plain_median_s": 0.6677408029999934,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Common/Reports/print/ReportPrintPage.lighthouseMark.test.tsx :: The Lighthouse mark is in the PDF asks for the Lighthouse mark again in a fresh frame when Retry follows an export whose mark could not be loaded, and prints once it is in": {
+   "samples": [
+    [
+     "over-1",
+     1.2239275250000063
+    ],
+    [
+     "over-3",
+     1.0045104419999988
+    ]
+   ],
+   "plain_median_s": 0.6385551019999984,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Common/Reports/print/ReportsPrintPage.test.tsx :: the print page of several reports gives each report its own running line and room for the credit, which prints once at the foot of every sheet": {
+   "samples": [
+    [
+     "over-1",
+     1.4101457970000046
+    ],
+    [
+     "over-2",
+     1.4423589619999984
+    ],
+    [
+     "over-3",
+     1.354078867000004
+    ]
+   ],
+   "plain_median_s": 0.8169352185000025,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx :: Comments, conditions and questions on the Refinement tab asks for the condition of a Yes, if\u2026 and sends it, trimmed, with the vote in one request": {
+   "samples": [
+    [
+     "over-1",
+     1.3903617860000013
+    ],
+    [
+     "over-2",
+     1.547356409
+    ],
+    [
+     "over-3",
+     1.4381381599999985
+    ]
+   ],
+   "plain_median_s": 0.8676311280000009,
+   "first_in_file": true,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx :: Comments, conditions and questions on the Refinement tab casts nothing when the condition of a Yes, if\u2026 is cancelled": {
+   "samples": [
+    [
+     "over-1",
+     1.0398848970000036
+    ],
+    [
+     "over-2",
+     1.3248673649999982
+    ],
+    [
+     "over-3",
+     1.1119588540000005
+    ]
+   ],
+   "plain_median_s": 0.5942570965000014,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx :: Comments, conditions and questions on the Refinement tab asks a browser without a name who is voting first, then the condition of its Yes, if\u2026": {
+   "samples": [
+    [
+     "over-1",
+     1.4967381850000019
+    ],
+    [
+     "over-2",
+     1.801691749000005
+    ],
+    [
+     "over-3",
+     1.7979076799999967
+    ]
+   ],
+   "plain_median_s": 0.7975742324999993,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx :: Comments, conditions and questions on the Refinement tab shows the log of the Work Item now open when a comment sent on another one is answered late": {
+   "samples": [
+    [
+     "over-1",
+     1.3897636480000002
+    ],
+    [
+     "over-2",
+     1.565505541999999
+    ],
+    [
+     "over-3",
+     1.3649494699999996
+    ]
+   ],
+   "plain_median_s": 0.7991811890000027,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx :: Comments, conditions and questions on the Refinement tab reads the log once more, not twice, when somebody names themselves to comment": {
+   "samples": [
+    [
+     "over-1",
+     1.0170090839999975
+    ],
+    [
+     "over-2",
+     1.0454408820000025
+    ],
+    [
+     "over-3",
+     1.0385072519999958
+    ]
+   ],
+   "plain_median_s": 0.5600484090000027,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.enoughFor.test.tsx :: The Refinement tab marks the Work Items needed before the next Refinement shows backlog order again the next time the tab opens after a sort": {
+   "samples": [
+    [
+     "over-1",
+     1.1153788839999978
+    ],
+    [
+     "over-2",
+     1.0613981249999997
+    ],
+    [
+     "over-3",
+     1.1219795139999988
+    ]
+   ],
+   "plain_median_s": 0.6390135650000011,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.enoughFor.test.tsx :: The Refinement tab marks the Work Items needed before the next Refinement says all the shown ones are needed when a filter leaves fewer than needed": {
+   "samples": [
+    [
+     "over-1",
+     1.3855828309999998
+    ],
+    [
+     "over-2",
+     1.3747864590000027
+    ],
+    [
+     "over-3",
+     1.3129093749999956
+    ]
+   ],
+   "plain_median_s": 0.8059830115000004,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.enoughFor.test.tsx :: The Refinement tab marks the Work Items needed before the next Refinement draws the line after the last shown row when a filter leaves exactly as many as needed": {
+   "samples": [
+    [
+     "over-1",
+     1.3704399110000014
+    ],
+    [
+     "over-2",
+     1.1616830370000024
+    ],
+    [
+     "over-3",
+     1.4335599740000033
+    ]
+   ],
+   "plain_median_s": 0.721755879999997,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx :: A voter casts a sizing vote from the list asks for a name the first time, then casts the vote under it and shows it as the voter's own": {
+   "samples": [
+    [
+     "over-1",
+     1.0462504430000044
+    ],
+    [
+     "over-2",
+     1.2048614689999995
+    ],
+    [
+     "over-3",
+     1.2812504749999998
+    ]
+   ],
+   "plain_median_s": 0.6096973799999978,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx :: A voter casts a sizing vote from the list lets the voter change the name their later votes carry, from the same browser": {
+   "samples": [
+    [
+     "over-1",
+     1.2444319419999956
+    ],
+    [
+     "over-2",
+     1.4917187239999985
+    ],
+    [
+     "over-3",
+     1.2956453450000007
+    ]
+   ],
+   "plain_median_s": 0.6742709135000005,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx :: DeliveryCreateModal should have Save button disabled for past date": {
+   "samples": [
+    [
+     "over-1",
+     1.8132190529999934
+    ],
+    [
+     "over-2",
+     1.5634901830000016
+    ],
+    [
+     "over-3",
+     1.6297797969999956
+    ]
+   ],
+   "plain_median_s": 0.9552902655000071,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx :: DeliveryCreateModal should have Save button disabled when no features are selected": {
+   "samples": [
+    [
+     "over-1",
+     1.2793150710000045
+    ],
+    [
+     "over-2",
+     1.4310806490000105
+    ],
+    [
+     "over-3",
+     1.2332506220000068
+    ]
+   ],
+   "plain_median_s": 0.7260449650000009,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx :: DeliveryCreateModal should call onSave with correct data when form is valid": {
+   "samples": [
+    [
+     "over-1",
+     1.6629036209999903
+    ],
+    [
+     "over-2",
+     1.7500434769999993
+    ],
+    [
+     "over-3",
+     1.566450143000009
+    ]
+   ],
+   "plain_median_s": 0.8653390579999978,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Overview/OverviewDashboard.licenseCheck.test.tsx :: Story 6406 (slice 02): the Overview's create actions while the licence is checked when the licence cannot be checked, Add Team and Add Portfolio are disabled and say why": {
+   "samples": [
+    [
+     "over-2",
+     1.0921705180000136
+    ],
+    [
+     "over-3",
+     1.359228071000005
+    ]
+   ],
+   "plain_median_s": 0.5426293650000007,
+   "first_in_file": false,
+   "family": "slice 11"
+  },
+  "src/pages/Reports/BulkReportWizard.ownerLimits.test.tsx :: Owners that cannot hold the window a pick made under a short window is dropped when going back makes the window too long for that owner": {
+   "samples": [
+    [
+     "over-2",
+     1.0563161319999927
+    ]
+   ],
+   "plain_median_s": 0.5139090109999961,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Reports/BulkReportWizard.portfolios.test.tsx :: Teams and Portfolios in one run a coach creates one comparison for two Teams and Ocean Explorer in one go": {
+   "samples": [
+    [
+     "over-2",
+     1.4880318469999911
+    ]
+   ],
+   "plain_median_s": 0.7750867254999976,
+   "first_in_file": true,
+   "family": "slice 6"
+  },
+  "src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run Select all picks all 60 Teams, the button counts them, and Create says at most 50": {
+   "samples": [
+    [
+     "over-2",
+     1.044050632999999
+    ]
+   ],
+   "plain_median_s": 0.45834138000000346,
+   "first_in_file": false,
+   "family": "slice 6"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Cancel closes the word that no PDF was made, prints nothing and keeps what was picked": {
+   "samples": [
+    [
+     "over-2",
+     1.1170399670000006
+    ],
+    [
+     "over-3",
+     1.0241215130000019
+    ]
+   ],
+   "plain_median_s": 0.5021077299999988,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report somebody else removed first counts as removed": {
+   "samples": [
+    [
+     "over-2",
+     1.0081109939999988
+    ],
+    [
+     "over-3",
+     1.1748666529999992
+    ]
+   ],
+   "plain_median_s": 0.5370247840000002,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape at the confirmation closes it, removes nothing and keeps what was picked": {
+   "samples": [
+    [
+     "over-2",
+     1.0315224699999999
+    ]
+   ],
+   "plain_median_s": 0.48606727299999963,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the report forgotten is the one removed, not one picked before it": {
+   "samples": [
+    [
+     "over-2",
+     1.011432349999999
+    ]
+   ],
+   "plain_median_s": 0.44139666950000084,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports sorting keeps what was picked": {
+   "samples": [
+    [
+     "over-2",
+     1.1116981779999988
+    ]
+   ],
+   "plain_median_s": 0.4144255754999986,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.usageData.test.tsx :: What the Reports page tells the usage data a bulk creation is told once, and one created report per report actually created": {
+   "samples": [
+    [
+     "over-2",
+     1.0218642059999983
+    ],
+    [
+     "over-3",
+     1.0864566730000005
+    ]
+   ],
+   "plain_median_s": 0.5497799939999968,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/components/Common/Connection/CreateConnectionWizard.test.tsx :: CreateConnectionWizard Step 2: OAuth premium-gated authentication method deletes the draft connection when the OAuth popup resolves with error": {
+   "samples": [
+    [
+     "over-2",
+     1.0482211109999988
+    ],
+    [
+     "over-3",
+     1.0206544150000045
+    ]
+   ],
+   "plain_median_s": 0.4769984824999992,
+   "first_in_file": false,
+   "family": "slice 8"
+  },
+  "src/components/Common/DataGrid/DataGridBase.paging.test.tsx :: A list of more than 100 rows says how many it has and pages to the rest leaves the saved layout of the list exactly as it was after paging": {
+   "samples": [
+    [
+     "over-2",
+     1.0420095090000032
+    ]
+   ],
+   "plain_median_s": 0.5453725674999987,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx :: a Feature's child items, from every list that opens them the Portfolio's Feature list: they are asked for again when the lead closes and reopens after a failure": {
+   "samples": [
+    [
+     "over-2",
+     1.2605743590000056
+    ],
+    [
+     "over-3",
+     1.012123999000003
+    ]
+   ],
+   "plain_median_s": 0.5925581810000004,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx :: a Feature's child items, from every list that opens them a Delivery's Features: they are asked for again when the lead closes and reopens after a failure": {
+   "samples": [
+    [
+     "over-2",
+     1.1599427230000001
+    ],
+    [
+     "over-3",
+     1.0044176899999948
+    ]
+   ],
+   "plain_median_s": 0.6020567374999992,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves a changed number of \u201cYes, if\u2026\u201d votes that send to discussion": {
+   "samples": [
+    [
+     "over-2",
+     1.0207419619999991
+    ]
+   ],
+   "plain_median_s": 0.7401556794999997,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx :: US-02 \u2014 every chart's dialog brings the columns that explain its point a Feature's forecast is offered as the Features grid's Forecasted Completion column, right after Size": {
+   "samples": [
+    [
+     "over-2",
+     1.031846411999999
+    ],
+    [
+     "over-3",
+     1.0146090780000012
+    ]
+   ],
+   "plain_median_s": 0.5219350565,
+   "first_in_file": false,
+   "family": "slice 9"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx :: US-03 \u2014 a Feature's child items show their progress at a glance featureChildren comes back with the reader's own layout, a default hidden and another column on, the next time it opens": {
+   "samples": [
+    [
+     "over-2",
+     1.0504720220000017
+    ]
+   ],
+   "plain_median_s": 0.4415072694999981,
+   "first_in_file": false,
+   "family": "slice 9"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx :: what each catalogue column says, and how it sorts inProgress: every column named here sorts on a header click": {
+   "samples": [
+    [
+     "over-2",
+     1.264972431999995
+    ],
+    [
+     "over-3",
+     1.0020506170000008
+    ]
+   ],
+   "plain_median_s": 0.5047440425000005,
+   "first_in_file": false,
+   "family": "slice 9"
+  },
+  "src/pages/Portfolios/Detail/PortfolioFeatureList.test.tsx :: PortfolioFeatureList component should open work items dialog when Overall Progress is clicked": {
+   "samples": [
+    [
+     "over-2",
+     1.1336347689999966
+    ]
+   ],
+   "plain_median_s": 0.5381745235000053,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Overview/OverviewDashboard.licenseCheck.test.tsx :: Story 6406 (slice 02): the Overview's create actions while the licence is checked once the licence is checked and the free limit is reached, the actions still point to a premium license": {
+   "samples": [
+    [
+     "over-3",
+     1.148353357
+    ]
+   ],
+   "plain_median_s": 0.46026321449999524,
+   "first_in_file": false,
+   "family": "slice 11"
+  },
+  "src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard what a deletion is reported as reports a deleted Portfolio as a Portfolio": {
+   "samples": [
+    [
+     "over-3",
+     1.0246096820000004
+    ]
+   ],
+   "plain_median_s": 0.5379742104999987,
+   "first_in_file": false,
+   "family": "slice 11"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the confirmation warns when one of them holds a Then that can no longer be rebuilt": {
+   "samples": [
+    [
+     "over-3",
+     1.1391295489999993
+    ]
+   ],
+   "plain_median_s": 0.5253348075000004,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when no answer arrives it says it cannot confirm what was removed": {
+   "samples": [
+    [
+     "over-3",
+     1.0301128690000005
+    ]
+   ],
+   "plain_median_s": 0.5119954849999995,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.test.tsx :: Every report in one place the filter still matches an owner's kind, though the cell shows only its name": {
+   "samples": [
+    [
+     "over-3",
+     1.1109647140000016
+    ]
+   ],
+   "plain_median_s": 0.5124682925000015,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches on a rule stored as off at its default threshold": {
+   "samples": [
+    [
+     "over-3",
+     1.0071570810000012
+    ]
+   ],
+   "plain_median_s": 0.6738176010000007,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings offers only the Team's To Do and Doing states as suggestions": {
+   "samples": [
+    [
+     "over-3",
+     1.3489049730000042
+    ]
+   ],
+   "plain_median_s": 0.6348250370000059,
+   "first_in_file": true,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Throughput History is invalid": {
+   "samples": [
+    [
+     "over-3",
+     1.0209408000000002
+    ]
+   ],
+   "plain_median_s": 0.6918948855000003,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx :: US-01 \u2014 the Estimation dialog shows each item's estimate a column turned on appears in its place in the fixed order": {
+   "samples": [
+    [
+     "over-3",
+     1.0427563940000009
+    ]
+   ],
+   "plain_median_s": 0.5474038540000001,
+   "first_in_file": false,
+   "family": "slice 9"
+  },
+  "src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx :: the items behind a Cumulative Time per State bar a late answer for the bar clicked before never lands in the next bar's dialog": {
+   "samples": [
+    [
+     "over-3",
+     1.0241079869999958
+    ]
+   ],
+   "plain_median_s": 0.6813321254999973,
+   "first_in_file": false,
+   "family": "slice 11"
+  }
+ },
+ "2": {
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold": {
+   "samples": [
+    [
+     "plain-1",
+     2.146780198999997
+    ],
+    [
+     "plain-2",
+     2.2608089409999956
+    ],
+    [
+     "over-1",
+     2.6139278730000006
+    ],
+    [
+     "over-2",
+     2.6845280300000014
+    ],
+    [
+     "over-3",
+     2.6094484489999994
+    ]
+   ],
+   "plain_median_s": 2.2037945699999963,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it": {
+   "samples": [
+    [
+     "plain-1",
+     3.0442179179999993
+    ],
+    [
+     "plain-2",
+     2.4954894690000002
+    ],
+    [
+     "over-1",
+     4.943913373000001
+    ],
+    [
+     "over-2",
+     4.62215801
+    ],
+    [
+     "over-3",
+     4.855979984
+    ],
+    [
+     "ci41227946204",
+     7.005007
+    ],
+    [
+     "ci41228644313",
+     7.343924
+    ],
+    [
+     "ci41428581254",
+     6.787662999999999
+    ]
+   ],
+   "plain_median_s": 2.7698536935,
+   "first_in_file": true,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last": {
+   "samples": [
+    [
+     "plain-1",
+     2.181308341
+    ],
+    [
+     "plain-2",
+     2.1299178570000006
+    ],
+    [
+     "over-1",
+     3.575536437999999
+    ],
+    [
+     "over-2",
+     4.036036124999999
+    ],
+    [
+     "over-3",
+     3.347825958999998
+    ],
+    [
+     "ci41227946204",
+     6.424922
+    ],
+    [
+     "ci41228644313",
+     6.349953
+    ],
+    [
+     "ci41428581254",
+     6.157001
+    ]
+   ],
+   "plain_median_s": 2.155613099,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves the edited query once, after the field is left": {
+   "samples": [
+    [
+     "plain-2",
+     2.0788175899999914
+    ],
+    [
+     "over-1",
+     2.578901221
+    ],
+    [
+     "over-2",
+     2.663424159000002
+    ],
+    [
+     "over-3",
+     2.497431531000002
+    ]
+   ],
+   "plain_median_s": 2.015338928499994,
+   "first_in_file": false,
+   "family": "slice 10"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50": {
+   "samples": [
+    [
+     "over-1",
+     2.4247548210000023
+    ],
+    [
+     "over-2",
+     2.746642308999999
+    ],
+    [
+     "over-3",
+     2.3665314610000023
+    ]
+   ],
+   "plain_median_s": 1.1728379584999984,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports exactly 50 picked may still be exported as one PDF": {
+   "samples": [
+    [
+     "over-1",
+     2.1573294129999994
+    ],
+    [
+     "over-2",
+     2.3670965780000004
+    ],
+    [
+     "over-3",
+     2.0122874129999984
+    ]
+   ],
+   "plain_median_s": 1.0775838639999993,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports above 50 picked, Remove is disabled and says at most 50": {
+   "samples": [
+    [
+     "over-1",
+     2.237373765
+    ],
+    [
+     "over-2",
+     2.6514945499999993
+    ],
+    [
+     "over-3",
+     2.285360101999999
+    ]
+   ],
+   "plain_median_s": 1.1484441134999996,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports exactly 50 picked may still be removed": {
+   "samples": [
+    [
+     "over-1",
+     2.1857502490000007
+    ],
+    [
+     "over-2",
+     2.409378814000003
+    ]
+   ],
+   "plain_median_s": 1.1260471355,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports Select all picks every row, on every page": {
+   "samples": [
+    [
+     "over-1",
+     3.634600676000002
+    ],
+    [
+     "over-2",
+     4.233615363000005
+    ],
+    [
+     "over-3",
+     3.549285956
+    ],
+    [
+     "ci41227946204",
+     6.66907
+    ],
+    [
+     "ci41228644313",
+     6.64073
+    ],
+    [
+     "ci41428581254",
+     6.119039
+    ]
+   ],
+   "plain_median_s": 1.7812433039999997,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/pages/Reports/ReportsPage.usageData.test.tsx :: What the Reports page tells the usage data a Retry and a Leave it out on one PDF of several reports count nothing more": {
+   "samples": [
+    [
+     "over-1",
+     2.2806253330000037
+    ],
+    [
+     "over-3",
+     2.175416527000001
+    ]
+   ],
+   "plain_median_s": 1.2336522875000009,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/components/Common/DataGrid/DataGridBase.paging.test.tsx :: Turning a page brings the top of the list into view never scrolls for a page change the reader did not ask for with an arrow": {
+   "samples": [
+    [
+     "over-1",
+     2.572478847999999
+    ],
+    [
+     "over-2",
+     2.6424364889999996
+    ],
+    [
+     "over-3",
+     2.7250034369999994
+    ]
+   ],
+   "plain_median_s": 1.4051379204999976,
+   "first_in_file": false,
+   "family": "sweep"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name after the debounce without anyone leaving a field": {
+   "samples": [
+    [
+     "over-1",
+     2.533450117
+    ],
+    [
+     "over-2",
+     2.3538910009999965
+    ],
+    [
+     "over-3",
+     2.4794875399999947
+    ]
+   ],
+   "plain_median_s": 1.3925589269999965,
+   "first_in_file": true,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query once, after the field is left": {
+   "samples": [
+    [
+     "over-1",
+     2.7270838069999956
+    ],
+    [
+     "over-2",
+     2.472273258000001
+    ],
+    [
+     "over-3",
+     2.6054217710000014
+    ]
+   ],
+   "plain_median_s": 1.9480328375000027,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the latest edit after the save already on its way, when the page is left meanwhile": {
+   "samples": [
+    [
+     "over-1",
+     2.634355797000004
+    ],
+    [
+     "over-2",
+     2.6395108610000024
+    ],
+    [
+     "over-3",
+     2.567667678999998
+    ]
+   ],
+   "plain_median_s": 1.7740744354999989,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off": {
+   "samples": [
+    [
+     "over-1",
+     2.0266709039999986
+    ],
+    [
+     "over-2",
+     2.007420277000001
+    ],
+    [
+     "over-3",
+     2.0203785430000027
+    ]
+   ],
+   "plain_median_s": 1.5536698715000004,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings saves a changed Ready rule and leaves the Being refined rule as it was": {
+   "samples": [
+    [
+     "over-1",
+     2.129144091
+    ]
+   ],
+   "plain_median_s": 1.3503971315,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings keeps an edited Ready rule when the Yes votes needed change before it is saved": {
+   "samples": [
+    [
+     "over-1",
+     2.1920649889999995
+    ],
+    [
+     "over-2",
+     2.1956535540000006
+    ],
+    [
+     "over-3",
+     2.1875332679999993
+    ]
+   ],
+   "plain_median_s": 1.2859228084999996,
+   "first_in_file": false,
+   "family": "slice 4"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx :: A Work Items dialog with more than 100 Work Items Priya, on the second page of 243, filters to 64 and sees all of them with no footer": {
+   "samples": [
+    [
+     "over-1",
+     3.776453383999993
+    ],
+    [
+     "over-2",
+     2.9821711050000013
+    ],
+    [
+     "over-3",
+     3.5770979820000064
+    ]
+   ],
+   "plain_median_s": 2.078587314500008,
+   "first_in_file": true,
+   "family": "slice 9"
+  },
+  "src/pages/Common/MetricsView/DashboardHeader.test.tsx :: DashboardHeader shows label and formatted date range and opens popover which calls handlers": {
+   "samples": [
+    [
+     "over-1",
+     2.8040442230000044
+    ],
+    [
+     "over-2",
+     2.7529479169999975
+    ],
+    [
+     "over-3",
+     2.5804473759999964
+    ]
+   ],
+   "plain_median_s": 1.5297959259999916,
+   "first_in_file": true,
+   "family": null
+  },
+  "src/pages/Settings/SystemInfo/ThirdPartyPackagesSection.paging.test.tsx :: Third-party packages pages like every other list keeps the reader's sort and column filter when a search opens the first page": {
+   "samples": [
+    [
+     "over-1",
+     2.108106415000002
+    ],
+    [
+     "over-2",
+     2.129536171
+    ],
+    [
+     "over-3",
+     2.0782723680000053
+    ]
+   ],
+   "plain_median_s": 1.224866605000003,
+   "first_in_file": false,
+   "family": null
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 0 needed, the line sits where it falls in the whole list (page 1: { side: 'above', by: 'GR-0001', \u2026(1) }, page 2: null)": {
+   "samples": [
+    [
+     "over-1",
+     2.2085013100000013
+    ],
+    [
+     "over-2",
+     2.116165733
+    ],
+    [
+     "over-3",
+     2.213320911999999
+    ]
+   ],
+   "plain_median_s": 1.3101600754999994,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 20 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0020', \u2026(1) }, page 2: null)": {
+   "samples": [
+    [
+     "over-1",
+     2.21595967
+    ],
+    [
+     "over-2",
+     2.0947734230000004
+    ],
+    [
+     "over-3",
+     2.1706936370000003
+    ]
+   ],
+   "plain_median_s": 1.1654365500000012,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 100 needed, the line sits where it falls in the whole list (page 1: { side: 'below', by: 'GR-0100', \u2026(1) }, page 2: null)": {
+   "samples": [
+    [
+     "over-1",
+     2.0282940450000004
+    ],
+    [
+     "over-3",
+     2.008274138000001
+    ]
+   ],
+   "plain_median_s": 1.2047240299999995,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 101 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0101', \u2026(1) })": {
+   "samples": [
+    [
+     "over-1",
+     2.1315010259999982
+    ],
+    [
+     "over-2",
+     2.0125502540000015
+    ],
+    [
+     "over-3",
+     2.165038691
+    ]
+   ],
+   "plain_median_s": 1.165196010999999,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 143 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', \u2026(1) })": {
+   "samples": [
+    [
+     "over-1",
+     2.020740173999999
+    ],
+    [
+     "over-2",
+     2.041837143000001
+    ],
+    [
+     "over-3",
+     2.0167240810000004
+    ]
+   ],
+   "plain_median_s": 1.1927639795000005,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120": {
+   "samples": [
+    [
+     "over-1",
+     2.2228318450000004
+    ],
+    [
+     "over-2",
+     2.2569437170000017
+    ],
+    [
+     "over-3",
+     2.0610189940000017
+    ]
+   ],
+   "plain_median_s": 1.0888762550000002,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.test.tsx :: The Refinement tab lists the Work Items in refinement handles three hundred Work Items, counting all of them and starting at the top of the backlog": {
+   "samples": [
+    [
+     "over-1",
+     2.5580979249999944
+    ],
+    [
+     "over-2",
+     2.8478940960000036
+    ],
+    [
+     "over-3",
+     2.8178132359999872
+    ]
+   ],
+   "plain_median_s": 1.4208609954999991,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0120', \u2026(1) })": {
+   "samples": [
+    [
+     "over-2",
+     2.121183531999999
+    ]
+   ],
+   "plain_median_s": 1.1280335299999988,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 150 needed, the line sits where it falls in the whole list (page 1: null, page 2: { side: 'below', by: 'GR-0143', \u2026(1) })": {
+   "samples": [
+    [
+     "over-2",
+     2.0560000089999995
+    ]
+   ],
+   "plain_median_s": 1.1431047505000005,
+   "first_in_file": false,
+   "family": "slice 7"
+  },
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list": {
+   "samples": [
+    [
+     "over-3",
+     2.381235069
+    ]
+   ],
+   "plain_median_s": 1.2316172115000001,
+   "first_in_file": true,
+   "family": "slice 5"
+  }
+ },
+ "3": {
+  "src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports Select all picks every row, on every page": {
+   "samples": [
+    [
+     "over-1",
+     3.634600676000002
+    ],
+    [
+     "over-2",
+     4.233615363000005
+    ],
+    [
+     "over-3",
+     3.549285956
+    ]
+   ],
+   "plain_median_s": 1.7812433039999997,
+   "first_in_file": false,
+   "family": "slice 5"
+  },
+  "src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx :: A Work Items dialog with more than 100 Work Items Priya, on the second page of 243, filters to 64 and sees all of them with no footer": {
+   "samples": [
+    [
+     "over-1",
+     3.776453383999993
+    ],
+    [
+     "over-3",
+     3.5770979820000064
+    ]
+   ],
+   "plain_median_s": 2.078587314500008,
+   "first_in_file": true,
+   "family": "slice 9"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached Jonas pages to GR-0131, the 131st Work Item in refinement, and votes on it": {
+   "samples": [
+    [
+     "over-1",
+     4.943913373000001
+    ],
+    [
+     "over-2",
+     4.62215801
+    ],
+    [
+     "over-3",
+     4.855979984
+    ]
+   ],
+   "plain_median_s": 2.7698536935,
+   "first_in_file": true,
+   "family": "slice 7"
+  },
+  "src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx :: Team Gravity's 143 Work Items in refinement can all be reached with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last": {
+   "samples": [
+    [
+     "over-1",
+     3.575536437999999
+    ],
+    [
+     "over-2",
+     4.036036124999999
+    ],
+    [
+     "over-3",
+     3.347825958999998
+    ]
+   ],
+   "plain_median_s": 2.155613099,
+   "first_in_file": false,
+   "family": "slice 7"
+  }
+ }
+}
