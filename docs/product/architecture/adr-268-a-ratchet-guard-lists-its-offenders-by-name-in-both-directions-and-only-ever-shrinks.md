@@ -61,8 +61,10 @@ internal reference codes as the explanation.
   leaking file pair (importing file → imported file), a refinement of "file or type".
 - 2026-11-03: the frontend test-time guard follows the ratchet idea but departs from it. The key is a
   single test (`file :: full test name`), not a file or a type. A stale entry is judged against what
-  ran, not against the source: a listed test that ran in a collected file must have run and must not
-  have taken under a quarter of the budget, an entry whose file is gone is stale, files outside a
-  filtered run are ignored, and a run cut short by bail skips the check. Every entry has its own
+  ran, not against the source: a listed test that is absent from a file the run collected is stale, a
+  skipped test is exempt, an entry whose file is gone from disk is stale even in a filtered run, a test
+  that passed in under a quarter of the budget in a plain run is stale (a coverage run never retires
+  an entry, and neither does a failed test), files outside a filtered run are ignored, a file that
+  broke while being collected does not count as collected, and a run cut short skips the check. Every entry has its own
   ceiling, so a listed slow test may not get slower. Neither this guard nor the per-file budget covers
   import, environment and transform cost, because those run outside any test.

@@ -123,7 +123,7 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   directly; keep one or two rendered wiring tests per user flow; render a large list or walk a long
   sequence only when the rendering itself is what is tested; prefer fake timers over real waits. The
   frontend time budget (reporter in `src/tests/timeBudget/`, known exceptions in its allow-list
-  `slowTests.ts`) names any single test over 2 s on a quiet machine, and the per-file budget
+  `slowTests.ts`) names any unlisted test over the budget (2 s, 2.31 s for a file's first test) and any listed test over its own ceiling, and the per-file budget
   (`Scripts/test-timings/check_budget.py`) sums test time only. Neither covers import, environment or
   transform cost, which run outside any test. Not automated because: the budget names a slow test
   after the fact; it cannot tell where the logic should have lived.
