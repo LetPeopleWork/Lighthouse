@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Models
                 Assert.That(entries, Has.Some.Matches<string>(entry => entry.StartsWith(' ') && !entry.EndsWith(' ')), "a leading space only");
                 Assert.That(entries, Has.Some.Matches<string>(entry => entry.StartsWith('\t')), "a tab");
                 Assert.That(entries, Has.Some.Matches<string>(entry => entry.StartsWith(NonBreakingSpace) && entry.EndsWith(NonBreakingSpace)), "non-breaking spaces");
-                Assert.That(entries, Has.Some.Matches<string>(entry => entry != entry.ToLowerInvariant() && entry == entry.ToUpperInvariant() && entry.Length > 3), "an upper-case variant");
+                Assert.That(entries, Has.Some.Matches<string>(entry => entry is { Length: > 3 } && entry.Any(char.IsUpper) && !entry.Any(char.IsLower)), "an upper-case variant");
                 Assert.That(cases.Select(c => c.Index), Is.Unique);
             }
         }

@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         [Test]
         public async Task EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(
-            [Values(Provider.Sqlite, Provider.Postgres)] Provider provider,
+            [Values] Provider provider,
             [Values] StoredShape storedShape)
         {
             var shape = ShapeOf(storedShape);
@@ -123,8 +123,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
         [Test]
         public async Task AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten(
-            [Values(Provider.Sqlite, Provider.Postgres)] Provider provider,
-            [Values(true, false)] bool statesAreNull)
+            [Values] Provider provider,
+            [Values] bool statesAreNull)
         {
             var shape = ShapeOf(StoredShape.GroupNamedInPlaceOfItsStates);
 
