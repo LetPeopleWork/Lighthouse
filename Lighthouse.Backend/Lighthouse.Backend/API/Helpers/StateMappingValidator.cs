@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.API.Helpers
             errors.AddRange(mappings
                 .Where(mapping => !string.IsNullOrWhiteSpace(mapping.Name) && HasChanged(mapping))
                 .SelectMany(mapping => CategoryErrors(lists, mapping)));
+            errors.AddRange(WaitStateErrors(settings.WaitStates, mappings, storedOwner?.WaitStates ?? [], HasChanged));
 
             return new StateMappingValidationResult(errors);
         }
@@ -101,6 +102,19 @@ namespace Lighthouse.Backend.API.Helpers
                where !ReferenceEquals(named, grouping) && StateCategoryLists.MembersOf(grouping).Exists(state => StateCategoryLists.IsSameState(state, named.Name))
                where isChanged(named) || isChanged(grouping)
                select $"Mapping \"{named.Name.Trim()}\" has the same name as a state grouped by mapping \"{grouping.Name.Trim()}\". Choose another name.";
+
+        // An item's history records a mapping's name, never the states inside it, so a wait state naming one of
+        // those states would make all the mapping's time wait.
+        private static IEnumerable<string> WaitStateErrors(List<string> waitStates, List<StateMapping> mappings, List<string> storedWaitStates, Func<StateMapping, bool> isChanged)
+            => from waitState in waitStates
+               where !string.IsNullOrWhiteSpace(waitState)
+               let mapping = mappings.Find(mapping =>
+                   !string.IsNullOrWhiteSpace(mapping.Name)
+                   && !StateCategoryLists.IsSameState(mapping.Name, waitState)
+                   && StateCategoryLists.MembersOf(mapping).Exists(state => StateCategoryLists.IsSameState(state, waitState)))
+               where mapping != null
+               where isChanged(mapping) || !storedWaitStates.Exists(stored => StateCategoryLists.IsSameState(stored, waitState))
+               select $"Wait state \"{waitState.Trim()}\" is part of the mapping \"{mapping.Name.Trim()}\". Use \"{mapping.Name.Trim()}\" as the wait state instead.";
 
         private static bool IsChanged(StateMapping mapping, IReadOnlyCollection<StateMapping> storedMappings)
             => !storedMappings.Any(stored =>

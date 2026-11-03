@@ -295,13 +295,14 @@ namespace Lighthouse.Backend.Tests.API.Integration
         {
             // Wait states are saved through the existing settings endpoint, as one more field. PUT the settings
             // JSON with a waitStates array holding a raw state and a mapping name, GET the settings back, and
-            // assert the array round-trips.
+            // assert the array round-trips. The raw state lies outside every mapping, because a wait state naming a
+            // state inside one is refused.
             var teamId = SeedTeamWithStateMappingWaitingGroup(out var connectionId);
 
             client.AsTeamAdmin(teamId);
 
             var putResponse = await PutTeamSettingsWithWaitStates(teamId, connectionId,
-                waitStates: [WaitingForReview, "Waiting"]);
+                waitStates: [InProgress, "Waiting"]);
             var putBody = await putResponse.Content.ReadAsStringAsync();
             Assert.That(putResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), putBody);
 
@@ -311,7 +312,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(settingsResponse.StatusCode, Is.EqualTo(HttpStatusCode.OK), settingsBody);
                 var persisted = StringArray(settingsBody, "waitStates");
-                Assert.That(persisted, Does.Contain(WaitingForReview),
+                Assert.That(persisted, Does.Contain(InProgress),
                     $"A raw wait state must round-trip through the existing settings payload. Body: {settingsBody}");
                 Assert.That(persisted, Does.Contain("Waiting"),
                     $"A mapping-name wait state must round-trip too (entries are raw states OR mapping names). Body: {settingsBody}");

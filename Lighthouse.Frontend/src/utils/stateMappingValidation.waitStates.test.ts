@@ -20,19 +20,19 @@ const TESTING_IS_PART_OF_REVIEW =
 	'Wait state "Testing" is part of the mapping "Review". Use "Review" as the wait state instead.';
 
 describe("validateStateMappings for wait states inside a mapping", () => {
-	it.skip("refuses a wait state that names one state inside a mapping, asking for the mapping's name", () => {
+	it("refuses a wait state that names one state inside a mapping, asking for the mapping's name", () => {
 		expect(
 			validateStateMappings([review], settingsWaitingIn("Testing")),
 		).toEqual([TESTING_IS_PART_OF_REVIEW]);
 	});
 
-	it.skip("holds back the autosave for that wait state with the same sentence", () => {
+	it("holds back the autosave for that wait state with the same sentence", () => {
 		expect(
 			mappingAutoSaveBlockers([review], settingsWaitingIn("Testing")),
 		).toEqual([TESTING_IS_PART_OF_REVIEW]);
 	});
 
-	it.skip("names the wait state trimmed, as it was written, when its case and padding differ", () => {
+	it("names the wait state trimmed, as it was written, when its case and padding differ", () => {
 		expect(
 			validateStateMappings(
 				[{ name: " Review ", states: ["Code Review", "Testing"] }],
@@ -43,7 +43,7 @@ describe("validateStateMappings for wait states inside a mapping", () => {
 		]);
 	});
 
-	it.skip("refuses the other state of a mapping named after one of its states", () => {
+	it("refuses the other state of a mapping named after one of its states", () => {
 		expect(
 			validateStateMappings([active], settingsWaitingIn("Resolved")),
 		).toEqual([
@@ -75,6 +75,17 @@ describe("validateStateMappings for wait states inside a mapping", () => {
 				[{ name: "", states: ["Testing"] }],
 				settingsWaitingIn("Testing"),
 			),
+		).toEqual([]);
+	});
+
+	it("does not hold back the autosave for a stored wait state inside an unchanged mapping", () => {
+		const stored = {
+			stateMappings: [{ name: "Review", states: ["Code Review", "Testing"] }],
+			waitStates: ["Testing"],
+		};
+
+		expect(
+			mappingAutoSaveBlockers([review], settingsWaitingIn("Testing"), stored),
 		).toEqual([]);
 	});
 });

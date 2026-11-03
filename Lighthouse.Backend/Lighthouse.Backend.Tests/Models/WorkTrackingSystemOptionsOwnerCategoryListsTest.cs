@@ -426,9 +426,10 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         // The charts show the group as one row, so a wait state naming any one of its states turns the whole
-        // group's time into wait. Pinned as it behaves today, not as a settled choice.
+        // group's time into wait. Settings now refuse this shape; an owner stored before that still reads the
+        // whole group as wait.
         [Test]
-        public void WaitStatesAsDisplayed_WaitStateNamesOneStateOfAMapping_CountsAllTimeInTheGroupAsWait()
+        public void WaitStatesAsDisplayed_StoredWaitStateNamesOneStateOfAMapping_CountsAllTimeInTheGroupAsWait()
         {
             var team = ATeamWaitingIn("Validating");
 

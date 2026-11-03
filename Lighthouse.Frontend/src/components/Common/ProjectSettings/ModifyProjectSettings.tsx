@@ -22,7 +22,9 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import {
+	type IStoredStateSettings,
 	mappingAutoSaveBlockers,
+	storedStateSettingsOf,
 	validateStateMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -63,6 +65,7 @@ function portfolioAutoSaveBlockers(
 	system: IWorkTrackingSystemConnection | null,
 	isDefault: boolean,
 	getTerm: (key: string) => string,
+	stored: IStoredStateSettings | undefined,
 ): string[] {
 	const schema = s.dataRetrievalSchema;
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -100,7 +103,7 @@ function portfolioAutoSaveBlockers(
 	if (s.doneStates.length === 0) {
 		reasons.push("Add at least one Done State");
 	}
-	reasons.push(...mappingAutoSaveBlockers(s.stateMappings, s));
+	reasons.push(...mappingAutoSaveBlockers(s.stateMappings, s, stored));
 	if (isDefault) {
 		return reasons;
 	}
@@ -135,6 +138,22 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { portfolioService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const portfolioIdRef = useRef(0);
+	const storedRef = useRef<IStoredStateSettings | undefined>(undefined);
+
+	const loadSettings = useCallback(async () => {
+		const loaded = await getProjectSettings();
+		storedRef.current = storedStateSettingsOf(loaded);
+		return loaded;
+	}, [getProjectSettings]);
+
+	const persistSettings = useCallback(
+		async (settings: IPortfolioSettings) => {
+			const saved = await saveProjectSettings(settings);
+			storedRef.current = storedStateSettingsOf(saved ?? settings);
+			return saved;
+		},
+		[saveProjectSettings],
+	);
 
 	const loadTeams = useCallback(async () => {
 		setTeams(await getAllTeams());
@@ -171,8 +190,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		doneHandlers,
 	} = useModifySettings<IPortfolioSettings>({
 		getWorkTrackingSystems,
-		getSettings: getProjectSettings,
-		saveSettings: saveProjectSettings,
+		getSettings: loadSettings,
+		saveSettings: persistSettings,
 		validateSettings: validateProjectSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultPortfolioSchema,
@@ -182,7 +201,13 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			refreshOnSave: true,
 		},
 		validateForm: (s, system, isDefault) =>
-			portfolioAutoSaveBlockers(s, system, isDefault, getTerm),
+			portfolioAutoSaveBlockers(
+				s,
+				system,
+				isDefault,
+				getTerm,
+				storedRef.current,
+			),
 		additionalFetch: refreshDependentData,
 		initialFetch: loadTeams,
 	});
@@ -194,6 +219,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		return validateStateMappings(
 			projectSettings.stateMappings,
 			projectSettings,
+			storedRef.current,
 		);
 	}, [projectSettings]);
 

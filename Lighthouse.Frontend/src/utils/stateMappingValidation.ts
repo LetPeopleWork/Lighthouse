@@ -5,6 +5,23 @@ export interface IStateLists {
 	toDoStates: string[];
 	doingStates: string[];
 	doneStates: string[];
+	waitStates?: string[];
+}
+
+/** The settings as the server holds them, before this edit. */
+export interface IStoredStateSettings {
+	stateMappings: IStateMapping[];
+	waitStates: string[];
+}
+
+export function storedStateSettingsOf(settings: {
+	stateMappings?: IStateMapping[];
+	waitStates?: string[];
+}): IStoredStateSettings {
+	return {
+		stateMappings: settings.stateMappings ?? [],
+		waitStates: settings.waitStates ?? [],
+	};
 }
 
 type CategoryLabel = "To Do" | "Doing" | "Done";
@@ -256,24 +273,77 @@ function stateNameClashErrors(
 		]);
 }
 
+function holdTheSameStates(left: string[], right: string[]): boolean {
+	return (
+		left.every((state) => listedAs(right, state) !== undefined) &&
+		right.every((state) => listedAs(left, state) !== undefined)
+	);
+}
+
+function isUnchanged(
+	mapping: IStateMapping,
+	stored: IStoredStateSettings,
+): boolean {
+	return stored.stateMappings.some(
+		(old) =>
+			isSameState(old.name, mapping.name) &&
+			holdTheSameStates(membersOf(old), membersOf(mapping)),
+	);
+}
+
+// An item's history records a mapping's name, never the states inside it, so a
+// wait state naming one of those states would make all the mapping's time wait.
+// The server lets a wait state it already holds through when the mapping it
+// falls into is unchanged, so settings saved before this rule still save.
+function waitStateErrors(
+	mappings: IStateMapping[],
+	lists: IStateLists,
+	stored?: IStoredStateSettings,
+): string[] {
+	return (lists.waitStates ?? [])
+		.filter((waitState) => !isBlankName(waitState))
+		.flatMap((waitState) => {
+			const mapping = mappings.find(
+				(m) =>
+					!isBlankName(m.name) &&
+					!isSameState(m.name, waitState) &&
+					listedAs(membersOf(m), waitState) !== undefined,
+			);
+			if (!mapping) return [];
+			if (
+				stored &&
+				isUnchanged(mapping, stored) &&
+				listedAs(stored.waitStates, waitState) !== undefined
+			)
+				return [];
+			const name = nameOf(mapping);
+			return [
+				`Wait state "${trimAsServer(waitState)}" is part of the mapping "${name}". Use "${name}" as the wait state instead.`,
+			];
+		});
+}
+
 function mappingRuleErrors(
 	mappings: IStateMapping[],
 	lists: IStateLists,
+	stored?: IStoredStateSettings,
 ): string[] {
 	return [
 		...validateUniqueNames(mappings),
 		...validateUniqueStates(mappings),
 		...stateNameClashErrors(mappings, lists),
+		...waitStateErrors(mappings, lists, stored),
 	];
 }
 
 export function validateStateMappings(
 	mappings: IStateMapping[],
 	lists: IStateLists,
+	stored?: IStoredStateSettings,
 ): string[] {
 	return [
 		...validateMappingFields(mappings),
-		...mappingRuleErrors(mappings, lists),
+		...mappingRuleErrors(mappings, lists, stored),
 	];
 }
 
@@ -282,8 +352,9 @@ export function validateStateMappings(
 export function mappingAutoSaveBlockers(
 	mappings: IStateMapping[],
 	lists: IStateLists,
+	stored?: IStoredStateSettings,
 ): string[] {
-	return mappingRuleErrors(withoutIncompleteMappings(mappings), lists);
+	return mappingRuleErrors(withoutIncompleteMappings(mappings), lists, stored);
 }
 
 export function withoutIncompleteMappings(

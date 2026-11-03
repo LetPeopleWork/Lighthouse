@@ -11,8 +11,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
     /// </summary>
     public class StateMappingValidatorWaitStatesTest
     {
-        private const string Pending = "pending: a wait state inside a mapping is refused";
-
         private const string TestingIsPartOfReview =
             "Wait state \"Testing\" is part of the mapping \"Review\". Use \"Review\" as the wait state instead.";
 
@@ -45,7 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             };
 
         [Test]
-        [Ignore(Pending)]
         public void TeamWaitStateNamingOneStateInsideAMapping_IsRefusedAskingForTheMappingsName()
         {
             var settings = TeamSettings(["Testing"], Review());
@@ -54,7 +51,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void PortfolioWaitStateNamingOneStateInsideAMapping_IsRefusedAskingForTheMappingsName()
         {
             var settings = Settings<PortfolioSettingDto>(["Testing"], Review());
@@ -63,7 +59,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void WaitStateWrittenInAnotherCaseWithPadding_IsRefusedNamingItTrimmed()
         {
             var settings = TeamSettings([" testing "], new StateMappingDto { Name = " Review ", States = ["Code Review", "Testing"] });
@@ -74,7 +69,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void WaitStateNamingTheOtherStateOfAMappingNamedAfterOneOfItsStates_IsRefused()
         {
             var settings = TeamSettings(["Resolved"], new StateMappingDto { Name = "Active", States = ["Active", "Resolved"] });
@@ -128,7 +122,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void NewWaitStateInsideAStoredMapping_IsRefused()
         {
             var stored = StoredTeam([], new StateMapping { Name = "Review", States = ["Code Review", "Testing"] });
@@ -137,7 +130,6 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
-        [Ignore(Pending)]
         public void StoredWaitStateThatThisSaveGroupsIntoAMapping_IsRefused()
         {
             var stored = StoredTeam(["Testing"], new StateMapping { Name = "Review", States = ["Code Review"] });

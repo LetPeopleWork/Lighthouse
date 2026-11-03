@@ -261,7 +261,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore("pending: a wait state inside a mapping is refused")]
         public async Task SavingAWaitStateThatNamesOneStateInsideAMapping_IsRefusedAskingForTheMappingsName()
         {
             SeedOwner();

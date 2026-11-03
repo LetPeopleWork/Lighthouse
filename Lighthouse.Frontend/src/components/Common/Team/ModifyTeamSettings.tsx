@@ -21,6 +21,8 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import {
+	type IStoredStateSettings,
+	storedStateSettingsOf,
 	validateStateMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
@@ -62,6 +64,22 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	const { teamService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const teamIdRef = useRef(0);
+	const storedRef = useRef<IStoredStateSettings | undefined>(undefined);
+
+	const loadSettings = useCallback(async () => {
+		const loaded = await getTeamSettings();
+		storedRef.current = storedStateSettingsOf(loaded);
+		return loaded;
+	}, [getTeamSettings]);
+
+	const persistSettings = useCallback(
+		async (settings: ITeamSettings) => {
+			const saved = await saveTeamSettings(settings);
+			storedRef.current = storedStateSettingsOf(saved ?? settings);
+			return saved;
+		},
+		[saveTeamSettings],
+	);
 
 	const refreshDependentData = useCallback(async () => {
 		if (teamIdRef.current > 0) {
@@ -91,15 +109,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		doneHandlers,
 	} = useModifySettings<ITeamSettings>({
 		getWorkTrackingSystems,
-		getSettings: getTeamSettings,
-		saveSettings: saveTeamSettings,
+		getSettings: loadSettings,
+		saveSettings: persistSettings,
 		validateSettings: validateTeamSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultTeamSchema,
 		additionalFetch: refreshDependentData,
 		autoSave: { enabled: true, canSave: !disableSave, refreshOnSave: true },
 		validateForm: (s, system, isDefault) =>
-			teamAutoSaveBlockers(s, system, isDefault, getTerm),
+			teamAutoSaveBlockers(s, system, isDefault, getTerm, storedRef.current),
 	});
 
 	teamIdRef.current = teamSettings?.id ?? 0;
@@ -109,6 +127,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		return validateStateMappings(
 			teamSettings.stateMappings || [],
 			teamSettings,
+			storedRef.current,
 		);
 	}, [teamSettings]);
 
