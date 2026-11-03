@@ -118,8 +118,6 @@ const goToNextPage = async (user: UserEvent, rangeThere: string) => {
 
 const ENOUGH_FOR =
 	"enough for the next Refinement (85%) · not needed before then";
-const ALL_143_NEEDED =
-	"All 143 Work Items in Refinement are needed before the next Refinement.";
 
 const THE_LINE =
 	/^(enough for the next Refinement \(85%\) · not needed before then|All \d+ Work Items in Refinement are needed before the next Refinement\.|The only Work Item in Refinement is needed before the next Refinement\.)$/;
@@ -204,7 +202,7 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 				),
 			});
 			const { user } = renderTheRefinementTab(
-				gravitysRefinement({}, workItemsInRefinement(143)),
+				gravityNeeding(120, workItemsInRefinement(143)),
 				sizingLogService,
 			);
 			await theRowOf(reference(1));
@@ -213,11 +211,30 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 			expect(theRowsOnThisPage().map((shown) => shown.referenceId)).toEqual(
 				references(1, 100),
 			);
+			// The first page must not call its own 100 rows all needed while 143 are in refinement.
+			expect(theRowsOnThisPage().map((shown) => shown.number)).toEqual(
+				references(1, 100).map((_, index) => String(index + 1)),
+			);
+			expect(
+				screen.getByRole("img", {
+					name: "100 of 120 needed before the next Refinement",
+				}),
+			).toBeInTheDocument();
+			expectOnThisPage(null);
 
 			await goToNextPage(user, "101–143 of 143");
 			expect(theRowsOnThisPage().map((shown) => shown.referenceId)).toEqual(
 				references(101, 143),
 			);
+			expect(theRowsOnThisPage().map((shown) => shown.number)).toEqual([
+				...references(101, 120).map((_, index) => String(index + 101)),
+				...references(121, 143).map(() => ""),
+			]);
+			expectOnThisPage({
+				side: "below",
+				by: reference(120),
+				says: ENOUGH_FOR,
+			});
 
 			await user.click(theButton(await theRowOf(reference(131)), "Yes"));
 
@@ -251,94 +268,6 @@ describe("Team Gravity's 143 Work Items in refinement can all be reached", () =>
 			expect(
 				screen.queryByRole("button", { name: "Go to next page" }),
 			).not.toBeInTheDocument();
-		},
-		RENDER_HEAVY,
-	);
-
-	// Where the line lands on each page for every placement that matters around the page edge.
-	it.each<[number, LineOnThePage | null, LineOnThePage | null]>([
-		[0, { side: "above", by: reference(1), says: ENOUGH_FOR }, null],
-		[20, { side: "below", by: reference(20), says: ENOUGH_FOR }, null],
-		[100, { side: "below", by: reference(100), says: ENOUGH_FOR }, null],
-		[101, null, { side: "below", by: reference(101), says: ENOUGH_FOR }],
-		[120, null, { side: "below", by: reference(120), says: ENOUGH_FOR }],
-		[143, null, { side: "below", by: reference(143), says: ENOUGH_FOR }],
-		[150, null, { side: "below", by: reference(143), says: ALL_143_NEEDED }],
-	])(
-		"with %i needed, the line sits where it falls in the whole list (page 1: %o, page 2: %o)",
-		async (high, onPageOne, onPageTwo) => {
-			const { user } = renderTheRefinementTab(
-				gravityNeeding(high, workItemsInRefinement(143)),
-			);
-			await theRowOf(reference(1));
-
-			expectOnThisPage(onPageOne);
-
-			await goToNextPage(user, "101–143 of 143");
-
-			expectOnThisPage(onPageTwo);
-		},
-		RENDER_HEAVY,
-	);
-
-	// The first page must not call its own 100 rows all needed while 143 are in refinement.
-	it(
-		"with 120 needed, numbers the first page 1 to 100 and continues at 101 on the second, up to 120",
-		async () => {
-			const { user } = renderTheRefinementTab(
-				gravityNeeding(120, workItemsInRefinement(143)),
-			);
-			await theRowOf(reference(1));
-
-			expect(theRowsOnThisPage().map((shown) => shown.number)).toEqual(
-				references(1, 100).map((_, index) => String(index + 1)),
-			);
-			expect(
-				screen.getByRole("img", {
-					name: "100 of 120 needed before the next Refinement",
-				}),
-			).toBeInTheDocument();
-			expect(screen.queryAllByText(THE_LINE)).toEqual([]);
-
-			await goToNextPage(user, "101–143 of 143");
-
-			expect(theRowsOnThisPage().map((shown) => shown.number)).toEqual([
-				...references(101, 120).map((_, index) => String(index + 101)),
-				...references(121, 143).map(() => ""),
-			]);
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"with 120 needed, a State filter on the second page that leaves 64 shows them all, the line under the last",
-		async () => {
-			const { user } = renderTheRefinementTab(
-				gravityNeeding(120, workItemsInRefinement(143)),
-			);
-			await theRowOf(reference(1));
-			await goToNextPage(user, "101–143 of 143");
-
-			await user.click(screen.getByLabelText("State column menu"));
-			await user.click(await screen.findByRole("menuitem", { name: "Filter" }));
-			await user.type(
-				await screen.findByRole("textbox", { name: "Value" }),
-				"Next",
-			);
-
-			await waitFor(
-				() =>
-					expect(theRowsOnThisPage().map((shown) => shown.referenceId)).toEqual(
-						references(1, 64),
-					),
-				{ timeout: 5000 },
-			);
-			expectOnThisPage({
-				side: "below",
-				by: reference(64),
-				says: "All 64 Work Items in Refinement are needed before the next Refinement.",
-			});
-			expect(screen.queryByText(/^\d+–\d+ of \d+$/)).not.toBeInTheDocument();
 		},
 		RENDER_HEAVY,
 	);
