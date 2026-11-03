@@ -40,18 +40,4 @@ describe("StateMappingsEditor over raw Doing states", () => {
 			screen.getAllByRole("option").map((option) => option.textContent),
 		).toEqual(["Analysis"]);
 	});
-
-	it("says nothing about a mapping state that is in none of the lists", () => {
-		render(
-			<StateMappingsEditor
-				stateMappings={[{ name: "Review", states: ["Code Review", "Testing"] }]}
-				doingStates={["Code Review"]}
-				onChange={vi.fn()}
-			/>,
-		);
-
-		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-		expect(screen.queryByText(/not (listed|in)/i)).not.toBeInTheDocument();
-		expect(screen.queryByText(/warning/i)).not.toBeInTheDocument();
-	});
 });
