@@ -10,7 +10,6 @@ import type {
 	IReportTemplates,
 	ReportTemplateKey,
 } from "../../../../models/Reports/Report";
-import { ApiError } from "../../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../../services/Api/ApiServiceContext";
 import {
 	usageDataReportTemplateFor,
@@ -24,54 +23,21 @@ import {
 	reportQueryKeyOf,
 	reportsQueryKeyOf,
 } from "../reportOwner";
+import { refusalCopyFor, useRefusalWords } from "./reportRefusalCopy";
+import { reportTypes } from "./reportTypes";
 import {
-	COULD_NOT_SAVE,
-	NO_LONGER_EXISTS,
-	type RefusalWords,
-	refusalCopyFor,
-	useRefusalWords,
-} from "./reportRefusalCopy";
-import { type ReportTypeStep, reportTypes } from "./reportTypes";
+	canMoveOn,
+	firstStepOf,
+	isThenBeforeCutoff,
+	saveFailureCopyFor,
+} from "./reportWizardRules";
 import TypeStep from "./TypeStep";
 
 const TITLE_ID = "report-wizard-title";
-const STALE_SAVE =
-	"This report was changed by someone else. Reload to see their changes.";
 const TYPE_STEP = 0;
-/** Type and Then are locked on an edit, so it opens on Now, the first step it can change. */
-const FIRST_EDITABLE_STEP = 2;
-
-const firstStepOf = (isEditing: boolean): number =>
-	isEditing ? FIRST_EDITABLE_STEP : TYPE_STEP;
 
 const CREATING = { title: "Create Report", action: "Create" };
 const EDITING = { title: "Edit report", action: "Save" };
-
-/** Somebody else saved the report after this edit read it, so the edit would overwrite theirs. */
-const isStaleSave = (error: unknown): boolean =>
-	error instanceof ApiError && error.code === 409;
-
-const isThenBeforeCutoff = (error: unknown): boolean =>
-	error instanceof ApiError && error.problemCode === "then-before-cutoff";
-
-/** Somebody else deleted the report after this edit read it. */
-const isGone = (error: unknown): boolean =>
-	error instanceof ApiError && error.code === 404;
-
-const saveFailureCopyFor = (error: unknown, words: RefusalWords): string => {
-	if (isStaleSave(error)) return STALE_SAVE;
-	if (isGone(error)) return NO_LONGER_EXISTS;
-	return refusalCopyFor(error, words, COULD_NOT_SAVE);
-};
-
-const canMoveOn = <TDraft,>(
-	step: ReportTypeStep<TDraft> | undefined,
-	isFrozen: boolean,
-	draft: TDraft,
-	templates: IReportTemplates | undefined,
-): boolean =>
-	templates !== undefined &&
-	(step === undefined || isFrozen || step.isComplete(draft, templates));
 
 interface ReportWizardProps {
 	owner: IReportOwner;

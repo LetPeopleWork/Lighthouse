@@ -7,53 +7,43 @@ import {
 	DialogTitle,
 	Typography,
 } from "@mui/material";
-import { format, subDays } from "date-fns";
 import type React from "react";
 import { useMemo, useState } from "react";
-import WizardStepperFrame, {
-	type WizardFrameAction,
-} from "../../components/Common/CreateWizards/WizardStepperFrame";
+import WizardStepperFrame from "../../components/Common/CreateWizards/WizardStepperFrame";
 import type { IReportTemplates } from "../../models/Reports/Report";
 import type {
 	IReportCreationOptions,
 	IReportCreationOwner,
 } from "../../models/Reports/ReportsAcrossOwners";
-import { parseLocalDate } from "../../utils/date/localDate";
-import { LONG_DAY } from "../Common/Reports/wizard/longDay";
-import {
-	type ReportTypeStep,
-	reportTypes,
-	templatesForOwnersOf,
-} from "../Common/Reports/wizard/reportTypes";
-import { ownerCannotHold } from "../Common/Reports/wizard/reportWindowCheck";
+import { templatesForOwnersOf } from "../Common/Reports/wizard/reportTypes";
 import TypeStep from "../Common/Reports/wizard/TypeStep";
+import BulkResult from "./BulkResult";
 import {
-	lengthOf,
-	nowLengthOf,
-	thenEndOf,
-} from "../Common/Reports/wizard/thenAndNow/thenAndNowDraft";
-import BulkResult, { type BulkRun, reportsWord } from "./BulkResult";
+	chosen,
+	createActionOf,
+	type Draft,
+	nextActionOf,
+	OWNER_STEP,
+	runOf,
+	STEP_LABELS,
+	TYPE_STEP,
+	type,
+	typeStepAt,
+} from "./bulkWizardSteps";
 import OwnerStep, {
-	isOverTheCeiling,
-	OVER_THE_CEILING_ID,
 	type OwnerLimitOf,
 	type OwnersStatus,
 	ownerKeyOf,
 } from "./OwnerStep";
+import {
+	holdableOwners,
+	limitOfFor,
+	pickedOwnersOf,
+	picksThatCanStillHold,
+} from "./ownerLimitOfWindow";
 import { useBulkReportCreation } from "./useBulkReportCreation";
 
 const TITLE_ID = "bulk-report-wizard-title";
-const TYPE_STEP = 0;
-const chosen = "then-and-now";
-const type = reportTypes[chosen];
-type Draft = ReturnType<typeof type.forOwners.newDraft>;
-
-/** Type, then the type's own steps, then who gets the report. */
-const STEP_LABELS = ["Type", ...type.steps.map((step) => step.label), "Owners"];
-const OWNER_STEP = STEP_LABELS.length - 1;
-
-const createLabelOf = (count: number): string =>
-	`Create ${count} ${reportsWord(count)}`;
 
 const byName = (left: IReportCreationOwner, right: IReportCreationOwner) =>
 	left.ownerName.localeCompare(right.ownerName);
@@ -75,88 +65,6 @@ const useOwnersToCreateOn = (
 				.sort(byName),
 		[options.owners, ownerKind, isAdmin],
 	);
-
-/** What stops an owner from holding the window as configured so far, or null when it holds it. */
-const limitOfFor =
-	(draft: Draft, templates: IReportTemplates): OwnerLimitOf =>
-	(owner) => {
-		const thenLength = lengthOf(draft.thenLength);
-		const nowLength = lengthOf(nowLengthOf(draft));
-		const thenEndDay = thenEndOf(draft, templates);
-		const thenEnd = parseLocalDate(thenEndDay);
-		const keptSince =
-			owner.earliestStart === null ? null : parseLocalDate(owner.earliestStart);
-		if (thenLength === null || thenEnd === null || keptSince === null)
-			return null;
-		const today = parseLocalDate(templates.today);
-		const tooLong: { window: "Then" | "Now"; start: Date }[] = [];
-		if (
-			ownerCannotHold(
-				{ side: "then", end: thenEndDay, lengthDays: thenLength },
-				templates,
-				owner,
-			)
-		)
-			tooLong.push({
-				window: "Then",
-				start: subDays(thenEnd, thenLength - 1),
-			});
-		if (
-			nowLength !== null &&
-			today !== null &&
-			ownerCannotHold({ side: "now", lengthDays: nowLength }, templates, owner)
-		)
-			tooLong.push({ window: "Now", start: subDays(today, nowLength - 1) });
-		tooLong.sort((left, right) => left.start.getTime() - right.start.getTime());
-		const furthestBack = tooLong[0];
-		return furthestBack === undefined
-			? null
-			: {
-					keptSince: format(keptSince, LONG_DAY),
-					window: furthestBack.window,
-					windowStarts: format(furthestBack.start, LONG_DAY),
-				};
-	};
-
-const typeStepAt = (activeStep: number): ReportTypeStep<Draft> | undefined =>
-	activeStep > TYPE_STEP && activeStep < OWNER_STEP
-		? type.steps[activeStep - 1]
-		: undefined;
-
-const nextActionOf = (
-	activeStep: number,
-	draft: Draft,
-	templates: IReportTemplates,
-	onNext: () => void,
-): WizardFrameAction | undefined => {
-	if (activeStep === OWNER_STEP) return undefined;
-	const step = typeStepAt(activeStep);
-	return {
-		label: "Next",
-		onClick: onNext,
-		disabled: step !== undefined && !step.isComplete(draft, templates),
-	};
-};
-
-const createActionOf = (
-	activeStep: number,
-	pickedCount: number,
-	ownersStatus: OwnersStatus,
-	onCreate: () => void,
-): WizardFrameAction | undefined =>
-	activeStep === OWNER_STEP
-		? {
-				label: createLabelOf(pickedCount),
-				onClick: onCreate,
-				disabled:
-					ownersStatus !== "ready" ||
-					pickedCount === 0 ||
-					isOverTheCeiling(pickedCount),
-				describedBy: isOverTheCeiling(pickedCount)
-					? OVER_THE_CEILING_ID
-					: undefined,
-			}
-		: undefined;
 
 interface StepContentProps {
 	activeStep: number;
@@ -227,15 +135,6 @@ const StepContent: React.FC<Readonly<StepContentProps>> = ({
 	);
 };
 
-const runOf = (
-	creation: ReturnType<typeof useBulkReportCreation>,
-): BulkRun | null => {
-	if (creation.isPending) return { status: "pending" };
-	if (creation.isError) return { status: "error" };
-	if (creation.isSuccess) return { status: "success", outcomes: creation.data };
-	return null;
-};
-
 interface ReadyWizardProps {
 	options: IReportCreationOptions;
 	isTeamAdmin: IsAdmin;
@@ -274,21 +173,13 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 	};
 
 	const limitOf = limitOfFor(draft, templates);
-	const canHold = (owner: IReportCreationOwner) => limitOf(owner) === null;
+	const allOwners = [...teams, ...portfolios];
 
 	// A pick the new window cannot hold is dropped for good, not merely hidden until the window shortens again.
 	const changeDraft = (next: Draft) => {
-		const limitOfNext = limitOfFor(next, templates);
 		setDraft(next);
 		setPicked(
-			new Set(
-				[...teams, ...portfolios]
-					.filter(
-						(owner) =>
-							picked.has(ownerKeyOf(owner)) && limitOfNext(owner) === null,
-					)
-					.map(ownerKeyOf),
-			),
+			picksThatCanStillHold(allOwners, picked, limitOfFor(next, templates)),
 		);
 	};
 
@@ -296,13 +187,11 @@ const ReadyWizard: React.FC<Readonly<ReadyWizardProps>> = ({
 		setPicked(
 			new Set([
 				...picked,
-				...owners.filter(canHold).map((owner) => ownerKeyOf(owner)),
+				...holdableOwners(owners, limitOf).map((owner) => ownerKeyOf(owner)),
 			]),
 		);
 
-	const pickedOwners = [...teams, ...portfolios].filter(
-		(owner) => picked.has(ownerKeyOf(owner)) && canHold(owner),
-	);
+	const pickedOwners = pickedOwnersOf(allOwners, picked, limitOf);
 	const pickedKeys = new Set(pickedOwners.map(ownerKeyOf));
 	const pickedNames = useMemo(
 		() =>
