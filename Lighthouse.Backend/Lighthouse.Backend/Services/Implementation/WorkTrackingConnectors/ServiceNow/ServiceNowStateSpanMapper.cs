@@ -108,7 +108,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         private static List<ServiceNowStateSpan> TheTeamRecognisesAsState(
             IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
         {
-            return [.. spans.Where(span => owner.MapStateToStateCategory(span.Label) != StateCategories.Unknown)];
+            var lists = owner.CategoryLists();
+            return [.. spans.Where(span => lists.CategoryOfRawState(span.Label) != StateCategories.Unknown)];
         }
 
         private static List<ServiceNowStateSpan> InStartOrder(IReadOnlyList<ServiceNowStateSpan> spans)

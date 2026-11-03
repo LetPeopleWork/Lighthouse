@@ -728,6 +728,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private List<WorkItem> ProjectStateAsOf(Team team, IReadOnlyCollection<WorkItem> items, DateTime asOf)
         {
             var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(team, items);
+            var lists = team.CategoryLists();
 
             foreach (var item in itemsWithTransitions)
             {
@@ -739,7 +740,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
 
                 item.State = stateOnDay.ToState;
-                item.StateCategory = team.CategoryOfDisplayName(stateOnDay.ToState);
+                item.StateCategory = lists.CategoryOfDisplayName(stateOnDay.ToState);
                 item.CurrentStateEnteredAt = stateOnDay.TransitionedAt;
             }
 

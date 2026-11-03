@@ -3,6 +3,8 @@ namespace Lighthouse.Backend.Models
     /// <summary>
     /// A To Do, Doing and Done list read against a set of mappings. Owners read their own lists through it, and a
     /// validator can read the lists of a settings payload through it without building an owner to hold them.
+    /// It reads the lists once, when first asked, and answers every later question from that reading, so hold one
+    /// for as long as the lists stay as they are (a refresh, a request), and take a new one after changing them.
     /// </summary>
     public sealed class StateCategoryLists(
         IReadOnlyList<string> toDoStates,
@@ -11,6 +13,24 @@ namespace Lighthouse.Backend.Models
         IReadOnlyList<StateMapping> stateMappings)
     {
         private static readonly StateCategories[] ListedCategories = [StateCategories.ToDo, StateCategories.Doing, StateCategories.Done];
+
+        private readonly Dictionary<StateCategories, List<string>> normalisedLists = [];
+
+        private List<string>[]? membersByMapping;
+
+        private Dictionary<string, StateCategories>? categoryByRawState;
+
+        private Dictionary<string, StateMapping>? groupByMember;
+
+        // Aligned with the mappings by position, so a mapping is looked up without building its member list again.
+        private List<string>[] MembersByMapping => membersByMapping ??= [.. stateMappings.Select(MembersOf)];
+
+        // Keys are trimmed and compared ignoring case, which is how IsSameState tells two states apart. The first
+        // category that lists a state answers for it, as a scan through the lists in order would.
+        private Dictionary<string, StateCategories> CategoryByRawState => categoryByRawState ??= ReadCategoryByRawState();
+
+        // The first mapping that groups a state answers for it, as a scan through the mappings in order would.
+        private Dictionary<string, StateMapping> GroupByMember => groupByMember ??= ReadGroupByMember();
 
         /// <summary>The stored list of a category, as it was given.</summary>
         public IReadOnlyList<string> StoredStatesOf(StateCategories category) => category switch
@@ -27,7 +47,19 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>The category's raw states as the charts show them: each state replaced by its mapping's name, the group at its first member's position.</summary>
         public List<string> DisplayStatesFor(StateCategories category)
-            => WithoutRepeats(NormalisedStatesFor(StoredStatesOf(category)).Select(MapRawStateToMappedName));
+            => WithoutRepeats(NormalisedStatesOf(category).Select(MapRawStateToMappedName));
+
+        /// <summary>The category's stored list with every mapping name replaced by the mapping's raw states, in order.</summary>
+        public IReadOnlyList<string> NormalisedStatesOf(StateCategories category)
+        {
+            if (!normalisedLists.TryGetValue(category, out var normalised))
+            {
+                normalised = NormalisedStatesFor(StoredStatesOf(category));
+                normalisedLists[category] = normalised;
+            }
+
+            return normalised;
+        }
 
         /// <summary>The To Do, Doing and Done lists as the charts show them, one after the other in that order, no state twice.</summary>
         public List<string> DisplayStatesInWorkflowOrder()
@@ -50,9 +82,9 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>The category of a raw tracker state, read through the normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
         public StateCategories CategoryOfRawState(string rawState)
-            => ListedCategories.FirstOrDefault(
-                category => NormalisedStatesFor(StoredStatesOf(category)).Exists(state => IsSameState(state, rawState)),
-                StateCategories.Unknown);
+            => rawState is not null && CategoryByRawState.TryGetValue(rawState.Trim(), out var category)
+                ? category
+                : StateCategories.Unknown;
 
         /// <summary>
         /// The category of a name an item or a stored transition carries: a raw state, or a mapping's name.
@@ -60,14 +92,14 @@ namespace Lighthouse.Backend.Models
         /// </summary>
         public StateCategories CategoryOfDisplayName(string displayName)
         {
-            var group = GroupNamed(displayName);
+            var group = IndexOfGroupNamed(displayName);
 
-            if (group == null)
+            if (group < 0)
             {
                 return CategoryOfRawState(displayName);
             }
 
-            var listedCategories = MembersOf(group)
+            var listedCategories = MembersByMapping[group]
                 .Select(CategoryOfRawState)
                 .Where(category => category != StateCategories.Unknown)
                 .Distinct()
@@ -94,7 +126,7 @@ namespace Lighthouse.Backend.Models
                 return [entry];
             }
 
-            var members = MembersOf(GroupNamed(entry)!);
+            var members = MembersByMapping[IndexOfGroupNamed(entry)];
 
             if (kind == ListEntryKind.StateOfItsOwnMapping)
             {
@@ -107,14 +139,14 @@ namespace Lighthouse.Backend.Models
         /// <summary>Whether a list entry is a state of the tracker or stands for a mapping's states, judged against the list it sits in.</summary>
         public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry)
         {
-            var group = GroupNamed(entry);
+            var group = IndexOfGroupNamed(entry);
 
-            if (group == null)
+            if (group < 0)
             {
                 return ListEntryKind.NotAGroupName;
             }
 
-            var members = MembersOf(group);
+            var members = MembersByMapping[group];
 
             if (members.Exists(state => IsSameState(state, entry)))
             {
@@ -139,7 +171,7 @@ namespace Lighthouse.Backend.Models
         /// </summary>
         public LegacyListShape? LegacyShape()
         {
-            if (stateMappings.Any(mapping => MembersOf(mapping).Count == 0))
+            if (Array.Exists(MembersByMapping, members => members.Count == 0))
             {
                 return LegacyListShape.EmptyGroup;
             }
@@ -159,7 +191,7 @@ namespace Lighthouse.Backend.Models
         }
 
         private bool GroupsAnotherGroup(string groupName)
-            => MembersOf(GroupNamed(groupName)!).Exists(member => !IsSameState(member, groupName) && GroupNamed(member) != null);
+            => MembersByMapping[IndexOfGroupNamed(groupName)].Exists(member => !IsSameState(member, groupName) && IndexOfGroupNamed(member) >= 0);
 
         /// <summary>The name of the mapping that groups a raw state, or the state itself when no mapping groups it.</summary>
         public string MapRawStateToMappedName(string rawState)
@@ -173,10 +205,54 @@ namespace Lighthouse.Backend.Models
 
         /// <summary>The mapping a list entry names, when that mapping groups at least one state.</summary>
         public StateMapping? GroupNamed(string entry)
-            => stateMappings.FirstOrDefault(mapping => IsSameState(mapping.Name, entry) && MembersOf(mapping).Count > 0);
+        {
+            var group = IndexOfGroupNamed(entry);
+            return group < 0 ? null : stateMappings[group];
+        }
+
+        private int IndexOfGroupNamed(string entry)
+        {
+            for (var index = 0; index < stateMappings.Count; index++)
+            {
+                if (IsSameState(stateMappings[index].Name, entry) && MembersByMapping[index].Count > 0)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
 
         private StateMapping? GroupContaining(string rawState)
-            => stateMappings.FirstOrDefault(mapping => MembersOf(mapping).Exists(member => IsSameState(member, rawState)));
+            => rawState is not null && GroupByMember.TryGetValue(rawState.Trim(), out var group) ? group : null;
+
+        private Dictionary<string, StateCategories> ReadCategoryByRawState()
+        {
+            var lookup = new Dictionary<string, StateCategories>(StringComparer.OrdinalIgnoreCase);
+            foreach (var category in ListedCategories)
+            {
+                foreach (var state in NormalisedStatesOf(category))
+                {
+                    lookup.TryAdd(state.Trim(), category);
+                }
+            }
+
+            return lookup;
+        }
+
+        private Dictionary<string, StateMapping> ReadGroupByMember()
+        {
+            var lookup = new Dictionary<string, StateMapping>(StringComparer.OrdinalIgnoreCase);
+            for (var index = 0; index < stateMappings.Count; index++)
+            {
+                foreach (var member in MembersByMapping[index])
+                {
+                    lookup.TryAdd(member.Trim(), stateMappings[index]);
+                }
+            }
+
+            return lookup;
+        }
 
         /// <summary>The states a mapping groups. A mapping can come back from storage with no states, or with null and blank ones; those name no state of the tracker.</summary>
         public static List<string> MembersOf(StateMapping mapping)

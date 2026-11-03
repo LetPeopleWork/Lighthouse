@@ -26,6 +26,8 @@
 
         StateCategories MapStateToStateCategory(string state);
 
+        StateCategoryLists CategoryLists();
+
         List<string> NormalisedStatesFor(IReadOnlyList<string> storedList);
 
         List<string> DisplayStatesFor(StateCategories category);
