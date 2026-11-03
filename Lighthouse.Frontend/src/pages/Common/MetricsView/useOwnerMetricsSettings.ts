@@ -11,51 +11,46 @@ const NO_STATES: string[] = [];
 const NO_MAPPINGS: IStateMapping[] = [];
 const NO_DEFINITIONS: ICycleTimeDefinition[] = [];
 
-interface DoingColumns {
+interface OwnerSettings<TSettings> {
 	readonly ownerId: number;
 	readonly status: WidgetStatus;
-	readonly states: string[];
+	readonly settings?: TSettings;
 }
 
 /**
- * The settings a Team's or a Portfolio's metrics page reads, fetched for the owner shown. The Doing columns are
- * only ever the shown owner's own; the other values stay those of the last owner loaded until the next arrive.
+ * The settings a Team's or a Portfolio's metrics page reads, fetched for the owner shown. Every value is the shown
+ * owner's own: until its answer arrives, or when it cannot be loaded, the page reads none rather than those of an
+ * owner shown before.
  */
 export function useOwnerMetricsSettings<TSettings extends IBaseSettings>(
 	ownerId: number,
 	getSettings: (ownerId: number) => Promise<TSettings>,
 	ownerLabel: string,
 ) {
-	const [settings, setSettings] = useState<TSettings>();
-	const [doingColumns, setDoingColumns] = useState<DoingColumns>();
+	const [loaded, setLoaded] = useState<OwnerSettings<TSettings>>();
 
 	useEffect(() => {
 		let isCurrentOwner = true;
-		const fetchSettings = async () => {
-			try {
-				const loaded = await getSettings(ownerId);
-				if (!isCurrentOwner) return;
-				setDoingColumns({
-					ownerId,
-					status: "ready",
-					states: loaded.doingDisplayStates ?? [],
-				});
-				setSettings(loaded);
-			} catch (error) {
+		getSettings(ownerId).then(
+			(settings) => {
+				if (isCurrentOwner) {
+					setLoaded({ ownerId, status: "ready", settings });
+				}
+			},
+			(error) => {
 				console.error(`Error fetching ${ownerLabel} settings:`, error);
 				if (isCurrentOwner) {
-					setDoingColumns({ ownerId, status: "error", states: [] });
+					setLoaded({ ownerId, status: "error" });
 				}
-			}
-		};
-
-		fetchSettings().catch((error) => {
-			console.error(`Error fetching ${ownerLabel} settings:`, error);
-		});
+			},
+		);
 		return () => {
 			isCurrentOwner = false;
 		};
 	}, [ownerId, getSettings, ownerLabel]);
+
+	const ofThisOwner = loaded?.ownerId === ownerId ? loaded : undefined;
+	const settings = ofThisOwner?.settings;
 
 	const hasBlockedConfig = useMemo(
 		() =>
@@ -63,16 +58,14 @@ export function useOwnerMetricsSettings<TSettings extends IBaseSettings>(
 		[settings],
 	);
 
-	// Until this owner's own answer arrives, the columns of an owner shown before are not its columns.
-	const columnsOfThisOwner =
-		doingColumns?.ownerId === ownerId ? doingColumns : undefined;
-
 	return {
 		settings,
-		doingStates: columnsOfThisOwner?.states ?? NO_STATES,
-		doingStatesStatus: columnsOfThisOwner?.status ?? "loading",
+		// An older server sends no display list; its Doing list is then the closest thing to the columns.
+		doingStates:
+			settings?.doingDisplayStates ?? settings?.doingStates ?? NO_STATES,
+		doingStatesStatus: ofThisOwner?.status ?? "loading",
 		waitStates: settings?.waitStates ?? NO_STATES,
-		stateMappings: settings ? settings.stateMappings : NO_MAPPINGS,
+		stateMappings: settings?.stateMappings ?? NO_MAPPINGS,
 		cycleTimeDefinitions: settings?.cycleTimeDefinitions ?? NO_DEFINITIONS,
 		hasBlockedConfig,
 		stalenessThresholdDays: settings?.stalenessThresholdDays,

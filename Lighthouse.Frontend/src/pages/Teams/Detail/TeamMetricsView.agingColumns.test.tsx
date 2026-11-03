@@ -14,6 +14,7 @@ import TeamMetricsView from "./TeamMetricsView";
 interface BaseMetricsViewProps {
 	doingStates: string[];
 	doingStatesStatus?: "loading" | "error" | "ready";
+	waitStates: string[];
 }
 
 // The aging widget's frame is the real one, so the words on screen are the words a reader sees.
@@ -25,9 +26,11 @@ vi.mock("../../Common/MetricsView/BaseMetricsView", async () => {
 		BaseMetricsView: ({
 			doingStates,
 			doingStatesStatus,
+			waitStates,
 		}: BaseMetricsViewProps) => (
 			<WidgetShell widgetKey="aging" status={doingStatesStatus}>
 				<div data-testid="doing-columns">{doingStates.join("|")}</div>
+				<div data-testid="wait-states">{waitStates.join("|")}</div>
 			</WidgetShell>
 		),
 	};
@@ -123,5 +126,39 @@ describe("TeamMetricsView aging columns", () => {
 		await act(async () => answerForTeamOne(settingsWith(["A"], ["A"])));
 
 		expect(screen.getByTestId("doing-columns")).toHaveTextContent("B");
+	});
+
+	it("does not hand the charts the wait states of the team it left while the next team's settings are on their way", async () => {
+		getTeamSettings.mockImplementation((id: number) =>
+			id === 1
+				? Promise.resolve({
+						...settingsWith(["A"], ["A"]),
+						waitStates: ["Blocked"],
+					})
+				: new Promise(() => {}),
+		);
+
+		const { rerender } = render(view(teamNamed(1)));
+		await waitFor(() =>
+			expect(screen.getByTestId("wait-states")).toHaveTextContent("Blocked"),
+		);
+
+		rerender(view(teamNamed(2)));
+
+		expect(screen.getByTestId("wait-states")).toBeEmptyDOMElement();
+	});
+
+	it("shows the Doing states as the columns when the settings carry no display list", async () => {
+		getTeamSettings.mockResolvedValue({
+			...settingsWith(["Analysis", "Testing"], []),
+			doingDisplayStates: undefined,
+		});
+
+		render(view(teamNamed(1)));
+
+		await waitFor(() => expect(statusOfTheFrame()).toBe("ready"));
+		expect(screen.getByTestId("doing-columns")).toHaveTextContent(
+			"Analysis|Testing",
+		);
 	});
 });
