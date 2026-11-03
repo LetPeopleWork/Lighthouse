@@ -10,6 +10,7 @@ import { parseRuleSet } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
+import type { WidgetStatus } from "../../Common/MetricsView/widgetStatus";
 
 const parseForecastFilterConditions = (
 	json: string | null | undefined,
@@ -31,9 +32,15 @@ interface TeamMetricsViewProps {
 	team: Team;
 }
 
+interface DoingColumns {
+	readonly teamId: number;
+	readonly status: WidgetStatus;
+	readonly states: string[];
+}
+
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
-	const [doingStates, setDoingStates] = useState<string[]>([]);
+	const [doingColumns, setDoingColumns] = useState<DoingColumns>();
 	const [waitStates, setWaitStates] = useState<string[]>([]);
 	const [stateMappings, setStateMappings] = useState<IStateMapping[]>([]);
 	const [cycleTimeDefinitions, setCycleTimeDefinitions] = useState<
@@ -92,10 +99,16 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	}, [teamService, team]);
 
 	useEffect(() => {
+		let isCurrentTeam = true;
 		const fetchTeamSettings = async () => {
 			try {
 				const settings = await teamService.getTeamSettings(team.id);
-				setDoingStates(settings.doingStates);
+				if (!isCurrentTeam) return;
+				setDoingColumns({
+					teamId: team.id,
+					status: "ready",
+					states: settings.doingDisplayStates ?? [],
+				});
 				setWaitStates(settings.waitStates ?? []);
 				setStateMappings(settings.stateMappings);
 				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
@@ -112,13 +125,23 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 				);
 			} catch (error) {
 				console.error("Error fetching team settings:", error);
+				if (isCurrentTeam) {
+					setDoingColumns({ teamId: team.id, status: "error", states: [] });
+				}
 			}
 		};
 
 		fetchTeamSettings().catch((error) => {
 			console.error("Error fetching team settings:", error);
 		});
+		return () => {
+			isCurrentTeam = false;
+		};
 	}, [team.id, teamService]);
+
+	// Until this team's own answer arrives, the columns of a team shown before are not its columns.
+	const columnsOfThisTeam =
+		doingColumns?.teamId === team.id ? doingColumns : undefined;
 
 	useEffect(() => {
 		if (team.useFixedDatesForThroughput) {
@@ -143,7 +166,8 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			featuresInProgress={inProgressFeatures}
 			featureWip={featureWip}
 			hasBlockedConfig={hasBlockedConfig}
-			doingStates={doingStates}
+			doingStates={columnsOfThisTeam?.states ?? []}
+			doingStatesStatus={columnsOfThisTeam?.status ?? "loading"}
 			waitStates={waitStates}
 			stateMappings={stateMappings}
 			cycleTimeDefinitions={cycleTimeDefinitions}

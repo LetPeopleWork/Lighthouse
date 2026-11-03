@@ -1921,7 +1921,7 @@ describe("Feature Size Percentiles' data, on a Team's and a Portfolio's Flow Ove
 });
 
 describe("a team's aging chart while its Doing columns are on their way", () => {
-	it.skip("shows a lone spinner and no chart while the columns load", async () => {
+	it("shows a lone spinner and no chart while the columns load", async () => {
 		openTheDashboard("team", "flow-metrics", { doingStatesStatus: "loading" });
 		await everythingHasLoaded();
 
@@ -1934,7 +1934,7 @@ describe("a team's aging chart while its Doing columns are on their way", () => 
 		).not.toBeInTheDocument();
 	});
 
-	it.skip("says it couldn't be loaded when the columns could not be fetched, and draws no empty chart", async () => {
+	it("says it couldn't be loaded when the columns could not be fetched, and draws no empty chart", async () => {
 		openTheDashboard("team", "flow-metrics", { doingStatesStatus: "error" });
 		await everythingHasLoaded();
 

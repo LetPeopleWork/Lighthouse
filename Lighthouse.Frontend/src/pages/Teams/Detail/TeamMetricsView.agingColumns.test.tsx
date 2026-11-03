@@ -70,7 +70,7 @@ describe("TeamMetricsView aging columns", () => {
 		);
 	};
 
-	it.skip("shows a loading frame, and no columns, while the settings are on their way", () => {
+	it("shows a loading frame, and no columns, while the settings are on their way", () => {
 		getTeamSettings.mockReturnValue(new Promise(() => {}));
 
 		render(view(teamNamed(1)));
@@ -79,7 +79,7 @@ describe("TeamMetricsView aging columns", () => {
 		expect(screen.getByTestId("doing-columns")).toBeEmptyDOMElement();
 	});
 
-	it.skip("says the columns could not be loaded when the settings fetch fails", async () => {
+	it("says the columns could not be loaded when the settings fetch fails", async () => {
 		getTeamSettings.mockRejectedValue(new Error("offline"));
 
 		render(view(teamNamed(1)));
@@ -88,7 +88,7 @@ describe("TeamMetricsView aging columns", () => {
 		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeVisible();
 	});
 
-	it.skip("shows the columns as the settings display them, groups in place of their states", async () => {
+	it("shows the columns as the settings display them, groups in place of their states", async () => {
 		getTeamSettings.mockResolvedValue(
 			settingsWith(
 				["Analysis", "Code Review", "Testing"],
@@ -104,7 +104,7 @@ describe("TeamMetricsView aging columns", () => {
 		);
 	});
 
-	it.skip("does not let a late answer for the team it left replace the columns of the team it shows", async () => {
+	it("does not let a late answer for the team it left replace the columns of the team it shows", async () => {
 		let answerForTeamOne: (settings: unknown) => void = () => {};
 		getTeamSettings.mockImplementation((id: number) =>
 			id === 1
