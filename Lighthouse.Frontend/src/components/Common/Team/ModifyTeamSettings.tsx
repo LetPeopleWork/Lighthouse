@@ -20,10 +20,9 @@ import ForecastSettingsComponent from "../../../pages/Teams/Edit/ForecastSetting
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
-import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
+	storedStateSettingsOf,
 	validateStateMappings,
-	withoutIncompleteMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -73,7 +72,9 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 
 	const {
 		loading,
+		loadFailed,
 		settings: teamSettings,
+		storedSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formInvalidReasons,
@@ -99,8 +100,14 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		getSchemaForSystem: getDefaultTeamSchema,
 		additionalFetch: refreshDependentData,
 		autoSave: { enabled: true, canSave: !disableSave, refreshOnSave: true },
-		validateForm: (s, system, isDefault) =>
-			teamAutoSaveBlockers(s, system, isDefault, getTerm),
+		validateForm: (s, system, isDefault, stored) =>
+			teamAutoSaveBlockers(
+				s,
+				system,
+				isDefault,
+				getTerm,
+				storedStateSettingsOf(stored),
+			),
 	});
 
 	teamIdRef.current = teamSettings?.id ?? 0;
@@ -110,8 +117,9 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		return validateStateMappings(
 			teamSettings.stateMappings || [],
 			teamSettings,
+			storedStateSettingsOf(storedSettings),
 		);
-	}, [teamSettings]);
+	}, [teamSettings, storedSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>
 		handleWorkTrackingSystemChange(e.target.value);
@@ -124,7 +132,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		});
 
 	return (
-		<LoadingAnimation isLoading={loading} hasError={false}>
+		<LoadingAnimation isLoading={loading} hasError={loadFailed}>
 			<Container maxWidth={false}>
 				{teamSettings && (
 					<Grid container spacing={3}>
@@ -173,23 +181,15 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							onRemoveDoneState={doneHandlers.onRemove}
 							onReorderDoneStates={doneHandlers.onReorder}
 							isForTeam={true}
-							stateMappingNames={withoutIncompleteMappings(
-								teamSettings.stateMappings ?? [],
-							).map((m) => m.name)}
+							stateMappings={teamSettings.stateMappings || []}
 						/>
 
 						<StateMappingsEditor
 							stateMappings={teamSettings.stateMappings || []}
 							doingStates={teamSettings.doingStates || []}
-							onChange={(nextMappings) => {
-								const reconciledDoing = reconcileDoingStates(
-									teamSettings.stateMappings || [],
-									nextMappings,
-									teamSettings.doingStates || [],
-								);
-								updateSettings("stateMappings", nextMappings);
-								updateSettings("doingStates", reconciledDoing);
-							}}
+							onChange={(nextMappings) =>
+								updateSettings("stateMappings", nextMappings)
+							}
 							validationErrors={stateMappingErrors}
 							refreshFailed={refreshFailed}
 							onReloadDependentData={reloadDependentData}
@@ -219,6 +219,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 							teamId={teamSettings.id}
 							toDoStates={teamSettings.toDoStates || []}
 							doingStates={teamSettings.doingStates || []}
+							stateMappings={teamSettings.stateMappings || []}
 							refinement={teamSettings.refinement}
 							onChange={changeRefinement}
 						/>

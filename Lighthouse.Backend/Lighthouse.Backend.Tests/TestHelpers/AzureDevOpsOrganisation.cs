@@ -138,6 +138,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// <summary>The stamp every item carries. Null stands for a tracker that reports no stamp at all.</summary>
         public DateTime? ChangedDate { get; set; } = WhenTheTrackerSaysItLastChanged;
 
+        /// <summary>The state every item is in now.</summary>
+        public string StateOfEveryItem { get; set; } = "Active";
+
+        /// <summary>The states every item went through, oldest first, each with the moment it got there.</summary>
+        public List<(string State, DateTime ChangedDate)> StateHistoryOfEveryItem { get; set; } =
+        [
+            ("New", new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Unspecified)),
+            ("Active", new DateTime(2026, 8, 5, 14, 30, 0, DateTimeKind.Unspecified)),
+        ];
+
         /// <summary>A payload read that answers for none of the ids it was given - a rejected batch.</summary>
         public bool AnswerPayloadReadsWithNothing { get; set; }
 
@@ -347,7 +357,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             var fields = new Dictionary<string, object>
             {
                 [AzureDevOpsFieldNames.Id] = id,
-                [AzureDevOpsFieldNames.State] = "Active",
+                [AzureDevOpsFieldNames.State] = StateOfEveryItem,
                 [AzureDevOpsFieldNames.Title] = $"Item {id}",
                 [AzureDevOpsFieldNames.WorkItemType] = "User Story",
                 [AzureDevOpsFieldNames.CreatedDate] = new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Utc),
@@ -370,10 +380,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         /// organisation that hands back instants already stamped UTC makes every normalisation downstream a
         /// no-op that no test can see fail.
         /// </summary>
-        private static List<AdoWorkItem> TheRevisionsOf(int id) =>
+        private List<AdoWorkItem> TheRevisionsOf(int id) =>
         [
-            ARevision(id, "New", new DateTime(2026, 7, 1, 8, 0, 0, DateTimeKind.Unspecified)),
-            ARevision(id, "Active", new DateTime(2026, 8, 5, 14, 30, 0, DateTimeKind.Unspecified)),
+            .. StateHistoryOfEveryItem.Select(entry => ARevision(id, entry.State, DateTime.SpecifyKind(entry.ChangedDate, DateTimeKind.Unspecified))),
         ];
 
         private static AdoWorkItem ARevision(int id, string state, DateTime changedDate) => new()

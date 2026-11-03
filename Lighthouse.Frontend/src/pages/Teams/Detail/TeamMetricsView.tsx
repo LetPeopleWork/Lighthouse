@@ -1,15 +1,13 @@
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
-import type { IStateMapping } from "../../../models/Common/StateMapping";
-import type { ICycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
 import type { Team } from "../../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
-import { parseRuleSet } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
+import { useOwnerMetricsSettings } from "../../Common/MetricsView/useOwnerMetricsSettings";
 
 const parseForecastFilterConditions = (
 	json: string | null | undefined,
@@ -33,24 +31,28 @@ interface TeamMetricsViewProps {
 
 const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	const [inProgressFeatures, setInProgressFeatures] = useState<IWorkItem[]>([]);
-	const [doingStates, setDoingStates] = useState<string[]>([]);
-	const [waitStates, setWaitStates] = useState<string[]>([]);
-	const [stateMappings, setStateMappings] = useState<IStateMapping[]>([]);
-	const [cycleTimeDefinitions, setCycleTimeDefinitions] = useState<
-		ICycleTimeDefinition[]
-	>([]);
-	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
-	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
-		number | undefined
-	>(undefined);
-	const [blockedStalenessThresholdDays, setBlockedStalenessThresholdDays] =
-		useState<number | undefined>(undefined);
 	const { teamMetricsService, teamService } = useContext(ApiServiceContext);
 	const [dateRange, setDateRange] = useState<number | undefined>(undefined);
 	const [featureWip, setFeatureWip] = useState<number | undefined>(undefined);
-	const [forecastFilterConditions, setForecastFilterConditions] = useState<
-		readonly EvaluatorCondition[]
-	>([]);
+	const getTeamSettings = useCallback(
+		(teamId: number) => teamService.getTeamSettings(teamId),
+		[teamService],
+	);
+	const {
+		settings,
+		doingStates,
+		doingStatesStatus,
+		waitStates,
+		stateMappings,
+		cycleTimeDefinitions,
+		hasBlockedConfig,
+		stalenessThresholdDays,
+		blockedStalenessThresholdDays,
+	} = useOwnerMetricsSettings(team.id, getTeamSettings, "team");
+	const forecastFilterConditions = useMemo(
+		() => parseForecastFilterConditions(settings?.forecastFilterRuleSetJson),
+		[settings],
+	);
 
 	const { getTerm } = useTerminology();
 	const workItemsTerm = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
@@ -92,35 +94,6 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 	}, [teamService, team]);
 
 	useEffect(() => {
-		const fetchTeamSettings = async () => {
-			try {
-				const settings = await teamService.getTeamSettings(team.id);
-				setDoingStates(settings.doingStates);
-				setWaitStates(settings.waitStates ?? []);
-				setStateMappings(settings.stateMappings);
-				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
-				setHasBlockedConfig(
-					(parseRuleSet(settings.blockedRuleSetJson)?.conditions.length ?? 0) >
-						0,
-				);
-				setStalenessThresholdDays(settings.stalenessThresholdDays);
-				setBlockedStalenessThresholdDays(
-					settings.blockedStalenessThresholdDays,
-				);
-				setForecastFilterConditions(
-					parseForecastFilterConditions(settings.forecastFilterRuleSetJson),
-				);
-			} catch (error) {
-				console.error("Error fetching team settings:", error);
-			}
-		};
-
-		fetchTeamSettings().catch((error) => {
-			console.error("Error fetching team settings:", error);
-		});
-	}, [team.id, teamService]);
-
-	useEffect(() => {
 		if (team.useFixedDatesForThroughput) {
 			setDateRange(30);
 		} else {
@@ -144,6 +117,7 @@ const TeamMetricsView: React.FC<TeamMetricsViewProps> = ({ team }) => {
 			featureWip={featureWip}
 			hasBlockedConfig={hasBlockedConfig}
 			doingStates={doingStates}
+			doingStatesStatus={doingStatesStatus}
 			waitStates={waitStates}
 			stateMappings={stateMappings}
 			cycleTimeDefinitions={cycleTimeDefinitions}

@@ -8,8 +8,8 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 {
     /// <summary>
-    /// DISTILL step definitions (Specifications) for Epic 5687 slice 05 — a setting costs a refetch only
-    /// when it changes what is fetched.
+    /// Step definitions for the fetch fingerprint: a setting costs a refetch only when it changes what
+    /// is fetched.
     ///
     /// Backend-observable contract: a stored fetch fingerprint covers everything the delta path skips —
     /// what the query asks the tracker for AND how the answer is read into the stored record. An edit to
@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// time, whether the stored records have to be discarded — and only a connection change does, because
     /// only a connection change makes the same reference id a different item.
     ///
-    /// The summary line's field names are slice 01's, asserted individually, and slice 05 adds one:
+    /// The summary line's field names are asserted individually, and the fingerprint adds one:
     /// <c>reason=</c>. Asserting the token rather than the sentence is what lets the prose improve
     /// without reding a test, and what gives a log pipeline something stable to grep.
     /// </summary>
@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         private const string ReasonField = "reason=";
 
         /// <summary>
-        /// AC-5.2's reason. It is a token, not a sentence: the operator reads it, and so does whatever
+        /// The reason a configuration change gives for a full update. It is a token, not a sentence: the operator reads it, and so does whatever
         /// greps the container log.
         /// </summary>
         private const string ConfigurationChanged = "configuration-changed";
@@ -77,8 +77,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         }
 
         /// <summary>
-        /// A team and a portfolio on one connection, refreshed independently. AC-5.6 is a promise about
-        /// exactly this shape: two entities that share everything except the fingerprint.
+        /// A team and a portfolio on one connection, refreshed independently: two entities that share
+        /// everything except the fingerprint, so an edit to one must not cost the other a refetch.
         /// </summary>
         private (SeededTeam Team, SeededPortfolio Portfolio) GivenATeamAndAPortfolioOnTheSameConnection()
         {
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 new RemoteRecord("FEAT-3", AWhileAgo));
 
         /// <summary>
-        /// Pillar 2: the precondition of every edit scenario is a completed cycle, run through the same
+        /// The precondition of every edit scenario is a completed cycle, run through the same
         /// driving port with the same step method — never a hand-built row that happens to look like one.
         /// </summary>
         private Task GivenTheTeamHasAlreadyBeenRefreshed(SeededTeam team) => WhenTheScheduledRefreshRuns(team);
@@ -116,8 +116,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
         /// <summary>
         /// The instance that upgraded into this release: its work is stored AND already carries remote
         /// change stamps, so the one thing missing is the fingerprint. Without the stamps this scenario
-        /// could not tell AC-5.5 apart from slice 02's "nothing stored has a stamp" branch, which resolves
-        /// to a full cycle for a completely different reason.
+        /// could not tell a missing fingerprint apart from the "nothing stored has a stamp" branch, which
+        /// resolves to a full cycle for a completely different reason.
         /// </summary>
         private void GivenTheTeamsWorkWasStoredByAReleaseThatKnewNothingOfFingerprints(SeededTeam team)
             => SeedStoredWorkItems(
@@ -206,7 +206,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
 
         /// <summary>
         /// The edit goes through the Settings screen's own endpoint, not through the repository: the
-        /// save-time half of this slice lives in the controller, and an edit applied underneath it would
+        /// save-time half of the fingerprint lives in the controller, and an edit applied underneath it would
         /// measure the fingerprint alone.
         /// </summary>
         private void WhenTheOperatorEditsTheTeamsSettings(SeededTeam team, Action<TeamSettingDto> edit)
@@ -230,16 +230,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             => WhenTheOperatorEditsThePortfoliosSettings(portfolio, settings => settings.DataRetrievalValue = "project = SOMEWHEREELSE");
 
         /// <summary>
-        /// The Doing column reads "Dev" only, and the Done column reads "Done" and "Test". The raw state
-        /// set is word-for-word the one the previous mapping produced - only which mapped name, and
-        /// therefore which state category, "Test" lands in has moved.
+        /// "Test" is now read as "Done" instead of "In Progress". The lists hold the tracker's own states,
+        /// so the operator moves "Test" from the Doing list to the Done list along with the mapping; a save
+        /// that regroups it without moving it is refused. The raw state set is word-for-word the one before -
+        /// only which mapped name, and therefore which state category, "Test" lands in has moved.
         /// </summary>
         private void WhenTheOperatorReadsOneRawStateAsADifferentState(SeededTeam team)
-            => WhenTheOperatorEditsTheTeamsSettings(team, settings => settings.StateMappings =
-            [
-                new StateMappingDto { Name = "In Progress", States = ["Dev"] },
-                new StateMappingDto { Name = TheReMappedName, States = [TheReMappedName, AMappedRawState] },
-            ]);
+            => WhenTheOperatorEditsTheTeamsSettings(team, settings =>
+            {
+                settings.StateMappings =
+                [
+                    new StateMappingDto { Name = "In Progress", States = ["Dev"] },
+                    new StateMappingDto { Name = TheReMappedName, States = [TheReMappedName, AMappedRawState] },
+                ];
+                settings.DoingStates = [.. settings.DoingStates.Where(state => state != AMappedRawState)];
+                settings.DoneStates = [.. settings.DoneStates, AMappedRawState];
+            });
 
         /// <summary>
         /// A state moves from the Doing column to the Done column. The union the query is built from does
@@ -493,7 +499,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
             return summaries[0];
         }
 
-        // --- The edits, as a table (AC-5.2 is a promise about every property, not about one) ---
+        // --- The edits, as a table (the promise holds for every property, not for one) ---
 
         /// <summary>
         /// One editable setting, named the way an operator would describe it. <c>Apply</c> is handed a
@@ -560,7 +566,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
                 [new StateMappingDto { Name = "In Progress", States = ["Dev", "Test"] }]),
         ];
 
-        /// <summary>AC-5.3's free list: everything an admin can tune without asking the tracker anything.</summary>
+        /// <summary>Everything an admin can tune without asking the tracker anything, so it costs no refetch.</summary>
         private static TeamEdit[] EveryTeamSettingThatChangesNothingAboutWhatIsFetched() =>
         [
             new("a wait state", (settings, _) => settings.WaitStates = ["In Progress"]),

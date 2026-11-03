@@ -21,11 +21,11 @@ import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/Advanc
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
-import { reconcileDoingStates } from "../../../utils/stateMappingReconciliation";
 import {
+	type IStoredStateSettings,
 	mappingAutoSaveBlockers,
+	storedStateSettingsOf,
 	validateStateMappings,
-	withoutIncompleteMappings,
 } from "../../../utils/stateMappingValidation";
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
@@ -65,6 +65,7 @@ function portfolioAutoSaveBlockers(
 	system: IWorkTrackingSystemConnection | null,
 	isDefault: boolean,
 	getTerm: (key: string) => string,
+	stored: IStoredStateSettings | undefined,
 ): string[] {
 	const schema = s.dataRetrievalSchema;
 	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
@@ -102,7 +103,7 @@ function portfolioAutoSaveBlockers(
 	if (s.doneStates.length === 0) {
 		reasons.push("Add at least one Done State");
 	}
-	reasons.push(...mappingAutoSaveBlockers(s.stateMappings, s));
+	reasons.push(...mappingAutoSaveBlockers(s.stateMappings, s, stored));
 	if (isDefault) {
 		return reasons;
 	}
@@ -153,7 +154,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 
 	const {
 		loading,
+		loadFailed,
 		settings: projectSettings,
+		storedSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formInvalidReasons,
@@ -182,8 +185,14 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			canSave,
 			refreshOnSave: true,
 		},
-		validateForm: (s, system, isDefault) =>
-			portfolioAutoSaveBlockers(s, system, isDefault, getTerm),
+		validateForm: (s, system, isDefault, stored) =>
+			portfolioAutoSaveBlockers(
+				s,
+				system,
+				isDefault,
+				getTerm,
+				storedStateSettingsOf(stored),
+			),
 		additionalFetch: refreshDependentData,
 		initialFetch: loadTeams,
 	});
@@ -195,14 +204,15 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		return validateStateMappings(
 			projectSettings.stateMappings,
 			projectSettings,
+			storedStateSettingsOf(storedSettings),
 		);
-	}, [projectSettings]);
+	}, [projectSettings, storedSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>
 		handleWorkTrackingSystemChange(e.target.value);
 
 	return (
-		<LoadingAnimation isLoading={loading} hasError={false}>
+		<LoadingAnimation isLoading={loading} hasError={loadFailed}>
 			<Container maxWidth={false}>
 				{projectSettings && (
 					<Grid container spacing={3}>
@@ -246,23 +256,15 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 							onRemoveDoneState={doneHandlers.onRemove}
 							onReorderDoneStates={doneHandlers.onReorder}
 							isForTeam={false}
-							stateMappingNames={withoutIncompleteMappings(
-								projectSettings.stateMappings ?? [],
-							).map((m) => m.name)}
+							stateMappings={projectSettings.stateMappings || []}
 						/>
 
 						<StateMappingsEditor
 							stateMappings={projectSettings.stateMappings || []}
 							doingStates={projectSettings.doingStates || []}
-							onChange={(nextMappings) => {
-								const reconciledDoing = reconcileDoingStates(
-									projectSettings.stateMappings || [],
-									nextMappings,
-									projectSettings.doingStates || [],
-								);
-								updateSettings("stateMappings", nextMappings);
-								updateSettings("doingStates", reconciledDoing);
-							}}
+							onChange={(nextMappings) =>
+								updateSettings("stateMappings", nextMappings)
+							}
 							validationErrors={stateMappingErrors}
 							refreshFailed={refreshFailed}
 							onReloadDependentData={reloadDependentData}

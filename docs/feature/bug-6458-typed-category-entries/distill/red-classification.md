@@ -1,0 +1,166 @@
+# DISTILL red classification: bug-6458-typed-category-entries
+
+Every pending scenario was run once with its skip marker removed (backend: SQLite and Postgres for the seeder cases; frontend: Vitest), then the markers were put back. Every one fails because the behaviour is missing (the assertion fires, or the scaffold throws the RED message). None fails on a compile error, a fixture error or a missing import. Tests that already pass are not listed here; they are marked green in `feature-delta.md`.
+
+## Backend (NUnit)
+
+- `AnOlderBackend_ReadingANormalisedList_FindsTheSameStatesAsBeforeTheUpgrade`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_GroupNamedAfterOneOfItsOwnStates_IsTheCategoryOfItsStates`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_ListStillHoldsTheGroupNameInPlaceOfItsStates_IsTheCategoryOfThatList`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Review",Doing)`: the new member is still a scaffold that throws
+- `ClassifyListEntry_AnyGeneratedList_NamesEveryGroupEntryTheWayItWasBuilt`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Analysis",Doing)`: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAGroupBesideOneOfItsStates_IsShadowing`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Backlog",ToDo)`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor("Jellybean",Unknown)`: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAGroupThatIsOneOfItsOwnStates_IsAStateOfTheTracker`: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAGroupWhoseStatesAreNotListed_IsACollapsedGroup`: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAMappingWithNoStates_IsAStateOfTheTracker(True)`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingWhoseStatesAreAllListedNowhere_IsUnknown`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingWhoseStatesSitInDifferentCategories_IsUnknown`: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfAMappingWithNoStates_IsAStateOfTheTracker(False)`: the new member is still a scaffold that throws
+- `CategoryOfDisplayName_MappingWithOneStateListedNowhere_FollowsTheStatesThatAreListed`: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameOfNoGroup_IsAStateOfTheTracker`: the new member is still a scaffold that throws
+- `CategoryOfRawState_ListStillHoldsTheGroupNameInPlaceOfItsStates_FindsTheStatesInThatList`: the new member is still a scaffold that throws
+- `CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown`: the new member is still a scaffold that throws
+- `CategoryOfRawState_ReadsTheListsAsTheyAre("Analysis",Doing)`: the new member is still a scaffold that throws
+- `ClassifyListEntry_NameWrittenInOtherCasingWithSpaces_IsRecognisedAsTheGroup`: the new member is still a scaffold that throws
+- `ClassifyListEntry_StateOfTheGroupIsListedOnlyInAnotherList_IsStillACollapsedGroup`: the new member is still a scaffold that throws
+- `CategoryOfRawState_ReadsTheListsAsTheyAre("analysis`: the new member is still a scaffold that throws
+- `CategoryOfRawState_ReadsTheListsAsTheyAre("Backlog",ToDo)`: the new member is still a scaffold that throws
+- `CategoryOfRawState_ReadsTheListsAsTheyAre("Done",Done)`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_AnyGeneratedList_ChangesNothingTheSecondTime`: the new member is still a scaffold that throws
+- `CategoryOfRawState_ReadsTheListsAsTheyAre("Testing",Doing)`: the new member is still a scaffold that throws
+- `CategoryOfRawState_ReadsTheListsAsTheyAre("Jellybean",Unknown)`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_AnyGeneratedList_KeepsAGroupNameOnlyWhereItIsOneOfTheGroupsOwnStates`: the new member is still a scaffold that throws
+- `DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly(ToDo,["Intake",`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_AnyGeneratedList_MeansTheSameStatesAsTheListBeforeIt`: the new member is still a scaffold that throws
+- `DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly(Doing,["Analysis"])`: the new member is still a scaffold that throws
+- `DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly(Done,["Released",`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_CollapsedGroup_IsReplacedByItsStatesInPlace`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_EmptyList_StaysEmpty`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_EntriesThatAreNullEmptyOrOnlyWhitespace_AreLeftOut`: the new member is still a scaffold that throws
+- `GroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence`: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(setti
+- `TwoMappingNames_DifferingOnlyInWhitespaceAtTheEnds_AreTheSame`: assertion on the behaviour fires: ' Review' and 'Review' | Assert.That(DuplicateNameErrors
+- `SyncTeamWithTeamSettings_CollapsedGroupFromTheCurrentEditor_StoresItsStatesInPlace`: the list is stored as sent instead of normalised
+- `NormalisedStatesFor_GroupNamedAfterItsOwnState_ListsTheOtherStatesRightAfterIt`: the new member is still a scaffold that throws
+- `GroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates`: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(setti
+- `GroupWhoseOnlyStateIsListedInTwoCategories_IsRefused`: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(setti
+- `NormalisedStatesFor_ListThatAlreadyHoldsEveryState_PassesThroughInTheSameOrder`: the new member is still a scaffold that throws
+- `DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState`: the new member is still a scaffold that throws
+- `SyncTeamWithTeamSettings_EntriesThatAreNullOrOnlyWhitespace_AreLeftOut`: assertion on the behaviour fires: System.NullReferenceException : Object reference not set
+- `DisplayStatesFor_AStateWhoseGroupWasDeleted_IsLeftExactlyAsStored`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_NameOfAMappingWithNoStates_StaysInTheList(True)`: the new member is still a scaffold that throws
+- `DisplayStatesFor_GroupNamedAfterOneOfItsOwnStates_ShowsTheGroupOnce`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_NameOfAMappingWithNoStates_StaysInTheList(False)`: the new member is still a scaffold that throws
+- `DisplayStatesFor_GroupWhoseStatesAreListedNowhere_LeavesTheListAlone`: the new member is still a scaffold that throws
+- `SyncTeamWithTeamSettings_GroupChangedInTheSameSave_ReadsTheListAgainstTheGroupJustSent`: the list is stored as sent instead of normalised
+- `DisplayStatesFor_LaterMemberBeforeEarlierOne_ShowsTheGroupAtTheFirstListedMember`: the new member is still a scaffold that throws
+- `DisplayStatesFor_MembersApart_ShowsTheGroupWhereItsFirstMemberIs`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_NoMappings_ReturnsTheListWithoutRepeats`: the new member is still a scaffold that throws
+- `DisplayStatesFor_MembersNextToEachOther_ShowsOneGroupInTheirPlace`: the new member is still a scaffold that throws
+- `SyncTeamWithTeamSettings_GroupNamedAfterItsOwnState_StoresTheOtherStatesRightAfterIt`: the list is stored as sent instead of normalised
+- `DisplayStatesFor_NoMappings_ReturnsTheListAsItIs`: the new member is still a scaffold that throws
+- `NormalisedStatesFor_SameStateInDifferentCasing_KeepsTheFirstSpelling`: the new member is still a scaffold that throws
+- `DisplayStatesFor_SameStateListedTwiceInDifferentCasingAndSpacing_ShowsItOnce`: the new member is still a scaffold that throws
+- `DisplayStatesFor_StatesPaddedWithTabsAndNonBreakingSpaces_AreRecognisedAsTheirGroup`: the new member is still a scaffold that throws
+- `NameBesideOneOfItsGroupsStatesInDoing_IsRefusedWithTheSentenceTheSettingsPageShows`: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(setti
+- `NameBesideOneOfItsGroupsStatesInDone_IsRefusedNamingTheDoneList`: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(setti
+- `NameBesideOneOfItsGroupsStatesInToDo_IsRefusedNamingTheToDoList`: assertion on the behaviour fires: Assert.That(StateMappingValidator.ValidateSettings(setti
+- `Reads_CollapsedListTheStartUpPassCouldNotRewrite_FindTheGroupsStatesEverywhere`: the category lookup and display view are still scaffolds that throw
+- `SyncTeamWithTeamSettings_RefinementChosenOnAGroup_KeepsTheGroup`: the list is stored as sent instead of normalised
+- `Reads_MappingWithNoStates_KeepTheEntryAsAStateAndDoNotThrow(True)`: null states: ArgumentNullException inside GetRawStatesForCategory; empty states: the entry is dropped from AllStates
+- `Reads_MappingWithNoStates_KeepTheEntryAsAStateAndDoNotThrow(False)`: null states: ArgumentNullException inside GetRawStatesForCategory; empty states: the entry is dropped from AllStates
+- `Seed_EveryLineItWrites_CarriesOnlyTheOwnerTypeIdCountsAndAFixedRule`: the new member is still a scaffold that throws
+- `NoCodeExpandsACategoryList`: assertion on the behaviour fires: These files still expand the To Do, Doing or Done list t
+- `Seed_MappingWithNoStates_LogsOneWarningWithAFixedRuleAndLeavesTheOwnerAlone(True)`: the seeder scaffold throws instead of logging the EmptyGroup warning
+- `Seed_MappingWithNoStates_LogsOneWarningWithAFixedRuleAndLeavesTheOwnerAlone(False)`: the seeder scaffold throws instead of logging the EmptyGroup warning
+- `Seed_NothingToRewrite_SavesNothing`: the new member is still a scaffold that throws
+- `Seed_SaveFails_LogsAWarningAndLetsTheStartContinue`: the new member is still a scaffold that throws
+- `Seed_SaveFailsForTheFirstOwner_StillRewritesTheSecond`: the new member is still a scaffold that throws
+- `OnlyCodeThatReadsSettingsNamingAGroupCallsTheExpansion`: assertion on the behaviour fires: Assert.That(callers.Except(FilesThatReadSettingsNamingAG
+- `PortfolioLookingBack_FeatureWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing`: the group name still lands under Unknown
+- `TeamLookingBack_ItemWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing`: the group name still lands under Unknown
+- `DemoJourney_GroupSitsFirstInDoing_StartsTheJourneyInTheGroup`: the demo journey still makes a self-transition inside the group
+- `DemoJourney_TeamGroupsTwoOfItsDoingStates_NeverMovesAnItemFromTheGroupToItself`: the demo journey still makes a self-transition inside the group
+- `ReadingAnOwnerWhoseGroupHasNoStates_KeepsTheEntryAsAStateAndDoesNotFail(True)`: the payload carries no display lists
+- `ReadingAnOwnerWhoseGroupHasNoStates_KeepsTheEntryAsAStateAndDoesNotFail(False)`: the payload carries no display lists
+- `ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay`: the list is stored as sent instead of normalised
+- `ReadingAnOwnerWhoseStoredListHoldsAGroupNameBesideOneOfItsStates_ShowsTheGroupOnceAsTheOldExpansionDid`: the settings payload carries no display lists yet
+- `ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupsStatesAndTheGroupOnDisplay`: the states of the group are missing from the list read, and no display lists
+- `SavingAGroupNamedAfterOneOfItsStatesWithoutTheOthers_AddsTheOthersRightAfterIt`: the list is stored as sent instead of normalised
+- `SavingAGroupOverAState_WhoseEarlierGroupWasDeleted_LeavesNoLeftoverName`: the settings payload carries no display lists yet
+- `SavingAGroupOverDoneStates_ShowsItInDone`: the settings payload carries no display lists yet
+- `SavingAGroupOverToDoStates_ShowsItInToDo`: the settings payload carries no display lists yet
+- `AnOwnerWhoseWriteIsRefused_IsSkipped_AndTheOwnersAfterItAreStillWritten`: the seeder scaffold throws; once built it must skip the refused owner and still read its states
+- `AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten(Sqlite,True)`: the seeder scaffold throws before the owner is left alone with its EmptyGroup warning
+- `SavingAGroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence`: the save is accepted (200) where a refusal (400) is expected
+- `SavingAGroupWhoseOnlyStateIsListedInTwoCategories_IsRefused`: the save is accepted (200) where a refusal (400) is expected
+- `SavingAGroupWithAStateListedNowhere_IsAcceptedWithoutAWarning`: the settings payload carries no display lists yet
+- `SavingANameBesideOneOfItsGroupsStates_IsRefusedWithTheSentenceTheSettingsPageShows`: the save is accepted (200) where a refusal (400) is expected
+- `AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten(Sqlite,False)`: the seeder scaffold throws before the owner is left alone with its EmptyGroup warning
+- `SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates`: the save is accepted (200) where a refusal (400) is expected
+- `SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates`: the list is stored as sent instead of normalised
+- `SavingGroupStatesThatAreApart_ShowsTheGroupWhereItsFirstStateIs`: the settings payload carries no display lists yet
+- `SavingListsWithNullAndBlankEntries_LeavesThemOut`: assertion on the behaviour fires: System.NullReferenceException : Object reference not set
+- `SavingRawStatesWithAGroup_ReadsBackTheSameStatesAndTheGroupOnDisplay`: the settings payload carries no display lists yet
+- `SavingTheGroupAndTheListInOneSave_ReadsTheListAgainstTheGroupJustSent`: the list is stored as sent instead of normalised
+- `SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace`: the list is stored as sent instead of normalised
+- `SavingTheOnlyEntryAsTheGroupsName_StoresTheGroupsStateInstead`: assertion on the behaviour fires: Assert.That(Strings(settings, "doingStates"), Is.EqualTo
+- `SavingTheSameSettingsTwice_ChangesNothingTheSecondTime`: the list is stored as sent instead of normalised
+- `SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName`: suggestions read the stored list directly and offer the group name
+- `AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten(Postgres,True)`: the seeder scaffold throws before the owner is left alone with its EmptyGroup warning
+- `AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten(Postgres,False)`: the seeder scaffold throws before the owner is left alone with its EmptyGroup warning
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,AlreadyRawWithNoGroup)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,AlreadyRawGroupStatesNextToEachOther)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,AlreadyRawGroupStatesApart)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,GroupNamedInPlaceOfItsStates)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,GroupNamedAfterOneOfItsOwnStates)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,NameShadowingAStateThatIsStillListed)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Sqlite,GroupThatListsAnotherGroupsName)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Postgres,AlreadyRawWithNoGroup)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Postgres,AlreadyRawGroupStatesNextToEachOther)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Postgres,AlreadyRawGroupStatesApart)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Postgres,GroupNamedInPlaceOfItsStates)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Postgres,GroupNamedAfterOneOfItsOwnStates)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Postgres,NameShadowingAStateThatIsStillListed)`: the new member is still a scaffold that throws
+- `EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime(Postgres,GroupThatListsAnotherGroupsName)`: the new member is still a scaffold that throws
+
+## Frontend (Vitest)
+
+- `stateMappingValidation.rawLists.test.ts` > does not refuse a name that stands alone in To Do or Done in place of : validation has no category rule, and its To Do and Done wording and rule still refuse a co
+- `stateMappingValidation.rawLists.test.ts` > refuses a mapping whose listed states sit in different categories, nam: validation has no category rule, and its To Do and Done wording and rule still refuse a co
+- `stateMappingValidation.rawLists.test.ts` > refuses a mapping whose only state is listed in two categories: validation has no category rule, and its To Do and Done wording and rule still refuse a co
+- `stateMappingView.test.ts` > shows one group in the place of states that sit next to each other: the scaffold throws the RED message
+- `stateMappingView.test.ts` > puts a group where its first listed state is when its states are apart: the scaffold throws the RED message
+- `stateMappingView.test.ts` > treats the same state in another casing or with spaces around it as on: the scaffold throws the RED message
+- `stateMappingView.test.ts` > shows a group named after one of its own states once: the scaffold throws the RED message
+- `stateMappingView.test.ts` > leaves a list alone when none of a group's states are in it: the scaffold throws the RED message
+- `stateMappingView.test.ts` > leaves a state exactly as stored once the group that held it is delete: the scaffold throws the RED message
+- `stateMappingView.test.ts` > leaves out entries that are empty or only whitespace: the scaffold throws the RED message
+- `stateMappingView.test.ts` > recognises states padded with tabs and non-breaking spaces as their gr: the scaffold throws the RED message
+- `stateMappingView.test.ts` > shows the list as it is when there are no groups: the scaffold throws the RED message
+- `stateMappingView.test.ts` > tells the same names apart in every case of the shared list: the page folds with toLowerCase/trim; the shared cases (Kelvin sign, Angstrom sign, U+0085
+- `stateMappingView.test.ts` > folds the names of the shared list to the same key exactly when the se: the page folds with toLowerCase/trim; the shared cases (Kelvin sign, Angstrom sign, U+0085
+- `stateMappingView.test.ts` > ignores whitespace at the ends the way the server does: the page folds with toLowerCase/trim; the shared cases (Kelvin sign, Angstrom sign, U+0085
+- `stateMappingView.test.ts` > calls a name of nothing but whitespace blank, whichever whitespace it : the page folds with toLowerCase/trim; the shared cases (Kelvin sign, Angstrom sign, U+0085
+- `StateMappingsEditor.rawLists.test.tsx` > explains that a group is one chip in Doing and the charts, and that it: the editor still shows the old help text
+- `StatesList.stateMappings.test.tsx` > shows a mapping as one chip with a group icon where its first state is: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `StatesList.stateMappings.test.tsx` > shows a mapping whose states are apart at the position of its first st: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `StatesList.stateMappings.test.tsx` > names the mapping's states in a tooltip that says how to remove it: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `StatesList.stateMappings.test.tsx` > offers no way to remove a mapping chip, and still one for a plain stat: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `StatesList.stateMappings.test.tsx` > moves all of a mapping's states together when the chip is dragged ahea: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `StatesList.stateMappings.test.tsx` > lands a dragged mapping where it is dropped, even when its states were: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `StatesList.stateMappings.test.tsx` > drags a plain state ahead of a mapping without splitting the mapping: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `StatesList.stateMappings.test.tsx` > does not offer a state named like one of the mappings as a suggestion: StatesList ignores `stateMappings` and renders the raw states as plain chips
+- `ModifyTeamSettings.test.tsx` > shows the could-not-load words when the settings cannot be fetched: the editor passes hasError=false, so a failed fetch shows no words
+- `BaseMetricsView.loading.test.tsx` > shows a lone spinner and no chart while the columns load: BaseMetricsView ignores `doingStatesStatus`; the frame reads ready
+- `BaseMetricsView.loading.test.tsx` > says it couldn't be loaded when the columns could not be fetched, and : BaseMetricsView ignores `doingStatesStatus`; the frame reads ready
+- `PortfolioMetricsView.agingColumns.test.tsx` > shows a loading frame, and no columns, while the settings are on their: the view passes no status and keeps `settings.doingStates`
+- `PortfolioMetricsView.agingColumns.test.tsx` > says the columns could not be loaded when the settings fetch fails: the view passes no status and keeps `settings.doingStates`
+- `PortfolioMetricsView.agingColumns.test.tsx` > shows the columns as the settings display them, groups in place of the: the view passes no status and keeps `settings.doingStates`
+- `TeamMetricsView.agingColumns.test.tsx` > shows a loading frame, and no columns, while the settings are on their: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old
+- `TeamMetricsView.agingColumns.test.tsx` > says the columns could not be loaded when the settings fetch fails: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old
+- `TeamMetricsView.agingColumns.test.tsx` > shows the columns as the settings display them, groups in place of the: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old
+- `TeamMetricsView.agingColumns.test.tsx` > does not let a late answer for the team it left replace the columns of: the view passes no status, keeps `settings.doingStates`, and lets a late answer for an old

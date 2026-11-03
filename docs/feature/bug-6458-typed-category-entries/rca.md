@@ -258,6 +258,11 @@ below.
   - The invariant is that `ToDoStates`, `DoingStates` and `DoneStates` hold raw states. `AllStates`,
     `OpenStates` and `MapStateToStateCategory` (`:33-38,188-206`) read the lists as they are and stop
     calling `GetRawStatesForCategory` on them. The same goes for the three connector sites in the table.
+    **Superseded by the design's D12 (normalise on read):** the stored lists hold raw states, but every read
+    (`AllStates`, `OpenStates`, both category lookups, `DisplayStatesFor`, the connector reads, the suggestions
+    endpoint) goes through the owner's one classifier / normaliser, so a stored list that still holds a collapsed
+    group name (a skipped, pre-seeder or old-pod-written owner) still loads every item. On a list that already
+    holds raw states the normaliser is the identity. The "read as they are" wording above is the earlier draft.
   - Keep `GetRawStatesForCategory` for mapped-name references only: wait states, cycle-time boundaries
     and refinement.
   - Add `DisplayStatesFor(category)`, the one place the view is computed. It is a single pass over the raw
@@ -279,22 +284,43 @@ below.
 - **Write path** (`API/Helpers/TeamExtensions.cs:66-71` then `:89-91`; the same in `PortfolioExtensions.cs`).
   The mappings must be synced **before** the lists, because the normalisation needs the incoming mappings.
   Today the order is the other way round.
+  - **DESIGN correction (review round 1): one entry classifier, defined on the owner.** The first draft below
+    this line refused every entry that names a mapping without being one of its members. That also refused the
+    collapsed chip (`[Analysis, Review]` with `Review = [Code Review, Testing]`), which is the shape the current
+    editor saves on every mapping edit. The corrected rule, for a list entry that equals a mapping's name:
+    - (a) the name is one of that mapping's own states: a raw state; keep it, then add the members not yet listed;
+    - (b) collapsed chip: the name is not one of that mapping's own states and no state of that mapping is listed
+      anywhere in that list: replace the entry by the members, in place. Never a 400. The write path and the
+      seeder both do this;
+    - (c) shadowing (the 6454 configuration): the name is not one of that mapping's own states, the name is listed
+      AND at least one of the mapping's states is listed alongside it: 400 on the write path, naming the fix (the
+      frontend's existing copy is reused); legacy expansion plus a Warning in the seeder.
+    - A mapping with no states (null or empty) is not a group: an entry with its name stays a raw state. The
+      seeder logs it as a Warning with the fixed rule value `EmptyGroup` and does not throw; no read throws either.
+    - The normaliser's output holds a mapping name only under (a).
   - **Pre-check (rejects with 400, naming the fix):**
-    - **V3**: an entry equals a mapping's name, and that name is not one of the mapping's members.
+    - **V3** (case c only): shadowing as defined above.
     - **V4**: a mapping member equals another mapping's name.
-  - **Why V3 is a deliberate break.** V3 is the one shape whose two meanings cannot be told apart.
+  - **Why V3 is a deliberate break.** Case (c) is the one shape that loses a raw state today.
     - Read as legacy, it is the 6454 configuration, which silently loses the raw state.
     - Read as new, it is a raw state that happens to share the name.
     - Rejecting it is a documented break of a configuration that loses data today. The 6454 frontend already
       blocks it (`stateMappingValidation.ts:75-91`), so only API clients can send it.
-    - This is the "marker" case, and it is handled by refusal rather than by guessing.
+    - It is handled by refusal rather than by guessing. Cases (a) and (b) are told apart by whether a state of
+      the mapping is listed, so they need no guess.
   - **Normalisation** (single pass over the original list, comparer `OrdinalIgnoreCase` after trim, the same as
     `GetRawStatesForCategory:214-215`):
     ```
+    drop null, empty and whitespace-only entries      # leaves the expansion set unchanged
     for each entry e in list (in order):
-        emit e                                    # after the pre-check, e is a raw state; a mapping name passes V3
-        if e names mapping M:                     # so e is one of M's own members
-            emit each member of M not already in the list or emitted, in M's order
+        # precedence: an e that is one of its own mapping's states is case (a), even when other
+        # states of that mapping are listed beside it
+        if e names mapping M and e is not a state of M and no state of M is listed anywhere in the list:   # case (b)
+            emit each member of M, in M's order                                  # replaces e in place
+        else:                                                                    # case (a); case (c) was refused
+            emit e
+            if e names mapping M:                       # so e is one of M's own members
+                emit each member of M not already in the list or emitted, in M's order
     dedupe ignore-case, keeping the first occurrence
     ```
   - **Equivalence proof sketch.** Let L pass V3 and V4, and let n be an entry that names M. Then n is in M.
@@ -306,7 +332,7 @@ below.
       passes through **unchanged, in order**.
   - **Property test before committing to (ii-b):** for every list and mapping set that passes today's
     validator and V3/V4, `set(Expand(normalise(L))) == set(Expand(L))`, and `normalise` is idempotent.
-    Generate cases with self-named mappings, duplicates, case and whitespace variants, and members spread
+    Generate cases with the collapsed chip (case b), self-named mappings (case a), duplicates, case and whitespace variants, and members spread
     across lists.
   - **What still cannot be decided.** A new-style raw state `A`, sent together with a mapping `A = [A, X]`
     where `X` is unlisted, is read as legacy and gets `X` added. That changes what is fetched without a 400.

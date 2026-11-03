@@ -15,9 +15,12 @@ namespace Lighthouse.Backend.API.DTO
             Name = workTrackingSystemOptionsOwner.Name;
             DataRetrievalValue = workTrackingSystemOptionsOwner.DataRetrievalValue;
             WorkItemTypes = workTrackingSystemOptionsOwner.WorkItemTypes;
-            ToDoStates = workTrackingSystemOptionsOwner.ToDoStates;
-            DoingStates = workTrackingSystemOptionsOwner.DoingStates;
-            DoneStates = workTrackingSystemOptionsOwner.DoneStates;
+            ToDoStates = workTrackingSystemOptionsOwner.NormalisedStatesFor(workTrackingSystemOptionsOwner.ToDoStates);
+            DoingStates = workTrackingSystemOptionsOwner.NormalisedStatesFor(workTrackingSystemOptionsOwner.DoingStates);
+            DoneStates = workTrackingSystemOptionsOwner.NormalisedStatesFor(workTrackingSystemOptionsOwner.DoneStates);
+            ToDoDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.ToDo);
+            DoingDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.Doing);
+            DoneDisplayStates = workTrackingSystemOptionsOwner.DisplayStatesFor(StateCategories.Done);
             WorkTrackingSystemConnectionId = workTrackingSystemOptionsOwner.WorkTrackingSystemConnectionId;
             ServiceLevelExpectationProbability = workTrackingSystemOptionsOwner.ServiceLevelExpectationProbability;
             ServiceLevelExpectationRange = workTrackingSystemOptionsOwner.ServiceLevelExpectationRange;
@@ -58,6 +61,14 @@ namespace Lighthouse.Backend.API.DTO
         public List<string> DoingStates { get; set; } = [];
 
         public List<string> DoneStates { get; set; } = [];
+
+        // Read-only on purpose: these show each group where the settings page lists it, while the raw lists
+        // above stay what a client edits and sends back.
+        public List<string> ToDoDisplayStates { get; } = [];
+
+        public List<string> DoingDisplayStates { get; } = [];
+
+        public List<string> DoneDisplayStates { get; } = [];
 
         public string? BlockedRuleSetJson { get; set; }
 
@@ -107,6 +118,13 @@ namespace Lighthouse.Backend.API.DTO
             => new(EstimationAdditionalFieldDefinitionId, EstimationUnit, UseNonNumericEstimation, EstimationCategoryValues ?? []);
 
         public List<StateMappingDto> StateMappings { get; set; } = [];
+
+        /// <summary>The mappings this save sends, untrimmed, so a refusal can quote them as the user typed them.</summary>
+        public List<StateMapping> StateMappingsAsSent()
+            => [.. StateMappings.Select(mapping => new StateMapping { Name = mapping.Name, States = mapping.States })];
+
+        /// <summary>The To Do, Doing and Done lists this save sends, read against the mappings it sends with them.</summary>
+        public StateCategoryLists CategoryListsAsSent() => new(ToDoStates, DoingStates, DoneStates, StateMappingsAsSent());
 
         public List<CycleTimeDefinitionDto> CycleTimeDefinitions { get; set; } = [];
 

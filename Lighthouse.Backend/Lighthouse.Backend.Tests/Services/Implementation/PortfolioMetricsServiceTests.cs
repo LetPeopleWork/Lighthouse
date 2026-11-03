@@ -1537,6 +1537,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
             const string analyzing = "Analyzing";
             const string awaitingApproval = "Awaiting Approval";
             const string queuedForBuild = "Queued for Build";
+            const string waiting = "Waiting";
             const string done = "Done";
 
             var windowEnd = new DateTime(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc);
@@ -1549,16 +1550,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Name = "Flow Efficiency Portfolio",
                 DoingStates = [analyzing, awaitingApproval, queuedForBuild],
                 DoneStates = [done],
-                WaitStates = ["Waiting"],
-                StateMappings = [new StateMapping { Name = "Waiting", States = [awaitingApproval, queuedForBuild] }],
+                WaitStates = [waiting],
+                StateMappings = [new StateMapping { Name = waiting, States = [awaitingApproval, queuedForBuild] }],
             };
 
+            // One feature waited in each of the two grouped states; a sync stores both visits under the mapping's name.
             var transitions = new List<FeatureStateTransition>();
             var flowFeatures = new List<Feature>
             {
                 SingleDoingVisitFeature(flowPortfolio, transitions, id: 201, referenceId: "EPIC-A", doingState: analyzing, startedDate: inWindow, days: 180),
-                SingleDoingVisitFeature(flowPortfolio, transitions, id: 202, referenceId: "EPIC-B", doingState: awaitingApproval, startedDate: inWindow, days: 120),
-                SingleDoingVisitFeature(flowPortfolio, transitions, id: 203, referenceId: "EPIC-C", doingState: queuedForBuild, startedDate: inWindow, days: 100),
+                SingleDoingVisitFeature(flowPortfolio, transitions, id: 202, referenceId: "EPIC-B", doingState: waiting, startedDate: inWindow, days: 120),
+                SingleDoingVisitFeature(flowPortfolio, transitions, id: 203, referenceId: "EPIC-C", doingState: waiting, startedDate: inWindow, days: 100),
             };
 
             featureRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
@@ -1576,6 +1578,94 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
                 Assert.That(result.WaitDays, Is.EqualTo(220.0).Within(FlowEfficiencyDaysTolerance));
                 Assert.That(result.EfficiencyPercent, Is.EqualTo(45.0).Within(FlowEfficiencyPercentTolerance));
             }
+        }
+
+        [Test]
+        public void GetCumulativeStateTimeForPortfolio_MappingGroupsTwoNonAdjacentDoingStates_ShowsTheGroupOnceAtItsFirstMembersPosition()
+        {
+            var mappedPortfolio = APortfolioGroupingAnalyzingAndValidatingAsReview();
+
+            var result = subject.GetCumulativeStateTimeForPortfolio(mappedPortfolio, MappedWindowStart, MappedWindowEnd, null);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.States.Select(row => row.State), Is.EqualTo(GroupThenBuildingColumns));
+                Assert.That(result.States[0].CompletedContributionDays, Is.EqualTo(20.0).Within(FlowEfficiencyDaysTolerance));
+            }
+        }
+
+        [Test]
+        public void GetAgeInStatePercentilesForPortfolio_MappingGroupsTwoNonAdjacentDoingStates_ShowsTheGroupOnceAtItsFirstMembersPosition()
+        {
+            var mappedPortfolio = APortfolioGroupingAnalyzingAndValidatingAsReview();
+
+            var result = subject.GetAgeInStatePercentilesForPortfolio(mappedPortfolio, MappedWindowStart, MappedWindowEnd).ToList();
+
+            Assert.That(result.Select(column => column.State), Is.EqualTo(GroupThenBuildingColumns));
+        }
+
+        [Test]
+        public void GetFlowEfficiencyInfoForPortfolio_MappingGroupsTwoNonAdjacentDoingStates_GroupTimeCountsInTheTotalButNotAsWait()
+        {
+            var mappedPortfolio = APortfolioGroupingAnalyzingAndValidatingAsReview();
+            mappedPortfolio.WaitStates = ["Building"];
+
+            var result = subject.GetFlowEfficiencyInfoForPortfolio(mappedPortfolio, MappedWindowStart, MappedWindowEnd);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result.TotalDoingDays, Is.EqualTo(30.0).Within(FlowEfficiencyDaysTolerance));
+                Assert.That(result.WaitDays, Is.EqualTo(10.0).Within(FlowEfficiencyDaysTolerance));
+            }
+        }
+
+        private static readonly DateTime MappedWindowEnd = new(2026, 5, 25, 0, 0, 0, DateTimeKind.Utc);
+
+        private static readonly DateTime MappedWindowStart = MappedWindowEnd.AddDays(-180);
+
+        private static readonly string[] GroupThenBuildingColumns = ["Review", "Building"];
+
+        private Portfolio APortfolioGroupingAnalyzingAndValidatingAsReview()
+        {
+            var mappedPortfolio = new Portfolio
+            {
+                Id = 11,
+                Name = "Mapped Portfolio",
+                ToDoStates = ["New"],
+                DoingStates = ["Analyzing", "Building", "Validating"],
+                DoneStates = ["Done"],
+                StateMappings = [new StateMapping { Name = "Review", States = ["Analyzing", "Validating"] }],
+            };
+
+            var started = MappedWindowStart.AddDays(20);
+            var feature = new Feature
+            {
+                Id = 301,
+                ReferenceId = "EPIC-MAP",
+                Name = "Epic EPIC-MAP",
+                State = "Done",
+                StateCategory = StateCategories.Done,
+                CreatedDate = started.AddDays(-1),
+                StartedDate = started,
+                ClosedDate = started.AddDays(30),
+            };
+            feature.Portfolios.Add(mappedPortfolio);
+            List<Feature> mappedFeatures = [feature];
+
+            // After a sync, the transitions carry the mapping's name, never the raw states it groups.
+            List<FeatureStateTransition> transitions =
+            [
+                new() { FeatureId = feature.Id, FromState = "Review", ToState = "Building", TransitionedAt = started.AddDays(5) },
+                new() { FeatureId = feature.Id, FromState = "Building", ToState = "Review", TransitionedAt = started.AddDays(15) },
+                new() { FeatureId = feature.Id, FromState = "Review", ToState = "Done", TransitionedAt = started.AddDays(30) },
+            ];
+
+            featureRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => mappedFeatures.Where(predicate.Compile()).AsQueryable());
+            featureStateTransitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
+                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+
+            return mappedPortfolio;
         }
 
         private const double FlowEfficiencyDaysTolerance = 0.1;

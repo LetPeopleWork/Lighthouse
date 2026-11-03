@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using Lighthouse.Backend.Extensions;
 
 namespace Lighthouse.Backend.Models
 {
@@ -30,12 +29,12 @@ namespace Lighthouse.Backend.Models
 
         public List<string> DoneStates { get; set; } = new List<string> { "Done", "Closed" };
 
-        public IEnumerable<string> AllStates => GetRawStatesForCategory(ToDoStates)
-            .Union(GetRawStatesForCategory(DoingStates))
-            .Union(GetRawStatesForCategory(DoneStates));
+        public IEnumerable<string> AllStates => NormalisedStatesFor(ToDoStates)
+            .Union(NormalisedStatesFor(DoingStates))
+            .Union(NormalisedStatesFor(DoneStates));
 
-        public IEnumerable<string> OpenStates => GetRawStatesForCategory(ToDoStates)
-            .Union(GetRawStatesForCategory(DoingStates));
+        public IEnumerable<string> OpenStates => NormalisedStatesFor(ToDoStates)
+            .Union(NormalisedStatesFor(DoingStates));
 
         public int ServiceLevelExpectationProbability { get; set; } = 0;
 
@@ -185,64 +184,47 @@ namespace Lighthouse.Backend.Models
             set => (storedParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
         }
 
-        public StateCategories MapStateToStateCategory(string state)
-        {
-            if (GetRawStatesForCategory(ToDoStates).IsItemInList(state))
-            {
-                return StateCategories.ToDo;
-            }
+        /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
+        public StateCategories MapStateToStateCategory(string state) => CategoryLists().CategoryOfRawState(state);
 
-            if (GetRawStatesForCategory(DoingStates).IsItemInList(state))
-            {
-                return StateCategories.Doing;
-            }
+        /// <summary>This owner's To Do, Doing and Done lists, read against its mappings.</summary>
+        public StateCategoryLists CategoryLists() => new(ToDoStates, DoingStates, DoneStates, StateMappings);
 
-            if (GetRawStatesForCategory(DoneStates).IsItemInList(state))
-            {
-                return StateCategories.Done;
-            }
+        /// <summary>The category's raw states as the charts show them: each state replaced by its mapping's name, the group at its first member's position.</summary>
+        public List<string> DisplayStatesFor(StateCategories category) => CategoryLists().DisplayStatesFor(category);
 
-            return StateCategories.Unknown;
-        }
+        /// <summary>
+        /// The category of a name an item or a stored transition carries: a raw state, or a mapping's name.
+        /// A mapping is judged by the states of it that are listed; when they disagree, or none is listed, it is Unknown.
+        /// </summary>
+        public StateCategories CategoryOfDisplayName(string displayName) => CategoryLists().CategoryOfDisplayName(displayName);
 
-        public List<string> GetRawStatesForCategory(List<string> categoryStates)
-        {
-            var rawStates = new List<string>();
+        /// <summary>A stored or sent list with every mapping name replaced by the mapping's raw states, in order; a list of raw states passes through unchanged.</summary>
+        public List<string> NormalisedStatesFor(IReadOnlyList<string> storedList) => CategoryLists().NormalisedStatesFor(storedList);
 
-            foreach (var entry in categoryStates)
-            {
-                var mapping = StateMappings.FirstOrDefault(m =>
-                    string.Equals(m.Name, entry, StringComparison.OrdinalIgnoreCase));
+        /// <summary>Whether a list entry is a state of the tracker or stands for a mapping's states, judged against the list it sits in.</summary>
+        public ListEntryKind ClassifyListEntry(IReadOnlyList<string> list, string entry) => CategoryLists().ClassifyListEntry(list, entry);
 
-                if (mapping != null)
-                {
-                    rawStates.AddRange(mapping.States);
-                }
-                else
-                {
-                    rawStates.Add(entry);
-                }
-            }
+        public List<string> GetRawStatesForCategory(List<string> categoryStates) => CategoryLists().RawStatesOf(categoryStates);
 
-            return rawStates;
-        }
-
+        /// <summary>Whether both boundaries of a definition stand for a state of the workflow as the charts show it.</summary>
         public bool IsCycleTimeDefinitionValid(CycleTimeDefinition definition)
         {
-            var states = AllStates.ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var startRaw = GetRawStatesForCategory([definition.StartState]);
-            var endRaw = GetRawStatesForCategory([definition.EndState]);
+            var lists = CategoryLists();
+            var statesInOrder = lists.DisplayStatesInWorkflowOrder();
 
-            return startRaw.Count > 0 && endRaw.Count > 0
-                && startRaw.All(states.Contains) && endRaw.All(states.Contains);
+            return lists.WorkflowEntryFor(statesInOrder, definition.StartState) != null
+                && lists.WorkflowEntryFor(statesInOrder, definition.EndState) != null;
         }
 
-        public string MapRawStateToMappedName(string rawState)
-        {
-            var mapping = StateMappings.FirstOrDefault(m =>
-                m.States.Any(s => string.Equals(s, rawState, StringComparison.OrdinalIgnoreCase)));
+        public string MapRawStateToMappedName(string rawState) => CategoryLists().MapRawStateToMappedName(rawState);
 
-            return mapping?.Name ?? rawState;
+        // A wait state may name a mapping or one of the states a mapping groups, while the chart rows carry the
+        // mapping's name in place of its states, so the wait states are compared in the form the rows use.
+        public List<string> WaitStatesAsDisplayed()
+        {
+            var lists = CategoryLists();
+            return lists.RawStatesOf(WaitStates).Select(lists.MapRawStateToMappedName).ToList();
         }
 
         public void ResetUpdateTime()

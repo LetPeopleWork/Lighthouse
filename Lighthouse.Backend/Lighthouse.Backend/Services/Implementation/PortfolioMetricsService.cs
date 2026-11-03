@@ -248,7 +248,7 @@ namespace Lighthouse.Backend.Services.Implementation
                     entry => entry.FeatureId,
                     entry => new StateAsOf(
                         entry.StateOnDay!.ToState,
-                        portfolio.MapStateToStateCategory(entry.StateOnDay.ToState),
+                        portfolio.CategoryOfDisplayName(entry.StateOnDay.ToState),
                         entry.StateOnDay.TransitionedAt));
         }
 
@@ -316,7 +316,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedFeatures);
                 var cycleTimePercentiles = GetCycleTimePercentilesForPortfolio(portfolio, startDate, endDate).ToList();
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, portfolio.DoingStates, DefaultPacePercentiles, cycleTimePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, portfolio.DisplayStatesFor(StateCategories.Doing), DefaultPacePercentiles, cycleTimePercentiles).ToList();
             }, logger);
         }
 
@@ -346,24 +346,24 @@ namespace Lighthouse.Backend.Services.Implementation
                 return BuildCumulativeWorkflowStateOrder(portfolio);
             }
 
-            var allStatesInOrder = portfolio.AllStates.ToList();
-            var startState = ResolveBoundaryState(portfolio, allStatesInOrder, scopedDefinition.StartState);
-            var endState = ResolveBoundaryState(portfolio, allStatesInOrder, scopedDefinition.EndState);
-            return ScopedCumulativeStateOrder(allStatesInOrder, startState, endState);
+            var displayStatesInOrder = DisplayStatesInOrder(portfolio);
+            var startState = ResolveBoundaryState(portfolio, displayStatesInOrder, scopedDefinition.StartState);
+            var endState = ResolveBoundaryState(portfolio, displayStatesInOrder, scopedDefinition.EndState);
+            return ScopedCumulativeStateOrder(displayStatesInOrder, startState, endState);
         }
 
         public IReadOnlyList<CycleTimeFeature> GetNamedCycleTimeDataForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
             logger.LogDebug("Getting Named Cycle Time Data for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var allStatesInOrder = portfolio.AllStates.ToList();
-            var resolvedDefinitions = ResolveValidNamedDefinitions(portfolio, allStatesInOrder);
+            var displayStatesInOrder = DisplayStatesInOrder(portfolio);
+            var resolvedDefinitions = ResolveValidNamedDefinitions(portfolio, displayStatesInOrder);
 
             var closedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
             var itemsWithTransitions = AssociateSyncedTransitions(closedFeatures);
             var namedByItemId = itemsWithTransitions.ToDictionary(
                 item => item.Id,
-                item => (IReadOnlyList<NamedCycleTimeValue>)NamedValuesForItem(item, allStatesInOrder, resolvedDefinitions));
+                item => (IReadOnlyList<NamedCycleTimeValue>)NamedValuesForItem(item, displayStatesInOrder, resolvedDefinitions));
 
             return closedFeatures
                 .Select(feature => new CycleTimeFeature(
@@ -388,15 +388,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 return [];
             }
 
-            var allStatesInOrder = portfolio.AllStates.ToList();
-            var startState = ResolveBoundaryState(portfolio, allStatesInOrder, definition.StartState);
-            var endState = ResolveBoundaryState(portfolio, allStatesInOrder, definition.EndState);
+            var displayStatesInOrder = DisplayStatesInOrder(portfolio);
+            var startState = ResolveBoundaryState(portfolio, displayStatesInOrder, definition.StartState);
+            var endState = ResolveBoundaryState(portfolio, displayStatesInOrder, definition.EndState);
 
             var closedFeatures = GetFeaturesClosedInDateRange(portfolio, startDate, endDate).ToList();
             var itemsWithTransitions = AssociateSyncedTransitions(closedFeatures);
 
             return itemsWithTransitions
-                .Select(item => NamedCycleTimeDays(item, allStatesInOrder, startState, endState))
+                .Select(item => NamedCycleTimeDays(item, displayStatesInOrder, startState, endState))
                 .Where(days => days.HasValue)
                 .Select(days => days!.Value)
                 .ToList();
@@ -493,7 +493,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static List<string> BuildCumulativeWorkflowStateOrder(Portfolio portfolio)
         {
-            return [.. portfolio.DoingStates];
+            return portfolio.DisplayStatesFor(StateCategories.Doing);
         }
 
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<Feature> completedFeatures)
@@ -740,8 +740,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(portfolio);
                 var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
 
-                var expandedWaitStates = portfolio.GetRawStatesForCategory(portfolio.WaitStates);
-                return ComputeFlowEfficiency(doingStateRows, expandedWaitStates, portfolio.WaitStates.Count > 0);
+                return ComputeFlowEfficiency(doingStateRows, portfolio.WaitStatesAsDisplayed(), portfolio.WaitStates.Count > 0);
             }, logger);
         }
 

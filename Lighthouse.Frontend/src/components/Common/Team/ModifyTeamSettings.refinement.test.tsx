@@ -17,8 +17,7 @@ import ModifyTeamSettings from "./ModifyTeamSettings";
  * The Refinement section of a Team's settings, exercised through the settings form a Team admin
  * actually uses, so what is checked is what the form's autosave sends. States are picked the way wait
  * states are: the Team's To Do and Doing states are suggested and every chosen state shows as a chip.
- * A chosen state stops being one the moment the form no longer has it as To Do or Doing: its chip goes
- * and the save leaves it out.
+ * A chosen state the form no longer has as To Do or Doing loses its chip; the server drops it on save.
  *
  * Sections the refinement choice does not depend on are stood in for, as the form's own tests do. The
  * states list stand-in can only take a Doing state away, which is all these cases need from it.
@@ -309,7 +308,9 @@ describe("The Refinement section of a Team's settings", () => {
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
-	it("drops a chosen state from the chips and the save once it stops being a Doing state", async () => {
+	// The server drops a chosen state that is no longer To Do or Doing when it applies the save, so the form
+	// only hides it and keeps sending it: a list that changes only for a moment must not lose the choice.
+	it("hides a chosen state once it stops being a Doing state and leaves dropping it to the server", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
 				states: [{ state: "Backlog" }, { state: "Analysing" }],
@@ -322,8 +323,24 @@ describe("The Refinement section of a Team's settings", () => {
 		);
 
 		await waitFor(() => expect(saveTeamSettings).toHaveBeenCalled());
-		expect(theStatesLastSaved()).toEqual(["Backlog"]);
+		expect(theStatesLastSaved()).toEqual(["Analysing", "Backlog"]);
 		expect(theChips()).toEqual(["Backlog"]);
+	});
+
+	it("keeps a chosen mapping as a refinement state while its name is retyped", async () => {
+		await renderGravitysSettingsForm({
+			...gravitysSettings({ states: [{ state: "Dev" }] }),
+			stateMappings: [{ name: "Dev", states: ["Analysing"] }],
+		});
+		const name = await screen.findByLabelText("Mapping Name");
+
+		await userEvent.clear(name);
+		await userEvent.type(name, "Dev");
+		await pick("Backlog");
+
+		await waitFor(() =>
+			expect(theStatesLastSaved()).toEqual(["Backlog", "Dev"]),
+		);
 	});
 
 	it("says the Team's own word for Refinement as the section's title and in the state input", async () => {

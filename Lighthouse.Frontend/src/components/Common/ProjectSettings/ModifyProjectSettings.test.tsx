@@ -125,9 +125,7 @@ vi.mock("../StatesList/StatesList", () => ({
 		onRemoveDoingState,
 		onAddDoneState,
 		onRemoveDoneState,
-		stateMappingNames,
 	}: {
-		stateMappingNames?: string[];
 		onAddToDoState: (state: string) => void;
 		onRemoveToDoState: (state: string) => void;
 		onAddDoingState: (state: string) => void;
@@ -137,9 +135,6 @@ vi.mock("../StatesList/StatesList", () => ({
 	}) => (
 		<div>
 			<div>StatesList</div>
-			<div data-testid="state-mapping-names">
-				{(stateMappingNames ?? []).join("|")}
-			</div>
 			<button type="button" onClick={() => onAddToDoState("New ToDo")}>
 				Add ToDo
 			</button>
@@ -918,11 +913,11 @@ describe("ModifyProjectSettings", () => {
 			expect(warning).toHaveTextContent("Add at least one To Do State");
 		});
 
-		it("holds back autosave while a mapping is named after a Doing state it does not group, and saves once the mappings are replaced", async () => {
+		it("holds back autosave while a new mapping is named after a Doing state it does not group", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
-				doingStates: ["In Arbeit", "In Progress"],
-				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+				doingStates: ["Group", "Active"],
+				stateMappings: [],
 			});
 
 			render(
@@ -940,32 +935,18 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
-			fireEvent.click(screen.getByText("Change General"));
+			fireEvent.click(screen.getByText("Change State Mapping"));
 
 			expect(
 				await screen.findByText(
-					'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
+					'Mapping "Group" has the same name as the Doing state "Group". Add "Group" to this mapping to group it, or choose another name.',
 				),
 			).toBeInTheDocument();
 			await waitPastTheDebounce();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
-
-			fireEvent.click(screen.getByText("Change State Mapping"));
-
-			await waitFor(() =>
-				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
-					expect.objectContaining({
-						doingStates: ["In Arbeit", "In Progress", "Group"],
-						stateMappings: [{ name: "Group", states: ["Active"] }],
-					}),
-				),
-			);
-			expect(
-				screen.queryByTestId("settings-blocking-warning"),
-			).not.toBeInTheDocument();
 		});
 
-		it("holds back autosave while a mapping is named after a state another mapping groups", async () => {
+		it("saves an unrelated edit although a stored mapping is named after a state another mapping groups", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
 				doingStates: ["In Progress", "Group", "In Arbeit"],
@@ -992,20 +973,27 @@ describe("ModifyProjectSettings", () => {
 
 			fireEvent.click(screen.getByText("Change General"));
 
-			expect(
-				await screen.findByText(
-					'Mapping "In Arbeit" has the same name as a state grouped by mapping "Group". Choose another name.',
+			await waitFor(() =>
+				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
+					expect.objectContaining({
+						stateMappings: [
+							{ name: "Group", states: ["In Arbeit"] },
+							{ name: "In Arbeit", states: ["Review"] },
+						],
+					}),
 				),
-			).toBeInTheDocument();
-			await waitPastTheDebounce();
-			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
+			);
+			expect(
+				screen.queryByTestId("settings-blocking-warning"),
+			).not.toBeInTheDocument();
 		});
 
-		it("holds back autosave while a mapping is named after a Done state", async () => {
+		it("holds back autosave while a new mapping's state sits in two categories", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
-				doneStates: ["In Arbeit"],
-				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+				doingStates: ["Active"],
+				doneStates: ["Active"],
+				stateMappings: [],
 			});
 
 			render(
@@ -1023,21 +1011,22 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
-			fireEvent.click(screen.getByText("Change General"));
+			fireEvent.click(screen.getByText("Change State Mapping"));
 
 			expect(
 				await screen.findByText(
-					'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Choose another name.',
+					'Mapping "Group" groups "Active", which is in both Doing and Done. Keep a mapping\'s states in one category.',
 				),
 			).toBeInTheDocument();
 			await waitPastTheDebounce();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
-		it("holds back autosave while a mapping is named after a To Do state", async () => {
+		it("holds back autosave while a mapping's name hides one of its states in To Do", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
-				toDoStates: ["Group"],
+				toDoStates: ["Group", "Active"],
+				doingStates: ["In Progress"],
 				stateMappings: [],
 			});
 
@@ -1139,35 +1128,6 @@ describe("ModifyProjectSettings", () => {
 			expect(
 				screen.queryByTestId("settings-blocking-warning"),
 			).not.toBeInTheDocument();
-		});
-
-		it("offers only complete mappings as state options", async () => {
-			mockGetProjectSettings.mockResolvedValue({
-				...projectSettings,
-				stateMappings: [
-					{ name: "First", states: ["Review"] },
-					{ name: "Half", states: [] },
-				],
-			});
-
-			render(
-				<ModifyProjectSettings
-					title="Modify Project Settings"
-					getWorkTrackingSystems={mockGetWorkTrackingSystems}
-					getProjectSettings={mockGetProjectSettings}
-					getAllTeams={mockGetAllTeams}
-					saveProjectSettings={mockSaveProjectSettings}
-					validateProjectSettings={mockValidateProjectSettings}
-				/>,
-			);
-
-			await waitFor(() =>
-				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
-			);
-
-			expect(screen.getByTestId("state-mapping-names")).toHaveTextContent(
-				/^First$/,
-			);
 		});
 
 		it("renders no warning while the form can be saved", async () => {

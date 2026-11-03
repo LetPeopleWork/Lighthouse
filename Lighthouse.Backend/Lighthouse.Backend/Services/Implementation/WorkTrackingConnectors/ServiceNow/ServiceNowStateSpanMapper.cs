@@ -3,12 +3,12 @@ using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow
 {
-    // The pure core of slice 04 (ADR-118, ADR-114's shape): spans in, transitions out, no HTTP.
+    // The pure core of reading ServiceNow history: spans in, transitions out, no HTTP.
     public static class ServiceNowStateSpanMapper
     {
         /// <summary>
         /// Pairs a record's consecutive spans into the transitions Lighthouse models, mapped through
-        /// the same <see cref="WorkItemStateTransitionMapper"/> every other connector uses (US-04 AC2).
+        /// the same <see cref="WorkItemStateTransitionMapper"/> every other connector uses.
         /// </summary>
         /// <remarks>
         /// The earliest span yields no transition. Spans begin only when the metric definition was
@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
 
         /// <summary>
         /// When work actually began: the last time the record crossed into Doing from outside it,
-        /// ignoring arrivals from Done (ADR-118 decision 7). Null when it never crossed — a record
+        /// ignoring arrivals from Done. Null when it never crossed — a record
         /// that never reached Doing has not started, and saying otherwise would put unstarted work
         /// into Cycle Time.
         /// </summary>
@@ -41,11 +41,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         }
 
         /// <summary>
-        /// When work finished: the last time the record crossed into Done from outside it (ADR-117
-        /// decision 1, amended 2026-07-31). Null when it never crossed.
+        /// When work finished: the last time the record crossed into Done from outside it. Null when it
+        /// never crossed.
         /// </summary>
         /// <remarks>
-        /// From <em>outside</em> Done, which is the whole of Bug #5621 F2. A desk mapping both
+        /// From <em>outside</em> Done, which is what Bug #5621 was about. A desk mapping both
         /// Resolved and Closed to Done finishes the work when someone resolves it; the instance's own
         /// close-resolved job moving it a week later crossed no boundary and undid nothing. Where a
         /// reopen genuinely did undo it, the return trip through Doing puts a real crossing after it.
@@ -78,8 +78,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         {
             return WorkItemCategoryCrossing.LastEntryInto(
                 ArrivalsIn(InStartOrder(TheTeamRecognisesAsState(spans, owner))),
-                owner.GetRawStatesForCategory(category),
-                owner.GetRawStatesForCategory(categoryToIgnoreArrivalsFrom));
+                owner.NormalisedStatesFor(category),
+                owner.NormalisedStatesFor(categoryToIgnoreArrivalsFrom));
         }
 
         // Every arrival the spans record, the earliest coming from nowhere — the same shape Azure
@@ -104,11 +104,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
         // A `field_value_duration` definition is not necessarily a definition on the state field:
         // the stock incident table also measures `active` and `assignment_group` that way, which
         // would pair `true` against a group name and report it as a move. A label the team never
-        // mapped is not a state. Amends ADR-118 D2, which discriminated on the definition type alone.
+        // mapped is not a state, so the definition type alone cannot tell a state span from the others.
         private static List<ServiceNowStateSpan> TheTeamRecognisesAsState(
             IReadOnlyList<ServiceNowStateSpan> spans, IWorkItemQueryOwner owner)
         {
-            return [.. spans.Where(span => owner.MapStateToStateCategory(span.Label) != StateCategories.Unknown)];
+            var lists = owner.CategoryLists();
+            return [.. spans.Where(span => lists.CategoryOfRawState(span.Label) != StateCategories.Unknown)];
         }
 
         private static List<ServiceNowStateSpan> InStartOrder(IReadOnlyList<ServiceNowStateSpan> spans)
@@ -127,7 +128,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Serv
                     FromState = spansInStartOrder[arrival - 1].Label,
                     ToState = spansInStartOrder[arrival].Label,
 
-                    // ADR-118 decision 1: dated by the arrival, never the departure.
+                    // The move happened when the record arrived in its next state, so the arrival dates it.
                     TransitionedAt = spansInStartOrder[arrival].Start,
                 });
             }

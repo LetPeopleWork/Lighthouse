@@ -36,10 +36,12 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	validateSettings: (settings: TSettings) => Promise<boolean>;
 	modifyDefaultSettings: boolean;
 	// Returns one human-readable reason per field blocking the save; empty means valid.
+	// `stored` is the settings as last loaded or saved, for rules that only judge what this edit changes.
 	validateForm: (
 		settings: TSettings,
 		selectedSystem: IWorkTrackingSystemConnection | null,
 		modifyDefaultSettings: boolean,
+		stored: TSettings | null,
 	) => string[];
 	getSchemaForSystem: (
 		connection: IWorkTrackingSystemConnection,
@@ -146,6 +148,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const [saveState, setSaveState] = useState<SaveState>("idle");
 	const [refreshFailed, setRefreshFailed] = useState(false);
 	const [loading, setLoading] = useState(false);
+	const [loadFailed, setLoadFailed] = useState(false);
 	const lastSavePayloadRef = useRef<TSettings | null>(null);
 	const requestSeqRef = useRef(0);
 	const hasInteractedRef = useRef(false);
@@ -154,6 +157,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const pendingPayloadRef = useRef<TSettings | null>(null);
 	const lastValidatedFingerprintRef = useRef<string | null>(null);
 	const persistedFormRef = useRef<string | null>(null);
+	const [storedSettings, setStoredSettings] = useState<TSettings | null>(null);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
@@ -181,7 +185,12 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	tokenRef.current = settings?.concurrencyToken;
 
 	const formInvalidReasons = settings
-		? validateForm(settings, selectedWorkTrackingSystem, modifyDefaultSettings)
+		? validateForm(
+				settings,
+				selectedWorkTrackingSystem,
+				modifyDefaultSettings,
+				storedSettings,
+			)
 		: [];
 	const formValid = settings !== null && formInvalidReasons.length === 0;
 
@@ -269,6 +278,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 					(result) => {
 						hasInteractedRef.current = false;
 						persistedFormRef.current = savedForm(payload);
+						setStoredSettings(result ?? payload);
 						applyRefreshedToken(result);
 						applyIfLatest("saved");
 						if (autoRefreshOnSave && isLatest()) {
@@ -305,6 +315,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const reloadAfterConflict = useCallback(async () => {
 		requestSeqRef.current += 1;
 		const freshSettings = await getSettingsRef.current();
+		setStoredSettings(freshSettings);
 		hasConflictRef.current = false;
 		hasInteractedRef.current = false;
 		const system =
@@ -393,9 +404,15 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			setLoading(true);
 			try {
 				const [fetchedSettings, systems] = await Promise.all([
-					getSettingsRef.current(),
+					getSettingsRef.current().then((loaded) => {
+						setStoredSettings(loaded);
+						return loaded;
+					}),
 					getWorkTrackingSystemsRef.current(),
-				]);
+				]).catch((error: unknown) => {
+					setLoadFailed(true);
+					throw error;
+				});
 				const system =
 					systems.find(
 						(s) => s.id === fetchedSettings.workTrackingSystemConnectionId,
@@ -485,7 +502,8 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			}
 		}
 
-		await saveSettings(updated as TSettings);
+		const saved = await saveSettings(updated as TSettings);
+		setStoredSettings(saved ?? (updated as TSettings));
 	};
 
 	const getListHandlers = (
@@ -508,7 +526,9 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 
 	return {
 		loading,
+		loadFailed,
 		settings,
+		storedSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formValid,

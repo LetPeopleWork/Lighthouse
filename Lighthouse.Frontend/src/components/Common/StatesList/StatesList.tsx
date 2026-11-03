@@ -2,8 +2,15 @@ import { Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useContext, useEffect, useMemo, useState } from "react";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { StatesCollection } from "../../../models/StatesCollection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import {
+	displayNameOf,
+	displayStatesFor,
+	foldKey,
+	groupsSomething,
+} from "../../../utils/stateMappingView";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 
@@ -24,7 +31,47 @@ interface StatesListComponentProps {
 	onReorderDoneStates?: (newOrder: string[]) => void;
 
 	isForTeam?: boolean;
-	stateMappingNames?: string[];
+	/** The lists above hold raw states; the mappings only group them on display. */
+	stateMappings?: IStateMapping[];
+}
+
+const NO_MAPPINGS: IStateMapping[] = [];
+
+function mappingTooltipsFor(
+	mappings: IStateMapping[],
+): ReadonlyMap<string, string> {
+	return new Map(
+		mappings
+			.filter(groupsSomething)
+			.map((mapping) => [
+				mapping.name,
+				`State mapping: ${mapping.states.join(", ")}. Delete it under State Mappings to remove it.`,
+			]),
+	);
+}
+
+/** Turns a reordered display list back into raw states, each mapping's states together in their stored order. */
+function rawOrderFor(
+	displayOrder: string[],
+	rawStates: string[],
+	mappings: IStateMapping[],
+): string[] {
+	return displayOrder.flatMap((entry) => {
+		const entryKey = foldKey(entry);
+		return rawStates.filter(
+			(state) => foldKey(displayNameOf(state, mappings)) === entryKey,
+		);
+	});
+}
+
+function reorderHandlerFor(
+	onReorder: ((newOrder: string[]) => void) | undefined,
+	rawStates: string[],
+	mappings: IStateMapping[],
+): ((newOrder: string[]) => void) | undefined {
+	if (!onReorder) return undefined;
+	return (displayOrder) =>
+		onReorder(rawOrderFor(displayOrder, rawStates, mappings));
 }
 
 const StatesList: React.FC<StatesListComponentProps> = ({
@@ -41,7 +88,7 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 	onRemoveDoneState,
 	onReorderDoneStates,
 	isForTeam = true,
-	stateMappingNames = [],
+	stateMappings = NO_MAPPINGS,
 }) => {
 	const [statesSuggestions, setStatesSuggestions] =
 		useState<StatesCollection | null>(null);
@@ -71,60 +118,77 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 		});
 	}, [suggestionService, isForTeam]);
 
+	const mappingTooltips = useMemo(
+		() => mappingTooltipsFor(stateMappings),
+		[stateMappings],
+	);
+	const toDoDisplayStates = useMemo(
+		() => displayStatesFor(toDoStates, stateMappings),
+		[toDoStates, stateMappings],
+	);
+	const doingDisplayStates = useMemo(
+		() => displayStatesFor(doingStates, stateMappings),
+		[doingStates, stateMappings],
+	);
+	const doneDisplayStates = useMemo(
+		() => displayStatesFor(doneStates, stateMappings),
+		[doneStates, stateMappings],
+	);
+
+	const reorderToDo = useMemo(
+		() => reorderHandlerFor(onReorderToDoStates, toDoStates, stateMappings),
+		[onReorderToDoStates, toDoStates, stateMappings],
+	);
+	const reorderDoing = useMemo(
+		() => reorderHandlerFor(onReorderDoingStates, doingStates, stateMappings),
+		[onReorderDoingStates, doingStates, stateMappings],
+	);
+	const reorderDone = useMemo(
+		() => reorderHandlerFor(onReorderDoneStates, doneStates, stateMappings),
+		[onReorderDoneStates, doneStates, stateMappings],
+	);
+
 	const allUsedStates = useMemo(() => {
 		return [...toDoStates, ...doingStates, ...doneStates];
 	}, [toDoStates, doingStates, doneStates]);
+
+	const isOfferable = useMemo(() => {
+		const mappingKeys = new Set(
+			stateMappings.map((mapping) => foldKey(mapping.name)),
+		);
+		return (state: string) =>
+			!allUsedStates.includes(state) && !mappingKeys.has(foldKey(state));
+	}, [allUsedStates, stateMappings]);
 
 	const todoSuggestions = useMemo(() => {
 		const toDoArray = statesSuggestions?.toDoStates ?? [];
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [
-			...stateMappingNames,
-			...toDoArray,
-			...doingArray,
-			...doneArray,
-		];
+		const allStates = [...toDoArray, ...doingArray, ...doneArray];
 
-		return Array.from(new Set(allStates)).filter(
-			(state) => !allUsedStates.includes(state),
-		);
-	}, [statesSuggestions, allUsedStates, stateMappingNames]);
+		return Array.from(new Set(allStates)).filter(isOfferable);
+	}, [statesSuggestions, isOfferable]);
 
 	const doingSuggestions = useMemo(() => {
 		const toDoArray = statesSuggestions?.toDoStates ?? [];
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [
-			...stateMappingNames,
-			...doingArray,
-			...toDoArray,
-			...doneArray,
-		];
+		const allStates = [...doingArray, ...toDoArray, ...doneArray];
 
-		return Array.from(new Set(allStates)).filter(
-			(state) => !allUsedStates.includes(state),
-		);
-	}, [statesSuggestions, allUsedStates, stateMappingNames]);
+		return Array.from(new Set(allStates)).filter(isOfferable);
+	}, [statesSuggestions, isOfferable]);
 
 	const doneSuggestions = useMemo(() => {
 		const toDoArray = statesSuggestions?.toDoStates ?? [];
 		const doingArray = statesSuggestions?.doingStates ?? [];
 		const doneArray = statesSuggestions?.doneStates ?? [];
 
-		const allStates = [
-			...stateMappingNames,
-			...doneArray,
-			...toDoArray,
-			...doingArray,
-		];
+		const allStates = [...doneArray, ...toDoArray, ...doingArray];
 
-		return Array.from(new Set(allStates)).filter(
-			(state) => !allUsedStates.includes(state),
-		);
-	}, [statesSuggestions, allUsedStates, stateMappingNames]);
+		return Array.from(new Set(allStates)).filter(isOfferable);
+	}, [statesSuggestions, isOfferable]);
 
 	return (
 		<InputGroup title="States">
@@ -133,10 +197,11 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 					<Typography variant="h6">To Do</Typography>
 					<ItemListManager
 						title="To Do States"
-						items={toDoStates}
+						items={toDoDisplayStates}
+						groupedItems={mappingTooltips}
 						onAddItem={onAddToDoState}
 						onRemoveItem={onRemoveToDoState}
-						onReorderItems={onReorderToDoStates}
+						onReorderItems={reorderToDo}
 						suggestions={todoSuggestions}
 						isLoading={isLoading}
 					/>
@@ -145,10 +210,11 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 					<Typography variant="h6">Doing</Typography>
 					<ItemListManager
 						title="Doing States"
-						items={doingStates}
+						items={doingDisplayStates}
+						groupedItems={mappingTooltips}
 						onAddItem={onAddDoingState}
 						onRemoveItem={onRemoveDoingState}
-						onReorderItems={onReorderDoingStates}
+						onReorderItems={reorderDoing}
 						suggestions={doingSuggestions}
 						isLoading={isLoading}
 					/>
@@ -157,10 +223,11 @@ const StatesList: React.FC<StatesListComponentProps> = ({
 					<Typography variant="h6">Done</Typography>
 					<ItemListManager
 						title="Done States"
-						items={doneStates}
+						items={doneDisplayStates}
+						groupedItems={mappingTooltips}
 						onAddItem={onAddDoneState}
 						onRemoveItem={onRemoveDoneState}
-						onReorderItems={onReorderDoneStates}
+						onReorderItems={reorderDone}
 						suggestions={doneSuggestions}
 						isLoading={isLoading}
 					/>

@@ -158,7 +158,9 @@ import WidgetShell from "./WidgetShell";
 import WipOverviewWidget from "./WipOverviewWidget";
 import { getWidgetInfo, type WidgetInfoOwner } from "./widgetInfoMetadata";
 import {
+	combineWidgetStatuses,
 	type FetchKeyStates,
+	type WidgetStatus,
 	widgetHasData,
 	widgetStatusFor,
 } from "./widgetStatus";
@@ -176,6 +178,8 @@ export interface BaseMetricsViewProps<
 	featureWip?: number;
 	hasBlockedConfig?: boolean;
 	doingStates: string[];
+	/** Whether the Doing columns have arrived; the aging chart never reads a pending or failed fetch as an empty Doing list. */
+	doingStatesStatus?: WidgetStatus;
 	hasForecastFilter?: boolean;
 	forecastFilterConditions?: readonly EvaluatorCondition[];
 	stalenessThresholdDays?: number;
@@ -330,7 +334,7 @@ type RagInputs = {
 
 // A status is only honest once wait states are configured AND there is work in scope; in the two
 // degraded states the widget shows an explanatory body instead, and emitting a footer here would
-// paint a misleading colour on top of it (AC2/AC3).
+// paint a misleading colour on top of it.
 function computeFlowEfficiencyFooter(
 	info: IFlowEfficiencyInfo | null,
 	terms: RagTerms,
@@ -1283,14 +1287,28 @@ function buildWidgetNodes(ctx: {
 	return nodes;
 }
 
+// The aging chart lays its columns out from the Doing states. Drawn before they arrive, it would
+// be an empty chart that reads as "nothing in progress".
+function columnsStatusOf(
+	widgetKey: string,
+	doingStatesStatus: WidgetStatus,
+): WidgetStatus {
+	return widgetKey === "aging" ? doingStatesStatus : "ready";
+}
+
 function frameStateOf(
 	widgetKey: string,
 	fetchStates: FetchKeyStates,
 	isCommitPending: boolean,
+	columnsStatus: WidgetStatus,
 ) {
 	return {
-		status: widgetStatusFor(widgetKey, fetchStates, isCommitPending),
-		hasContentToDim: widgetHasData(widgetKey, fetchStates),
+		status: combineWidgetStatuses([
+			widgetStatusFor(widgetKey, fetchStates, isCommitPending),
+			columnsStatus,
+		]),
+		hasContentToDim:
+			columnsStatus === "ready" && widgetHasData(widgetKey, fetchStates),
 	};
 }
 
@@ -1319,8 +1337,11 @@ function bodyOf(
 	widgetKey: string,
 	node: ReactNode,
 	fetchStates: FetchKeyStates,
+	columnsStatus: WidgetStatus,
 ): ReactNode {
-	return widgetHasData(widgetKey, fetchStates) ? node : null;
+	return columnsStatus === "ready" && widgetHasData(widgetKey, fetchStates)
+		? node
+		: null;
 }
 
 export const BaseMetricsView = <
@@ -1335,6 +1356,7 @@ export const BaseMetricsView = <
 	featureWip,
 	hasBlockedConfig = false,
 	doingStates,
+	doingStatesStatus = "ready",
 	hasForecastFilter = false,
 	forecastFilterConditions = [],
 	stalenessThresholdDays,
@@ -1982,23 +2004,36 @@ export const BaseMetricsView = <
 	const activeWidgets = getWidgetsForCategory(selectedCategory, ownerType);
 	const dashboardItems: DashboardItem[] = activeWidgets
 		.filter((w) => isPlaced(w.widgetKey, widgetNodes[w.widgetKey], fetchStates))
-		.map((w) => ({
-			id: w.widgetKey,
-			size: w.size,
-			node: (
-				<WidgetShell
-					widgetKey={w.widgetKey}
-					showTips={showTips}
-					header={widgetFooters[w.widgetKey]}
-					info={getWidgetInfo(w.widgetKey, infoOwner)}
-					viewData={widgetViewData[w.widgetKey]}
-					trend={widgetTrends[w.widgetKey]}
-					{...frameStateOf(w.widgetKey, fetchStates, isCommitPending)}
-				>
-					{bodyOf(w.widgetKey, widgetNodes[w.widgetKey], fetchStates)}
-				</WidgetShell>
-			),
-		}));
+		.map((w) => {
+			const columnsStatus = columnsStatusOf(w.widgetKey, doingStatesStatus);
+			return {
+				id: w.widgetKey,
+				size: w.size,
+				node: (
+					<WidgetShell
+						widgetKey={w.widgetKey}
+						showTips={showTips}
+						header={widgetFooters[w.widgetKey]}
+						info={getWidgetInfo(w.widgetKey, infoOwner)}
+						viewData={widgetViewData[w.widgetKey]}
+						trend={widgetTrends[w.widgetKey]}
+						{...frameStateOf(
+							w.widgetKey,
+							fetchStates,
+							isCommitPending,
+							columnsStatus,
+						)}
+					>
+						{bodyOf(
+							w.widgetKey,
+							widgetNodes[w.widgetKey],
+							fetchStates,
+							columnsStatus,
+						)}
+					</WidgetShell>
+				),
+			};
+		});
 
 	return (
 		<Grid container spacing={2}>

@@ -205,13 +205,13 @@ namespace Lighthouse.Backend.API
                 return BadRequest(baselineValidation.ErrorMessage);
             }
 
-            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting);
+            var storedTeam = teamRepository.GetById(teamId);
+
+            var stateMappingValidation = StateMappingValidator.ValidateSettings(teamSetting, storedTeam);
             if (!stateMappingValidation.IsValid)
             {
                 return BadRequest(stateMappingValidation.Errors);
             }
-
-            var storedTeam = teamRepository.GetById(teamId);
 
             var refinementErrors = RefinementSettingsValidator.ValidateSettings(teamSetting, storedTeam?.RefinementSettings);
             if (refinementErrors.Count > 0)
@@ -243,7 +243,7 @@ namespace Lighthouse.Backend.API
 
             if (canUsePremiumFeatures)
             {
-                var cycleTimeValidation = CycleTimeDefinitionValidator.ValidateSettings(teamSetting);
+                var cycleTimeValidation = CycleTimeDefinitionValidator.ValidateSettings(teamSetting, storedTeam?.CycleTimeDefinitions);
                 if (!cycleTimeValidation.IsValid)
                 {
                     return BadRequest(cycleTimeValidation.Errors);

@@ -46,7 +46,7 @@ describe("resolveWaitRawStates", () => {
 		expect(resolved).toEqual(["Waiting for Review"]);
 	});
 
-	it("expands a raw entry AND a mapping-name entry to the same raw set (cross-surface invariant #1a)", () => {
+	it("expands a raw entry and a mapping-name entry to the same raw set", () => {
 		const mappings: IStateMapping[] = [
 			{ name: "Waiting", states: ["Waiting for Review", "Blocked - External"] },
 		];
@@ -83,22 +83,34 @@ describe("flowEfficiency fold", () => {
 		}
 	});
 
-	it("expands a mapping-name wait state and counts every underlying raw state's time", () => {
+	it("counts a mapping's time as wait whether the wait state names the mapping or one of its states", () => {
+		const rows: ICumulativeStateTimeStateRow[] = [
+			getMockStateRow({ state: "In Progress", totalDays: 100 }),
+			getMockStateRow({ state: "Waiting", totalDays: 200 }),
+			getMockStateRow({ state: "Queue", totalDays: 100 }),
+		];
+		const mappings: IStateMapping[] = [
+			{ name: "Waiting", states: ["Waiting for Review", "Blocked - External"] },
+			{ name: "Queue", states: ["Ready for Test", "QA"] },
+		];
+
+		const result = flowEfficiency(rows, ["Waiting", "qa"], mappings);
+
+		expect(result).toEqual({ status: "computed", efficiencyPercent: 25 });
+	});
+
+	it("counts the whole mapping's time as wait when the wait state is one of the mapping's states", () => {
 		const rows: ICumulativeStateTimeStateRow[] = [
 			getMockStateRow({ state: "In Progress", totalDays: 180 }),
-			getMockStateRow({ state: "Waiting for Review", totalDays: 120 }),
-			getMockStateRow({ state: "Blocked - External", totalDays: 100 }),
+			getMockStateRow({ state: "Waiting", totalDays: 220 }),
 		];
 		const mappings: IStateMapping[] = [
 			{ name: "Waiting", states: ["Waiting for Review", "Blocked - External"] },
 		];
 
-		const result = flowEfficiency(rows, ["Waiting"], mappings);
+		const result = flowEfficiency(rows, ["blocked - external"], mappings);
 
-		expect(result.status).toBe("computed");
-		if (result.status === "computed") {
-			expect(result.efficiencyPercent).toBeCloseTo(45, 0);
-		}
+		expect(result).toEqual({ status: "computed", efficiencyPercent: 45 });
 	});
 
 	it("recomputes over a narrowed selection of rows (per-item)", () => {
@@ -143,7 +155,7 @@ describe("flowEfficiency fold", () => {
 		}
 	});
 
-	it("equals the tile fold value on one shared whole-set fixture (cross-surface invariant #1b)", () => {
+	it("equals the tile fold value on one shared whole-set fixture", () => {
 		const waitStates = ["Waiting for Review", "Ready for Test"];
 
 		const chartNumber = flowEfficiency(knownFixtureRows, waitStates, []);

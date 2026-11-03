@@ -20,7 +20,6 @@ import {
 	isCycleTimeDefinitionValid,
 	resolveWorkflowStates,
 } from "../../../utils/isCycleTimeDefinitionValid";
-import { withoutIncompleteMappings } from "../../../utils/stateMappingValidation";
 import InputGroup from "../InputGroup/InputGroup";
 
 interface CycleTimesEditorProps {
@@ -48,19 +47,11 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 	const labelId = useId();
 	const nextTempId = useRef(-1);
 
-	const mappingNames = withoutIncompleteMappings(stateMappings).map(
-		(mapping) => mapping.name,
-	);
-
 	const workflowStates = resolveWorkflowStates(
 		toDoStates,
 		doingStates,
 		doneStates,
 		stateMappings,
-	);
-
-	const suggestions = [...workflowStates, ...mappingNames].filter(
-		(state, index, all) => all.indexOf(state) === index,
 	);
 
 	if (!licenseStatus?.canUsePremiumFeatures) {
@@ -181,7 +172,7 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 							<Autocomplete
 								freeSolo
 								size="small"
-								options={suggestions}
+								options={workflowStates}
 								value={definition.startState}
 								onChange={(_, value) =>
 									updateDefinition(index, { startState: value ?? "" })
@@ -201,7 +192,7 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 							<Autocomplete
 								freeSolo
 								size="small"
-								options={suggestions}
+								options={workflowStates}
 								value={definition.endState}
 								onChange={(_, value) =>
 									updateDefinition(index, { endState: value ?? "" })

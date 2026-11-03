@@ -25,8 +25,8 @@ import {
 	formatDuration,
 } from "../../../utils/date/formatDuration";
 import {
+	displayedWaitStateMatcher,
 	flowEfficiency,
-	resolveWaitRawStates,
 } from "../../../utils/flowEfficiency";
 
 const HATCH_PATTERN_ID = "cumulative-state-time-ongoing-hatch";
@@ -302,13 +302,8 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 		() => orderByWorkflow(data.states),
 		[data.states],
 	);
-	const waitRawStates = useMemo(
-		() =>
-			new Set(
-				resolveWaitRawStates(waitStates, stateMappings).map((state) =>
-					state.toLowerCase(),
-				),
-			),
+	const isWaitState = useMemo(
+		() => displayedWaitStateMatcher(waitStates, stateMappings),
 		[waitStates, stateMappings],
 	);
 	const maxTotalDays = Math.max(...orderedStates.map((row) => row.totalDays));
@@ -318,11 +313,11 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 			states: orderedStates,
 			unit,
 			solidColorFor: (state) =>
-				waitRawStates.has(state.toLowerCase())
+				isWaitState(state)
 					? theme.palette.error.main
 					: theme.palette.primary.main,
 		}),
-		[orderedStates, unit, waitRawStates, theme],
+		[orderedStates, unit, isWaitState, theme],
 	);
 
 	if (data.states.length === 0) {
@@ -362,8 +357,6 @@ const CumulativeStateTimeChart: React.FC<CumulativeStateTimeChartProps> = ({
 
 	const stateLabels = orderedStates.map((row) => row.state);
 
-	const isWaitState = (state: string): boolean =>
-		waitRawStates.has(state.toLowerCase());
 	const hasWaitBars = orderedStates.some((row) => isWaitState(row.state));
 
 	const completedFor = (wait: boolean): (number | null)[] =>

@@ -1,24 +1,37 @@
 import type { IStateMapping } from "../models/Common/StateMapping";
 import type { ICumulativeStateTimeStateRow } from "../models/Metrics/CumulativeStateTime";
+import { displayNameOf, foldKey } from "./stateMappingView";
 
 export type FlowEfficiencyResult =
 	| { status: "not-configured" }
 	| { status: "no-data" }
 	| { status: "computed"; efficiencyPercent: number };
 
-const matchesMappingName = (mapping: IStateMapping, entry: string): boolean =>
-	mapping.name.toLowerCase() === entry.toLowerCase();
-
 export function resolveWaitRawStates(
 	waitStates: string[],
 	stateMappings: IStateMapping[],
 ): string[] {
 	return waitStates.flatMap((entry) => {
-		const mapping = stateMappings.find((candidate) =>
-			matchesMappingName(candidate, entry),
+		const key = foldKey(entry);
+		const mapping = stateMappings.find(
+			(candidate) => foldKey(candidate.name) === key,
 		);
 		return mapping ? mapping.states : [entry];
 	});
+}
+
+// The chart rows carry a mapping's name in place of its states, so a wait state is compared in that form:
+// a mapping's name stays itself, and one of a mapping's states stands for the whole mapping.
+export function displayedWaitStateMatcher(
+	waitStates: string[],
+	stateMappings: IStateMapping[],
+): (displayedState: string) => boolean {
+	const waitKeys = new Set(
+		resolveWaitRawStates(waitStates, stateMappings).map((rawState) =>
+			foldKey(displayNameOf(rawState, stateMappings)),
+		),
+	);
+	return (displayedState) => waitKeys.has(foldKey(displayedState));
 }
 
 export function flowEfficiency(
@@ -35,13 +48,9 @@ export function flowEfficiency(
 		return { status: "no-data" };
 	}
 
-	const waitRawStates = new Set(
-		resolveWaitRawStates(waitStates, stateMappings).map((state) =>
-			state.toLowerCase(),
-		),
-	);
+	const isWaitState = displayedWaitStateMatcher(waitStates, stateMappings);
 	const waitDays = rows
-		.filter((row) => waitRawStates.has(row.state.toLowerCase()))
+		.filter((row) => isWaitState(row.state))
 		.reduce((sum, row) => sum + row.totalDays, 0);
 
 	const activeDays = totalDoingDays - waitDays;

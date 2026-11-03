@@ -1,12 +1,14 @@
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect, useRef } from "react";
+import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type {
 	IRefinementSettings,
 	IRefinementStateSetting,
 } from "../../../models/Refinement/Refinement";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { withoutIncompleteMappings } from "../../../utils/stateMappingValidation";
+import { displayStatesFor, foldKey } from "../../../utils/stateMappingView";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
 import ReadinessSettings, {
@@ -51,6 +53,7 @@ interface RefinementSettingsSectionProps {
 	teamId: number;
 	toDoStates: string[];
 	doingStates: string[];
+	stateMappings: IStateMapping[];
 	refinement: IRefinementSettings | null | undefined;
 	/** Receives only the part of the settings that changed. */
 	onChange: (change: Partial<IRefinementSettings>) => void;
@@ -63,48 +66,38 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 	teamId,
 	toDoStates,
 	doingStates,
+	stateMappings,
 	refinement,
 	onChange,
 }) => {
 	const { getTerm } = useTerminology();
 
 	const chosenStates = refinement?.states ?? [];
-	const suggestions = [...toDoStates, ...doingStates];
-	const offered = new Set(suggestions.map((state) => state.toLowerCase()));
-	const chosen = chosenStates
-		.map((entry) => entry.state)
-		.filter((state) => offered.has(state.toLowerCase()));
+	const mappings = withoutIncompleteMappings(stateMappings);
+	const suggestions = [
+		...displayStatesFor(toDoStates, mappings),
+		...displayStatesFor(doingStates, mappings),
+	];
+	const offered = new Set(suggestions.map(foldKey));
+	const allChosen = chosenStates.map((entry) => entry.state);
+	// A chosen state that is no longer To Do or Doing is only hidden, and is still sent: the server drops it
+	// when it applies the save. Dropping it here would lose it while a mapping's name is being retyped.
+	const chosen = allChosen.filter((state) => offered.has(foldKey(state)));
 
 	const save = (states: string[]) => onChange({ states: toSettings(states) });
-
-	// Only To Do and Doing states can mean refinement, so a chosen state leaves as soon as the admin stops
-	// offering it, and the same save that changes the states carries the shorter list. Opening the form is
-	// not an edit: a stored state that is not offered is only hidden, and the server drops it on any save.
-	const offeredKey = [...offered].join("\n");
-	const lastOfferedKey = useRef(offeredKey);
-	const anyNoLongerOffered = chosen.length < chosenStates.length;
-	useEffect(() => {
-		if (lastOfferedKey.current === offeredKey) {
-			return;
-		}
-		lastOfferedKey.current = offeredKey;
-		if (anyNoLongerOffered) {
-			onChange({ states: toSettings(chosen) });
-		}
-	}, [offeredKey, anyNoLongerOffered, chosen, onChange]);
 
 	// The list accepts free text, but the server refuses anything that is not a To Do or Doing state,
 	// so a typed value only counts when it names one of the suggestions.
 	const add = (typed: string) => {
-		const wanted = typed.trim().toLowerCase();
-		const match = suggestions.find((state) => state.toLowerCase() === wanted);
+		const wanted = foldKey(typed);
+		const match = suggestions.find((state) => foldKey(state) === wanted);
 		if (match && !chosen.includes(match)) {
-			save([...chosen, match]);
+			save([...allChosen, match]);
 		}
 	};
 
 	const remove = (state: string) =>
-		save(chosen.filter((name) => name !== state));
+		save(allChosen.filter((name) => name !== state));
 
 	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
 

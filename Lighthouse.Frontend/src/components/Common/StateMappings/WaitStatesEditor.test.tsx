@@ -55,26 +55,25 @@ describe("WaitStatesEditor", () => {
 		expect(screen.getByText(/efficiency/i)).toBeInTheDocument();
 	});
 
-	it("suggests both raw Doing states and non-empty mapping names", async () => {
+	it("offers a mapping's name, not its states", async () => {
 		render(
 			<WaitStatesEditor
 				waitStates={[]}
-				doingStates={doingStates}
-				stateMappings={stateMappings}
+				doingStates={["Active", "In Review", "In Test"]}
+				stateMappings={[{ name: "Testing", states: ["In Review", "In Test"] }]}
 				onChange={vi.fn()}
 			/>,
 		);
 
 		await openControl();
+		await userEvent.click(
+			screen.getByRole("combobox", { name: /wait state/i }),
+		);
 
-		const combobox = screen.getByRole("combobox", { name: /wait state/i });
-		await userEvent.click(combobox);
-
-		const options = screen.getByRole("listbox");
-		expect(within(options).getByText("Active")).toBeInTheDocument();
-		expect(within(options).getByText("In Review")).toBeInTheDocument();
-		expect(within(options).getByText("Waiting for Review")).toBeInTheDocument();
-		expect(within(options).getAllByRole("option")).toHaveLength(3);
+		const offered = within(screen.getByRole("listbox"))
+			.getAllByRole("option")
+			.map((option) => option.textContent);
+		expect(offered).toEqual(["Active", "Testing"]);
 	});
 
 	it("does not suggest a mapping that has a name but no states yet", async () => {
@@ -94,7 +93,7 @@ describe("WaitStatesEditor", () => {
 
 		const options = screen.getByRole("listbox");
 		expect(within(options).queryByText("Half Done")).not.toBeInTheDocument();
-		expect(within(options).getAllByRole("option")).toHaveLength(3);
+		expect(within(options).getAllByRole("option")).toHaveLength(2);
 	});
 
 	it("clears the wait states when the toggle is switched off", async () => {

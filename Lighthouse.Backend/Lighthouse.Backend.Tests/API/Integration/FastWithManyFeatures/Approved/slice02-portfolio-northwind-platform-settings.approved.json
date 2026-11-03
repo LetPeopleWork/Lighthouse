@@ -45,6 +45,15 @@
   "doneStates": [
     "Done"
   ],
+  "toDoDisplayStates": [
+    "New"
+  ],
+  "doingDisplayStates": [
+    "In Progress"
+  ],
+  "doneDisplayStates": [
+    "Done"
+  ],
   "blockedRuleSetJson": "{\"version\":1,\"mode\":\"or\",\"conditions\":[]}",
   "waitStates": [],
   "serviceLevelExpectationProbability": 0,

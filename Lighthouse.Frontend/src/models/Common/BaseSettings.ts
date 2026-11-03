@@ -25,6 +25,10 @@ export interface IBaseSettings {
 	toDoStates: string[];
 	doingStates: string[];
 	doneStates: string[];
+	/** The lists as the charts show them, groups in place of their states; read-only. */
+	toDoDisplayStates?: string[];
+	doingDisplayStates?: string[];
+	doneDisplayStates?: string[];
 	workTrackingSystemConnectionId: number;
 	serviceLevelExpectationProbability: number;
 	serviceLevelExpectationRange: number;

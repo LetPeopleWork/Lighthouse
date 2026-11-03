@@ -1,9 +1,11 @@
+import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import {
 	Autocomplete,
 	Chip,
 	CircularProgress,
 	Stack,
 	TextField,
+	Tooltip,
 	Typography,
 } from "@mui/material";
 import Grid from "@mui/material/Grid";
@@ -18,6 +20,8 @@ interface ItemListManagerProps {
 	onReorderItems?: (newOrder: string[]) => void;
 	suggestions?: string[];
 	isLoading?: boolean;
+	/** Items that stand for a group, each with the tooltip it shows; they cannot be removed here. */
+	groupedItems?: ReadonlyMap<string, string>;
 }
 
 const ItemListManager: React.FC<ItemListManagerProps> = ({
@@ -28,6 +32,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 	onReorderItems,
 	suggestions = [],
 	isLoading = false,
+	groupedItems,
 }) => {
 	const [inputValue, setInputValue] = useState<string>("");
 	const [highlightedOption, setHighlightedOption] = useState<string | null>(
@@ -103,28 +108,38 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 			<Grid size={{ xs: 12 }}>
 				<Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
 					{items
-						.filter((item) => item.trim())
-						.map((item, index) => (
-							<Chip
-								key={item}
-								label={item}
-								onDelete={() => onRemoveItem(item)}
-								color="primary"
-								variant="outlined"
-								draggable={!!onReorderItems}
-								onDragStart={(e) => handleDragStart(e, index)}
-								onDragOver={handleDragOver}
-								onDrop={(e) => handleDrop(e, index)}
-								onDragEnd={handleDragEnd}
-								sx={{
-									cursor: onReorderItems ? "grab" : "default",
-									"&:active": {
-										cursor: onReorderItems ? "grabbing" : "default",
-									},
-									opacity: draggedIndex === index ? 0.5 : 1,
-								}}
-							/>
-						))}
+						.map((item, index) => ({ item, index }))
+						.filter(({ item }) => item.trim())
+						.map(({ item, index }) => {
+							const groupTooltip = groupedItems?.get(item);
+							const chip = (
+								<Chip
+									key={item}
+									label={item}
+									color="primary"
+									{...chipLookFor(item, groupTooltip, onRemoveItem)}
+									draggable={!!onReorderItems}
+									onDragStart={(e) => handleDragStart(e, index)}
+									onDragOver={handleDragOver}
+									onDrop={(e) => handleDrop(e, index)}
+									onDragEnd={handleDragEnd}
+									sx={{
+										cursor: onReorderItems ? "grab" : "default",
+										"&:active": {
+											cursor: onReorderItems ? "grabbing" : "default",
+										},
+										opacity: draggedIndex === index ? 0.5 : 1,
+									}}
+								/>
+							);
+							return groupTooltip === undefined ? (
+								chip
+							) : (
+								<Tooltip key={item} title={groupTooltip} describeChild>
+									{chip}
+								</Tooltip>
+							);
+						})}
 				</Stack>
 			</Grid>
 			<Grid size={{ xs: 12 }}>
@@ -225,5 +240,26 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 		</Grid>
 	);
 };
+
+// A plain chip can be removed. A mapping chip cannot: it is removed by deleting the mapping, so it has no action
+// of its own, and without tabIndex a keyboard user would never reach its tooltip. A plain div may not carry a
+// name, so the mapping chip is a group named after the mapping.
+function chipLookFor(
+	item: string,
+	groupTooltip: string | undefined,
+	onRemoveItem: (item: string) => void,
+) {
+	if (groupTooltip === undefined) {
+		return { onDelete: () => onRemoveItem(item), variant: "outlined" as const };
+	}
+	return {
+		icon: <WorkspacesIcon data-testid="state-mapping-chip-icon" />,
+		"data-testid": "state-mapping-chip",
+		variant: "filled" as const,
+		tabIndex: 0,
+		role: "group",
+		"aria-label": item,
+	};
+}
 
 export default ItemListManager;

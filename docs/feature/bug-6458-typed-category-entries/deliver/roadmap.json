@@ -1,0 +1,907 @@
+{
+  "roadmap": {
+    "project_id": "bug-6458-typed-category-entries",
+    "created_at": "2026-11-01",
+    "total_steps": 26,
+    "total_phases": 5,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "methodology": "outside-in-tdd-from-distill",
+    "goal": "ADO Bug #6458 (a): the To Do, Doing and Done lists hold raw tracker states and a state mapping is a derived display grouping. One entry classifier on the owner normalises every write and every read; a shadowing payload is a 400; a startup seeder rewrites stored lists once (skip and log); the settings page shows a mapping as one chip it cannot remove, and the aging chart never shows an empty Doing list while its settings load or fail.",
+    "scope": "Backend: owner model (classifier, normaliser, display view, split category lookup), settings sync and validators, settings DTO, new seeder, connectors (ADO, Jira issue factory, ServiceNow, CSV demo journey), metrics services, suggestions endpoint. Frontend: display view and shared fold, validation mirror, StatesList chips, editor help text, metrics pages and the aging frame; the reconciliation module is deleted. No schema change, no migration, no new package.",
+    "ssot_inputs": [
+      "docs/feature/bug-6458-typed-category-entries/feature-delta.md (DESIGN D1-D12, components, Reuse Analysis, UI1-UI8, DISTILL scenario inventory and slice order)",
+      "docs/feature/bug-6458-typed-category-entries/distill/red-classification.md",
+      "docs/product/architecture/adr-270-category-lists-hold-raw-states-mappings-are-a-derived-view.md",
+      "docs/ci-learnings.md"
+    ],
+    "rigor_profile": "thorough (agreed with the maintainer at AFK entry): crafter opus, reviewer sonnet, double review. Pass model explicitly on every dispatch.",
+    "slice_order_note": "DISTILL order kept. Under D12 the read switch (phase 04) no longer depends on stored data being raw, so it could move before the write path, but its HTTP read scenarios need the DTO display lists from phase 02 and the seeder phase proves the normaliser is the identity on rewritten rows; moving it buys nothing.",
+    "standing_rules": [
+      "Un-skip only the scenarios a step names: remove `[Ignore(\"pending: ...\")]` on NUnit methods and `it.skip` (and its pending-reason comment) in Vitest. Every phase ends with every un-skipped test passing and the still-pending ones still skipped.",
+      "Focused runs only: backend `dotnet build` then `dotnet test --filter \"FullyQualifiedName~<ClassName>\"`; frontend `pnpm vitest run <files>`. Never the unfiltered `dotnet test` (live connector categories hit real trackers).",
+      "The machine is loaded by a parallel mutation-testing session: never run backend and frontend suites concurrently.",
+      "Phase-end gate, backend: `dotnet build` (zero warnings), then `dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\"`. Frontend: `pnpm test`, then `pnpm build` (prebuild runs `biome check --write`; check git status afterwards). Known environmental failures (2 Licensing in a worktree, ReleaseService contention) are listed in CLAUDE.md and are not regressions.",
+      "Remove each `// SCAFFOLD: true` / `__SCAFFOLD__` / doc-comment `SCAFFOLD: true` marker in the step that implements its member. `grep -rn \"SCAFFOLD: true\\|__SCAFFOLD__\" Lighthouse.Backend Lighthouse.Frontend/src` must find nothing in production code after 05-08.",
+      "Comments: plain-language why only; never cite D-numbers, UI-numbers, ADR numbers or slice ids. No nWave scenario tags in code.",
+      "Copy is pinned exactly: Doing shadowing `Mapping \"{name}\" has the same name as the Doing state \"{state}\". Add \"{name}\" to this mapping to group it, or choose another name.`; To Do/Done shadowing `Mapping \"{name}\" has the same name as the {To Do|Done} state \"{state}\". Choose another name.`; chain `Mapping \"{name}\" has the same name as a state grouped by mapping \"{other}\". Choose another name.`; UI7 category sentences as in feature-delta.md. UI7 wording still needs the maintainer's explicit yes at the first review window.",
+      "Pre-apply docs/ci-learnings.md for the stack touched. Commits: conventional, scope `state-mapping`, one focused commit per step, refactor commits apart. Do NOT push without the maintainer."
+    ],
+    "out_of_scope": [
+      "Release-note lines (written at /release): v1 meaning change of doingStates and the shadowing 400; old settings page re-collapses after a downgrade; an owner in the seeder's Warning keeps working and is retried; rolling-update overlap with more than one replica.",
+      "docs/concepts/api-versioning.md and ARCHITECTURE.md updates (feature finalization).",
+      "Lighthouse-Clients skill text (coaching-patterns.md), rides on the next clients changeset.",
+      "Mutation testing: runs once at the final gate on frozen code (Stryker.NET skipping the acceptance suite; StrykerJS), targets seeder, DisplayStatesFor, the lookups, the classifier, StateMappingValidator, the frontend mirror; >=80% kill rate."
+    ]
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "DISTILL review gate (4 reviewers, see feature-delta.md 'Review gate disposition')",
+    "reviewed_at": "2026-11-01"
+  },
+  "phases": [
+    {
+      "phase_id": "01",
+      "id": "01",
+      "name": "Owner: classifier, normaliser, display view, category split, as-of fix",
+      "description": "Implements the five owner members scaffolded by DISTILL and switches the two as-of sites to CategoryOfDisplayName. No list is read differently yet; the as-of lookup stops answering Unknown for a group name.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "step_id": "01-01",
+          "id": "01-01",
+          "name": "Owner classifies a list entry against the mappings (ClassifyListEntry)",
+          "description": "Implement ClassifyListEntry with D10 precedence: an entry that is one of its own mapping's states is StateOfItsOwnMapping even when other states of that mapping are listed beside it; a mapping with no states is not a group. Correct the ListEntryKind.cs doc comment on StateOfItsOwnMapping to state that precedence exclusion.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/CategoryListNormalisationTest.cs",
+          "scenario_name": "ClassifyListEntry_NameOfAGroupThatIsOneOfItsOwnStates_IsAStateOfTheTracker; ClassifyListEntry_NameOfAGroupWhoseStatesAreNotListed_IsACollapsedGroup; ClassifyListEntry_NameOfAGroupBesideOneOfItsStates_IsShadowing; ClassifyListEntry_StateOfTheGroupIsListedOnlyInAnotherList_IsStillACollapsedGroup; ClassifyListEntry_NameWrittenInOtherCasingWithSpaces_IsRecognisedAsTheGroup; ClassifyListEntry_NameOfNoGroup_IsAStateOfTheTracker; ClassifyListEntry_NameOfAMappingWithNoStates_IsAStateOfTheTracker; ClassifyListEntry_AnyGeneratedList_NamesEveryGroupEntryTheWayItWasBuilt",
+          "scenario_count": 8,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/ListEntryKind.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/CategoryListNormalisationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 8 named scenarios run un-skipped and pass (both null and empty no-states cases).",
+            "A self-named entry is StateOfItsOwnMapping even with other members beside it; shadowing only when the name is not one of the mapping's states and a member is listed in the same list.",
+            "ListEntryKind.StateOfItsOwnMapping's doc comment states the precedence exclusion in plain words.",
+            "The ClassifyListEntry `// SCAFFOLD: true` marker is removed; filtered dotnet test on the class is green."
+          ],
+          "criteria": [
+            "The 8 named scenarios run un-skipped and pass.",
+            "ListEntryKind doc comment corrected; ClassifyListEntry scaffold marker removed."
+          ],
+          "dependencies": [],
+          "deps": [],
+          "implementation_notes": "Reuse the name-to-members walk of GetRawStatesForCategory (Reuse Analysis: EXTEND). Fold names with OrdinalIgnoreCase plus Trim as the existing code does. EXEMPT FROM PARADIGM: C#/NUnit, no Hypothesis; property scenarios use the seeded StateListCases.Generate(300) generator already in the test project."
+        },
+        {
+          "step_id": "01-02",
+          "id": "01-02",
+          "name": "Owner normalises a stored list into raw states (NormalisedStatesFor)",
+          "description": "Implement NormalisedStatesFor over the classifier: drop null/blank entries, case (a) adds the missing members right after the self-named entry, case (b) replaces a collapsed chip by its members in place, case (c) uses the legacy expansion; de-duplicate keeping the first spelling.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/CategoryListNormalisationTest.cs",
+          "scenario_name": "NormalisedStatesFor_NameOfAMappingWithNoStates_StaysInTheList; NormalisedStatesFor_GroupNamedAfterItsOwnState_ListsTheOtherStatesRightAfterIt; NormalisedStatesFor_CollapsedGroup_IsReplacedByItsStatesInPlace; NormalisedStatesFor_ListThatAlreadyHoldsEveryState_PassesThroughInTheSameOrder; NormalisedStatesFor_SameStateInDifferentCasing_KeepsTheFirstSpelling; NormalisedStatesFor_NoMappings_ReturnsTheListWithoutRepeats; NormalisedStatesFor_EmptyList_StaysEmpty; NormalisedStatesFor_EntriesThatAreNullEmptyOrOnlyWhitespace_AreLeftOut",
+          "scenario_count": 8,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/CategoryListNormalisationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 8 named scenarios run un-skipped and pass.",
+            "The normaliser's output holds a mapping name only where it is one of that mapping's own states.",
+            "The NormalisedStatesFor scaffold marker is removed."
+          ],
+          "criteria": [
+            "The 8 named scenarios pass; NormalisedStatesFor scaffold marker removed."
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "deps": [
+            "01-01"
+          ],
+          "implementation_notes": "Pure function of the owner and the given list: no mutation of the stored lists. EXEMPT FROM PARADIGM: C#/NUnit; properties covered in 01-03."
+        },
+        {
+          "step_id": "01-03",
+          "id": "01-03",
+          "name": "Normalisation properties: same states, idempotent, rollback-safe",
+          "description": "Un-skip the generator-driven properties: the expansion of the normalised list equals the expansion of the original (shadowing excluded by design), normalising twice changes nothing, group names survive only in case (a), and an older backend reading a normalised list finds the same states.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/CategoryListNormalisationTest.cs",
+          "scenario_name": "NormalisedStatesFor_AnyGeneratedList_MeansTheSameStatesAsTheListBeforeIt; NormalisedStatesFor_AnyGeneratedList_ChangesNothingTheSecondTime; NormalisedStatesFor_AnyGeneratedList_KeepsAGroupNameOnlyWhereItIsOneOfTheGroupsOwnStates; AnOlderBackend_ReadingANormalisedList_FindsTheSameStatesAsBeforeTheUpgrade",
+          "scenario_count": 4,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/CategoryListNormalisationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 4 property scenarios pass over all 300 generated cases; a failing case prints its input.",
+            "Production code changes only if a property finds a defect in 01-02; the generator is not weakened to make a property pass."
+          ],
+          "criteria": [
+            "The 4 property scenarios pass over 300 generated cases."
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "deps": [
+            "01-02"
+          ],
+          "implementation_notes": "This is the backend-rollback safety proof named in DEVOPS Q2. EXEMPT FROM PARADIGM: property tests already written with the seeded StateListCases generator."
+        },
+        {
+          "step_id": "01-04",
+          "id": "01-04",
+          "name": "Owner derives the display list: one group in place of its states (DisplayStatesFor, part 1)",
+          "description": "Implement DisplayStatesFor(StateCategories) over MapRawStateToMappedName: a group appears once, at its first listed member's index; folding, padding and self-named groups handled; a group with no listed member leaves the list alone.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs",
+          "scenario_name": "DisplayStatesFor_MembersNextToEachOther_ShowsOneGroupInTheirPlace; DisplayStatesFor_MembersApart_ShowsTheGroupWhereItsFirstMemberIs; DisplayStatesFor_LaterMemberBeforeEarlierOne_ShowsTheGroupAtTheFirstListedMember; DisplayStatesFor_SameStateListedTwiceInDifferentCasingAndSpacing_ShowsItOnce; DisplayStatesFor_StatesPaddedWithTabsAndNonBreakingSpaces_AreRecognisedAsTheirGroup; DisplayStatesFor_GroupNamedAfterOneOfItsOwnStates_ShowsTheGroupOnce; DisplayStatesFor_GroupWhoseStatesAreListedNowhere_LeavesTheListAlone; DisplayStatesFor_NoMappings_ReturnsTheListAsItIs",
+          "scenario_count": 8,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 8 named scenarios pass.",
+            "DisplayStatesFor is a pure function of the owner (no list or mapping mutated).",
+            "The DisplayStatesFor scaffold marker is removed."
+          ],
+          "criteria": [
+            "The 8 named scenarios pass; DisplayStatesFor scaffold marker removed."
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "deps": [
+            "01-02"
+          ],
+          "implementation_notes": "Display reads the normalised view of the stored list (D12), so a collapsed stored chip still displays as its group. EXEMPT FROM PARADIGM: C#/NUnit example tests; the display property is in 01-05."
+        },
+        {
+          "step_id": "01-05",
+          "id": "01-05",
+          "name": "Display view per category and the raw-state category lookup (DisplayStatesFor part 2, CategoryOfRawState)",
+          "description": "Finish DisplayStatesFor (per-category, deleted group, display property) and implement CategoryOfRawState, which reads the normalised lists so a list still holding a group name finds that group's states.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs",
+          "scenario_name": "DisplayStatesFor_AnyCategory_GroupsThatCategorysListOnly; DisplayStatesFor_AStateWhoseGroupWasDeleted_IsLeftExactlyAsStored; DisplayStatesFor_AnyGeneratedList_ShowsEachGroupOnceInTheOrderOfItsFirstStateAndLosesNoState; CategoryOfRawState_ReadsTheListsAsTheyAre; CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown; CategoryOfRawState_ListStillHoldsTheGroupNameInPlaceOfItsStates_FindsTheStatesInThatList",
+          "scenario_count": 6,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/IWorkItemQueryOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 6 named scenarios pass, every TestCase included.",
+            "The CategoryOfRawState scaffold marker is removed; the existing MapStateToStateCategory callers are unchanged in this step."
+          ],
+          "criteria": [
+            "The 6 named scenarios pass; CategoryOfRawState scaffold marker removed."
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "deps": [
+            "01-04"
+          ],
+          "implementation_notes": "Add the lookup split to IWorkItemQueryOwner (owner contract). EXEMPT FROM PARADIGM: C#/NUnit; display property already uses StateListCases."
+        },
+        {
+          "step_id": "01-06",
+          "id": "01-06",
+          "name": "Display-name category lookup and the as-of Unknown fix",
+          "description": "Implement CategoryOfDisplayName (a group judged by its listed states only; mixed or none listed is Unknown; a list entry that is still a collapsed group name answers its list's category) and switch the as-of projections (TeamMetricsService :743, PortfolioMetricsService :251) to it.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs",
+          "scenario_name": "CategoryOfDisplayName_MappingNameOrRawState_ReadsTheCategoryOfWhatItStandsFor; CategoryOfDisplayName_ListStillHoldsTheGroupNameInPlaceOfItsStates_IsTheCategoryOfThatList; CategoryOfDisplayName_MappingWhoseStatesSitInDifferentCategories_IsUnknown; CategoryOfDisplayName_MappingWithOneStateListedNowhere_FollowsTheStatesThatAreListed; CategoryOfDisplayName_MappingWhoseStatesAreAllListedNowhere_IsUnknown; CategoryOfDisplayName_GroupNamedAfterOneOfItsOwnStates_IsTheCategoryOfItsStates; MetricsAsOfGroupNameTest > TeamLookingBack_ItemWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing; MetricsAsOfGroupNameTest > PortfolioLookingBack_FeatureWasInAGroupWhoseNameIsNoStateOfTheTracker_WasStillInDoing",
+          "scenario_count": 8,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/IWorkItemQueryOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/MetricsAsOfGroupNameTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 8 named scenarios pass; both as-of probes now answer Doing where they answered Unknown.",
+            "No owner scaffold marker remains in WorkTrackingSystemOptionsOwner.cs.",
+            "Phase-end gate green: dotnet build zero warnings, then the filtered backend dotnet test (CLAUDE.md filter)."
+          ],
+          "criteria": [
+            "The 8 named scenarios pass; owner scaffold markers all gone; phase-end backend gate green."
+          ],
+          "dependencies": [
+            "01-05"
+          ],
+          "deps": [
+            "01-05"
+          ],
+          "implementation_notes": "Fix (not refactor) commit for the as-of sites: `fix(state-mapping): ...`. EXEMPT FROM PARADIGM: C#/NUnit example tests over in-memory repositories."
+        }
+      ]
+    },
+    {
+      "phase_id": "02",
+      "id": "02",
+      "name": "Write path, validation, DTO display lists, refinement and cycle-time display names",
+      "description": "New saves store raw states: SyncStates syncs mappings before lists and calls the owner's normaliser; the validator refuses shadowing, chains and split categories; the DTO gains three read-only display lists; refinement and cycle-time draw from display states. Reads still expand, which phase 01's equivalence property proves gives the same set.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "step_id": "02-01",
+          "id": "02-01",
+          "name": "Validator rules over raw lists: shadowing, chain, categories (UI7/UI8 copy)",
+          "description": "StateMappingValidator sees the three lists and calls the owner's classifier: shadowing refused with the list-specific sentence (UI8: Doing sentence with 'Add ... to this mapping', To Do/Done sentence with 'Choose another name.'), a chain refused with the chain sentence, a changed mapping whose listed states sit in different categories refused with the UI7 sentences. Trim as the shared rule cases require.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorRawListsTest.cs",
+          "scenario_name": "NameBesideOneOfItsGroupsStatesInDoing_IsRefusedWithTheSentenceTheSettingsPageShows; NameBesideOneOfItsGroupsStatesInToDo_IsRefusedNamingTheToDoList; NameBesideOneOfItsGroupsStatesInDone_IsRefusedNamingTheDoneList; GroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence; GroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates; GroupWhoseOnlyStateIsListedInTwoCategories_IsRefused; StateMappingRuleCasesTest > TwoMappingNames_DifferingOnlyInWhitespaceAtTheEnds_AreTheSame",
+          "scenario_count": 7,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/StateMappingValidator.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorRawListsTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingRuleCasesTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 7 named scenarios pass with the sentences pinned exactly (UI7 both category sentences; UI8 Doing and To Do/Done shadowing; chain).",
+            "The green guards in StateMappingValidatorRawListsTest and the existing StateMappingValidatorTest stay green (an older group spanning categories is not refused on an unrelated save).",
+            "The validator calls the owner's classifier; it does not re-implement the three-way classification."
+          ],
+          "criteria": [
+            "The 7 named scenarios pass with exact copy; existing validator tests stay green."
+          ],
+          "dependencies": [
+            "01-06"
+          ],
+          "deps": [
+            "01-06"
+          ],
+          "implementation_notes": "Category rules apply to changed mappings only (feature-delta component row). UI7 wording was an AFK default: flag it in the step report for the maintainer's yes. EXEMPT FROM PARADIGM: exact error strings."
+        },
+        {
+          "step_id": "02-02",
+          "id": "02-02",
+          "name": "Settings sync normalises the lists; refinement and cycle-time draw from display states",
+          "description": "SyncStates in TeamExtensions and PortfolioExtensions syncs mappings before lists and assigns the owner's normalised lists (the only writers, D11); null/blank entries dropped; SyncRefinement candidates, RefinementSettingsValidator and CycleTimeDefinitionValidator use display states so a refinement or boundary chosen on a group keeps the group.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/TeamListSyncRawStatesTest.cs",
+          "scenario_name": "SyncTeamWithTeamSettings_GroupNamedAfterItsOwnState_StoresTheOtherStatesRightAfterIt; SyncTeamWithTeamSettings_CollapsedGroupFromTheCurrentEditor_StoresItsStatesInPlace; SyncTeamWithTeamSettings_GroupChangedInTheSameSave_ReadsTheListAgainstTheGroupJustSent; SyncTeamWithTeamSettings_EntriesThatAreNullOrOnlyWhitespace_AreLeftOut; SyncTeamWithTeamSettings_RefinementChosenOnAGroup_KeepsTheGroup",
+          "scenario_count": 5,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/RefinementSettingsValidator.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/CycleTimeDefinitionValidator.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/TeamListSyncRawStatesTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 5 named scenarios pass; the green sync guards (group deleted in the same save, raw list kept as sent) stay green.",
+            "CategoryListOwnershipGuardTest.OnlyTheSettingsSyncAndTheSeederPutAListOnAnOwner stays green.",
+            "Existing TeamExtensions/PortfolioExtensions, refinement and cycle-time validator tests stay green."
+          ],
+          "criteria": [
+            "The 5 named scenarios pass; ownership guard and existing sync/validator tests stay green."
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "deps": [
+            "02-01"
+          ],
+          "implementation_notes": "Bounded-change: the three lists and the mappings of the owner being saved, nothing else. EXEMPT FROM PARADIGM: C#/NUnit example tests."
+        },
+        {
+          "step_id": "02-03",
+          "id": "02-03",
+          "name": "Settings DTO carries the three display lists; approved payload updated",
+          "description": "SettingsOwnerDtoBase fills ToDoDisplayStates/DoingDisplayStates/DoneDisplayStates from the owner's DisplayStatesFor and drops [JsonIgnore]; they stay get-only (round-trip guard). Update the approved slice02-portfolio-northwind-platform-settings.approved.json deliberately.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs",
+          "scenario_name": "SavingRawStatesWithAGroup_ReadsBackTheSameStatesAndTheGroupOnDisplay; SavingGroupStatesThatAreApart_ShowsTheGroupWhereItsFirstStateIs; SavingAGroupOverToDoStates_ShowsItInToDo; SavingAGroupOverDoneStates_ShowsItInDone; SavingAGroupNamedAfterOneOfItsStatesWithoutTheOthers_AddsTheOthersRightAfterIt; SavingTheGroupsNameInPlaceOfItsStates_StoresTheStatesInPlace; SavingTheOnlyEntryAsTheGroupsName_StoresTheGroupsStateInstead",
+          "scenario_count": 7,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FastWithManyFeatures/Approved/slice02-portfolio-northwind-platform-settings.approved.json"
+          ],
+          "acceptance_criteria": [
+            "The 7 named scenarios pass for Team and Portfolio.",
+            "The approved JSON gains the three display lists and nothing else changes in it.",
+            "This step may make TWO commits: the step's own `feat(state-mapping): ...` commit, plus a separate `test(state-mapping): approve ...` commit that only updates slice02-portfolio-northwind-platform-settings.approved.json and says in its body that the change is a deliberate approval of the new display lists.",
+            "SettingsOwnerDtoRoundTripTest stays green; the DTO scaffold marker is removed."
+          ],
+          "criteria": [
+            "The 7 named scenarios pass; approved payload updated deliberately; DTO scaffold marker removed."
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "deps": [
+            "02-02"
+          ],
+          "implementation_notes": "Grep usages of SettingsOwnerDtoBase and the settings test builders first (shared contract). EXEMPT FROM PARADIGM: HTTP integration via WebApplicationFactory."
+        },
+        {
+          "step_id": "02-04",
+          "id": "02-04",
+          "name": "Write path over HTTP: collapsed stored lists, same-save groups, idempotence, blanks",
+          "description": "Pin the write path through the endpoints: an unchanged save of a collapsed stored owner writes raw states; a group sent with the list is read against itself; a second identical save changes nothing; a deleted group leaves no leftover name; null/blank entries are dropped.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs",
+          "scenario_name": "SavingAnOwnersUnchangedSettings_WhileItsStoredListHoldsACollapsedGroup_WritesRawStates; SavingTheGroupAndTheListInOneSave_ReadsTheListAgainstTheGroupJustSent; SavingTheSameSettingsTwice_ChangesNothingTheSecondTime; SavingAGroupOverAState_WhoseEarlierGroupWasDeleted_LeavesNoLeftoverName; SavingListsWithNullAndBlankEntries_LeavesThemOut",
+          "scenario_count": 5,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/TeamExtensions.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 5 named scenarios pass for Team and Portfolio; save status asserted.",
+            "A null list entry no longer crashes a save with NullReferenceException."
+          ],
+          "criteria": [
+            "The 5 named scenarios pass for Team and Portfolio."
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "deps": [
+            "02-03"
+          ],
+          "implementation_notes": "Most of these should pass from 02-02/02-03; production changes only where a scenario still fails. EXEMPT FROM PARADIGM: HTTP integration."
+        },
+        {
+          "step_id": "02-05",
+          "id": "02-05",
+          "name": "Write path over HTTP: refusals leave nothing behind, a state listed nowhere is silent",
+          "description": "Pin the 400s end to end (shadowing with the settings-page sentence, chain, split categories naming both states, one state in two categories) and the silent acceptance of a group with a state listed nowhere (UI6). After each refusal the lists and mappings read back as seeded.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs",
+          "scenario_name": "SavingANameBesideOneOfItsGroupsStates_IsRefusedWithTheSentenceTheSettingsPageShows; SavingAGroupThatListsAnotherGroupsName_IsRefusedWithTheChainSentence; SavingAGroupWithAStateListedNowhere_IsAcceptedWithoutAWarning; SavingANewGroupWhoseListedStatesSitInDifferentCategories_IsRefusedNamingTheTwoStates; SavingAGroupWhoseOnlyStateIsListedInTwoCategories_IsRefused",
+          "scenario_count": 5,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 5 named scenarios pass for Team and Portfolio with exact copy; the green refusal guards (blank name, no states, duplicate names, unrelated save while an older group spans categories) stay green.",
+            "Phase-end gate green: dotnet build zero warnings, then the filtered backend dotnet test."
+          ],
+          "criteria": [
+            "The 5 named scenarios pass; phase-end backend gate green."
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "deps": [
+            "02-04"
+          ],
+          "implementation_notes": "Controllers listed only in case the validator's lists-aware call needs wiring there; prefer no controller change. EXEMPT FROM PARADIGM: exact error strings over HTTP."
+        }
+      ]
+    },
+    {
+      "phase_id": "03",
+      "id": "03",
+      "name": "Seeder, registration in Program.cs, isolation, logging",
+      "description": "CategoryListNormalisationSeeder rewrites each Team's and Portfolio's lists once through the owner's normaliser, per-owner save, skip and log, idempotent; registered last in Program.cs.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "step_id": "03-01",
+          "id": "03-01",
+          "name": "Seeder rewrites stored lists per owner, skips and logs a failure, logs only ids and counts",
+          "description": "Implement Seed(): for each owner, normalise the three lists; save only when changed; per-owner try/catch; on a failed save detach that owner's entries and log Warning (Rule SaveFailed); a mapping with no states logs one Warning with Rule EmptyGroup and leaves the owner alone; shadowing/chained rows legacy-expanded with a Warning; one Information summary (Scanned, Rewritten, LegacyExpanded, Skipped). Lines carry only OwnerType, OwnerId, counts and a fixed Rule, never exception text or names.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/CategoryListNormalisationSeederTests.cs",
+          "scenario_name": "Seed_SaveFails_LogsAWarningAndLetsTheStartContinue; Seed_SaveFailsForTheFirstOwner_StillRewritesTheSecond; Seed_MappingWithNoStates_LogsOneWarningWithAFixedRuleAndLeavesTheOwnerAlone; Seed_NothingToRewrite_SavesNothing; Seed_EveryLineItWrites_CarriesOnlyTheOwnerTypeIdCountsAndAFixedRule",
+          "scenario_count": 5,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/CategoryListNormalisationSeeder.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Seeding/CategoryListNormalisationSeederTests.cs"
+          ],
+          "acceptance_criteria": [
+            "The 5 named scenarios pass.",
+            "The seeder adds no classification logic of its own: it calls the owner's normaliser and classifier.",
+            "No exception escapes Seed(); the seeder scaffold marker is removed."
+          ],
+          "criteria": [
+            "The 5 named scenarios pass; seeder scaffold marker removed."
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "deps": [
+            "02-05"
+          ],
+          "implementation_notes": "Follow ApiKeyOwnerReconciliationSeeder (ISeeder, id-only logging). Bounded-change: the three lists of each owner, nothing else. EXEMPT FROM PARADIGM: mocked repositories and log capture."
+        },
+        {
+          "step_id": "03-02",
+          "id": "03-02",
+          "name": "Register the seeder in Program.cs; both providers, isolation and the upgrade read",
+          "description": "Register CategoryListNormalisationSeeder last, after ForecastInputsForgottenAtStartSeeder. Un-skip the container tests (SQLite and Postgres: every stored shape rewritten once and left alone the second time; an EmptyGroup owner left alone while others are rewritten; SQLite trigger refusing one owner's update) and the HTTP upgrade read that runs every registered ISeeder.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CategoryListNormalisationSeederOnBothProvidersTests.cs",
+          "scenario_name": "EveryStoredShape_IsRewrittenOnceAndLeftAloneTheSecondTime; AnOwnerWhoseGroupHasNoStates_IsLeftAloneWithAWarning_AndTheOthersAreStillRewritten; CategoryListNormalisationSeederIsolationTests > AnOwnerWhoseWriteIsRefused_IsSkipped_AndTheOwnersAfterItAreStillWritten; CategoryListsHoldRawStatesSettingsIntegrationTest > ReadingAnOwnerSavedBeforeTheUpgrade_AfterTheUpgradeRan_ShowsRawStatesAndTheGroupOnDisplay",
+          "scenario_count": 4,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CategoryListNormalisationSeederOnBothProvidersTests.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/CategoryListNormalisationSeederIsolationTests.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 4 named scenarios pass, the container ones on SQLite and on Postgres (shared Postgres container, Docker required).",
+            "Registration order puts the new seeder last; the restore and clear-database paths pick it up through GetServices<ISeeder>().",
+            "The ownership guard (only the sync and the seeder write the lists) stays green.",
+            "Phase-end gate green: dotnet build zero warnings, then the filtered backend dotnet test."
+          ],
+          "criteria": [
+            "The 4 named scenarios pass on both providers; seeder registered last; phase-end backend gate green."
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "deps": [
+            "03-01"
+          ],
+          "implementation_notes": "Editing Program.cs makes CI run the FULL backend Integration suite, live connector categories included: expected, not a regression, and a connector 429 there is not caused by this change. Locally still run only the filtered suite plus the container classes by name. EXEMPT FROM PARADIGM: real-I/O integration on both providers."
+        }
+      ]
+    },
+    {
+      "phase_id": "04",
+      "id": "04",
+      "name": "Reads through the normaliser: owner reads, ADO/Jira/ServiceNow, CSV journey, metrics columns, suggestions",
+      "description": "D12: every read goes through the owner's normalised view (identity on a rewritten list), so a skipped, pre-seeder or old-pod-written owner still loads every item. Connectors stop expanding lists themselves; suggestions read normalised lists; CSV journey and metrics columns iterate display states.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "step_id": "04-01",
+          "id": "04-01",
+          "name": "Owner reads (AllStates, OpenStates, lookups) and the HTTP read model go through the normaliser",
+          "description": "AllStates, OpenStates and both category lookups read the normalised view of the stored lists; a mapping with no states keeps its entry as a state and nothing throws (today a null group throws inside GetRawStatesForCategory); a shadowing stored list reads with the legacy expansion. The settings GET returns those lists and the display lists.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs",
+          "scenario_name": "Reads_MappingWithNoStates_KeepTheEntryAsAStateAndDoNotThrow; Reads_CollapsedListTheStartUpPassCouldNotRewrite_FindTheGroupsStatesEverywhere; CategoryListsHoldRawStatesSettingsIntegrationTest > ReadingAnOwnerWhoseStoredListStillHoldsAGroupName_ShowsTheGroupsStatesAndTheGroupOnDisplay; CategoryListsHoldRawStatesSettingsIntegrationTest > ReadingAnOwnerWhoseGroupHasNoStates_KeepsTheEntryAsAStateAndDoesNotFail; CategoryListsHoldRawStatesSettingsIntegrationTest > ReadingAnOwnerWhoseStoredListHoldsAGroupNameBesideOneOfItsStates_ShowsTheGroupOnceAsTheOldExpansionDid",
+          "scenario_count": 5,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/DTO/SettingsOwnerDtoBase.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 5 named scenarios pass (Team and Portfolio for the HTTP ones).",
+            "The green read guards stay green: AllStates/OpenStates over a collapsed list, legacy expansion beside a state, read twice unchanged, raw list held once.",
+            "GetRawStatesForCategory remains only for mapped-name references (wait states, cycle time, refinement); the obsolete expansion cases of WorkTrackingSystemOptionsOwnerTest are rewritten or retired with the reason in the commit body."
+          ],
+          "criteria": [
+            "The 5 named scenarios pass; the green read guards stay green."
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "deps": [
+            "03-02"
+          ],
+          "implementation_notes": "Small per-read cost accepted by D12. Keep the view pure: never write the normalised list back from a read. EXEMPT FROM PARADIGM: C#/NUnit and HTTP integration."
+        },
+        {
+          "step_id": "04-02",
+          "id": "04-02",
+          "name": "Connectors and suggestions stop expanding lists; architecture guard; live ADO check",
+          "description": "AzureDevOpsWorkTrackingConnector.StartedAndClosedDateFrom, IssueFactory.GetStartedAndClosedDate and ServiceNowStateSpanMapper.LastCrossingInto read the owner's normalised view instead of calling the expansion; SuggestionsController (Team and Portfolio twin) reads the normalised owner lists. Un-skip the source-scan guards.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CategoryListOwnershipGuardTest.cs",
+          "scenario_name": "NoCodeExpandsACategoryList; OnlyCodeThatReadsSettingsNamingAGroupCallsTheExpansion; CategoryListsHoldRawStatesSettingsIntegrationTest > SuggestingStatesWhileAnOwnersStoredListStillHoldsAGroupName_OffersTheStatesAndNotTheName",
+          "scenario_count": 3,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Factories/IssueFactory.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/SuggestionsController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CategoryListOwnershipGuardTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "The 3 named scenarios pass; the green IssueFactoryRawListsTest and ServiceNowStateSpanMapperRawListsTest guards and the green suggestions scenario stay green.",
+            "The ADO connector changes and has no unit seam, so its live category is run as project instructions require: run only that category with --filter TestCategory=AdoIntegration (`dotnet test --filter \"TestCategory=AdoIntegration\"`), once, alone on the machine, and report the result.",
+            "Jira and Linear connector files are unchanged."
+          ],
+          "criteria": [
+            "The 3 named scenarios pass; connector guards green; AdoIntegration run once and reported."
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "deps": [
+            "04-01"
+          ],
+          "implementation_notes": "Do not run other live categories; the Linear key is shared with CI. EXEMPT FROM PARADIGM: source-scan guard plus HTTP integration."
+        },
+        {
+          "step_id": "04-03",
+          "id": "04-03",
+          "name": "CSV demo journey and metrics columns iterate display states",
+          "description": "CsvWorkTrackingConnector.BuildInterpolatedDoneJourney iterates display states so members of one mapping never transition to themselves and a group first in Doing starts the journey; TeamMetricsService (:463, :584) and PortfolioMetricsService (:319, :496) take column order from display states.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs",
+          "scenario_name": "DemoJourney_TeamGroupsTwoOfItsDoingStates_NeverMovesAnItemFromTheGroupToItself; DemoJourney_GroupSitsFirstInDoing_StartsTheJourneyInTheGroup",
+          "scenario_count": 2,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Csv/CsvWorkTrackingConnector.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Csv/CsvDemoJourneyWithStateMappingTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs"
+          ],
+          "acceptance_criteria": [
+            "The 2 named scenarios pass.",
+            "RED FIRST for the metrics column change (no DISTILL scenario covers it): before touching TeamMetricsService or PortfolioMetricsService, write one new failing test in Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs and one in .../PortfolioMetricsServiceTests.cs, beside the existing Age-in-State / cumulative-state tests: with a mapping grouping two non-adjacent Doing states, the group's column appears exactly once, at its first member's position, and its members do not appear as separate columns. Run them and see them fail, then implement.",
+            "Existing TeamMetricsService/PortfolioMetricsService tests (Age-in-State, cumulative state time) stay green; with no mappings the column order is unchanged.",
+            "Phase-end gate green: dotnet build zero warnings, then the filtered backend dotnet test."
+          ],
+          "criteria": [
+            "The 2 named scenarios pass; new RED-first Team and Portfolio metrics column tests written, seen failing, then green; existing metrics tests green; phase-end backend gate green."
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "deps": [
+            "04-02"
+          ],
+          "implementation_notes": "RED first: the metrics column change has no pending DISTILL scenario, so the crafter writes the two failing tests named in the acceptance criteria (TeamMetricsServiceTests.cs and PortfolioMetricsServiceTests.cs, next to the existing column tests) before changing :463/:584 and :319/:496. The aging columns' display order is also pinned on the frontend pages (phase 05). EXEMPT FROM PARADIGM: production container CSV journey and in-memory metrics examples."
+        }
+      ]
+    },
+    {
+      "phase_id": "05",
+      "id": "05",
+      "name": "Frontend: chips, refusal, help text, drag, aging loading and failure looks, validation mirror, reconciliation deleted",
+      "description": "The page renders the server's display lists: a mapping is one chip with a group icon and no delete icon, drag moves all its states, the help text explains groups, the aging widget shows loading and could-not-load looks; validation mirrors the backend against shared cases; the reconciliation module is deleted.",
+      "default_agent": "nw-software-crafter",
+      "steps": [
+        {
+          "step_id": "05-01",
+          "id": "05-01",
+          "name": "Frontend display view (displayStatesFor) mirrors the backend",
+          "description": "Implement displayStatesFor in stateMappingView.ts: a group once at its first listed state, folding and padding as the server, self-named group once, blank entries left out, a state whose group was deleted left as stored.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingView.test.ts",
+          "scenario_name": "shows one group in the place of states that sit next to each other; puts a group where its first listed state is when its states are apart; shows a group named after one of its own states once; leaves a list alone when none of a group's states are in it; leaves a state exactly as stored once the group that held it is deleted; leaves out entries that are empty or only whitespace; recognises states padded with tabs and non-breaking spaces as their group; shows the list as it is when there are no groups",
+          "scenario_count": 8,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingView.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingView.test.ts"
+          ],
+          "acceptance_criteria": [
+            "The 8 named scenarios pass under `pnpm vitest run src/utils/stateMappingView.test.ts`.",
+            "displayStatesFor is pure and no longer throws the RED scaffold error."
+          ],
+          "criteria": [
+            "The 8 named scenarios pass; displayStatesFor implemented."
+          ],
+          "dependencies": [
+            "04-03"
+          ],
+          "deps": [
+            "04-03"
+          ],
+          "implementation_notes": "Used where the page must compute a view locally (editing before save); the server's display lists remain the source when present. EXEMPT FROM PARADIGM: Vitest example tests."
+        },
+        {
+          "step_id": "05-02",
+          "id": "05-02",
+          "name": "Shared fold and blank rule; validation mirror for To Do/Done and categories",
+          "description": "Implement foldKey and isBlankName to agree with the server on stateMappingRuleCases.json (trim as the server trims incl. U+0085; upper-case per code point keeping multi-code-point results, ı and ſ). Add to stateMappingValidation.ts the To Do/Done stand-alone case and the two UI7 category sentences.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingView.test.ts",
+          "scenario_name": "treats the same state in another casing or with spaces around it as one; tells the same names apart in every case of the shared list; folds the names of the shared list to the same key exactly when the server does; ignores whitespace at the ends the way the server does; calls a name of nothing but whitespace blank, whichever whitespace it is; stateMappingValidation.rawLists.test.ts > does not refuse a name that stands alone in To Do or Done in place of its mapping's states; stateMappingValidation.rawLists.test.ts > refuses a mapping whose listed states sit in different categories, naming the two states; stateMappingValidation.rawLists.test.ts > refuses a mapping whose only state is listed in two categories",
+          "scenario_count": 8,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingView.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingView.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingValidation.rawLists.test.ts"
+          ],
+          "acceptance_criteria": [
+            "The 8 named scenarios pass; UI7 sentences match the backend exactly.",
+            "The `export const __SCAFFOLD__ = true` in stateMappingView.ts is removed.",
+            "The green mirror scenarios (shadowing sentences, chain, autosave hold-back) stay green."
+          ],
+          "criteria": [
+            "The 8 named scenarios pass; stateMappingView __SCAFFOLD__ removed."
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "deps": [
+            "05-01"
+          ],
+          "implementation_notes": "One fold for the whole frontend: validation must use foldKey, not its own toLowerCase/trim. EXEMPT FROM PARADIGM: shared-case table drives the fold tests."
+        },
+        {
+          "step_id": "05-03",
+          "id": "05-03",
+          "name": "StatesList shows a mapping as one chip it cannot remove (UI1, UI2), and suggests no mapping name",
+          "description": "BaseSettings carries the three display lists; ModifyTeamSettings/ModifyProjectSettings pass display lists and mappings to StatesList; a mapping chip has a group icon (data-testid state-mapping-chip / state-mapping-chip-icon), the UI1 tooltip, and no delete icon; a plain state keeps its delete; suggestions never offer a mapping name.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StatesList/StatesList.stateMappings.test.tsx",
+          "scenario_name": "shows a mapping as one chip with a group icon where its first state is; shows a mapping whose states are apart at the position of its first state; names the mapping's states in a tooltip that says how to remove it; offers no way to remove a mapping chip, and still one for a plain state; does not offer a state named like one of the mappings as a suggestion",
+          "scenario_count": 5,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StatesList/StatesList.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StatesList/StatesList.stateMappings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/models/Common/BaseSettings.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx"
+          ],
+          "acceptance_criteria": [
+            "The 5 named scenarios pass; tooltip text exactly `State mapping: Code Review, Testing. Delete it under State Mappings to remove it.`",
+            "Reuses the ItemListManager chip style; no new control.",
+            "ModifyTeamSettings/ModifyProjectSettings still call reconcileDoingStates in this step (removed in 05-05): a mapping edit in the settings editor stays green, proven by the existing ModifyTeamSettings.test.tsx tests `auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure` and `holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed`, plus ModifyProjectSettings.test.tsx and stateMappingReconciliation.test.ts, all unchanged and green.",
+            "The doc-comment SCAFFOLD markers in BaseSettings.ts and StatesList.tsx are removed."
+          ],
+          "criteria": [
+            "The 5 named scenarios pass with exact tooltip copy; BaseSettings and StatesList scaffold markers removed."
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "deps": [
+            "05-02"
+          ],
+          "implementation_notes": "UI sketch already approved (UI1/UI2). Chips render display states; the saved payload stays raw states. RTL name matchers are unanchored: use exact strings. EXEMPT FROM PARADIGM: single-shot UI."
+        },
+        {
+          "step_id": "05-04",
+          "id": "05-04",
+          "name": "Dragging a mapping chip moves all its states together (UI4)",
+          "description": "Reordering in StatesList moves every member of a dragged group to the drop position; dragging a plain state ahead of a group never splits the group.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StatesList/StatesList.stateMappings.test.tsx",
+          "scenario_name": "moves all of a mapping's states together when the chip is dragged ahead of another; lands a dragged mapping where it is dropped, even when its states were apart; drags a plain state ahead of a mapping without splitting the mapping",
+          "scenario_count": 3,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StatesList/StatesList.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StatesList/StatesList.stateMappings.test.tsx"
+          ],
+          "acceptance_criteria": [
+            "The 3 named scenarios pass; the emitted list is raw states in the new order.",
+            "A mapping edit in the settings editor stays green (reconcileDoingStates is still called until 05-05): the existing ModifyTeamSettings.test.tsx tests `auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure` and `holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed`, and ModifyProjectSettings.test.tsx, pass unchanged."
+          ],
+          "criteria": [
+            "The 3 named scenarios pass."
+          ],
+          "dependencies": [
+            "05-03"
+          ],
+          "deps": [
+            "05-03"
+          ],
+          "implementation_notes": "EXEMPT FROM PARADIGM: single-shot UI interactions."
+        },
+        {
+          "step_id": "05-05",
+          "id": "05-05",
+          "name": "Refactor: delete the reconciliation, pickers use display states",
+          "description": "Remove the reconcileDoingStates call sites in ModifyTeamSettings and ModifyProjectSettings, delete Lighthouse.Frontend/src/utils/stateMappingReconciliation.ts and its test, and delete the doing-clash rules in stateMappingValidation.ts, keeping only the shared fold (foldKey in stateMappingView.ts). StateMappingsEditor source pickers take raw Doing; WaitStatesEditor, RefinementSettingsSection and isCycleTimeDefinitionValid draw from display states, so they offer a mapping's name instead of its states.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/WaitStatesEditor.test.tsx",
+          "scenario_name": "NEW, written RED first by the crafter (no DISTILL scenario): WaitStatesEditor.test.tsx > offers a mapping's name, not its states; ModifyTeamSettings.refinementNeed.test.tsx > the refinement picker offers a mapping's name, not its states; isCycleTimeDefinitionValid.test.ts > a cycle-time boundary on a mapping's name is valid and its member states are not offered separately",
+          "scenario_count": 3,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/WaitStatesEditor.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/WaitStatesEditor.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/Team/RefinementSettingsSection.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/isCycleTimeDefinitionValid.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/isCycleTimeDefinitionValid.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingValidation.test.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingReconciliation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingReconciliation.test.ts"
+          ],
+          "acceptance_criteria": [
+            "RED FIRST for the picker switch (no DISTILL scenario covers it): before changing a picker, write one failing test per picker, next to its existing tests: WaitStatesEditor.test.tsx (the wait-state picker offers a mapping's name, not its states), ModifyTeamSettings.refinementNeed.test.tsx (the refinement picker in RefinementSettingsSection offers a mapping's name, not its states), isCycleTimeDefinitionValid.test.ts (a boundary on a mapping's name resolves through display states, its members are not offered separately). Run them and see them fail, then implement.",
+            "stateMappingReconciliation.ts and stateMappingReconciliation.test.ts no longer exist; no import of them remains; ModifyTeamSettings/ModifyProjectSettings no longer call reconcileDoingStates.",
+            "The doing-clash cases in stateMappingValidation.ts/.test.ts and the state-mapping-names cases in ModifyTeamSettings.test.tsx and its Portfolio twin are retired or rewritten (the `holds back autosave while a mapping is named after a Doing state ...` test now expects raw doingStates in the save), with the reason in the commit body.",
+            "The green UI6 scenario and the green stateMappingValidation.rawLists.test.ts mirror scenarios stay green; existing WaitStatesEditor, refinement and cycle-time tests stay green."
+          ],
+          "criteria": [
+            "Three RED-first picker tests written, seen failing, then green; reconciliation module, its call sites and the doing-clash rules deleted; existing picker and editor tests green."
+          ],
+          "dependencies": [
+            "05-04"
+          ],
+          "deps": [
+            "05-04"
+          ],
+          "implementation_notes": "RED first: the picker switch has no pending DISTILL scenario, so the crafter writes the three failing tests named in the acceptance criteria before touching WaitStatesEditor, RefinementSettingsSection or isCycleTimeDefinitionValid. Deletion is safe because the server now owns the rules (phase 02). Commit as `refactor(state-mapping): ...` (deletion) apart from any `feat` commit for the pickers. EXEMPT FROM PARADIGM: component wiring and single-shot UI."
+        },
+        {
+          "step_id": "05-06",
+          "id": "05-06",
+          "name": "Copy: State Mappings help text and could-not-load words",
+          "description": "Replace the State Mappings help text with the UI3 copy; wire the settings editor's loading frame hasError so a failed settings fetch shows its could-not-load words.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.rawLists.test.tsx",
+          "scenario_name": "explains that a group is one chip in Doing and the charts, and that its states stay read from the tracker; ModifyTeamSettings.test.tsx > shows the could-not-load words when the settings cannot be fetched",
+          "scenario_count": 2,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/StateMappings/StateMappingsEditor.rawLists.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.tsx"
+          ],
+          "acceptance_criteria": [
+            "The 2 named scenarios pass; help text exactly the UI3 sentence.",
+            "The Portfolio editor wires hasError the same way.",
+            "The green UI6 scenario (no message for a state listed nowhere) stays green."
+          ],
+          "criteria": [
+            "The 2 named scenarios pass with exact UI3 copy."
+          ],
+          "dependencies": [
+            "05-05"
+          ],
+          "deps": [
+            "05-05"
+          ],
+          "implementation_notes": "Copy-only step; `fix(state-mapping): ...` commit. EXEMPT FROM PARADIGM: exact copy."
+        },
+        {
+          "step_id": "05-07",
+          "id": "05-07",
+          "name": "Aging widget frame and Team page: loading and could-not-load looks, display columns, late answers dropped (UI5)",
+          "description": "BaseMetricsView reads doingStatesStatus and renders WidgetShell status (lone spinner while loading, COULD_NOT_LOAD_MESSAGE on failure, never an empty chart); TeamMetricsView fetches settings with a keyed query, takes columns from doingDisplayStates, and a late answer for a team it left never lands.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Teams/Detail/TeamMetricsView.agingColumns.test.tsx",
+          "scenario_name": "shows a loading frame, and no columns, while the settings are on their way; says the columns could not be loaded when the settings fetch fails; shows the columns as the settings display them, groups in place of their states; does not let a late answer for the team it left replace the columns of the team it shows; BaseMetricsView.loading.test.tsx > shows a lone spinner and no chart while the columns load; BaseMetricsView.loading.test.tsx > says it couldn't be loaded when the columns could not be fetched, and draws no empty chart",
+          "scenario_count": 6,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Teams/Detail/TeamMetricsView.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Teams/Detail/TeamMetricsView.agingColumns.test.tsx"
+          ],
+          "acceptance_criteria": [
+            "The 6 named scenarios pass; the green frame scenarios (chart once columns arrive, other charts load on their own) stay green.",
+            "The BaseMetricsView doc-comment SCAFFOLD marker is removed.",
+            "E2E page objects still wait on data-widget-status=\"ready\" (no POM change expected)."
+          ],
+          "criteria": [
+            "The 6 named scenarios pass; BaseMetricsView scaffold marker removed."
+          ],
+          "dependencies": [
+            "05-06"
+          ],
+          "deps": [
+            "05-06"
+          ],
+          "implementation_notes": "Reuse WidgetShell status and TanStack keyed queries; no new look. Check by hand once with a throttled connection if a dev instance is available. EXEMPT FROM PARADIGM: UI states."
+        },
+        {
+          "step_id": "05-08",
+          "id": "05-08",
+          "name": "Portfolio page aging looks and columns (UI5); final marker sweep and frontend gate",
+          "description": "PortfolioMetricsView mirrors 05-07: keyed settings query, display columns, loading and could-not-load looks. Close the feature's code: no scaffold marker remains anywhere.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioMetricsView.agingColumns.test.tsx",
+          "scenario_name": "shows a loading frame, and no columns, while the settings are on their way; says the columns could not be loaded when the settings fetch fails; shows the columns as the settings display them, groups in place of their states",
+          "scenario_count": 3,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioMetricsView.tsx",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioMetricsView.agingColumns.test.tsx"
+          ],
+          "acceptance_criteria": [
+            "The 3 named scenarios pass.",
+            "`grep -rn \"SCAFFOLD: true\\|__SCAFFOLD__\" Lighthouse.Backend Lighthouse.Frontend/src` finds no marker from this feature (zero remain).",
+            "No `it.skip` or `[Ignore(\"pending: ...\")]` from this feature's inventory remains.",
+            "Phase-end gate green: `pnpm test`, then `pnpm build` (zero errors and warnings; check git status after Biome --write). Then, not concurrently, the backend gate once more: dotnet build and the filtered dotnet test."
+          ],
+          "criteria": [
+            "The 3 named scenarios pass; zero scaffold markers and zero pending skips remain; frontend and backend gates green."
+          ],
+          "dependencies": [
+            "05-07"
+          ],
+          "deps": [
+            "05-07"
+          ],
+          "implementation_notes": "Mutation testing (Stryker.NET + StrykerJS) runs once after this step, at the final gate, on frozen code. EXEMPT FROM PARADIGM: UI states."
+        },
+        {
+          "step_id": "05-09",
+          "id": "05-09",
+          "name": "Validator refuses a wait state that names one state inside a mapping (backend + frontend mirror)",
+          "description": "StateMappingValidator.ValidateSettings refuses a wait state that matches (trimmed, case-folded) a state inside a mapping unless it equals that mapping's name (self-named group). Copy: Wait state \"{state}\" is part of the mapping \"{mapping}\". Use \"{mapping}\" as the wait state instead. Judged only for what the save adds or changes (new wait state, or a mapping this save changes). Frontend validateStateMappings and mappingAutoSaveBlockers mirror it with the same sentence; IStateLists gains waitStates?: string[].",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorWaitStatesTest.cs",
+          "test_files": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorWaitStatesTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingValidation.waitStates.test.ts"
+          ],
+          "scenario_name": "TeamWaitStateNamingOneStateInsideAMapping_IsRefusedAskingForTheMappingsName; PortfolioWaitStateNamingOneStateInsideAMapping_IsRefusedAskingForTheMappingsName; WaitStateWrittenInAnotherCaseWithPadding_IsRefusedNamingItTrimmed; WaitStateNamingTheOtherStateOfAMappingNamedAfterOneOfItsStates_IsRefused; NewWaitStateInsideAStoredMapping_IsRefused; StoredWaitStateThatThisSaveGroupsIntoAMapping_IsRefused; CategoryListsHoldRawStatesSettingsIntegrationTest > SavingAWaitStateThatNamesOneStateInsideAMapping_IsRefusedAskingForTheMappingsName; stateMappingValidation.waitStates.test.ts > refuses a wait state that names one state inside a mapping, asking for the mapping's name; stateMappingValidation.waitStates.test.ts > holds back the autosave for that wait state with the same sentence; stateMappingValidation.waitStates.test.ts > names the wait state trimmed, as it was written, when its case and padding differ; stateMappingValidation.waitStates.test.ts > refuses the other state of a mapping named after one of its states",
+          "scenario_count": 11,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/API/Helpers/StateMappingValidator.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Helpers/StateMappingValidatorWaitStatesTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CategoryListsHoldRawStatesSettingsIntegrationTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Models/WorkTrackingSystemOptionsOwnerCategoryListsTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingValidation.ts",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Frontend/src/utils/stateMappingValidation.waitStates.test.ts"
+          ],
+          "acceptance_criteria": [
+            "A save whose wait state names one state of a mapping gets a 400 with that sentence, for Team and Portfolio, and nothing is stored.",
+            "A wait state equal to a mapping's name (case-folded) is accepted, including a mapping named after one of its own states.",
+            "A stored wait state sent back unchanged over an unchanged mapping is not refused; it is refused when new or when the save changes the mapping it falls into.",
+            "The settings page shows the same sentence among the mapping editor's errors and holds back the autosave."
+          ],
+          "criteria": [
+            "The named scenarios pass; the old pinning test is renamed to WaitStatesAsDisplayed_StoredWaitStateNamesOneStateOfAMapping_CountsAllTimeInTheGroupAsWait with a plain comment that settings now refuse the shape and an owner stored before still reads the whole group as wait."
+          ],
+          "dependencies": [
+            "05-08"
+          ],
+          "deps": [
+            "05-08"
+          ],
+          "implementation_notes": "Maintainer decision 2026-11-03. Use settings.WaitStates with StateCategoryLists.MembersOf and IsSameState, skipping blanks; gate with HasChanged(mapping) plus not-in storedOwner.WaitStates; skip mappings with no name or no states. Frontend folds with the shared fold. The sentence shows where validateStateMappings errors already show (no new UI placement). The Wait States picker already offers display names after 05-05."
+        },
+        {
+          "step_id": "05-10",
+          "id": "05-10",
+          "name": "Cycle-time-definition columns and boundaries from display names",
+          "description": "Definition-scoped named cycle times, cycle-time data and the cumulative state chart rank and slice the display list (DisplayStatesFor ToDo + Doing + Done) instead of AllStates; ResolveBoundaryState maps a boundary through the mapping (a raw member resolves to the mapping's name; a mapping name stays). Team and Portfolio.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CycleTimeDefinitionOverAMappingIntegrationTest.cs",
+          "scenario_name": "NamedCycleTimeStartingAtAMapping_CountsFromWhenTheItemEnteredTheMapping; NamedCycleTimeStartingAtOneStateInsideAMapping_CountsFromWhenTheItemEnteredTheMapping; NamedCycleTimeEndingAtAMapping_StopsWhenTheItemEnteredTheMapping; ChartScopedAroundAMapping_ShowsTheMappingOnceInPlaceOfItsStates; ChartScopedAroundAMapping_GivesTheMappingTheTimeTheItemSpentInIt; ChartScopedFromOneStateInsideAMapping_StartsAtTheMapping",
+          "scenario_count": 6,
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/BaseMetricsService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/TeamMetricsService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/PortfolioMetricsService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceNamedCycleTimeTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/serialized-rolling-tower/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/CycleTimeDefinitionOverAMappingIntegrationTest.cs"
+          ],
+          "acceptance_criteria": [
+            "Over the metrics endpoints, for Team and Portfolio, a definition boundary on a mapping or on a state inside one counts from or to when the item entered the mapping.",
+            "A chart scoped to a definition shows the mapping once in place of its states, carrying the item's time.",
+            "Owners without mappings read exactly as before (active guards stay green)."
+          ],
+          "criteria": [
+            "The 6 named scenarios pass; the 3 active guards stay green; backend gate green."
+          ],
+          "dependencies": [
+            "05-09"
+          ],
+          "deps": [
+            "05-09"
+          ],
+          "implementation_notes": "Maintainer decision 2026-11-03; pre-existing on main, so a release-note line of its own. Replace AllStates in ComputeNamedDurations, ComputeCycleTimeData, ResolveCumulativeStateOrder and the Portfolio twins. IsCycleTimeDefinitionValid already accepts these definitions; keep it. The frontend takes the chart's states from the backend, so no frontend change."
+        }
+      ]
+    }
+  ]
+}

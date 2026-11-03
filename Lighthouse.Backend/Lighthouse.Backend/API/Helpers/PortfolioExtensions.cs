@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.API.Helpers
             project.ProcessBehaviourChartBaselineEndDate = portfolioSetting.ProcessBehaviourChartBaselineEndDate.HasValue ? DateTime.SpecifyKind(portfolioSetting.ProcessBehaviourChartBaselineEndDate.Value, DateTimeKind.Utc) : null;
 
             SyncStates(project, portfolioSetting);
-            SyncStateMappings(project, portfolioSetting);
             SyncCycleTimeDefinitions(project, portfolioSetting);
             SyncTeams(project, portfolioSetting, teamRepo);
             SyncServiceLevelExpectation(project, portfolioSetting);
@@ -41,11 +40,15 @@ namespace Lighthouse.Backend.API.Helpers
             SyncWaitStates(project, portfolioSetting);
         }
 
+        // The mappings go first: a list is read against the groups sent in the same save, and is stored as the
+        // tracker's raw states, with any group's name replaced by its states.
         private static void SyncStates(Portfolio project, PortfolioSettingDto portfolioSetting)
         {
-            project.ToDoStates = TrimListEntries(portfolioSetting.ToDoStates);
-            project.DoingStates = TrimListEntries(portfolioSetting.DoingStates);
-            project.DoneStates = TrimListEntries(portfolioSetting.DoneStates);
+            SyncStateMappings(project, portfolioSetting);
+
+            project.ToDoStates = project.NormalisedStatesFor(StateListEntries.Trimmed(portfolioSetting.ToDoStates));
+            project.DoingStates = project.NormalisedStatesFor(StateListEntries.Trimmed(portfolioSetting.DoingStates));
+            project.DoneStates = project.NormalisedStatesFor(StateListEntries.Trimmed(portfolioSetting.DoneStates));
         }
 
         private static void SyncBlockedItems(Portfolio project, PortfolioSettingDto portfolioSetting)

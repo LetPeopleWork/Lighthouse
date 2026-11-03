@@ -221,6 +221,29 @@ describe("ItemListManager", () => {
 		]);
 	});
 
+	it("moves the dragged item itself when a blank entry sits before it", () => {
+		const mockOnReorderItems = vi.fn();
+		render(
+			<ItemListManager
+				title={title}
+				items={["Item 1", " ", "Item 3"]}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+				onReorderItems={mockOnReorderItems}
+			/>,
+		);
+
+		fireEvent.dragStart(screen.getByText("Item 3"), {
+			dataTransfer: { effectAllowed: "move", setData: vi.fn() },
+		});
+		fireEvent.dragOver(screen.getByText("Item 1"));
+		fireEvent.drop(screen.getByText("Item 1"), {
+			dataTransfer: { dropEffect: "move", getData: vi.fn() },
+		});
+
+		expect(mockOnReorderItems).toHaveBeenCalledWith(["Item 3", "Item 1", " "]);
+	});
+
 	it("makes chips draggable when onReorderItems is provided", () => {
 		const mockOnReorderItems = vi.fn();
 		render(
@@ -253,5 +276,42 @@ describe("ItemListManager", () => {
 		for (const chip of chips) {
 			expect(chip.closest('[draggable="true"]')).not.toBeInTheDocument();
 		}
+	});
+
+	it("shows no chip for a blank item", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={["Item 1", "  "]}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+			/>,
+		);
+
+		expect(screen.getAllByTestId("CancelIcon")).toHaveLength(1);
+	});
+
+	it("shows a grouped item filled, with the group icon and named as a group, and a plain item outlined without them", () => {
+		render(
+			<ItemListManager
+				title={title}
+				items={["Item 1", "Group 1"]}
+				onAddItem={mockOnAddItem}
+				onRemoveItem={mockOnRemoveItem}
+				groupedItems={new Map([["Group 1", "Groups State A and State B"]])}
+			/>,
+		);
+
+		const plain = screen.getByText("Item 1").closest(".MuiChip-root");
+		const grouped = screen.getByRole("group", { name: "Group 1" });
+		expect(plain).toHaveClass("MuiChip-outlined");
+		expect(screen.getAllByRole("group")).toEqual([grouped]);
+		expect(plain).not.toContainElement(
+			screen.getByTestId("state-mapping-chip-icon"),
+		);
+		expect(grouped).toHaveClass("MuiChip-filled");
+		expect(grouped).toContainElement(
+			screen.getByTestId("state-mapping-chip-icon"),
+		);
 	});
 });

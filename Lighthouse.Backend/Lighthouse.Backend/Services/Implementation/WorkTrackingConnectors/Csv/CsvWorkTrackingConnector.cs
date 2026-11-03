@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         }
 
         /// <summary>
-        /// Permanently false (Epic #5687, D11). A CSV fetch is a file the user already uploaded; there is
+        /// Permanently false. A CSV fetch is a file the user already uploaded; there is
         /// no remote call for an identity sweep to save.
         /// </summary>
         public bool SupportsIncrementalSync(WorkTrackingSystemConnection connection) => false;
@@ -39,6 +39,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var workItems = new List<WorkItem>();
 
             using var csv = ReadCsv(team);
+            var knownStates = KnownStatesOf(team);
 
             while (csv.Read())
             {
@@ -46,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 // fetched, so answering with the rows read so far deletes every record on the rest.
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var workItemBase = CreateWorkItemBaseForRow(csv, team);
+                var workItemBase = CreateWorkItemBaseForRow(csv, team, knownStates);
 
                 if (workItemBase == null)
                 {
@@ -71,12 +72,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             var features = new List<Feature>();
 
             using var csv = ReadCsv(project);
+            var knownStates = KnownStatesOf(project);
 
             while (csv.Read())
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var workItemBase = CreateWorkItemBaseForRow(csv, project);
+                var workItemBase = CreateWorkItemBaseForRow(csv, project, knownStates);
 
                 if (workItemBase != null)
                 {
@@ -199,7 +201,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             }
         }
 
-        private static WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner)
+        // Read once per upload rather than per row. An empty state cell is never a known state, even when a
+        // list holds an empty entry.
+        private static HashSet<string> KnownStatesOf(IWorkItemQueryOwner owner)
+            => owner.AllStates.Where(state => !string.IsNullOrEmpty(state)).ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        private static WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner, HashSet<string> knownStates)
         {
             var referenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
             var name = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
@@ -219,7 +226,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             var order = $"{orderCounter++}";
 
-            if (!owner.AllStates.IsItemInList(state) || !owner.WorkItemTypes.IsItemInList(type))
+            if (!knownStates.Contains(state) || !owner.WorkItemTypes.IsItemInList(type))
             {
                 return null;
             }
@@ -298,7 +305,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         private static IReadOnlyList<WorkItemStateTransition> BuildInterpolatedDoneJourney(
             IWorkItemQueryOwner owner, DateTime startedDate, DateTime closedDate)
         {
-            var doingStates = owner.DoingStates;
+            var doingStates = owner.DisplayStatesFor(StateCategories.Doing);
 
             if (doingStates.Count == 0)
             {
@@ -322,8 +329,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 .Zip(doingStates.Skip(1).Select((state, index) => (state, enteredAt: enteredAt[index + 1])),
                     (fromState, to) => new WorkItemStateTransition
                     {
-                        FromState = owner.MapRawStateToMappedName(fromState),
-                        ToState = owner.MapRawStateToMappedName(to.state),
+                        FromState = fromState,
+                        ToState = to.state,
                         TransitionedAt = to.enteredAt,
                     });
 
@@ -332,7 +339,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 .. exitTransitions,
                 new WorkItemStateTransition
                 {
-                    FromState = owner.MapRawStateToMappedName(doingStates[^1]),
+                    FromState = doingStates[^1],
                     ToState = MappedDoneState(owner),
                     TransitionedAt = closed,
                 }

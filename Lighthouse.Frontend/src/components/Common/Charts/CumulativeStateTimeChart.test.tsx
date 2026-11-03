@@ -523,21 +523,21 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-04)", () => {
 		expect(seriesById("completedWait")?.data[activeIdx]).toBeNull();
 	});
 
-	it("colours every underlying raw bar when a mapping name is configured as wait", () => {
+	it("colours a mapping's bar when one of the mapping's states is configured as wait", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
-				waitStates={["Waiting"]}
+				waitStates={["Code Review"]}
 				stateMappings={[
 					{
-						name: "Waiting",
-						states: ["Waiting for Review", "Ready for Test"],
+						name: "Waiting for Review",
+						states: ["Code Review", "Pending Approval"],
 					},
 				]}
 			/>,
 		);
 
-		expect(waitColoured()).toEqual(["Waiting for Review", "Ready for Test"]);
+		expect(waitColoured()).toEqual(["Waiting for Review"]);
 	});
 
 	it("shows a non-clickable wait colour key labelled wait whose swatch matches the red waste colour", () => {
@@ -561,18 +561,21 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-04)", () => {
 		});
 	});
 
-	it("drives the colouring from the same resolveWaitRawStates used by the figure", () => {
+	it("colours the bars and counts the figure alike when one mapping's name and another mapping's state are configured as wait", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
-				waitStates={["Waiting"]}
-				stateMappings={[{ name: "Waiting", states: ["Ready for Test"] }]}
+				waitStates={["Ready for Test", "code review"]}
+				stateMappings={[
+					{ name: "Ready for Test", states: ["QA"] },
+					{ name: "Waiting for Review", states: ["Code Review"] },
+				]}
 			/>,
 		);
 
 		const figure = screen.getByTestId("cumulative-state-time-flow-efficiency");
-		expect(figure.textContent).toContain("83");
-		expect(waitColoured()).toEqual(["Ready for Test"]);
+		expect(figure.textContent).toContain("50");
+		expect(waitColoured()).toEqual(["Waiting for Review", "Ready for Test"]);
 	});
 
 	it("emits no wait series, no red colour and no wait key when no wait states are configured", () => {

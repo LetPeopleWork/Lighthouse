@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 
 namespace Lighthouse.Backend.API.Helpers
@@ -60,13 +61,14 @@ namespace Lighthouse.Backend.API.Helpers
         }
 
         // Checked against the states in the same save, because one save may change the Team's states and its
-        // refinement choice together. A mapped name is an entry of those lists in its own right, so it counts.
+        // refinement choice together. The states are read as the picker shows them, so a group counts by its name.
         // Only states added in this save are judged: a form opened before the admin took a chosen state out of To Do
         // and Doing still sends it, and refusing that would block the save. Such a state is dropped when the save
         // is applied instead.
         private static List<string> ValidateStates(TeamSettingDto teamSetting, RefinementSettingsDto refinement, IEnumerable<string> storedStates)
         {
-            var candidates = NormalisedSet(teamSetting.ToDoStates.Concat(teamSetting.DoingStates));
+            var lists = teamSetting.CategoryListsAsSent();
+            var candidates = NormalisedSet(lists.DisplayStatesFor(StateCategories.ToDo).Concat(lists.DisplayStatesFor(StateCategories.Doing)));
             var alreadyChosen = NormalisedSet(storedStates);
 
             return refinement.States

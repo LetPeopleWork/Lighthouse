@@ -1263,9 +1263,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private static (DateTime? StartedDate, DateTime? ClosedDate) StartedAndClosedDateFrom(
             List<AdoWorkItem> revisions, IWorkItemQueryOwner workItemQueryOwner, StateCategories stateCategory)
         {
-            var rawToDoStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.ToDoStates);
-            var rawDoingStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoingStates);
-            var rawDoneStates = workItemQueryOwner.GetRawStatesForCategory(workItemQueryOwner.DoneStates);
+            var rawToDoStates = workItemQueryOwner.NormalisedStatesFor(workItemQueryOwner.ToDoStates);
+            var rawDoingStates = workItemQueryOwner.NormalisedStatesFor(workItemQueryOwner.DoingStates);
+            var rawDoneStates = workItemQueryOwner.NormalisedStatesFor(workItemQueryOwner.DoneStates);
 
             DateTime? startedDate = null;
             DateTime? closedDate = null;

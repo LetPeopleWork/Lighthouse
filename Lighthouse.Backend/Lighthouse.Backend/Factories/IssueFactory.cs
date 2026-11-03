@@ -250,11 +250,12 @@ namespace Lighthouse.Backend.Factories
                 return (null, null);
             }
 
-            var stateCategory = workitemQueryOwner.MapStateToStateCategory(state);
+            var lists = workitemQueryOwner.CategoryLists();
+            var stateCategory = lists.CategoryOfRawState(state);
 
-            var rawToDoStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.ToDoStates);
-            var rawDoingStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.DoingStates);
-            var rawDoneStates = workitemQueryOwner.GetRawStatesForCategory(workitemQueryOwner.DoneStates);
+            var rawToDoStates = lists.NormalisedStatesOf(StateCategories.ToDo);
+            var rawDoingStates = lists.NormalisedStatesOf(StateCategories.Doing);
+            var rawDoneStates = lists.NormalisedStatesOf(StateCategories.Done);
 
             DateTime? closedDate = null;
             DateTime? startedDate = null;

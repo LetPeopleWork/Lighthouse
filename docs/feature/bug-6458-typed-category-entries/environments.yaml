@@ -1,0 +1,112 @@
+# Environment inventory - bug-6458-typed-category-entries (ADO Bug #6458, part a)
+# Consumed by DISTILL for Mandate 4 (Environmental Realism).
+#
+# The change introduces no environment, credential, variable, configuration key, chart value, EF migration,
+# HistoricalSchemaPatch entry or dependency. Everything below already exists.
+#
+# DISTILL must parametrize over two axes:
+#   provider           - sqlite, postgres (the startup seeder runs on both)
+#   stored-list-shape  - already raw | collapsed, adjacent members | collapsed, non-adjacent members |
+#                        shadowing row | chained row | a row that makes the seeder throw
+#   plus run-count (first start, second start) for idempotence.
+
+target_environments:
+  - name: local-dev
+    description: >
+      Developer workstation. Backend via Lighthouse.Backend/Start-DevServer.ps1; frontend via the Vite dev
+      server. Check the aging widget by hand with the browser throttled to a slow connection.
+    platform: [linux, macos, windows, wsl]
+    preconditions:
+      - ".NET 10 SDK, Node.js 24 + pnpm via corepack"
+      - "A database restored from a previous release (collapsed lists), to watch the seeder log once"
+
+  - name: ci-build
+    description: >
+      GitHub Actions ubuntu-latest commit-stage jobs: ci_backend.yml (dotnet build with TreatWarningsAsErrors,
+      dotnet test incl. the full Integration suite because Program.cs changes, SonarCloud), ci_frontend.yml
+      (pnpm test, tsc -b, vite build, Biome via prebuild), ci_e2e.yml (compiles the Playwright project).
+    platform: [linux]
+    preconditions:
+      - "ci.yml path filter matches the code commits; a docs-only PUSH to main starts no CI run, but a docs-only pull_request does (ci.yml:6)"
+    note: >
+      Live connector tests in the Integration suite are expected to run; a connector 429 is not a regression.
+
+  - name: ci-verify-sqlite
+    description: "ci_verifysqlite.yml: package, boot on SQLite, then Playwright minus @screenshot/@auth/@rbac/@proxyauth."
+    platform: [linux]
+    preconditions:
+      - "Packaged linux-x64 build from ci_packageapp"
+      - "CI licence minted by Scripts/generate_license.py"
+    note: >
+      Boots a fresh database, so the seeder runs on an empty database here (no-op). The collapsed-list
+      case is covered by backend tests, not by this job.
+
+  - name: ci-verify-postgres
+    description: "The same suite against Postgres (ci_verifypostgres.yml)."
+    platform: [linux]
+    preconditions:
+      - "Packaged linux-x64 build from ci_packageapp"
+      - "Postgres service container"
+
+  - name: customer-self-hosted
+    description: >
+      Docker image, Helm chart (replicaCount 1, default RollingUpdate, probes present) or a signed
+      standalone build. The seeder runs inside the artifact at startup, after migrations.
+    platform: [linux, windows, macos, docker, kubernetes]
+    preconditions:
+      - name: upgrade-from-previous-release
+        description: >
+          A database written by the previous release: Teams and Portfolios whose Doing list holds mapping
+          names in place of their members, some with a shadowing entry or a chained mapping.
+        expected: >
+          First start: collapsed lists rewritten to raw states, group at the first member's index,
+          Information summary; shadowing and chained rows legacy-expanded with a Warning. Second start:
+          nothing rewritten.
+    observability_note: >
+      Telemetry is off by default. The seeder's Serilog lines (owner type and id, counts) are the only
+      signal; no dashboard or alert rule exists in the repo or the chart.
+
+coexistence_matrix:
+  - tool: stored-data-from-previous-release
+    must_not_break: true
+    rationale: "Seeder is idempotent and skip-and-log; a bad owner never aborts startup (SeedDatabase has no try/catch, so the seeder catches per owner)."
+  - tool: older-settings-page-after-downgrade
+    must_not_break: true
+    rationale: "Old frontend re-collapses members on its next mapping edit; old backend reads raw lists correctly. Release-note line owed."
+  - tool: api-v1-clients
+    must_not_break: true
+    rationale: "Field types unchanged; doingStates meaning changed (raw states), shadowing is a 400, three read-only display lists added. Lighthouse-Clients passes settings through as opaque JSON: docs and skill text only, no version bump."
+  - tool: existing-playwright-POM-callers
+    must_not_break: true
+    rationale: "BaseSettingsPage.getDoingStates reads chips (now display states); MetricsPage already waits on data-widget-status ready. No spec sets a state mapping."
+  - tool: existing-approval-fixtures
+    must_not_break: true
+    rationale: "slice02-portfolio-northwind-platform-settings.approved.json gains the display lists; a deliberate approval update."
+  - tool: existing-SonarCloud-quality-gate
+    must_not_break: true
+    rationale: "new_violations = 0. Run dotnet format analyzers --verify-no-changes before push."
+  - tool: existing-Stryker-config
+    must_not_break: true
+    rationale: "per-feature, >=80%. Stryker.NET skips the acceptance suite; check StrykerJS left no @ts-nocheck."
+  - tool: ef-migrations-and-HistoricalSchemaPatch
+    must_not_break: true
+    rationale: "No new column; CreateMigration is not used."
+
+platform_coverage:
+  Browsers: ["Chromium (Playwright default)"]
+  Linux: [Ubuntu 22.04, Ubuntu 24.04]
+  Windows: [Windows Server 2022, Windows 11]
+  macOS: [13.x, 14.x, "arm64 standalone"]
+  Docker: ["existing image, unchanged"]
+  Kubernetes: ["existing Helm chart, unchanged"]
+  CI: ["GitHub Actions ubuntu-latest (existing ci.yml; no new workflow or job)"]
+  Database:
+    sqlite: "seeder tests, idempotence, shadowing/chained/throwing rows"
+    postgres: "the same tests via the shared Postgres container fixture"
+
+deployment_assumptions:
+  - "Nothing is installed, migrated or configured by the operator; the rewrite runs at startup inside the artifact."
+  - "Rollback is the ordinary artifact rollback (re-pin image, helm rollback, previous standalone); one artifact carries bundle and API."
+  - "A mixed-version overlap is NOT harmless with replicaCount above 1 (allowed with Redis, chart/templates/_helpers.tpl:236) and no Deployment strategy block: an old-version save after the new seed can re-collapse a list. The new pod normalises on read, so the list still loads every item, and the next start rewrites it. Owed: a release-note line."
+  - "The seeder also runs in-process after RestoreBackup and ClearDatabase (DatabaseManagementService.cs:116, :174), not only at process start."
+  - "Owed at release: release-note lines (lists hold raw states and shadowing payload refused; downgrade may re-collapse on next edit; an owner named in the seeder's Warning keeps working and the seeder retries on each start; rolling-update overlap) and a docs/skill note for Lighthouse-Clients. No feature flag, no usage-data event, no demo-data change."

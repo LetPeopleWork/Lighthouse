@@ -186,7 +186,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static FlowEfficiencyInfoDto ComputeFlowEfficiency(
             IReadOnlyList<CumulativeStateTimeStateRowDto> doingStateRows,
-            IReadOnlyList<string> expandedWaitStates,
+            IReadOnlyList<string> waitDisplayStates,
             bool isConfigured)
         {
             var totalDoingDays = doingStateRows.Sum(row => row.TotalDays);
@@ -195,7 +195,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 return new FlowEfficiencyInfoDto(isConfigured, HasDataInScope: totalDoingDays > 0, EfficiencyPercent: 0, totalDoingDays, WaitDays: 0);
             }
 
-            var waitStateSet = expandedWaitStates.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var waitStateSet = waitDisplayStates.ToHashSet(StringComparer.OrdinalIgnoreCase);
             var waitDays = doingStateRows
                 .Where(row => waitStateSet.Contains(row.State))
                 .Sum(row => row.TotalDays);
@@ -334,16 +334,16 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        protected static IReadOnlyList<string> ScopedCumulativeStateOrder(IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        protected static IReadOnlyList<string> ScopedCumulativeStateOrder(IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
-            var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
-            var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
+            var startThreshold = PositionOf(statesInOrder, startState);
+            var endThreshold = PositionOf(statesInOrder, endState);
             if (startThreshold < 0 || endThreshold <= startThreshold)
             {
                 return [];
             }
 
-            return allStatesInOrder.Skip(startThreshold).Take(endThreshold - startThreshold).ToList();
+            return statesInOrder.Skip(startThreshold).Take(endThreshold - startThreshold).ToList();
         }
 
         protected static IEnumerable<PercentileValue> BuildPercentiles(List<int> values) =>
@@ -356,39 +356,38 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static List<(int Id, string StartState, string EndState)> ResolveValidNamedDefinitions(
             WorkTrackingSystemOptionsOwner owner,
-            IReadOnlyList<string> allStatesInOrder)
+            IReadOnlyList<string> statesInOrder)
         {
             return owner.CycleTimeDefinitions
                 .Where(owner.IsCycleTimeDefinitionValid)
                 .Select(definition => (
                     definition.Id,
-                    StartState: ResolveBoundaryState(owner, allStatesInOrder, definition.StartState),
-                    EndState: ResolveBoundaryState(owner, allStatesInOrder, definition.EndState)))
+                    StartState: ResolveBoundaryState(owner, statesInOrder, definition.StartState),
+                    EndState: ResolveBoundaryState(owner, statesInOrder, definition.EndState)))
                 .ToList();
         }
 
         protected static List<NamedCycleTimeValue> NamedValuesForItem(
             WorkItem item,
-            IReadOnlyList<string> allStatesInOrder,
+            IReadOnlyList<string> statesInOrder,
             IReadOnlyList<(int Id, string StartState, string EndState)> definitions)
         {
             return definitions
-                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, allStatesInOrder, definition.StartState, definition.EndState)))
+                .Select(definition => (definition.Id, days: NamedCycleTimeDays(item, statesInOrder, definition.StartState, definition.EndState)))
                 .Where(entry => entry.days.HasValue)
                 .Select(entry => new NamedCycleTimeValue(entry.Id, entry.days!.Value))
                 .ToList();
         }
 
-        protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> allStatesInOrder, string boundaryState)
-        {
-            var rawStates = owner.GetRawStatesForCategory([boundaryState]);
-            return allStatesInOrder.FirstOrDefault(state => rawStates.Any(raw => string.Equals(raw, state, StringComparison.OrdinalIgnoreCase)))
-                ?? boundaryState;
-        }
+        protected static List<string> DisplayStatesInOrder(WorkTrackingSystemOptionsOwner owner)
+            => owner.CategoryLists().DisplayStatesInWorkflowOrder();
 
-        protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> statesInOrder, string boundaryState)
+            => owner.CategoryLists().WorkflowEntryFor(statesInOrder, boundaryState) ?? boundaryState;
+
+        protected static int? NamedCycleTimeDays(WorkItem item, IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
-            var window = NamedCycleTimeWindow(item, allStatesInOrder, startState, endState);
+            var window = NamedCycleTimeWindow(item, statesInOrder, startState, endState);
             if (window == null)
             {
                 return null;
@@ -397,16 +396,16 @@ namespace Lighthouse.Backend.Services.Implementation
             return (int)(window.Value.End.Date - window.Value.Start.Date).TotalDays + 1;
         }
 
-        protected static (DateTime Start, DateTime End)? NamedCycleTimeWindow(WorkItem item, IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        protected static (DateTime Start, DateTime End)? NamedCycleTimeWindow(WorkItem item, IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
-            var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
-            var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
+            var startThreshold = PositionOf(statesInOrder, startState);
+            var endThreshold = PositionOf(statesInOrder, endState);
             if (startThreshold < 0 || endThreshold <= startThreshold)
             {
                 return null;
             }
 
-            var stateEntries = OrderedStateEntries(item, allStatesInOrder).ToList();
+            var stateEntries = OrderedStateEntries(item, statesInOrder).ToList();
 
             var startMoment = stateEntries
                 .Where(entry => entry.Rank >= startThreshold)
@@ -443,20 +442,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return (startMoment.Value, endMoment.Value);
         }
 
-        private static int BoundaryThresholdIndex(IReadOnlyList<string> allStatesInOrder, string boundaryState)
-        {
-            for (var index = 0; index < allStatesInOrder.Count; index++)
-            {
-                if (string.Equals(allStatesInOrder[index], boundaryState, StringComparison.OrdinalIgnoreCase))
-                {
-                    return index;
-                }
-            }
-
-            return -1;
-        }
-
-        private static IEnumerable<(int Rank, DateTime EnteredAt)> OrderedStateEntries(WorkItem item, IReadOnlyList<string> allStatesInOrder)
+        private static IEnumerable<(int Rank, DateTime EnteredAt)> OrderedStateEntries(WorkItem item, IReadOnlyList<string> statesInOrder)
         {
             var orderedTransitions = item.SyncedTransitions
                 .OrderBy(transition => transition.TransitionedAt)
@@ -469,19 +455,19 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var firstState = orderedTransitions.Count > 0 ? orderedTransitions[0].FromState : item.State;
-            yield return (RankOfState(allStatesInOrder, firstState), workflowEntry.Value);
+            yield return (PositionOf(statesInOrder, firstState), workflowEntry.Value);
 
             foreach (var transition in orderedTransitions)
             {
-                yield return (RankOfState(allStatesInOrder, transition.ToState), transition.TransitionedAt);
+                yield return (PositionOf(statesInOrder, transition.ToState), transition.TransitionedAt);
             }
         }
 
-        private static int RankOfState(IReadOnlyList<string> allStatesInOrder, string state)
+        private static int PositionOf(IReadOnlyList<string> statesInOrder, string state)
         {
-            for (var index = 0; index < allStatesInOrder.Count; index++)
+            for (var index = 0; index < statesInOrder.Count; index++)
             {
-                if (string.Equals(allStatesInOrder[index], state, StringComparison.OrdinalIgnoreCase))
+                if (StateCategoryLists.IsSameState(statesInOrder[index], state))
                 {
                     return index;
                 }

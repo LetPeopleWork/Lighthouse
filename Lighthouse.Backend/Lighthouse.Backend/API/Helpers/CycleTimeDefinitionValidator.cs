@@ -7,24 +7,16 @@ namespace Lighthouse.Backend.API.Helpers
     {
         public const string EndStateMustComeAfterStartStateError = "End state must come after the start state in the workflow";
 
-        public static CycleTimeDefinitionValidationResult ValidateSettings(SettingsOwnerDtoBase settings)
+        public static CycleTimeDefinitionValidationResult ValidateSettings(SettingsOwnerDtoBase settings, IReadOnlyCollection<CycleTimeDefinition>? storedDefinitions = null)
         {
-            var resolver = new Team
-            {
-                ToDoStates = settings.ToDoStates,
-                DoingStates = settings.DoingStates,
-                DoneStates = settings.DoneStates,
-                StateMappings = settings.StateMappings
-                    .Select(mapping => new StateMapping { Name = mapping.Name, States = mapping.States })
-                    .ToList(),
-            };
+            var lists = settings.CategoryListsAsSent();
 
-            var orderedStates = resolver.AllStates.ToList();
+            var orderedStates = lists.DisplayStatesInWorkflowOrder();
             var errors = new List<string>();
 
-            foreach (var definition in settings.CycleTimeDefinitions)
+            foreach (var definition in settings.CycleTimeDefinitions.Where(sent => IsChanged(sent, storedDefinitions ?? [])))
             {
-                ValidateDefinition(definition, resolver, orderedStates, errors);
+                ValidateDefinition(definition, lists, orderedStates, errors);
             }
 
             foreach (var duplicate in DuplicateNames(settings.CycleTimeDefinitions))
@@ -37,8 +29,8 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static void ValidateDefinition(
             CycleTimeDefinitionDto definition,
-            Team resolver,
-            IReadOnlyList<string> orderedStates,
+            StateCategoryLists lists,
+            List<string> orderedStates,
             List<string> errors)
         {
             if (string.IsNullOrWhiteSpace(definition.Name))
@@ -46,36 +38,29 @@ namespace Lighthouse.Backend.API.Helpers
                 errors.Add("A cycle time name is required.");
             }
 
-            var startIndex = BoundaryIndex(resolver, orderedStates, definition.StartState);
-            var endIndex = BoundaryIndex(resolver, orderedStates, definition.EndState);
+            var startIndex = BoundaryIndex(lists, orderedStates, definition.StartState);
+            var endIndex = BoundaryIndex(lists, orderedStates, definition.EndState);
 
-            // Boundary presence is a READ-TIME concern (D5): a definition whose boundary state was
-            // removed persists as invalid (IsValid:false on projection), it is not rejected at save.
-            // Only the end-after-start ordering (D4) is enforced here, and only when both resolve.
+            // A definition whose boundary state was removed is kept and shown as invalid rather than refused, so
+            // only the end-after-start ordering is enforced here, and only when both boundaries are found.
             if (startIndex >= 0 && endIndex >= 0 && endIndex <= startIndex)
             {
                 errors.Add(EndStateMustComeAfterStartStateError);
             }
         }
 
-        private static int BoundaryIndex(Team resolver, IReadOnlyList<string> orderedStates, string boundary)
+        // A definition stored before a state group covered both its boundaries can now order them as one position.
+        // The settings page sends stored definitions back on every save, so refusing one unchanged would block all saves.
+        private static bool IsChanged(CycleTimeDefinitionDto sent, IReadOnlyCollection<CycleTimeDefinition> storedDefinitions)
+            => !storedDefinitions.Any(stored =>
+                stored.Id == sent.Id
+                && StateCategoryLists.IsSameState(stored.StartState, sent.StartState)
+                && StateCategoryLists.IsSameState(stored.EndState, sent.EndState));
+
+        private static int BoundaryIndex(StateCategoryLists lists, List<string> orderedStates, string boundary)
         {
-            if (string.IsNullOrWhiteSpace(boundary))
-            {
-                return -1;
-            }
-
-            var rawStates = resolver.GetRawStatesForCategory([boundary]);
-
-            for (var index = 0; index < orderedStates.Count; index++)
-            {
-                if (rawStates.Any(raw => string.Equals(raw, orderedStates[index], StringComparison.OrdinalIgnoreCase)))
-                {
-                    return index;
-                }
-            }
-
-            return -1;
+            var entry = lists.WorkflowEntryFor(orderedStates, boundary);
+            return entry == null ? -1 : orderedStates.IndexOf(entry);
         }
 
         private static IEnumerable<string> DuplicateNames(IEnumerable<CycleTimeDefinitionDto> definitions)

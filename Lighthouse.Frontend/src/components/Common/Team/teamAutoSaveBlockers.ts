@@ -1,7 +1,10 @@
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { mappingAutoSaveBlockers } from "../../../utils/stateMappingValidation";
+import {
+	type IStoredStateSettings,
+	mappingAutoSaveBlockers,
+} from "../../../utils/stateMappingValidation";
 import { refinementSettingsBlockers } from "./RefinementSettingsSection";
 
 // Autosave is the only save trigger, so an invalid form has to name what blocks it.
@@ -10,6 +13,7 @@ export function teamAutoSaveBlockers(
 	system: IWorkTrackingSystemConnection | null,
 	isDefault: boolean,
 	getTerm: (key: string) => string,
+	stored?: IStoredStateSettings,
 ): string[] {
 	const schema = s.dataRetrievalSchema;
 	const reasons: string[] = [];
@@ -48,7 +52,7 @@ export function teamAutoSaveBlockers(
 			s.refinement,
 			getTerm(TERMINOLOGY_KEYS.REFINEMENT),
 		),
-		...mappingAutoSaveBlockers(s.stateMappings, s),
+		...mappingAutoSaveBlockers(s.stateMappings, s, stored),
 	);
 	if (isDefault) {
 		return reasons;

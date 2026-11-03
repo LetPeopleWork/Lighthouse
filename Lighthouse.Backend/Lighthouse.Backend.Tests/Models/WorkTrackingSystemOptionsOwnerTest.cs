@@ -74,51 +74,47 @@ namespace Lighthouse.Backend.Tests.Models
         public void GetRawStatesForCategory_NoMappings_ReturnsSameStates()
         {
             var subject = CreateSubject();
-            subject.DoingStates.Clear();
-            subject.DoingStates.AddRange(["Active", "Resolved"]);
+            subject.WaitStates = ["Blocked", "Waiting"];
 
-            var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
+            var rawStates = subject.GetRawStatesForCategory(subject.WaitStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(["Active", "Resolved"]));
+            Assert.That(rawStates, Is.EquivalentTo(["Blocked", "Waiting"]));
         }
 
         [Test]
         public void GetRawStatesForCategory_WithMappedLabel_ExpandsToRawStates()
         {
             var subject = CreateSubject();
-            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active", "Resolved"] });
-            subject.DoingStates.Clear();
-            subject.DoingStates.AddRange(["In Progress"]);
+            subject.StateMappings.Add(new StateMapping { Name = "Waiting", States = ["Blocked", "On Hold"] });
+            subject.WaitStates = ["Waiting"];
 
-            var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
+            var rawStates = subject.GetRawStatesForCategory(subject.WaitStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(["Active", "Resolved"]));
+            Assert.That(rawStates, Is.EquivalentTo(["Blocked", "On Hold"]));
         }
 
         [Test]
         public void GetRawStatesForCategory_MixedRawAndMapped_ExpandsOnlyMappedLabels()
         {
             var subject = CreateSubject();
-            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active", "Resolved"] });
-            subject.DoingStates.Clear();
-            subject.DoingStates.AddRange(["In Progress", "Development"]);
+            subject.StateMappings.Add(new StateMapping { Name = "Waiting", States = ["Blocked", "On Hold"] });
+            subject.WaitStates = ["Waiting", "Ready for Test"];
 
-            var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
+            var rawStates = subject.GetRawStatesForCategory(subject.WaitStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(["Active", "Resolved", "Development"]));
+            Assert.That(rawStates, Is.EquivalentTo(["Blocked", "On Hold", "Ready for Test"]));
         }
 
         [Test]
         public void GetRawStatesForCategory_MappedLabelCaseInsensitive_ExpandsCorrectly()
         {
             var subject = CreateSubject();
-            subject.StateMappings.Add(new StateMapping { Name = "In Progress", States = ["Active"] });
-            subject.DoingStates.Clear();
-            subject.DoingStates.AddRange(["in progress"]);
+            subject.StateMappings.Add(new StateMapping { Name = "Waiting", States = ["Blocked"] });
+            subject.WaitStates = ["waiting"];
 
-            var rawStates = subject.GetRawStatesForCategory(subject.DoingStates);
+            var rawStates = subject.GetRawStatesForCategory(subject.WaitStates);
 
-            Assert.That(rawStates, Is.EquivalentTo(["Active"]));
+            Assert.That(rawStates, Is.EquivalentTo(["Blocked"]));
         }
 
         [Test]
@@ -273,7 +269,7 @@ namespace Lighthouse.Backend.Tests.Models
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(subject.GetRawStatesForCategory(subject.DoingStates), Is.EquivalentTo(["In Arbeit", "In Progress"]));
+                Assert.That(subject.NormalisedStatesFor(subject.DoingStates), Is.EquivalentTo(["In Arbeit", "In Progress"]));
                 Assert.That(subject.AllStates, Is.EquivalentTo(["New", "In Arbeit", "In Progress", "Closed"]));
                 Assert.That(subject.MapStateToStateCategory("In Arbeit"), Is.EqualTo(StateCategories.Doing));
                 Assert.That(subject.MapStateToStateCategory("In Progress"), Is.EqualTo(StateCategories.Doing));
@@ -431,14 +427,16 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [TestCase("New", "Done", true)]
-        [TestCase("Jellybean", "Done", false)]
-        [TestCase("New", "Jellybean", false)]
+        [TestCase("Ghost", "Done", false)]
+        [TestCase("New", "Ghost", false)]
+        [TestCase("Jellybean", "Done", true)]
+        [TestCase("New", "Jellybean", true)]
         [TestCase("Nothing", "Done", false)]
         [TestCase("New", "Nothing", false)]
-        [TestCase("Partly", "Done", false)]
-        [TestCase("New", "Partly", false)]
+        [TestCase("Partly", "Done", true)]
+        [TestCase("New", "Partly", true)]
         [TestCase("Started", "Finished", true)]
-        public void IsCycleTimeDefinitionValid_NeedsBothBoundariesToNameOnlyStatesTheOwnerKnows(string start, string end, bool expected)
+        public void IsCycleTimeDefinitionValid_NeedsBothBoundariesInTheWorkflowAsTheChartsShowIt(string start, string end, bool expected)
         {
             var subject = CreateSubject();
             subject.StateMappings =

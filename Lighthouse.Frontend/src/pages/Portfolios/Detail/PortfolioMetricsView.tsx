@@ -1,13 +1,11 @@
 import type React from "react";
-import { useContext, useEffect, useState } from "react";
-import type { IStateMapping } from "../../../models/Common/StateMapping";
-import type { ICycleTimeDefinition } from "../../../models/Metrics/NamedCycleTime";
+import { useCallback, useContext } from "react";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
-import { parseRuleSet } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
+import { useOwnerMetricsSettings } from "../../Common/MetricsView/useOwnerMetricsSettings";
 
 interface PortfolioMetricsViewProps {
 	portfolio: IPortfolio;
@@ -16,51 +14,25 @@ interface PortfolioMetricsViewProps {
 const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 	portfolio,
 }) => {
-	const [doingStates, setDoingStates] = useState<string[]>([]);
-	const [waitStates, setWaitStates] = useState<string[]>([]);
-	const [stateMappings, setStateMappings] = useState<IStateMapping[]>([]);
-	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
-	const [stalenessThresholdDays, setStalenessThresholdDays] = useState<
-		number | undefined
-	>(undefined);
-	const [blockedStalenessThresholdDays, setBlockedStalenessThresholdDays] =
-		useState<number | undefined>(undefined);
-	const [cycleTimeDefinitions, setCycleTimeDefinitions] = useState<
-		ICycleTimeDefinition[]
-	>([]);
 	const { portfolioMetricsService, portfolioService } =
 		useContext(ApiServiceContext);
+	const getPortfolioSettings = useCallback(
+		(portfolioId: number) => portfolioService.getPortfolioSettings(portfolioId),
+		[portfolioService],
+	);
+	const {
+		doingStates,
+		doingStatesStatus,
+		waitStates,
+		stateMappings,
+		cycleTimeDefinitions,
+		hasBlockedConfig,
+		stalenessThresholdDays,
+		blockedStalenessThresholdDays,
+	} = useOwnerMetricsSettings(portfolio.id, getPortfolioSettings, "portfolio");
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
-
-	useEffect(() => {
-		const fetchPortfolioSettings = async () => {
-			try {
-				const settings = await portfolioService.getPortfolioSettings(
-					portfolio.id,
-				);
-				setDoingStates(settings.doingStates);
-				setWaitStates(settings.waitStates ?? []);
-				setStateMappings(settings.stateMappings);
-				setHasBlockedConfig(
-					(parseRuleSet(settings.blockedRuleSetJson)?.conditions.length ?? 0) >
-						0,
-				);
-				setStalenessThresholdDays(settings.stalenessThresholdDays);
-				setBlockedStalenessThresholdDays(
-					settings.blockedStalenessThresholdDays,
-				);
-				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
-			} catch (error) {
-				console.error("Error fetching portfolio settings:", error);
-			}
-		};
-
-		fetchPortfolioSettings().catch((error) => {
-			console.error("Error fetching portfolio settings:", error);
-		});
-	}, [portfolio.id, portfolioService]);
 
 	return (
 		<BaseMetricsView
@@ -70,6 +42,7 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 			defaultDateRange={90}
 			hasBlockedConfig={hasBlockedConfig}
 			doingStates={doingStates}
+			doingStatesStatus={doingStatesStatus}
 			waitStates={waitStates}
 			stateMappings={stateMappings}
 			cycleTimeDefinitions={cycleTimeDefinitions}

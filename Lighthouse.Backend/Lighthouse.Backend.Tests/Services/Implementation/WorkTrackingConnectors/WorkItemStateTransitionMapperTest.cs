@@ -64,6 +64,26 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public void MapToMappedStates_TrackerSendsAGroupedStateWithSpacesAround_StoresTheGroupTheChartsShow()
+        {
+            var owner = CreateOwner(("Review", ["Testing"]));
+            owner.DoingStates = ["Analysis", "Testing"];
+
+            var raw = new List<WorkItemStateTransition>
+            {
+                new() { FromState = "Analysis", ToState = "Testing ", TransitionedAt = new DateTime(2026, 5, 25, 9, 0, 0, DateTimeKind.Utc) },
+            };
+
+            var mapped = WorkItemStateTransitionMapper.MapToMappedStates(raw, owner);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mapped[0].ToState, Is.EqualTo("Review"));
+                Assert.That(owner.DisplayStatesFor(StateCategories.Doing), Does.Contain(mapped[0].ToState));
+            }
+        }
+
         private static TestQueryOwner CreateOwner(params (string mappedName, string[] rawStates)[] mappings)
         {
             var owner = new TestQueryOwner

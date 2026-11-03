@@ -417,14 +417,14 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private List<CycleTimeWorkItem> ComputeCycleTimeData(Team team, DateTime startDate, DateTime endDate)
         {
-            var allStatesInOrder = team.AllStates.ToList();
-            var resolvedDefinitions = ResolveValidNamedDefinitions(team, allStatesInOrder);
+            var displayStatesInOrder = DisplayStatesInOrder(team);
+            var resolvedDefinitions = ResolveValidNamedDefinitions(team, displayStatesInOrder);
 
             var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
             var itemsWithTransitions = AssociateSyncedTransitions(closedItems);
 
             return itemsWithTransitions
-                .Select(item => new CycleTimeWorkItem(item, NamedValuesForItem(item, allStatesInOrder, resolvedDefinitions)))
+                .Select(item => new CycleTimeWorkItem(item, NamedValuesForItem(item, displayStatesInOrder, resolvedDefinitions)))
                 .ToList();
         }
 
@@ -436,15 +436,15 @@ namespace Lighthouse.Backend.Services.Implementation
                 return [];
             }
 
-            var allStatesInOrder = team.AllStates.ToList();
-            var startState = ResolveBoundaryState(team, allStatesInOrder, definition.StartState);
-            var endState = ResolveBoundaryState(team, allStatesInOrder, definition.EndState);
+            var displayStatesInOrder = DisplayStatesInOrder(team);
+            var startState = ResolveBoundaryState(team, displayStatesInOrder, definition.StartState);
+            var endState = ResolveBoundaryState(team, displayStatesInOrder, definition.EndState);
 
             var closedItems = GetWorkItemsClosedInDateRange(team, startDate, endDate).ToList();
             var itemsWithTransitions = AssociateSyncedTransitions(closedItems);
 
             return itemsWithTransitions
-                .Select(item => NamedCycleTimeDays(item, allStatesInOrder, startState, endState))
+                .Select(item => NamedCycleTimeDays(item, displayStatesInOrder, startState, endState))
                 .Where(days => days.HasValue)
                 .Select(days => days!.Value)
                 .ToList();
@@ -460,7 +460,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var completedItemsWithTransitions = AssociateSyncedTransitions(completedItems);
                 var cycleTimePercentiles = GetCycleTimePercentilesForTeam(team, startDate, endDate).ToList();
 
-                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, team.DoingStates, DefaultPacePercentiles, cycleTimePercentiles).ToList();
+                return ComputeAgeInStatePercentiles(completedItemsWithTransitions, team.DisplayStatesFor(StateCategories.Doing), DefaultPacePercentiles, cycleTimePercentiles).ToList();
             }, logger);
         }
 
@@ -492,8 +492,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 var workflowStateOrder = BuildCumulativeWorkflowStateOrder(team);
                 var doingStateRows = ComputeCumulativeStateTime(candidateItems, workflowStateOrder, endDate);
 
-                var expandedWaitStates = team.GetRawStatesForCategory(team.WaitStates);
-                return ComputeFlowEfficiency(doingStateRows, expandedWaitStates, team.WaitStates.Count > 0);
+                return ComputeFlowEfficiency(doingStateRows, team.WaitStatesAsDisplayed(), team.WaitStates.Count > 0);
             }, logger);
         }
 
@@ -581,7 +580,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         private static List<string> BuildCumulativeWorkflowStateOrder(Team team)
         {
-            return [.. team.DoingStates];
+            return team.DisplayStatesFor(StateCategories.Doing);
         }
 
         private static IReadOnlyList<string> ResolveCumulativeStateOrder(Team team, CycleTimeDefinition? scopedDefinition)
@@ -591,10 +590,10 @@ namespace Lighthouse.Backend.Services.Implementation
                 return BuildCumulativeWorkflowStateOrder(team);
             }
 
-            var allStatesInOrder = team.AllStates.ToList();
-            var startState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.StartState);
-            var endState = ResolveBoundaryState(team, allStatesInOrder, scopedDefinition.EndState);
-            return ScopedCumulativeStateOrder(allStatesInOrder, startState, endState);
+            var displayStatesInOrder = DisplayStatesInOrder(team);
+            var startState = ResolveBoundaryState(team, displayStatesInOrder, scopedDefinition.StartState);
+            var endState = ResolveBoundaryState(team, displayStatesInOrder, scopedDefinition.EndState);
+            return ScopedCumulativeStateOrder(displayStatesInOrder, startState, endState);
         }
 
         private List<WorkItem> AssociateSyncedTransitions(IReadOnlyCollection<WorkItem> completedItems)
@@ -729,6 +728,7 @@ namespace Lighthouse.Backend.Services.Implementation
         private List<WorkItem> ProjectStateAsOf(Team team, IReadOnlyCollection<WorkItem> items, DateTime asOf)
         {
             var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(team, items);
+            var lists = team.CategoryLists();
 
             foreach (var item in itemsWithTransitions)
             {
@@ -740,7 +740,7 @@ namespace Lighthouse.Backend.Services.Implementation
                 }
 
                 item.State = stateOnDay.ToState;
-                item.StateCategory = team.MapStateToStateCategory(stateOnDay.ToState);
+                item.StateCategory = lists.CategoryOfDisplayName(stateOnDay.ToState);
                 item.CurrentStateEnteredAt = stateOnDay.TransitionedAt;
             }
 

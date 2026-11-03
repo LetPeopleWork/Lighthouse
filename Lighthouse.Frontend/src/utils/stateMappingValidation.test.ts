@@ -59,32 +59,11 @@ describe("validateStateMappings", () => {
 		);
 	});
 
-	it("reports a mapping named after a Doing state it does not contain", () => {
-		const mappings: IStateMapping[] = [
-			{ name: "In Arbeit", states: ["In Progress"] },
-		];
-		const result = validateStateMappings(
-			mappings,
-			lists(["In Arbeit", "In Progress"]),
-		);
-		expect(result).toEqual([
-			'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
-		]);
-	});
-
 	it("allows a mapping named after a Doing state it contains", () => {
 		const mappings: IStateMapping[] = [
 			{ name: "In Arbeit", states: ["In Arbeit", "In Progress"] },
 		];
 		const result = validateStateMappings(mappings, lists(["In Arbeit"]));
-		expect(result).toEqual([]);
-	});
-
-	it("allows a mapping already taken into the Doing list under its own name", () => {
-		const mappings: IStateMapping[] = [
-			{ name: "Implementation", states: ["Active", "Resolved"] },
-		];
-		const result = validateStateMappings(mappings, lists(["Implementation"]));
 		expect(result).toEqual([]);
 	});
 
@@ -94,7 +73,7 @@ describe("validateStateMappings", () => {
 		expect(result).toEqual(['Mapping "In Arbeit" has no source states.']);
 	});
 
-	it("reports a mapping named after a state another mapping groups, and not the mapping that groups it", () => {
+	it("reports a mapping named after a state another mapping groups, and the grouping mapping listed beside that state", () => {
 		const mappings: IStateMapping[] = [
 			{ name: "Group", states: ["In Arbeit"] },
 			{ name: "In Arbeit", states: ["Review"] },
@@ -104,33 +83,21 @@ describe("validateStateMappings", () => {
 			lists(["In Progress", "Group", "In Arbeit"]),
 		);
 		expect(result).toEqual([
+			'Mapping "Group" has the same name as the Doing state "Group". Add "Group" to this mapping to group it, or choose another name.',
 			'Mapping "In Arbeit" has the same name as a state grouped by mapping "Group". Choose another name.',
 		]);
 	});
 
-	it("reports a mapping named after a To Do state", () => {
+	it("names a mapping hiding a To Do state without surrounding spaces, and the state as it is listed", () => {
 		const mappings: IStateMapping[] = [
 			{ name: " in arbeit ", states: ["In Progress"] },
 		];
 		const result = validateStateMappings(
 			mappings,
-			lists(["Group"], ["In Arbeit"]),
+			lists(["Group"], ["In Arbeit", "In Progress"]),
 		);
 		expect(result).toEqual([
 			'Mapping "in arbeit" has the same name as the To Do state "In Arbeit". Choose another name.',
-		]);
-	});
-
-	it("reports a mapping named after a Done state", () => {
-		const mappings: IStateMapping[] = [
-			{ name: "In Arbeit", states: ["In Progress"] },
-		];
-		const result = validateStateMappings(
-			mappings,
-			lists(["Group"], [], ["In Arbeit"]),
-		);
-		expect(result).toEqual([
-			'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Choose another name.',
 		]);
 	});
 
@@ -242,17 +209,6 @@ describe("mappingAutoSaveBlockers", () => {
 		];
 		expect(mappingAutoSaveBlockers(mappings, lists())).toEqual([
 			'Duplicate mapping name: "QA".',
-		]);
-	});
-
-	it("still reports a mapping named after a Doing state it does not group", () => {
-		const mappings: IStateMapping[] = [
-			{ name: "In Arbeit", states: ["In Progress"] },
-		];
-		expect(
-			mappingAutoSaveBlockers(mappings, lists(["In Arbeit", "In Progress"])),
-		).toEqual([
-			'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.',
 		]);
 	});
 
