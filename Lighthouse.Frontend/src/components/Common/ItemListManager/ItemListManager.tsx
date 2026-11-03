@@ -116,28 +116,8 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 								<Chip
 									key={item}
 									label={item}
-									onDelete={
-										groupTooltip === undefined
-											? () => onRemoveItem(item)
-											: undefined
-									}
-									icon={
-										groupTooltip === undefined ? undefined : (
-											<WorkspacesIcon data-testid="state-mapping-chip-icon" />
-										)
-									}
-									data-testid={
-										groupTooltip === undefined
-											? undefined
-											: "state-mapping-chip"
-									}
 									color="primary"
-									variant={groupTooltip === undefined ? "outlined" : "filled"}
-									// A mapping chip has no action of its own, so without this a keyboard user never reaches its tooltip.
-									// A plain div may not carry a name, so the chip is a group named after the mapping.
-									{...(groupTooltip === undefined
-										? {}
-										: { tabIndex: 0, role: "group", "aria-label": item })}
+									{...chipLookFor(item, groupTooltip, onRemoveItem)}
 									draggable={!!onReorderItems}
 									onDragStart={(e) => handleDragStart(e, index)}
 									onDragOver={handleDragOver}
@@ -260,5 +240,26 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 		</Grid>
 	);
 };
+
+// A plain chip can be removed. A mapping chip cannot: it is removed by deleting the mapping, so it has no action
+// of its own, and without tabIndex a keyboard user would never reach its tooltip. A plain div may not carry a
+// name, so the mapping chip is a group named after the mapping.
+function chipLookFor(
+	item: string,
+	groupTooltip: string | undefined,
+	onRemoveItem: (item: string) => void,
+) {
+	if (groupTooltip === undefined) {
+		return { onDelete: () => onRemoveItem(item), variant: "outlined" as const };
+	}
+	return {
+		icon: <WorkspacesIcon data-testid="state-mapping-chip-icon" />,
+		"data-testid": "state-mapping-chip",
+		variant: "filled" as const,
+		tabIndex: 0,
+		role: "group",
+		"aria-label": item,
+	};
+}
 
 export default ItemListManager;

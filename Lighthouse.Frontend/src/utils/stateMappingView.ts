@@ -2,8 +2,7 @@ import type { IStateMapping } from "../models/Common/StateMapping";
 
 // The characters .NET's string.Trim removes. JavaScript's own trim misses U+0085 and also removes U+FEFF,
 // which the server keeps.
-const SERVER_WHITESPACE =
-	"\\u0009-\\u000D\\u0020\\u0085\\u00A0\\u1680\\u2000-\\u200A\\u2028\\u2029\\u202F\\u205F\\u3000";
+const SERVER_WHITESPACE = String.raw`\u0009-\u000D\u0020\u0085\u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000`;
 const SURROUNDING_WHITESPACE = new RegExp(
 	`^[${SERVER_WHITESPACE}]+|[${SERVER_WHITESPACE}]+$`,
 	"g",
