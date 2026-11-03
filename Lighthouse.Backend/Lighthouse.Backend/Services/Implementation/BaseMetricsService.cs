@@ -334,16 +334,16 @@ namespace Lighthouse.Backend.Services.Implementation
             }
         }
 
-        protected static IReadOnlyList<string> ScopedCumulativeStateOrder(IReadOnlyList<string> allStatesInOrder, string startState, string endState)
+        protected static IReadOnlyList<string> ScopedCumulativeStateOrder(IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
-            var startThreshold = BoundaryThresholdIndex(allStatesInOrder, startState);
-            var endThreshold = BoundaryThresholdIndex(allStatesInOrder, endState);
+            var startThreshold = PositionOf(statesInOrder, startState);
+            var endThreshold = PositionOf(statesInOrder, endState);
             if (startThreshold < 0 || endThreshold <= startThreshold)
             {
                 return [];
             }
 
-            return allStatesInOrder.Skip(startThreshold).Take(endThreshold - startThreshold).ToList();
+            return statesInOrder.Skip(startThreshold).Take(endThreshold - startThreshold).ToList();
         }
 
         protected static IEnumerable<PercentileValue> BuildPercentiles(List<int> values) =>
@@ -398,8 +398,8 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static (DateTime Start, DateTime End)? NamedCycleTimeWindow(WorkItem item, IReadOnlyList<string> statesInOrder, string startState, string endState)
         {
-            var startThreshold = BoundaryThresholdIndex(statesInOrder, startState);
-            var endThreshold = BoundaryThresholdIndex(statesInOrder, endState);
+            var startThreshold = PositionOf(statesInOrder, startState);
+            var endThreshold = PositionOf(statesInOrder, endState);
             if (startThreshold < 0 || endThreshold <= startThreshold)
             {
                 return null;
@@ -442,20 +442,7 @@ namespace Lighthouse.Backend.Services.Implementation
             return (startMoment.Value, endMoment.Value);
         }
 
-        private static int BoundaryThresholdIndex(IReadOnlyList<string> allStatesInOrder, string boundaryState)
-        {
-            for (var index = 0; index < allStatesInOrder.Count; index++)
-            {
-                if (StateCategoryLists.IsSameState(allStatesInOrder[index], boundaryState))
-                {
-                    return index;
-                }
-            }
-
-            return -1;
-        }
-
-        private static IEnumerable<(int Rank, DateTime EnteredAt)> OrderedStateEntries(WorkItem item, IReadOnlyList<string> allStatesInOrder)
+        private static IEnumerable<(int Rank, DateTime EnteredAt)> OrderedStateEntries(WorkItem item, IReadOnlyList<string> statesInOrder)
         {
             var orderedTransitions = item.SyncedTransitions
                 .OrderBy(transition => transition.TransitionedAt)
@@ -468,19 +455,19 @@ namespace Lighthouse.Backend.Services.Implementation
             }
 
             var firstState = orderedTransitions.Count > 0 ? orderedTransitions[0].FromState : item.State;
-            yield return (RankOfState(allStatesInOrder, firstState), workflowEntry.Value);
+            yield return (PositionOf(statesInOrder, firstState), workflowEntry.Value);
 
             foreach (var transition in orderedTransitions)
             {
-                yield return (RankOfState(allStatesInOrder, transition.ToState), transition.TransitionedAt);
+                yield return (PositionOf(statesInOrder, transition.ToState), transition.TransitionedAt);
             }
         }
 
-        private static int RankOfState(IReadOnlyList<string> allStatesInOrder, string state)
+        private static int PositionOf(IReadOnlyList<string> statesInOrder, string state)
         {
-            for (var index = 0; index < allStatesInOrder.Count; index++)
+            for (var index = 0; index < statesInOrder.Count; index++)
             {
-                if (StateCategoryLists.IsSameState(allStatesInOrder[index], state))
+                if (StateCategoryLists.IsSameState(statesInOrder[index], state))
                 {
                     return index;
                 }
