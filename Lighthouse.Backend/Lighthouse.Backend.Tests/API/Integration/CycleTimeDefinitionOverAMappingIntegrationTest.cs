@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [TestFixture(OwnerKind.Portfolio)]
     public class CycleTimeDefinitionOverAMappingIntegrationTest(OwnerKind kind)
     {
-        private const string Pending = "pending: cycle time definitions read the states as the charts show them";
 
         private const string Backlog = "Backlog";
         private const string Analysis = "Analysis";
@@ -93,7 +92,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task NamedCycleTimeStartingAtAMapping_CountsFromWhenTheItemEnteredTheMapping()
         {
             SeedOwnerWithReviewMapping();
@@ -103,7 +101,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task NamedCycleTimeStartingAtOneStateInsideAMapping_CountsFromWhenTheItemEnteredTheMapping()
         {
             SeedOwnerWithReviewMapping();
@@ -113,7 +110,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task NamedCycleTimeEndingAtAMapping_StopsWhenTheItemEnteredTheMapping()
         {
             SeedOwnerWithReviewMapping();
@@ -132,7 +128,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task ChartScopedAroundAMapping_ShowsTheMappingOnceInPlaceOfItsStates()
         {
             SeedOwnerWithReviewMapping();
@@ -143,7 +138,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task ChartScopedAroundAMapping_GivesTheMappingTheTimeTheItemSpentInIt()
         {
             SeedOwnerWithReviewMapping();
@@ -154,7 +148,6 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
-        [Ignore(Pending)]
         public async Task ChartScopedFromOneStateInsideAMapping_StartsAtTheMapping()
         {
             SeedOwnerWithReviewMapping();

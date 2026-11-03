@@ -379,10 +379,19 @@ namespace Lighthouse.Backend.Services.Implementation
                 .ToList();
         }
 
-        protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> allStatesInOrder, string boundaryState)
+        protected static List<string> DisplayStatesInOrder(WorkTrackingSystemOptionsOwner owner)
         {
-            var rawStates = owner.GetRawStatesForCategory([boundaryState]);
-            return allStatesInOrder.FirstOrDefault(state => rawStates.Any(raw => string.Equals(raw, state, StringComparison.OrdinalIgnoreCase)))
+            return owner.DisplayStatesFor(StateCategories.ToDo)
+                .Concat(owner.DisplayStatesFor(StateCategories.Doing))
+                .Concat(owner.DisplayStatesFor(StateCategories.Done))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> statesInOrder, string boundaryState)
+        {
+            var displayedBoundary = owner.MapRawStateToMappedName(boundaryState);
+            return statesInOrder.FirstOrDefault(state => string.Equals(state, displayedBoundary, StringComparison.OrdinalIgnoreCase))
                 ?? boundaryState;
         }
 
