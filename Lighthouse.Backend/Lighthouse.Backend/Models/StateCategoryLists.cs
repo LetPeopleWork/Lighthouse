@@ -29,6 +29,10 @@ namespace Lighthouse.Backend.Models
         public List<string> DisplayStatesFor(StateCategories category)
             => WithoutRepeats(NormalisedStatesFor(StoredStatesOf(category)).Select(MapRawStateToMappedName));
 
+        /// <summary>The To Do, Doing and Done lists as the charts show them, one after the other in that order.</summary>
+        public List<string> DisplayStatesInWorkflowOrder()
+            => [.. ListedCategories.SelectMany(DisplayStatesFor)];
+
         /// <summary>The category of a raw tracker state, read through the normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
         public StateCategories CategoryOfRawState(string rawState)
             => ListedCategories.FirstOrDefault(

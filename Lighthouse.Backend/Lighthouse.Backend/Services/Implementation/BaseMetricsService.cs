@@ -381,9 +381,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
         protected static List<string> DisplayStatesInOrder(WorkTrackingSystemOptionsOwner owner)
         {
-            return owner.DisplayStatesFor(StateCategories.ToDo)
-                .Concat(owner.DisplayStatesFor(StateCategories.Doing))
-                .Concat(owner.DisplayStatesFor(StateCategories.Done))
+            return owner.CategoryLists().DisplayStatesInWorkflowOrder()
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
         }

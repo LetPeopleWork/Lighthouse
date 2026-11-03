@@ -11,10 +11,7 @@ namespace Lighthouse.Backend.API.Helpers
         {
             var lists = settings.CategoryListsAsSent();
 
-            var orderedStates = lists.DisplayStatesFor(StateCategories.ToDo)
-                .Concat(lists.DisplayStatesFor(StateCategories.Doing))
-                .Concat(lists.DisplayStatesFor(StateCategories.Done))
-                .ToList();
+            var orderedStates = lists.DisplayStatesInWorkflowOrder();
             var errors = new List<string>();
 
             foreach (var definition in settings.CycleTimeDefinitions.Where(sent => IsChanged(sent, storedDefinitions ?? [])))
