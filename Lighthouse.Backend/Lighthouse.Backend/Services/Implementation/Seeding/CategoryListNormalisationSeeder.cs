@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Lighthouse.Backend.Services.Implementation.Seeding
 {
     /// <summary>
-    /// Rewrites every Team's and Portfolio's To Do, Doing and Done lists as raw tracker states, once per start. Lists
+    /// Rewrites the To Do, Doing and Done lists of every Team and Portfolio with mappings as raw tracker states, once per start. Lists
     /// saved by older versions can hold a mapping's name in place of its states. An owner that cannot be rewritten is
     /// skipped with a Warning and retried on the next start; reads normalise the lists anyway, so nothing is lost.
     /// Every line carries ids, counts and a fixed rule only: these logs leave customers' instances.
@@ -60,6 +60,13 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
         private async Task Normalise<TOwner>(IRepository<TOwner> repository, TOwner owner, string ownerType, Tally tally)
             where TOwner : WorkTrackingSystemOptionsOwner
         {
+            // Without a mapping no entry names a group, and reads already skip blanks and repeats, so a rewrite
+            // would change nothing anyone reads and still cost a full refetch of the owner's items.
+            if (owner.StateMappings is null or { Count: 0 })
+            {
+                return;
+            }
+
             var plan = TryPlan(owner);
             if (plan == null)
             {

@@ -223,6 +223,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             }
         }
 
+        // Without a mapping there is no group name to expand, and reads skip blanks and repeats anyway, so rewriting
+        // such an owner would cost a full refetch of its items for nothing.
+        [Test]
+        public async Task Seed_AnOwnerWithoutMappings_IsLeftAloneEvenWithBlanksAndRepeatsInItsLists()
+        {
+            var team = new Team { Id = 1, Name = "Team", ToDoStates = ["Backlog", " "], DoingStates = ["Analysis", "analysis"], DoneStates = ["Done"] };
+            var teams = new Mock<IRepository<Team>>();
+            teams.Setup(r => r.GetAll()).Returns([team]);
+            var log = new RecordingLogger<CategoryListNormalisationSeeder>();
+
+            await new CategoryListNormalisationSeeder(teams.Object, NoPortfolios().Object, log).Seed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                teams.Verify(r => r.Save(), Times.Never);
+                Assert.That(team.ToDoStates, Is.EqualTo(new List<string> { "Backlog", " " }));
+                Assert.That(team.DoingStates, Is.EqualTo(new List<string> { "Analysis", "analysis" }));
+                Assert.That(Counted(log, "Scanned"), Is.EqualTo(1));
+                Assert.That(Counted(log, "Rewritten"), Is.Zero);
+            }
+        }
+
         [Test]
         public async Task Seed_EveryLineItWrites_CarriesOnlyTheOwnerTypeIdCountsAndAFixedRule()
         {
