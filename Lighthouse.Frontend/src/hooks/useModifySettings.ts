@@ -157,7 +157,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const pendingPayloadRef = useRef<TSettings | null>(null);
 	const lastValidatedFingerprintRef = useRef<string | null>(null);
 	const persistedFormRef = useRef<string | null>(null);
-	const storedSettingsRef = useRef<TSettings | null>(null);
+	const [storedSettings, setStoredSettings] = useState<TSettings | null>(null);
 	const [settings, setSettings] = useState<TSettings | null>(null);
 	const [workTrackingSystems, setWorkTrackingSystems] = useState<
 		IWorkTrackingSystemConnection[]
@@ -189,7 +189,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				settings,
 				selectedWorkTrackingSystem,
 				modifyDefaultSettings,
-				storedSettingsRef.current,
+				storedSettings,
 			)
 		: [];
 	const formValid = settings !== null && formInvalidReasons.length === 0;
@@ -278,7 +278,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 					(result) => {
 						hasInteractedRef.current = false;
 						persistedFormRef.current = savedForm(payload);
-						storedSettingsRef.current = result ?? payload;
+						setStoredSettings(result ?? payload);
 						applyRefreshedToken(result);
 						applyIfLatest("saved");
 						if (autoRefreshOnSave && isLatest()) {
@@ -315,7 +315,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const reloadAfterConflict = useCallback(async () => {
 		requestSeqRef.current += 1;
 		const freshSettings = await getSettingsRef.current();
-		storedSettingsRef.current = freshSettings;
+		setStoredSettings(freshSettings);
 		hasConflictRef.current = false;
 		hasInteractedRef.current = false;
 		const system =
@@ -405,7 +405,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			try {
 				const [fetchedSettings, systems] = await Promise.all([
 					getSettingsRef.current().then((loaded) => {
-						storedSettingsRef.current = loaded;
+						setStoredSettings(loaded);
 						return loaded;
 					}),
 					getWorkTrackingSystemsRef.current(),
@@ -503,7 +503,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		}
 
 		const saved = await saveSettings(updated as TSettings);
-		storedSettingsRef.current = saved ?? (updated as TSettings);
+		setStoredSettings(saved ?? (updated as TSettings));
 	};
 
 	const getListHandlers = (
@@ -528,7 +528,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		loading,
 		loadFailed,
 		settings,
-		storedSettings: storedSettingsRef.current,
+		storedSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formValid,
