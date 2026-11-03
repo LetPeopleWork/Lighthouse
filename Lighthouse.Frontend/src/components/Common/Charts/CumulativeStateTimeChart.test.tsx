@@ -561,18 +561,21 @@ describe("CumulativeStateTimeChart wait-state colouring (US-04-04)", () => {
 		});
 	});
 
-	it("colours the bar and counts the figure alike when a mapping's name is configured as wait", () => {
+	it("colours the bars and counts the figure alike when one mapping's name and another mapping's state are configured as wait", () => {
 		render(
 			<CumulativeStateTimeChart
 				data={{ states: waitHighlightRows }}
-				waitStates={["Ready for Test"]}
-				stateMappings={[{ name: "Ready for Test", states: ["QA"] }]}
+				waitStates={["Ready for Test", "code review"]}
+				stateMappings={[
+					{ name: "Ready for Test", states: ["QA"] },
+					{ name: "Waiting for Review", states: ["Code Review"] },
+				]}
 			/>,
 		);
 
 		const figure = screen.getByTestId("cumulative-state-time-flow-efficiency");
-		expect(figure.textContent).toContain("83");
-		expect(waitColoured()).toEqual(["Ready for Test"]);
+		expect(figure.textContent).toContain("50");
+		expect(waitColoured()).toEqual(["Waiting for Review", "Ready for Test"]);
 	});
 
 	it("emits no wait series, no red colour and no wait key when no wait states are configured", () => {
