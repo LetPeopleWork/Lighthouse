@@ -64,22 +64,6 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	const { teamService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const teamIdRef = useRef(0);
-	const storedRef = useRef<IStoredStateSettings | undefined>(undefined);
-
-	const loadSettings = useCallback(async () => {
-		const loaded = await getTeamSettings();
-		storedRef.current = storedStateSettingsOf(loaded);
-		return loaded;
-	}, [getTeamSettings]);
-
-	const persistSettings = useCallback(
-		async (settings: ITeamSettings) => {
-			const saved = await saveTeamSettings(settings);
-			storedRef.current = storedStateSettingsOf(saved ?? settings);
-			return saved;
-		},
-		[saveTeamSettings],
-	);
 
 	const refreshDependentData = useCallback(async () => {
 		if (teamIdRef.current > 0) {
@@ -91,6 +75,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		loading,
 		loadFailed,
 		settings: teamSettings,
+		storedSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formInvalidReasons,
@@ -109,15 +94,21 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		doneHandlers,
 	} = useModifySettings<ITeamSettings>({
 		getWorkTrackingSystems,
-		getSettings: loadSettings,
-		saveSettings: persistSettings,
+		getSettings: getTeamSettings,
+		saveSettings: saveTeamSettings,
 		validateSettings: validateTeamSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultTeamSchema,
 		additionalFetch: refreshDependentData,
 		autoSave: { enabled: true, canSave: !disableSave, refreshOnSave: true },
-		validateForm: (s, system, isDefault) =>
-			teamAutoSaveBlockers(s, system, isDefault, getTerm, storedRef.current),
+		validateForm: (s, system, isDefault, stored) =>
+			teamAutoSaveBlockers(
+				s,
+				system,
+				isDefault,
+				getTerm,
+				storedStateSettingsOf(stored),
+			),
 	});
 
 	teamIdRef.current = teamSettings?.id ?? 0;
@@ -127,9 +118,9 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		return validateStateMappings(
 			teamSettings.stateMappings || [],
 			teamSettings,
-			storedRef.current,
+			storedStateSettingsOf(storedSettings),
 		);
-	}, [teamSettings]);
+	}, [teamSettings, storedSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>
 		handleWorkTrackingSystemChange(e.target.value);

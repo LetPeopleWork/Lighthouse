@@ -14,10 +14,13 @@ export interface IStoredStateSettings {
 	waitStates: string[];
 }
 
-export function storedStateSettingsOf(settings: {
-	stateMappings?: IStateMapping[];
-	waitStates?: string[];
-}): IStoredStateSettings {
+export function storedStateSettingsOf(
+	settings: {
+		stateMappings?: IStateMapping[];
+		waitStates?: string[];
+	} | null,
+): IStoredStateSettings | undefined {
+	if (!settings) return undefined;
 	return {
 		stateMappings: settings.stateMappings ?? [],
 		waitStates: settings.waitStates ?? [],

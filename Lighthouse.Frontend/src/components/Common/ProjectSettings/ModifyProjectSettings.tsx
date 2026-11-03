@@ -138,22 +138,6 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { portfolioService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const portfolioIdRef = useRef(0);
-	const storedRef = useRef<IStoredStateSettings | undefined>(undefined);
-
-	const loadSettings = useCallback(async () => {
-		const loaded = await getProjectSettings();
-		storedRef.current = storedStateSettingsOf(loaded);
-		return loaded;
-	}, [getProjectSettings]);
-
-	const persistSettings = useCallback(
-		async (settings: IPortfolioSettings) => {
-			const saved = await saveProjectSettings(settings);
-			storedRef.current = storedStateSettingsOf(saved ?? settings);
-			return saved;
-		},
-		[saveProjectSettings],
-	);
 
 	const loadTeams = useCallback(async () => {
 		setTeams(await getAllTeams());
@@ -172,6 +156,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		loading,
 		loadFailed,
 		settings: projectSettings,
+		storedSettings,
 		workTrackingSystems,
 		selectedWorkTrackingSystem,
 		formInvalidReasons,
@@ -190,8 +175,8 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		doneHandlers,
 	} = useModifySettings<IPortfolioSettings>({
 		getWorkTrackingSystems,
-		getSettings: loadSettings,
-		saveSettings: persistSettings,
+		getSettings: getProjectSettings,
+		saveSettings: saveProjectSettings,
 		validateSettings: validateProjectSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultPortfolioSchema,
@@ -200,13 +185,13 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			canSave,
 			refreshOnSave: true,
 		},
-		validateForm: (s, system, isDefault) =>
+		validateForm: (s, system, isDefault, stored) =>
 			portfolioAutoSaveBlockers(
 				s,
 				system,
 				isDefault,
 				getTerm,
-				storedRef.current,
+				storedStateSettingsOf(stored),
 			),
 		additionalFetch: refreshDependentData,
 		initialFetch: loadTeams,
@@ -219,9 +204,9 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		return validateStateMappings(
 			projectSettings.stateMappings,
 			projectSettings,
-			storedRef.current,
+			storedStateSettingsOf(storedSettings),
 		);
-	}, [projectSettings]);
+	}, [projectSettings, storedSettings]);
 
 	const onWtsChange = (e: SelectChangeEvent<string>) =>
 		handleWorkTrackingSystemChange(e.target.value);
