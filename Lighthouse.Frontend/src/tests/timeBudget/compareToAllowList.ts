@@ -62,10 +62,52 @@ export interface Verdict {
 	lines: readonly string[];
 }
 
+function limitFor(
+	test: ObservedTest,
+	entry: AllowListEntry | undefined,
+	options: TimeBudgetOptions,
+): number {
+	const base = entry?.ceilingSeconds ?? options.budgetSeconds;
+	const scaled =
+		options.runKind === "coverage" ? base * options.coverageFactor : base;
+	return test.firstInFile ? scaled + options.firstTestAllowanceSeconds : scaled;
+}
+
+function describeOverrun(test: ObservedTest, limitSeconds: number): string {
+	return `${test.file} :: ${test.name} took ${test.seconds} s, limit ${limitSeconds} s`;
+}
+
 export function compareToAllowList(
-	_run: ObservedRun,
-	_allowList: readonly AllowListEntry[],
-	_options: TimeBudgetOptions,
+	run: ObservedRun,
+	allowList: readonly AllowListEntry[],
+	options: TimeBudgetOptions,
 ): Verdict {
-	throw new Error("Not yet implemented -- RED scaffold");
+	const findings: Finding[] = [];
+	const lines: string[] = [];
+
+	if (options.mode !== "off") {
+		for (const test of run.tests) {
+			if (test.state === "skipped") continue;
+			const entry = allowList.find(
+				(candidate) =>
+					candidate.file === test.file && candidate.name === test.name,
+			);
+			const limitSeconds = limitFor(test, entry, options);
+			if (test.seconds <= limitSeconds) continue;
+			findings.push({
+				kind: entry ? "over-ceiling" : "over-budget",
+				file: test.file,
+				name: test.name,
+				seconds: test.seconds,
+				limitSeconds,
+			});
+			lines.push(describeOverrun(test, limitSeconds));
+		}
+	}
+
+	return {
+		findings,
+		failing: options.mode === "fail" && findings.length > 0,
+		lines,
+	};
 }

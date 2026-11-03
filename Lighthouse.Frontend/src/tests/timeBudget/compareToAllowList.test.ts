@@ -7,8 +7,6 @@ import {
 	type TimeBudgetOptions,
 } from "./compareToAllowList";
 
-const pending = "waits for the time-budget guard to be built";
-
 // A test offends only when it takes strictly more than its limit.
 const plainRun: TimeBudgetOptions = {
 	mode: "fail",
@@ -61,7 +59,7 @@ function listed(
 	];
 }
 
-describe.skip(`time-budget comparison (${pending})`, () => {
+describe("time-budget comparison", () => {
 	describe("a test that is not on the allow-list", () => {
 		it("fails naming the file, the test, the duration and the threshold when it is over the budget", () => {
 			const verdict = compareToAllowList(
@@ -329,7 +327,7 @@ describe.skip(`time-budget comparison (${pending})`, () => {
 		});
 	});
 
-	describe("an allow-list entry that no longer earns its place", () => {
+	describe.skip("an allow-list entry that no longer earns its place", () => {
 		it("is stale when its file ran and the test is not among the tests that ran", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ name: "some other test" })]),
@@ -475,7 +473,7 @@ describe.skip(`time-budget comparison (${pending})`, () => {
 		});
 	});
 
-	describe("the guard's mode", () => {
+	describe.skip("the guard's mode", () => {
 		const offending = aRun([aTest({ name: "far too slow", seconds: 9 })]);
 
 		it("judges nothing when it is off, as under mutation testing or in watch mode", () => {
