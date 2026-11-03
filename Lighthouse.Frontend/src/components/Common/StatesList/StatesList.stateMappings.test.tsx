@@ -132,9 +132,12 @@ describe("StatesList with state mappings over raw states", () => {
 		const user = userEvent.setup();
 		const chip = chipOf("Review");
 
-		for (let step = 0; step < 20 && document.activeElement !== chip; step++) {
+		const tabTo = async (target: Element, triesLeft: number): Promise<void> => {
+			if (document.activeElement === target || triesLeft === 0) return;
 			await user.tab();
-		}
+			return tabTo(target, triesLeft - 1);
+		};
+		await tabTo(chip, 20);
 
 		expect(chip).toHaveFocus();
 		expect((await screen.findByRole("tooltip")).textContent).toBe(
