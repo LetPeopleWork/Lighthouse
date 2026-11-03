@@ -1,0 +1,37 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Models/StateCategoryLists.cs",
+      "**/Models/WorkTrackingSystemOptionsOwner.cs",
+      "**/Services/Implementation/Seeding/CategoryListNormalisationSeeder.cs",
+      "**/API/Helpers/StateMappingValidator.cs",
+      "**/API/Helpers/CycleTimeDefinitionValidator.cs",
+      "**/API/Helpers/StateListEntries.cs",
+      "**/API/Helpers/RefinementSettingsValidator.cs",
+      "**/API/Helpers/TeamExtensions.cs",
+      "**/API/Helpers/PortfolioExtensions.cs",
+      "**/API/DTO/SettingsOwnerDtoBase.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowStateSpanMapper.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.API.Helpers|FullyQualifiedName~Tests.API.DTO|FullyQualifiedName~SyncTest|FullyQualifiedName~Tests.Models|FullyQualifiedName~CategoryListNormalisationSeederTests|FullyQualifiedName~ServiceNowStateSpanMapper|FullyQualifiedName~MetricsAsOfGroupName|FullyQualifiedName~RawLists|FullyQualifiedName~CsvDemoJourneyWithStateMapping|FullyQualifiedName~WorkItemStateTransitionMapper)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~Dogfood&FullyQualifiedName!~IntegrationTest",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
