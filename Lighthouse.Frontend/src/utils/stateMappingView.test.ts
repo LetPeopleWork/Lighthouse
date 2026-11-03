@@ -110,6 +110,15 @@ describe("displayStatesFor", () => {
 		).toEqual(["Analysis", "Review"]);
 	});
 
+	it("keeps the states of a mapping that has no name yet under their own names", () => {
+		expect(
+			displayStatesFor(
+				["Analysis", "Code Review", "Testing"],
+				[{ name: "  ", states: ["Code Review", "Testing"] }],
+			),
+		).toEqual(["Analysis", "Code Review", "Testing"]);
+	});
+
 	it("shows the list as it is when there are no groups", () => {
 		expect(displayStatesFor(["Analysis", "Testing"], [])).toEqual([
 			"Analysis",

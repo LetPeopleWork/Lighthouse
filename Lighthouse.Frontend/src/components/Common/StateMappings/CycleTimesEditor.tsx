@@ -54,8 +54,6 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 		stateMappings,
 	);
 
-	const suggestions = workflowStates;
-
 	if (!licenseStatus?.canUsePremiumFeatures) {
 		return null;
 	}
@@ -174,7 +172,7 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 							<Autocomplete
 								freeSolo
 								size="small"
-								options={suggestions}
+								options={workflowStates}
 								value={definition.startState}
 								onChange={(_, value) =>
 									updateDefinition(index, { startState: value ?? "" })
@@ -194,7 +192,7 @@ const CycleTimesEditor: React.FC<CycleTimesEditorProps> = ({
 							<Autocomplete
 								freeSolo
 								size="small"
-								options={suggestions}
+								options={workflowStates}
 								value={definition.endState}
 								onChange={(_, value) =>
 									updateDefinition(index, { endState: value ?? "" })

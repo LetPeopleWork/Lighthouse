@@ -106,6 +106,32 @@ describe("CycleTimesEditor", () => {
 		]);
 	});
 
+	it("offers the states of a mapping that has no name yet under their own names", async () => {
+		render(
+			<CycleTimesEditor
+				cycleTimeDefinitions={[definition({ startState: "", endState: "" })]}
+				toDoStates={["New"]}
+				doingStates={["Active"]}
+				doneStates={["Done"]}
+				stateMappings={[{ name: "", states: ["Active"] }]}
+				onChange={vi.fn()}
+			/>,
+		);
+
+		await userEvent.click(
+			screen.getByRole("combobox", { name: /start state/i }),
+		);
+
+		const options = screen
+			.getByRole("listbox")
+			.querySelectorAll('[role="option"]');
+		expect(Array.from(options).map((option) => option.textContent)).toEqual([
+			"New",
+			"Active",
+			"Done",
+		]);
+	});
+
 	it("appends a blank definition when Add Cycle Time is clicked", async () => {
 		const onChange = renderEditor([]);
 
