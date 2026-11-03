@@ -1001,9 +1001,10 @@ describe("ModifyProjectSettings", () => {
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
-		it("holds back autosave while a mapping is named after a Done state", async () => {
+		it("holds back autosave while a mapping's state sits in two categories", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
+				doingStates: ["In Progress"],
 				doneStates: ["In Arbeit"],
 				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
 			});
@@ -1027,17 +1028,18 @@ describe("ModifyProjectSettings", () => {
 
 			expect(
 				await screen.findByText(
-					'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Choose another name.',
+					'Mapping "In Arbeit" groups "In Progress", which is in both Doing and Done. Keep a mapping\'s states in one category.',
 				),
 			).toBeInTheDocument();
 			await waitPastTheDebounce();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
-		it("holds back autosave while a mapping is named after a To Do state", async () => {
+		it("holds back autosave while a mapping's name hides one of its states in To Do", async () => {
 			mockGetProjectSettings.mockResolvedValue({
 				...projectSettings,
-				toDoStates: ["Group"],
+				toDoStates: ["Group", "Active"],
+				doingStates: ["In Progress"],
 				stateMappings: [],
 			});
 

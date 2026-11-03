@@ -18,14 +18,17 @@ function upperOneToOne(character: string): string {
 	return [...upper].length === 1 ? upper : character;
 }
 
+/** A name or a state without the whitespace the server trims from its ends. */
+export function trimAsServer(value: string): string {
+	return value.replace(SURROUNDING_WHITESPACE, "");
+}
+
 /**
  * Folds a name or a state the way the server compares them, so both sides agree on what is the same:
  * trimmed the way the server trims, then upper-cased one character at a time as the server does.
  */
 export function foldKey(value: string): string {
-	return [...value.replace(SURROUNDING_WHITESPACE, "")]
-		.map(upperOneToOne)
-		.join("");
+	return [...trimAsServer(value)].map(upperOneToOne).join("");
 }
 
 /** True for a name of nothing but whitespace, in the server's sense of whitespace. */

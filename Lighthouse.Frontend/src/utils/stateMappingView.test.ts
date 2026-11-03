@@ -62,7 +62,7 @@ describe("displayStatesFor", () => {
 		).toEqual(["Review", "Analysis", "Waiting"]);
 	});
 
-	it.skip("treats the same state in another casing or with spaces around it as one", () => {
+	it("treats the same state in another casing or with spaces around it as one", () => {
 		expect(
 			displayStatesFor(
 				["Analysis", "analysis ", "  CODE REVIEW", "testing "],
@@ -127,26 +127,26 @@ describe("the page and the server agree on which names are the same", () => {
 		}
 	});
 
-	it.skip("tells the same names apart in every case of the shared list", () => {
+	it("tells the same names apart in every case of the shared list", () => {
 		for (const { a, b, same } of cases.sameNameOrNot) {
 			expect(duplicateNameErrors(a, b).length > 0, `${a} and ${b}`).toBe(same);
 		}
 	});
 
-	it.skip("folds the names of the shared list to the same key exactly when the server does", () => {
+	it("folds the names of the shared list to the same key exactly when the server does", () => {
 		for (const { a, b, same } of cases.sameNameOrNot) {
 			expect(foldKey(a) === foldKey(b), `${a} and ${b}`).toBe(same);
 		}
 	});
 
-	it.skip("ignores whitespace at the ends the way the server does", () => {
+	it("ignores whitespace at the ends the way the server does", () => {
 		for (const { a, b } of cases.sameOnceTrimmed) {
 			expect(foldKey(a), `${JSON.stringify(a)} and ${b}`).toBe(foldKey(b));
 			expect(duplicateNameErrors(a, b).length).toBeGreaterThan(0);
 		}
 	});
 
-	it.skip("calls a name of nothing but whitespace blank, whichever whitespace it is", () => {
+	it("calls a name of nothing but whitespace blank, whichever whitespace it is", () => {
 		for (const blank of cases.blank) {
 			expect(isBlankName(blank), JSON.stringify(blank)).toBe(true);
 			expect(

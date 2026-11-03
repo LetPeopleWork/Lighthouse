@@ -54,7 +54,7 @@ describe("validateStateMappings over lists of raw states", () => {
 		]);
 	});
 
-	it.skip("does not refuse a name that stands alone in To Do or Done in place of its mapping's states", () => {
+	it("does not refuse a name that stands alone in To Do or Done in place of its mapping's states", () => {
 		expect(
 			validateStateMappings([inArbeit], lists(["Active"], ["In Arbeit"])),
 		).toEqual([]);
@@ -80,7 +80,7 @@ describe("validateStateMappings over lists of raw states", () => {
 		]);
 	});
 
-	it.skip("refuses a mapping whose listed states sit in different categories, naming the two states", () => {
+	it("refuses a mapping whose listed states sit in different categories, naming the two states", () => {
 		expect(
 			validateStateMappings(
 				[{ name: "Review", states: ["Code Review", "Testing"] }],
@@ -91,7 +91,7 @@ describe("validateStateMappings over lists of raw states", () => {
 		]);
 	});
 
-	it.skip("refuses a mapping whose only state is listed in two categories", () => {
+	it("refuses a mapping whose only state is listed in two categories", () => {
 		expect(
 			validateStateMappings(
 				[{ name: "Review", states: ["Testing"] }],

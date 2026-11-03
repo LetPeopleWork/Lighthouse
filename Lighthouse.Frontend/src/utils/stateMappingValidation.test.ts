@@ -108,29 +108,16 @@ describe("validateStateMappings", () => {
 		]);
 	});
 
-	it("reports a mapping named after a To Do state", () => {
+	it("names a mapping hiding a To Do state without surrounding spaces, and the state as it is listed", () => {
 		const mappings: IStateMapping[] = [
 			{ name: " in arbeit ", states: ["In Progress"] },
 		];
 		const result = validateStateMappings(
 			mappings,
-			lists(["Group"], ["In Arbeit"]),
+			lists(["Group"], ["In Arbeit", "In Progress"]),
 		);
 		expect(result).toEqual([
 			'Mapping "in arbeit" has the same name as the To Do state "In Arbeit". Choose another name.',
-		]);
-	});
-
-	it("reports a mapping named after a Done state", () => {
-		const mappings: IStateMapping[] = [
-			{ name: "In Arbeit", states: ["In Progress"] },
-		];
-		const result = validateStateMappings(
-			mappings,
-			lists(["Group"], [], ["In Arbeit"]),
-		);
-		expect(result).toEqual([
-			'Mapping "In Arbeit" has the same name as the Done state "In Arbeit". Choose another name.',
 		]);
 	});
 
