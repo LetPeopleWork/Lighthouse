@@ -1,8 +1,8 @@
 import type { RunKind, TimeBudgetMode } from "./compareToAllowList";
 
-export const __SCAFFOLD__ = true;
-
 export const TIME_BUDGET_VARIABLE = "LIGHTHOUSE_TIME_BUDGET";
+
+const STRYKER_WORKER_VARIABLE = "STRYKER_MUTATOR_WORKER";
 
 export interface TimeBudgetSwitches {
 	mode: TimeBudgetMode;
@@ -11,9 +11,61 @@ export interface TimeBudgetSwitches {
 	annotation: "::error::" | "::warning::" | "none";
 }
 
+type Environment = Readonly<Record<string, string | undefined>>;
+
+function requestedMode(env: Environment): TimeBudgetMode {
+	const requested = env[TIME_BUDGET_VARIABLE];
+
+	if (requested === undefined || requested === "") {
+		return "fail";
+	}
+	if (requested === "warn" || requested === "off") {
+		return requested;
+	}
+	throw new Error(
+		`${TIME_BUDGET_VARIABLE} must be "fail", "warn" or "off", but was "${requested}"`,
+	);
+}
+
+function isWatchRun(env: Environment, argv: readonly string[]): boolean {
+	if (env.CI?.toLowerCase() === "true") {
+		return false;
+	}
+	if (argv.includes("--watch")) {
+		return true;
+	}
+	return !argv.includes("run") && !argv.includes("--run");
+}
+
+function annotationFor(
+	env: Environment,
+	mode: TimeBudgetMode,
+): TimeBudgetSwitches["annotation"] {
+	if (env.GITHUB_ACTIONS === undefined || mode === "off") {
+		return "none";
+	}
+	return mode === "fail" ? "::error::" : "::warning::";
+}
+
+/**
+ * Decides how the time budget behaves for a test run from the environment and the
+ * command-line arguments. Timings mean nothing under mutation testing or in watch mode,
+ * so the guard is off there whatever the switch says.
+ */
 export function resolveTimeBudgetOptions(
-	_env: Readonly<Record<string, string | undefined>>,
-	_argv: readonly string[],
+	env: Environment,
+	argv: readonly string[],
 ): TimeBudgetSwitches {
-	throw new Error("Not yet implemented -- RED scaffold");
+	const requested = requestedMode(env);
+	const timingsMeaningless =
+		env[STRYKER_WORKER_VARIABLE] !== undefined || isWatchRun(env, argv);
+	const mode = timingsMeaningless ? "off" : requested;
+
+	return {
+		mode,
+		runKind: argv.some((argument) => argument.startsWith("--coverage"))
+			? "coverage"
+			: "plain",
+		annotation: annotationFor(env, mode),
+	};
 }

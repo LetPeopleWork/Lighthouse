@@ -4,12 +4,11 @@ import {
 	TIME_BUDGET_VARIABLE,
 } from "./timeBudgetOptions";
 
-const pending = "waits for the time-budget guard to be built";
 const plainArgv = ["node", "vitest.mjs", "run", "--reporter=default"];
 const coverageArgv = ["node", "vitest.mjs", "run", "--coverage"];
 const noRunArgv = ["node", "vitest.mjs"];
 
-describe.skip(`time-budget options (${pending})`, () => {
+describe("time-budget options", () => {
 	// The variable-name constant exists in the stub, so this one passes before the
 	// guard is built; that is deliberate.
 	it("reads its switch from LIGHTHOUSE_TIME_BUDGET", () => {
