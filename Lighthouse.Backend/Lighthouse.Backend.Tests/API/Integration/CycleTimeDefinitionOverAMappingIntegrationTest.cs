@@ -206,6 +206,35 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 "Spaces around the mapping's name do not make it a different state from the one the definition names.");
         }
 
+        [Test]
+        public async Task CycleTimeDataOverAMapping_CarriesEachNamedCycleTimeOfTheItem()
+        {
+            SeedOwnerWithReviewMapping();
+
+            var namedCycleTimes = await NamedCycleTimesOfTheItem();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(namedCycleTimes[ReviewToDoneDefinitionId], Is.EqualTo(7));
+                Assert.That(namedCycleTimes[TestingToDoneDefinitionId], Is.EqualTo(7));
+                Assert.That(namedCycleTimes[AnalysisToReviewDefinitionId], Is.EqualTo(3));
+                Assert.That(namedCycleTimes[AnalysisToDoneDefinitionId], Is.EqualTo(9));
+            }
+        }
+
+        private async Task<Dictionary<int, int>> NamedCycleTimesOfTheItem()
+        {
+            var response = await client.GetAsync($"{MetricsRoute}/cycleTimeData?startDate={windowStart:O}&endDate={windowEnd:O}");
+            var body = await response.Content.ReadAsStringAsync();
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
+
+            using var document = JsonDocument.Parse(body);
+            var items = document.RootElement.EnumerateArray().ToList();
+            Assert.That(items, Has.Count.EqualTo(1), body);
+            return items[0].GetProperty("namedCycleTimes").EnumerateArray()
+                .ToDictionary(entry => entry.GetProperty("definitionId").GetInt32(), entry => entry.GetProperty("days").GetInt32());
+        }
+
         private async Task<int> MedianNamedCycleTime(int definitionId)
         {
             var response = await client.GetAsync($"{MetricsRoute}/cycleTimePercentiles?startDate={windowStart:O}&endDate={windowEnd:O}&definitionId={definitionId}");
