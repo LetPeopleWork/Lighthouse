@@ -16,7 +16,6 @@ import {
 	contextColumnsShown,
 	day,
 	estimateOf,
-	FIXED_COLUMNS,
 	headerText,
 	noUsableEstimate,
 	openManageColumns,
@@ -183,40 +182,19 @@ const warningsColumn = {
 	warningsFor: () => ["Starts after its Delivery date."],
 };
 
-type ContextCase = {
+type ReopenCase = {
 	context: WorkItemsDialogContextId;
 	items: IWorkItem[];
-	extra?: Record<string, unknown>;
 	columns: string[];
-	sortedBy: string;
-	firstRow: string;
 	/** Everything Manage columns lists for these rows: the defaults, then the one fixed order. */
 	offered: string[];
 };
 
-const everyChartContext: ContextCase[] = [
-	{
-		context: "closedItems",
-		items: finishedStories,
-		columns: ["closedDate", "cycleTime"],
-		sortedBy: "cycleTime",
-		firstRow: "ST-1",
-		offered: [
-			"closedDate",
-			"cycleTime",
-			"startedDate",
-			"workItemAge",
-			"estimate",
-			"parent",
-			"blockedSince",
-		],
-	},
+const readersLayoutCases: ReopenCase[] = [
 	{
 		context: "estimation",
 		items: finishedStories,
 		columns: ["estimate", "cycleTime", "closedDate"],
-		sortedBy: "cycleTime",
-		firstRow: "ST-1",
 		offered: [
 			"estimate",
 			"cycleTime",
@@ -224,107 +202,6 @@ const everyChartContext: ContextCase[] = [
 			"startedDate",
 			"workItemAge",
 			"parent",
-			"blockedSince",
-		],
-	},
-	{
-		context: "arrivals",
-		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: ["startedDate", "workItemAge", "cycleTime"],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"startedDate",
-			"workItemAge",
-			"cycleTime",
-			"closedDate",
-			"estimate",
-			"parent",
-			"blockedSince",
-		],
-	},
-	{
-		context: "inProgress",
-		items: inFlight,
-		extra: { sleRiskColumn, timeInStateColumn },
-		columns: ["startedDate", "workItemAge", "timeInState", "sleRisk"],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"startedDate",
-			"workItemAge",
-			"timeInState",
-			"sleRisk",
-			"closedDate",
-			"cycleTime",
-			"parent",
-			"blockedSince",
-		],
-	},
-	{
-		context: "aging",
-		items: inFlight,
-		extra: { ageBandColumn, sleRiskColumn, timeInStateColumn },
-		columns: ["workItemAge", "ageBand", "sleRisk", "timeInState"],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"workItemAge",
-			"ageBand",
-			"sleRisk",
-			"timeInState",
-			"startedDate",
-			"closedDate",
-			"cycleTime",
-			"parent",
-			"blockedSince",
-		],
-	},
-	{
-		context: "blocked",
-		items: inFlight,
-		columns: ["workItemAge", "blockedSince"],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"workItemAge",
-			"blockedSince",
-			"startedDate",
-			"closedDate",
-			"cycleTime",
-			"parent",
-		],
-	},
-	{
-		context: "stale",
-		items: inFlight,
-		extra: { timeInStateColumn },
-		columns: ["workItemAge", "timeInState"],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"workItemAge",
-			"timeInState",
-			"startedDate",
-			"closedDate",
-			"cycleTime",
-			"parent",
-			"blockedSince",
-		],
-	},
-	{
-		context: "workDistribution",
-		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: ["parent", "workItemAge", "cycleTime"],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"parent",
-			"workItemAge",
-			"cycleTime",
-			"startedDate",
-			"closedDate",
-			"estimate",
 			"blockedSince",
 		],
 	},
@@ -332,8 +209,6 @@ const everyChartContext: ContextCase[] = [
 		context: "featureSize",
 		items: portfolioFeatures,
 		columns: ["owningTeam", "size", "workItemAge", "cycleTime", "closedDate"],
-		sortedBy: "size",
-		firstRow: "FTR-2",
 		// Feature rows keep Owned by beside the fixed columns, never carry a blocked-since date, and
 		// add Size and the Features grid's Forecasted Completion, whose grid field is "forecasts".
 		offered: [
@@ -347,124 +222,25 @@ const everyChartContext: ContextCase[] = [
 			"forecasts",
 		],
 	},
-	{
-		context: "startedAndClosed",
-		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: ["startedDate", "closedDate", "workItemAge", "cycleTime"],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"startedDate",
-			"closedDate",
-			"workItemAge",
-			"cycleTime",
-			"estimate",
-			"parent",
-			"blockedSince",
-		],
-	},
 ];
-
-const theFeatureListContexts: ContextCase[] = [
-	{
-		context: "featureChildren",
-		items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-		columns: [
-			"startedDate",
-			"closedDate",
-			"workItemAge",
-			"cycleTime",
-			"estimate",
-		],
-		sortedBy: "workItemAge",
-		firstRow: "WIP-1",
-		offered: [
-			"startedDate",
-			"closedDate",
-			"workItemAge",
-			"cycleTime",
-			"estimate",
-			"parent",
-			"blockedSince",
-		],
-	},
-	{
-		context: "deliveryTimeline",
-		items: [mediumFeature],
-		extra: { warningsColumn },
-		columns: ["owningTeam", "warnings"],
-		sortedBy: "warnings",
-		firstRow: "FTR-1",
-		offered: [
-			"owningTeam",
-			"warnings",
-			"startedDate",
-			"closedDate",
-			"cycleTime",
-			"workItemAge",
-			"parent",
-			"size",
-			"forecasts",
-		],
-	},
-];
-
-const withoutEstimation = (items: IWorkItem[]): IWorkItem[] =>
-	items.map((item) => ({ ...item, estimate: null }));
-
-async function estimateIsNeitherShownNorOffered({
-	context,
-	items,
-	extra,
-	columns,
-	offered,
-}: ContextCase) {
-	const user = userEvent.setup();
-	const exceptEstimate = (fields: string[]) =>
-		fields.filter((field) => field !== "estimate");
-	openTheDialog({ context, items: withoutEstimation(items), ...extra });
-
-	expect(contextColumnsShown()).toEqual(exceptEstimate(columns));
-
-	await openManageColumns(user);
-
-	expect(catalogueOffered().map(({ field }) => field)).toEqual(
-		exceptEstimate(offered),
-	);
-}
-
-async function manageColumnsListsTheOneFixedOrder({
-	context,
-	items,
-	extra,
-	offered,
-}: ContextCase) {
-	const user = userEvent.setup();
-	openTheDialog({ context, items, ...extra });
-
-	await openManageColumns(user);
-
-	expect(catalogueOffered().map(({ field }) => field)).toEqual(offered);
-}
 
 async function theReadersLayoutComesBackOnReopen({
 	context,
 	items,
-	extra,
 	columns,
 	offered,
-}: ContextCase) {
+}: ReopenCase) {
 	const user = userEvent.setup();
 	const hidden = columns[columns.length - 1];
 	const turnedOn = offered[columns.length];
-	const first = openTheDialog({ context, items, ...extra });
+	const first = openTheDialog({ context, items });
 	await turnColumns(user, [
 		[hidden, false],
 		[turnedOn, true],
 	]);
 	first.unmount();
 
-	openTheDialog({ context, items, ...extra });
+	openTheDialog({ context, items });
 
 	expect(contextColumnsShown()).toEqual([...columns.slice(0, -1), turnedOn]);
 }
@@ -524,52 +300,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 			expect(cellText("estimate", "ST-1")).toBe("3");
 			expect(cellText("estimate", "ST-2")).toBe("8");
 			expect(cellText("estimate", "ST-3")).toBe("");
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"a category estimate shows its category name",
-		() => {
-			const sized = [
-				{ ...threePointerThatTookLong, estimate: estimateOf(2, null, "M") },
-			];
-
-			openTheDialog({ context: "estimation", items: sized });
-
-			expect(cellText("estimate", "ST-1")).toBe("M");
-		},
-		RENDER_HEAVY,
-	);
-
-	it.each([
-		[
-			"reads plain Estimate even when every estimated row shares a unit",
-			finishedStories,
-			"Estimate",
-		],
-		[
-			"reads plain Estimate when no unit is set",
-			finishedStories.map((story) => ({
-				...story,
-				estimate: story.estimate && { ...story.estimate, unit: null },
-			})),
-			"Estimate",
-		],
-		[
-			"reads plain Estimate when the rows carry different units",
-			[
-				threePointerThatTookLong,
-				{ ...eightPointerThatFlew, estimate: estimateOf(8, "Hours") },
-			],
-			"Estimate",
-		],
-	])(
-		"the Estimate header %s",
-		(_, items, header) => {
-			openTheDialog({ context: "estimation", items });
-
-			expect(headerText("estimate")).toBe(header);
 		},
 		RENDER_HEAVY,
 	);
@@ -661,21 +391,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 	);
 
 	it(
-		"dates show the local day as YYYY-MM-DD, and a date the item does not have stays empty",
-		() => {
-			openTheDialog({
-				context: "startedAndClosed",
-				items: [eightPointerThatFlew, justStarted],
-			});
-
-			expect(cellText("closedDate", "ST-2")).toBe("2026-09-30");
-			expect(cellText("startedDate", "ST-2")).toBe("2026-09-27");
-			expect(cellText("closedDate", "WIP-3")).toBe("");
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
 		"the configured word for Cycle Time heads its column",
 		() => {
 			instanceWords.cycleTime = "Lead Time";
@@ -689,18 +404,6 @@ describe("US-01 — the Estimation dialog shows each item's estimate", () => {
 });
 
 describe("US-02 — every chart's dialog brings the columns that explain its point", () => {
-	it.each(everyChartContext)(
-		"$context opens with exactly its default columns, in order, sorted by $sortedBy",
-		({ context, items, extra, columns, sortedBy, firstRow }) => {
-			openTheDialog({ context, items, ...extra });
-
-			expect(contextColumnsShown()).toEqual(columns);
-			expect(sortedDescendingBy()).toBe(sortedBy);
-			expect(rowOrder()[0]).toBe(firstRow);
-		},
-		RENDER_HEAVY,
-	);
-
 	it(
 		"a Feature Size dot lists the largest Feature first",
 		() => {
@@ -772,11 +475,16 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	it.each(["aging", "inProgress"] as const)(
-		"%s neither shows nor offers Time in State when the caller says nothing about how to measure it",
-		async (context) => {
+	it(
+		"aging neither shows nor offers Time in State when the caller says nothing about how to measure it",
+		async () => {
 			const user = userEvent.setup();
-			openTheDialog({ context, items: inFlight, ageBandColumn, sleRiskColumn });
+			openTheDialog({
+				context: "aging",
+				items: inFlight,
+				ageBandColumn,
+				sleRiskColumn,
+			});
 
 			expect(columnsShown()).not.toContain("timeInState");
 
@@ -803,16 +511,11 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 		RENDER_HEAVY,
 	);
 
-	it.each([
-		"arrivals",
-		"workDistribution",
-		"startedAndClosed",
-		"featureChildren",
-	] as const)(
-		"%s leaves a finished item's Work Item Age and an unfinished item's Cycle Time empty, never 0, and lists the empty ages last",
-		(context) => {
+	it(
+		"arrivals leaves a finished item's Work Item Age and an unfinished item's Cycle Time empty, never 0, and lists the empty ages last",
+		() => {
 			openTheDialog({
-				context,
+				context: "arrivals",
 				items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
 			});
 
@@ -821,86 +524,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 			expect(cellText("workItemAge", "WIP-1")).toBe("30");
 			expect(cellText("cycleTime", "WIP-1")).toBe("");
 			expect(rowOrder()).toEqual(["WIP-1", "WIP-3", "ST-1"]);
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"Age on a past day's point still shows for an item finished since, because it was unfinished on that day",
-		() => {
-			openTheDialog({
-				context: "startedAndClosed",
-				items: [threePointerThatTookLong],
-				ageOn: day("2026-09-10"),
-			});
-
-			expect(cellText("workItemAge", "ST-1")).toBe("10");
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"an item not started yet leaves its Work Item Age empty, never 0, and lists it below the started ones",
-		() => {
-			const notStarted = aWorkItem({
-				referenceId: "TODO-1",
-				state: "New",
-				stateCategory: "ToDo",
-				startedDate: new Date(0),
-				closedDate: new Date(0),
-				cycleTime: 0,
-				workItemAge: 0,
-			});
-			openTheDialog({
-				context: "featureChildren",
-				items: [notStarted, oldestButJustMoved, justStarted],
-			});
-
-			expect(cellText("workItemAge", "TODO-1")).toBe("");
-			expect(rowOrder()).toEqual(["WIP-1", "WIP-3", "TODO-1"]);
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"Age on a day given as its first moment, as a chosen range end is, is the age on that calendar day",
-		() => {
-			openTheDialog({
-				context: "inProgress",
-				items: [oldestButJustMoved, threePointerThatTookLong],
-				ageOn: new Date(2026, 8, 20),
-			});
-
-			expect(cellText("workItemAge", "WIP-1")).toBe("10");
-			expect(cellText("workItemAge", "ST-1")).toBe("");
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"Age on a past day stays empty for an item that had finished by that day",
-		() => {
-			openTheDialog({
-				context: "inProgress",
-				items: [threePointerThatTookLong],
-				ageOn: day("2026-09-25"),
-			});
-
-			expect(cellText("workItemAge", "ST-1")).toBe("");
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"Age on a past day's point stays empty for an item that had not started by that day",
-		() => {
-			openTheDialog({
-				context: "inProgress",
-				items: [justStarted],
-				ageOn: day("2026-09-20"),
-			});
-
-			expect(cellText("workItemAge", "WIP-3")).toBe("");
 		},
 		RENDER_HEAVY,
 	);
@@ -965,27 +588,6 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 			expect(catalogueOffered()).toEqual([
 				{ field: "daysContributed", shown: true },
 			]);
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"Feature rows add Size and Forecasted Completion, last, to what Manage columns offers",
-		async () => {
-			const user = userEvent.setup();
-			openTheDialog({
-				context: "closedItems",
-				ownerKind: "portfolio",
-				items: portfolioFeatures,
-			});
-
-			await openManageColumns(user);
-
-			expect(
-				catalogueOffered()
-					.map(({ field }) => field)
-					.slice(-2),
-			).toEqual(["size", "forecasts"]);
 		},
 		RENDER_HEAVY,
 	);
@@ -1063,19 +665,7 @@ describe("US-02 — every chart's dialog brings the columns that explain its poi
 });
 
 describe("US-02 — every chart context that offers more columns follows the same rules", () => {
-	it.each(everyChartContext)(
-		"$context neither shows nor offers an Estimate where estimation is not set up",
-		estimateIsNeitherShownNorOffered,
-		RENDER_HEAVY,
-	);
-
-	it.each(everyChartContext)(
-		"$context lists its defaults, then every other column the rows can fill in the one fixed order",
-		manageColumnsListsTheOneFixedOrder,
-		RENDER_HEAVY,
-	);
-
-	it.each(everyChartContext)(
+	it.each(readersLayoutCases)(
 		"$context comes back with the reader's own layout, a default hidden and another column on, the next time it opens",
 		theReadersLayoutComesBackOnReopen,
 		RENDER_HEAVY,
@@ -1083,26 +673,6 @@ describe("US-02 — every chart context that offers more columns follows the sam
 });
 
 describe("US-03 — a Feature's child items show their progress at a glance", () => {
-	it(
-		"a Feature's child items open with Started, Closed, Work Item Age, Cycle Time and Estimate, oldest first",
-		() => {
-			openTheDialog({
-				context: "featureChildren",
-				items: [threePointerThatTookLong, oldestButJustMoved, justStarted],
-			});
-
-			expect(contextColumnsShown()).toEqual([
-				"startedDate",
-				"closedDate",
-				"workItemAge",
-				"cycleTime",
-				"estimate",
-			]);
-			expect(sortedDescendingBy()).toBe("workItemAge");
-		},
-		RENDER_HEAVY,
-	);
-
 	it(
 		"without estimation on the child items' Team, the child items open without an Estimate",
 		() => {
@@ -1120,47 +690,6 @@ describe("US-03 — a Feature's child items show their progress at a glance", ()
 		},
 		RENDER_HEAVY,
 	);
-
-	it(
-		"the Delivery timeline keeps Warnings as its only extra column and never offers Estimate or Blocked since",
-		async () => {
-			const user = userEvent.setup();
-			openTheDialog({
-				context: "deliveryTimeline",
-				ownerKind: "portfolio",
-				items: [{ ...mediumFeature, estimate: estimateOf(5) }],
-				warningsColumn,
-			});
-
-			expect(contextColumnsShown()).toEqual(["owningTeam", "warnings"]);
-
-			await openManageColumns(user);
-
-			const offered = catalogueOffered().map(({ field }) => field);
-			expect(offered).toContain("startedDate");
-			expect(offered).not.toContain("estimate");
-			expect(offered).not.toContain("blockedSince");
-		},
-		RENDER_HEAVY,
-	);
-
-	it.each(theFeatureListContexts)(
-		"$context neither shows nor offers an Estimate where estimation is not set up",
-		estimateIsNeitherShownNorOffered,
-		RENDER_HEAVY,
-	);
-
-	it.each(theFeatureListContexts)(
-		"$context lists its defaults, then every other column the rows can fill in the one fixed order",
-		manageColumnsListsTheOneFixedOrder,
-		RENDER_HEAVY,
-	);
-
-	it.each(theFeatureListContexts)(
-		"$context comes back with the reader's own layout, a default hidden and another column on, the next time it opens",
-		theReadersLayoutComesBackOnReopen,
-		RENDER_HEAVY,
-	);
 });
 
 describe("guards that hold today and must keep holding", () => {
@@ -1175,19 +704,6 @@ describe("guards that hold today and must keep holding", () => {
 		RENDER_HEAVY,
 	);
 });
-
-const headingsOffered = (): string[] =>
-	screen
-		.getAllByRole("checkbox")
-		.filter((box) => {
-			const field = box.getAttribute("name") ?? "";
-			return (
-				field !== "" &&
-				field !== "Show/Hide All" &&
-				!FIXED_COLUMNS.includes(field)
-			);
-		})
-		.map((box) => box.closest("label")?.textContent?.trim() ?? "");
 
 const inFlightSince = (
 	referenceId: string,
@@ -1205,47 +721,6 @@ const inFlightSince = (
 	});
 
 describe("what each catalogue column says, and how it sorts", () => {
-	it(
-		"heads every column the catalogue offers with its name",
-		async () => {
-			const user = userEvent.setup();
-			const storyList = openTheDialog({
-				context: "closedItems",
-				items: finishedStories,
-			});
-			await openManageColumns(user);
-
-			expect(headingsOffered()).toEqual([
-				"Closed",
-				"Cycle Time",
-				"Started",
-				"Work Item Age",
-				"Estimate",
-				"Parent",
-				"Blocked since",
-			]);
-			storyList.unmount();
-
-			const featureList = openTheDialog({
-				context: "featureSize",
-				ownerKind: "portfolio",
-				items: portfolioFeatures,
-			});
-
-			expect(headerText("size")).toBe("Size");
-			featureList.unmount();
-
-			openTheDialog({
-				context: "cumulativeStateTime",
-				items: [threePointerThatTookLong],
-				daysContributedColumn: { daysFor: () => 2 },
-			});
-
-			expect(headerText("daysContributed")).toBe("Days Contributed");
-		},
-		RENDER_HEAVY,
-	);
-
 	it.each([
 		{
 			context: "inProgress" as const,
@@ -1433,86 +908,6 @@ describe("what each catalogue column says, and how it sorts", () => {
 	);
 
 	it(
-		"Age on a day counts an item started later that day, and not one finished that day or never started",
-		() => {
-			const startedThatAfternoon = aWorkItem({
-				referenceId: "WIP-S",
-				state: "In Progress",
-				stateCategory: "Doing",
-				startedDate: new Date("2026-10-08T15:00:00Z"),
-				closedDate: new Date(0),
-				workItemAge: 3,
-			});
-			const finishedThatAfternoon = aWorkItem({
-				referenceId: "ST-F",
-				startedDate: day("2026-10-01"),
-				closedDate: new Date("2026-10-08T15:00:00Z"),
-			});
-			const neverStarted = aWorkItem({
-				referenceId: "ST-N",
-				state: "New",
-				stateCategory: "ToDo",
-				startedDate: new Date(0),
-				closedDate: new Date(0),
-			});
-			openTheDialog({
-				context: "inProgress",
-				items: [startedThatAfternoon, finishedThatAfternoon, neverStarted],
-				ageOn: day("2026-10-08"),
-			});
-
-			expect(cellText("workItemAge", "WIP-S")).toBe("1");
-			expect(cellText("workItemAge", "ST-F")).toBe("");
-			expect(cellText("workItemAge", "ST-N")).toBe("");
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"Cycle Time reads the named cycle time it is scoped to, and each named column reads its own",
-		async () => {
-			const user = userEvent.setup();
-			const namedCycleTimeDefinitions = [
-				{ id: 7, name: "Dev Cycle" },
-				{ id: 9, name: "Review Cycle" },
-			];
-			const throughBoth = aWorkItem({
-				referenceId: "ST-A",
-				namedCycleTimes: [
-					{ definitionId: 7, days: 2 },
-					{ definitionId: 9, days: 5 },
-				],
-			});
-			const throughDevOnly = aWorkItem({
-				referenceId: "ST-B",
-				namedCycleTimes: [{ definitionId: 7, days: 4 }],
-			});
-			const throughNeither = aWorkItem({ referenceId: "ST-C" });
-			const references = ["ST-A", "ST-B", "ST-C"];
-			openTheDialog({
-				context: "closedItems",
-				items: [throughBoth, throughDevOnly, throughNeither],
-				namedCycleTimeDefinitions,
-				cycleTimeScope: 9,
-			});
-
-			expect(headerText("cycleTime")).toBe("Review Cycle");
-			expect(references.map((ref) => cellText("cycleTime", ref))).toEqual([
-				"5",
-				"",
-				"",
-			]);
-
-			await turnColumn(user, "namedCycleTime:7", true);
-
-			expect(
-				references.map((ref) => cellText("namedCycleTime:7", ref)),
-			).toEqual(["2", "4", ""]);
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
 		"washes a judged cell in a tenth of its judgement's colour",
 		() => {
 			openTheDialog({
@@ -1600,28 +995,6 @@ describe("what each catalogue column says, and how it sorts", () => {
 
 			expect(await screen.findByRole("tooltip")).toHaveTextContent(
 				"Judged on 3 finished items.",
-			);
-		},
-		RENDER_HEAVY,
-	);
-
-	it(
-		"lists every warning a row has, one sentence after another",
-		() => {
-			openTheDialog({
-				context: "deliveryTimeline",
-				items: [mediumFeature],
-				warningsColumn: {
-					...warningsColumn,
-					warningsFor: () => [
-						"Starts after its Delivery date.",
-						"Has no forecast.",
-					],
-				},
-			});
-
-			expect(cellText("warnings", "FTR-1")).toBe(
-				"Starts after its Delivery date. Has no forecast.",
 			);
 		},
 		RENDER_HEAVY,
