@@ -1,6 +1,5 @@
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import { useEffect, useRef } from "react";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type {
 	IRefinementSettings,
@@ -80,27 +79,12 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 		...displayStatesFor(doingStates, mappings),
 	];
 	const offered = new Set(suggestions.map(foldKey));
-	const chosen = chosenStates
-		.map((entry) => entry.state)
-		.filter((state) => offered.has(foldKey(state)));
+	const allChosen = chosenStates.map((entry) => entry.state);
+	// A chosen state that is no longer To Do or Doing is only hidden, and is still sent: the server drops it
+	// when it applies the save. Dropping it here would lose it while a mapping's name is being retyped.
+	const chosen = allChosen.filter((state) => offered.has(foldKey(state)));
 
 	const save = (states: string[]) => onChange({ states: toSettings(states) });
-
-	// Only To Do and Doing states can mean refinement, so a chosen state leaves as soon as the admin stops
-	// offering it, and the same save that changes the states carries the shorter list. Opening the form is
-	// not an edit: a stored state that is not offered is only hidden, and the server drops it on any save.
-	const offeredKey = [...offered].join("\n");
-	const lastOfferedKey = useRef(offeredKey);
-	const anyNoLongerOffered = chosen.length < chosenStates.length;
-	useEffect(() => {
-		if (lastOfferedKey.current === offeredKey) {
-			return;
-		}
-		lastOfferedKey.current = offeredKey;
-		if (anyNoLongerOffered) {
-			onChange({ states: toSettings(chosen) });
-		}
-	}, [offeredKey, anyNoLongerOffered, chosen, onChange]);
 
 	// The list accepts free text, but the server refuses anything that is not a To Do or Doing state,
 	// so a typed value only counts when it names one of the suggestions.
@@ -108,12 +92,12 @@ const RefinementSettingsSection: React.FC<RefinementSettingsSectionProps> = ({
 		const wanted = foldKey(typed);
 		const match = suggestions.find((state) => foldKey(state) === wanted);
 		if (match && !chosen.includes(match)) {
-			save([...chosen, match]);
+			save([...allChosen, match]);
 		}
 	};
 
 	const remove = (state: string) =>
-		save(chosen.filter((name) => name !== state));
+		save(allChosen.filter((name) => name !== state));
 
 	const refinementTerm = getTerm(TERMINOLOGY_KEYS.REFINEMENT);
 
