@@ -30,11 +30,11 @@ import {
 	firstStepOf,
 	isThenBeforeCutoff,
 	saveFailureCopyFor,
+	TYPE_STEP,
 } from "./reportWizardRules";
 import TypeStep from "./TypeStep";
 
 const TITLE_ID = "report-wizard-title";
-const TYPE_STEP = 0;
 
 const CREATING = { title: "Create Report", action: "Create" };
 const EDITING = { title: "Edit report", action: "Save" };

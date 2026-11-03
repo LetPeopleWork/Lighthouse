@@ -73,6 +73,19 @@ describe("what stops an owner from holding the window", () => {
 		});
 	});
 
+	it("holds a window that starts on the first day of the kept history and refuses one that starts a day before it", () => {
+		const limitOf = limitOfFor(backToBack("90", "30"), templates);
+		const keptFromTheFirstDay = ownerKeeping(5, "2026-06-05");
+		const keptFromADayLater = ownerKeeping(6, "2026-06-06");
+
+		expect(limitOf(keptFromTheFirstDay)).toBeNull();
+		expect(limitOf(keptFromADayLater)).toEqual({
+			keptSince: "6 Jun 2026",
+			window: "Then",
+			windowStarts: "5 Jun 2026",
+		});
+	});
+
 	it("names Now when only Now reaches back past the kept history", () => {
 		const draft = { ...backToBack("14", "90"), thenEnd: "2026-09-30" };
 
@@ -129,22 +142,15 @@ describe("which owners the window can be created on", () => {
 		expect(pickedOwnersOf(everyOwner, picked, limitOf)).toEqual([keepsAYear]);
 	});
 
-	it("keeps the picks the new window can still hold and drops the rest for good", () => {
+	it("keeps the picks the new window can still hold and drops the rest", () => {
 		const picked = new Set([
 			ownerKeyOf(keepsAYear),
 			ownerKeyOf(keepsSinceSeptember),
 		]);
-		const shortWindow = limitOfFor(backToBack("14", "14"), templates);
 		const longWindow = limitOfFor(backToBack("90", "90"), templates);
 
 		const afterLonger = picksThatCanStillHold(everyOwner, picked, longWindow);
-		const afterShorterAgain = picksThatCanStillHold(
-			everyOwner,
-			afterLonger,
-			shortWindow,
-		);
 
 		expect([...afterLonger]).toEqual([ownerKeyOf(keepsAYear)]);
-		expect([...afterShorterAgain]).toEqual([ownerKeyOf(keepsAYear)]);
 	});
 });

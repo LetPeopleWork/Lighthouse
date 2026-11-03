@@ -52,8 +52,11 @@ const whileThePageHears = (change: () => unknown) =>
  * otherwise the last press comes due after the page has been taken down and fails the whole run.
  */
 const theLastPressSettles = async () => {
-	await act(() => vi.advanceTimersByTimeAsync(350));
-	vi.useRealTimers();
+	try {
+		await act(() => vi.advanceTimersByTimeAsync(350));
+	} finally {
+		vi.useRealTimers();
+	}
 };
 
 beforeEach(() => {

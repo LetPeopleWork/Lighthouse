@@ -143,9 +143,11 @@ describe("what Create does on the owner step", () => {
 	});
 
 	it("calls what it was given when pressed", async () => {
-		await createActionOf(OWNER_STEP, 2, "ready", onCreate)?.onClick();
+		const onThisCreate = vi.fn();
 
-		expect(onCreate).toHaveBeenCalledTimes(1);
+		await createActionOf(OWNER_STEP, 2, "ready", onThisCreate)?.onClick();
+
+		expect(onThisCreate).toHaveBeenCalledTimes(1);
 	});
 });
 
