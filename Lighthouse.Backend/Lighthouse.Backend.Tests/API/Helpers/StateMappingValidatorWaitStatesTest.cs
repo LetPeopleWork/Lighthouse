@@ -51,6 +51,15 @@ namespace Lighthouse.Backend.Tests.API.Helpers
         }
 
         [Test]
+        public void SettingsSentWithoutAnyWaitStates_AreJudgedAsHavingNone()
+        {
+            var settings = TeamSettings([], Review());
+            settings.WaitStates = null!;
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Is.Empty);
+        }
+
+        [Test]
         public void PortfolioWaitStateNamingOneStateInsideAMapping_IsRefusedAskingForTheMappingsName()
         {
             var settings = Settings<PortfolioSettingDto>(["Testing"], Review());

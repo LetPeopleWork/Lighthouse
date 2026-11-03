@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.API.Helpers
             errors.AddRange(mappings
                 .Where(mapping => !string.IsNullOrWhiteSpace(mapping.Name) && HasChanged(mapping))
                 .SelectMany(mapping => CategoryErrors(lists, mapping)));
-            errors.AddRange(WaitStateErrors(settings.WaitStates, mappings, storedOwner?.WaitStates ?? [], HasChanged));
+            errors.AddRange(WaitStateErrors(settings.WaitStates ?? [], mappings, storedOwner?.WaitStates ?? [], HasChanged));
 
             return new StateMappingValidationResult(errors);
         }
