@@ -21,7 +21,6 @@ import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import {
-	type IStoredStateSettings,
 	storedStateSettingsOf,
 	validateStateMappings,
 } from "../../../utils/stateMappingValidation";
