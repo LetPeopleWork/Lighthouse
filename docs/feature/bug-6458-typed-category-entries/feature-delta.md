@@ -1077,3 +1077,27 @@ Taken in AFK mode when the two steps were added (05-09, 05-10; tests in 477667ed
 - The refusal sentence shows where the mapping editor's errors already show. It does not move next to the Wait States
   list, because that would be a new placement that needs a sketch. The copy is: `Wait state "{state}" is part of the
   mapping "{mapping}". Use "{mapping}" as the wait state instead.`
+
+## Wave: DELIVER / [REF] Progress (2026-11-03)
+
+Slice 5 (05-01..05-10) is done, refactored and double-reviewed (both blockers fixed), and was pushed to the feature
+branch. The final gates then ran on the whole feature: a refactor, a double review (frontend blocker fixed: the page
+now judges only what a save adds or changes, as the server does; backend approved, with the per-item lookup cost and
+the seeder's start-up guard fixed) and mutation testing on frozen code. Backend 87.20 % (95.02 % after one kill round
+on four files), frontend 80.10 % (89.22 % after one incremental kill round); see `mutation/results.md`.
+
+Decisions to revisit:
+
+- A wait state saved before the refusal that names one state inside a mapping keeps counting all time in the mapping
+  as wait. Before this feature it counted nothing. The next edit of that wait state is refused.
+- The refinement picker no longer drops a chosen state that stops being offered (renaming a mapping did that on the
+  first keystroke). It hides it, and the server's sync drops it on save if it is really gone.
+- Cycle-time definitions on a mapping that is only partly listed are valid now (the server moved to the display-list
+  rule the page already used).
+
+Deferred: a hint on a wait state whose mapping was deleted (new UI, needs a sketch); the wait-state refusal beside
+the Wait States field instead of among the mapping editor's errors (new placement). Open mutation gaps are listed in
+`mutation/results.md`.
+
+The maintainer agreed to rebase onto main after mutation, skip the full suites after the rebase (CI verifies, the two
+builds run), push to main and delete the feature branch.
