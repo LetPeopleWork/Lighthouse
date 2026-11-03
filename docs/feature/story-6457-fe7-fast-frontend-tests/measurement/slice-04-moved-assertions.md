@@ -124,11 +124,11 @@ must not be lower at close.
 
 | Measure | Before | After |
 |---|---|---|
-| Test count (five files) | 153 | 122 (plus 68 in four new unit-test files) |
-| Preserved ids missing | n/a | 0 of the surviving; 31 gone, all in the table below |
+| Test count (five files) | 153 | 123 (plus 68 in four new unit-test files) |
+| Preserved ids missing | n/a | 0 of the surviving; 30 gone, all in the table below |
 | Line coverage, Team directory | 94.96 | 96.26 |
 | Branch coverage, Team directory | 83.73 | 86.23 |
-| Per-test time, allow-listed entries (indicative, not quiet; mean of 5 alternating runs, before -> after) | | name change after debounce 1.56 -> 2.18 s; query saved once 2.09 -> 0.99 s; latest edit while save in flight 2.00 -> 1.36 s; Ready rule with Yes votes 1.85 -> 2.71 s; changed Ready rule 1.76 -> 1.69 s; two readiness entries removed with their tests (1.75 s and 2.38 s before). The machine was loaded and the spread between runs is large (summed 61-104 s before, 58-80 s after), so single-test figures say little. |
+| Per-test time, allow-listed entries (indicative, not quiet; mean of 5 alternating runs, before -> after) | | name change after debounce 1.56 -> 2.18 s; query saved once 2.09 -> 0.99 s; latest edit while save in flight 2.00 -> 1.36 s; Ready rule with Yes votes 1.85 -> 2.71 s; changed Ready rule 1.76 -> 1.69 s; the entry of the removed "refused" readiness test is gone (2.38 s before); the entry of the restored readiness test is gone too, as the test now runs under budget. The machine was loaded and the spread between runs is large (summed 61-104 s before, 58-80 s after), so single-test figures say little. |
 | File time, five files (indicative, not quiet; summed test seconds, mean of 5 alternating pairs, 6 workers, budget off) | 82.31 s (104.4 88.3 88.2 61.4 69.2) | 71.44 s (79.8 70.1 72.0 58.5 76.8), -13.2 % |
 | Allow-list entries removed / lowered | 7 | 2 removed, 0 lowered, 5 kept |
 
@@ -141,9 +141,6 @@ must not be lower at close.
 | ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished | `expect(hasIncompleteStageRule({ ready: rule, beingRefined: null })).toBe(` | refinementSettingsBlockers.test.ts | What a stage rule saves as %s saves as the rule shown and blocks the save only while unfinished |
 | ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as holds nothing back for a Team without stage rules | `expect(hasIncompleteStageRule(undefined)).toBe(false);` | refinementSettingsBlockers.test.ts | What a stage rule saves as holds nothing back for a Team without stage rules |
 | ModifyTeamSettings.refinementNeed.test.tsx :: What a stage rule saves as holds nothing back for a Team without stage rules | `expect(hasIncompleteStageRule(null)).toBe(false);` | refinementSettingsBlockers.test.ts | What a stage rule saves as holds nothing back for a Team without stage rules |
-| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to remembers the threshold a rule was changed to when it is switched off |
-| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to remembers the threshold a rule was changed to when it is switched off |
-| ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to remembers the threshold a rule was changed to when it is switched off |
 | ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to keeps the last allowed threshold when the rule is switched off at one that is refused |
 | ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to keeps the last allowed threshold when the rule is switched off at one that is refused |
 | ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold | `expect(theReadinessLastSaved()?.discussWhen).toEqual({` | discussionRules.test.ts | the threshold a discussion rule returns to keeps the last allowed threshold when the rule is switched off at one that is refused |
@@ -153,23 +150,23 @@ must not be lower at close.
 | ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server checks a readiness stored without discussion rules as if it had the defaults | `expect(readinessErrors({ minYes: 3, minVoters: 3 })).toEqual({` | readinessErrors.test.ts | the discussion rules the form shares with the server checks a readiness stored without discussion rules as if it had the defaults |
 
 Rows per file, against `git diff -U0 686f22bf5 -- <file> | grep -c '^-.*expect('`: refinementNeed 5 / 5,
-readiness 10 / 10, test.tsx 0 / 0, refinement 0 / 0, queryCommit 0 / 0. The `expect(` rows of the two
+readiness 7 / 7, test.tsx 0 / 0, refinement 0 / 0, queryCommit 0 / 0. The `expect(` rows of the two
 `it.each` readiness blocks are one line each in the diff (the call is on the next line); the other rows
-quote the removed line as it was. Every moved block was moved verbatim except the two removed readiness
-page tests, whose rule logic is covered by `discussionRules.test.ts`; the page file keeps
-"switches a rule back on at the threshold it had before" as the wiring test for the same rule.
+quote the removed line as it was. Every moved block was moved verbatim except the removed readiness
+page test ("refused"), whose rule logic is covered by `discussionRules.test.ts`; the page file keeps
+"switches a rule back on at the threshold it had before" and "switches a rule back on at the threshold it was changed to before it was switched off" as the wiring tests for the same rule.
 
 ### Preserved ids
 
-Before 153 ids, after 122 (the five files). Missing: 31, all listed above by their old test (2 removed readiness
-tests, 23 readiness-rule cases moved to `readinessErrors.test.ts`, 6 stage-rule cases moved to
+Before 153 ids, after 123 (the five files). Missing: 30, all listed above by their old test (1 removed readiness
+test, 23 readiness-rule cases moved to `readinessErrors.test.ts`, 6 stage-rule cases moved to
 `refinementSettingsBlockers.test.ts`, kept with the same test names). Added to the five files: 0. Surviving
 ids are unchanged.
 
 ### New unit tests
 
 `teamAutoSaveBlockers.test.ts` 18, `discussionRules.test.ts` 14, `refinementSettingsBlockers.test.ts` 13 (6 moved,
-7 new), `readinessErrors.test.ts` 23 (all moved). Net new tests: 39. Moved: 29. Removed outright: 2.
+7 new), `readinessErrors.test.ts` 23 (all moved). Net new tests: 39. Moved: 29. Removed outright: 1.
 
 ### Fake clock
 
@@ -181,6 +178,20 @@ and the 3000 ms `waitFor` ceiling.
 
 ### Allow-list
 
-Seven entries before, five after. Removed: the two readiness entries whose tests were removed. Kept: the three
+Seven entries before, five after. Removed: the entry of the removed readiness test and the entry of the restored readiness test (it runs under budget). Kept: the three
 queryCommit entries and the two refinementNeed entries; each still renders the whole form and none runs under
 0.5 s, so none is stale (a time-budget run reports 0 offenders).
+
+## Review revision
+
+The review found that the page test "switches a rule back on at the threshold it was changed to before it was
+switched off" had been removed as if `discussionRules.test.ts` covered it. It does not: the unit tests check the
+helper, not that `ReadinessSettings` hands the helper the threshold currently shown. The one remaining page test
+starts from a stored 4 and ends at 4, so passing the remembered threshold instead of the shown one would have
+gone unnoticed. The test is back, unchanged, as a page test; it fails when `ReadinessSettings` passes the
+remembered threshold instead of the shown one, and passes with the real code. Only the "refused" page test stays
+removed, because its extra case (a threshold of 0) is asserted in `discussionRules.test.ts` and its wiring is the
+same. Counts above are corrected (removed 1, not 2; 123 ids after, 30 gone). The restored test ran in about 1.5 s
+(limit 2 s), so no allow-list entry came back. The three autosave test files now take their wait from
+`DEBOUNCE_MS` plus a margin instead of a hard-coded 600. All timing figures remain indicative: the machine was
+loaded throughout.
