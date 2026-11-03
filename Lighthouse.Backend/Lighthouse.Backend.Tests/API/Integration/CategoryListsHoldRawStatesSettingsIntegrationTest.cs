@@ -261,6 +261,36 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         [Test]
+        [Ignore("pending: a wait state inside a mapping is refused")]
+        public async Task SavingAWaitStateThatNamesOneStateInsideAMapping_IsRefusedAskingForTheMappingsName()
+        {
+            SeedOwner();
+
+            var response = await Save(Settings(doing: ["Analysis", "Code Review", "Testing"], mappings: [Review()], waitStates: ["Testing"]));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(
+                    await Errors(response),
+                    Is.EqualTo(Listed("Wait state \"Testing\" is part of the mapping \"Review\". Use \"Review\" as the wait state instead.")));
+                Assert.That(Strings(await ReadSettings(), "waitStates"), Is.Empty);
+            }
+
+            await AssertNothingWasStored();
+        }
+
+        [Test]
+        public async Task SavingAWaitStateThatNamesAMappingNamedAfterOneOfItsStates_IsAccepted()
+        {
+            SeedOwner();
+
+            await SaveExpectingOk(Settings(doing: ["Analysis", "Active", "Resolved"], mappings: [ActiveGroup()], waitStates: ["Active"]));
+
+            Assert.That(Strings(await ReadSettings(), "waitStates"), Is.EqualTo(Listed("Active")));
+        }
+
+        [Test]
         public async Task SavingAGroupOverAState_WhoseEarlierGroupWasDeleted_LeavesNoLeftoverName()
         {
             SeedOwner(mappings: [new StateMappingDto { Name = "A", States = ["X"] }], doing: ["Y", "X"]);
@@ -663,7 +693,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
             string[]? doing = null,
             string[]? done = null,
             StateMappingDto[]? mappings = null,
-            string? name = null)
+            string? name = null,
+            string[]? waitStates = null)
         {
             SettingsOwnerDtoBase dto = kind == OwnerKind.Team
                 ? new TeamSettingDto { ThroughputHistory = 30, FeatureWIP = 1, DoneItemsCutoffDays = 365 }
@@ -685,6 +716,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             dto.DoingStates = [.. doing ?? ["Active"]];
             dto.DoneStates = [.. done ?? ["Done"]];
             dto.StateMappings = [.. mappings ?? []];
+            dto.WaitStates = [.. waitStates ?? []];
             return dto;
         }
 
