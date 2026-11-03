@@ -811,3 +811,33 @@ item changes the plan for the others.
 - Changes the plan:
   - FE7 and T4: a per-file frontend budget already exists in CI, warn-only; FE7 takes the per-test ratchet, T4 keeps the per-file budget and drops `--warn-only`.
   - Follow-up candidates, not filed: per-test seeding cost in seeded acceptance suites (~210 ms per test with the schema template); two usage-data fixtures leave database files behind; `A_cancelled_refresh_still_lets_go_of_the_work_held_behind_it` cannot fail on a no-op cancel; test names that embed today's date drift the id list daily; a test-writing guidance skill for DISTILL and DELIVER once T4/T5 settle the convention.
+
+## Wave: DISCUSS / [REF] Split into improvement Epics (2026-11-03)
+
+Epic 6264 grew to 46 Stories with five separate goals, so the maintainer split it. ADO #6264 is Closed with no
+children; every Story moved, the closed ones with their theme. This workspace stays the shared catalogue for all six
+Epics: briefs, dependency graph and Improvement log stay here, and each Story keeps its ADO id. The Epics carry the ADO
+tag `Continuous Improvement`; `/continuous-improvement` finds them by that tag and takes their order from the Epic
+backlog order in ADO.
+
+| Order | Epic | Stories | Builds on |
+|---|---|---|---|
+| 1 | #6506 Fast, reliable test suites (Active) | T1 #6459, T2 #6460, T3 #6461 (done); FE7 #6457, T4 #6462, T5 #6469 | nothing |
+| 2 | #6507 Narrow persistence access: repositories by role | S05a #6369 (done); S05b-g #6370-6375 | nothing |
+| 3 | #6508 Thin services and controllers | S06 #6376, S07a #6377, S07b #6378, S07d #6380, S12a-c #6386-6388 | #6507, softly |
+| 4 | #6509 Frontend packaged by module | FE1 #6389 (done); FE2-FE6 #6390-6394 | #6508, softly (FE4) |
+| 5 | #6510 Modules: package the bounded contexts | S01 #6357, S04a #6367, S11 #6385 (done); S02 #6358, S03a-h #6359-6366, S03i #6468, S04b #6368, S09a #6382, S09b #6383 | #6508 hard (S12c before the DTO moves of S02 and S03a-d), #6507 softly |
+| 6 | #6511 Aggregates and data ownership | S07c #6379, S08 #6381, S10 #6384, S13 #6395 | #6510 (S10 needs every S03 done) |
+
+Cross-Epic edges, from the briefs (all one direction): S12c ==> S02/S03a-d DTO moves (`slice-32` line 30, `slice-04`
+line 33); S06 and S07a "ideally before" S03a/S03b; S07b and S12a soft on S02 (with #6508 first they do not wait);
+S12b and S07b soft on S05c/d/f; S03d, S03i and S13 soft on S05c/d; S05f "S02 may absorb this" (S05f stays in #6507,
+S02's DESIGN is told it is done); FE4 soft on S07b. S07c was in a soft loop with S05c and S08 and says its decision goes
+in S08's catalogue, so it moved to #6511. Risk: S02 is the go/no-go gate of #6510; a "stop" leaves that Epic almost
+empty, by design.
+
+Stale briefs found at the split (fix at each Story's pick-up, during its baseline re-count): `slice-08` (S03f) title
+and goal still offer a Platform context (only its update says "no module"); `slice-10` (S03h) still names "Platform"
+and "RBAC/licence" in its namespace rule; `slice-09` (S03g) has no update block; `slice-02` to `slice-07` bodies and
+file names keep the pre-ADR-270 context names (their update blocks are right); "all S03*" in S04b, S09a, S09b and S10
+now includes S03i and S03f (no longer a module); enumerations "S03a-S03h" in this file miss S03i.

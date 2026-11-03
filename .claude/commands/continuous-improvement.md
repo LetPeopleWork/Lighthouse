@@ -1,6 +1,6 @@
 ---
-description: Continuous improvement of Lighthouse's architecture, tech debt and code structure — one improvement at a time, interleaved with feature work. Builds a board of what is done, in flight and ready in the current improvement focus (today Epic 6264, the path to a modular monolith), resumes the in-flight item or lets the maintainer pick the next one, runs its waves under behaviour-free refactoring discipline, and feeds what was learned back into the plan.
-argument-hint: "[status] | [item-ids…] | focus [<epic-id>]"
+description: Continuous improvement of Lighthouse's architecture, tech debt, code structure and test infrastructure — one improvement at a time, interleaved with feature work. Builds one board across every ADO Epic tagged "Continuous Improvement" (in backlog order), resumes the in-flight item or lets the maintainer pick the next one, runs its waves under behaviour-free refactoring discipline, and feeds what was learned back into the plan. Also answers which improvement items a new feature Epic should take on first.
+argument-hint: "[status] | [item-ids…] | focus | before <epic-id>"
 ---
 
 # /continuous-improvement — the next step in making the code better
@@ -17,23 +17,37 @@ Arguments for this run: `$ARGUMENTS`
 - `/continuous-improvement <item> [<item>…]` — skip the recommendation and propose those items (ADO ids
   like `6367`, or catalogue ids like `S04a`). The board and the dependency check still run; a blocked
   pick is refused with what blocks it named.
-- `/continuous-improvement focus [<epic-id>]` — show or change the current focus (see below).
+- `/continuous-improvement focus` — list the improvement Epics in their order, with open-item counts.
+- `/continuous-improvement before <epic-id>` — for a feature Epic about to start (at its DISCUSS or
+  DESIGN): which open improvement items touch the same code and are worth doing before or during it
+  (see "Before a feature Epic").
 
-## The current focus
+## The improvement Epics
 
-Improvement work is grouped into **improvement Epics**: DISCUSS ran once for the whole Epic and left a
-catalogue of independent items rather than a slice plan. The Epics listed here are the focus, in
-order; the first one with open items is the one this command works from.
+Improvement work is grouped into **improvement Epics**, each with a catalogue of independent items
+rather than a slice plan. They are found in ADO, not listed here: every Epic tagged
+**`Continuous Improvement`** that is not Closed or Removed.
 
-| Epic | Theme | Workspace |
-|---|---|---|
-| #6264 | Architecture cleanup — path to a modular monolith | `docs/feature/epic-6264-modular-monolith/` |
+```
+SELECT [System.Id], [System.Title], [System.State], [Microsoft.VSTS.Common.StackRank]
+FROM WorkItems WHERE [System.TeamProject] = 'Lighthouse' AND [System.WorkItemType] = 'Epic'
+AND [System.Tags] CONTAINS 'Continuous Improvement' AND [System.State] NOT IN ('Closed', 'Removed')
+ORDER BY [Microsoft.VSTS.Common.StackRank]
+```
 
-Changing the focus — adding the next improvement Epic once its DISCUSS has produced a catalogue, or
-removing one that is finished — is the maintainer's call. `focus <epic-id>` proposes the edit to this
-table and applies it on their yes. When every Epic here is finished, say so, list any open ADO items
-tagged or titled as tech debt or refactoring that you come across, and ask what the next focus is. Do
-not invent one.
+**Their order is the Epic backlog order in ADO** (StackRank, lowest first), which the maintainer sets by
+dragging on the board. The board covers all of them; recommendations prefer the first Epic in that order
+that has Ready items, and say when a later Epic's item is the better pick. A new improvement Epic joins
+by being tagged; nothing here needs editing. Adding the tag, removing it, reordering and every Epic state
+move are the maintainer's; when no tagged Epic has open items left, say so, list any open ADO items
+titled as tech debt or refactoring that you come across, and ask what comes next. Do not invent an Epic.
+
+**Catalogues.** Several Epics can share one catalogue: the six Epics split out of Epic 6264 on
+2026-11-03 (fast tests #6506, persistence by role #6507, thin services #6508, frontend by module #6509,
+modules #6510, aggregates and data ownership #6511) all keep their briefs in
+`docs/feature/epic-6264-modular-monolith/`. Find an item's brief by its ADO id in the "ADO Stories"
+table of any `docs/feature/epic-*/feature-delta.md`, not by assuming one workspace per Epic. An item
+with no brief anywhere (for example T5 #6469 at the split) needs its DISCUSS before it can be Ready.
 
 A catalogue is usable when its `feature-delta.md` has a story map with pick-up groups, a dependency
 graph, a "How to pick up a Story" section, an ADO Stories table, and one brief per item under
@@ -67,16 +81,16 @@ these.
 
 ## 1. Build the board
 
-For the focus Epic, read the feature-delta's `[REF]` sections every run, because they change as items
+For each catalogue the tagged Epics use, read the feature-delta's `[REF]` sections every run, because they change as items
 close: especially **How to pick up a Story**, **Wave Decisions**, **Risks / Open questions** and
 **Improvement log** (once it exists). Also read any ADR an earlier item produced that the log or the
 decisions name (6264: the bounded-context and layout ADR from S01, with its context map and glossary).
 
 Then collect three sources and reconcile them:
 
-1. **ADO** — one WIQL over the Epic's children (`/ado-sync` has the `az boards` cookbook):
-   `SELECT [System.Id], [System.Title], [System.State] FROM WorkItems WHERE [System.TeamProject] =
-   'Lighthouse' AND [System.Parent] = <epic-id>`. If `az` fails, say so and continue on local evidence
+1. **ADO** — the tagged Epics (query above), then one WIQL over their children (`/ado-sync` has the
+   `az boards` cookbook): `SELECT [System.Id], [System.Title], [System.State], [System.Parent] FROM
+   WorkItems WHERE [System.TeamProject] = 'Lighthouse' AND [System.Parent] IN (<epic-ids>)`. If `az` fails, say so and continue on local evidence
    alone, marking the board "ADO not checked".
 2. **Workspaces** — item workspaces `docs/feature/story-<ado-id>-*/` and
    `docs/feature/stories-*<ado-id>*/`, plus archives in `docs/evolution/` naming the id. For an open
@@ -109,7 +123,10 @@ go-with-changes. Read the decision from the Improvement log or the ADR, never fr
 Flag drift: an item ADO calls Closed with no commits, an Active one with no workspace, an open
 workspace whose ADO item is still New.
 
-Print the board grouped by pick-up group, one line per item:
+Dependencies cross Epics: a brief may name an item now in another tagged Epic. Resolve it the same way,
+and show the Epic next to the item.
+
+Print the board grouped by Epic (in backlog order), then by pick-up group, one line per item:
 `S04a #6367  Ready   — Close the Models ↛ Services gap (S)`, then the dependency disagreements, then
 the counts (done / in flight / ready / blocked), and the progress against the Epic's outcome KPIs where
 the log has re-measured them.
@@ -200,9 +217,24 @@ to that brief and the ADO change (`/ado-sync` Op 2: create, retitle or Remove) a
 the maintainer's yes. Commit the log and brief edits as
 `docs(<scope>): improvement log — <catalogue-id> closed`.
 
-Finish with the refreshed board, so the next decision starts from it. When the focus Epic has no open
-items left, say so, leave its ADO state to the maintainer, and ask whether to drop it from the focus
-table and what comes next.
+Finish with the refreshed board, so the next decision starts from it. When an improvement Epic has no
+open items left, say so and leave its ADO state and its tag to the maintainer.
+
+## Before a feature Epic
+
+When a feature Epic starts (its DISCUSS, or DESIGN at the latest; CLAUDE.md asks for this), check which
+open improvement items it should take on first or alongside. `before <epic-id>`:
+
+1. Build the board as in step 1, `status` only.
+2. From the feature's DISCUSS (or its ADO description if DISCUSS has not run): the contexts it touches
+   (ADR-270's context map), and the code areas, services, controllers and frontend units it will change.
+3. For each open improvement item, read its brief and mark it **Before** (the feature would build on the
+   structure the item replaces, so doing it first saves rework, or the feature would grow a thing the
+   item ratchets down), **During** (small, same area, can ride along as its own commits under the
+   behaviour-free rules), or **Unrelated**.
+4. Print the Before and During items with one line of why each, and their Ready/Blocked state. The
+   maintainer decides; a chosen item runs as its own improvement item (steps 3 to 5), never folded into
+   a feature Story's commits.
 
 ## Never
 
@@ -211,4 +243,5 @@ table and what comes next.
 - Loosen a ratchet, or ship a ratchet-less move.
 - Trust a brief's numbers without re-counting.
 - Copy the Epic's [REF] sections into an item workspace (only the checklist is copied).
-- Pick a new focus Epic, move an Epic's ADO state, push without a go, or rebase on your own.
+- Tag or untag an Epic, reorder the Epic backlog, move an Epic's ADO state, push without a go, or rebase
+  on your own.

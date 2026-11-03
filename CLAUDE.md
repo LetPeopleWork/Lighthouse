@@ -160,6 +160,11 @@ Two standing principles worth keeping visible here because they're easy to skip 
   the next starts; do not interleave slices across Epics. A dependency between sibling Epics is allowed
   only in one direction (a later Epic builds on an earlier, finished one), never as a slice of one Epic
   waiting on a slice of another. If the value only appears once two Epics are both done, they are one Epic.
+- **A new feature Epic first checks the improvement backlog.** At its DISCUSS (DESIGN at the latest), run
+  `/continuous-improvement before <epic-id>`: it lists the open items of the Epics tagged `Continuous
+  Improvement` that touch the same code and are worth doing before or during the feature (refactoring the
+  structure the feature would otherwise build on). Present them to the maintainer with the recommendation;
+  a chosen item runs as its own improvement item, not inside the feature's commits.
 
 ### Commits & Shared Contracts
 
