@@ -1,0 +1,246 @@
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection answers a report made by a newer version at once, asking only once
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection answers a report that is gone at once, asking only once
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection asks again when a read fails for any other reason
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection asks again when the server fails to answer
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection asks no more often than the instance's usual retries before saying the report could not be loaded
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection never lets a late answer for the report opened before land on the one opened now
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection offers Retry, not the way back, when the report fails with a 422 for another reason
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection offers Retry, not the way back, when the report fails with another status naming the newer Type
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection says a report made by a newer version cannot be shown here and leads back to the list
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection says a report that is gone no longer exists and leads back to the list
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection says it is busy while the report is on its way, and no longer once it is shown
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection says the report could not be loaded and offers Retry, showing no numbers
+src/pages/Common/Reports/ReportView.test.tsx :: A report on a slow or failing connection shows only the way back and a spinner while the report is on its way
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report leads No change, a fall and a rise each with a mark of its own; a screen reader hears the fall and the rise, and skips the No change mark
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report leads Throughput's total and per-day lines with their icons on both sides
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report leads the average, median, min and max of Total Work Item Age with the same icons on both sides
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report leads the average, median, min and max of WIP with the same icons on both sides
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report marks every percentile on both sides with the certainty icon the Metrics tab shows for it
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report names every metric and the Work Items in the instance's words
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report names the line of every change on the Cycle Time panel, the 95th first
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report names the line of every change on the Throughput panel
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report names the line of every change on the Total Work Item Age panel
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report names the line of every change on the WIP panel
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report opens the Cycle Time panel with the 95th for Then and for Now, and its change
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report reads a percentile that did not move as No change, and a longer one as worse
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report shows Throughput as a total and a per-day average, compared per day
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report shows WIP as its average, median, min and max, each with its own change, lower reading as better
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report shows the Cycle Time panel as Then, Now and Change, each side headed by its name alone
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report stacks only the shown metrics, in the catalog's order whatever order they were ticked in
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report tells a growing Total Work Item Age as worse on every line by sign and mark as well as colour
+src/pages/Common/Reports/ReportView.test.tsx :: The panels of a report tells a shorter Cycle Time as better on every percentile by mark and sign as well as colour
+src/pages/Common/Reports/ReportView.test.tsx :: The report header names the report on one line after Reports, which leads back to the list, with no large heading
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed in Then none for a side whose percentiles rest on no Work Items
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed in Then none for a side with no finished Work Items
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed in Then the Work Items behind the first percentile that has any, the 85th recorded as never captured
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed in Then the Work Items of a side whose 85th was never kept
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed the Work Items Throughput finished, for a Then where nothing finished
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed the Work Items Throughput finished, for a report that captured both
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed the Work Items Throughput finished, for a report that does not show its Throughput panel
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts as closed the Work Items Throughput finished, for a report whose Cycle Time was never captured
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header counts the closed Work Items even when the report does not show its Cycle Time panel
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header names both windows and their lengths for a Then and a Now within one year, a year written once where both ends share it
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header names both windows and their lengths for a Then reaching back into the year before, a year written once where both ends share it
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header names both windows and their lengths for a Then wholly in the year before Now, a year written once where both ends share it
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header names both windows and their lengths for a Then whose first day the server names apart from its length, a year written once where both ends share it
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header names both windows but no closed count when neither Throughput nor Cycle Time was captured, Cycle Time missing from the report
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header names both windows but no closed count when neither Throughput nor Cycle Time was captured, Cycle Time recorded as never captured
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header names the closed Work Items in the instance's words
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header opens with a summary of each side's window and how many Work Items closed in it
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header says nothing of Then being frozen or of Now always being the last days
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header says one day and one Work Item in the singular
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header shows no summary when the report could not be loaded
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header shows no summary when the report was made by a newer version
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header shows no summary while the report is on its way, and shows it once the report is here
+src/pages/Common/Reports/ReportView.test.tsx :: The report's summary header sits between the line naming the report and the first panel, inside the report's loading look
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side counts a change from a Then of zero
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side counts a one-day move, and reads Unchanged for a metric that did not move
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side judges Throughput by its rate per day, never by its total
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side judges a hundredth of a Work Item more per day as the panel shows it
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side judges a move too small for the panel to show as the panel shows it
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side judges a report frozen before the 95th was captured on its other percentiles alone
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side leaves out a metric none of whose lines can be compared
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side lists a metric this version has no panel for in no group
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side lists a shown metric the report never captured in no group
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side names the metrics in the instance's words, as their panels are titled
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side names the metrics that improved and the one that got worse
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side reads Mixed for a metric whose slow end got worse while its fast end improved
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side reads Then, Now and Change side by side, like the panels
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side reads a dash when no shown metric can be compared at all
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side shows every kind in its order, each led by its mark and word, improved in green and got worse in red
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side shows the CHANGE of the report read after Retry, never one from before
+src/pages/Common/Reports/ReportView.test.tsx :: The summary's CHANGE side summarises only the metrics the report shows
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show heads the note in place of a later version's metric with that metric's key
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show names a single finished Work Item in the singular
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show puts a plain note in place of a metric this version cannot show, and shows the others
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show says WIP and Total Work Item Age were not captured for a report made before they existed
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show shows a dash and says Then had no finished Work Items
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show shows a value backed by very few Work Items, with that number in the summary above
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show shows every WIP and Total Work Item Age line as a real 0 when Then had nothing in progress
+src/pages/Common/Reports/ReportView.test.tsx :: Values a report cannot show shows no percentage for a change from a Then of zero
+src/pages/Common/Reports/ReportView.test.tsx :: What opening a report reports reports nothing for a report left within five seconds
+src/pages/Common/Reports/ReportView.test.tsx :: What opening a report reports reports nothing for a report that could not be loaded
+src/pages/Common/Reports/ReportView.test.tsx :: What opening a report reports reports one report opened, with its Type, once it has been open for five seconds
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page deletes the report after asking, warns when its Then cannot be rebuilt, and goes back to the list
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page goes back to the list without reporting a deletion when the report was already deleted
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page never shows a deleted report again when it is opened once more
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page offers a reader neither
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page offers a reader no Delete
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page offers an admin Delete
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page offers an admin Edit report and Delete
+src/pages/Common/Reports/ReportView.test.tsx :: Who may change a report from its page offers an admin neither on a report that is gone
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report asks for the bounds again only when Then is refused for the oldest kept day, not after a failure that is no refusal
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report asks for the bounds again only when Then is refused for the oldest kept day, not after a refusal for another reason
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report closes and asks for the list again once the report is created
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report creates nothing and reports nothing when the wizard is closed
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report creates the report as chosen, opens it, and reports one report created with its Type
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report has the Reports page's list of every report read again once the report is created
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report holds the wizard open, with Cancel and Back disabled, while the report is being created
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report keeps every input and reports nothing when creating fails
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report names the oldest kept day the server refuses Then with, not the one the wizard was opened with
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report says a name can be at most 200 characters when the server refuses it for its length
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report says the cap was reached when the server refuses for it
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report shows that the report is being created and holds every input still meanwhile
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report takes back what the last refusal said while creating again
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Creating the report takes no more than 200 characters for the name
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step four: metrics and name cannot create a report showing no metric
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step four: metrics and name cannot create a report without a name
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step four: metrics and name keeps an edited name when Then changes afterwards
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step four: metrics and name names the report after its Then until the name is edited
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step four: metrics and name offers only the metrics this version can show, whatever else the server offers
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step four: metrics and name ticks all four metrics, named in the instance's words
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step one: the Type of report offers Then & Now as the one Type, already chosen, saying what it is for
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now allows no fewer days in either length field than the server's shortest window
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now follows a Then changed afterwards while Now is still untouched
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now is as long as Then until changed, always ending today
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now keeps an edited Now when Then changes afterwards
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now names its length field with Length and or, and offers no Same as Then choice
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now names no window while its length reads "", not a whole number of days
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now names no window while its length reads "-5", not a whole number of days
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now names no window while its length reads "14.5", not a whole number of days
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now names the presets of each window for a screen reader
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now offers a Portfolio's Now as 90 or 180 days with one click
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now offers a Team's Now as 30 or 90 days with one click, beside its length in days
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now refuses a Now reaching back past the oldest kept day and goes no further
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now refuses a Now shorter than 14 days and goes no further
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now starts on the length Then was given with one click, with that button pressed
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step three: Now takes a Now of a custom length in days, pressing no button
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then accepts a Then of exactly 14 days
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then cannot end in the future
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then labels its custom length Custom: and has no Custom button
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then lets Then start on any day when the Team keeps every finished Work Item
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then names the oldest kept day the server answers when Then starts before it
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then offers a Portfolio's Then as 90 or 180 days with one click
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then offers a Team's Then as 30 or 90 days with one click
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then refuses a Then of -30 days as too short and goes no further
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then refuses a Then of 0 days as too short and goes no further
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then refuses a Then reaching back further than the calendar goes, without naming its days
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then refuses a Then shorter than 14 days and goes no further
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then refuses a Then starting before the oldest kept day, naming that day, and goes no further
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then says the days of a Then of a custom length
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then says the days of a Then that ended in the past
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then starts as the 90 days ending today and says which days that is
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: Step two: Then takes the shortest Then it allows from the server
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard on a slow or failing connection draws no dates and goes no further while the report types are on their way
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard on a slow or failing connection says the report types could not be loaded and offers Retry, going no further
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard while its bounds are read holds Next on reopening until today's bounds have been read again
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard while its bounds are read keeps its step when the window regains focus, asking for no bounds again
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard while its bounds are read names Now's length before its presets
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard while its bounds are read offers no Create while the bounds are read again after a refusal for the oldest kept day
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard while its bounds are read reads only its own owner's list again once the report is created
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard's steps asks the server for today's bounds every time it opens
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard's steps is named Create Report and offers Create only on its last step
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard's steps names its steps Type, Then, Now and Metrics & name
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard's steps offers no way back from the first step
+src/pages/Common/Reports/ReportsTab.createWizard.test.tsx :: The wizard's steps starts Then on the 90-day preset, and keeps it when that preset is clicked again
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list asks first, deletes the report, takes it off the list and reports one report deleted
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list does not warn about rebuilding a Then that can still be rebuilt
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list holds the question open while the delete is on its way, whatever is pressed
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list keeps the report and reports nothing when the delete is cancelled
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list keeps the report listed and reports nothing when the delete fails
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list lets Delete be pressed again after a delete failed
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list sends one delete however quickly Delete is pressed twice
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list takes a report somebody else already deleted off the list and reports nothing
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting a report from the list warns that a Then reaching past the kept history can no longer be rebuilt
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting one report after another asks before deleting a report of a type this version cannot show, warning of nothing
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting one report after another forgets only the deleted report and reads only the list again
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting one report after another keeps the other reports on screen, dimmed, while the list is read again after a delete
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting one report after another lets a second report be deleted once the first is gone
+src/pages/Common/Reports/ReportsTab.test.tsx :: Deleting one report after another says a delete the server refused couldn't be done, rather than taking the report off the list
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list forgets a report that is gone, keeping the others it has read
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list lets what went wrong be dismissed, and takes it back when Edit is pressed again
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list offers a reader no Edit
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list offers an admin Edit on a Then & Now report, after Export PDF and before its Delete
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list offers only Delete on a report of a type this version cannot show
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list reads the report and opens Edit report on Now, with the report's values
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list reads the report once however quickly Edit is pressed twice, and shows it is on its way
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list saves once over the report as it was read, and reads the list again
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list says a report that could not be read could not be loaded, and opens nothing
+src/pages/Common/Reports/ReportsTab.test.tsx :: Editing a report from the list says a report that is gone no longer exists, opens nothing and reads the list again
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Community cap on the Reports tab disables Create Report at the cap and says why, in the instance's word for a Team
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Community cap on the Reports tab enables Create Report again once the report is deleted
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Community cap on the Reports tab explains the disabled Create Report with the Premium licence tooltip
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Community cap on the Reports tab says nothing about the cap below it
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports list on a slow or failing connection holds Create Report until the list says whether another report may be created
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports list on a slow or failing connection says it is busy while the list is on its way, and no longer once it is shown
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports list on a slow or failing connection says the list could not be loaded and offers Retry, never the empty list
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports list on a slow or failing connection shows a spinner, never the empty list, while the list is on its way
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports lets everybody create and delete when roles are not enforced
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports links a Portfolio's report to its place under the Portfolio
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports lists a report of a type this version cannot show as not supported, and still lets an admin delete it
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports lists each report by name, linking to it, with its Type and when it was created
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports never says Template
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports offers an admin Create Report
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports shows a reader the reports but nothing to create or delete them with
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports shows an admin of a Team without reports an empty list and Create Report
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports tells a reader of a Portfolio without reports that a Portfolio Admin can create one, in the instance's words
+src/pages/Common/Reports/ReportsTab.test.tsx :: The Reports tab lists a Team's reports tells a reader of a Team without reports that a Team Admin can create one
+src/pages/Common/Reports/ReportsTab.test.tsx :: The columns of the Reports list names a Type this version does not know as not supported
+src/pages/Common/Reports/ReportsTab.test.tsx :: The columns of the Reports list names each report's Type and the day it was created
+src/pages/Common/Reports/ReportsTab.test.tsx :: The layout of the Reports list follows a Team's saved layout, which may hide Type and Created but never Name or the actions
+src/pages/Common/Reports/ReportsTab.test.tsx :: The layout of the Reports list heads the row actions Actions, a column that cannot be sorted
+src/pages/Common/Reports/ReportsTab.test.tsx :: The layout of the Reports list sorts the reports by name
+src/pages/Reports/BulkReportWizard.openings.test.tsx :: Every press of Create reports is its own opening an answer to an earlier, cancelled opening never fills the wizard opened after it
+src/pages/Reports/BulkReportWizard.openings.test.tsx :: Once open, the wizard stays until it is closed the network dropping and coming back keeps the wizard and the Team picked, and asks nothing again
+src/pages/Reports/BulkReportWizard.openings.test.tsx :: Once open, the wizard stays until it is closed what a report needs being read again while it is open keeps the wizard and the Team picked
+src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run 30 Teams and 20 Portfolios make exactly 50: Create is enabled, with no ceiling message
+src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run 30 Teams and 21 Portfolios make 51: Create is disabled and says at most 50
+src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run Select all picks all 60 Teams, the button counts them, and Create says at most 50
+src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run exactly 50 picked may still be created, with no ceiling message
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a Team refused for a kept history too short for the window gets its own line
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a Team refused for the Community cap after the licence lapsed gets its own line
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a Team refused is named with its reason while the others are created and can be opened
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a coach creates the same comparison for Zenith and Gravity and finds both listed
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams creating the same report twice creates it twice, with no warning
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams every Team picked gets the same comparison, in the order the step lists them
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams in the desktop app, which opens no second window, Open moves to the report in place and the result closes
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams when every Team is refused the headline says none was created and each line says why
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams when no answer arrives it says it cannot confirm what was created and leads back to Reports
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams while the run is under way the result says so and cannot be closed
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with 180 days left as it opens, Then ends the day before Now starts
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with 30 days left as it opens, Then ends the day before Now starts
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with 90 days left as it opens, Then ends the day before Now starts
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with no report anywhere yet, the empty page also offers Create reports, on Premium and Community alike
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard Back leads from Then to the Type step, which offers no Back of its own
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard Escape leaves the result open while the run is under way, and closes it once the run has answered
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard Next waits while Then's length is no number of days
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard a Team picked a second time is no longer picked
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard a Team the answer leaves unnamed takes the name it was picked under
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard an owner neither the answer nor the picks name is spoken of as this Team
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard is titled Create reports and names its steps Type, Then, Now, Metrics & name and Owners
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard lists only the Teams the reader is Admin of
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard one report created is counted in the singular, and its line names its Team
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard the owner step offers Create, not Next, and nothing can be created before a Team is picked
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs Cancel closes it and creates nothing
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs Retry asks again and opens the first step once it arrives
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs once it has arrived the wizard opens at its first step, filled
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs when it cannot be loaded the wizard says so, shows no step, and offers Cancel and Retry
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs while it loads, Create reports spins and is disabled, and no wizard opens
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed an Admin of one Team on Premium may press it
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed for someone who is Admin of no Team or Portfolio it is disabled and says why
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed on Community it is shown but disabled, with the Premium licence tooltip
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed when permissions cannot be loaded it stays enabled, so the owner step can say what went wrong
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed where roles are not enforced anyone may press it on Premium
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed while permissions are on their way it is disabled
+src/pages/Reports/BulkReportWizard.test.tsx :: Who may press Create reports an Admin of one Portfolio alone on Premium may press it
+src/pages/Reports/BulkReportWizard.test.tsx :: Who may press Create reports for an Admin on Premium it carries no tooltip
