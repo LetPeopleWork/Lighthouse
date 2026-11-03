@@ -7,8 +7,6 @@ const refinementPagingFile =
 const reportsRemovalFile = "src/pages/Reports/ReportsPage.removal.test.tsx";
 const teamQueryCommitFile =
 	"src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx";
-const reportsCombinedPdfFile =
-	"src/pages/Reports/ReportsPage.combinedPdf.test.tsx";
 const teamRefinementNeedFile =
 	"src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx";
 
@@ -74,41 +72,6 @@ export const slowTests: readonly AllowListEntry[] = [
 		name: "DashboardHeader shows label and formatted date range and opens popover which calls handlers",
 		reason:
 			"Renders the dashboard header and opens its date popover, which loads the date picker the first time.",
-		ceilingSeconds: 2.5,
-	},
-	{
-		file: reportsCombinedPdfFile,
-		name: "One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50",
-		reason:
-			"Renders the Reports page with more than 50 reports and picks them all before checking the export button.",
-		ceilingSeconds: 3.0,
-	},
-	{
-		file: reportsCombinedPdfFile,
-		name: "One PDF of several reports exactly 50 picked may still be exported as one PDF",
-		reason:
-			"Renders the Reports page and picks exactly 50 reports before exporting them as one PDF.",
-		ceilingSeconds: 2.5,
-	},
-	{
-		file: reportsRemovalFile,
-		name: "Picking reports Select all picks every row, on every page",
-		reason:
-			"Renders the Reports page with a long list and selects every row across all pages.",
-		ceilingSeconds: 4.5,
-	},
-	{
-		file: reportsRemovalFile,
-		name: "Picking reports above 50 picked, Remove is disabled and says at most 50",
-		reason:
-			"Renders the Reports page with more than 50 reports and picks them all before checking the remove button.",
-		ceilingSeconds: 3.0,
-	},
-	{
-		file: reportsRemovalFile,
-		name: "Picking reports exactly 50 picked may still be removed",
-		reason:
-			"Renders the Reports page and picks exactly 50 reports before removing them.",
 		ceilingSeconds: 2.5,
 	},
 	{

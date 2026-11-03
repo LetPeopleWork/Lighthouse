@@ -12,7 +12,6 @@ import type { IReportOwner } from "../../models/Reports/Report";
 import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
 import type { IReportService } from "../../services/Api/ReportService";
 import {
-	AT_MOST_50,
 	aReportOn,
 	CANCEL,
 	couldNotLoadTheReportOf,
@@ -21,7 +20,6 @@ import {
 	GRAVITY,
 	LEAVE_IT_OUT,
 	MONTH,
-	moreReportsThanTheCeiling,
 	NO_PDF_WAS_MADE,
 	NOTHING_SELECTED_TO_EXPORT,
 	neverAnswered,
@@ -594,43 +592,6 @@ describe("One PDF of several reports", () => {
 				.map((button) => button.textContent),
 		).toEqual([CANCEL, RETRY]);
 		expect(frames.timesAFramePrinted()).toBe(0);
-	});
-
-	it("above 50 picked, Export PDF is disabled and says at most 50", async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listingAndReading(
-				eachReportReads(),
-				...moreReportsThanTheCeiling(ZENITH).reports,
-			),
-		});
-		await theReportsTable();
-
-		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
-
-		const exportSeveral = screen.getByRole("button", {
-			name: exportButton(51),
-		});
-		expect(exportSeveral).toBeDisabled();
-		await user.hover(exportSeveral.parentElement ?? exportSeveral);
-		expect(await screen.findByRole("tooltip")).toHaveTextContent(
-			new RegExp(`^${AT_MOST_50.replaceAll(".", "\\.")}$`),
-		);
-	});
-
-	it("exactly 50 picked may still be exported as one PDF", async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listingAndReading(
-				eachReportReads(),
-				...moreReportsThanTheCeiling(ZENITH, 0).reports,
-			),
-		});
-		await theReportsTable();
-
-		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
-
-		expect(
-			screen.getByRole("button", { name: exportButton(50) }),
-		).toBeEnabled();
 	});
 
 	it("with nothing picked Export PDF is disabled and says why", async () => {

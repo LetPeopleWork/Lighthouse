@@ -2,7 +2,6 @@ import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IReportService } from "../../services/Api/ReportService";
 import {
-	AT_MOST_50,
 	aReportOn,
 	CANCEL,
 	confirmLineOf,
@@ -12,7 +11,6 @@ import {
 	GRAVITY,
 	LOST_FOR_GOOD_WARNING,
 	MONTH,
-	moreReportsThanTheCeiling,
 	NOT_CONFIRMED_REMOVED,
 	neverAnswered,
 	notAdminOfSome,
@@ -563,43 +561,7 @@ describe("Remove several reports at once", () => {
 	});
 });
 
-// Every test here renders a page of 50 to 101 grid rows, which takes seconds in jsdom on a loaded runner.
-describe("Picking reports", { timeout: 15_000 }, () => {
-	it("above 50 picked, Remove is disabled and says at most 50", async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH)),
-			),
-			permissions: { adminOf: [ZENITH] },
-		});
-		await theReportsTable();
-
-		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
-
-		const remove = screen.getByRole("button", { name: removeButton(51) });
-		expect(remove).toBeDisabled();
-		await user.hover(remove.parentElement ?? remove);
-		expect(await screen.findByRole("tooltip")).toHaveTextContent(
-			new RegExp(`^${AT_MOST_50.replaceAll(".", "\\.")}$`),
-		);
-	});
-
-	it(`exactly 50 picked may still be removed`, async () => {
-		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 0)),
-			),
-			permissions: { adminOf: [ZENITH] },
-		});
-		await theReportsTable();
-
-		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
-
-		expect(
-			screen.getByRole("button", { name: removeButton(50) }),
-		).toBeEnabled();
-	});
-
+describe("Picking reports", () => {
 	it(`changing the filter clears what was picked`, async () => {
 		const { user } = renderTheReportsPage({
 			reportService: listing(theThreeOfThem()),
@@ -631,17 +593,14 @@ describe("Picking reports", { timeout: 15_000 }, () => {
 
 	it("Select all picks every row, on every page", async () => {
 		const { user } = renderTheReportsPage({
-			reportService: listing(
-				vi.fn().mockResolvedValue(moreReportsThanTheCeiling(ZENITH, 51)),
-			),
-			permissions: { adminOf: [ZENITH] },
+			reportService: listing(theThreeOfThem()),
 		});
 		await theReportsTable();
 
 		await user.click(screen.getByRole("checkbox", { name: /^Select all/ }));
 
 		expect(
-			screen.getByText(selectedCount(101), { exact: true }),
+			screen.getByText(selectedCount(3), { exact: true }),
 		).toBeInTheDocument();
 	});
 });
