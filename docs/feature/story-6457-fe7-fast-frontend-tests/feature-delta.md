@@ -711,3 +711,146 @@ Preserved-id lists come **from a run, never from source**: after a run that writ
 ### Walking-skeleton note
 
 WS6 (`LIGHTHOUSE_TIME_BUDGET=off`): nothing reported and exit 0; the reporter is loaded and judges nothing. WS5 adds: under `GITHUB_ACTIONS=true` the lines carry `::warning::`; in the enforcing case `::error::`.
+
+## Wave: DELIVER / [REF] Roadmap notes (2026-11-03)
+
+Roadmap: `deliver/roadmap.json`, 13 phases (one per slice: 01 = 1a, 02 = 1b, 03 = 2, 04 = 3, 05-12 = slices 4-11, 13 = 12),
+41 steps. Rigor `standard` (model passed explicitly per dispatch). Steps named **QUIET MACHINE** (01-02, 01-08, 03-02, 03-03,
+04-02, 13-02) are lead-run: the lead pauses and asks the maintainer for a quiet system before starting each. Other lead steps
+(02-02, 03-04, 13-03, 13-04) need no quiet machine. Per-step detail, keyed by step id:
+
+### Phase 01 - slice 1a
+- **01-01 Spike.** Five answers, each with the command and output: (1) Vitest 5 per-test duration hook and end-of-run set, and
+  how a failing exit code is set (candidates `onTestCaseResult`, `onTestRunEnd`); (2) whether `--reporter=default` in the
+  `test` script replaces config reporters (WS9 is the check); (3) the Stryker worker marker (candidate
+  `STRYKER_MUTATOR_WORKER`, unverified); (4) whether the composite action can read the `vars` context; (5) whether the end-of-run
+  hook fires with the full list on a `bail` run. Answers can change the mechanics of 01-06, 01-07 and 02-01, not the outcome.
+- **01-02 Calibration.** Local plain vs `--coverage` on the same machine separates machine effect from coverage effect; three
+  oversubscribed runs (workers = cores) feed the flake bound; the 5+ CI artifacts give F per test (join on `file :: test name`);
+  A from the local JSON in file order. B by the D4 rule (smallest of 1, 2, 3 s such that every offender sits in a file a slice names
+  or carries its own reason). No fallback value if artifacts are missing. The Duration-from-log command is confirmed against
+  a saved run, so KPI 16's first "after" number can be trusted later.
+- **01-03/01-04 Compare (two parts), 01-05 Observe, 01-06 Options.** Stale rule is B/4 unscaled; a coverage run can keep an entry, never retire it. The CI-set-and-switch-unset row reads fail unless the reporter-wiring step moves the wiring to 1b. Pure steps: Each removes its file's `describe.skip` and the reason constant first, then goes green one
+  test at a time. Order compare (47), observe (11, imports types from compare), options (21, needs the 01-01 marker answer).
+  Test-file edits beyond removing the skip are allowed only where the spike shows a pinned row wrong, with a recorded reason
+  (the DEVOPS contingency row for "CI with the switch unset" is the known candidate). Scaffold markers are removed from the stubs.
+- **01-07 Reporter and wiring.** Prints a start line (runner facts) and a last line (verdict). Thin shell only; the options function decides everything from environment and argv; the
+  calibrated B, A, F enter through the options. `slowTests.ts` is created empty here so the reporter compiles; 01-08 fills it.
+  `package.json` changes only if 01-01 answer (2) says the flag drops reporters. `action.yml` gets the one env line (not a `ci*.yml`
+  edit, so no forced full suite); if `vars` is unreadable in a composite action the wiring moves to 02-01.
+- **01-08 Seed.** One entry per test over the threshold in the calibration samples; reason in plain words, ceiling in quiet-local
+  seconds, no ids of stories or slices in reasons.
+- **01-09 Proof (WS1-WS10).** The DISTILL table has ten checks, not six. Output recorded in `measurement/slice-01a-proof.md`;
+  re-run WS2/WS9 after any reporter or options change (04-02 does).
+- **01-10 summarise.py.** Extend, no second script; the sample CSV test gains cases; reproducing the DESIGN figures on the
+  baseline CSV is the sanity check.
+- **01-11 Docs.** Word per DEVOPS fact 5: the per-file half sums test time only; the import/environment/transform half is
+  guarded by nothing.
+- **01-12 Biome.** Count offenders of `noSkippedTests`/`noFocusedTests` first; fix, or suppress narrowly with a reason. Depends on
+  the three pure steps because it needs the `describe.skip` gone.
+
+### Phase 02 - slice 1b
+- **02-01.** `--warn-only` becomes `LIGHTHOUSE_BUDGET_WARN_ONLY`-controlled (unset = enforce). Run `check_budget.py` on the 7
+  saved artifacts first; re-derive the nine ceilings only if it fails (D1), with the new test case. Backend call untouched.
+- **02-02.** Lead push. The `ci_frontend.yml` edit forces the full backend, E2E and live-connector suites (DEVOPS fact 6); the
+  first CI run's reporter line records the real runner processor count and worker count.
+
+### Phase 03 - slice 2 (measure only)
+- **03-01.** Two worktrees, scripts under `measurement/scripts/`, the node-project trimmed setup in the candidate arm only, the
+  commit that added MUI inlining read, CI runner facts read, per-file split and a two-file CPU profile.
+- **03-02.** Candidates a, b, d, e of D5 per the A/B rule (median -10 %, non-overlapping ranges, identical id list from
+  saved JSONs, memory +10 % at most, 3 green, 3 shuffled). **03-03** happy-dom only if environment cost stays above 10 % of
+  worker time. **03-04** the CI arm: direction only (a run > 10 % above 930.9 s blocks, at or below is consistent, between is
+  direction only); one full verify run with live connectors, lead-scheduled. **03-05** the verdict table; nothing adopted.
+
+### Phase 04 - slice 3
+- **04-01.** One option per commit; only candidates marked adopted. Bounded change: the reporter entry plus the adopted option
+  entries. The WS2/WS9 re-run (a config edit that drops a reporter is the named bug class) is done in 04-02. `ARCHITECTURE.md` line on the test
+  stack changes only if the environment changes. If nothing passed, the step records that and the phase ends.
+- **04-02 (QUIET MACHINE).** WS2/WS9 re-run, 3 plain + 3 shuffled green, one `CI=true pnpm run sonarreport`, memory vs 4.6-4.8 GB, alternating before/after wall.
+
+### Phases 05-12 - slices 4-11 (rewrite slices)
+Common shape, two steps each: `NN-01` declares the universe (extractions, edited tests, allow-list entries), saves the before
+id list from a results file, before seconds and before coverage; `NN-02` does the extraction as its own refactor commit (no test
+change; unmodified page tests pass), then the test rewrite commit with the allow-list deletions. Rule 1 counting per file:
+`git diff -U0 <before> -- <file> | grep -c '^-.*expect('` matched by rows. Order may change or a slice may be dropped by measured
+payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows the `BaseMetricsView` split if it landed.
+- **05 (slice 4).** Autosave debounce and rule gating; 600 ms (`.refinement`) and 500 ms x2 (`.test`) sleeps and 300 ms
+  debounce waits to a fake clock.
+- **06 (slice 5).** 50-row pick limit, picked count, select-all as functions over a row list; the 101-row render becomes
+  a direct check plus one wiring test.
+- **07 (slice 6).** Wizard step and validation logic; 350 ms (`BulkReportWizard.openings`) and 300 ms (`BulkReportWizard`) waits
+  to fake timers; extraction files may be several, named at `07-01`.
+- **08 (slice 7).** Paging and filter arithmetic; exactly one test renders the 143-row list.
+- **09 (slice 8).** Field-change and default resolution per tracker type; every tracker field set a test relied on is listed
+  at `09-01` so none is lost.
+- **10 (slice 9).** No extraction expected: each of the 108 cases is kept or has a row naming the function test making the same
+  assertion; paging extraction only if `10-01` names it.
+- **11 (slice 10).** Reuses slice 4's helpers; three 500 ms sleeps (`ModifyProjectSettings.test.tsx` lines 590, 617, 722 at
+  the baseline) to a fake clock.
+- **12 (slice 11).** Profile first (the budget file says "not profiled yet"); extractions named after profiling; loading and
+  failure looks stay pinned by named tests (existing `BaseMetricsView.loading` tests keep their role).
+
+### Phase 13 - slice 12
+- **13-01.** Declaration: names the tail (every `slowTests.ts` entry still listed after the last shipped rewrite slice, plus `DataGridBase.paging` and `featureChildItemsDialog`), universe, before ids, seconds, coverage.
+- **13-02.** Sweep. Allow-list review (delete fixed or no-longer-slow entries), the two named files (`DataGridBase.paging`,
+  `featureChildItemsDialog`, about 17 s) and the tail, under the same contract; lower the budget only by the D4 rule.
+- **13-03 (QUIET MACHINE).** Alternating baseline vs final, median of at least 5 pairs, on frozen code.
+- **13-04 (QUIET MACHINE).** Stryker once, after 13-03 (it loads the machine and any edit shifts the staleness of earlier numbers); mutate list
+  and runner include checked first; survivors killed with a follow-up test commit or listed, no hours of reruns.
+- **13-05.** CI after-measurement by job result, Duration median from job logs (KPI 16), KPI 14 zero unlisted offenders.
+- **13-06.** Closing report, T4 hand-off (frontend half leaves T4 at its pick-up), ARCHITECTURE.md/ADR-270 "no concept added".
+
+### Roadmap build notes (contradictions found while reading the inputs)
+1. The walking skeleton is **WS1-WS10** in DISTILL, not WS1-WS6; the roadmap uses ten.
+2. DEVOPS "`off` loads nothing" is superseded by DISTILL's "`off` judges nothing" (kept as in the revision section).
+3. DESIGN D1/slice table say `--warn-only` is **removed** from the frontend call; DEVOPS makes it variable-controlled
+   (`LIGHTHOUSE_BUDGET_WARN_ONLY`, unset = enforce). The roadmap follows DEVOPS.
+4. DESIGN D3/D4 read "under a quarter of the budget" as scaled; DISTILL pins `B/4` unscaled, so coverage runs can keep entries
+   but never retire them; the roadmap follows DISTILL.
+5. D2's guard-off conditions (Stryker, watch) vs DISTILL "`CI` set means never watch": compatible, roadmap follows DISTILL.
+6. DEVOPS cites story 6461's `measure.sh` for the local arm; DISTILL cites `measurement/scripts/measure.sh`; 03-01 creates or
+   copies the latter.
+7. Slice 11's Stryker mention: DEVOPS lists slices 4-8 and 11 for Stryker; DISTILL lists "extracted files"; the roadmap uses the
+   extracted production files of every shipped slice (13-04).
+
+### Revision after review (2026-11-03)
+
+Supersedes the step ids, step counts and QUIET MACHINE list above where they differ. The roadmap now has 13 phases and **44 steps**.
+
+**Renumbering.** Phase 01: compare step split (01-03 part one, 01-04 part two), then observe 01-05, options 01-06, reporter 01-07, seed 01-08, proof 01-09, summarise 01-10, docs 01-11, Biome 01-12. Phase 04 gains 04-03. Phase 13: 13-01 declaration (new), 13-02 sweep, 13-03 final runs, 13-04 Stryker, 13-05 CI after-measurement, 13-06 finalize. Per-step notes above are re-keyed to the new ids (old 01-03..01-11 became 01-05..01-12, old 13-01..13-05 became 13-02..13-06).
+
+**QUIET MACHINE steps now:** 01-02, 01-09, 03-01, 03-02, 03-03, 04-02, 13-03, 13-04. No rewrite slice (phases 05-12) needs one.
+
+**What changed**
+1. **Per-slice figures without a quiet machine (amends DISTILL rule 8, D10 and the DEVOPS local-arm line).** Slices 4-11 (and the 13-02 sweep) measure only the touched test files, before and after alternating (3 pairs, same minute, same worker count), so load from a parallel session hits both arms alike. The close report gives summed seconds before/after, relative change, allow-list length, tests added/removed, and replaces the slice's estimate with the measured relative figure. The NN-01 declarations record the "before" (pre-slice commit, ids, seconds, coverage). The suite wall median is a 13-03-only figure (quiet). 12-01's profiling uses the same method.
+2. **03-01 is QUIET MACHINE** (its per-file split and CPU profile are part of the slice 2 measurement). The A/B and happy-dom steps stay QUIET MACHINE.
+3. **CI reads (amends the DEVOPS per-slice CI line).** CI after-measurement is no longer per slice. A passive read is added after phase 04 (new step 04-03), because configuration is the change expected to move CI wall time; 13-05 reads the end state against both the baseline and the 04-03 read.
+4. **02-02** depends also on 01-07, 01-08 and 01-09; it carries a flaky-guard window of the first 5 main runs after the push (switch to `warn` and re-calibrate, no retry in the reporter).
+5. **Phase 13** depends on 12-02 (the last rewrite step); if later slices are dropped, re-point to the last shipped one. A declaration step 13-01 names the tail (every `slowTests.ts` entry still listed after the last shipped rewrite slice, plus `DataGridBase.paging` and `featureChildItemsDialog`) before the sweep rewrite 13-02.
+6. **No slice ids in `slowTests.ts`:** entries carry a plain-language reason and a ceiling only; the retirement mapping (entry to slice) is a table in this file, written by 01-08 and kept current by each slice.
+7. **Seeding (01-08)** uses 01-02's saved calibration data, with no fresh full run in the crafter step; the confirming guard-on full run moved into the quiet 01-09.
+8. **04-01 no longer re-runs WS2/WS9;** that moved into the quiet 04-02.
+9. **Compare step split** into two steps (01-03: listed/unlisted/limits/exact-key; 01-04: stale/bailed/modes). Part one keeps the stale and mode groups skipped by their own inner skip until part two; observe, options and the proof stay whole.
+10. **01-02:** the oversubscribed runs override `LIGHTHOUSE_TEST_WORKERS=12` for those runs only.
+11. **Every rewrite step's criteria** now copy rule 7 and the universe check: `git diff --name-only` is a subset of the declared universe, with no other production file, Playwright spec, screenshot file or `setupTests.ts`.
+12. **01-12:** remaining Biome offenders get a narrow line suppression with a reason (Biome's way), never a wider one.
+13. **New files** are marked `(create)` in `files_to_modify` (reporter, `slowTests.ts`, node setup file, measurement notes).
+14. **12-01:** FE5 (the `BaseMetricsView` split) is named an external predecessor; if it has not landed, `BaseMetricsView` is left alone and ratcheted.
+15. **13-04 (Stryker) is QUIET MACHINE.**
+16. **03-04:** one CI arm per locally passing candidate, one run each; ties keep the simpler configuration.
+17. **Rigor:** `standard` for the whole test track was agreed at its AFK entry (recorded in the T1 workspace); no per-slice raise.
+18. **Contradictions list:** the DEVOPS rollback wording ("off loads nothing") is superseded by DISTILL ("off judges nothing"), as for the options step; resolution 3 (`--warn-only` becomes variable-controlled) follows DEVOPS's revised-after-review text.
+19. `validation.status` is `pending_review`.
+
+Second revision (minor fixes): the stale rule in 01-03/01-04 is pinned to B/4 unscaled (a coverage run keeps but never retires an entry); 01-06 and 01-07 state the same conditional for CI set with the switch unset (fail, unless the vars contingency moves the wiring to 1b, with the recorded reason); 01-07 prints a start line (runner facts) and a last line (verdict) and 02-02 checks both; 03-02 runs `CI=true pnpm run sonarreport` once (slice 1 has it in 01-09, slice 3 in 04-02); 11-02 gets the extraction-commit rule and 10-02 says why slice 9 needs none (it points at the existing `workItemsDialogContexts`) and applies the rule if 10-01 names a paging extraction; contradiction added: DESIGN says re-derive the per-file ceilings from 5 runs, DEVOPS and the roadmap use the 7 saved runs; resolution: use all 7 (more evidence, the floor of 5 is met).
+
+Previously listed as not acted on (now acted on, see above): m2, m3, m5 (read as the M5 allow-list wording), m7 and m8, and the "(a) list it" part of m16.
+
+**Second re-check fixes (2026-11-03).**
+1. **Crafter runs are not timing runs.** Once the reporter is wired (from 01-07 on), every crafter step's full `pnpm test` runs with `LIGHTHOUSE_TIME_BUDGET=warn`: a parallel session's load can produce false offenders, and crafter runs prove correctness and test ids only. Timing verdicts come only from QUIET MACHINE steps. Written as P-crafter-warn and added to the criteria of every step; 04-01's id-list and all-pass runs use `warn` with no timing judgement, and the enforcing run stays in 04-02.
+2. **Rewrite-slice figures are an explicit exception to the quiet rule.** Close figures (every NN-02, the 12-01 profile, the 13-02 sweep) are not quiet-machine measurements: alternating before/after runs of the same touched files within minutes put the same load on both arms, so the relative change is meaningful while absolute seconds are not. Every close report labels the figure "indicative (not quiet)", and the pairs are raised from 3 to 5 everywhere (this also corrects "3 pairs" in revision item 1 above).
+3. **03-04 now also depends on 03-03.**
+4. **Reference correction:** resolution 3 (`--warn-only` becomes variable-controlled) follows the DEVOPS "Pipeline changes per slice" table (about line 474, revised after review in commit a637162de). Open item: **maintainer to confirm: reverses DESIGN D1's removal of `--warn-only`.**
+5. **Rigor citation:** the T1 record (the T1 feature-delta, about line 819) covers the whole test track, FE7 included; no change.
+6. **@sizing-review-needed: 01-05, 01-06, 01-09 (kept whole by lead decision).**

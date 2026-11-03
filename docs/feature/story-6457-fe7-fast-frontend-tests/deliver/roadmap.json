@@ -1,0 +1,1202 @@
+{
+  "roadmap": {
+    "project_id": "story-6457-fe7-fast-frontend-tests",
+    "created_at": "2026-11-03",
+    "total_steps": 44,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Story 6457 (FE7): frontend tests run in milliseconds where they can, and a guard keeps them fast. Behaviour-free test infrastructure: a Vitest time-budget reporter with a ratcheting allow-list of named slow tests (slice 1a), the per-file budget made enforceable (1b), a measure-only configuration spike (2), adoption of the winning configuration only (3), eight rewrite slices that move logic into directly tested functions and cut render and wait cost (4 to 11), and a sweep with the closing measurements and the single end-of-Story Stryker run (12). No production behaviour changes (production edits are pure extractions only), no assertion is lost (moved-assertions list per slice), no Playwright or screenshot file is touched. Payoff is measured by the lead (touched-files alternating runs per slice, one quiet-machine wall median at the end, allow-list length, CI Duration median), never asserted by a test.",
+    "rigor": "standard for every slice (crafter and designer sonnet, reviewer haiku): agreed for the whole test track at its AFK entry, recorded in the T1 workspace; no per-slice raise. The model is passed explicitly on every dispatch.",
+    "preconditions": [
+      "P-ws (lead): working directory for every command is Lighthouse.Frontend; the workspace is docs/feature/story-6457-fe7-fast-frontend-tests (called the workspace below). Measurement artefacts go under workspace/measurement/. Files marked (create) in files_to_modify do not exist yet.",
+      "P-quiet (lead): steps whose name contains QUIET MACHINE need a quiet system: no other pnpm test, dotnet test, IDE test run or heavy session; dotnet build-server shutdown beforehand; LIGHTHOUSE_TEST_WORKERS=6 exported (01-02's oversubscribed runs override it with 12 for those runs only). The lead pauses and asks the maintainer for a quiet machine before each such step and does not dispatch a crafter for it. QUIET MACHINE steps: 01-02, 01-09, 03-01, 03-02, 03-03, 04-02, 13-03, 13-04.",
+      "P-slice-figures (lead): EXCEPTION to the quiet-machine rule: rewrite-slice close figures (every NN-02 step, the 12-01 profile and the 13-02 sweep) are NOT quiet-machine measurements. Rationale: alternating before and after runs of the same touched files within minutes puts the same load on both arms, so the relative change is meaningful while absolute seconds are not; every close report labels its figure 'indicative (not quiet)' and uses 5 pairs. Rewrite slices (phases 05 to 12) do NOT need a quiet machine. Per-slice before and after figures are measured by running only the slice's touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'), so any load from a parallel session hits both arms alike. The close report gives summed seconds before and after, the relative change, allow-list length, and tests added and removed, and replaces the slice's estimate with the measured relative figure. The suite wall median is a figure of step 13-03 only (quiet). This amends the earlier per-slice rule and the local-arm protocol.",
+      "P-crafter-warn: once the reporter is wired (from step 01-07 on), every crafter step's full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn, because a parallel session's load can produce false offenders. Crafter runs prove correctness and test ids, not timing. Timing verdicts come only from QUIET MACHINE steps, where the guard enforces.",
+      "P-ci-artifacts (lead): step 01-02 needs the test-timings-frontend artifacts of at least 5 main runs (7 are saved under workspace/measurement/ci-artifacts-2026-11-02/). If fewer than 5 are usable the step stops and asks; there is no fallback budget value.",
+      "P-push (lead): one push per slice, green first. Slice 1a does not edit a workflow file and so does not force the full backend, E2E and live-connector suites. Slice 1b edits ci_frontend.yml and does: the lead announces it and keeps the shared Linear key quiet. Slice 2's CI arms are throwaway features/** branches, each a full verify run with live connectors, one per passing candidate, never near another connector run. Crafters push nothing.",
+      "P-activation: the 79 acceptance tests in src/tests/timeBudget are under describe.skip and RED on stubs. Steps 01-03 to 01-06 remove the skips and go green one test at a time, in this split: compare part one (not-listed, exact-key and listed groups), compare part two (stale and mode groups, kept skipped by their own inner skip until 01-04), observe (11), options (21). Counts: compare 47, options 21, observe 11. No skip survives step 01-04, 01-05 or 01-06 respectively.",
+      "P-rewrite-contract: every rewrite slice (phases 05 to 12) follows the behaviour-free contract in the feature-delta: universe and preserved set declared first; every removed or shrunk expect( has a row in the moved-assertions list (counted per file with git diff -U0 and grep); preserved ids come from a run, never from source; the extraction commit changes no test and the unmodified page tests pass at it; no added skip, todo, only, fails, loosened matcher or longer timeout; coverage of the touched directory not lower, run apart from timing runs; no production file outside the named extractions, no Playwright spec, no screenshot file and no setupTests.ts in the diff (git diff --name-only is a subset of the declared universe); the slice deletes the slowTests.ts entries it fixes in the same commit as the tests; CI=true pnpm run sonarreport run once over the touched test files.",
+      "P-allow-list-text: slowTests.ts carries no slice, story or decision id. Each entry has a plain-language reason and a ceiling only. Which slice retires which entry is recorded in the feature-delta (retirement mapping, written in 01-08 and kept current by each rewrite slice).",
+      "P-order: slices 4 to 11 (phases 05 to 12) may be reordered or dropped by measured payoff after slice 3; the lead decides and records it. Slice 10 follows slice 4. Slice 11 follows FE5's split of BaseMetricsView (an external predecessor) if that has landed; otherwise it leaves that file and ratchets it. If a slice is dropped, its steps are removed here and phase 13 is re-pointed to the last shipped rewrite step.",
+      "P-ci-reads (lead): CI after-measurement is not per slice. It is taken passively after phase 04 (step 04-03, because configuration is the change expected to move CI wall time) and at the end (step 13-05), as the median of at least 5 qualifying main runs each time. Rewrite slices get their payoff from the touched-files figure; their pushes still count toward the runs that 04-03 and 13-05 read.",
+      "P-mutation: Stryker (frontend) runs once, in step 13-04, on frozen code, over the production files touched by extractions; kill rate not lower than before the Story, at least 80 percent for new code. Check the mutate list and the runner include first. The reporter, compare step and options function are test infrastructure and are not mutated.",
+      "P-rollback: LIGHTHOUSE_TIME_BUDGET=warn|off switches the reporter in CI with no commit (off means the reporter judges nothing; the earlier wording that off loads nothing is superseded); LIGHTHOUSE_BUDGET_WARN_ONLY=true restores warn-only for the per-file half. Every slice reverts alone; a rewrite revert re-adds that slice's slowTests.ts entries in the same commit.",
+      "Rationale and implementation detail per step is in feature-delta.md, section 'Wave: DELIVER / [REF] Roadmap notes', keyed by step id, with a 'Revision after review (2026-11-03)' sub-section."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 1a: time-budget guard, calibration, profile report, standing skip check",
+      "description": "Spike first, then calibration, then the pure steps (compare in two parts, observe, options) against the 79 acceptance tests, the reporter shell and configuration wiring, the seeded allow-list, the planted-test proof, summarise.py, docs and the Biome check. No workflow-file edit; pushable with the other slices. If calibration does not fit one day, split at 01-02.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Answer the spike questions before any other work",
+          "description": "Record in a spike note: the Vitest 5 hook that delivers per-test duration and the end-of-run set, and how a failing exit code is set; whether the --reporter=default flag drops config reporters; the Stryker worker marker; whether a composite action can read the vars context; whether the end-of-run hook fires with the full list on a bailed run.",
+          "criteria": [
+            "Each of the five questions has a written answer with the evidence (command and observed output) in the spike note",
+            "Where the --reporter=default flag drops the sonar and json reporters, the note names the package.json script change that step 01-07 makes",
+            "The Stryker marker is verified by running the frontend Stryker runner far enough to print its worker environment, or the note says it could not be and which fallback the options function uses",
+            "No production or test code changed by this step",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (investigation, answers recorded in the spike note)",
+          "scenario_name": "Spike questions answered before design mechanics are fixed",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-01a-spike.md (create)"
+          ],
+          "dependencies": [],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-01. Until question 2 is answered, every local measurement runs pnpm exec vitest run --reporter=default --reporter=json with TZ=Europe/Zurich, and copies test-results.json out after each run."
+        },
+        {
+          "id": "01-02",
+          "name": "Lead, QUIET MACHINE: calibrate the budget, the CI factor and the first-test allowance",
+          "description": "Lead-owned, no code. Measure local plain against local --coverage on the same machine, three oversubscribed local runs (LIGHTHOUSE_TEST_WORKERS=12 for these runs only), and the CI artifacts (at least 5). Derive B, F and A by the written rule, confirm the CI log Duration fetch, and record the result.",
+          "criteria": [
+            "Calibration note records B, F, A, the CI to local ratio, the coverage to plain ratio and the observed spread, with the commit hash and worker counts; the oversubscribed runs state the 12-worker override and nothing else uses it",
+            "B is the smallest of 1, 2 or 3 seconds for which every test over the threshold in all samples sits in a file a rewrite slice names, or carries its own reason; a dated re-check note is written to the feature-delta and the Epic KPI 14 row if B moves from 2 s",
+            "The calibration samples show zero unlisted tests over the final threshold, and the list of tests over the threshold is saved in a form step 01-08 can seed from without a fresh full run",
+            "Fewer than 5 usable CI artifacts stops the step and asks for them; no fallback value is used",
+            "The command that reads the Vitest Duration line from a frontend job log is run against a saved CI run and its output recorded",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "Calibration recorded with the budget rule applied",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-01a-calibration.md (create)",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/feature-delta.md"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "M (about 1 day with runs)",
+          "implementation_notes": "See Roadmap notes 01-02. A joins CI and local on file :: test name; the first test per file is read from the local JSON in file order; no CSV column is added."
+        },
+        {
+          "id": "01-03",
+          "name": "Compare step, part one: unlisted and listed tests, limits and exact-key matching",
+          "description": "Remove the outer skip of the compare tests (keeping the stale and mode groups skipped by their own inner skip for now) and implement the pure compare step until the not-listed, exact-key and listed groups pass: budget, first-test allowance, coverage factor, ceilings, strict limit, exact file and name.",
+          "criteria": [
+            "The not-listed, exact-key and listed test groups run (no skip) and pass; the stale and mode groups stay skipped and are untouched",
+            "A test strictly over its limit offends; exactly at the limit passes; a failed test is judged like a passed one",
+            "A listed test is judged on its scaled ceiling; first tests get the unscaled allowance; matching is on the exact file and name, never a prefix or suffix",
+            "Printed offender lines match the pinned text exactly",
+            "The types in the stub are kept; the scaffold marker is removed only once part two is done",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts",
+          "scenario_name": "Time-budget comparison: unlisted and listed tests, limits and exact-key matching",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "M (about 0.5 to 1 day)",
+          "implementation_notes": "See Roadmap notes 01-03. Pure function, return-only. The only test-file edits are removing the outer skip and its reason constant, and adding the temporary inner skip to the two groups part two owns."
+        },
+        {
+          "id": "01-04",
+          "name": "Compare step, part two: stale entries, bailed runs and the three modes",
+          "description": "Remove the temporary inner skip from the stale and mode groups and implement the rest of the compare step until all 47 pass: stale entries (absent test, file gone, ran in under B/4 seconds unscaled), ignored files and skipped tests, incomplete runs, and the off, warn and fail modes.",
+          "criteria": [
+            "All 47 compare tests run (no skip anywhere in the file) and pass",
+            "A stale entry is reported for a missing test, a file gone from disk or a run that took under B/4 seconds, unscaled (a coverage run can keep an entry but never retire it, so entries retire only by plain runs); entries for files outside the run, skipped tests and incomplete runs are never stale; an incomplete run still names a slow test",
+            "Mode off judges nothing, mode warn reports without failing, mode fail fails only when there is a finding",
+            "The scaffold marker is removed from the stub",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts",
+          "scenario_name": "Time-budget comparison: stale entries, bailed runs and modes",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "estimated_size": "M (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-04. Where a pinned row is wrong, change the test with a recorded reason."
+        },
+        {
+          "id": "01-05",
+          "name": "Observe step: turn a Vitest run outcome into an observed run",
+          "description": "Remove the skip from the observe tests and implement the pure mapping until all 11 pass: pending becomes skipped, milliseconds become seconds, the first test that ran in each file is marked, every collected file is listed, and only an interrupted run is incomplete.",
+          "criteria": [
+            "All 11 observe tests run (no skip) and pass",
+            "Pending maps to skipped and durations are in seconds",
+            "The first test that ran (not skipped) per file is marked; files with no tests are still listed as collected",
+            "Only an interrupted run is marked incomplete",
+            "The scaffold marker is removed from the stub",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/observedRunFromVitest.test.ts",
+          "scenario_name": "Reading a Vitest run into the shape the comparison judges (11 tests)",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/observedRunFromVitest.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/observedRunFromVitest.test.ts"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-05. Pure function; fileExists is injected."
+        },
+        {
+          "id": "01-06",
+          "name": "Options step: decide mode, run kind and annotation from environment and arguments",
+          "description": "Remove the skip from the options tests and implement the pure options function until all 21 pass: the switch variable, the Stryker marker verified in 01-01, watch detection, coverage detection, the CI never-watch rule and the annotation prefix table.",
+          "criteria": [
+            "All 21 options tests run (no skip) and pass",
+            "Unset or empty switch means fail, including when CI is set, unless step 01-07's vars check moves the rollback wiring to slice 1b, in which case CI set with the switch unset means warn and that one row is changed with the recorded reason (the same wording as 01-07); warn and off are honoured; any other value throws naming the variable and the value",
+            "The verified Stryker marker and watch mode force the guard off; a CI command with no run argument still enforces",
+            "Coverage in the arguments selects the coverage run kind",
+            "The annotation is error when GITHUB_ACTIONS is set in fail mode, warning in warn mode, otherwise none, across all pinned combinations",
+            "The scaffold marker is removed from the stub; if the spike shows the marker or the CI default differs from the pinned rows, the affected row is changed with a recorded reason",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetOptions.test.ts",
+          "scenario_name": "Time-budget options from environment and arguments (21 tests)",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetOptions.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetOptions.test.ts"
+          ],
+          "dependencies": [
+            "01-01",
+            "01-03"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-06. Pure function in the style of resolveTestWorkers; the reporter itself reads no environment."
+        },
+        {
+          "id": "01-07",
+          "name": "Reporter shell and configuration wiring: the guard runs in pnpm test and in the CI coverage run",
+          "description": "Add the thin reporter (Vitest data in, observe step, compare step, print, exit code at end of run), an empty typed allow-list module, list the reporter in vitest.config.ts with options from the options function and the calibrated numbers, wire the rollback variable to the test step, and fix the test script if the spike requires it.",
+          "criteria": [
+            "The reporter reports once at the end of the run, names every offender that ran, prints a start line with the runner facts (workers, processors, run kind) and a last line with the verdict (mode, budget, factors, offender count), and sets the exit code once",
+            "The default, sonar and json reporters still write their outputs under pnpm test and under CI=true pnpm run sonarreport",
+            "The reporter is off under the Stryker marker and in watch mode",
+            "The rollback variable reaches the test step through the composite action without editing any ci*.yml; CI set with the switch unset means fail, unless the vars context cannot be read there, in which case the options function defaults to warn when CI is set, the wiring is recorded as owed to slice 1b, and the options row is changed with that reason (same wording as 01-06)",
+            "The existing worker-cap function and its tests are unchanged",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None new: the pure steps are covered by the 79 tests in src/tests/timeBudget; the reporter shell is proven by the real-run checks in 01-09",
+          "scenario_name": "Guard loads beside the existing reporters in plain and coverage runs",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.ts (create)",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts (create)",
+            "Lighthouse.Frontend/vitest.config.ts",
+            ".github/actions/build-frontend/action.yml",
+            "Lighthouse.Frontend/package.json"
+          ],
+          "dependencies": [
+            "01-02",
+            "01-04",
+            "01-05",
+            "01-06"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 01-07. Functional core, imperative shell: the reporter is the only impure part. package.json changes only if the spike (01-01) shows the flag drops config reporters."
+        },
+        {
+          "id": "01-08",
+          "name": "Seed the allow-list from the calibration data, each entry with a plain reason and a ceiling",
+          "description": "Fill the allow-list from the test list saved by 01-02, with no fresh full run. Each entry has the file and full test name, a one-line plain-language reason, and a ceiling in quiet-local seconds. Write the retirement mapping (which later slice retires which entry) into the feature-delta, not into the list.",
+          "criteria": [
+            "Every entry carries a plain-language reason and a ceiling; none is a bare name; no entry text contains a slice, story or decision id",
+            "The entries are exactly the tests the calibration note lists as over the threshold",
+            "The retirement mapping (entry to the slice expected to retire it, or its own reason to stay) is a table in the feature-delta",
+            "The seeded list compiles and the pure-step tests stay green; the confirming guard-on full run is done in 01-09, not here",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts (data module, exercised by the full guard-on run in 01-09)",
+          "scenario_name": "Allow-list seeded from calibration data",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/feature-delta.md"
+          ],
+          "dependencies": [
+            "01-02",
+            "01-07"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-08. Reasons are written for a stranger: what makes the test slow, not which slice will fix it."
+        },
+        {
+          "id": "01-09",
+          "name": "Lead, QUIET MACHINE: confirming guard-on full run and planted-test proof through the real reporter",
+          "description": "Lead-owned. First a guard-on full pnpm test with the seeded list (zero unlisted offenders). Then, with scratch files that are removed afterwards, run checks WS1 to WS10: a planted slow test fails pnpm test and the CI coverage command, is ignored under the Stryker marker and in watch, honours warn and off, fails over a listed ceiling, flags a stale entry only on a full run, and names offenders before a bail.",
+          "criteria": [
+            "The guard-on full run is green with zero unlisted offenders and the same test count as the baseline",
+            "WS1 and WS2: the planted slow test fails both commands, naming file and test, duration and limit, with a non-zero exit; sonar-report.xml and test-results.json are still written",
+            "WS3 and WS4: nothing is judged under the Stryker marker or in watch mode",
+            "WS5 and WS6: warn prints warning lines and exits 0 (error prefix only when GITHUB_ACTIONS is set in fail mode); off judges nothing and exits 0",
+            "WS7 and WS8: a listed test over its low ceiling fails naming it; a stale entry fails a full run and does not fail a filtered run",
+            "WS9 and WS10: plain pnpm test writes both output files; with bail on and a planted failing test the offenders that ran before the bail are named and the stale check is skipped",
+            "Output of each run is recorded in the proof note; every planted file is removed and git status shows it gone",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (real-run shell checks WS1 to WS10, recorded in the proof note)",
+          "scenario_name": "Walking skeleton: the guard works through pnpm test and the CI coverage command",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-01a-proof.md (create)"
+          ],
+          "dependencies": [
+            "01-07",
+            "01-08"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 01-09. A reporter or options change later re-runs this proof (WS2 and WS9 at minimum)."
+        },
+        {
+          "id": "01-10",
+          "name": "Profile report: top-N shares and counts over thresholds in summarise.py",
+          "description": "Extend the existing summary script and its sample-based test so a run's CSV also reports the share of summed time held by the slowest 10, 20 and 50 files and the number and seconds of tests over 0.1, 0.5, 1, 2 and 5 seconds.",
+          "criteria": [
+            "On the sample CSV the new lines show the shares and the counts with seconds, in the same output style as the existing summary",
+            "The existing output lines are unchanged",
+            "python3 -m unittest discover -s Scripts/test-timings/tests is green including a case for the new lines",
+            "Re-running it on the saved baseline CSV reproduces the DESIGN figures (top 10 about 22 percent, 1,893 tests over 0.1 s)",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_summarise.py",
+          "scenario_name": "Summary reports top-N shares and counts over thresholds",
+          "files_to_modify": [
+            "Scripts/test-timings/summarise.py",
+            "Scripts/test-timings/tests/test_summarise.py"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 01-10. Extend summarise.py; no second script. summarise.sh and summarise.ps1 only if they enumerate sections."
+        },
+        {
+          "id": "01-11",
+          "name": "Documentation: where to test, and the departure from the ratchet decisions",
+          "description": "Add the 'where to test' rule to the frontend Tests section of the ledger (logic in a function or hook tested directly, one or two wiring tests per flow) and add status notes to the two ratchet decisions: key is a test, stale rule against what ran, per-entry ceiling, list read from the run itself. Word the per-file half as summing test time only.",
+          "criteria": [
+            "The ledger entry states the rule and why no tool can enforce it, without story, decision or slice ids",
+            "Each of the two decisions has a dated status note stating how this guard departs from it",
+            "The notes say that neither guard covers import, environment and transform cost",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (documentation)",
+          "scenario_name": "Documentation",
+          "files_to_modify": [
+            "docs/ci-learnings.md",
+            "docs/product/architecture/adr-268-a-ratchet-guard-lists-its-offenders-by-name-in-both-directions-and-only-ever-shrinks.md",
+            "docs/product/architecture/adr-269-frontend-layer-rules-are-checked-by-fallow-and-ratcheted-in-an-enforcement-test.md"
+          ],
+          "dependencies": [
+            "01-09"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 01-11. One short new decision record at the next free number instead, if the notes grow past a paragraph each."
+        },
+        {
+          "id": "01-12",
+          "name": "Standing check for skipped and focused tests in Biome",
+          "description": "Count the current offenders of the two Biome rules for skipped and focused tests, fix them or suppress them with Biome's narrow line suppression and a written reason, then enable both rules. The describe.skip files of the guard must already be unskipped.",
+          "criteria": [
+            "Offender count before is recorded; after the change Biome reports zero errors and zero warnings on src",
+            "Both rules are enabled in biome.json; any remaining offender carries a narrow line suppression with a plain-language reason, never a file-wide or project-wide one",
+            "A scratch file with a focused or skipped test makes the Biome check fail, and is removed afterwards",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (lint configuration, proven by a planted focused test)",
+          "scenario_name": "Skipped and focused tests fail the build",
+          "files_to_modify": [
+            "Lighthouse.Frontend/biome.json"
+          ],
+          "dependencies": [
+            "01-04",
+            "01-05",
+            "01-06"
+          ],
+          "estimated_size": "S (size depends on the offender count)",
+          "implementation_notes": "See Roadmap notes 01-12. If the offender list is long, fix in small commits per directory."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 1b: the per-file budget can fail the frontend build",
+      "description": "The only slice that edits a workflow file. The frontend budget check stops carrying a fixed warn-only flag and is controlled by a repository variable; ceilings are re-derived only if the check does not pass on the saved artifacts. Its push runs the full backend, E2E and live-connector suites.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Frontend budget check enforces unless a repository variable says warn",
+          "description": "In ci_frontend.yml the frontend budget call passes warn-only only when LIGHTHOUSE_BUDGET_WARN_ONLY is true; unset means enforce. Run the check on the saved artifacts first; if it fails, re-derive the nine ceilings from them and add the test case. Complete the rollback wiring from 01-07 if it was deferred.",
+          "criteria": [
+            "With the variable unset the frontend call enforces; with it true the call behaves as warn-only; the backend call and its flag are untouched",
+            "check_budget.py run over the saved artifacts exits 0; if the ceilings were re-derived each new value has the highest observed value plus the measured margin in the note, and the test case for it exists",
+            "python3 -m unittest discover -s Scripts/test-timings/tests is green",
+            "The comment above the step explains in plain language how the variable works",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget.py (new case only if the ceilings change)",
+          "scenario_name": "Per-file budget fails the build unless warn-only is switched on by variable",
+          "files_to_modify": [
+            ".github/workflows/ci_frontend.yml",
+            "Scripts/test-timings/test-time-budget.json",
+            "Scripts/test-timings/tests/test_check_budget.py"
+          ],
+          "dependencies": [
+            "01-07"
+          ],
+          "estimated_size": "S (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 02-01. Stale entries already fail under warn-only; check_budget.py is not edited."
+        },
+        {
+          "id": "02-02",
+          "name": "Lead: announce and push slice 1a and 1b with the full-suite run accepted",
+          "description": "Lead-owned. Announce the forced full backend, E2E and live-connector run, keep the shared Linear key quiet, push green, and record the first CI run's reporter start line (runner facts: processors, workers) and last line (the verdict). Watch a flaky-guard window of the first 5 main runs after the push.",
+          "criteria": [
+            "Announcement made before the push; no other connector run or hand exploration of the Linear API near it",
+            "The first CI run's log shows the reporter's start line (workers, processors, run kind) and last line (mode, budget, factors, verdict); both are recorded in the feature-delta",
+            "Flaky-guard window: the first 5 main runs after the push are watched; a flaky failure of an unlisted test in the window switches the variable to warn and re-calibrates from the new artifacts, with no retry in the reporter",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (CI run)",
+          "scenario_name": "Guard runs green in CI",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/feature-delta.md"
+          ],
+          "dependencies": [
+            "02-01",
+            "01-07",
+            "01-08",
+            "01-09",
+            "01-11",
+            "01-12"
+          ],
+          "estimated_size": "S (wait for CI)",
+          "implementation_notes": "See Roadmap notes 02-02."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice 2: configuration spike, measure only, adopt nothing",
+      "description": "One table with a row per candidate: environment split, MUI inlining, isolation off for the DOM-free project, pool, and happy-dom last. Alternating A/B on two checkouts, the written adoption rule applied, CI runner facts read, one CI arm per candidate that passed locally. Nothing lands on main from this phase except the measurement notes and scripts.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Lead, QUIET MACHINE: prepare the arms and take the timed baseline measurements",
+          "description": "Create the baseline and candidate worktrees, the measurement scripts and a trimmed setup file for a DOM-free project in the candidate arm; read why MUI is inlined from the commit that added it and the CI runner facts; then, on a quiet machine, produce the per-file import, environment and transform split and a CPU profile of two slow files.",
+          "criteria": [
+            "Scripts live in the measurement folder and print the run label, exit code, wall seconds, peak memory and thread count; test-results.json is copied out after every run",
+            "The reason for inlining the MUI packages is quoted from the adding commit, or recorded as not found",
+            "Runner type, processor count and default worker count for CI are read from the workflow and logs, not assumed",
+            "The per-file fixed-cost split and the two-file profile are taken on a quiet machine and saved with the command that produced them",
+            "No change reaches main from this step except notes and scripts",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "Facts and instruments ready before any candidate is timed",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/scripts/ (create)",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-02-facts.md (create)"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 03-01. Two checkouts, never a toggled config; pnpm install --frozen-lockfile --ignore-scripts in each."
+        },
+        {
+          "id": "03-02",
+          "name": "Lead, QUIET MACHINE: alternating A/B of the environment split, MUI inlining, isolation and pool candidates",
+          "description": "Lead-owned. For each candidate, at least 5 alternating pairs against the unchanged baseline at 6 workers, then 3 consecutive green full runs and 3 runs with random order and different seeds. Apply the adoption rule and record every measured number, including the failures.",
+          "criteria": [
+            "Each candidate row shows median wall and range per arm, peak memory per arm, the sorted test-id comparison and the number of failing tests",
+            "A candidate passes only if median wall falls at least 10 percent with non-overlapping ranges, the sorted test-id list is identical with every test passing, peak memory is not more than 10 percent higher, and the 3 plain and 3 shuffled runs are green",
+            "A candidate that needs a test edited lists every edit and is eligible per file or glob only",
+            "The id lists come from the saved results files of runs, not from source",
+            "Nothing is adopted in this step",
+            "CI=true pnpm run sonarreport is run once (the CI-shaped coverage run, with the guard loaded) on the baseline and on the leading candidate, and both are green",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "Each configuration candidate measured against the unchanged baseline",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-02-ab-table.md (create)"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_size": "L (about 1 day of runs)",
+          "implementation_notes": "See Roadmap notes 03-02. Coverage runs are separate pairs, never combined with timing runs."
+        },
+        {
+          "id": "03-03",
+          "name": "Lead, QUIET MACHINE: happy-dom candidate, only if the others leave environment cost above 10 percent",
+          "description": "Lead-owned and conditional. If environment cost is still above 10 percent of worker time after the other candidates, measure happy-dom in a candidate checkout by the same rule, with every DataGrid, dialog and user-event test run unmodified. Otherwise record the skip and the figure that justified it.",
+          "criteria": [
+            "The note states the remaining environment share and whether the candidate was measured",
+            "If measured: the same rule and the same columns as the other candidates, plus the named list of DataGrid, Dialog and user-event test files that ran unmodified and passed",
+            "Nothing is adopted in this step",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "happy-dom measured last or skipped with the figure that justifies it",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-02-ab-table.md"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "estimated_size": "M (0.5 day if measured)",
+          "implementation_notes": "See Roadmap notes 03-03. New dependency (MIT) lives in the candidate checkout only."
+        },
+        {
+          "id": "03-04",
+          "name": "Lead: one CI arm for each candidate that passed locally, on throwaway branches",
+          "description": "Lead-owned. For each candidate that passed the local rule, push a throwaway features/ branch whose tip changes the Vitest configuration with that candidate, read the Duration from the job log, compare to the 930.9 s median of the 7 saved runs, delete the branch. One run per candidate, each a full verify run with live connectors, never near another connector run. When candidates tie, the simpler configuration is kept.",
+          "criteria": [
+            "A run more than 10 percent above 930.9 s blocks that candidate; a run at or below it is consistent; one in between is direction only and does not block; the table says that one CI run cannot adopt a candidate alone",
+            "Exactly one run per locally passing candidate; each is scheduled away from any other connector run; each branch is deleted afterwards",
+            "Ties between passing candidates are broken in favour of the simpler configuration, with the reason written down",
+            "Skipped with a written reason if no candidate passed the local rule",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (CI run)",
+          "scenario_name": "CI arm: each passing candidate not slower than the baseline median",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-02-ab-table.md"
+          ],
+          "dependencies": [
+            "03-02",
+            "03-03"
+          ],
+          "estimated_size": "S (wait for CI)",
+          "implementation_notes": "See Roadmap notes 03-04."
+        },
+        {
+          "id": "03-05",
+          "name": "Slice 2 verdict: one table, nothing adopted, the number slice 3 needs",
+          "description": "Fold the facts, the candidate rows, the CI arms and the happy-dom decision into one table in the feature-delta with the measured wall effect per candidate and the list of candidates slice 3 may adopt.",
+          "criteria": [
+            "One row per candidate with the verdict and the reason",
+            "The measured fixed-overhead share and the saving available from the winners are stated as measured figures",
+            "A candidate that failed any rule item is listed as rejected with the failing item",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (documentation)",
+          "scenario_name": "Documentation",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/feature-delta.md"
+          ],
+          "dependencies": [
+            "03-03",
+            "03-04"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 03-05."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice 3: adopt the winning configuration",
+      "description": "Only candidates that passed the slice 2 rule, one option per commit, with the node project's own trimmed setup file if the environment split is adopted. If nothing passed, step 04-01 records that and the phase ends after the verification.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "Adopt each winning candidate, one commit per option",
+          "description": "Apply the candidates that passed the rule to the Vitest configuration, add the trimmed setup file for a DOM-free project if adopted, list every test edit a candidate needed, re-ceiling allow-list entries that moved with a reason, and update the architecture document line on the test stack if the environment changes.",
+          "criteria": [
+            "Only candidates marked adopted in the slice 2 table appear in the diff; each is its own commit",
+            "The id-list and all-pass runs in this step use LIGHTHOUSE_TIME_BUDGET=warn and make no timing judgement; the enforcing run stays in 04-02",
+            "The sorted test-id list before and after is identical (from saved results files) and every test passes",
+            "The node project's setup file contains only what a DOM-free test needs; the shared setup file is unchanged",
+            "Allow-list entries still pass or are re-ceilinged with a one-line plain-language reason; no entry is added",
+            "No screenshot or Playwright file in the diff",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts (guard still green; configuration is proven by the identical test-id list)",
+          "scenario_name": "Winning configuration adopted with an identical test set",
+          "files_to_modify": [
+            "Lighthouse.Frontend/vitest.config.ts",
+            "Lighthouse.Frontend/src/setupTestsNode.ts (create)",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "ARCHITECTURE.md"
+          ],
+          "dependencies": [
+            "03-05"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 04-01. Config change is bounded: universe is the reporter entry plus the adopted option entries; nothing silently dropped. The setup file name may differ; the step names it. The guard-still-loads re-run (WS2, WS9) is done in 04-02."
+        },
+        {
+          "id": "04-02",
+          "name": "Lead, QUIET MACHINE: verify the adopted configuration, re-run the guard checks and record the payoff",
+          "description": "Lead-owned. Re-run WS2 and WS9 (a config edit that drops a reporter is the named bug class), 3 consecutive green full runs, 3 shuffled runs, the CI-shaped coverage run once, the memory check against the baseline, and alternating before and after runs for the wall figure; report to the maintainer.",
+          "criteria": [
+            "WS2 and WS9 pass again: the planted slow test still fails pnpm test and the coverage command, and both output files are still written",
+            "3 consecutive green full runs and 3 shuffled green runs at 6 workers with the same test count as the baseline",
+            "CI=true pnpm run sonarreport runs green once with the guard loaded",
+            "Peak memory is not more than 10 percent above the 4.6 to 4.8 GB baseline; above it stops the track",
+            "Median wall before and after (alternating, at least 5 pairs), summed seconds, allow-list length and the verdict are reported as measured figures",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "Adopted configuration verified and its payoff measured",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-03-payoff.md (create)"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "estimated_size": "M (about 0.5 day of runs)",
+          "implementation_notes": "See Roadmap notes 04-02."
+        },
+        {
+          "id": "04-03",
+          "name": "Lead: passive CI read after the configuration is adopted",
+          "description": "Lead-owned and passive. After slice 3 is pushed, as qualifying main runs accrue, read the median Vitest Duration and per-file medians of at least 5 qualifying runs against the saved baseline; wall time is expected to move here, so this is the CI read for the configuration change.",
+          "criteria": [
+            "Runs are classified by the frontend job's result; skipped and failed ones are not counted; each counted artifact has no failed rows and a plausible row count",
+            "The median Duration of at least 5 qualifying runs is compared with 930.9 s and the verdict (or 'no verdict, ranges overlap') is written; the composite step median is shown as secondary",
+            "Skipped with a written reason if slice 3 adopted nothing",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (CI measurement)",
+          "scenario_name": "CI payoff of the adopted configuration read passively",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/feature-delta.md"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "S (calendar time, not effort)",
+          "implementation_notes": "See Roadmap notes 04-03. Does not block the rewrite slices."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice 4: ModifyTeamSettings family (reorderable or droppable by measured payoff)",
+      "description": "Autosave debounce and rule gating tested as functions or hooks; the 600 ms and 500 ms real sleeps and the 300 ms debounce waits move to a fake clock. Soonest of the rewrites: slice 10 reuses its helpers.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Declare the universe, preserved set and delta for the ModifyTeamSettings family",
+          "description": "Write the slice's moved-assertions file header: the extracted functions or hooks, the five test files, the allow-list entries to delete; save the before test-id list, before summed seconds (touched files only) and before coverage of the Team directory.",
+          "criteria": [
+            "Universe names each extraction and each edited test file; nothing else may change",
+            "Before ids are saved from a run's results file; before seconds of the touched files and line and branch coverage of the touched directory are recorded, with coverage run apart from timing; the pre-slice commit is recorded for the close-time alternating pairs",
+            "The real sleeps (one of 600 ms in the refinement file, 500 ms twice in the main file) and the debounce waits are listed as targets of the fake clock",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for the ModifyTeamSettings family",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-04-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 05-01."
+        },
+        {
+          "id": "05-02",
+          "name": "Extract autosave and rule-gating logic, then shrink the page tests and fake the clock",
+          "description": "First commit: move the autosave debounce and rule-gating logic out of the form into named units the component calls, changing no test. Second commit: test those units directly, cut the page tests to wiring plus small fixtures, replace real sleeps with a fake clock, and delete the fixed allow-list entries.",
+          "criteria": [
+            "At the extraction commit the unmodified page tests pass and the diff only moves code",
+            "Every removed or shrunk expect( in the five test files has a row in the moved-assertions list; ids missing after are all listed; surviving ids unchanged",
+            "No real sleep remains in the touched files; no skip, todo, only, fails, loosened matcher or longer timeout added",
+            "Line and branch coverage of the touched directory are not lower than before",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "The touched files' allow-list entries are deleted in the same commit as the tests",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx",
+          "scenario_name": "Autosave and rule gating checked directly; wiring tests stay cheap",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-04-moved-assertions.md"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "estimated_size": "L (about 1 day)",
+          "implementation_notes": "See Roadmap notes 05-02. Extraction is a pure move; new unit tests sit beside the extracted units (files created, named in 05-01). Fake clock as the sibling tests already use."
+        }
+      ]
+    },
+    {
+      "id": "06",
+      "name": "Slice 5: Reports pages (reorderable or droppable by measured payoff)",
+      "description": "Pick limit, picked count and select-all as functions over a row list; the page keeps wiring tests with small fixtures. Independent of the other rewrite slices.",
+      "steps": [
+        {
+          "id": "06-01",
+          "name": "Declare the universe, preserved set and delta for the Reports pages",
+          "description": "Write the moved-assertions header for the removal and combined-PDF files: the extracted selection functions, the two test files, the allow-list entries to delete; save before ids, before seconds of the touched files and coverage of the Reports directory.",
+          "criteria": [
+            "Universe names the pick-limit and picked-count extractions and the two test files",
+            "Before ids, touched-files summed seconds and line and branch coverage are recorded; the pre-slice commit is recorded for the close-time alternating pairs",
+            "The 101-row select-all test and its 1.97 s timing are listed as the target, with the assertion it makes",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for the Reports pages",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-05-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 06-01."
+        },
+        {
+          "id": "06-02",
+          "name": "Extract row-selection rules, then test them directly and keep two wiring tests per flow",
+          "description": "First commit: move the 50-row pick limit, the picked count and select-all into functions over a row list that the page calls, changing no test. Second commit: test them directly, shrink the page tests to wiring with small fixtures, delete the fixed allow-list entries.",
+          "criteria": [
+            "At the extraction commit the unmodified page tests pass",
+            "Select-all on every page, the limit of 50 and the picked count are asserted directly on the functions, and one page test still proves the wiring of a render",
+            "Every removed or shrunk expect( has a row in the moved-assertions list; surviving ids unchanged",
+            "No added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "Allow-list entries for the touched files deleted in the same commit",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Reports/ReportsPage.removal.test.tsx",
+          "scenario_name": "Select all picks every row, on every page, checked without rendering 101 rows",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Reports/ReportsPage.tsx",
+            "Lighthouse.Frontend/src/pages/Reports/ReportsPage.removal.test.tsx",
+            "Lighthouse.Frontend/src/pages/Reports/ReportsPage.combinedPdf.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-05-moved-assertions.md"
+          ],
+          "dependencies": [
+            "06-01"
+          ],
+          "estimated_size": "M (about 0.5 to 1 day)",
+          "implementation_notes": "See Roadmap notes 06-02."
+        }
+      ]
+    },
+    {
+      "id": "07",
+      "name": "Slice 6: Reports tab and wizards (reorderable or droppable by measured payoff)",
+      "description": "Wizard step and validation logic as functions; fewer user-event walks; the 350 ms and 300 ms real waits move to fake timers.",
+      "steps": [
+        {
+          "id": "07-01",
+          "name": "Declare the universe, preserved set and delta for the Reports tab and wizards",
+          "description": "Write the moved-assertions header for ReportsTab, its create-wizard file, BulkReportWizard and ReportView files: extractions, edited tests, allow-list entries to delete; save before ids, before seconds of the touched files and coverage.",
+          "criteria": [
+            "Universe names the wizard step and validation extractions and every edited test file",
+            "Before ids, touched-files summed seconds and line and branch coverage of the touched directories are recorded; the pre-slice commit is recorded for the close-time alternating pairs",
+            "The 350 ms wait (openings file) and 300 ms wait (main wizard file) are listed as fake-clock targets",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for the Reports tab and wizards",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-06-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 07-01."
+        },
+        {
+          "id": "07-02",
+          "name": "Extract wizard step rules, then cut user-event walks and fake the waits",
+          "description": "First commit: move wizard step and validation logic into named functions the wizard calls, changing no test. Second commit: test them directly, replace multi-step walks with one wiring walk per wizard, put the two real waits on a fake clock, delete the fixed allow-list entries.",
+          "criteria": [
+            "At the extraction commit the unmodified tests pass",
+            "Step order, validation outcomes and step-gating that walks used to prove are asserted directly; one walk per wizard still proves the wiring",
+            "Every removed or shrunk expect( has a row; surviving ids unchanged; no real sleep left in the touched files",
+            "No added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "Allow-list entries for the touched files deleted in the same commit",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx",
+          "scenario_name": "Wizard rules checked directly; one wiring walk per wizard",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.createWizard.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportsTab.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/Reports/ReportView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.test.tsx",
+            "Lighthouse.Frontend/src/pages/Reports/BulkReportWizard.openings.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-06-moved-assertions.md"
+          ],
+          "dependencies": [
+            "07-01"
+          ],
+          "estimated_size": "L (about 1 day)",
+          "implementation_notes": "See Roadmap notes 07-02."
+        }
+      ]
+    },
+    {
+      "id": "08",
+      "name": "Slice 7: RefinementView (reorderable or droppable by measured payoff)",
+      "description": "Paging and filter arithmetic as functions; the 143-row render stays in exactly one test; holds the slowest test of the suite.",
+      "steps": [
+        {
+          "id": "08-01",
+          "name": "Declare the universe, preserved set and delta for RefinementView",
+          "description": "Write the moved-assertions header for the paging, comments and votes files: the paging and filter extractions, edited tests, allow-list entries to delete; save before ids, before seconds of the touched files and coverage.",
+          "criteria": [
+            "Universe names the extractions and the three test files",
+            "Before ids, touched-files summed seconds and line and branch coverage of the Refinement directory are recorded; the pre-slice commit is recorded for the close-time alternating pairs",
+            "The test that pages to GR-0131 (2.48 s, the slowest of the suite) is listed with every assertion it makes",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for RefinementView",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-07-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 08-01."
+        },
+        {
+          "id": "08-02",
+          "name": "Extract paging and filter arithmetic, then keep the large render in one test",
+          "description": "First commit: move paging and filter arithmetic into functions the view calls, changing no test. Second commit: assert page boundaries and filters directly, keep the 143-row render in a single wiring test, shrink the others to small fixtures, delete the fixed allow-list entries.",
+          "criteria": [
+            "At the extraction commit the unmodified tests pass",
+            "Page boundaries, last-page content and filter results are asserted directly on the functions; exactly one test renders the large list",
+            "Every removed or shrunk expect( has a row; surviving ids unchanged",
+            "No added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "Allow-list entries for the touched files deleted in the same commit",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+          "scenario_name": "Paging checked directly; one render of the large list",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.paging.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.comments.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/Refinement/RefinementView.votes.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-07-moved-assertions.md"
+          ],
+          "dependencies": [
+            "08-01"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 08-02."
+        }
+      ]
+    },
+    {
+      "id": "09",
+      "name": "Slice 8: EditConnection and CreateConnectionWizard (reorderable or droppable by measured payoff)",
+      "description": "Field-change and default-resolution logic as functions; page tests keep the wiring.",
+      "steps": [
+        {
+          "id": "09-01",
+          "name": "Declare the universe, preserved set and delta for the connection forms",
+          "description": "Write the moved-assertions header for the EditConnection files and CreateConnectionWizard: the field-change and default-resolution extractions, edited tests, allow-list entries to delete; save before ids, before seconds of the touched files and coverage.",
+          "criteria": [
+            "Universe names the extractions and the four test files",
+            "Before ids, touched-files summed seconds and line and branch coverage of the Connections and Connection directories are recorded; the pre-slice commit is recorded for the close-time alternating pairs",
+            "The tracker-specific field sets each test relies on are listed, so none is lost when logic moves",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for the connection forms",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-08-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 09-01."
+        },
+        {
+          "id": "09-02",
+          "name": "Extract field-change and default resolution, then shrink the form tests",
+          "description": "First commit: move field-change and default-resolution logic into functions the forms call, changing no test. Second commit: assert them directly across tracker types, shrink the form tests to wiring, delete the fixed allow-list entries.",
+          "criteria": [
+            "At the extraction commit the unmodified tests pass",
+            "Default resolution and field-change effects are asserted directly for every tracker type the old tests covered; a form test per screen still proves the wiring",
+            "Every removed or shrunk expect( has a row; surviving ids unchanged",
+            "No added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "Allow-list entries for the touched files deleted in the same commit",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+          "scenario_name": "Field changes and defaults checked directly; forms keep wiring tests",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.test.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx",
+            "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.defaults.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-08-moved-assertions.md"
+          ],
+          "dependencies": [
+            "09-01"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 09-02."
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "name": "Slice 9: WorkItemsDialog (reorderable or droppable by measured payoff)",
+      "description": "The 108-case context table is pointed at the already tested context function; one render per distinct panel behaviour; paging arithmetic checked directly. No extraction is expected.",
+      "steps": [
+        {
+          "id": "10-01",
+          "name": "Declare the universe, preserved set and delta for WorkItemsDialog",
+          "description": "Write the moved-assertions header for the contexts, main and paging files: the context function that receives the cases, any paging extraction (if one is needed it is named here), edited tests, allow-list entries to delete; save before ids, before seconds of the touched files and coverage.",
+          "criteria": [
+            "Universe states whether any production file changes; the default is none",
+            "Before ids (108 context cases among them), touched-files summed seconds and line and branch coverage of the dialog directory are recorded; the pre-slice commit is recorded for the close-time alternating pairs",
+            "The distinct panel behaviours that still need a render are listed, each with the assertion it keeps",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for WorkItemsDialog",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-09-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 10-01."
+        },
+        {
+          "id": "10-02",
+          "name": "Point the 108 context cases at the context function; one render per distinct panel behaviour",
+          "description": "Move each context case's assertions to the existing context function's tests, keep one dialog render per distinct panel behaviour, assert paging arithmetic directly, and delete the fixed allow-list entries. Extract paging only if the declaration named it, as its own earlier commit.",
+          "criteria": [
+            "Every one of the 108 cases is either kept as a dialog test or has a row naming the function test that makes the same assertion",
+            "No extraction is needed because the cases point at the existing, already tested context function and no production file changes; if 10-01 named a paging extraction, it is its own earlier commit that only moves code, the component calls the moved function, behaviour is unchanged and the unmodified tests pass at it",
+            "Every removed or shrunk expect( has a row; surviving ids unchanged",
+            "No added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "Allow-list entries for the touched files deleted in the same commit",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+          "scenario_name": "Context cases checked against the context function; dialog renders once per behaviour",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.contexts.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/workItemsDialogContexts.test.ts",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.paging.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-09-moved-assertions.md"
+          ],
+          "dependencies": [
+            "10-01"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 10-02."
+        }
+      ]
+    },
+    {
+      "id": "11",
+      "name": "Slice 10: ModifyProjectSettings (after slice 4; reorderable or droppable by measured payoff)",
+      "description": "Same form pattern as slice 4: reuse its helpers; the three 500 ms real sleeps move to a fake clock.",
+      "steps": [
+        {
+          "id": "11-01",
+          "name": "Declare the universe, preserved set and delta for ModifyProjectSettings",
+          "description": "Write the moved-assertions header: which of slice 4's helpers are reused, whether any new extraction is needed, the two test files, allow-list entries to delete; save before ids, before seconds of the touched files and coverage.",
+          "criteria": [
+            "Universe names the reused helpers and states whether any production file changes",
+            "Before ids, touched-files summed seconds and line and branch coverage of the ProjectSettings directory are recorded; the pre-slice commit is recorded for the close-time alternating pairs",
+            "The three 500 ms sleeps are listed as fake-clock targets",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for ModifyProjectSettings",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-10-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 11-01."
+        },
+        {
+          "id": "11-02",
+          "name": "Reuse the form helpers, fake the sleeps, shrink the settings tests",
+          "description": "Use the helpers slice 4 extracted (extract more only if the declaration names it, as its own earlier commit), move the three real sleeps to a fake clock, shrink page tests to wiring plus small fixtures, delete the fixed allow-list entries.",
+          "criteria": [
+            "Extraction rule: any new extraction named in 11-01 is its own commit before the test rewrite, the component calls the moved function, behaviour is unchanged and the unmodified tests pass at it; with none named, no production file changes and slice 4's helpers are only reused",
+            "No real sleep remains in the two touched files",
+            "Every removed or shrunk expect( has a row; surviving ids unchanged",
+            "No added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "Allow-list entries for the touched files deleted in the same commit",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx",
+          "scenario_name": "Project settings waits on a fake clock; wiring tests stay cheap",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-10-moved-assertions.md"
+          ],
+          "dependencies": [
+            "11-01"
+          ],
+          "estimated_size": "M (about 0.5 to 1 day)",
+          "implementation_notes": "See Roadmap notes 11-02."
+        }
+      ]
+    },
+    {
+      "id": "12",
+      "name": "Slice 11: OverviewDashboard and BaseMetricsView (last; external predecessor FE5 splits BaseMetricsView; reorderable or droppable)",
+      "description": "Profile first; extractions are named after profiling. Loading and failure looks stay pinned. FE5 (the BaseMetricsView split) is an external predecessor: if it has not landed, this slice leaves BaseMetricsView alone and ratchets it.",
+      "steps": [
+        {
+          "id": "12-01",
+          "name": "Profile the metrics views, then declare the universe, preserved set and delta",
+          "description": "Profile where the loading and main tests spend their time (touched files only, alternating runs, no quiet machine needed), check whether FE5's BaseMetricsView split has landed (if not, leave that file and ratchet it), name the extractions, and write the moved-assertions header with before ids, seconds and coverage.",
+          "criteria": [
+            "The profile result is saved with the command that produced it and uses the same alternating touched-files method as the other slices; the cost is attributed (render, provider stack, waits, data fixtures)",
+            "The note states whether the FE5 split landed and what follows: coordinate, or leave BaseMetricsView alone and keep its allow-list entries",
+            "Universe names each extraction and each edited test file; before ids, touched-files seconds and coverage are recorded; the pre-slice commit is recorded",
+            "The tests that pin the loading and failure looks are listed with the assertion each keeps",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (profile and declaration)",
+          "scenario_name": "Cost profiled and behaviour-free contract declared for the metrics views",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-11-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "04-02"
+          ],
+          "estimated_size": "M (about 0.5 day)",
+          "implementation_notes": "See Roadmap notes 12-01."
+        },
+        {
+          "id": "12-02",
+          "name": "Apply the named extractions and shrink the metrics view tests, keeping loading and failure looks pinned",
+          "description": "Apply the extractions the declaration named, each as its own refactor commit with no test change, then shrink the loading and main tests to what the profile says is wasted, keeping the loading and failure looks pinned, and delete the fixed allow-list entries.",
+          "criteria": [
+            "At each extraction commit the unmodified tests pass; if none was named, the step is a test-only change",
+            "The loading look and the failure look of each touched view are still asserted by a test",
+            "Every removed or shrunk expect( has a row; surviving ids unchanged",
+            "No added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "Allow-list entries for the touched files deleted in the same commit",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds before and after, relative change, allow-list length, tests added and removed; the slice's estimate is replaced by the measured relative figure",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+          "scenario_name": "Metrics view loading and failure looks stay pinned while the tests get cheaper",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+            "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
+            "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-11-moved-assertions.md"
+          ],
+          "dependencies": [
+            "12-01"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 12-02. Additional production files named in 12-01 are added to this step's universe at that time."
+        }
+      ]
+    },
+    {
+      "id": "13",
+      "name": "Slice 12: sweep, closing measurements, single Stryker run, close",
+      "description": "Runs after the last rewrite slice that ships; if later slices are dropped, re-point every dependency on 12-02 to the last shipped rewrite step. Declaration, then the sweep, then the quiet-machine final runs, then Stryker once on frozen code, then the CI after-measurement and the finalize notes.",
+      "steps": [
+        {
+          "id": "13-01",
+          "name": "Declare the universe, preserved set and delta for the sweep",
+          "description": "Name the tail at step start: every slowTests.ts entry still listed after the last shipped rewrite slice, plus the DataGridBase paging and feature child items dialog tests. Write the moved-assertions header with the universe, before ids, before seconds of the touched files and coverage.",
+          "criteria": [
+            "The tail is enumerated by name from slowTests.ts as it stands at step start, together with DataGridBase.paging and featureChildItemsDialog; each file has its before seconds",
+            "Universe names every extraction (if any) and every edited test file; before ids are saved from a run's results file; line and branch coverage of the touched directories are recorded; the pre-slice commit is recorded for the close-time alternating pairs",
+            "Each remaining entry is marked 'fix here' or 'stays, with its reason'",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (declaration)",
+          "scenario_name": "Behaviour-free contract declared for the sweep",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-12-moved-assertions.md (create)"
+          ],
+          "dependencies": [
+            "12-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 13-01."
+        },
+        {
+          "id": "13-02",
+          "name": "Sweep: rewrite the named tail, delete fixed entries, tighten the budget if the list allows",
+          "description": "Rewrite the DataGridBase paging and feature child items dialog tests and the named tail under the same contract as the rewrite slices, delete the entries that are fixed or no longer slow, and lower the budget by the written rule if the list allows it.",
+          "criteria": [
+            "Every remaining entry has a plain-language reason that is still true and a ceiling not above its measured value",
+            "Every removed or shrunk expect( has a row; surviving ids unchanged; no added skip, todo, only, fails, loosened matcher or longer timeout; coverage not lower",
+            "git diff --name-only is a subset of the declared universe: no other production file, no Playwright spec, no screenshot file, no setupTests.ts",
+            "The budget is lowered only if zero unlisted tests exceed the lower value in the calibration samples, with a dated note; otherwise it stays and the note says why",
+            "The list is not longer than after the seed step",
+            "Close report from running only the touched test files, before and after alternating (5 pairs, same minute, same worker count; labelled 'indicative (not quiet)'): summed seconds, relative change, allow-list length, tests added and removed",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+          "scenario_name": "Remaining slow tests fixed or justified; allow-list only shrank",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.paging.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/FeatureListDataGrid/featureChildItemsDialog.test.tsx",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-12-moved-assertions.md"
+          ],
+          "dependencies": [
+            "13-01"
+          ],
+          "estimated_size": "M (about 1 day)",
+          "implementation_notes": "See Roadmap notes 13-02."
+        },
+        {
+          "id": "13-03",
+          "name": "Lead, QUIET MACHINE: final before and after wall runs on frozen code",
+          "description": "Lead-owned. Alternating baseline (pre-Story commit) and final checkouts, median of at least 5 pairs, plus the summed seconds of every touched file and the allow-list length. This is the only suite wall median of the Story. Code is frozen: any later edit makes these numbers stale.",
+          "criteria": [
+            "Median wall, range and peak memory per arm, from at least 5 alternating pairs at 6 workers, are reported with the commit hashes",
+            "Summed seconds before and after for the files of every shipped slice, and the measured saving against each slice's estimate, are tabulated",
+            "Allow-list length now against at the seed step",
+            "The test count difference equals the tests the slices deliberately removed or added, listed",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (measurement)",
+          "scenario_name": "Final local payoff measured",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-12-final-runs.md (create)"
+          ],
+          "dependencies": [
+            "13-02"
+          ],
+          "estimated_size": "M (about 0.5 day of runs)",
+          "implementation_notes": "See Roadmap notes 13-03."
+        },
+        {
+          "id": "13-04",
+          "name": "Lead, QUIET MACHINE: Stryker once over the production files touched by extractions",
+          "description": "Lead-owned. On frozen code, after checking the mutate list and the runner include, run Stryker (frontend) over the extracted production files; kill the survivors that matter, do not chase hours of runs. Needs a quiet machine because the run is long and heavy.",
+          "criteria": [
+            "The mutate list and the runner include are checked and recorded before the run",
+            "Kill rate of the touched area is not lower than before the Story; at least 80 percent for new code",
+            "The time-budget guard is off during the run (the marker was verified earlier)",
+            "Survivors are either killed by a test added in a follow-up commit (code stays otherwise frozen) or listed with a reason",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (mutation run)",
+          "scenario_name": "Mutation score of the extracted code",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/measurement/slice-12-stryker.md (create)"
+          ],
+          "dependencies": [
+            "13-03"
+          ],
+          "estimated_size": "M (long run; time not chased)",
+          "implementation_notes": "See Roadmap notes 13-04."
+        },
+        {
+          "id": "13-05",
+          "name": "Lead: CI after-measurement over at least 5 qualifying main runs",
+          "description": "Lead-owned, after the push. Classify main runs by job result, download artifacts of successful frontend jobs, compute per-file medians and the median Vitest Duration from the job logs against the saved baseline and against the passive read after slice 3, and record the verdict.",
+          "criteria": [
+            "Runs are classified by the frontend job's result; skipped and failed ones are not counted; each counted artifact has no failed rows and a plausible row count",
+            "KPI 16's frontend half is the median Duration of at least 5 qualifying runs, compared with 930.9 s and with the read after slice 3; the composite step median is shown as secondary",
+            "KPI 14: zero unlisted tests over the budget in every counted run, and the allow-list length reported",
+            "A block with run ids, table and verdict is added to the feature-delta; the baseline files are not edited; overlapping ranges are not called a verdict",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (CI measurement)",
+          "scenario_name": "CI payoff measured against the saved baseline",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/feature-delta.md"
+          ],
+          "dependencies": [
+            "13-04",
+            "04-03"
+          ],
+          "estimated_size": "S (calendar time, not effort)",
+          "implementation_notes": "See Roadmap notes 13-05. Re-list the run list before trusting a count: the list API can serve a stale page."
+        },
+        {
+          "id": "13-06",
+          "name": "Finalize notes: payoff report, T4 hand-off, architecture check",
+          "description": "Write the closing report to the maintainer (touched-files figures per slice, one wall median, allow-list length), note that T4 loses its frontend half at its pick-up, confirm no concept was added to the context map or architecture overview, and record the hand-off in the Epic workspace.",
+          "criteria": [
+            "The report uses measured figures only and states which estimates were not reached",
+            "The T4 brief's frontend half is named as to be removed at T4 pick-up",
+            "ARCHITECTURE.md line on the test stack is current; the context map and architecture overview need no change, stated with the reason",
+            "No release notes written (rule); documentation updates owed are listed or answered N/A with a reason",
+            "pnpm test and pnpm build are clean in Lighthouse.Frontend (pnpm build runs Biome --write; git status checked afterwards for rewritten files); from step 01-07 on, every crafter full pnpm test runs with LIGHTHOUSE_TIME_BUDGET=warn (it proves correctness and test ids, not timing; timing verdicts come only from QUIET MACHINE steps); no internal references (decision, check or slice ids) in code comments; no nWave scenario tags in code or test names"
+          ],
+          "test_file": "None (documentation)",
+          "scenario_name": "Documentation",
+          "files_to_modify": [
+            "docs/feature/story-6457-fe7-fast-frontend-tests/feature-delta.md",
+            "docs/feature/epic-6264-modular-monolith/feature-delta.md"
+          ],
+          "dependencies": [
+            "13-05"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "See Roadmap notes 13-06."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "reviewer": "nw-acceptance-designer-reviewer (haiku), 2 rounds; last two majors verified fixed by the lead",
+    "date": "2026-11-03"
+  }
+}
