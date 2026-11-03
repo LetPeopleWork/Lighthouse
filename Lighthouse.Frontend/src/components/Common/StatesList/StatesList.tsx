@@ -9,6 +9,7 @@ import {
 	displayNameOf,
 	displayStatesFor,
 	foldKey,
+	groupsSomething,
 } from "../../../utils/stateMappingView";
 import InputGroup from "../InputGroup/InputGroup";
 import ItemListManager from "../ItemListManager/ItemListManager";
@@ -40,10 +41,12 @@ function mappingTooltipsFor(
 	mappings: IStateMapping[],
 ): ReadonlyMap<string, string> {
 	return new Map(
-		mappings.map((mapping) => [
-			mapping.name,
-			`State mapping: ${mapping.states.join(", ")}. Delete it under State Mappings to remove it.`,
-		]),
+		mappings
+			.filter(groupsSomething)
+			.map((mapping) => [
+				mapping.name,
+				`State mapping: ${mapping.states.join(", ")}. Delete it under State Mappings to remove it.`,
+			]),
 	);
 }
 

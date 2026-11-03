@@ -212,6 +212,20 @@ describe("StatesList with state mappings over raw states", () => {
 		).toBeInTheDocument();
 	});
 
+	it.each([
+		["has no states yet", { name: "Analysis", states: [] }],
+		["has only blank states", { name: "Analysis", states: [" "] }],
+	])(
+		"keeps a plain state removable when a mapping named like it %s",
+		async (_, mapping) => {
+			await renderDoing(["Analysis", "Code Review"], [mapping]);
+
+			const chip = chipOf("Analysis");
+			expect(chip).not.toHaveAttribute("data-testid", "state-mapping-chip");
+			expect(within(chip).getByTestId("CancelIcon")).toBeInTheDocument();
+		},
+	);
+
 	it("does not offer a state named like one of the mappings as a suggestion", async () => {
 		await renderDoing(["Analysis", "Code Review", "Testing"]);
 

@@ -53,9 +53,17 @@ export function withoutRepeats(states: string[]): string[] {
 }
 
 /**
- * The name the charts show for a raw state: its mapping's name, or the state itself when no mapping groups it.
- * A mapping still being typed in, with states but no name yet, groups nothing: its states keep their own names.
+ * Whether a mapping stands for a group yet. One still being typed in, without a name or without a state,
+ * groups nothing: its states keep their own names and a state named like it stays a plain state.
  */
+export function groupsSomething(mapping: IStateMapping): boolean {
+	return (
+		!isBlankName(mapping.name) &&
+		mapping.states.some((state) => !isBlankName(state))
+	);
+}
+
+/** The name the charts show for a raw state: its mapping's name, or the state itself when no mapping groups it. */
 export function displayNameOf(
 	rawState: string,
 	mappings: IStateMapping[],
@@ -63,7 +71,7 @@ export function displayNameOf(
 	const key = foldKey(rawState);
 	const group = mappings.find(
 		(mapping) =>
-			!isBlankName(mapping.name) &&
+			groupsSomething(mapping) &&
 			mapping.states.some((state) => foldKey(state) === key),
 	);
 	return group?.name ?? rawState;
