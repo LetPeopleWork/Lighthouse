@@ -8,7 +8,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent))
 
-from summarise import gather, render_top_n  # noqa: E402
+from summarise import _render_summary, gather, render_top_n  # noqa: E402
 
 FIXTURES = HERE / "fixtures"
 
@@ -97,6 +97,36 @@ class RenderTopNTests(unittest.TestCase):
     def test_renders_empty_message_when_no_rows(self):
         output = render_top_n([], n=20)
         self.assertIn("No timing data found", output)
+
+
+class SummaryProfileTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = HERE / "_tmp_summarise_profile"
+        if self.tmp.exists():
+            shutil.rmtree(self.tmp)
+        self.tmp.mkdir()
+        shutil.copy(FIXTURES / "sample.trx", self.tmp / "sample.trx")
+        shutil.copy(FIXTURES / "sample-vitest.json", self.tmp / "vitest-results.json")
+        self.summary = _render_summary(gather([self.tmp])).splitlines()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_keeps_the_existing_stack_lines_first(self):
+        self.assertTrue(self.summary[0].startswith("Backend  :"))
+        self.assertTrue(self.summary[1].startswith("Frontend :"))
+
+    def test_reports_the_share_of_time_held_by_the_slowest_files(self):
+        self.assertIn("Slowest 10 files : 100% of summed time (6.5s)", self.summary)
+        self.assertIn("Slowest 20 files : 100% of summed time (6.5s)", self.summary)
+        self.assertIn("Slowest 50 files : 100% of summed time (6.5s)", self.summary)
+
+    def test_reports_counts_and_seconds_of_tests_over_each_threshold(self):
+        self.assertIn("Tests > 0.1s : {:>5} ({:.1f}s)".format(7, 6.5), self.summary)
+        self.assertIn("Tests > 0.5s : {:>5} ({:.1f}s)".format(4, 5.6), self.summary)
+        self.assertIn("Tests > 1s   : {:>5} ({:.1f}s)".format(2, 4.0), self.summary)
+        self.assertIn("Tests > 2s   : {:>5} ({:.1f}s)".format(1, 2.5), self.summary)
+        self.assertIn("Tests > 5s   : {:>5} ({:.1f}s)".format(0, 0.0), self.summary)
 
 
 if __name__ == "__main__":

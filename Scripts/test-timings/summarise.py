@@ -19,6 +19,8 @@ from trx_to_csv import (
 from vitest_to_csv import parse_vitest
 
 _VITEST_REQUIRED_KEYS = {"testResults", "numTotalTests"}
+_TOP_FILE_COUNTS = (10, 20, 50)
+_THRESHOLDS_S = ("0.1", "0.5", "1", "2", "5")
 _TABLE_COLUMNS = (
     ("stack", 9),
     ("duration_ms", 13),
@@ -139,7 +141,34 @@ def _render_summary(rows: list[dict[str, object]]) -> str:
         f"({len(integration)} integration, {integration_ms / 1000:.2f}s)",
         f"Frontend : {len(frontend):>5} tests, {frontend_total_ms / 1000:>8.2f}s wall-clock",
     ]
+    lines.extend(_render_profile(rows))
     return "\n".join(lines)
+
+
+def _render_profile(rows: list[dict[str, object]]) -> list[str]:
+    per_file: dict[tuple[object, object], float] = {}
+    for row in rows:
+        key = (row["stack"], row["category_or_file"])
+        per_file[key] = per_file.get(key, 0.0) + float(row["duration_ms"])
+    file_totals = sorted(per_file.values(), reverse=True)
+    total_ms = sum(file_totals)
+
+    lines = []
+    for n in _TOP_FILE_COUNTS:
+        held_ms = sum(file_totals[:n])
+        share = held_ms / total_ms * 100 if total_ms else 0.0
+        lines.append(
+            f"Slowest {n} files : {share:.0f}% of summed time ({held_ms / 1000:.1f}s)"
+        )
+    for threshold in _THRESHOLDS_S:
+        over = [
+            float(r["duration_ms"])
+            for r in rows
+            if float(r["duration_ms"]) > float(threshold) * 1000
+        ]
+        label = f"Tests > {threshold}s".ljust(13)
+        lines.append(f"{label}: {len(over):>5} ({sum(over) / 1000:.1f}s)")
+    return lines
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:
