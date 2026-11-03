@@ -790,8 +790,9 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   files -34.5 % (the two edited files -65.7 %); allow-list 23 to 13.
 - **09 (slice 8).** Field-change and default resolution per tracker type; every tracker field set a test relied on is listed
   at `09-01` so none is lost.
-- **10 (slice 9).** No extraction expected: each of the 108 cases is kept or has a row naming the function test making the same
-  assertion; paging extraction only if `10-01` names it.
+- **10 (slice 9).** No extraction needed (`contextGridLayout` was already exported): 65 of the 108 context cases moved to 88
+  direct tests of that function, 43 stay as renders; each call-site setting proven by mutation. Measured (indicative, not
+  quiet, 5 alternating pairs): summed test seconds of the touched files -63.3 %; allow-list 13 to 13.
 - **11 (slice 10).** Reuses slice 4's helpers; three 500 ms sleeps (`ModifyProjectSettings.test.tsx` lines 590, 617, 722 at
   the baseline) to a fake clock.
 - **12 (slice 11).** Profile first (the budget file says "not profiled yet"); extractions named after profiling; loading and

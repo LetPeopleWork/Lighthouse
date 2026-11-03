@@ -240,18 +240,138 @@ Rules that sit in the component and not in the function stay on renders only: `h
 in state pre-sort), `status` (loading, error and empty), the enlarge toggle, the export file name. They are not part of
 the cut.
 
-## Delta (filled in at close)
+## Delta and moved assertions
 
-To be completed by the 10-02 close report, in the shape of slice 7: commit hashes against the pre-slice commit, a table
-of every removed id with its destination and every removed `expect(` ("moved to ... asserts ..." or "dropped because
-..."), the five alternating before/after pairs on the six files plus the new file (labelled indicative (not quiet)),
-the allow-list length (23 now; 1 entry belongs to the universe and is untouched), tests added and removed, coverage
-after (lines and branches of `WorkItemsDialog.tsx` and `workItemColumns.tsx` not below the figures above), and the
-mutation proof for each row of the wiring table. Declared up front, so a reviewer can check the cut:
+Commits (pre-slice `92e40dca8`): `aed76322b` the test commit (`contextGridLayout.test.ts` added, 65 cases removed from
+`WorkItemsDialog.contexts.test.tsx`); this report is the close-report commit. **No production file changed, no
+extraction commit**: `git diff --name-only 92e40dca8..aed76322b` is exactly the two test files. RED: the new
+`contextGridLayout.test.ts` was seen to fail against a deliberately wrong `sortBy` returned by `contextGridLayout`
+(`"size"` for every context): 12 of 88 failed (the eleven contexts whose sort column is not Size, and Cumulative Time
+per State); production restored with `git checkout`. The preserved files (`WorkItemsDialog.test.tsx`,
+`.layout.`, `.loading.`, `.paging.`, `workItemsDialogContexts.test.ts`) were not edited, their ids are unchanged.
 
-- Production files changed: none.
-- Ids that leave: 65 of 108 in `WorkItemsDialog.contexts.test.tsx` (groups A to G; D leaves 10 of its 12). Ids that
-  stay: 43 there plus all 135 others, i.e. 178 of 243. Ids added: the function test's cases, in the new file.
-- The describe titles of the contexts file keep their text (ids unchanged), even where a block then holds two cases.
-- Time expectation, for the close report to confirm or refute: the 65 cases are 9.55 s of the 29.23 s summed; the
-  function tests add well under 0.1 s.
+| Measure | Before | After |
+|---|---|---|
+| Tests in the directory (7 files after, 6 before) | 243 | 266 |
+| `WorkItemsDialog.contexts.test.tsx` | 108 | 43 |
+| Tests added (`contextGridLayout.test.ts`, no render) | n/a | 88 |
+| Tests removed | n/a | 65 (rows below); 0 added in the old files |
+| Surviving ids from `slice-09-ids-before.txt` | 243 | 178, all unchanged (sorted lists compared: 65 missing, 0 new in the old files; every missing id is in the contexts file) |
+| `expect(` in `WorkItemsDialog.contexts.test.tsx` | 100 | 65 |
+| Line coverage, `src/components/Common/WorkItemsDialog/**` | 97.08 % (200/206) | 97.08 % (200/206) |
+| Branch coverage, same | 91.48 % (129/141) | 91.48 % (129/141) |
+| `WorkItemsDialog.tsx` | lines 34/34, branches 28/30 | lines 34/34, branches 28/30 |
+| `workItemColumns.tsx` | lines 156/156, statements 171/172, branches 101/105 | the same |
+| Allow-list length | 13 | 13 (the one entry of the universe, in the paging file, is untouched) |
+
+Coverage did not rise: the 108 renders already reached every line and branch of `workItemColumns.tsx` that the new
+tests reach, so a direct test of the function adds none. The six lines of `workItemsDialogRows.ts` stay uncovered
+here as before (that file is exercised from other directories).
+
+The two kept reopen cases (Estimation, Feature Size) and the describe titles keep their text: the block "every chart
+context that offers more columns follows the same rules" now holds two cases and the block "a Feature's child items
+show their progress at a glance" holds one, and the ids of those cases did not change.
+
+### Time (indicative, not quiet)
+
+Five alternating before/after pairs run back to back, `LIGHTHOUSE_TEST_WORKERS=2` both sides, load average 2.27 at the
+start and 2.01 at the end (so not quiet), only the touched test files: before
+= `WorkItemsDialog.contexts.test.tsx` from a temporary worktree of `92e40dca8`; after = the contexts file plus
+`contextGridLayout.test.ts`. Figure compared: the sum of per-test durations from the JSON report (wall clock was not
+recorded: no `bc` here).
+
+| Pair | Before (s, 108 tests) | After (s, 131 tests) |
+|---|---|---|
+| 1 | 15.42 | 5.63 |
+| 2 | 14.77 | 5.71 |
+| 3 | 15.81 | 5.45 |
+| 4 | 15.53 | 5.62 |
+| 5 | 14.77 | 5.59 |
+| Sum | 76.30 | 28.00 |
+
+Relative change of the summed test seconds of the touched files: **-63.3 %**. The declaration's expectation (65 cases
+are 9.55 s of the 15.70 s, the function tests add well under 0.1 s) is confirmed: the 88 function tests take about
+0.02 s in all. The declaration named all six files plus the new one for the pairs; the close brief narrowed it to the
+touched files, which is what was run, so this figure is larger than a six-file figure would be (the other five files,
+13.5 s before, are unchanged).
+
+### Call sites proven by mutation
+
+Each line was changed in `WorkItemsDialog.tsx` (nothing else), the whole `WorkItemsDialog` directory run
+(266 tests), then restored with `git checkout`. The failing tests are all survivors (in the 178 preserved ids); the
+tests removed by this slice no longer exist, so none of them is among the failures.
+
+| Change | Failed | Failing surviving tests (first ones) |
+|---|---|---|
+| `getTerm` replaced by `(key) => key` | 10 | "the configured word for Cycle Time heads its column"; Work Item Age Band column tests |
+| `parentReferences` dropped | 6 | "asks once for the names of the shown rows' parents while Parent is shown, and shows them"; "links a parent's name to the parent ..." |
+| `timeInState` (the column definition) dropped | 9 | "Time in State keeps its own badge when the list is sorted by Age"; "orders by time in state on a Time in State header click" |
+| `sle` dropped | 10 | "Cycle Time keeps its SLE colouring and bold where the caller passes the SLE"; "blocked icon appears with SLE coloring" |
+| `ageOn` dropped | 1 | "Age on a past day's point is the age the item had on that day" |
+| `cycleTimeScope` dropped | 1 | "a named percentile's dialog reads that named cycle time under its name, and offers each named cycle time" |
+| `namedCycleTimeDefinitions` dropped | 1 | the same test |
+| `daysContributed` dropped | 1 | "Cumulative Time per State keeps Days Contributed only and offers nothing else" |
+| `ageBand` dropped | 18 | "does not take over which column the dialog opens sorted by"; "sits beside the band it belongs with when both are offered" |
+| `sleRisk` dropped | 18 | "orders SLE Risk lowest first, then highest first, ..."; "inProgress: every column named here sorts on a header click" |
+| `warnings` dropped | 2 | "carries whatever the caller found worth warning about"; "deliveryTimeline: every column named here sorts on a header click" |
+| `items` replaced by `[]` | 20 | "a Team's Features worked on show in the Size column ..."; "a bubble on a Team's Estimation ..." |
+| `context` replaced by `"closedItems"` | 108 | "a bubble on a Portfolio's Estimation ..." and 107 more |
+| `...contextLayout.columns` replaced by `...[]` | 120 | "a Team's Features worked on show in the Size column ..." and 119 more |
+| `defaultColumnVisibilityModel` replaced by `{}` | 100 | "a bubble on a Team's Estimation ..."; "a column turned on appears in its place in the fixed order"; "Manage columns offers every other column the rows can fill, all of them off, after the defaults" |
+| `initialSortModel` field replaced by `"referenceId"` | 18 | "a bubble on a Team's Estimation ... longest Cycle Time first"; "a Feature Size dot lists the largest Feature first"; "aging lists the oldest item first, not the one longest in its state" |
+| `initialSortModel` direction `"asc"` | 20 | the same, plus "arrivals leaves a finished item's Work Item Age ..." |
+| `storageKey` without `context` | 3 | `WorkItemsDialog.layout.test.tsx`: "a column turned on stays on in its own context only"; "hiding Closed in the Estimation dialog leaves the Cycle Time scatter's dialog as it was"; "the same dialog switched to another context while open shows that context's layout" |
+| `storageKey` without `ownerKind` | 1 | `WorkItemsDialog.layout.test.tsx`: "hiding Closed in a Team's Estimation dialog leaves every Portfolio's Estimation dialog as it was" |
+
+Every change was caught by a surviving render, so there is no pre-existing gap to record and no render case had to be
+kept or restored beyond the 43 declared. The dropped first-row assertion of group A is accepted on the terms of the
+brief: the `initialSortModel` mutation (field and direction) is caught by 18 and 20 surviving renders, and
+`contextGridLayout.test.ts` asserts `sortBy` exactly for each of the 12 contexts (and Cumulative Time per State).
+
+### Moved assertions
+
+Old tests are in `WorkItemsDialog.contexts.test.tsx`. "Function test" is a test in `contextGridLayout.test.ts`;
+`shownIn` is the entries of the returned `visibilityModel` that are true, in key order, `fieldsOf` all its keys in
+order, `valueIn` the column's `valueGetter` on a row, `headerName` the column's header string. Owned by is added by
+the dialog itself, so every Feature context's lists in the function test leave `owningTeam` out; the dialog's own
+rule stays asserted by "a bubble on a Portfolio's Estimation ...", "Feature rows keep Owned by beside the fixed
+columns" and "Feature rows that name no owning team leave Owned by out".
+
+| Old tests (describe :: name) | `expect(` | New location: function test | Assertion |
+|---|---|---|---|
+| "every chart's dialog ..." :: "$context opens with exactly its default columns, in order, sorted by $sortedBy" for closedItems, estimation, arrivals, inProgress, aging, blocked, stale, workDistribution, featureSize, startedAndClosed (10) | `contextColumnsShown()` equals the default columns | "$context opens with exactly its default columns, in order, sorted by $sortedBy" | `shownIn(layout)` equals the same list (featureSize without `owningTeam`) |
+| same | `sortedDescendingBy()` is the sort column | same test | `layout.sortBy` is the same field; the grid being given it, descending, is the `initialSortModel` rows of the mutation table |
+| same | `rowOrder()[0]` is the context's first row | none: dropped | The row order is MUI's sort over the sort column. Kept renders assert it for the same rows and columns: "a bubble on a Team's Estimation ..." (cycleTime; closedItems and estimation use the same rows and sort), "a Feature Size dot ...", "aging lists the oldest item first ..." (workItemAge, the same `inFlight` rows as blocked, stale, inProgress), "arrivals leaves a finished item's ..." (workItemAge, the arrivals/workDistribution/startedAndClosed rows); the mutation of the sort model fails 18 of them |
+| "a Feature's child items ..." :: "a Feature's child items open with Started, Closed, Work Item Age, Cycle Time and Estimate, oldest first" | `contextColumnsShown()`; `sortedDescendingBy()` | "featureChildren opens with exactly its default columns, in order, sorted by workItemAge" | `shownIn(layout)`; `layout.sortBy` |
+| "every chart context that offers more columns ..." :: "$context neither shows nor offers an Estimate where estimation is not set up" for the same 10 | `contextColumnsShown()` equals the defaults without estimate; `catalogueOffered()` fields equal the offered list without estimate | "$context neither shows nor offers an Estimate where estimation is not set up" | `shownIn(layout)` and `fieldsOf(layout)` of the rows with `estimate: null` equal the same two lists |
+| "a Feature's child items ..." :: same name for featureChildren and deliveryTimeline | the same two | same test | the same two |
+| "every chart context ..." :: "$context lists its defaults, then every other column the rows can fill in the one fixed order" for the same 10, and "a Feature's child items ..." for featureChildren and deliveryTimeline | `catalogueOffered()` fields equal the offered list | "$context lists its defaults, then every other column the rows can fill in the one fixed order" | `fieldsOf(layout)` equals the offered list; and the shown flags are true for the defaults and false for the rest. The panel is the visibility model in key order: "Manage columns offers every other column ..." (kept) asserts `{field, shown}` in order |
+| "every chart context ..." :: "$context comes back with the reader's own layout, ..." for closedItems, arrivals, inProgress, aging, blocked, stale, workDistribution, startedAndClosed (8), and "a Feature's child items ..." for featureChildren and deliveryTimeline (2) | `contextColumnsShown()` equals the defaults without the hidden one, plus the next offered | "$context has a column to turn on after its last default, which stays off until it is turned on" (the per-context input of the removed case) | the last default is `true` and the first column after the defaults is `false` in `visibilityModel`. That a hidden default and a turned-on column come back after a reopen is the grid's saved layout keyed by context and owner, held by the kept "estimation comes back ..." and "featureSize comes back ..." and by `WorkItemsDialog.layout.test.tsx` (storage-key mutations in the table above) |
+| "the Estimation dialog ..." :: "a category estimate shows its category name" | `cellText("estimate","ST-1")` is `M` | "a category estimate has its category name as its value" | `valueIn(layout, "estimate", row)` is `M`; the kept "each row shows the estimate the chart plots it at ..." renders an estimate cell |
+| same :: "the Estimate header reads plain Estimate ..." (3 cases: shared unit, no unit, different units) | `headerText("estimate")` is `Estimate` | "the Estimate header reads plain Estimate when %s" (the same 3 row sets) | the column's `headerName` is `Estimate` |
+| same :: "dates show the local day as YYYY-MM-DD, and a date the item does not have stays empty" | three `cellText` on closedDate, startedDate, closedDate of a not finished item | "a date shows the local day as YYYY-MM-DD, and a date the item does not have stays empty" | `valueIn` gives `2026-09-30`, `2026-09-27` and `""`; the kept "Blocked since shows the day an item was blocked ..." renders a date cell |
+| "every chart's dialog ..." :: "inProgress neither shows nor offers Time in State when the caller says nothing about how to measure it" (the `aging` case stays) | `columnsShown()` does not contain timeInState; `catalogueOffered()` fields do not | "$context neither shows nor offers Time in State ..." for aging and inProgress | `shownIn(layout)` and `fieldsOf(layout)` do not contain `timeInState` |
+| same :: "workDistribution / startedAndClosed / featureChildren leaves a finished item's Work Item Age and an unfinished item's Cycle Time empty, never 0, and lists the empty ages last" (the `arrivals` case stays) | four `cellText` on ST-1 and WIP-1 | "%s leaves a finished item's Work Item Age and an unfinished item's Cycle Time empty, never 0" (all four contexts) | `valueIn` gives `null`, `20`, `30`, `null`; the cell shows nothing for `null` (the kept arrivals render) |
+| same | `rowOrder()` is WIP-1, WIP-3, ST-1 | none: dropped | Same rows, same sort column as the kept "arrivals leaves ...", which asserts this order; the sort column is asserted per context in the function test |
+| same :: "Age on a past day's point still shows for an item finished since, because it was unfinished on that day" | `cellText("workItemAge","ST-1")` is `10` | the test of that name | `valueIn(...)` is `10` |
+| same :: "an item not started yet leaves its Work Item Age empty, never 0, and lists it below the started ones" | `cellText` of TODO-1 is empty; `rowOrder()` is WIP-1, WIP-3, TODO-1 | "an item not started yet leaves its Work Item Age empty, never 0" | `valueIn` is `null` for TODO-1, `30` and `3` for the others; the order is dropped, as above (empty last is the grid's, asserted by the kept arrivals render) |
+| same :: "Age on a day given as its first moment, as a chosen range end is, is the age on that calendar day" | `cellText` WIP-1 `10`; ST-1 empty | the test of that name | `valueIn` is `10` and `null` |
+| same :: "Age on a past day stays empty for an item that had finished by that day" | `cellText` empty | the test of that name | `valueIn` is `null` |
+| same :: "Age on a past day's point stays empty for an item that had not started by that day" | `cellText` empty | the test of that name | `valueIn` is `null` |
+| "what each catalogue column says ..." :: "Age on a day counts an item started later that day, and not one finished that day or never started" | three `cellText` (`1`, empty, empty) | the test of that name | `valueIn` is `1`, `null`, `null` |
+| same :: "Cycle Time reads the named cycle time it is scoped to, and each named column reads its own" | `headerText("cycleTime")`; the three Cycle Time cells; the three named column cells after turning it on | the test of that name | `headerName` is `Review Cycle`; `valueIn` gives `5, null, null`; the named column is in `columns`, off in `visibilityModel`, and its values are `2, 4, null` |
+| "US-02 ... explain its point" :: "Feature rows add Size and Forecasted Completion, last, to what Manage columns offers" | the last two offered fields | the test of that name | `fieldsOf(layout).slice(-2)` is `size`, `forecasts`, and `blockedSince` is not offered for Feature rows |
+| "what each catalogue column says ..." :: "heads every column the catalogue offers with its name" | the offered headings (7); `headerText("size")`; `headerText("daysContributed")` | the test of that name | the `headerName`s of `columns` in order (Closed, Cycle Time, Started, Work Item Age, Estimate, Parent, Blocked since); `Size`; `Days Contributed` |
+| "a Feature's child items ..." :: "the Delivery timeline keeps Warnings as its only extra column and never offers Estimate or Blocked since" | `contextColumnsShown()` (`owningTeam`, `warnings`); offered contains `startedDate`; does not contain `estimate`; does not contain `blockedSince` | the test of that name | `shownIn(layout)` is `warnings`; the same three on `fieldsOf(layout)` for a Feature row that carries an estimate |
+| "what each catalogue column says ..." :: "lists every warning a row has, one sentence after another" | `cellText("warnings","FTR-1")` | the test of that name | `valueIn` joins both sentences with a space |
+
+The function file also holds assertions with no old counterpart (a column for each field the model lists, the
+returned columns in the model's key order; Cumulative Time per State; the configured word for Cycle Time; the
+named-percentile header and offered list) so the settings the removed cases reached are asserted on the function as well.
+
+### Deviations from the declaration
+
+- The declaration listed the pairs on "the six files plus the new file"; the close brief said to run only the touched
+  files, which is what was run (see the time section).
+- The function file has 88 tests, not a count the declaration fixed; the extra ones are listed above.
+- Coverage is unchanged rather than raised (see above).
