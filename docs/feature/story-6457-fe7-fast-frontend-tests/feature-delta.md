@@ -784,7 +784,10 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   and the report view's one-second retry delay to fake timers; three extraction files with 51 direct tests; one walk removed.
   Measured (indicative, not quiet, 5 alternating pairs): summed test seconds of the touched files -12.4 % (pairs 1 to 4,
   before the parallel load fell away: -4.4 %); allow-list 23 to 23.
-- **08 (slice 7).** Paging and filter arithmetic; exactly one test renders the 143-row list.
+- **08 (slice 7).** Line arithmetic and heading wording extracted (`refinementPaging.ts`, `refinementHeading.ts`) with 48 direct
+  tests; exactly one test renders the 143-row list (extended with the page-2 line and numbers); nine large-list tests and the
+  300-row test removed with rows. Measured (indicative, not quiet, 5 alternating pairs): summed test seconds of the four
+  files -34.5 % (the two edited files -65.7 %); allow-list 23 to 13.
 - **09 (slice 8).** Field-change and default resolution per tracker type; every tracker field set a test relied on is listed
   at `09-01` so none is lost.
 - **10 (slice 9).** No extraction expected: each of the 108 cases is kept or has a row naming the function test making the same

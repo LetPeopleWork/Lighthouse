@@ -257,11 +257,94 @@ property of the footer that only a render shows.
 
 ## Delta and moved assertions
 
-Filled in by 08-02: commits, test counts before and after, tests added and removed, preserved ids missing,
-coverage, allow-list length, `expect(` counts per file against the extraction commit. Before: 82 tests in the four
-files, allow-list length 23.
+Commits (pre-slice `15bf02cb2`): `29e24de92` extraction only (no test touched; the 356 tests of the Refinement
+directory passed unmodified), `347f4b296` a one-line follow-up to the extraction (`neededNumberAt` takes an
+undefined `high`, so `NeededNumber` kept the branch coverage it had; production only), `75aa52e9e` the unit
+tests, the extended GR-0131 test and the removed tests with their allow-list entries. RED: the extraction came
+first, as in slices 4 to 6, logged SKIPPED (behaviour-free extraction); the new `refinementPaging.test.ts` was
+seen to fail against a deliberately wrong `shownRowOf` (`index === shownCount` instead of `shownCount - 1`): 7
+tests failed (rows 142 of 143, 63 of 64 and 0 of 1 for the last-shown rule, the 150-needed placement and space,
+the "all 143" sentence and the 64-row result).
+
+| Measure | Before | After |
+|---|---|---|
+| Test count (four files) | 82 | 72 |
+| Tests added (two new files) | n/a | 48 (`refinementPaging.test.ts` 37, `refinementHeading.test.ts` 11) |
+| Tests removed | n/a | 10 (the seven placement cases, the numbering test, the State filter test, the 300-row test) |
+| Preserved ids missing | n/a | 10 (the removed tests, rows below); 0 added in the four files |
+| Line coverage, `src/pages/Teams/Detail/Refinement/**` | 100 (551/551) | 100 (556/556) |
+| Branch coverage, same | 99.05 (316/319) | 99.07 (320/323); the same three uncovered branches |
+| Allow-list length | 23 | 13 (entries 2 to 11 deleted; entry 1, the GR-0131 test, stays: 2.3 s here, ceiling 5.0 s) |
+| `expect(` per file against the extraction commit | | `RefinementView.paging.test.tsx` 18 to 15; `RefinementView.test.tsx` 40 to 38; `RefinementView.comments.test.tsx` and `RefinementView.votes.test.tsx` unchanged (not edited) |
+
+The 300-row test is removed: its two assertions are `describeHeading` over 300 rows
+(`refinementHeading.test.ts`) and the first listed row, which the small-fixture "shows the Work Items in the order
+they came, which is backlog order" already asserts. `RefinementView.comments.test.tsx` and
+`RefinementView.votes.test.tsx` were not changed.
+
+### Call sites proven by mutation
+
+Each call site was broken in `EnoughForLine.tsx` or `RefinementView.tsx`, the Refinement directory run (393
+tests), then restored (`git checkout`); the surviving test that failed is named.
+
+| Call site | Mutation | Failing surviving tests (first ones) |
+|---|---|---|
+| `shownRowOf(props.index, shownCount, ...)` | `shownCount + 1` | `RefinementView.enoughFor`: "says all the shown ones are needed when a filter leaves fewer than needed", "says all of them are needed, after the last row, when fewer are in refinement than needed", "says the Team's own words on the line" (3 failed) |
+| `shownCountOf(props.index)` | replaced by `props.index` | the same three |
+| `neededNumberAt(marking?.high, index)` | `index + 1` | the GR-0131 test, "numbers the first rows up to the high end and draws the line after them", "numbers the rows in the order they are shown when somebody sorts the list", "draws the line after the last row when exactly as many are listed as needed", and others |
+| `spaceKeptFor(high, row)` | `high + 1` | the GR-0131 test, "reserves the space the line takes after the last needed row", "reserves the space the line takes before the first row when nothing is needed", "moves with the number needed when the Refinement is read again" (5 failed) |
+| `describeHeading(refinement, getTerm)` | replaced by a constant | "heads the tab with the list broken down by stage, and counts it nowhere else", "reads the heading first and the next Refinement after it", "counts the Work Items the votes made Ready in the heading, on the heading's own line", and others |
+| same | `getTerm` replaced by the identity | "asks for this Team's refinement and counts what it holds in the heading above a grid", "counts a single Work Item in the singular", "says the Team's own words in the heading and the name column", and others |
+
+Gap noted, not closed: the page-2 side of the shown-row rule (`shownCount` 143 at the page edge) is only proven by
+the unit test, since no surviving render of the whole list ends on the "all needed" sentence; the placement of the
+line on page 2 is still proven in a render by the GR-0131 test (`neededNumberAt` and `spaceKeptFor` mutations
+fail it).
 
 ### Moved assertions
 
 | Old test (file :: test) | Assertion text | New location (file) | New test (name) |
 |---|---|---|---|
+| `RefinementView.paging.test.tsx` :: with 0 needed, the line sits where it falls in the whole list | page 1 has the line above GR-0001 with 36 px kept above it and nowhere else; page 2 has none | `refinementPaging.test.ts` | "with 0 needed, the line is beside one row only, on page 1" and "with 0 needed, space is kept for the line at place 0 and nowhere else" |
+| same, 20 needed | page 1 has the line below GR-0020 with 36 px kept below it; page 2 none | `refinementPaging.test.ts` | the same two tests, 20 needed (place 19, page 1) |
+| same, 100 needed | page 1 has the line below GR-0100 (last row of page 1); page 2 none | `refinementPaging.test.ts` | the same two tests, 100 needed (place 99, page 1) |
+| same, 101 needed | page 1 none; page 2 has the line below GR-0101 (first row of page 2) | `refinementPaging.test.ts` | the same two tests, 101 needed (place 100, page 2) |
+| same, 120 needed | page 1 none; page 2 has the line below GR-0120 | `refinementPaging.test.ts`, and the GR-0131 test | the same two tests, 120 needed (place 119, page 2); GR-0131 test now asserts `expectOnThisPage` null on page 1 and the line under GR-0120 on page 2 |
+| same, 143 needed | page 2 has the line below GR-0143 saying "enough for the next Refinement" | `refinementPaging.test.ts` | the same two tests, 143 needed (place 142, page 2) |
+| same, 150 needed | page 2 has the line below GR-0143 saying "All 143 Work Items in Refinement are needed before the next Refinement." | `refinementPaging.test.ts` | "with 150 needed, the line is beside one row only, on page 2", "... space is kept ...", and "says all 143 are needed under the last row when more are needed than are shown" |
+| `RefinementView.paging.test.tsx` :: with 120 needed, numbers the first page 1 to 100 ... up to 120 (1) | `expect` the "#" cells of page 1 equal 1..100 | the GR-0131 test (same assertion, same fixture size) and `refinementPaging.test.ts` | GR-0131 test; "numbers the first page 1 to 100 and continues at 101 on the second, up to 120" |
+| same (2) | `expect` the progress `img` named "100 of 120 needed before the next Refinement" | the GR-0131 test | GR-0131 test (same `getByRole("img", ...)` assertion) |
+| same (3) | `expect(queryAllByText(THE_LINE)).toEqual([])` on page 1 | the GR-0131 test | `expectOnThisPage(null)` on page 1, which asserts no line text and no kept space (stronger) |
+| same (4) | `expect` the "#" cells of page 2 equal 101..120 then 23 blanks | the GR-0131 test and `refinementPaging.test.ts` | GR-0131 test (same assertion); the numbering unit test above |
+| `RefinementView.paging.test.tsx` :: with 120 needed, a State filter on the second page that leaves 64 ... (1) | after the filter the page holds GR-0001..GR-0064 | not a function of ours (MUI's filter); the filtered *result* is `refinementPaging.test.ts`; the real filter on a small list stays in `RefinementView.enoughFor.test.tsx` | "puts it under the last shown row, saying all 64 are needed, with 120 needed"; enoughFor: "says all the shown ones are needed when a filter leaves fewer than needed" and "draws the line after the last shown row when a filter leaves exactly as many as needed" |
+| same (2) | `expectOnThisPage`: line below GR-0064 saying "All 64 Work Items in Refinement are needed ..." with space kept there only | `refinementPaging.test.ts` | the 64-row test, line, kept space and sentence (shown count 64) |
+| same (3) | no range footer ("N-M of N") after the filter | `RefinementView.paging.test.tsx` and `DataGridBase.paging.test.tsx` | "a Team with 38 Work Items in refinement sees all of them, with no footer" asserts the same `queryByText(/^\d+–\d+ of \d+$/)` absence; the footer is MUI's, not ours |
+| `RefinementView.test.tsx` :: handles three hundred Work Items ... (1) | the heading reads "300 Work Items in Refinement" | `refinementHeading.test.ts` | "counts 300 Work Items of a Team without stage rules"; the call site stays proven by "asks for this Team's refinement and counts what it holds in the heading above a grid" |
+| same (2) | the first listed row is GR-1000 | `RefinementView.test.tsx` | "shows the Work Items in the order they came, which is backlog order" (a row order in the server's answer, not size dependent) |
+
+## Close report
+
+All figures indicative (not quiet): load average about 4 to 5 on 12 cores while another session worked. Method: the
+four test files only (after side also runs the two new unit files), `LIGHTHOUSE_TIME_BUDGET=off`,
+`LIGHTHOUSE_TEST_WORKERS=4` on both sides, a worktree of `15bf02cb2` for the before side, 5 alternating
+before/after pairs within the same minute, summed assertion durations (seconds).
+
+| Pair | Before (82 tests) | After (120 tests) |
+|---|---|---|
+| 1 | 29.77 | 19.83 |
+| 2 | 30.15 | 19.52 |
+| 3 | 29.96 | 19.26 |
+| 4 | 29.63 | 19.56 |
+| 5 | 29.39 | 19.33 |
+| Sum | 148.89 | 97.50 |
+| Mean | 29.78 | 19.50 |
+
+Relative change **-34.5 %** (mean of the five pairs). The preserved `comments` and `votes` files (about 14.3 s of
+the sum, unchanged) dilute it: in the last pair the two edited files went from 14.80 s (`paging` 11.69, `test`
+3.11) to 5.07 s (`paging` 3.12, `test` 1.95), **-65.7 %**, and the two new unit files add 0.01 s.
+
+Allow-list: 23 before, 13 after. Tests: 82 before, 72 after in the four files, plus 48 new direct tests.
+`pnpm build` clean (no Biome rewrite of a committed file); `LIGHTHOUSE_TIME_BUDGET=warn pnpm test` 595 files, 9229
+tests, passed. `git diff --name-only 15bf02cb2..HEAD` outside `docs/` shows the declared universe plus
+`.claude/commands/continuous-improvement.md` and `CLAUDE.md`, which come from another session's commit
+(`a15fb6497`), not from this step.
