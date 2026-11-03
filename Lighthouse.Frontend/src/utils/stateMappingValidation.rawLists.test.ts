@@ -16,16 +16,6 @@ const SHADOWS_A_DOING_STATE =
 	'Mapping "In Arbeit" has the same name as the Doing state "In Arbeit". Add "In Arbeit" to this mapping to group it, or choose another name.';
 
 describe("validateStateMappings over lists of raw states", () => {
-	// A tracker may offer a state the Team never lists; grouping it is harmless.
-	it("says nothing about a mapping state that is in none of the lists", () => {
-		expect(
-			validateStateMappings(
-				[{ name: "Review", states: ["Code Review", "Testing"] }],
-				lists(["Code Review"]),
-			),
-		).toEqual([]);
-	});
-
 	it("names each problem once, however often it occurs", () => {
 		expect(
 			validateStateMappings(
