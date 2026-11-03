@@ -108,6 +108,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             }
         }
 
+        // A mapping without states has no states to stand in for its name, so the owner is left as it is, its other
+        // groups included, and counted as skipped.
+        [Test]
+        public async Task Seed_MappingWithNoStatesBesideAGroupWithStates_LeavesTheWholeOwnerAloneAndCountsItSkipped()
+        {
+            var team = new Team { Id = 4, Name = "Half Broken Squad", ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review", "QA"], DoneStates = ["Done"] };
+            team.StateMappings.Add(new StateMapping { Name = "Review", States = [] });
+            team.StateMappings.Add(new StateMapping { Name = "QA", States = ["Testing", "Acceptance"] });
+            var teams = new Mock<IRepository<Team>>();
+            teams.Setup(r => r.GetAll()).Returns([team]);
+            var log = new RecordingLogger<CategoryListNormalisationSeeder>();
+
+            await new CategoryListNormalisationSeeder(teams.Object, NoPortfolios().Object, log).Seed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(team.DoingStates, Is.EqualTo(new List<string> { "Analysis", "Review", "QA" }));
+                teams.Verify(r => r.Save(), Times.Never);
+                Assert.That(Counted(log, "Skipped"), Is.EqualTo(1));
+                Assert.That(Counted(log, "Rewritten"), Is.Zero);
+            }
+        }
+
+        [Test]
+        public async Task Seed_SaveFails_CountsTheOwnerAsSkippedAndNotAsRewritten()
+        {
+            var teams = new Mock<IRepository<Team>>();
+            teams.Setup(r => r.GetAll()).Returns([ACollapsedTeam(1)]);
+            teams.Setup(r => r.Save()).ThrowsAsync(new InvalidOperationException("the database is read-only"));
+            var log = new RecordingLogger<CategoryListNormalisationSeeder>();
+
+            await new CategoryListNormalisationSeeder(teams.Object, NoPortfolios().Object, log).Seed();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Counted(log, "Skipped"), Is.EqualTo(1));
+                Assert.That(Counted(log, "Rewritten"), Is.Zero);
+            }
+        }
+
         // Startup has no handler around the seeders, so stored data the rules cannot read must not refuse the start.
         [Test]
         [TestCase("a missing mapping")]

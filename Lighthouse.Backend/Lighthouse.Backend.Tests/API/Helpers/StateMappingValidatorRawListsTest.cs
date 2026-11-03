@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.API.Helpers;
+using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Tests.API.Helpers
 {
@@ -175,6 +176,54 @@ namespace Lighthouse.Backend.Tests.API.Helpers
             settings.DoingStates.Add(null!);
 
             Assert.That(() => StateMappingValidator.ValidateSettings(settings), Throws.Nothing);
+        }
+
+        [Test]
+        public void NameBesideOneOfItsGroupsStatesByTheSecondMapping_IsRefusedNamingThatMapping()
+        {
+            var settings = Settings(["Backlog"], ["In Arbeit", "In Progress"], ["Done"], Mapping("Review", "Code Review"), Mapping("In Arbeit", "In Progress"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings).Errors, Has.Some.EqualTo(InArbeitShadowsADoingState));
+        }
+
+        private static Team StoredTeam(string[] doing, params StateMapping[] mappings)
+            => new()
+            {
+                ToDoStates = ["Backlog"],
+                DoingStates = [.. doing],
+                DoneStates = ["Done"],
+                StateMappings = [.. mappings],
+            };
+
+        // An owner stored before the rule may already list a mapping's name beside one of its states. Refusing that
+        // when it comes back unchanged would block every unrelated save.
+        [Test]
+        public void NameBesideOneOfItsGroupsStatesStoredBeforeTheRule_SentBackUnchanged_IsNotRefused()
+        {
+            var stored = StoredTeam(["In Arbeit", "In Progress"], new StateMapping { Name = "In Arbeit", States = ["In Progress"] });
+            var settings = Settings(["Backlog"], ["In Arbeit", "In Progress"], ["Done"], Mapping("In Arbeit", "In Progress"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings, stored).Errors, Is.Empty);
+        }
+
+        [Test]
+        public void NameNewlyListedBesideOneOfItsGroupsStates_IsRefusedEvenThoughTheMappingIsUnchanged()
+        {
+            var stored = StoredTeam(["In Progress"], new StateMapping { Name = "In Arbeit", States = ["In Progress"] });
+            var settings = Settings(["Backlog"], ["In Arbeit", "In Progress"], ["Done"], Mapping("In Arbeit", "In Progress"));
+
+            Assert.That(StateMappingValidator.ValidateSettings(settings, stored).Errors, Has.Some.EqualTo(InArbeitShadowsADoingState));
+        }
+
+        [Test]
+        public void NewMappingNamedLikeAStateAStoredMappingGroups_IsRefusedWithTheChainSentence()
+        {
+            var stored = StoredTeam(["X"], new StateMapping { Name = "B", States = ["A"] });
+            var settings = Settings(["Backlog"], ["X"], ["Done"], Mapping("A", "X"), Mapping("B", "A"));
+
+            Assert.That(
+                StateMappingValidator.ValidateSettings(settings, stored).Errors,
+                Has.Some.EqualTo("Mapping \"A\" has the same name as a state grouped by mapping \"B\". Choose another name."));
         }
     }
 }
