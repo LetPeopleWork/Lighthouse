@@ -108,6 +108,45 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Seeding
             }
         }
 
+        // Startup has no handler around the seeders, so stored data the rules cannot read must not refuse the start.
+        [Test]
+        [TestCase("a missing mapping")]
+        [TestCase("a missing list")]
+        public async Task Seed_AnOwnerCannotBeNormalised_SkipsItWithAWarningAndStillRewritesTheNext(string oddity)
+        {
+            var odd = new Team { Id = 7, Name = "Odd Squad", ToDoStates = ["Backlog"], DoingStates = ["Analysis", "Review"], DoneStates = ["Done"] };
+            odd.StateMappings.Add(new StateMapping { Name = "Review", States = ["Code Review", "Testing"] });
+            if (oddity == "a missing mapping")
+            {
+                odd.StateMappings.Add(null!);
+            }
+            else
+            {
+                odd.DoneStates = null!;
+            }
+
+            var next = ACollapsedTeam(8);
+            var teams = new Mock<IRepository<Team>>();
+            teams.Setup(r => r.GetAll()).Returns([odd, next]);
+            teams.Setup(r => r.Save()).Returns(Task.CompletedTask);
+            var log = new RecordingLogger<CategoryListNormalisationSeeder>();
+
+            await Assert.ThatAsync(async () => await new CategoryListNormalisationSeeder(teams.Object, NoPortfolios().Object, log).Seed(), Throws.Nothing);
+
+            var warning = log.Everything.Single(entry => entry.Level == LogLevel.Warning);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(warning.Properties["Rule"], Is.EqualTo("Unreadable"));
+                Assert.That(warning.Properties["OwnerType"], Is.EqualTo("Team"));
+                Assert.That(warning.Properties["OwnerId"], Is.EqualTo(7));
+                Assert.That(warning.Failure, Is.Null, "A failure's own text could carry a name.");
+                Assert.That(odd.DoingStates, Is.EqualTo(new List<string> { "Analysis", "Review" }));
+                Assert.That(next.DoingStates, Is.EqualTo(new List<string> { "Analysis", "Code Review", "Testing" }));
+                Assert.That(Counted(log, "Skipped"), Is.EqualTo(1));
+                Assert.That(Counted(log, "Rewritten"), Is.EqualTo(1));
+            }
+        }
+
         [Test]
         public async Task Seed_TheTeamsCannotBeRead_LogsAWarningCountsItAndStillRewritesThePortfolios()
         {

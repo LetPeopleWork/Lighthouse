@@ -60,8 +60,15 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
         private async Task Normalise<TOwner>(IRepository<TOwner> repository, TOwner owner, string ownerType, Tally tally)
             where TOwner : WorkTrackingSystemOptionsOwner
         {
-            var lists = owner.CategoryLists();
-            var legacyShape = lists.LegacyShape();
+            var plan = TryPlan(owner);
+            if (plan == null)
+            {
+                tally.Skipped++;
+                logger.LogWarning("{OwnerType} {OwnerId} could not be read and is left as it is; Rule {Rule}", ownerType, owner.Id, Unreadable);
+                return;
+            }
+
+            var (legacyShape, stored, normalised) = plan;
             if (legacyShape == LegacyListShape.EmptyGroup)
             {
                 tally.Skipped++;
@@ -69,8 +76,6 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 return;
             }
 
-            var stored = ListsSnapshot.Of(owner);
-            var normalised = stored.NormalisedBy(lists);
             if (normalised.SameAs(stored))
             {
                 return;
@@ -115,6 +120,22 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
             }
         }
 
+        // Stored data no rule expects, such as a missing list or a missing mapping, must not refuse the start
+        // either. The failure is not logged, for the same reason as above.
+        private static NormalisationPlan? TryPlan(WorkTrackingSystemOptionsOwner owner)
+        {
+            try
+            {
+                var lists = owner.CategoryLists();
+                var stored = ListsSnapshot.Of(owner);
+                return new NormalisationPlan(lists.LegacyShape(), stored, stored.NormalisedBy(lists));
+            }
+            catch (Exception failure) when (failure is not OperationCanceledException)
+            {
+                return null;
+            }
+        }
+
         private static async Task<bool> TrySave<TOwner>(IRepository<TOwner> repository)
             where TOwner : WorkTrackingSystemOptionsOwner
         {
@@ -139,6 +160,8 @@ namespace Lighthouse.Backend.Services.Implementation.Seeding
                 return false;
             }
         }
+
+        private sealed record NormalisationPlan(LegacyListShape? LegacyShape, ListsSnapshot Stored, ListsSnapshot Normalised);
 
         private sealed record ListsSnapshot(List<string> ToDo, List<string> Doing, List<string> Done)
         {
