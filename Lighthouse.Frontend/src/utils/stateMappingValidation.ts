@@ -18,20 +18,32 @@ export interface IStateLists {
 export interface IStoredStateSettings {
 	stateMappings: IStateMapping[];
 	waitStates: string[];
+	toDoStates?: string[];
+	doingStates?: string[];
+	doneStates?: string[];
 }
 
 export function storedStateSettingsOf(
 	settings: {
 		stateMappings?: IStateMapping[];
 		waitStates?: string[];
+		toDoStates?: string[];
+		doingStates?: string[];
+		doneStates?: string[];
 	} | null,
 ): IStoredStateSettings | undefined {
 	if (!settings) return undefined;
 	return {
 		stateMappings: settings.stateMappings ?? [],
 		waitStates: settings.waitStates ?? [],
+		toDoStates: settings.toDoStates ?? [],
+		doingStates: settings.doingStates ?? [],
+		doneStates: settings.doneStates ?? [],
 	};
 }
+
+// With nothing stored yet (a new team or portfolio) every mapping counts as changed.
+type ChangeCheck = (mapping: IStateMapping) => boolean;
 
 type CategoryLabel = "To Do" | "Doing" | "Done";
 
@@ -112,11 +124,13 @@ function validateUniqueStates(mappings: IStateMapping[]): string[] {
 function groupingMappingOf(
 	mapping: IStateMapping,
 	mappings: IStateMapping[],
+	isWanted: ChangeCheck = () => true,
 ): IStateMapping | undefined {
 	return mappings.find(
 		(other) =>
 			other !== mapping &&
-			listedAs(membersOf(other), mapping.name) !== undefined,
+			listedAs(membersOf(other), mapping.name) !== undefined &&
+			isWanted(other),
 	);
 }
 
@@ -180,11 +194,17 @@ function listClashError(
 	mapping: IStateMapping,
 	mappings: IStateMapping[],
 	label: CategoryLabel,
-	states: string[],
+	{ states, storedStates }: { states: string[]; storedStates?: string[] },
+	isChanged: ChangeCheck,
 ): string[] {
 	const listed = listedAs(states, mapping.name);
-	return listed !== undefined &&
-		classifyListEntry(listed, states, mappings) === "shadowing"
+	if (
+		listed === undefined ||
+		classifyListEntry(listed, states, mappings) !== "shadowing"
+	)
+		return [];
+	const wasListed = listedAs(storedStates ?? [], listed) !== undefined;
+	return isChanged(mapping) || !wasListed
 		? [shadowingSentence(nameOf(mapping), label, trimAsServer(listed))]
 		: [];
 }
@@ -203,8 +223,13 @@ function shadowingSentence(
 function groupedElsewhereError(
 	mapping: IStateMapping,
 	mappings: IStateMapping[],
+	isChanged: ChangeCheck,
 ): string[] {
-	const grouping = groupingMappingOf(mapping, mappings);
+	const grouping = groupingMappingOf(
+		mapping,
+		mappings,
+		(other) => isChanged(mapping) || isChanged(other),
+	);
 	return grouping
 		? [
 				`Mapping "${nameOf(mapping)}" has the same name as a state grouped by mapping "${nameOf(grouping)}". Choose another name.`,
@@ -253,18 +278,29 @@ function categoryErrors(
 	];
 }
 
+// Like the server, only what this edit adds or changes is judged, so an owner
+// stored before these rules existed can still save an unrelated edit.
 function stateNameClashErrors(
 	mappings: IStateMapping[],
 	lists: IStateLists,
+	stored?: IStoredStateSettings,
 ): string[] {
+	const isChanged: ChangeCheck = (mapping) =>
+		!stored || !isUnchanged(mapping, stored);
+	const doing = {
+		states: lists.doingStates,
+		storedStates: stored?.doingStates,
+	};
+	const toDo = { states: lists.toDoStates, storedStates: stored?.toDoStates };
+	const done = { states: lists.doneStates, storedStates: stored?.doneStates };
 	return mappings
 		.filter((m) => membersOf(m).length > 0 && !isBlankName(m.name))
 		.flatMap((m) => [
-			...listClashError(m, mappings, "Doing", lists.doingStates),
-			...listClashError(m, mappings, "To Do", lists.toDoStates),
-			...listClashError(m, mappings, "Done", lists.doneStates),
-			...groupedElsewhereError(m, mappings),
-			...categoryErrors(m, mappings, lists),
+			...listClashError(m, mappings, "Doing", doing, isChanged),
+			...listClashError(m, mappings, "To Do", toDo, isChanged),
+			...listClashError(m, mappings, "Done", done, isChanged),
+			...groupedElsewhereError(m, mappings, isChanged),
+			...(isChanged(m) ? categoryErrors(m, mappings, lists) : []),
 		]);
 }
 
@@ -326,7 +362,7 @@ function mappingRuleErrors(
 	return [
 		...validateUniqueNames(mappings),
 		...validateUniqueStates(mappings),
-		...stateNameClashErrors(mappings, lists),
+		...stateNameClashErrors(mappings, lists, stored),
 		...waitStateErrors(mappings, lists, stored),
 	];
 }

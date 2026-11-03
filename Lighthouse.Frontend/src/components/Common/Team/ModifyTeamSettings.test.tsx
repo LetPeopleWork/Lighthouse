@@ -637,12 +637,14 @@ describe("ModifyTeamSettings", () => {
 			mockGetTeamSettings.mockResolvedValueOnce({
 				...createMockTeamSettings(),
 				doingStates: ["In Arbeit", "In Progress"],
-				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+				stateMappings: [{ name: "Draft", states: ["In Progress"] }],
 			});
 
 			await renderModifyTeamSettings();
 
-			fireEvent.click(screen.getByText("Add ToDo"));
+			fireEvent.change(screen.getByLabelText("Mapping Name"), {
+				target: { value: "In Arbeit" },
+			});
 
 			const warning = await screen.findByTestId("settings-blocking-warning");
 			expect(
@@ -675,12 +677,14 @@ describe("ModifyTeamSettings", () => {
 				...createMockTeamSettings(),
 				toDoStates: ["In Arbeit", "In Progress"],
 				doingStates: ["Active"],
-				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+				stateMappings: [{ name: "Draft", states: ["In Progress"] }],
 			});
 
 			await renderModifyTeamSettings();
 
-			fireEvent.click(screen.getByText("Add Done"));
+			fireEvent.change(screen.getByLabelText("Mapping Name"), {
+				target: { value: "In Arbeit" },
+			});
 
 			const warning = await screen.findByTestId("settings-blocking-warning");
 			expect(
@@ -711,12 +715,14 @@ describe("ModifyTeamSettings", () => {
 				...createMockTeamSettings(),
 				doingStates: ["Active"],
 				doneStates: ["In Arbeit", "In Progress"],
-				stateMappings: [{ name: "In Arbeit", states: ["In Progress"] }],
+				stateMappings: [{ name: "Draft", states: ["In Progress"] }],
 			});
 
 			await renderModifyTeamSettings();
 
-			fireEvent.click(screen.getByText("Add ToDo"));
+			fireEvent.change(screen.getByLabelText("Mapping Name"), {
+				target: { value: "In Arbeit" },
+			});
 
 			const warning = await screen.findByTestId("settings-blocking-warning");
 			expect(
@@ -748,13 +754,15 @@ describe("ModifyTeamSettings", () => {
 				doingStates: ["In Progress", "In Arbeit"],
 				stateMappings: [
 					{ name: "Group", states: ["In Arbeit"] },
-					{ name: "In Arbeit", states: ["Review"] },
+					{ name: "Draft", states: ["Review"] },
 				],
 			});
 
 			await renderModifyTeamSettings();
 
-			fireEvent.click(screen.getByText("Add ToDo"));
+			fireEvent.change(screen.getAllByLabelText("Mapping Name")[1], {
+				target: { value: "In Arbeit" },
+			});
 
 			const warning = await screen.findByTestId("settings-blocking-warning");
 			expect(
