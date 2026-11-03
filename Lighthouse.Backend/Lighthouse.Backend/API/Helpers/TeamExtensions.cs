@@ -68,14 +68,9 @@ namespace Lighthouse.Backend.API.Helpers
         {
             SyncStateMappings(team, teamSetting);
 
-            team.ToDoStates = team.NormalisedStatesFor(TrimmedStates(teamSetting.ToDoStates));
-            team.DoingStates = team.NormalisedStatesFor(TrimmedStates(teamSetting.DoingStates));
-            team.DoneStates = team.NormalisedStatesFor(TrimmedStates(teamSetting.DoneStates));
-        }
-
-        private static List<string> TrimmedStates(List<string> list)
-        {
-            return list.Where(state => !string.IsNullOrWhiteSpace(state)).Select(state => state.Trim()).ToList();
+            team.ToDoStates = team.NormalisedStatesFor(StateListEntries.Trimmed(teamSetting.ToDoStates));
+            team.DoingStates = team.NormalisedStatesFor(StateListEntries.Trimmed(teamSetting.DoingStates));
+            team.DoneStates = team.NormalisedStatesFor(StateListEntries.Trimmed(teamSetting.DoneStates));
         }
 
         private static void SyncBlockedItems(Team team, TeamSettingDto teamSetting)

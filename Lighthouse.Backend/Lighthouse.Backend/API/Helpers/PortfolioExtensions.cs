@@ -46,14 +46,9 @@ namespace Lighthouse.Backend.API.Helpers
         {
             SyncStateMappings(project, portfolioSetting);
 
-            project.ToDoStates = project.NormalisedStatesFor(TrimmedStates(portfolioSetting.ToDoStates));
-            project.DoingStates = project.NormalisedStatesFor(TrimmedStates(portfolioSetting.DoingStates));
-            project.DoneStates = project.NormalisedStatesFor(TrimmedStates(portfolioSetting.DoneStates));
-        }
-
-        private static List<string> TrimmedStates(List<string> list)
-        {
-            return list.Where(state => !string.IsNullOrWhiteSpace(state)).Select(state => state.Trim()).ToList();
+            project.ToDoStates = project.NormalisedStatesFor(StateListEntries.Trimmed(portfolioSetting.ToDoStates));
+            project.DoingStates = project.NormalisedStatesFor(StateListEntries.Trimmed(portfolioSetting.DoingStates));
+            project.DoneStates = project.NormalisedStatesFor(StateListEntries.Trimmed(portfolioSetting.DoneStates));
         }
 
         private static void SyncBlockedItems(Portfolio project, PortfolioSettingDto portfolioSetting)
