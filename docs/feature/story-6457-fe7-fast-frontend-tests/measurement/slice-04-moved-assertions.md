@@ -5,7 +5,7 @@ configuration spike (maintainer decision 2026-11-03).
 
 ## Pre-slice commit
 
-`fcf6ed6c1ab396f1544dc6863e6c02b131531e21` (HEAD of main when this was declared). The close-time alternating
+`61b44b6ecf4f6b55480c112d5d828ae020bf4d1a` (HEAD of main when this was declared). The close-time alternating
 before/after timing pairs check this commit out for the "before" side.
 
 ## Universe
@@ -152,7 +152,7 @@ must not be lower at close.
 | ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server No at $no, “Yes, if…” at $yesIf → $noError / $yesIfError | `expect(` | readinessErrors.test.ts | the discussion rules the form shares with the server No at $no, “Yes, if…” at $yesIf → $noError / $yesIfError |
 | ModifyTeamSettings.readiness.test.tsx :: the discussion rules the form shares with the server checks a readiness stored without discussion rules as if it had the defaults | `expect(readinessErrors({ minYes: 3, minVoters: 3 })).toEqual({` | readinessErrors.test.ts | the discussion rules the form shares with the server checks a readiness stored without discussion rules as if it had the defaults |
 
-Rows per file, against `git diff -U0 c0d7cfeff -- <file> | grep -c '^-.*expect('`: refinementNeed 5 / 5,
+Rows per file, against `git diff -U0 686f22bf5 -- <file> | grep -c '^-.*expect('`: refinementNeed 5 / 5,
 readiness 10 / 10, test.tsx 0 / 0, refinement 0 / 0, queryCommit 0 / 0. The `expect(` rows of the two
 `it.each` readiness blocks are one line each in the diff (the call is on the next line); the other rows
 quote the removed line as it was. Every moved block was moved verbatim except the two removed readiness
