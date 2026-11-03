@@ -28,9 +28,12 @@ export const shownRowOf = (
 /** How many rows are shown up to and including the one at this place. */
 export const shownCountOf = (index: number): number => index + 1;
 
-/** The number in the "#" column for the row at this place, or nothing when it is below the line. */
-export const neededNumberAt = (high: number, index: number): number | null =>
-	isNumbered(high, index) ? shownCountOf(index) : null;
+/** The number in the "#" column for the row at this place, or nothing when it is below the line or no line is drawn. */
+export const neededNumberAt = (
+	high: number | undefined,
+	index: number,
+): number | null =>
+	high !== undefined && isNumbered(high, index) ? shownCountOf(index) : null;
 
 /**
  * The grid lays its rows out from the heights it knows about, so the line lives in space the grid reserves

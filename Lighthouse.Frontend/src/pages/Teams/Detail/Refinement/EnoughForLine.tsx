@@ -139,7 +139,7 @@ export const useEnoughForLine = (marking: EnoughForMarking | null) => {
 export const NeededNumber: React.FC = () => {
 	const marking = useContext(EnoughForContext);
 	const index = useContext(ShownIndexContext);
-	const number = marking === null ? null : neededNumberAt(marking.high, index);
+	const number = neededNumberAt(marking?.high, index);
 	if (marking === null || number === null) {
 		return null;
 	}
