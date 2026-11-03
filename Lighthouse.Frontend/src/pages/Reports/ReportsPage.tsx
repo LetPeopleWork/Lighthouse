@@ -14,6 +14,7 @@ import { ownerOfReport } from "../Common/Reports/reportOwner";
 import { mayEditReportsOf } from "../Common/Reports/useMayEditReports";
 import { useReportDeletion } from "../Common/Reports/useReportDeletion";
 import { useReportEditing } from "../Common/Reports/useReportEditing";
+import { selectedSentence } from "./pickedReports";
 import { useAllReports } from "./useAllReports";
 import { useAllReportsListedReporter } from "./useAllReportsListedReporter";
 import { useBulkCreation } from "./useBulkCreation";
@@ -67,7 +68,9 @@ const ReportsPageContent: React.FC = () => {
 				{bulkCreation.button}
 				{removal.button}
 				{selectionExport.button}
-				<Typography color="text.secondary">{`${picks.picked.length} selected`}</Typography>
+				<Typography color="text.secondary">
+					{selectedSentence(picks.picked.length)}
+				</Typography>
 			</Box>
 			<Box
 				data-testid="all-reports"

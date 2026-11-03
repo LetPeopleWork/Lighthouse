@@ -1,6 +1,7 @@
 import type { GridRowId } from "@mui/x-data-grid";
 import { useRef, useState } from "react";
 import type { IReportAcrossOwners } from "../../models/Reports/ReportsAcrossOwners";
+import { pickedReports } from "./pickedReports";
 
 /** The reports the reader picked, in the order picked, and a way to read them in the order the table shows them. */
 export const useRowPicks = (
@@ -8,13 +9,11 @@ export const useRowPicks = (
 ) => {
 	const [selectedIds, setSelectedIds] = useState<GridRowId[]>([]);
 	const tableOrder = useRef<(() => GridRowId[]) | undefined>(undefined);
-	const reportOf = (id: GridRowId) =>
-		reports?.find((report) => report.id === id) ?? [];
-	const picked = selectedIds.flatMap((id) => reportOf(id));
+	const picked = pickedReports(reports, selectedIds);
 	const inTableOrder = (): IReportAcrossOwners[] =>
 		(tableOrder.current?.() ?? selectedIds)
 			.filter((id) => selectedIds.includes(id))
-			.flatMap((id) => reportOf(id));
+			.flatMap((id) => pickedReports(reports, [id]));
 	return {
 		picking: { selectedIds, onSelectionChange: setSelectedIds, tableOrder },
 		picked,
