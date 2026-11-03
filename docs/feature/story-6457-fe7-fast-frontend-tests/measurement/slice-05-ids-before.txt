@@ -1,0 +1,44 @@
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Cancel closes the word that no PDF was made, prints nothing and keeps what was picked
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out is not offered when leaving the failed reports out would leave nothing to print
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out leaves out only the report that failed, not the other report of the same Team
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out unpicks every report that failed
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out unpicks the report that failed and prints the rest
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Retry asks for the report again and prints once it arrives
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a coach exports the reports of two Teams as one PDF, each on a page of its own
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a reader who is Admin of none of them may still export them
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a report that cannot be loaded stops the PDF and is named
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports above 50 picked, Export PDF is disabled and says at most 50
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports exactly 50 picked may still be exported as one PDF
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports nothing prints while one of the reports is still on its way, and the PDF holds both once it arrives
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports once the print dialog closes the frame goes, Export PDF is ready again, and nothing says a PDF failed
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports picks and sorting changed while the PDF is prepared leave it as it was when Export PDF was pressed
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports the reports print in the table's order, as the reader sorted it
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports when part of the page cannot be loaded no PDF is made and it says so
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports while a PDF of several is prepared, a row's PDF icon is held back and starts no second
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports while a row's PDF is prepared, Export PDF is held back and starts no second
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports while the reports load, Export PDF shows it is preparing and nothing prints yet
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports with nothing picked Export PDF is disabled and says why
+src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports Select all picks every row, on every page
+src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports above 50 picked, Remove is disabled and says at most 50
+src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports changing the filter clears what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports exactly 50 picked may still be removed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports sorting keeps what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Cancel removes nothing
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape at the confirmation closes it, removes nothing and keeps what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape on the result closes it and clears what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a picked report without a Then & Now carries no warning
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report somebody else removed first counts as removed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report the server did not remove is named with its reason and stays listed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once each report the removal took, or found already gone, is forgotten, and one it could not remove is kept
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the confirmation warns in the plural when two Thens would be lost
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the confirmation warns when one of them holds a Then that can no longer be rebuilt
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the report forgotten is the one removed, not one picked before it
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the result counts only the reports removed, and names only the one that was not
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when her permissions could not be loaded, Remove is disabled and says to reload
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when her permissions could not be loaded, pressing Remove asks nothing
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when no answer arrives it says it cannot confirm what was removed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once while the removal is under way the dialog cannot be closed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once with every Then still rebuildable the confirmation carries no warning
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once with one picked report on an owner she only reads, Remove is disabled and says why
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once with two picked reports on owners she only reads, the reason says they are
