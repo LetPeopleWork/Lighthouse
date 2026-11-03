@@ -1,5 +1,3 @@
-export const __SCAFFOLD__ = true;
-
 export type TimeBudgetMode = "off" | "warn" | "fail";
 export type RunKind = "plain" | "coverage";
 
@@ -77,6 +75,41 @@ function describeOverrun(test: ObservedTest, limitSeconds: number): string {
 	return `${test.file} :: ${test.name} took ${test.seconds} s, limit ${limitSeconds} s`;
 }
 
+function staleReason(
+	entry: AllowListEntry,
+	run: ObservedRun,
+	options: TimeBudgetOptions,
+): StaleReason | undefined {
+	if (!run.fileExists(entry.file)) return "file-gone";
+	if (!run.collectedFiles.includes(entry.file)) return undefined;
+	const ran = run.tests.find(
+		(test) => test.file === entry.file && test.name === entry.name,
+	);
+	if (!ran) return "test-absent";
+	// A coverage run slows tests down, so it can keep an entry but never retire it.
+	const retiresEntries = options.runKind === "plain" && ran.state !== "skipped";
+	if (retiresEntries && ran.seconds < options.budgetSeconds / 4) {
+		return "ran-far-under-budget";
+	}
+	return undefined;
+}
+
+type StaleFinding = Extract<Finding, { kind: "stale" }>;
+
+function staleFindings(
+	run: ObservedRun,
+	allowList: readonly AllowListEntry[],
+	options: TimeBudgetOptions,
+): StaleFinding[] {
+	const stale: StaleFinding[] = [];
+	for (const entry of allowList) {
+		const why = staleReason(entry, run, options);
+		if (why)
+			stale.push({ kind: "stale", file: entry.file, name: entry.name, why });
+	}
+	return stale;
+}
+
 export function compareToAllowList(
 	run: ObservedRun,
 	allowList: readonly AllowListEntry[],
@@ -102,6 +135,15 @@ export function compareToAllowList(
 				limitSeconds,
 			});
 			lines.push(describeOverrun(test, limitSeconds));
+		}
+	}
+
+	if (options.mode !== "off" && run.complete) {
+		for (const finding of staleFindings(run, allowList, options)) {
+			findings.push(finding);
+			lines.push(
+				`${finding.file} :: ${finding.name} stale allow-list entry (${finding.why})`,
+			);
 		}
 	}
 

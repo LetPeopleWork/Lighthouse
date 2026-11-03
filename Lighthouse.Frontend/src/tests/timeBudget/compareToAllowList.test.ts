@@ -327,7 +327,7 @@ describe("time-budget comparison", () => {
 		});
 	});
 
-	describe.skip("an allow-list entry that no longer earns its place", () => {
+	describe("an allow-list entry that no longer earns its place", () => {
 		it("is stale when its file ran and the test is not among the tests that ran", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ name: "some other test" })]),
@@ -473,7 +473,7 @@ describe("time-budget comparison", () => {
 		});
 	});
 
-	describe.skip("the guard's mode", () => {
+	describe("the guard's mode", () => {
 		const offending = aRun([aTest({ name: "far too slow", seconds: 9 })]);
 
 		it("judges nothing when it is off, as under mutation testing or in watch mode", () => {
