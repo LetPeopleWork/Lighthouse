@@ -61,7 +61,7 @@ describe("PortfolioMetricsView aging columns", () => {
 		);
 	};
 
-	it.skip("shows a loading frame, and no columns, while the settings are on their way", () => {
+	it("shows a loading frame, and no columns, while the settings are on their way", () => {
 		getPortfolioSettings.mockReturnValue(new Promise(() => {}));
 
 		render(view());
@@ -70,7 +70,7 @@ describe("PortfolioMetricsView aging columns", () => {
 		expect(screen.getByTestId("doing-columns")).toBeEmptyDOMElement();
 	});
 
-	it.skip("says the columns could not be loaded when the settings fetch fails", async () => {
+	it("says the columns could not be loaded when the settings fetch fails", async () => {
 		getPortfolioSettings.mockRejectedValue(new Error("offline"));
 
 		render(view());
@@ -79,7 +79,7 @@ describe("PortfolioMetricsView aging columns", () => {
 		expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeVisible();
 	});
 
-	it.skip("shows the columns as the settings display them, groups in place of their states", async () => {
+	it("shows the columns as the settings display them, groups in place of their states", async () => {
 		getPortfolioSettings.mockResolvedValue({
 			...createMockTeamSettings(),
 			doingStates: ["Analysis", "Code Review", "Testing"],

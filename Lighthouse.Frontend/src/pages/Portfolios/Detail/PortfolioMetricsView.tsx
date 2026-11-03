@@ -8,15 +8,22 @@ import { parseRuleSet } from "../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { BaseMetricsView } from "../../Common/MetricsView/BaseMetricsView";
+import type { WidgetStatus } from "../../Common/MetricsView/widgetStatus";
 
 interface PortfolioMetricsViewProps {
 	portfolio: IPortfolio;
 }
 
+interface DoingColumns {
+	readonly portfolioId: number;
+	readonly status: WidgetStatus;
+	readonly states: string[];
+}
+
 const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 	portfolio,
 }) => {
-	const [doingStates, setDoingStates] = useState<string[]>([]);
+	const [doingColumns, setDoingColumns] = useState<DoingColumns>();
 	const [waitStates, setWaitStates] = useState<string[]>([]);
 	const [stateMappings, setStateMappings] = useState<IStateMapping[]>([]);
 	const [hasBlockedConfig, setHasBlockedConfig] = useState(false);
@@ -35,12 +42,18 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
 
 	useEffect(() => {
+		let isCurrentPortfolio = true;
 		const fetchPortfolioSettings = async () => {
 			try {
 				const settings = await portfolioService.getPortfolioSettings(
 					portfolio.id,
 				);
-				setDoingStates(settings.doingStates);
+				if (!isCurrentPortfolio) return;
+				setDoingColumns({
+					portfolioId: portfolio.id,
+					status: "ready",
+					states: settings.doingDisplayStates ?? [],
+				});
 				setWaitStates(settings.waitStates ?? []);
 				setStateMappings(settings.stateMappings);
 				setHasBlockedConfig(
@@ -54,13 +67,27 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 				setCycleTimeDefinitions(settings.cycleTimeDefinitions ?? []);
 			} catch (error) {
 				console.error("Error fetching portfolio settings:", error);
+				if (isCurrentPortfolio) {
+					setDoingColumns({
+						portfolioId: portfolio.id,
+						status: "error",
+						states: [],
+					});
+				}
 			}
 		};
 
 		fetchPortfolioSettings().catch((error) => {
 			console.error("Error fetching portfolio settings:", error);
 		});
+		return () => {
+			isCurrentPortfolio = false;
+		};
 	}, [portfolio.id, portfolioService]);
+
+	// Until this portfolio's own answer arrives, the columns of a portfolio shown before are not its columns.
+	const columnsOfThisPortfolio =
+		doingColumns?.portfolioId === portfolio.id ? doingColumns : undefined;
 
 	return (
 		<BaseMetricsView
@@ -69,7 +96,8 @@ const PortfolioMetricsView: React.FC<PortfolioMetricsViewProps> = ({
 			title={featuresTerm}
 			defaultDateRange={90}
 			hasBlockedConfig={hasBlockedConfig}
-			doingStates={doingStates}
+			doingStates={columnsOfThisPortfolio?.states ?? []}
+			doingStatesStatus={columnsOfThisPortfolio?.status ?? "loading"}
 			waitStates={waitStates}
 			stateMappings={stateMappings}
 			cycleTimeDefinitions={cycleTimeDefinitions}
