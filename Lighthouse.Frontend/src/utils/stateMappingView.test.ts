@@ -44,7 +44,7 @@ const duplicateNameErrors = (a: string, b: string) =>
 const isAscii = (text: string) => [...text].every((c) => c.charCodeAt(0) < 128);
 
 describe("displayStatesFor", () => {
-	it.skip("shows one group in the place of states that sit next to each other", () => {
+	it("shows one group in the place of states that sit next to each other", () => {
 		expect(
 			displayStatesFor(
 				["Analysis", "Code Review", "Testing", "Waiting"],
@@ -53,7 +53,7 @@ describe("displayStatesFor", () => {
 		).toEqual(["Analysis", "Review", "Waiting"]);
 	});
 
-	it.skip("puts a group where its first listed state is when its states are apart", () => {
+	it("puts a group where its first listed state is when its states are apart", () => {
 		expect(
 			displayStatesFor(
 				["Code Review", "Analysis", "Testing", "Waiting"],
@@ -71,7 +71,7 @@ describe("displayStatesFor", () => {
 		).toEqual(["Analysis", "Review"]);
 	});
 
-	it.skip("shows a group named after one of its own states once", () => {
+	it("shows a group named after one of its own states once", () => {
 		expect(
 			displayStatesFor(
 				["Active", "Resolved", "Blocked"],
@@ -80,24 +80,24 @@ describe("displayStatesFor", () => {
 		).toEqual(["Active", "Blocked"]);
 	});
 
-	it.skip("leaves a list alone when none of a group's states are in it", () => {
+	it("leaves a list alone when none of a group's states are in it", () => {
 		expect(displayStatesFor(["Analysis", "Waiting"], [review])).toEqual([
 			"Analysis",
 			"Waiting",
 		]);
 	});
 
-	it.skip("leaves a state exactly as stored once the group that held it is deleted", () => {
+	it("leaves a state exactly as stored once the group that held it is deleted", () => {
 		expect(displayStatesFor(["Y", "X"], [])).toEqual(["Y", "X"]);
 	});
 
-	it.skip("leaves out entries that are empty or only whitespace", () => {
+	it("leaves out entries that are empty or only whitespace", () => {
 		expect(
 			displayStatesFor(["Analysis", "", "  ", "\t", "Code Review"], [review]),
 		).toEqual(["Analysis", "Review"]);
 	});
 
-	it.skip("recognises states padded with tabs and non-breaking spaces as their group", () => {
+	it("recognises states padded with tabs and non-breaking spaces as their group", () => {
 		expect(
 			displayStatesFor(
 				[
@@ -110,7 +110,7 @@ describe("displayStatesFor", () => {
 		).toEqual(["Analysis", "Review"]);
 	});
 
-	it.skip("shows the list as it is when there are no groups", () => {
+	it("shows the list as it is when there are no groups", () => {
 		expect(displayStatesFor(["Analysis", "Testing"], [])).toEqual([
 			"Analysis",
 			"Testing",
