@@ -5,7 +5,7 @@ import {
 	type ObservedRun,
 	type ObservedTest,
 	type TimeBudgetOptions,
-} from "./compareToAllowList";
+} from "./compareToAllowList.ts";
 
 // A test offends only when it takes strictly more than its limit.
 const plainRun: TimeBudgetOptions = {

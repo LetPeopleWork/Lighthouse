@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	resolveTimeBudgetOptions,
 	TIME_BUDGET_VARIABLE,
-} from "./timeBudgetOptions";
+} from "./timeBudgetOptions.ts";
 
 const plainArgv = ["node", "vitest.mjs", "run", "--reporter=default"];
 const coverageArgv = ["node", "vitest.mjs", "run", "--coverage"];

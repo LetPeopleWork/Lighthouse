@@ -6,13 +6,13 @@ import {
 	type AllowListEntry,
 	compareToAllowList,
 	type TimeBudgetOptions,
-} from "./compareToAllowList";
+} from "./compareToAllowList.ts";
 import {
 	observeVitestRun,
 	type VitestRunOutcome,
 	vitestRunOutcome,
-} from "./observedRunFromVitest";
-import type { TimeBudgetSwitches } from "./timeBudgetOptions";
+} from "./observedRunFromVitest.ts";
+import type { TimeBudgetSwitches } from "./timeBudgetOptions.ts";
 
 export interface TimeBudgetReporterOptions
 	extends TimeBudgetOptions,

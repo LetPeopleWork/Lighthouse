@@ -1,4 +1,4 @@
-import type { RunKind, TimeBudgetMode } from "./compareToAllowList";
+import type { RunKind, TimeBudgetMode } from "./compareToAllowList.ts";
 
 export const TIME_BUDGET_VARIABLE = "LIGHTHOUSE_TIME_BUDGET";
 

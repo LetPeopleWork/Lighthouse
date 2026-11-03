@@ -5,7 +5,7 @@ import {
 	type VitestRunOutcome,
 	type VitestTestOutcome,
 	vitestRunOutcome,
-} from "./observedRunFromVitest";
+} from "./observedRunFromVitest.ts";
 
 interface FakeCase {
 	name: string;

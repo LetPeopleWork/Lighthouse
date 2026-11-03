@@ -1,4 +1,4 @@
-import type { ObservedRun, ObservedTest } from "./compareToAllowList";
+import type { ObservedRun, ObservedTest } from "./compareToAllowList.ts";
 
 export interface VitestTestOutcome {
 	name: string;

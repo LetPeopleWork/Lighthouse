@@ -1,6 +1,6 @@
 // A test over its budget is listed here with why it is slow and a ceiling in seconds on a quiet machine.
 // An entry whose test now runs well under budget, or no longer exists, fails the run until it is removed.
-import type { AllowListEntry } from "./compareToAllowList";
+import type { AllowListEntry } from "./compareToAllowList.ts";
 
 export const slowTests: readonly AllowListEntry[] = [
 	{
