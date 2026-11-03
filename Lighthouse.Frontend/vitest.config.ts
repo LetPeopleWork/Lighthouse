@@ -3,14 +3,14 @@ import { defineConfig } from "vitest/config";
 import { EXPECTED_TEST_FAILURE } from "./src/tests/ExpectedTestFailure.ts";
 import { resolveTestWorkers } from "./src/tests/testWorkers.ts";
 import { slowTests } from "./src/tests/timeBudget/slowTests.ts";
-import { resolveTimeBudgetOptions } from "./src/tests/timeBudget/timeBudgetOptions.ts";
+import { isCiRun, resolveTimeBudgetOptions } from "./src/tests/timeBudget/timeBudgetOptions.ts";
 import { TimeBudgetReporter } from "./src/tests/timeBudget/timeBudgetReporter.ts";
 
 // Per-test budget in seconds on a quiet machine.
 const BUDGET_SECONDS = 2;
 // CI coverage runs are about 2-3x slower per test, so every limit is scaled by this.
 const COVERAGE_FACTOR = 3;
-// The first test of a file pays for importing the component tree, so it gets extra time.
+// The first test of a file pays for the cold first render and module warm-up inside the test, so it gets extra time.
 const FIRST_TEST_ALLOWANCE_SECONDS = 0.31;
 
 const workers = resolveTestWorkers(process.env, availableParallelism());
@@ -67,7 +67,7 @@ export default defineConfig({
 		fileParallelism: true,
 
 		// CI-specific optimizations
-		...(process.env.CI && {
+		...(isCiRun(process.env) && {
 			bail: 1, // Optional: fail fast
 		}),
 	},

@@ -39,13 +39,11 @@ class GatherTests(unittest.TestCase):
         self.assertGreater(len(frontend), 0)
 
     def test_ignores_unrelated_json_files(self):
+        without = gather([self.tmp])
         (self.tmp / "package.json").write_text(
             json.dumps({"name": "not-a-test-result"})
         )
-        rows = gather([self.tmp])
-        frontend = [row for row in rows if row["stack"] == "Frontend"]
-        for row in frontend:
-            self.assertNotEqual(row["name"], "")
+        self.assertEqual(len(gather([self.tmp])), len(without))
 
 
 class RenderTopNTests(unittest.TestCase):
@@ -117,9 +115,37 @@ class SummaryProfileTests(unittest.TestCase):
         self.assertTrue(self.summary[1].startswith("Frontend :"))
 
     def test_reports_the_share_of_time_held_by_the_slowest_files(self):
-        self.assertIn("Slowest 10 files : 100% of summed time (6.5s)", self.summary)
-        self.assertIn("Slowest 20 files : 100% of summed time (6.5s)", self.summary)
-        self.assertIn("Slowest 50 files : 100% of summed time (6.5s)", self.summary)
+        self.assertIn(
+            "Slowest 10 frontend files : 100% of summed time (1.7s)", self.summary
+        )
+        self.assertIn(
+            "Slowest 20 frontend files : 100% of summed time (1.7s)", self.summary
+        )
+        self.assertIn(
+            "Slowest 50 frontend files : 100% of summed time (1.7s)", self.summary
+        )
+
+    def test_keeps_backend_categories_out_of_the_file_shares(self):
+        rows = [
+            {
+                "stack": "Backend",
+                "name": "Big.Backend.Test",
+                "category_or_file": "Integration",
+                "duration_ms": 90000.0,
+                "outcome": "Passed",
+            },
+            {
+                "stack": "Frontend",
+                "name": "only frontend",
+                "category_or_file": "src/a.test.tsx",
+                "duration_ms": 1000.0,
+                "outcome": "Passed",
+            },
+        ]
+        summary = _render_summary(rows).splitlines()
+        self.assertIn(
+            "Slowest 10 frontend files : 100% of summed time (1.0s)", summary
+        )
 
     def test_reports_counts_and_seconds_of_tests_over_each_threshold(self):
         self.assertIn("Tests > 0.1s : {:>5} ({:.1f}s)".format(7, 6.5), self.summary)

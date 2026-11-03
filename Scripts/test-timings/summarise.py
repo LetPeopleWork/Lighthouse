@@ -148,6 +148,8 @@ def _render_summary(rows: list[dict[str, object]]) -> str:
 def _render_profile(rows: list[dict[str, object]]) -> list[str]:
     per_file: dict[tuple[object, object], float] = {}
     for row in rows:
+        if row["stack"] != "Frontend":
+            continue
         key = (row["stack"], row["category_or_file"])
         per_file[key] = per_file.get(key, 0.0) + float(row["duration_ms"])
     file_totals = sorted(per_file.values(), reverse=True)
@@ -158,7 +160,7 @@ def _render_profile(rows: list[dict[str, object]]) -> list[str]:
         held_ms = sum(file_totals[:n])
         share = held_ms / total_ms * 100 if total_ms else 0.0
         lines.append(
-            f"Slowest {n} files : {share:.0f}% of summed time ({held_ms / 1000:.1f}s)"
+            f"Slowest {n} frontend files : {share:.0f}% of summed time ({held_ms / 1000:.1f}s)"
         )
     for threshold in _THRESHOLDS_S:
         over = [

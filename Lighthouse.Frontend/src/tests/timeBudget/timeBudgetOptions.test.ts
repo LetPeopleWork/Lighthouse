@@ -1,20 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-	resolveTimeBudgetOptions,
-	TIME_BUDGET_VARIABLE,
-} from "./timeBudgetOptions.ts";
+import { resolveTimeBudgetOptions } from "./timeBudgetOptions.ts";
 
 const plainArgv = ["node", "vitest.mjs", "run", "--reporter=default"];
 const coverageArgv = ["node", "vitest.mjs", "run", "--coverage"];
 const noRunArgv = ["node", "vitest.mjs"];
 
 describe("time-budget options", () => {
-	// The variable-name constant exists in the stub, so this one passes before the
-	// guard is built; that is deliberate.
-	it("reads its switch from LIGHTHOUSE_TIME_BUDGET", () => {
-		expect(TIME_BUDGET_VARIABLE).toBe("LIGHTHOUSE_TIME_BUDGET");
-	});
-
 	describe("enforcement", () => {
 		it.each([
 			["nothing is set", {}],
@@ -52,6 +43,21 @@ describe("time-budget options", () => {
 			expect(
 				resolveTimeBudgetOptions({ CI: "true" }, coverageArgv).runKind,
 			).toBe("coverage");
+		});
+
+		it.each([
+			["--coverage", "coverage"],
+			["--coverage=true", "coverage"],
+			["--coverage.enabled", "coverage"],
+			["--coverage.enabled=true", "coverage"],
+			["--coverage=false", "plain"],
+			["--coverage.enabled=false", "plain"],
+			["--coverage.reporter=text", "plain"],
+		] as const)("reads %s as a %s run", (flag, expected) => {
+			expect(
+				resolveTimeBudgetOptions({}, ["node", "vitest.mjs", "run", flag])
+					.runKind,
+			).toBe(expected);
 		});
 	});
 
@@ -117,6 +123,20 @@ describe("time-budget options", () => {
 				"fail",
 			);
 		});
+
+		it.each([
+			["CI=1", "1", "fail"],
+			["CI=TRUE", "TRUE", "fail"],
+			["CI=false", "false", "off"],
+			["an empty CI", "", "off"],
+		])(
+			"reads %s like Vitest does when deciding whether a bare command is a watch",
+			(_name, ci, expected) => {
+				expect(resolveTimeBudgetOptions({ CI: ci }, noRunArgv).mode).toBe(
+					expected,
+				);
+			},
+		);
 
 		it("stays on for a one-off run given as --run", () => {
 			expect(

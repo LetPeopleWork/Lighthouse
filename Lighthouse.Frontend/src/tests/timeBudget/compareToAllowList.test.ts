@@ -399,7 +399,26 @@ describe("time-budget comparison", () => {
 			expect(verdict.findings).toEqual([]);
 		});
 
-		it("is stale when its file is gone from disk, whether or not the run touched it", () => {
+		it("is stale when its file is gone from disk although the run collected it", () => {
+			const verdict = compareToAllowList(
+				aRun([aTest({ name: slowOne, seconds: 1 })], {
+					fileExists: () => false,
+				}),
+				listed(),
+				plainRun,
+			);
+
+			expect(verdict.findings).toEqual([
+				{
+					kind: "stale",
+					file: reportsFile,
+					name: slowOne,
+					why: "file-gone",
+				},
+			]);
+		});
+
+		it("is stale when its file is gone from disk and the run did not touch it", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ file: settingsFile })], {
 					fileExists: (file) => file !== reportsFile,
@@ -468,7 +487,7 @@ describe("time-budget comparison", () => {
 			]);
 		});
 
-		it("is measured against a quarter of the unscaled budget in a coverage run too", () => {
+		it("is not judged against a scaled quarter of the budget in a coverage run", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ name: slowOne, seconds: 0.8 })]),
 				listed(),
@@ -476,6 +495,42 @@ describe("time-budget comparison", () => {
 			);
 
 			expect(verdict.findings).toEqual([]);
+		});
+
+		it("never retires in a coverage run, however quickly the test ran", () => {
+			const verdict = compareToAllowList(
+				aRun([aTest({ name: slowOne, seconds: 0.3 })]),
+				listed(),
+				coverageRun,
+			);
+
+			expect(verdict.findings).toEqual([]);
+		});
+
+		it("stays listed when it failed, even if it failed fast", () => {
+			const verdict = compareToAllowList(
+				aRun([aTest({ name: slowOne, seconds: 0.1, state: "failed" })]),
+				listed(),
+				plainRun,
+			);
+
+			expect(verdict.findings).toEqual([]);
+		});
+
+		it("prints a limit that is a floating-point sum rounded like the duration", () => {
+			const verdict = compareToAllowList(
+				aRun([aTest({ name: slowOne, seconds: 5, firstInFile: true })]),
+				listed({ ceilingSeconds: 1.1 }),
+				{
+					...coverageRun,
+					coverageFactor: 3,
+					firstTestAllowanceSeconds: 0.31,
+				},
+			);
+
+			expect(verdict.lines).toEqual([
+				`${reportsFile} :: ${slowOne} took 5 s, limit 3.61 s`,
+			]);
 		});
 	});
 

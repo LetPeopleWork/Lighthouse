@@ -76,7 +76,7 @@ function printedSeconds(seconds: number): string {
 }
 
 function describeOverrun(test: ObservedTest, limitSeconds: number): string {
-	return `${test.file} :: ${test.name} took ${printedSeconds(test.seconds)} s, limit ${limitSeconds} s`;
+	return `${test.file} :: ${test.name} took ${printedSeconds(test.seconds)} s, limit ${printedSeconds(limitSeconds)} s`;
 }
 
 function staleReason(
@@ -91,7 +91,8 @@ function staleReason(
 	);
 	if (!ran) return "test-absent";
 	// A coverage run slows tests down, so it can keep an entry but never retire it.
-	const retiresEntries = options.runKind === "plain" && ran.state !== "skipped";
+	// Only a passed test can retire an entry: a failed one may simply have failed fast.
+	const retiresEntries = options.runKind === "plain" && ran.state === "passed";
 	if (retiresEntries && ran.seconds < options.budgetSeconds / 4) {
 		return "ran-far-under-budget";
 	}
@@ -119,30 +120,31 @@ export function compareToAllowList(
 	allowList: readonly AllowListEntry[],
 	options: TimeBudgetOptions,
 ): Verdict {
+	if (options.mode === "off")
+		return { findings: [], failing: false, lines: [] };
+
 	const findings: Finding[] = [];
 	const lines: string[] = [];
 
-	if (options.mode !== "off") {
-		for (const test of run.tests) {
-			if (test.state === "skipped") continue;
-			const entry = allowList.find(
-				(candidate) =>
-					candidate.file === test.file && candidate.name === test.name,
-			);
-			const limitSeconds = limitFor(test, entry, options);
-			if (test.seconds <= limitSeconds) continue;
-			findings.push({
-				kind: entry ? "over-ceiling" : "over-budget",
-				file: test.file,
-				name: test.name,
-				seconds: test.seconds,
-				limitSeconds,
-			});
-			lines.push(describeOverrun(test, limitSeconds));
-		}
+	for (const test of run.tests) {
+		if (test.state === "skipped") continue;
+		const entry = allowList.find(
+			(candidate) =>
+				candidate.file === test.file && candidate.name === test.name,
+		);
+		const limitSeconds = limitFor(test, entry, options);
+		if (test.seconds <= limitSeconds) continue;
+		findings.push({
+			kind: entry ? "over-ceiling" : "over-budget",
+			file: test.file,
+			name: test.name,
+			seconds: test.seconds,
+			limitSeconds,
+		});
+		lines.push(describeOverrun(test, limitSeconds));
 	}
 
-	if (options.mode !== "off" && run.complete) {
+	if (run.complete) {
 		for (const finding of staleFindings(run, allowList, options)) {
 			findings.push(finding);
 			lines.push(

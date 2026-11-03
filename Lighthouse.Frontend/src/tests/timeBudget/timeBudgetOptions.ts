@@ -27,8 +27,21 @@ function requestedMode(env: Environment): TimeBudgetMode {
 	);
 }
 
+/** Vitest's own reading: CI counts as set unless it is empty or "false". */
+export function isCiRun(env: Environment): boolean {
+	const ci = env.CI;
+	return ci !== undefined && ci !== "" && ci.toLowerCase() !== "false";
+}
+
+const COVERAGE_SWITCHED_ON = new Set([
+	"--coverage",
+	"--coverage=true",
+	"--coverage.enabled",
+	"--coverage.enabled=true",
+]);
+
 function isWatchRun(env: Environment, argv: readonly string[]): boolean {
-	if (env.CI?.toLowerCase() === "true") {
+	if (isCiRun(env)) {
 		return false;
 	}
 	if (argv.includes("--watch")) {
@@ -63,7 +76,7 @@ export function resolveTimeBudgetOptions(
 
 	return {
 		mode,
-		runKind: argv.some((argument) => argument.startsWith("--coverage"))
+		runKind: argv.some((argument) => COVERAGE_SWITCHED_ON.has(argument))
 			? "coverage"
 			: "plain",
 		annotation: annotationFor(env, mode),

@@ -3,21 +3,9 @@ import {
 	observeVitestRun,
 	type VitestFileOutcome,
 	type VitestRunOutcome,
-	type VitestTestOutcome,
 	vitestRunOutcome,
 } from "./observedRunFromVitest.ts";
-
-interface FakeCase {
-	name: string;
-	parent: FakeParent;
-	result(): { state: VitestTestOutcome["state"] };
-	diagnostic(): { duration: number } | undefined;
-}
-
-interface FakeModule {
-	relativeModuleId: string;
-	children: { allTests(): Iterable<FakeCase> };
-}
+import { aCase, aModule, aSuite, type FakeCase } from "./vitestFakes.ts";
 
 const reportsFile = "src/pages/Reports/ReportsPage.test.tsx";
 const settingsFile = "src/pages/Teams/ModifyTeamSettings.test.tsx";
@@ -122,6 +110,20 @@ describe("reading a Vitest run", () => {
 		expect(observed.collectedFiles).toEqual([reportsFile, settingsFile]);
 	});
 
+	it("does not count a file that failed while being collected as collected", () => {
+		const observed = observeVitestRun(
+			aRunOutcome([
+				aFile(reportsFile, [
+					{ name: "the test", state: "passed", durationMs: 10 },
+				]),
+				{ file: settingsFile, tests: [], collectionFailed: true },
+			]),
+			everythingExists,
+		);
+
+		expect(observed.collectedFiles).toEqual([reportsFile]);
+	});
+
 	it.each([
 		["passed", true],
 		["failed", true],
@@ -145,38 +147,6 @@ describe("reading a Vitest run", () => {
 		expect(observed.fileExists(settingsFile)).toBe(false);
 	});
 });
-
-type FakeParent =
-	| { type: "module" }
-	| { type: "suite"; name: string; parent: FakeParent };
-
-function aModule(relativeModuleId: string, tests: FakeCase[]): FakeModule {
-	return {
-		relativeModuleId,
-		children: { allTests: () => tests },
-	};
-}
-
-function aSuite(
-	name: string,
-	parent: FakeParent = { type: "module" },
-): FakeParent {
-	return { type: "suite", name, parent };
-}
-
-function aCase(
-	name: string,
-	parent: FakeParent,
-	state: VitestTestOutcome["state"] = "passed",
-	duration?: number,
-): FakeCase {
-	return {
-		name,
-		parent,
-		result: () => ({ state }),
-		diagnostic: () => (duration === undefined ? undefined : { duration }),
-	};
-}
 
 describe("naming Vitest tests like the JSON reporter", () => {
 	const nameOf = (test: FakeCase) =>
@@ -208,6 +178,21 @@ describe("naming Vitest tests like the JSON reporter", () => {
 		);
 	});
 
+	it("flags a module that reported errors during collection", () => {
+		const outcome = vitestRunOutcome(
+			[
+				aModule("src/broken.test.ts", [], [new Error("syntax error")]),
+				aModule("src/fine.test.ts", []),
+			],
+			"failed",
+		);
+
+		expect(outcome.files.map((file) => file.collectionFailed)).toEqual([
+			true,
+			false,
+		]);
+	});
+
 	it("maps file, state and duration, defaulting a missing duration to zero", () => {
 		const outcome = vitestRunOutcome(
 			[
@@ -223,6 +208,7 @@ describe("naming Vitest tests like the JSON reporter", () => {
 			files: [
 				{
 					file: "src/x.test.ts",
+					collectionFailed: false,
 					tests: [
 						{ name: "S ran", state: "passed", durationMs: 12.5 },
 						{ name: "S skipped", state: "skipped", durationMs: 0 },

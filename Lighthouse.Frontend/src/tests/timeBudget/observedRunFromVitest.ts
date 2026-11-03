@@ -9,6 +9,8 @@ export interface VitestTestOutcome {
 export interface VitestFileOutcome {
 	file: string;
 	tests: readonly VitestTestOutcome[];
+	/** True when the file broke while Vitest was collecting its tests, so its tests are unknown. */
+	collectionFailed?: boolean;
 }
 
 export interface VitestRunOutcome {
@@ -44,7 +46,9 @@ export function observeVitestRun(
 ): ObservedRun {
 	return {
 		tests: outcome.files.flatMap(observeFile),
-		collectedFiles: outcome.files.map((file) => file.file),
+		collectedFiles: outcome.files
+			.filter((file) => !file.collectionFailed)
+			.map((file) => file.file),
 		complete: outcome.reason !== "interrupted",
 		fileExists,
 	};
@@ -66,6 +70,7 @@ export interface VitestTestCaseLike {
 export interface VitestModuleLike {
 	relativeModuleId: string;
 	children: { allTests(): Iterable<VitestTestCaseLike> };
+	errors(): readonly unknown[];
 }
 
 /**
@@ -89,6 +94,7 @@ export function vitestRunOutcome(
 	return {
 		files: modules.map((module) => ({
 			file: module.relativeModuleId,
+			collectionFailed: module.errors().length > 0,
 			tests: Array.from(module.children.allTests(), (test) => ({
 				name: jsonReporterFullName(test),
 				state: test.result().state,
