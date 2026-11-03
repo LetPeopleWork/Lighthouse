@@ -9,8 +9,8 @@ import {
 } from "./compareToAllowList";
 import {
 	observeVitestRun,
-	type VitestFileOutcome,
 	type VitestRunOutcome,
+	vitestRunOutcome,
 } from "./observedRunFromVitest";
 import type { TimeBudgetSwitches } from "./timeBudgetOptions";
 
@@ -20,17 +20,6 @@ export interface TimeBudgetReporterOptions
 	allowList: readonly AllowListEntry[];
 	workers: number | undefined;
 	frontendRoot: string;
-}
-
-function fileOutcome(module: TestModule): VitestFileOutcome {
-	return {
-		file: module.relativeModuleId,
-		tests: Array.from(module.children.allTests()).map((test) => ({
-			name: test.fullName,
-			state: test.result().state,
-			durationMs: test.diagnostic()?.duration ?? 0,
-		})),
-	};
 }
 
 export class TimeBudgetReporter implements Reporter {
@@ -52,12 +41,8 @@ export class TimeBudgetReporter implements Reporter {
 		const { options } = this;
 		if (options.mode === "off") return;
 
-		const outcome: VitestRunOutcome = {
-			files: testModules.map(fileOutcome),
-			reason,
-		};
 		const verdict = compareToAllowList(
-			observeVitestRun(outcome, (file) =>
+			observeVitestRun(vitestRunOutcome(testModules, reason), (file) =>
 				existsSync(resolve(options.frontendRoot, file)),
 			),
 			options.allowList,

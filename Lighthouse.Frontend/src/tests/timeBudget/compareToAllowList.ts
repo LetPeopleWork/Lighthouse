@@ -71,8 +71,12 @@ function limitFor(
 	return test.firstInFile ? scaled + options.firstTestAllowanceSeconds : scaled;
 }
 
+function printedSeconds(seconds: number): string {
+	return String(Number(seconds.toFixed(2)));
+}
+
 function describeOverrun(test: ObservedTest, limitSeconds: number): string {
-	return `${test.file} :: ${test.name} took ${test.seconds} s, limit ${limitSeconds} s`;
+	return `${test.file} :: ${test.name} took ${printedSeconds(test.seconds)} s, limit ${limitSeconds} s`;
 }
 
 function staleReason(

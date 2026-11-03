@@ -49,3 +49,52 @@ export function observeVitestRun(
 		fileExists,
 	};
 }
+
+interface VitestParent {
+	type: string;
+	name?: string;
+	parent?: VitestParent;
+}
+
+export interface VitestTestCaseLike {
+	name: string;
+	parent: VitestParent;
+	result(): { state: VitestTestOutcome["state"] };
+	diagnostic(): { duration: number } | undefined;
+}
+
+export interface VitestModuleLike {
+	relativeModuleId: string;
+	children: { allTests(): Iterable<VitestTestCaseLike> };
+}
+
+/**
+ * The name the JSON reporter writes as `fullName`: the enclosing describe
+ * titles, outermost first, then the test title, joined by single spaces.
+ */
+function jsonReporterFullName(test: VitestTestCaseLike): string {
+	const titles = [test.name];
+	let node: VitestParent | undefined = test.parent;
+	while (node && node.type !== "module") {
+		titles.unshift(node.name ?? "");
+		node = node.parent;
+	}
+	return titles.join(" ");
+}
+
+export function vitestRunOutcome(
+	modules: readonly VitestModuleLike[],
+	reason: VitestRunOutcome["reason"],
+): VitestRunOutcome {
+	return {
+		files: modules.map((module) => ({
+			file: module.relativeModuleId,
+			tests: Array.from(module.children.allTests(), (test) => ({
+				name: jsonReporterFullName(test),
+				state: test.result().state,
+				durationMs: test.diagnostic()?.duration ?? 0,
+			})),
+		})),
+		reason,
+	};
+}
