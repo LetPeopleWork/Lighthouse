@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { PAGE_SIZE } from "../../../../components/Common/DataGrid/RowRangeFooter";
 import { describeEnoughFor, lineBeside } from "./enoughForPlacement";
 import {
 	LINE_HEIGHT_PX,
@@ -8,7 +9,6 @@ import {
 	spaceKeptFor,
 } from "./refinementPaging";
 
-const PAGE_SIZE = 100;
 const TERMS = {
 	workItem: "Work Item",
 	workItems: "Work Items",
@@ -70,33 +70,19 @@ describe("shownCountOf", () => {
 
 describe("the line in a list of 143 shown rows", () => {
 	it.each([
-		[0, 1, "above", "EnoughFor", 0],
-		[20, 1, "below", "EnoughFor", 19],
-		[100, 1, "below", "EnoughFor", 99],
-		[101, 2, "below", "EnoughFor", 100],
-		[120, 2, "below", "EnoughFor", 119],
-		[143, 2, "below", "EnoughFor", 142],
-		[150, 2, "below", "AllNeeded", 142],
+		[0, 1, "above", "EnoughFor", 0, { top: LINE_HEIGHT_PX }],
+		[20, 1, "below", "EnoughFor", 19, { bottom: LINE_HEIGHT_PX }],
+		[100, 1, "below", "EnoughFor", 99, { bottom: LINE_HEIGHT_PX }],
+		[101, 2, "below", "EnoughFor", 100, { bottom: LINE_HEIGHT_PX }],
+		[120, 2, "below", "EnoughFor", 119, { bottom: LINE_HEIGHT_PX }],
+		[143, 2, "below", "EnoughFor", 142, { bottom: LINE_HEIGHT_PX }],
+		[150, 2, "below", "AllNeeded", 142, { bottom: LINE_HEIGHT_PX }],
 	])(
-		"with %i needed, the line is beside one row only, on page %i",
-		(high, page, side, says, index) => {
+		"with %i needed, the line is beside one row only, on page %i, and space is kept for it there and nowhere else",
+		(high, page, side, says, index, space) => {
 			expect(linesInTheWholeList(high, 143)).toEqual([
 				{ index, page, side, says },
 			]);
-		},
-	);
-
-	it.each([
-		[0, 0, { top: LINE_HEIGHT_PX }],
-		[20, 19, { bottom: LINE_HEIGHT_PX }],
-		[100, 99, { bottom: LINE_HEIGHT_PX }],
-		[101, 100, { bottom: LINE_HEIGHT_PX }],
-		[120, 119, { bottom: LINE_HEIGHT_PX }],
-		[143, 142, { bottom: LINE_HEIGHT_PX }],
-		[150, 142, { bottom: LINE_HEIGHT_PX }],
-	])(
-		"with %i needed, space is kept for the line at place %i and nowhere else",
-		(high, index, space) => {
 			expect(spaceInTheWholeList(high, 143)).toEqual([{ index, space }]);
 		},
 	);

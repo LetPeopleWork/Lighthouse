@@ -22,9 +22,10 @@ import {
 
 /**
  * Team Gravity has 143 Work Items in refinement, more than one page of the list holds. Every one of
- * them can be reached and voted on, and the line marking how many are needed before the next
- * Refinement sits where it falls in the whole list: on whichever page holds that row, with nothing
- * on the other page, and "All N … are needed" only under the list's own last row.
+ * them can be reached and voted on, and the numbers and the line marking how many are needed before
+ * the next Refinement carry on across the page edge: the second page picks up counting where the
+ * first stopped, and the line sits under the row that falls last among those needed. Where the line
+ * says all of them are needed is checked in RefinementView.pageEdge.test.tsx.
  */
 
 const { terms, mockUseLicenseRestrictions, reporter } = vi.hoisted(() => ({
