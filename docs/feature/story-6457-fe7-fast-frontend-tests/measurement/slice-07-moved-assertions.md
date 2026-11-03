@@ -367,6 +367,6 @@ page %i" and "... space is kept for the line at place %i and nowhere else") are 
 needed, the line is beside one row only, on page %i, and space is kept for it there and nowhere else", with the same
 assertions (7 tests fewer, none lost); `PAGE_SIZE` is imported from `RowRangeFooter.tsx`; the new file adds one test.
 `pnpm build` clean (no Biome rewrite of a committed file); `LIGHTHOUSE_TIME_BUDGET=warn pnpm test` 595 files, 9229
-tests, passed. `git diff --name-only 15bf02cb2..HEAD` outside `docs/` shows the declared universe plus
-`.claude/commands/continuous-improvement.md` and `CLAUDE.md`, which come from another session's commit
+tests, passed at the test commit; 596 files, 9,223 tests, passed after the review revision. `git diff --name-only 15bf02cb2..HEAD` outside `docs/` shows the declared universe plus
+`.claude/commands/continuous-improvement.md` and `CLAUDE.md`, which come from the lead's process commit
 (`a15fb6497`), not from this step.
