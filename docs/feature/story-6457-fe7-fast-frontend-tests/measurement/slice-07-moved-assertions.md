@@ -87,6 +87,10 @@ Not changed: `DataGridBase.tsx`, `RowRangeFooter.tsx`, `enoughForPlacement.ts`, 
 - `src/pages/Teams/Detail/Refinement/RefinementView.test.tsx` (only the 300-row test)
 - `src/tests/timeBudget/slowTests.ts` (delete the entries 08-02 fixes)
 
+Added in the review revision: `src/pages/Teams/Detail/Refinement/RefinementView.pageEdge.test.tsx` (new file, so its
+module mocks reach no other file), the render that proves the "All N ... are needed" sentence counts the whole list
+on page 2. No production file changes.
+
 Preserved untouched (must stay green as they are; they hold wiring named below):
 `RefinementView.comments.test.tsx`, `RefinementView.votes.test.tsx`, `RefinementView.enoughFor.test.tsx`,
 `EnoughForLine.test.tsx`, `enoughForPlacement.test.ts`, `DataGridBase.paging.test.tsx`.
@@ -269,7 +273,7 @@ the "all 143" sentence and the 64-row result).
 | Measure | Before | After |
 |---|---|---|
 | Test count (four files) | 82 | 72 |
-| Tests added (two new files) | n/a | 48 (`refinementPaging.test.ts` 37, `refinementHeading.test.ts` 11) |
+| Tests added (three new files, after the review revision) | n/a | 42 (`refinementPaging.test.ts` 30, `refinementHeading.test.ts` 11, `RefinementView.pageEdge.test.tsx` 1); the first draft had 48, 37 in the paging file |
 | Tests removed | n/a | 10 (the seven placement cases, the numbering test, the State filter test, the 300-row test) |
 | Preserved ids missing | n/a | 10 (the removed tests, rows below); 0 added in the four files |
 | Line coverage, `src/pages/Teams/Detail/Refinement/**` | 100 (551/551) | 100 (556/556) |
@@ -295,11 +299,22 @@ tests), then restored (`git checkout`); the surviving test that failed is named.
 | `spaceKeptFor(high, row)` | `high + 1` | the GR-0131 test, "reserves the space the line takes after the last needed row", "reserves the space the line takes before the first row when nothing is needed", "moves with the number needed when the Refinement is read again" (5 failed) |
 | `describeHeading(refinement, getTerm)` | replaced by a constant | "heads the tab with the list broken down by stage, and counts it nowhere else", "reads the heading first and the next Refinement after it", "counts the Work Items the votes made Ready in the heading, on the heading's own line", and others |
 | same | `getTerm` replaced by the identity | "asks for this Team's refinement and counts what it holds in the heading above a grid", "counts a single Work Item in the singular", "says the Team's own words in the heading and the name column", and others |
+| `gridExpandedRowCountSelector` read in `EnoughForRow` (review revision) | count made page-local: `gridPaginatedVisibleSortedGridRowIdsSelector(...).length` | `RefinementView.pageEdge.test.tsx` :: "with 15 Work Items in refinement and 20 needed, the first page has no such line and the second says all 15 under its last row", and the GR-0131 test (2 failed; both pass on the real code) |
+| `props.isNotVisible` argument of `shownRowOf` in `EnoughForRow` (review revision) | `false` passed instead | no failure (395 of 395 passed); see the pre-existing gap below |
 
-Gap noted, not closed: the page-2 side of the shown-row rule (`shownCount` 143 at the page edge) is only proven by
-the unit test, since no surviving render of the whole list ends on the "all needed" sentence; the placement of the
-line on page 2 is still proven in a render by the GR-0131 test (`neededNumberAt` and `spaceKeptFor` mutations
-fail it).
+Gap closed in the review revision: the page-2 side of the shown-row rule (the "All N ... are needed" sentence counting
+the whole list, not the page) was first proven only by the unit test. `RefinementView.pageEdge.test.tsx` now renders
+it (page size shortened to 10 as in `ReportsPage.pickLimit.test.tsx`, 15 Work Items, 20 needed: page 1 has no such
+line, page 2 shows rows 11 to 15 and "All 15 Work Items in Refinement are needed before the next Refinement." under
+GR-0015); it takes 0.58 s and needs no allow-list entry. A separate file, so its mocks of `RowRangeFooter` (the
+exported `PAGE_SIZE`, and the footer, whose own show-or-hide test reads a constant private to its module) and of
+the grid's starting page affect no other file.
+
+Pre-existing gap, not closed: the `isNotVisible` argument (a row the grid keeps rendered out of sight draws no line)
+is proven only by the pure `enoughForPlacement.test.ts`; at `15bf02cb2` it was equally unproven in a render.
+
+Follow-up, not done here: the describe/it names of the 38-row test ("Team Gravity's 143 Work Items ... can all be
+reached" over a test about 38 rows and no footer) pre-date the slice; renaming changes ids, so it is left.
 
 ### Moved assertions
 
@@ -316,9 +331,9 @@ fail it).
 | same (2) | `expect` the progress `img` named "100 of 120 needed before the next Refinement" | the GR-0131 test | GR-0131 test (same `getByRole("img", ...)` assertion) |
 | same (3) | `expect(queryAllByText(THE_LINE)).toEqual([])` on page 1 | the GR-0131 test | `expectOnThisPage(null)` on page 1, which asserts no line text and no kept space (stronger) |
 | same (4) | `expect` the "#" cells of page 2 equal 101..120 then 23 blanks | the GR-0131 test and `refinementPaging.test.ts` | GR-0131 test (same assertion); the numbering unit test above |
-| `RefinementView.paging.test.tsx` :: with 120 needed, a State filter on the second page that leaves 64 ... (1) | after the filter the page holds GR-0001..GR-0064 | not a function of ours (MUI's filter); the filtered *result* is `refinementPaging.test.ts`; the real filter on a small list stays in `RefinementView.enoughFor.test.tsx` | "puts it under the last shown row, saying all 64 are needed, with 120 needed"; enoughFor: "says all the shown ones are needed when a filter leaves fewer than needed" and "draws the line after the last shown row when a filter leaves exactly as many as needed" |
+| `RefinementView.paging.test.tsx` :: with 120 needed, a State filter on the second page that leaves 64 ... (1) | after the filter the page holds GR-0001..GR-0064 | not a function of ours (MUI's filter); the filtered *result* is `refinementPaging.test.ts`; the real filter on a small list stays in `RefinementView.enoughFor.test.tsx`. Not asserted any more at render level: that the filter's result *on page 2 of a 143-row list* is exactly GR-0001..GR-0064 (the row set is MUI's filtering and page reset, not our code; the small-list filter tests exercise our reading of the filtered count) | "puts it under the last shown row, saying all 64 are needed, with 120 needed"; enoughFor: "says all the shown ones are needed when a filter leaves fewer than needed" and "draws the line after the last shown row when a filter leaves exactly as many as needed" |
 | same (2) | `expectOnThisPage`: line below GR-0064 saying "All 64 Work Items in Refinement are needed ..." with space kept there only | `refinementPaging.test.ts` | the 64-row test, line, kept space and sentence (shown count 64) |
-| same (3) | no range footer ("N-M of N") after the filter | `RefinementView.paging.test.tsx` and `DataGridBase.paging.test.tsx` | "a Team with 38 Work Items in refinement sees all of them, with no footer" asserts the same `queryByText(/^\d+–\d+ of \d+$/)` absence; the footer is MUI's, not ours |
+| same (3) | no range footer ("N-M of N") after the filter | `DataGridBase.paging.test.tsx` (the footer rule) | Not asserted any more at render level for a *filtered* list. "a Team with 38 Work Items in refinement sees all of them, with no footer" asserts the same absence, but for an unfiltered list of 38, not a list a filter cut from 143 to 64. The footer counts the filtered rows through `RowRangeFooter` and MUI's selector, which are shared grid code with their own tests, not this feature's |
 | `RefinementView.test.tsx` :: handles three hundred Work Items ... (1) | the heading reads "300 Work Items in Refinement" | `refinementHeading.test.ts` | "counts 300 Work Items of a Team without stage rules"; the call site stays proven by "asks for this Team's refinement and counts what it holds in the heading above a grid" |
 | same (2) | the first listed row is GR-1000 | `RefinementView.test.tsx` | "shows the Work Items in the order they came, which is backlog order" (a row order in the server's answer, not size dependent) |
 
@@ -343,7 +358,14 @@ Relative change **-34.5 %** (mean of the five pairs). The preserved `comments` a
 the sum, unchanged) dilute it: in the last pair the two edited files went from 14.80 s (`paging` 11.69, `test`
 3.11) to 5.07 s (`paging` 3.12, `test` 1.95), **-65.7 %**, and the two new unit files add 0.01 s.
 
-Allow-list: 23 before, 13 after. Tests: 82 before, 72 after in the four files, plus 48 new direct tests.
+Allow-list: 23 before, 13 after. Tests: 82 before, 72 after in the four files, plus 42 new tests (review revision; the
+Refinement directory is 388 tests, 27 files).
+
+Review revision, id changes (all ids of tests added in this slice, none in the before list): in
+`refinementPaging.test.ts` the two seven-case tables with identical cases ("... the line is beside one row only, on
+page %i" and "... space is kept for the line at place %i and nowhere else") are one table of seven cases, "with %i
+needed, the line is beside one row only, on page %i, and space is kept for it there and nowhere else", with the same
+assertions (7 tests fewer, none lost); `PAGE_SIZE` is imported from `RowRangeFooter.tsx`; the new file adds one test.
 `pnpm build` clean (no Biome rewrite of a committed file); `LIGHTHOUSE_TIME_BUDGET=warn pnpm test` 595 files, 9229
 tests, passed. `git diff --name-only 15bf02cb2..HEAD` outside `docs/` shows the declared universe plus
 `.claude/commands/continuous-improvement.md` and `CLAUDE.md`, which come from another session's commit
