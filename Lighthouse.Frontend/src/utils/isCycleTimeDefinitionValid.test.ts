@@ -20,7 +20,7 @@ const workflow = (mappings: IStateMapping[] = NO_MAPPINGS) =>
 		mappings,
 	);
 
-describe("isCycleTimeDefinitionValid (C#<->TS parity)", () => {
+describe("isCycleTimeDefinitionValid", () => {
 	it("is valid when both boundary states are present", () => {
 		expect(
 			isCycleTimeDefinitionValid(
@@ -176,6 +176,20 @@ describe("isCycleTimeDefinitionValid (C#<->TS parity)", () => {
 				[emptyMapping],
 			),
 		).toBe(false);
+	});
+
+	it("is valid for a mapping with one state listed and another listed nowhere", () => {
+		const phaseMapping: IStateMapping = {
+			name: "Phase",
+			states: ["Review", "Ghost"],
+		};
+		expect(
+			isCycleTimeDefinitionValid(
+				{ startState: "Phase", endState: "Done" },
+				workflow([phaseMapping]),
+				[phaseMapping],
+			),
+		).toBe(true);
 	});
 
 	it("locates a boundary that matches any underlying state of a multi-state mapping", () => {
