@@ -13,7 +13,7 @@
     "ssot_inputs": [
       "docs/feature/bug-6458-typed-category-entries/feature-delta.md (DESIGN D1-D12, components, Reuse Analysis, UI1-UI8, DISTILL scenario inventory and slice order)",
       "docs/feature/bug-6458-typed-category-entries/distill/red-classification.md",
-      "docs/product/architecture/adr-270-category-lists-hold-raw-states-mappings-are-a-derived-view.md",
+      "docs/product/architecture/adr-277-category-lists-hold-raw-states-mappings-are-a-derived-view.md",
       "docs/ci-learnings.md"
     ],
     "rigor_profile": "thorough (agreed with the maintainer at AFK entry): crafter opus, reviewer sonnet, double review. Pass model explicitly on every dispatch.",

@@ -11039,7 +11039,7 @@ scan for `/levels` on the frontend.
 
 ## Application Architecture — bug-6458-typed-category-entries (DESIGN delta)
 
-Bug 6458 part (a), DESIGN, propose mode. Convention: ADR-270. Workspace:
+Bug 6458 part (a), DESIGN, propose mode. Convention: ADR-277. Workspace:
 `docs/feature/bug-6458-typed-category-entries/`.
 
 **Invariant: the To Do, Doing and Done lists hold raw tracker states; mapping names never appear in them.** A
@@ -11048,7 +11048,7 @@ Bug 6458 part (a), DESIGN, propose mode. Convention: ADR-270. Workspace:
 
 | Decision | Verdict |
 |---|---|
-| Shape | Raw-only lists, mapping as derived view. Typed entries and a category flag rejected (ADR-270) |
+| Shape | Raw-only lists, mapping as derived view. Typed entries and a category flag rejected (ADR-277) |
 | Display columns | Read-only `toDoDisplayStates`, `doingDisplayStates`, `doneDisplayStates` on the settings DTO, computed in the owner |
 | Category lookup | Split in two: raw state (connectors) and display name (stored transitions, fixes the as-of `Unknown`) |
 | Entry classifier | One classifier on the owner (Models). First drops null, empty and whitespace-only entries (expansion set unchanged). Then: (a) name is one of the mapping's own states, keep it and add missing members (takes precedence even when other states of that mapping are listed beside it); (b) collapsed chip, no state of the mapping listed, replace by members in place, never a 400; (c) shadowing, name listed with a state of the mapping alongside, 400 on the write path, legacy expansion plus Warning in the seeder. Output holds a mapping name only under (a) |

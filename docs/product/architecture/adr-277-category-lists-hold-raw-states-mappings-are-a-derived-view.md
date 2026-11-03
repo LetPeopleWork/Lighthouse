@@ -1,4 +1,4 @@
-# ADR-270: Category lists hold raw states; a state mapping is a derived view
+# ADR-277: Category lists hold raw states; a state mapping is a derived view
 
 **Status**: Accepted (2026-11-01, DESIGN of Bug 6458 part (a), propose mode, maintainer sign-off)
 **Date**: 2026-11-01

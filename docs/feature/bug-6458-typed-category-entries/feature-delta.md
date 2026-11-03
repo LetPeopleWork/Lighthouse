@@ -9,7 +9,7 @@ part (a) only.
 - **RCA done**, in `rca.md` here. The maintainer agreed both root causes and the split:
   part (a) is a design flaw (public API values, a data rewrite of stored lists, connector expansion sites,
   the settings editor), so it goes through **DESIGN** before any fix. No further frontend guard.
-- **DESIGN is done (2026-11-01).** Shape (ii-b) was chosen; see "Wave: DESIGN" below and ADR-270.
+- **DESIGN is done (2026-11-01).** Shape (ii-b) was chosen; see "Wave: DESIGN" below and ADR-277.
   **DEVOPS is done (2026-11-01, AFK):** usage-data event is N/A, the seeder is skip-and-log, no clients
   version bump. **DISTILL is done (2026-11-01, AFK):** the scenarios, scaffolds and the red classification are in
   `distill/red-classification.md` and the "Wave: DISTILL" sections below; the UI decisions UI1-UI6 are pinned as
@@ -32,7 +32,7 @@ part (a) only.
 
 ## Wave: DESIGN / [REF] Design decisions
 
-Application scope, propose mode, 2026-11-01. Convention: `docs/product/architecture/adr-270-category-lists-hold-raw-states-mappings-are-a-derived-view.md`.
+Application scope, propose mode, 2026-11-01. Convention: `docs/product/architecture/adr-277-category-lists-hold-raw-states-mappings-are-a-derived-view.md`.
 Architecture delta: `docs/product/architecture/brief.md`, section "bug-6458-typed-category-entries (DESIGN delta)".
 Invariant: the To Do, Doing and Done lists hold raw tracker states; mapping names never appear in them.
 
@@ -49,7 +49,7 @@ Invariant: the To Do, Doing and Done lists hold raw tracker states; mapping name
 | D9 | As-of `Unknown` | Part of (a): failing probe first, fixed by splitting the category lookup into `CategoryOfRawState` and `CategoryOfDisplayName` | One method over two namespaces is the bug class this feature removes |
 | D10 | One entry classifier (DESIGN correction after review) | One classifier on the owner (Models), called by the write path, the validator and the seeder. For a list entry that equals a mapping's name: (a) the name is one of that mapping's own states: a raw state, kept, and the members not yet listed are added after it; (b) collapsed chip: no state of that mapping is listed anywhere in that list: replace the entry by the members, in place, never a 400; (c) shadowing: the name is listed and at least one of the mapping's states is listed alongside: 400 on the write path, legacy expansion plus a Warning in the seeder. Precedence: an entry that is one of its own mapping's states is case (a), even when other states of that mapping are listed beside it (the exclusion the scaffold's `ListEntryKind.cs` doc text omitted; DELIVER corrects that comment). A first step drops null, empty and whitespace-only entries; this leaves the expansion set unchanged, because such an entry expands to nothing a tracker can return. The normaliser's output holds a mapping name only under (a). A mapping with no states (null or empty) is not a group: an entry with its name stays a raw state; the seeder logs it as a Warning with the fixed rule value `EmptyGroup` and does not throw, and no read throws either | The rca.md draft refused case (b), but (b) is the shape the current editor saves on every mapping edit; three documents gave three verdicts. One classifier removes the divergence and keeps services free of an API dependency |
 | D11 | Single write entry for the three lists | `SyncStates` in `TeamExtensions.cs` and `PortfolioExtensions.cs` (the create paths go through the same sync) and the seeder are the only code that assigns `ToDoStates`/`DoingStates`/`DoneStates`; both call the owner's normaliser. An architecture test pins it. Seed-data writer, allow-listed: `DemoDataFactory.cs:36-38` and `:55-57` builds new Teams and Portfolios with list initialisers; its demo lists are raw states and carry no mappings, so there is nothing to normalise | A third writer would skip the classifier |
-| D12 | Normalise on read (maintainer rule: "skip, warn, retry if a user can fix it; if not, normalise") | Supersedes the "lists read as they are" wording of D1 and ADR-270. The stored value still holds raw states, but every read goes through the owner's one classifier / normaliser (D10): `AllStates`, `OpenStates`, both category lookups, `DisplayStatesFor`, the connector reads and the suggestions endpoint see the normalised view of the stored lists. On a list the seeder already rewrote the normaliser is the identity. A skipped, pre-seeder or old-pod-written owner still loads every item. Case (c), shadowing, reads with the legacy expansion, exactly as the seeder writes it. The seeder stays: it makes stored data match, keeps the API GET's raw lists honest, and retries on every start | The earlier claim "an ordinary save repairs a skipped owner" is false: the seeder skips an owner only when reading or writing that row fails, a persistent failure fails the user's save too, and for the pinned unreadable shape (a group with no states) the save is a 400. Cost: a small per-read cost, and reads depend on the mappings again, but without ambiguity because of the classifier |
+| D12 | Normalise on read (maintainer rule: "skip, warn, retry if a user can fix it; if not, normalise") | Supersedes the "lists read as they are" wording of D1 and ADR-277. The stored value still holds raw states, but every read goes through the owner's one classifier / normaliser (D10): `AllStates`, `OpenStates`, both category lookups, `DisplayStatesFor`, the connector reads and the suggestions endpoint see the normalised view of the stored lists. On a list the seeder already rewrote the normaliser is the identity. A skipped, pre-seeder or old-pod-written owner still loads every item. Case (c), shadowing, reads with the legacy expansion, exactly as the seeder writes it. The seeder stays: it makes stored data match, keeps the API GET's raw lists honest, and retries on every start | The earlier claim "an ordinary save repairs a skipped owner" is false: the seeder skips an owner only when reading or writing that row fails, a persistent failure fails the user's save too, and for the pinned unreadable shape (a group with no states) the save is a 400. Cost: a small per-read cost, and reads depend on the mappings again, but without ambiguity because of the classifier |
 
 ## Wave: DESIGN / [REF] Component decomposition
 
@@ -182,7 +182,7 @@ AFK, 2026-11-01. Nothing was asked; every open point took the recommended option
 | Artifact | Read |
 |---|---|
 | This `feature-delta.md` (DESIGN D1-D9, component decomposition, loading/failure looks, UI decisions UI1-UI6) | yes |
-| `docs/product/architecture/adr-270-category-lists-hold-raw-states-mappings-are-a-derived-view.md` | yes |
+| `docs/product/architecture/adr-277-category-lists-hold-raw-states-mappings-are-a-derived-view.md` | yes |
 | `Program.cs` seeder registration (:1487-1493), `Data/DatabaseConfigurator.cs` (`ApplyMigrations`, `SeedDatabase`), `ApiKeyOwnerReconciliationSeeder.cs` | yes |
 | `Models/UsageData/UsageDataEventName.cs` (values 0-24) | yes |
 | `Services/Implementation/DemoDataService.cs`; `Lighthouse.EndToEndTests/tests` (helpers, POMs, specs) | yes |
@@ -405,7 +405,7 @@ contradict. DESIGN against DEVOPS against the UI decisions:
 Points the review gate should look at (found while writing the tests; each took the reading given, none blocks):
 
 1. **A skipped owner is read as-is.** DEVOPS Q1 says an owner the seeder skips "still works under the legacy
-   one-level expansion". DESIGN D1/ADR-270 made `AllStates`, `OpenStates` and the category lookup read the lists
+   one-level expansion". DESIGN D1/ADR-277 made `AllStates`, `OpenStates` and the category lookup read the lists
    as they are. Both cannot hold: a skipped owner keeps its collapsed list and, once reads are as-is, items in
    the grouped states fall out of the queries. The tests pin the DEVOPS behaviour that is decidable (skip, log a
    Warning with the owner id, still rewrite the others, count it) and nothing about reading a skipped owner.
