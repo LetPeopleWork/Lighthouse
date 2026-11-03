@@ -1,0 +1,13 @@
+diff --git a/Lighthouse.Frontend/vitest.config.ts b/Lighthouse.Frontend/vitest.config.ts
+index 20e86091c..757c8fa1d 100644
+--- a/Lighthouse.Frontend/vitest.config.ts
++++ b/Lighthouse.Frontend/vitest.config.ts
+@@ -57,7 +57,7 @@ export default defineConfig({
+ 		],
+ 		server: {
+ 			deps: {
+-				inline: [/@mui\//, /react-transition-group/],
++				inline: [/@mui\/x-/, /react-transition-group/],
+ 			},
+ 		},
+ 

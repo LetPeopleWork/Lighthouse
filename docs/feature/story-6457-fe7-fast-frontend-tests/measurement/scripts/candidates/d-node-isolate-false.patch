@@ -1,0 +1,209 @@
+diff --git a/Lighthouse.Frontend/setupTests.node.ts b/Lighthouse.Frontend/setupTests.node.ts
+new file mode 100644
+index 000000000..29e63321b
+--- /dev/null
++++ b/Lighthouse.Frontend/setupTests.node.ts
+@@ -0,0 +1,52 @@
++// Setup for the node-environment project: the locale pins and console mocks of setupTests.ts,
++// nothing that needs a DOM (no jest-dom, user-event, ResizeObserver, scrollIntoView, localStorage).
++const TEST_LOCALE = "en-US";
++
++type LocaleMethod = (locales?: unknown, options?: unknown) => string;
++
++const withDefaultLocale = (original: LocaleMethod): LocaleMethod =>
++	function (this: unknown, locales?: unknown, options?: unknown) {
++		return original.call(this, locales ?? TEST_LOCALE, options);
++	};
++
++Date.prototype.toLocaleDateString = withDefaultLocale(
++	Date.prototype.toLocaleDateString as LocaleMethod,
++) as Date["toLocaleDateString"];
++Date.prototype.toLocaleTimeString = withDefaultLocale(
++	Date.prototype.toLocaleTimeString as LocaleMethod,
++) as Date["toLocaleTimeString"];
++Date.prototype.toLocaleString = withDefaultLocale(
++	Date.prototype.toLocaleString as LocaleMethod,
++) as Date["toLocaleString"];
++Number.prototype.toLocaleString = withDefaultLocale(
++	Number.prototype.toLocaleString as LocaleMethod,
++) as typeof Number.prototype.toLocaleString;
++
++const OriginalDateTimeFormat = Intl.DateTimeFormat;
++Intl.DateTimeFormat = new Proxy(OriginalDateTimeFormat, {
++	construct: (target, [locales, options]) =>
++		new target(locales ?? TEST_LOCALE, options),
++	apply: (target, _thisArg, [locales, options]) =>
++		target(locales ?? TEST_LOCALE, options),
++});
++
++const OriginalNumberFormat = Intl.NumberFormat;
++Intl.NumberFormat = new Proxy(OriginalNumberFormat, {
++	construct: (target, [locales, options]) =>
++		new target(locales ?? TEST_LOCALE, options),
++	apply: (target, _thisArg, [locales, options]) =>
++		target(locales ?? TEST_LOCALE, options),
++});
++
++const originalConsoleError = console.error;
++const originalConsoleWarn = console.warn;
++
++beforeAll(() => {
++	console.error = vi.fn();
++	console.warn = vi.fn();
++});
++
++afterAll(() => {
++	console.error = originalConsoleError;
++	console.warn = originalConsoleWarn;
++});
+diff --git a/Lighthouse.Frontend/src/tests/domTsTestFiles.ts b/Lighthouse.Frontend/src/tests/domTsTestFiles.ts
+new file mode 100644
+index 000000000..beefa3709
+--- /dev/null
++++ b/Lighthouse.Frontend/src/tests/domTsTestFiles.ts
+@@ -0,0 +1,67 @@
++// Draft for the configuration spike: .test.ts files that touch the DOM (or browser globals) and so stay in the jsdom project.
++// Found by grep over the files; every other .test.ts file runs in the node project.
++export const domTsTestFiles: string[] = [
++	"src/components/Common/Charts/deliveryEpicColors.test.ts",
++	"src/components/Common/DataGrid/hooks.test.ts",
++	"src/hooks/useAgingBackground.test.ts",
++	"src/hooks/useAuthGuard.test.ts",
++	"src/hooks/useChartVisibility.test.ts",
++	"src/hooks/useCreateWizard.test.ts",
++	"src/hooks/useHideCompletedFeatures.test.ts",
++	"src/hooks/useLicenseRestrictions.test.ts",
++	"src/hooks/useMetricsData.test.ts",
++	"src/hooks/useModifySettings.autosave.test.ts",
++	"src/hooks/useModifySettings.conflict.test.ts",
++	"src/hooks/useModifySettings.test.ts",
++	"src/hooks/useModifySettings.validation.test.ts",
++	"src/hooks/useOAuthPopup.test.ts",
++	"src/hooks/useRbacGate.test.ts",
++	"src/hooks/useRbac.test.ts",
++	"src/hooks/useRefinementSetUpReporter.test.ts",
++	"src/hooks/useVoterIdentity.test.ts",
++	"src/models/Common/DataRetrievalSchemaDefaults.serviceNow.test.ts",
++	"src/models/Forecasts/WhenForecast.beyondTheHorizon.test.ts",
++	"src/models/WorkTracking/WriteBackStartSources.test.ts",
++	"src/pages/Common/MetricsView/blockedTrend.test.ts",
++	"src/pages/Common/MetricsView/dateWindow.test.ts",
++	"src/pages/Common/MetricsView/useCategorySelection.test.ts",
++	"src/pages/Common/MetricsView/useCumulativeStateTimeChoices.test.ts",
++	"src/pages/Common/MetricsView/usePbcOverTime.test.ts",
++	"src/pages/Common/MetricsView/usePercentilesOverTime.test.ts",
++	"src/pages/Common/MetricsView/useShowTips.test.ts",
++	"src/pages/Common/MetricsView/widgetStatus.test.ts",
++	"src/pages/Common/MetricsView/workItemAgePercentilesTrend.test.ts",
++	"src/pages/Common/Reports/panels/thenNowComparison.test.ts",
++	"src/pages/Common/Reports/print/reportPrint.enforcement.test.ts",
++	"src/pages/Common/Reports/reportOwner.test.ts",
++	"src/pages/Common/Reports/wizard/reportRefusalCopy.test.ts",
++	"src/pages/Common/Reports/wizard/reportWindowCheck.test.ts",
++	"src/pages/Common/Reports/wizard/thenAndNow/thenAndNowDraft.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryExportTable.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryDependencyOverlay.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTeamLanes.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttAdapterBoundary.enforcement.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttShapes.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/pageChoice.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/timelineView.test.ts",
++	"src/pages/Portfolios/Detail/Components/DeliveryGrid/useDeliveryManagement.test.ts",
++	"src/pages/Settings/SystemInfo/refreshFindingSentences.test.ts",
++	"src/pages/Teams/Detail/realityCheckCopy.test.ts",
++	"src/pages/Teams/Detail/realityCheckGrading.test.ts",
++	"src/services/Api/DatabaseManagementService.test.ts",
++	"src/services/Api/LicensingService.test.ts",
++	"src/services/Api/LogService.test.ts",
++	"src/services/Api/MetricsService.test.ts",
++	"src/services/Api/RefinementService.voterKey.test.ts",
++	"src/services/Api/WorkTrackingSystemService.test.ts",
++	"src/services/Refinement/voterStore.test.ts",
++	"src/services/UsageData/promptSession.test.ts",
++	"src/services/UsageData/usageDataAskEligibility.test.ts",
++	"src/services/UsageData/usageDataAskMarker.test.ts",
++	"src/services/UsageData/usageDataEvents.test.ts",
++	"src/services/UsageData/usageDataReporter.test.ts",
++	"src/services/UsageData/usageDataRouteKeys.test.ts",
++	"src/utils/dependencies/dependencySentences.test.ts",
++	"src/utils/tauri.test.ts",
++];
+diff --git a/Lighthouse.Frontend/vitest.config.ts b/Lighthouse.Frontend/vitest.config.ts
+index 20e86091c..ebed6afb7 100644
+--- a/Lighthouse.Frontend/vitest.config.ts
++++ b/Lighthouse.Frontend/vitest.config.ts
+@@ -1,6 +1,7 @@
+ import { availableParallelism } from "node:os";
+ import { defineConfig } from "vitest/config";
+ import { EXPECTED_TEST_FAILURE } from "./src/tests/ExpectedTestFailure.ts";
++import { domTsTestFiles } from "./src/tests/domTsTestFiles.ts";
+ import { resolveTestWorkers } from "./src/tests/testWorkers.ts";
+ import { slowTests } from "./src/tests/timeBudget/slowTests.ts";
+ import { isCiRun, resolveTimeBudgetOptions } from "./src/tests/timeBudget/timeBudgetOptions.ts";
+@@ -16,12 +17,18 @@ const FIRST_TEST_ALLOWANCE_SECONDS = 0.31;
+ const workers = resolveTestWorkers(process.env, availableParallelism());
+ const budgetSwitches = resolveTimeBudgetOptions(process.env, process.argv);
+ 
++const baseExclude = [
++	"**/node_modules/**",
++	"**/dist/**",
++	"**/.stryker-tmp*/**",
++	"**/StrykerOutput/**",
++];
++
+ export default defineConfig({
+ 	test: {
+ 		globals: true,
+ 		onUnhandledError: (error) => error.name !== EXPECTED_TEST_FAILURE,
+ 		environment: "jsdom",
+-		setupFiles: ["./setupTests.ts"],
+ 		env: {
+ 			VITE_API_SERVICE_TYPE: "DEMO",
+ 		},
+@@ -33,14 +40,7 @@ export default defineConfig({
+ 		coverage: {
+ 			reporter: ["text", "lcov"],
+ 		},
+-		exclude: [
+-			"**/node_modules/**",
+-			"**/dist/**",
+-			// Trailing wildcard: every stryker config here uses a per-feature suffixed temp dir, so a
+-			// bare ".stryker-tmp" matched none of them and a run in progress polluted `pnpm test`.
+-			"**/.stryker-tmp*/**",
+-			"**/StrykerOutput/**",
+-		],
++		exclude: baseExclude,
+ 		reporters: [
+ 			"default",
+ 			["vitest-sonar-reporter", { outputFile: "sonar-report.xml" }],
+@@ -61,6 +61,29 @@ export default defineConfig({
+ 			},
+ 		},
+ 
++		// Draft split: DOM-free .test.ts files run in node, everything else in jsdom.
++		projects: [
++			{
++				extends: true,
++				test: {
++					name: "node",
++					isolate: false,
++					environment: "node",
++					setupFiles: ["./setupTests.node.ts"],
++					include: ["src/**/*.test.ts"],
++					exclude: [...baseExclude, ...domTsTestFiles],
++				},
++			},
++			{
++				extends: true,
++				test: {
++					name: "jsdom",
++					setupFiles: ["./setupTests.ts"],
++					include: ["src/**/*.test.tsx", ...domTsTestFiles],
++				},
++			},
++		],
++
+ 		pool: "threads",
+ 		isolate: true,
+ 		maxWorkers: workers,

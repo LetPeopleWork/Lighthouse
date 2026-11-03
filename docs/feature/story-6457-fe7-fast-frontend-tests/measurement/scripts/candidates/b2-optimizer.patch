@@ -1,0 +1,23 @@
+diff --git a/Lighthouse.Frontend/vitest.config.ts b/Lighthouse.Frontend/vitest.config.ts
+index 20e86091c..002740b32 100644
+--- a/Lighthouse.Frontend/vitest.config.ts
++++ b/Lighthouse.Frontend/vitest.config.ts
+@@ -55,9 +55,17 @@ export default defineConfig({
+ 				frontendRoot: import.meta.dirname,
+ 			}),
+ 		],
++		deps: {
++			optimizer: {
++				web: {
++					enabled: true,
++					include: ["@mui/material", "@mui/x-data-grid", "@mui/x-date-pickers", "@mui/x-charts", "react-transition-group"],
++				},
++			},
++		},
+ 		server: {
+ 			deps: {
+-				inline: [/@mui\//, /react-transition-group/],
++				inline: [],
+ 			},
+ 		},
+ 

@@ -1,0 +1,13 @@
+diff --git a/Lighthouse.Frontend/vitest.config.ts b/Lighthouse.Frontend/vitest.config.ts
+index 20e86091c..8a56165d9 100644
+--- a/Lighthouse.Frontend/vitest.config.ts
++++ b/Lighthouse.Frontend/vitest.config.ts
+@@ -61,7 +61,7 @@ export default defineConfig({
+ 			},
+ 		},
+ 
+-		pool: "threads",
++		pool: "forks",
+ 		isolate: true,
+ 		maxWorkers: workers,
+ 		fileParallelism: true,
