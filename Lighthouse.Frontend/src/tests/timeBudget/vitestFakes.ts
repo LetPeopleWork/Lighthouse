@@ -22,9 +22,11 @@ export function aModule(
 	};
 }
 
+const THE_MODULE: FakeParent = { type: "module" };
+
 export function aSuite(
 	name: string,
-	parent: FakeParent = { type: "module" },
+	parent: FakeParent = THE_MODULE,
 ): FakeParent {
 	return { type: "suite", name, parent };
 }

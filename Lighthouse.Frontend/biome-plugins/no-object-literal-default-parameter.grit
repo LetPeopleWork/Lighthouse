@@ -1,0 +1,5 @@
+JsFormalParameter(initializer = JsInitializerClause(expression = $value)) where {
+    $value <: JsObjectExpression(members = $members),
+    $members <: not [],
+    register_diagnostic(span=$value, message="An object literal as a parameter default builds a new object on every call and hides its fields from the signature. Move it to a named constant, or default each field with destructuring.", severity="error")
+}
