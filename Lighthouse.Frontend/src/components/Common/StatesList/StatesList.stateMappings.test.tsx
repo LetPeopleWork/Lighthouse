@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { actAndSettle } from "../../../tests/actAndSettle";
@@ -78,6 +78,10 @@ describe("StatesList with state mappings over raw states", () => {
 		onReorderDoingStates.mockClear();
 	});
 
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
 	it("shows a mapping as one chip with a group icon where its first state is", async () => {
 		await renderDoing(["Analysis", "Code Review", "Testing", "Waiting"]);
 
@@ -111,6 +115,33 @@ describe("StatesList with state mappings over raw states", () => {
 		expect((await screen.findByRole("tooltip")).textContent).toBe(
 			REVIEW_TOOLTIP,
 		);
+	});
+
+	it("shows the tooltip to a keyboard user and keeps the mapping's name as the chip's name", async () => {
+		// jsdom knows no :focus-visible, which the tooltip asks before it opens on focus; a tab key focus is visible.
+		const matches = Element.prototype.matches;
+		vi.spyOn(Element.prototype, "matches").mockImplementation(function (
+			this: Element,
+			selector: string,
+		) {
+			return selector === ":focus-visible"
+				? this === document.activeElement
+				: matches.call(this, selector);
+		});
+		await renderDoing(["Analysis", "Code Review", "Testing"]);
+		const user = userEvent.setup();
+		const chip = chipOf("Review");
+
+		for (let step = 0; step < 20 && document.activeElement !== chip; step++) {
+			await user.tab();
+		}
+
+		expect(chip).toHaveFocus();
+		expect((await screen.findByRole("tooltip")).textContent).toBe(
+			REVIEW_TOOLTIP,
+		);
+		expect(chip).toHaveAccessibleName("Review");
+		expect(chip).toHaveAccessibleDescription(REVIEW_TOOLTIP);
 	});
 
 	it("offers no way to remove a mapping chip, and still one for a plain state", async () => {

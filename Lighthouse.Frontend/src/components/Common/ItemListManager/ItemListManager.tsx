@@ -132,6 +132,9 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 									}
 									color="primary"
 									variant={groupTooltip === undefined ? "outlined" : "filled"}
+									// A mapping chip has no action of its own, so without this a keyboard user never reaches its tooltip.
+									tabIndex={groupTooltip === undefined ? undefined : 0}
+									aria-label={groupTooltip === undefined ? undefined : item}
 									draggable={!!onReorderItems}
 									onDragStart={(e) => handleDragStart(e, index)}
 									onDragOver={handleDragOver}
@@ -149,7 +152,7 @@ const ItemListManager: React.FC<ItemListManagerProps> = ({
 							return groupTooltip === undefined ? (
 								chip
 							) : (
-								<Tooltip key={item} title={groupTooltip}>
+								<Tooltip key={item} title={groupTooltip} describeChild>
 									{chip}
 								</Tooltip>
 							);
