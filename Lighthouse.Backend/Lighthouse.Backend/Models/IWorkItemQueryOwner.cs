@@ -26,10 +26,6 @@
 
         StateCategories MapStateToStateCategory(string state);
 
-        StateCategories CategoryOfRawState(string rawState);
-
-        StateCategories CategoryOfDisplayName(string displayName);
-
         List<string> NormalisedStatesFor(IReadOnlyList<string> storedList);
 
         List<string> DisplayStatesFor(StateCategories category);

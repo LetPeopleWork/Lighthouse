@@ -159,31 +159,31 @@ namespace Lighthouse.Backend.Tests.Models
         [TestCase("Done", StateCategories.Done)]
         [TestCase("Testing", StateCategories.Doing)]
         [TestCase("Jellybean", StateCategories.Unknown)]
-        public void CategoryOfRawState_ReadsTheListsAsTheyAre(string rawState, StateCategories expected)
+        public void MapStateToStateCategory_ReadsTheListsAsTheyAre(string rawState, StateCategories expected)
         {
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing");
 
-            Assert.That(team.CategoryOfRawState(rawState), Is.EqualTo(expected));
+            Assert.That(team.MapStateToStateCategory(rawState), Is.EqualTo(expected));
         }
 
         [Test]
-        public void CategoryOfRawState_MappingNameThatIsNoStateOfTheTracker_IsUnknown()
+        public void MapStateToStateCategory_MappingNameThatIsNoStateOfTheTracker_IsUnknown()
         {
             var team = ATeamWithReviewMapping("Analysis", "Code Review", "Testing");
 
-            Assert.That(team.CategoryOfRawState("Review"), Is.EqualTo(StateCategories.Unknown));
+            Assert.That(team.MapStateToStateCategory("Review"), Is.EqualTo(StateCategories.Unknown));
         }
 
         [Test]
-        public void CategoryOfRawState_ListStillHoldsTheGroupNameInPlaceOfItsStates_FindsTheStatesInThatList()
+        public void MapStateToStateCategory_ListStillHoldsTheGroupNameInPlaceOfItsStates_FindsTheStatesInThatList()
         {
             var team = ATeamWithReviewMapping("Analysis", "Review", "Waiting");
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(team.CategoryOfRawState("Code Review"), Is.EqualTo(StateCategories.Doing));
-                Assert.That(team.CategoryOfRawState("Testing"), Is.EqualTo(StateCategories.Doing));
-                Assert.That(team.CategoryOfRawState("Review"), Is.EqualTo(StateCategories.Unknown), "The group's name is no state of the tracker.");
+                Assert.That(team.MapStateToStateCategory("Code Review"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.MapStateToStateCategory("Testing"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.MapStateToStateCategory("Review"), Is.EqualTo(StateCategories.Unknown), "The group's name is no state of the tracker.");
             }
         }
 
@@ -262,7 +262,6 @@ namespace Lighthouse.Backend.Tests.Models
             {
                 Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("A")));
                 Assert.That(team.NormalisedStatesFor(team.DoingStates), Is.EqualTo(Listed("A")));
-                Assert.That(team.CategoryOfRawState("A"), Is.EqualTo(StateCategories.Doing));
                 Assert.That(team.CategoryOfDisplayName("A"), Is.EqualTo(StateCategories.Doing));
                 Assert.That(team.MapRawStateToMappedName("A"), Is.EqualTo("A"));
                 Assert.That(team.MapStateToStateCategory("A"), Is.EqualTo(StateCategories.Doing));
@@ -352,7 +351,7 @@ namespace Lighthouse.Backend.Tests.Models
                 Assert.That(() => team.AllStates.ToList(), Throws.Nothing);
                 Assert.That(team.AllStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Review", "Waiting", "Done")));
                 Assert.That(team.OpenStates, Is.EquivalentTo(Listed("Backlog", "Analysis", "Review", "Waiting")));
-                Assert.That(team.CategoryOfRawState("Review"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.MapStateToStateCategory("Review"), Is.EqualTo(StateCategories.Doing));
                 Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
             }
         }
@@ -368,7 +367,7 @@ namespace Lighthouse.Backend.Tests.Models
             {
                 Assert.That(team.AllStates, Is.SupersetOf(Listed("Code Review", "Testing")));
                 Assert.That(team.OpenStates, Is.SupersetOf(Listed("Code Review", "Testing")));
-                Assert.That(team.CategoryOfRawState("Testing"), Is.EqualTo(StateCategories.Doing));
+                Assert.That(team.MapStateToStateCategory("Testing"), Is.EqualTo(StateCategories.Doing));
                 Assert.That(team.DisplayStatesFor(StateCategories.Doing), Is.EqualTo(Listed("Analysis", "Review", "Waiting")));
             }
         }

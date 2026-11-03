@@ -184,16 +184,14 @@ namespace Lighthouse.Backend.Models
             set => (storedParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
         }
 
-        public StateCategories MapStateToStateCategory(string state) => CategoryOfRawState(state);
+        /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
+        public StateCategories MapStateToStateCategory(string state) => CategoryLists().CategoryOfRawState(state);
 
         /// <summary>This owner's To Do, Doing and Done lists, read against its mappings.</summary>
         public StateCategoryLists CategoryLists() => new(ToDoStates, DoingStates, DoneStates, StateMappings);
 
         /// <summary>The category's raw states as the charts show them: each state replaced by its mapping's name, the group at its first member's position.</summary>
         public List<string> DisplayStatesFor(StateCategories category) => CategoryLists().DisplayStatesFor(category);
-
-        /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
-        public StateCategories CategoryOfRawState(string rawState) => CategoryLists().CategoryOfRawState(rawState);
 
         /// <summary>
         /// The category of a name an item or a stored transition carries: a raw state, or a mapping's name.
