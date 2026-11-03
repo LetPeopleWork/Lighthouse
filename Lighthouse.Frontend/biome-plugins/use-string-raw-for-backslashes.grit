@@ -1,0 +1,4 @@
+JsStringLiteralExpression() as $str where {
+    $str <: r".*\\\\.*",
+    register_diagnostic(span=$str, message="Write a string that escapes backslashes as String.raw`...` instead of doubling them (Sonar S7780).", severity="error")
+}

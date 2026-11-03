@@ -53,6 +53,10 @@
 			},
 			"complexity": {
 				"noCommaOperator": "error",
+				"noExcessiveCognitiveComplexity": {
+					"level": "error",
+					"options": { "maxAllowedComplexity": 15 }
+				},
 				"noExtraBooleanCast": "error",
 				"noStaticOnlyClass": "error",
 				"noUselessConstructor": "error",
@@ -198,6 +202,43 @@
 	"overrides": [
 		{
 			"includes": [
+				"src/components/Common/Charts/FeatureSizeScatterPlotChart.test.tsx",
+				"src/components/Common/Charts/FeatureSizeScatterPlotChart.tsx",
+				"src/components/Common/Charts/ProcessBehaviourChart.tsx",
+				"src/components/Common/Connection/CreateConnectionWizard.tsx",
+				"src/components/Common/Connection/ModifyConnectionSettings.tsx",
+				"src/components/Common/DataGrid/DataGridBase.tsx",
+				"src/components/Common/DataOverviewTable/DataOverviewTable.tsx",
+				"src/components/Common/LicenseStatus/LicenseStatusDialog.tsx",
+				"src/components/Common/LicenseStatus/LicenseStatusIcon.tsx",
+				"src/components/Common/LicenseStatus/LicenseStatusPopover.tsx",
+				"src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
+				"src/components/Common/Team/ModifyTeamSettings.tsx",
+				"src/hooks/useAuthGuard.ts",
+				"src/hooks/useModifySettings.ts",
+				"src/hooks/useParentWorkItems.ts",
+				"src/models/Delivery.ts",
+				"src/pages/Common/MetricsView/BaseMetricsView.tsx",
+				"src/pages/Common/MetricsView/categoryMetadata.test.ts",
+				"src/pages/Common/Reports/print/printPageState.test.ts",
+				"src/pages/Overview/OverviewDashboard.tsx",
+				"src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.tsx",
+				"src/pages/Portfolios/Detail/PortfolioDetail.tsx",
+				"src/pages/Settings/DatabaseManagement/DatabaseManagementSettings.tsx",
+				"src/pages/Settings/SystemInfo/RefreshHistorySection.tsx",
+				"src/pages/Teams/Detail/BacktestForecaster.tsx",
+				"src/pages/Teams/Detail/ManualForecaster.tsx",
+				"src/pages/Teams/Detail/TeamDetail.tsx",
+				"src/pages/Teams/Detail/TeamForecastView.tsx"
+			],
+			"linter": {
+				"rules": {
+					"complexity": { "noExcessiveCognitiveComplexity": "off" }
+				}
+			}
+		},
+		{
+			"includes": [
 				"src/**",
 				"!src/**/*.test.ts",
 				"!src/**/*.test.tsx",
@@ -218,7 +259,10 @@
 				"!src/**/__tests__/**",
 				"!src/main.tsx"
 			],
-			"plugins": ["./biome-plugins/no-function-nested-past-four.grit"]
+			"plugins": [
+				"./biome-plugins/no-function-nested-past-four.grit",
+				"./biome-plugins/use-string-raw-for-backslashes.grit"
+			]
 		},
 		{
 			"includes": [
