@@ -1,6 +1,7 @@
 import { act, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -171,8 +172,7 @@ const pick = async (state: string) => {
 	);
 };
 
-// Opening the form is not an edit, so nothing may be saved even once the autosave would have fired.
-const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
+const AUTOSAVE_DELAY_AND_MARGIN_MS = DEBOUNCE_MS + 200;
 
 const pastTheAutosaveDelay = () =>
 	act(async () => {

@@ -1,6 +1,7 @@
 import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type {
 	IReadinessSetting,
 	IRefinementSettings,
@@ -160,8 +161,7 @@ const replaceTheNumberIn = async (label: string, value: string) => {
 	await userEvent.type(field, value);
 };
 
-// Twice the form's 300 ms autosave debounce, so any save the last change would cause has surely fired.
-const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
+const AUTOSAVE_DELAY_AND_MARGIN_MS = DEBOUNCE_MS + 200;
 
 // The clock is moved on rather than waited out, so the autosave's timer has surely run by the
 // time nothing is checked as saved, however slowly the machine is going.
@@ -466,6 +466,34 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 			expect(field).toHaveAttribute("min", "1");
 			expect(field).toHaveAttribute("step", "1");
 		}
+	});
+
+	it("switches a rule back on at the threshold it was changed to before it was switched off", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheNumberIn(NO_THRESHOLD, "3");
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: 3,
+				yesIf: 2,
+			}),
+		);
+		const noRule = screen.getByRole("checkbox", { name: NO_RULE });
+		await userEvent.click(noRule);
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: null,
+				yesIf: 2,
+			}),
+		);
+		await userEvent.click(noRule);
+
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: 3,
+				yesIf: 2,
+			}),
+		);
 	});
 
 	it("switches on a No rule stored as off at its default threshold", async () => {

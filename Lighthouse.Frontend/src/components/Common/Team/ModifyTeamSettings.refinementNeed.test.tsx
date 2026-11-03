@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -162,8 +163,7 @@ const theRefinementLastSaved = () => {
 	return saved?.refinement;
 };
 
-// Twice the form's 300 ms autosave debounce, so any save the last change would cause has surely fired.
-const AUTOSAVE_DELAY_AND_MARGIN_MS = 600;
+const AUTOSAVE_DELAY_AND_MARGIN_MS = DEBOUNCE_MS + 200;
 
 // The clock is moved on rather than waited out, so the autosave's timer has surely run by the
 // time nothing is checked as saved, however slowly the machine is going.
