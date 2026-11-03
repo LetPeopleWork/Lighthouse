@@ -29,9 +29,9 @@ namespace Lighthouse.Backend.Models
         public List<string> DisplayStatesFor(StateCategories category)
             => WithoutRepeats(NormalisedStatesFor(StoredStatesOf(category)).Select(MapRawStateToMappedName));
 
-        /// <summary>The To Do, Doing and Done lists as the charts show them, one after the other in that order.</summary>
+        /// <summary>The To Do, Doing and Done lists as the charts show them, one after the other in that order, no state twice.</summary>
         public List<string> DisplayStatesInWorkflowOrder()
-            => [.. ListedCategories.SelectMany(DisplayStatesFor)];
+            => WithoutRepeats(ListedCategories.SelectMany(DisplayStatesFor));
 
         /// <summary>
         /// The entry of the workflow as the charts show it that a cycle-time boundary stands for, written as the list
@@ -186,7 +186,7 @@ namespace Lighthouse.Backend.Models
         public static bool IsSameState(string? left, string? right)
             => string.Equals(left?.Trim(), right?.Trim(), StringComparison.OrdinalIgnoreCase);
 
-        public static List<string> WithoutRepeats(IEnumerable<string> states)
+        private static List<string> WithoutRepeats(IEnumerable<string> states)
             => [.. states.DistinctBy(state => state.Trim(), StringComparer.OrdinalIgnoreCase)];
     }
 }

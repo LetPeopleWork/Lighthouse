@@ -380,7 +380,7 @@ namespace Lighthouse.Backend.Services.Implementation
         }
 
         protected static List<string> DisplayStatesInOrder(WorkTrackingSystemOptionsOwner owner)
-            => StateCategoryLists.WithoutRepeats(owner.CategoryLists().DisplayStatesInWorkflowOrder());
+            => owner.CategoryLists().DisplayStatesInWorkflowOrder();
 
         protected static string ResolveBoundaryState(WorkTrackingSystemOptionsOwner owner, IReadOnlyList<string> statesInOrder, string boundaryState)
             => owner.CategoryLists().WorkflowEntryFor(statesInOrder, boundaryState) ?? boundaryState;
