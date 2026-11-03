@@ -83,6 +83,8 @@ dotnet_diagnostic.ASP0015.severity = warning
 dotnet_diagnostic.CS9236.severity = warning
 dotnet_diagnostic.NUnit2046.severity = warning
 dotnet_diagnostic.NUnit2010.severity = warning
+dotnet_diagnostic.NUnit4001.severity = warning
+dotnet_diagnostic.CA1862.severity = warning
 
 # The Sonar gate runs these three with their default thresholds (more than 7 parameters,
 # cognitive complexity above 15, a string literal repeated 3 times). The NuGet analyzer ships

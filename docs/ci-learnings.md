@@ -58,10 +58,12 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
 - **S3776 (cognitive complexity, including render bodies)**: Sonar caps a function at 15. A third
   branch or mode added to a function that is already near the limit tips it over, and so does a
   conditional nested in JSX inside a `&&`. Fix: extract the nested JSX subtree or the per-mode decision
-  into a named component or helper before you add the branch. To measure it, run
-  `pnpm exec biome lint --only=complexity/noExcessiveCognitiveComplexity <file>`, which reads close to
-  Sonar but usually a little lower. Not automated because: Biome's rule counts nested callbacks
-  differently. At `error` it flags 37 production functions that Sonar passes.
+  into a named component or helper before you add the branch. Biome's
+  `noExcessiveCognitiveComplexity` now fails `pnpm build` at 15, except in the files listed in the first
+  override of `biome.json`, which held functions over the limit when the check was switched on. Take a
+  file off that list once its functions are under 15; never add one. Still partly manual because:
+  Biome counts nested callbacks differently from Sonar, so a function Biome passes can still fail
+  Sonar by a point or two, and a listed file is not checked at all.
 - **S6767 (prop declared, never used)**: removing a control leaves its prop on the interface, then a
   caller local, then the value that fed it. Fix: delete the prop, and every call site and local that
   fed it, in the same change. Not automated because: neither Biome nor `tsc` reports unused props.
