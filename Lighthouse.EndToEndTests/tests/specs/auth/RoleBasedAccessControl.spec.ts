@@ -24,6 +24,7 @@ const LICENSE_FILE_PATH = path.join(
 
 const TEAM_NAME = "Team Zenith";
 const PORTFOLIO_NAME = "Project Apollo";
+const DEMO_CONNECTION_NAME = "Demo Data CSV Connector";
 
 async function loginAs(
 	loginPage: LoginPage,
@@ -483,6 +484,11 @@ test.describe("@rbac E2E", () => {
 					}),
 				).toBeVisible();
 
+				await teamDetailPage.goToSettings();
+				await expect(teamDetailPage.settingsConnectionSelect).toHaveText(
+					DEMO_CONNECTION_NAME,
+				);
+
 				const scopedAccess = new ScopedAccessPage(teamDetailPage.page);
 				await scopedAccess.goToAccessTab();
 				await expect(scopedAccess.groupMappingsSection).toBeVisible();
@@ -573,6 +579,11 @@ test.describe("@rbac E2E", () => {
 				await expect(
 					portfolioDetailPage.page.getByRole("tab", { name: "Access" }),
 				).toBeVisible();
+
+				await portfolioDetailPage.goToSettings();
+				await expect(portfolioDetailPage.settingsConnectionSelect).toHaveText(
+					DEMO_CONNECTION_NAME,
+				);
 
 				const deliveriesPage = await portfolioDetailPage.goToDeliveries();
 				await expect(

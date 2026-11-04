@@ -26,6 +26,11 @@ export class TeamDetailPage {
 		await this.page.getByRole("tab", { name: "Settings" }).click();
 	}
 
+	/** The connection selector of the Settings form; it holds the Team's connection name once the form has loaded. */
+	get settingsConnectionSelect(): Locator {
+		return this.page.getByRole("combobox", { name: /^Select / });
+	}
+
 	get featureListReady(): Locator {
 		return this.page.locator('[data-widget-status="ready"]').filter({
 			has: this.page.getByTestId("hide-completed-features-toggle"),

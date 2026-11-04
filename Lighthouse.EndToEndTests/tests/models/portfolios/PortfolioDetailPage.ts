@@ -74,6 +74,11 @@ export class PortfolioDetailPage {
 		await this.page.getByRole("tab", { name: "Settings" }).click();
 	}
 
+	/** The connection selector of the Settings form; it holds the Portfolio's connection name once the form has loaded. */
+	get settingsConnectionSelect(): Locator {
+		return this.page.getByRole("combobox", { name: /^Select / });
+	}
+
 	async refreshFeatures(): Promise<void> {
 		await this.refreshFeatureButton.click();
 	}
