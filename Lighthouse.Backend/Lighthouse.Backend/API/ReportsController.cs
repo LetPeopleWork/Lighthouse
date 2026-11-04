@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.API
             return Ok(new ReportBulkCreation(outcomes));
         }
 
-        [CheckedInHandler("Write access is checked for each Team or Portfolio named, and one the caller may not change is refused.")]
+        [CheckedInHandler("Write access is checked for the Team or Portfolio that owns each report named, and a report the caller may not change is refused.")]
         [HttpPost("bulk-removal")]
         public async Task<ActionResult<ReportBulkRemoval>> RemoveEach([FromBody] ReportRemovalRequest request)
         {

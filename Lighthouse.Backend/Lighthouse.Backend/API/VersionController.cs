@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.API
             return Ok(version);
         }
 
-        [SignedInOnly("Public release information that the update banner shows to everybody, with nothing about this instance's data.")]
+        [SignedInOnly("Public release information that the update notification shows to everybody, with nothing about this instance's data.")]
         [HttpGet("hasupdate")]
         public async Task<ActionResult> IsUpdateAvailable()
         {

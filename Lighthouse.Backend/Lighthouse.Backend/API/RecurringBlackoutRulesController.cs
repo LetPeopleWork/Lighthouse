@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.API
     {
         private readonly IRecurringBlackoutRuleService recurringBlackoutRuleService = recurringBlackoutRuleService ?? throw new ArgumentNullException(nameof(recurringBlackoutRuleService));
 
-        [SignedInOnly("The instance calendar of recurring blackout rules that every forecast view reads; only a System Admin may change them.")]
+        [SignedInOnly("The instance calendar of recurring blackout rules, the same for everybody and not specific to any Team or Portfolio; only a System Admin may change them.")]
         [HttpGet]
         public ActionResult<IEnumerable<RecurringBlackoutRuleDto>> GetAll()
         {

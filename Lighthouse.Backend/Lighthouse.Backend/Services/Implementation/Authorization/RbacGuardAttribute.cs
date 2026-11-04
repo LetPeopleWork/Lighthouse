@@ -61,7 +61,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 : new ForbidResult();
         }
 
-        private bool RequiresScope()
+        public bool RequiresScope()
         {
             return Requirement is RbacGuardRequirement.TeamRead
                 or RbacGuardRequirement.TeamContribute

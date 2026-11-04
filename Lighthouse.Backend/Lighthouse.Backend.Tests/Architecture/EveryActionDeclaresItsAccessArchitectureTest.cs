@@ -173,70 +173,77 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 return controller
                     .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-                    .Where(method => method.DeclaringType != typeof(object) && method.DeclaringType != typeof(ControllerBase))
                     .Where(method => !method.IsDefined(typeof(NonActionAttribute), inherit: true))
                     .Where(method => method.GetCustomAttributes<Attribute>(inherit: true).OfType<IActionHttpMethodProvider>().Any());
             }
 
             private static IEnumerable<string> Problems(Type controller, MethodInfo action)
             {
-                var name = $"{controller.Name}.{action.Name}";
-                return Describe(controller, action).Select(problem => $"{name}: {problem}");
+                var onClass = controller.GetCustomAttributes<Attribute>(inherit: true).ToList();
+                var onAction = action.GetCustomAttributes<Attribute>(inherit: true).ToList();
+                var onEither = onClass.Concat(onAction).ToList();
+
+                return DeclarationProblems(onClass, onAction, onEither)
+                    .Concat(ReasonProblems(onEither))
+                    .Concat(ScopeKeyProblems(onEither))
+                    .Select(problem => $"{controller.Name}.{action.Name}: {problem}");
             }
 
-            private static IEnumerable<string> Describe(Type controller, MethodInfo action)
+            private static IEnumerable<string> DeclarationProblems(List<Attribute> onClass, List<Attribute> onAction, List<Attribute> onEither)
             {
-                var classAttributes = controller.GetCustomAttributes<Attribute>(inherit: true).ToList();
-                var actionAttributes = action.GetCustomAttributes<Attribute>(inherit: true).ToList();
+                var guards = onEither.OfType<RbacGuardAttribute>().ToList();
+                var markers = onEither.OfType<AccessMarkerAttribute>().ToList();
+                var anonymous = onEither.OfType<AllowAnonymousAttribute>().Any();
 
-                var classGuards = classAttributes.OfType<RbacGuardAttribute>().ToList();
-                var actionGuards = actionAttributes.OfType<RbacGuardAttribute>().ToList();
-                var classMarkers = classAttributes.Where(IsMarker).ToList();
-                var actionMarkers = actionAttributes.Where(IsMarker).ToList();
-                var allGuards = classGuards.Concat(actionGuards).ToList();
-                var allMarkers = classMarkers.Concat(actionMarkers).ToList();
-                var anonymous = classAttributes.Concat(actionAttributes).OfType<AllowAnonymousAttribute>().Any();
-                var routeParameters = RouteParametersOf(classAttributes, actionAttributes);
+                var classHasGuard = onClass.OfType<RbacGuardAttribute>().Any();
+                var classHasMarker = onClass.OfType<AccessMarkerAttribute>().Any();
+                var actionHasGuard = onAction.OfType<RbacGuardAttribute>().Any();
+                var actionHasMarker = onAction.OfType<AccessMarkerAttribute>().Any();
 
-                var checking = allGuards.Where(guard => guard.Check).ToList();
-                var declared = checking.Count > 0 || allMarkers.Count > 0 || anonymous;
-
-                if (!declared)
+                if (!guards.Any(guard => guard.Check) && markers.Count == 0 && !anonymous)
                 {
                     yield return "declares no access; add an RbacGuard, a SignedInOnly or CheckedInHandler marker, or AllowAnonymous ([Authorize] alone does not count)";
                 }
 
-                if (allGuards.Any(guard => !guard.Check))
+                if (guards.Any(guard => !guard.Check))
                 {
                     yield return "an RbacGuard with Check = false checks nothing";
                 }
 
-                if (anonymous && (allGuards.Count > 0 || allMarkers.Count > 0))
+                if (anonymous && (guards.Count > 0 || markers.Count > 0))
                 {
                     yield return "AllowAnonymous cannot be combined with a guard or a marker";
                 }
 
-                if (allMarkers.Select(marker => marker.GetType()).Distinct().Count() > 1)
+                if (markers.Select(marker => marker.GetType()).Distinct().Count() > 1)
                 {
                     yield return "SignedInOnly and CheckedInHandler cannot both apply";
                 }
 
-                if ((classMarkers.Count > 0 && classGuards.Count > 0) || (actionMarkers.Count > 0 && actionGuards.Count > 0))
+                if ((classHasMarker && classHasGuard) || (actionHasMarker && actionHasGuard))
                 {
                     yield return "a marker and an RbacGuard sit at the same level";
                 }
 
-                if (actionMarkers.Count > 0 && classGuards.Count > 0)
+                if (actionHasMarker && classHasGuard)
                 {
                     yield return "a class-level RbacGuard still runs under an action-level marker";
                 }
+            }
 
-                foreach (var marker in allMarkers.Where(marker => ReasonOf(marker).Trim().Length < MinimumReasonLength))
-                {
-                    yield return $"the reason on {marker.GetType().Name} is blank or shorter than {MinimumReasonLength} characters";
-                }
+            private static IEnumerable<string> ReasonProblems(List<Attribute> onEither)
+            {
+                return onEither
+                    .OfType<AccessMarkerAttribute>()
+                    .Where(marker => marker.Reason.Trim().Length < MinimumReasonLength)
+                    .Select(marker => $"the reason on {marker.GetType().Name} is blank or shorter than {MinimumReasonLength} characters");
+            }
 
-                foreach (var guard in checking.Where(RequiresScope))
+            private static IEnumerable<string> ScopeKeyProblems(List<Attribute> onEither)
+            {
+                var routeParameters = RouteParametersOf(onEither);
+
+                foreach (var guard in onEither.OfType<RbacGuardAttribute>().Where(guard => guard.Check && guard.RequiresScope()))
                 {
                     if (string.IsNullOrWhiteSpace(guard.ScopeIdRouteKey))
                     {
@@ -249,33 +256,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 }
             }
 
-            private static bool IsMarker(Attribute attribute)
+            private static HashSet<string> RouteParametersOf(List<Attribute> onEither)
             {
-                return attribute is SignedInOnlyAttribute or CheckedInHandlerAttribute;
-            }
-
-            private static string ReasonOf(Attribute marker)
-            {
-                return marker switch
-                {
-                    SignedInOnlyAttribute signedInOnly => signedInOnly.Reason,
-                    CheckedInHandlerAttribute checkedInHandler => checkedInHandler.Reason,
-                    _ => string.Empty,
-                } ?? string.Empty;
-            }
-
-            private static bool RequiresScope(RbacGuardAttribute guard)
-            {
-                return guard.Requirement is RbacGuardRequirement.TeamRead
-                    or RbacGuardRequirement.TeamContribute
-                    or RbacGuardRequirement.TeamWrite
-                    or RbacGuardRequirement.PortfolioRead
-                    or RbacGuardRequirement.PortfolioWrite;
-            }
-
-            private static HashSet<string> RouteParametersOf(IEnumerable<Attribute> classAttributes, IEnumerable<Attribute> actionAttributes)
-            {
-                return classAttributes.Concat(actionAttributes)
+                return onEither
                     .OfType<IRouteTemplateProvider>()
                     .Select(provider => provider.Template)
                     .OfType<string>()

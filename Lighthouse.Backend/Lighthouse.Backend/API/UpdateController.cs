@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.API
         IUpdateQueueService updateQueueService)
         : ControllerBase
     {
-        [SignedInOnly("Says only whether an update is running and how many are queued; the list of tasks stays System Admin only.")]
+        [SignedInOnly("Says only whether any update is running or queued, and how many; the list of tasks stays System Admin only.")]
         [HttpGet("status")]
         [ProducesResponseType(typeof(UpdateStatusResponse), StatusCodes.Status200OK)]
         public ActionResult<UpdateStatusResponse> GetUpdateStatus()

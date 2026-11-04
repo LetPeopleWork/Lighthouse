@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.API
     [Authorize]
     public class AuthorizationController(IRbacAdministrationService rbacAdministrationService) : ControllerBase
     {
-        [SignedInOnly("Says whether access control is switched on and set up, which the interface needs from every signed-in user to decide what to show.")]
+        [SignedInOnly("Says whether access control is switched on and how far it is set up, naming no user, which the interface needs from every signed-in user to decide what to show.")]
         [HttpGet("status")]
         [ProducesResponseType<RbacStatus>(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetStatus(CancellationToken cancellationToken)
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpGet("users")]
         [ProducesResponseType<IReadOnlyList<RbacUserSummary>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -75,7 +75,7 @@ namespace Lighthouse.Backend.API
             return Ok(users);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpPost("system-admins/{userProfileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpDelete("system-admins/{userProfileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -129,7 +129,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpDelete("users/{userProfileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Team, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Team.")]
         [HttpGet("teams/{teamId:int}/members")]
         [ProducesResponseType<IReadOnlyList<RbacScopedMemberSummary>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -172,7 +172,7 @@ namespace Lighthouse.Backend.API
             return Ok(members);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Team, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Team.")]
         [HttpPut("teams/{teamId:int}/members/{userProfileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -214,7 +214,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Team, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Team.")]
         [HttpDelete("teams/{teamId:int}/members/{userProfileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -235,7 +235,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Portfolio, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Portfolio.")]
         [HttpGet("portfolios/{portfolioId:int}/members")]
         [ProducesResponseType<IReadOnlyList<RbacScopedMemberSummary>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -251,7 +251,7 @@ namespace Lighthouse.Backend.API
             return Ok(members);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Portfolio, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Portfolio.")]
         [HttpPut("portfolios/{portfolioId:int}/members/{userProfileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -293,7 +293,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Portfolio, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Portfolio.")]
         [HttpDelete("portfolios/{portfolioId:int}/members/{userProfileId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -314,7 +314,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpGet("group-mappings")]
         [ProducesResponseType<IReadOnlyList<RbacGroupMappingSummary>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -330,7 +330,7 @@ namespace Lighthouse.Backend.API
             return Ok(mappings);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Team, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Team.")]
         [HttpGet("teams/{teamId:int}/group-mappings")]
         [ProducesResponseType<IReadOnlyList<RbacGroupMappingSummary>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -346,7 +346,7 @@ namespace Lighthouse.Backend.API
             return Ok(mappings);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage the membership of this Portfolio, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage the membership of this Portfolio.")]
         [HttpGet("portfolios/{portfolioId:int}/group-mappings")]
         [ProducesResponseType<IReadOnlyList<RbacGroupMappingSummary>>(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -362,7 +362,7 @@ namespace Lighthouse.Backend.API
             return Ok(mappings);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpPost("group-mappings")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -407,7 +407,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpPut("group-mappings/{mappingId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -449,7 +449,7 @@ namespace Lighthouse.Backend.API
             return BadRequest(result.Message);
         }
 
-        [CheckedInHandler("Answers only when the caller may manage access for the whole instance, otherwise it is refused.")]
+        [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpDelete("group-mappings/{mappingId:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]

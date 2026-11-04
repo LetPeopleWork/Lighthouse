@@ -34,14 +34,14 @@ namespace Lighthouse.Backend.API
         }
 
         // The route stays open to anybody signed in, because the shell cannot render without what is on
-        // it. What changes is that two of its fields are answered only to somebody who could have asked
+        // it. What changes is that some of its fields are answered only to somebody who could have asked
         // for them directly. The question is asked once and the record decides which fields that covers,
         // so a field added later inherits the answer.
         //
         // An instance not enforcing access control satisfies this for everyone, and that is right: with
         // nobody to tell apart there is nobody to withhold it from, and a standalone operator is exactly
         // who needs to see which key they are on.
-        [CheckedInHandler("Open to everybody signed in because the interface needs it, but two details are withheld unless the caller is a System Admin.")]
+        [CheckedInHandler("Open to everybody signed in because the interface needs it, but the emergency admins, the encryption details and the database connection are withheld unless the caller is a System Admin.")]
         [HttpGet]
         [ProducesResponseType<SystemInfo>(StatusCodes.Status200OK)]
         public async Task<ActionResult<SystemInfo>> GetSystemInfo(CancellationToken cancellationToken)
