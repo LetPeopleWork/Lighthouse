@@ -430,7 +430,7 @@ describe("PortfolioDetail component", () => {
 	});
 
 	describe("settings tab connection read", () => {
-		it("a Portfolio Admin whose full connection list is refused still sees the settings form", async () => {
+		it("the settings tab asks for the connection summary, so a Portfolio Admin refused the full list still sees the form", async () => {
 			const workTrackingSystemService = createMockWorkTrackingSystemService();
 			workTrackingSystemService.getConfiguredWorkTrackingSystems = vi
 				.fn()

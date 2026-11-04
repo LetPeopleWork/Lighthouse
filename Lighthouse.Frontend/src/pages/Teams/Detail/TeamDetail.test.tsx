@@ -571,7 +571,7 @@ describe("TeamDetail component", () => {
 			mockParams = { id: "1", tab: "settings" };
 		});
 
-		it("a Team Admin whose full connection list is refused still sees the settings form", async () => {
+		it("the settings tab asks for the connection summary, so a Team Admin refused the full list still sees the form", async () => {
 			const mockTeamService = createMockTeamService();
 			mockTeamService.getTeam = vi.fn().mockResolvedValue(mockTeam);
 			const mockUpdateService = createMockUpdateSubscriptionService();

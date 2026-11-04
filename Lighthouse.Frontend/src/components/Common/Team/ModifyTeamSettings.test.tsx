@@ -1,8 +1,12 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { createElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
-import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	type IWorkTrackingSystemConnection,
+	WorkTrackingSystemConnection,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	ApiServiceContext,
 	type IApiServiceContext,
@@ -35,11 +39,19 @@ vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
 	),
 }));
 
+// The wizards are heavy to load and play no part in what is read here.
+vi.mock("../../DataRetrievalWizards", () => ({
+	getWizardsForSystem: () => [],
+}));
+
+const realGeneralSettings = vi.hoisted(() => ({
+	component: null as React.ComponentType<Record<string, unknown>> | null,
+}));
+
 vi.mock(
 	"../../../components/Common/BaseSettings/GeneralSettingsComponent.tsx",
-	() => ({
-		__esModule: true,
-		default: ({
+	() => {
+		const Fake = ({
 			onSettingsChange,
 			onWorkTrackingSystemChange,
 			onNewWorkTrackingSystemConnectionAdded,
@@ -92,8 +104,17 @@ vi.mock(
 					</>
 				)}
 			</div>
-		),
-	}),
+		);
+		return {
+			__esModule: true,
+			default: (props: React.ComponentProps<typeof Fake>) =>
+				realGeneralSettings.component ? (
+					createElement(realGeneralSettings.component, props)
+				) : (
+					<Fake {...props} />
+				),
+		};
+	},
 );
 
 vi.mock("../LoadingAnimation/LoadingAnimation", () => ({
@@ -271,6 +292,7 @@ describe("ModifyTeamSettings", () => {
 	};
 
 	afterEach(() => {
+		realGeneralSettings.component = null;
 		vi.useRealTimers();
 	});
 
@@ -288,6 +310,44 @@ describe("ModifyTeamSettings", () => {
 		mockSaveTeamSettings.mockResolvedValue(undefined);
 		mockValidateTeamSettings.mockResolvedValue(true);
 		mockUpdateTeamData.mockResolvedValue(undefined);
+	});
+
+	it("a connection read from the summary is selected and saved by its id", async () => {
+		const actual = await vi.importActual<
+			typeof import("../BaseSettings/GeneralSettingsComponent")
+		>("../BaseSettings/GeneralSettingsComponent");
+		realGeneralSettings.component =
+			actual.default as unknown as React.ComponentType<Record<string, unknown>>;
+		// The shape getConnectionSummaries returns: no options and no authentication fields.
+		const summaryConnection = new WorkTrackingSystemConnection({
+			id: 7,
+			name: "Summary Jira",
+			workTrackingSystem: "Jira",
+			options: [],
+			additionalFieldDefinitions: [],
+			defaults: {},
+			supportedDefaults: [],
+		});
+		mockGetWorkTrackingSystems.mockResolvedValue([summaryConnection]);
+		mockGetTeamSettings.mockResolvedValue({
+			...createMockTeamSettings(),
+			workTrackingSystemConnectionId: 7,
+		});
+		await renderModifyTeamSettings();
+
+		expect(
+			screen.getByRole("combobox", { name: /^Select / }),
+		).toHaveTextContent("Summary Jira");
+
+		fireEvent.change(screen.getByLabelText("Name"), {
+			target: { value: "Renamed" },
+		});
+
+		await waitFor(() =>
+			expect(mockSaveTeamSettings).toHaveBeenCalledWith(
+				expect.objectContaining({ workTrackingSystemConnectionId: 7 }),
+			),
+		);
 	});
 
 	it("renders loading state initially", () => {
