@@ -409,14 +409,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
         public async Task<BoardInformation> GetBoardInformation(WorkTrackingSystemConnection workTrackingSystemConnection, string boardId)
         {
-            var emptyInfo = new BoardInformation();
-
             try
             {
                 var splitBoardId = boardId.Split('|');
                 if (splitBoardId.Length != 2)
                 {
-                    return emptyInfo;
+                    throw AzureDevOpsReadException.BoardUnreadable("the board id is not one Azure DevOps gave", $"Board id '{boardId}' does not hold a project and a board");
                 }
 
                 var projectId = splitBoardId[0];
@@ -443,10 +441,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     DoneStates = doneStates,
                 };
             }
+            catch (WorkTrackingReadException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error getting board information for board {BoardId}", boardId);
-                return emptyInfo;
+                throw AzureDevOpsReadException.BoardUnreadable(AzureDevOpsReadException.HowAzureDevOpsAnswered(ex), ex.Message);
             }
         }
 

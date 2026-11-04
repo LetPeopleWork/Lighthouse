@@ -83,6 +83,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 technicalDetails));
 
         /// <summary>
+        /// A single board could not be read. The answer follows the same rule as the board list.
+        /// </summary>
+        public static AzureDevOpsReadException BoardUnreadable(string answer, string technicalDetails)
+            => new(ConnectionValidationResult.Failure(
+                "board_unreadable",
+                $"Lighthouse could not read this board from Azure DevOps: {answer}. Check the connection's URL and sign-in details, then try again.",
+                technicalDetails));
+
+        /// <summary>
         /// What to tell the administrator Azure DevOps answered with: its own message for a failure it
         /// reported, "no answer" when nothing came back, and a fixed phrase for anything else. A full stop
         /// ending the message is dropped because the sentence around it supplies one.

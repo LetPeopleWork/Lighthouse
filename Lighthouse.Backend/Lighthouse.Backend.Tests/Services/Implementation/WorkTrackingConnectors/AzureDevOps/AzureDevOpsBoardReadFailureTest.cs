@@ -28,8 +28,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [TestFixture]
     public class AzureDevOpsBoardReadFailureTest
     {
-        private const string PendingTheAzureDevOpsBoardFix = "pending: a failed Azure DevOps board read still answers as empty";
-
         private const string WhatAzureDevOpsSaid = "VS30063: You are not authorized to access https://dev.azure.com";
 
         private const string WhatAzureDevOpsSaidEndingInAFullStop = WhatAzureDevOpsSaid + ".";
@@ -68,7 +66,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task An_administrator_asking_for_a_board_of_an_Azure_DevOps_that_refuses_it_is_told_what_it_said()
         {
             var organisation = new AnOrganisation { BoardFailure = ARefusal() };
@@ -187,7 +184,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [TestCaseSource(nameof(WaysOfGettingNoAnswer))]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_board_nobody_answered_for_reads_as_no_answer(Exception silence)
         {
             var organisation = new AnOrganisation { BoardFailure = silence };
@@ -233,7 +229,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
         {
             var fault = AnUnexpectedFault();
@@ -274,7 +269,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_full_stop_ending_what_Azure_DevOps_said_about_a_board_is_not_doubled()
         {
             var organisation = new AnOrganisation { BoardFailure = ARefusalEndingInAFullStop() };
@@ -288,7 +282,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523-e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
         [TestCase("first|second|third")]
         [TestCase("Jambalaya")]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_malformed_board_id_is_a_failed_read_and_never_an_empty_board(string malformedBoardId)
         {
             var organisation = new AnOrganisation();

@@ -891,28 +891,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
-        [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523-e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
-        [TestCase("Jambalaya")]
-        [TestCase("123123")]
-        public async Task GetBoardInformation_BoardIdIsNotContainingTwoGuids_ReturnsEmpty(string invalidBoardId)
-        {
-            var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
-
-            var subject = CreateSubject();
-            
-            var boardInfo = await subject.GetBoardInformation(workTrackingSystemConnection, invalidBoardId);
-
-            using (Assert.EnterMultipleScope()){
-                Assert.That(boardInfo.DataRetrievalValue, Is.Empty);
-                Assert.That(boardInfo.WorkItemTypes,  Is.Empty);
-                Assert.That(boardInfo.ToDoStates, Is.Empty);
-                Assert.That(boardInfo.DoingStates, Is.Empty);
-                Assert.That(boardInfo.DoneStates, Is.Empty);
-            }
-        }
-
-        [Test]
         public async Task GetBoardInformation_GivenSpecificBoard_ReturnsCorrectQuery()
         {
             var workTrackingSystemConnection = CreateWorkTrackingSystemConnection();
