@@ -738,7 +738,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!response.IsSuccessStatusCode)
             {
-                var answer = $"{(int)response.StatusCode} {response.ReasonPhrase ?? response.StatusCode.ToString()}";
+                var answer = StatusLineOf(response);
                 logger.LogError(
                     "Jira refused the configuration of Board {BoardId}: {Answer} at {RequestUri}",
                     boardId, answer, response.RequestMessage?.RequestUri);
@@ -766,6 +766,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             return boardInformation;
         }
+
+        private static string StatusLineOf(HttpResponseMessage response)
+            => $"{(int)response.StatusCode} {response.ReasonPhrase ?? response.StatusCode.ToString()}";
 
         private static JiraReadException TheBoardFailureFor(JiraReadException refused)
         {
@@ -887,7 +890,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!response.IsSuccessStatusCode)
             {
-                var answer = $"{(int)response.StatusCode} {response.ReasonPhrase ?? response.StatusCode.ToString()}";
+                var answer = StatusLineOf(response);
                 logger.LogError("Jira refused the work items of Board {BoardId}: {Answer}", boardId, answer);
 
                 throw JiraReadException.BoardUnreadable(answer, $"GET {BoardsEndpoint}/{boardId}/issue answered {answer}.");
@@ -1131,7 +1134,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 if (!response.IsSuccessStatusCode)
                 {
                     var failBody = await response.Content.ReadAsStringAsync();
-                    var answer = $"{(int)response.StatusCode} {response.ReasonPhrase ?? response.StatusCode.ToString()}";
+                    var answer = StatusLineOf(response);
                     logger.LogError(
                         "Jira refused the board list for {Connection}: {Answer} at {RequestUri}. Body: {Body}",
                         workTrackingSystemConnection.Name,
