@@ -508,9 +508,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                 return await GetBoardsFromJira(workTrackingSystemConnection, client);
             }
-            catch
+            catch (WorkTrackingReadException)
             {
-                return [];
+                throw;
+            }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+            {
+                logger.LogError(exception, "Jira could not be asked for the boards of {Connection}", workTrackingSystemConnection.Name);
+                throw JiraReadException.BoardListUnreadable("no answer", exception.Message);
+            }
+            catch (Exception exception)
+            {
+                logger.LogError(exception, "Reading the boards of {Connection} failed unexpectedly", workTrackingSystemConnection.Name);
+                throw JiraReadException.BoardListUnreadable("an answer Lighthouse could not read", exception.Message);
             }
         }
 
@@ -1114,14 +1124,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 if (!response.IsSuccessStatusCode)
                 {
                     var failBody = await response.Content.ReadAsStringAsync();
-                    logger.LogInformation(
-                        "Authentication is not valid for {Connection}. Jira returned {StatusCode} {Reason} at {RequestUri}. Body: {Body}",
+                    var answer = $"{(int)response.StatusCode} {response.ReasonPhrase ?? response.StatusCode.ToString()}";
+                    logger.LogError(
+                        "Jira refused the board list for {Connection}: {Answer} at {RequestUri}. Body: {Body}",
                         workTrackingSystemConnection.Name,
-                        (int)response.StatusCode,
-                        response.ReasonPhrase,
+                        answer,
                         response.RequestMessage?.RequestUri,
                         failBody);
-                    return [];
+                    throw JiraReadException.BoardListUnreadable(answer, $"GET {BoardsEndpoint} answered {answer}.");
                 }
 
                 var boardsResponseBody = await response.Content.ReadAsStringAsync();

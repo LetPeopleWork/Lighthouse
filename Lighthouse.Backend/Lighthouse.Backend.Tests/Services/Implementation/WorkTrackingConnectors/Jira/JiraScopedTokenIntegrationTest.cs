@@ -61,9 +61,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var subject = CreateSubject();
             var connection = CreateWorkTrackingSystemConnection();
 
-            var boards = (await subject.GetBoards(connection)).ToList();
-
-            Assert.That(boards, Is.Empty);
+            await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoards(connection));
         }
 
         [Test]

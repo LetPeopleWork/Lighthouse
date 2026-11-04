@@ -46,7 +46,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string WhatSilenceReads = "no answer";
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task An_administrator_asking_for_the_boards_of_a_Jira_that_refuses_them_is_told_what_Jira_said()
         {
             var connection = AConnection();
@@ -76,7 +75,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(HttpStatusCode.Unauthorized, "401 Unauthorized")]
         [TestCase(HttpStatusCode.Forbidden, "403 Forbidden")]
         [TestCase(HttpStatusCode.ServiceUnavailable, "503 Service Unavailable")]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_list_Jira_answers_with_a_failure_carries_that_answer(HttpStatusCode status, string answer)
         {
             var subject = AConnectorOver(AJira(boards: _ => Responding(status, "{\"errorMessages\":[]}")));
@@ -87,7 +85,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_list_from_a_Jira_that_cannot_be_reached_reads_as_no_answer()
         {
             var subject = AConnectorOver(AJira(boards: _ => throw new HttpRequestException("No such host is known.")));
@@ -98,7 +95,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_list_that_times_out_reads_as_no_answer()
         {
             var subject = AConnectorOver(AJira(boards: _ => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")));
@@ -110,7 +106,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(AGatewayPage)]
         [TestCase(ABoardListEntryWithoutAnId)]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_list_Lighthouse_cannot_read_says_so(string body)
         {
             var subject = AConnectorOver(AJira(boards: _ => Responding(HttpStatusCode.OK, body)));
@@ -121,7 +116,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
         {
             var fault = AnUnexpectedFault();
@@ -138,7 +132,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_failure_on_the_second_page_fails_the_whole_board_list()
         {
             var subject = AConnectorOver(AJira(boards: request => IsTheSecondPage(request)
@@ -151,7 +144,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_list_over_two_pages_still_offers_every_board()
         {
             var subject = AConnectorOver(AJira(boards: request => Responding(
@@ -165,7 +157,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase("{\"isLast\":true,\"values\":[]}")]
         [TestCase("{\"values\":[]}")]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_Jira_that_really_has_no_boards_for_this_account_stays_an_empty_list(string body)
         {
             var subject = AConnectorOver(AJira(boards: _ => Responding(HttpStatusCode.OK, body)));
@@ -176,7 +167,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_failed_board_list_is_logged_with_what_Jira_answered_and_not_as_a_bad_credential()
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();
