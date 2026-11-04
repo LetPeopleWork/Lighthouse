@@ -1,6 +1,7 @@
-import { screen, waitFor } from "@testing-library/react";
+import { act, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
@@ -12,7 +13,6 @@ import {
 } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
-import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
 vi.mock("../../../hooks/useRbac", () => ({
@@ -35,8 +35,15 @@ vi.mock("../../../hooks/useRbac", () => ({
 	}),
 }));
 
-// Each test waits past the 300 ms debounce in real time, on top of a full page render.
+// A full page render plus a typed query can take several seconds on a loaded machine.
 vi.setConfig({ testTimeout: 20000 });
+
+// The clock is moved on rather than waited out, so a pending autosave has surely fired by the
+// time nothing is checked as saved.
+const pastTheAutosaveDelay = () =>
+	act(async () => {
+		await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 200);
+	});
 
 describe("ModifyProjectSettings query field", () => {
 	const mockSaveProjectSettings = vi.fn();
@@ -109,7 +116,12 @@ describe("ModifyProjectSettings query field", () => {
 		return { query, user: userEvent.setup(), leaveThePage: view.unmount };
 	};
 
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		mockSaveProjectSettings.mockReset();
 		mockSaveProjectSettings.mockResolvedValue(undefined);
 	});
@@ -119,7 +131,7 @@ describe("ModifyProjectSettings query field", () => {
 
 		await user.click(query);
 		await user.tab();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 	});
@@ -129,7 +141,7 @@ describe("ModifyProjectSettings query field", () => {
 
 		await user.click(query);
 		await user.type(query, " AND project = LH");
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 	});
@@ -139,7 +151,7 @@ describe("ModifyProjectSettings query field", () => {
 
 		await user.click(query);
 		await user.type(query, " AND project = LH");
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 
 		await user.tab();
@@ -152,7 +164,7 @@ describe("ModifyProjectSettings query field", () => {
 			}),
 		);
 
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 		expect(mockSaveProjectSettings).toHaveBeenCalledTimes(1);
 	});
 
@@ -163,7 +175,7 @@ describe("ModifyProjectSettings query field", () => {
 		await user.type(query, "x");
 		await user.keyboard("{Backspace}");
 		await user.tab();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 	});
@@ -175,7 +187,7 @@ describe("ModifyProjectSettings query field", () => {
 		await user.type(query, " AND project = LH");
 		await user.tab();
 		leaveThePage();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveProjectSettings).toHaveBeenCalledTimes(1);
 		expect(mockSaveProjectSettings).toHaveBeenCalledWith(
@@ -191,7 +203,7 @@ describe("ModifyProjectSettings query field", () => {
 		await user.click(query);
 		await user.tab();
 		leaveThePage();
-		await waitPastTheDebounce();
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 	});

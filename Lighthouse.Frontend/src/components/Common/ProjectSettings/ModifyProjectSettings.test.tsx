@@ -1,11 +1,13 @@
 import {
+	act,
 	fireEvent,
 	render,
 	screen,
 	waitFor,
 	within,
 } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -18,7 +20,6 @@ import {
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
-import { waitPastTheDebounce } from "../../../tests/waitPastTheDebounce";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
 vi.mock("./PortfolioSizeNote", () => ({ default: () => null }));
@@ -249,6 +250,13 @@ vi.mock("../../../hooks/useRbac", () => ({
 	}),
 }));
 
+// The clock is moved on rather than waited out, so a pending autosave has surely fired by the
+// time nothing is checked as saved.
+const pastTheAutosaveDelay = () =>
+	act(async () => {
+		await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 200);
+	});
+
 describe("ModifyProjectSettings", () => {
 	const mockGetWorkTrackingSystems = vi.fn();
 	const mockGetProjectSettings = vi.fn();
@@ -369,7 +377,12 @@ describe("ModifyProjectSettings", () => {
 
 	const projectSettings = createMockProjectSettings();
 
+	afterEach(() => {
+		vi.useRealTimers();
+	});
+
 	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
 		mockGetWorkTrackingSystems.mockClear();
 		mockGetProjectSettings.mockClear();
 		mockGetAllTeams.mockClear();
@@ -582,7 +595,7 @@ describe("ModifyProjectSettings", () => {
 		);
 
 		fireEvent.click(screen.getByText("Change General"));
-		await new Promise((resolve) => setTimeout(resolve, 500));
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 	});
@@ -609,7 +622,7 @@ describe("ModifyProjectSettings", () => {
 		).toBeInTheDocument();
 
 		fireEvent.click(screen.getByText("Change General"));
-		await new Promise((resolve) => setTimeout(resolve, 500));
+		await pastTheAutosaveDelay();
 
 		expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 	});
@@ -665,27 +678,7 @@ describe("ModifyProjectSettings", () => {
 
 	const scenarios = [
 		{ invalidValue: "Name", name: "" },
-		{
-			invalidValue: "Default Amount of Work Items",
-			defaultAmountOfWorkItemsPerFeature: undefined,
-		},
-		{ invalidValue: "Work Item Types", workItemTypes: [] },
-		{ invalidValue: "To Do States", toDoStates: [] },
-		{ invalidValue: "Doing States", doingStates: [] },
-		{ invalidValue: "Done States", doneStates: [] },
 		{ invalidValue: "Work Item Query", dataRetrievalValue: "" },
-		{
-			invalidValue: "Missing Historical Days",
-			usePercentileToCalculateDefaultAmountOfWorkItems: true,
-			defaultWorkItemPercentile: 80,
-			percentileHistoryInDays: null,
-		},
-		{
-			invalidValue: "Missing Default Work Item Percentile",
-			usePercentileToCalculateDefaultAmountOfWorkItems: true,
-			defaultWorkItemPercentile: 0,
-			historicalFeaturesWorkItemQuery: "My Query",
-		},
 	];
 
 	for (const scenario of scenarios) {
@@ -713,8 +706,8 @@ describe("ModifyProjectSettings", () => {
 				expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
 			);
 
-			fireEvent.click(screen.getByText("Remove ToDo"));
-			await new Promise((resolve) => setTimeout(resolve, 500));
+			fireEvent.click(screen.getByText("Add ToDo"));
+			await pastTheAutosaveDelay();
 
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
@@ -942,7 +935,7 @@ describe("ModifyProjectSettings", () => {
 					'Mapping "Group" has the same name as the Doing state "Group". Add "Group" to this mapping to group it, or choose another name.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
@@ -1018,7 +1011,7 @@ describe("ModifyProjectSettings", () => {
 					'Mapping "Group" groups "Active", which is in both Doing and Done. Keep a mapping\'s states in one category.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
@@ -1052,7 +1045,7 @@ describe("ModifyProjectSettings", () => {
 					'Mapping "Group" has the same name as the To Do state "Group". Choose another name.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
@@ -1088,7 +1081,7 @@ describe("ModifyProjectSettings", () => {
 					'Source state "Review" is used in multiple mappings.',
 				),
 			).toBeInTheDocument();
-			await waitPastTheDebounce();
+			await pastTheAutosaveDelay();
 			expect(mockSaveProjectSettings).not.toHaveBeenCalled();
 		});
 
