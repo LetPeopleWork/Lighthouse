@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBoard } from "../../models/Boards/Board";
@@ -296,7 +296,7 @@ describe("BoardWizard", () => {
 		expect(mockOnComplete).not.toHaveBeenCalled();
 	});
 
-	// Story #5610 slice 02, AC-B3 / ADR-126 decision 2. Every refusal used to arrive here as
+	// Every refusal used to arrive here as
 	// "Failed to load boards. Please try again." — the same sentence for a rejected credential, a
 	// table the account may not read and a board nobody shared, and advice that fixes none of them.
 	// The backend already wrote the words that name the table and the role to grant.
@@ -319,7 +319,7 @@ describe("BoardWizard", () => {
 		});
 	});
 
-	// ADR-126 decision 3. Boards are shared, not roled, so an empty list has two causes that nothing
+	// Boards are shared, not roled, so an empty list has two causes that nothing
 	// on the instance can tell apart — the account is a member of no board, or none of its boards
 	// carries both a table and a filter. The copy names both and asserts neither.
 	it("names both reasons a connection may have no board to offer", async () => {
@@ -347,7 +347,7 @@ describe("BoardWizard", () => {
 		);
 	});
 
-	// ADR-126 decision 1 again, from the other side: only a failure that never reached the backend
+	// The backend words its own refusals. Only a failure that never reached the backend
 	// has no words of its own, and that is the one case this component may word itself. A plain
 	// Error is not a refusal and its message is not for an administrator.
 	it("words a failure that never reached the backend itself", async () => {
@@ -795,8 +795,7 @@ describe("BoardWizard", () => {
 		expect(mockOnCancel).not.toHaveBeenCalled();
 	});
 
-	// Story #5610 slice 02, AC-B3 / D9 / ADR-126 decision 2. This replaces the assertion that pinned
-	// the defect: a failed board read used to be substituted by an all-empty board, which is truthy,
+	// A failed board read used to be substituted by an all-empty board, which is truthy,
 	// which enabled Confirm. Nothing was overwritten — the settings screen writes each field only
 	// when the incoming value is non-empty — so the dialog reported success and silently did
 	// nothing. A refusal wearing a success costume, for all four connectors.
@@ -991,5 +990,216 @@ describe("BoardWizard", () => {
 		expect(
 			screen.queryByText("Loading Board Information"),
 		).not.toBeInTheDocument();
+	});
+
+	describe("telling an empty list from a failed one", () => {
+		const NOTHING_TO_OFFER =
+			"No boards are available to this connection. The account may not have access to any board, or none of the boards it can see can be used by Lighthouse.";
+		const THE_LIST_WAS_REFUSED =
+			"Lighthouse could not read the boards from Jira: 401 Unauthorized. Check the connection's URL and sign-in details, then try again.";
+		const THE_BOARD_WAS_REFUSED =
+			"Lighthouse could not read this board from Jira: 403 Forbidden. Check the connection's URL and sign-in details, then try again.";
+
+		const thePickerFor = (
+			connectionId: number,
+			boardType?: "Board" | "Team",
+		) => (
+			<ApiServiceContext.Provider value={mockApiServiceContext}>
+				<BoardWizard
+					open={true}
+					workTrackingSystemConnectionId={connectionId}
+					onComplete={mockOnComplete}
+					onCancel={mockOnCancel}
+					boardType={boardType}
+				/>
+			</ApiServiceContext.Provider>
+		);
+
+		it.skip.each(["Board", "Team"] as const)(
+			"says the same thing about an empty list on a %s picker",
+			async (boardType) => {
+				mockGetBoards.mockResolvedValue([]);
+
+				render(thePickerFor(1, boardType));
+
+				expect(await screen.findByText(NOTHING_TO_OFFER)).toBeInTheDocument();
+				expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+			},
+		);
+
+		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
+		it.skip("shows what the tracker said about a board and cannot be confirmed", async () => {
+			mockGetBoards.mockResolvedValue(mockBoards);
+			mockGetBoardInformation.mockRejectedValue(
+				new ApiError(400, THE_BOARD_WAS_REFUSED),
+			);
+
+			render(thePickerFor(1));
+			await userEvent.click(await screen.findByLabelText("Board"));
+			await userEvent.click(await screen.findByText("Sprint Board"));
+
+			expect(
+				await screen.findByText(THE_BOARD_WAS_REFUSED),
+			).toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+		});
+
+		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
+		it.skip("takes away the boards of the last answer when the list is refused", async () => {
+			mockGetBoards.mockImplementation((connectionId: number) =>
+				connectionId === 1
+					? Promise.resolve(mockBoards)
+					: Promise.reject(new ApiError(400, THE_LIST_WAS_REFUSED)),
+			);
+
+			const { rerender } = render(thePickerFor(1));
+			await waitFor(() => expect(screen.getByLabelText("Board")).toBeEnabled());
+
+			rerender(thePickerFor(42));
+
+			expect(await screen.findByText(THE_LIST_WAS_REFUSED)).toBeInTheDocument();
+			expect(screen.getByLabelText("Board")).toBeDisabled();
+			expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+		});
+	});
+
+	describe("an answer about a board that is no longer the selected one", () => {
+		const THE_BOARD_WAS_REFUSED =
+			"Lighthouse could not read this board from Jira: 403 Forbidden. Check the connection's URL and sign-in details, then try again.";
+		const sprintBoard: IBoardInformation = {
+			...mockBoardInformation,
+			dataRetrievalValue: "the query of the Sprint Board",
+		};
+		const kanbanBoard: IBoardInformation = {
+			...mockBoardInformation,
+			dataRetrievalValue: "the query of the Kanban Board",
+		};
+
+		const anAnswerStillOnItsWay = (information: IBoardInformation) => {
+			let resolve: (answer: IBoardInformation) => void = () => {};
+			let reject: (reason: unknown) => void = () => {};
+			const promise = new Promise<IBoardInformation>((res, rej) => {
+				resolve = res;
+				reject = rej;
+			});
+
+			return {
+				promise,
+				arrives: () => act(async () => resolve(information)),
+				isRefused: () =>
+					act(async () => reject(new ApiError(400, THE_BOARD_WAS_REFUSED))),
+			};
+		};
+
+		const thePickerWithBothBoardsAskedFor = async () => {
+			const sprint = anAnswerStillOnItsWay(sprintBoard);
+			const kanban = anAnswerStillOnItsWay(kanbanBoard);
+			mockGetBoards.mockResolvedValue(mockBoards);
+			mockGetBoardInformation.mockImplementation(
+				(_connectionId: number, boardId: string) =>
+					boardId === "1" ? sprint.promise : kanban.promise,
+			);
+
+			render(
+				<ApiServiceContext.Provider value={mockApiServiceContext}>
+					<BoardWizard
+						open={true}
+						workTrackingSystemConnectionId={1}
+						onComplete={mockOnComplete}
+						onCancel={mockOnCancel}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+
+			await pick("Sprint Board");
+			await pick("Kanban Board");
+
+			return { sprint, kanban };
+		};
+
+		const pick = async (boardName: string) => {
+			await userEvent.click(await screen.findByLabelText("Board"));
+			await userEvent.click(await screen.findByText(boardName));
+		};
+
+		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
+		it.skip("keeps the newer board when the older one answers last", async () => {
+			const { sprint, kanban } = await thePickerWithBothBoardsAskedFor();
+
+			await kanban.arrives();
+			await sprint.arrives();
+
+			expect(
+				screen.getByText("the query of the Kanban Board"),
+			).toBeInTheDocument();
+			expect(
+				screen.queryByText("the query of the Sprint Board"),
+			).not.toBeInTheDocument();
+
+			await userEvent.click(screen.getByRole("button", { name: "Confirm" }));
+
+			expect(mockOnComplete).toHaveBeenCalledWith(kanbanBoard);
+		});
+
+		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
+		it.skip("says nothing about the older board being refused after the newer one answered", async () => {
+			const { sprint, kanban } = await thePickerWithBothBoardsAskedFor();
+
+			await kanban.arrives();
+			await sprint.isRefused();
+
+			expect(screen.queryByText(THE_BOARD_WAS_REFUSED)).not.toBeInTheDocument();
+			expect(
+				screen.getByText("the query of the Kanban Board"),
+			).toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+		});
+
+		it.skip.each(["arrives", "isRefused"] as const)(
+			"keeps waiting for the newer board when the older one %s first",
+			async (howTheOlderOneEnds) => {
+				const { sprint } = await thePickerWithBothBoardsAskedFor();
+
+				await sprint[howTheOlderOneEnds]();
+
+				expect(
+					screen.getByText("Loading Board Information"),
+				).toBeInTheDocument();
+				expect(
+					screen.queryByText(THE_BOARD_WAS_REFUSED),
+				).not.toBeInTheDocument();
+				expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+			},
+		);
+
+		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
+		it.skip("ignores an answer that arrives after the selection was cleared", async () => {
+			const sprint = anAnswerStillOnItsWay(sprintBoard);
+			mockGetBoards.mockResolvedValue(mockBoards);
+			mockGetBoardInformation.mockReturnValue(sprint.promise);
+
+			render(
+				<ApiServiceContext.Provider value={mockApiServiceContext}>
+					<BoardWizard
+						open={true}
+						workTrackingSystemConnectionId={1}
+						onComplete={mockOnComplete}
+						onCancel={mockOnCancel}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+
+			await pick("Sprint Board");
+			await userEvent.clear(screen.getByLabelText("Board"));
+			await sprint.arrives();
+
+			expect(
+				screen.queryByText("the query of the Sprint Board"),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByText("Loading Board Information"),
+			).not.toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+		});
 	});
 });

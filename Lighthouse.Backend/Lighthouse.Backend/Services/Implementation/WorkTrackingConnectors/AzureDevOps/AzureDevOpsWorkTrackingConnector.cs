@@ -1663,7 +1663,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return GetClientAsync<WorkItemTrackingHttpClient>(workTrackingSystemConnection);
         }
 
-        private async Task<TClient> GetClientAsync<TClient>(WorkTrackingSystemConnection workTrackingSystemConnection) where TClient : IVssHttpClient
+        // Overridable so a test can hand the connector the project and board clients too: without a fake
+        // here, what a failed board read does could only be seen against a live organisation.
+        internal virtual async Task<TClient> GetClientAsync<TClient>(WorkTrackingSystemConnection workTrackingSystemConnection) where TClient : IVssHttpClient
         {
             var (connection, key) = await GetConnectionForWorkTrackingSystemAsync(workTrackingSystemConnection);
             var cacheKey = $"{typeof(TClient).FullName}_{key}";

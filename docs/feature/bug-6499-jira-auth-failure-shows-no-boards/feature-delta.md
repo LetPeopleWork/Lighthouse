@@ -2,6 +2,10 @@
 
 Root-cause analysis: `rca.md` in this folder.
 
+**Read "Maintainer decisions: simplified copy" (2026-11-04) first.** It supersedes the copy and much of the
+classification below, and it holds the answers to the DISTILL review. Passages it changed are restated in place.
+The Q, N and AFK tables, the first copy table and DESIGN Decision 1 are kept as history only.
+
 ## Maintainer decisions (2026-11-02, after the RCA)
 
 | # | Question | Decision |
@@ -26,9 +30,9 @@ existing flow with a known emotional arc (confused -> told what to fix); the ske
 ### Scope Assessment: PASS
 
 2 user stories (one per connector, each a slice), 1 bounded context touched (Tracker integration; the
-frontend copy table is a presentation detail of the same flow), no new integration points, estimated
-2.5 days (slice 01 about 1.5, slice 02 about 1). Not oversized. Linear is out (Q2). Anything beyond the board/field-list/validate reads is
-out (Q6, Q8).
+frontend sentence is a presentation detail of the same flow), no new integration points, estimated
+about 2 days (slice 01 about 1.5, slice 02 about 0.5). Not oversized. Linear is out (Q2). Anything beyond the
+board reads, the one Test connection string and the disabled button is out (Q6, Q8, the 2026-11-04 block).
 
 ### Persona and job
 
@@ -44,47 +48,39 @@ out (Q6, Q8).
   Proposed `jobs.yaml` edit, applied in DELIVER: a dated `REVISED` line in that job's `note` saying the
   signal now also reaches the picker and the validate sentence. No score change.
 - **JTBD one-liner**: When Jira or Azure DevOps refuses the credential or cannot be reached, I want the
-  board picker and the connection check to say which of those happened and what to fix, so I do not
-  re-issue tokens or conclude my boards are gone.
+  board picker to say what the tracker answered and what to check, so I do not conclude my boards are gone.
 
 ## Wave: DISCUSS / [REF] Locked decisions
 
-Q1 to Q8 above are binding. Derived decisions (D) that follow from them, for DESIGN to honour:
+Q1 to Q8 above are binding where the 2026-11-04 block left them standing. Derived decisions (D) that follow from
+them, for DESIGN to honour; D2, D3, D4, D6, D8 and D9 are restated as that block left them:
 
 - **D1** (Q2): the Jira and ADO connectors' `GetBoards` and `GetBoardInformation` stop turning failure into
   emptiness. Failure is a `WorkTrackingReadException` (`JiraReadException`, `AzureDevOpsReadException`
   already exist). A genuine `200` with zero boards stays `200 []` (ADR-126 decision 3).
-- **D2** (Q3 clarified, Q5, N2, N3): there is **one credential sentence per connector** (Jira: C1, method-neutral
-  for Cloud and Data Center; ADO: C6), produced in one place and used by `ValidateConnection`, the board list,
-  the board information read and (Jira) the field list. It is reworded: it **replaces today's Test connection
-  text** ("Authentication failed for Jira." with detail "Jira returned 401 Unauthorized."), and the picker shows
-  the very same sentence. A 401 and a 403 both get it on the board list, board information and field list
-  (N3, Q7). Code stays `authentication_failed` (`ConnectionHealthService` keys on it; ADR-184). The Jira
-  sentence highlights no field. Scoped-token and OAuth connections never get C1 (D8).
-- **D3** (Q4): `BoardWizard` empty-list copy is per connector; ServiceNow keeps today's text, Jira, ADO and
-  Linear get the neutral text (Linear gets only this text change; its read path is untouched).
-- **D4** (Q7): Jira `FieldListRefused` for 401 or 403 uses the credential sentence; other statuses keep
-  today's text.
+- **D2** (restated 2026-11-04): the picker has no credential sentence. A failed board list shows F1 and a failed
+  board read shows F2, with the tracker's answer in it, whatever the cause. Jira Test connection shows T1, one
+  neutral string for every Jira sign-in; its code (`authentication_failed`), technical detail and highlighted field
+  stay as they are.
+- **D3** (restated 2026-11-04): the empty list reads E1 for every connector, ServiceNow included. No per-connector
+  copy. Linear gets only this text change; its read path is untouched.
+- **D4** (dropped 2026-11-04): the field-list text is not reworded. A Jira field-list 401 still says it needs to
+  browse a project.
 - **D5** (Q8): no architecture rule. Each connector gets failure-path tests (RCA section 3 lists them; none
   exist today for `GetBoards`).
-- **D6**: a failure that is not a credential refusal (5xx, other status, transport, unparseable body) gets
-  its own sentence naming what happened, never the credential sentence. This is the maintainer's S4 note
-  ("even if Jira is down, the error is odd").
+- **D6** (restated 2026-11-04): every failure, credential or not (5xx, other status, transport, unparseable body),
+  gets F1 or F2 naming what happened. Both keep "Check the connection's URL and sign-in details", also for a 503
+  or a timeout: the maintainer accepted this because the status sits in the sentence. That is the answer to the
+  S4 note ("even if Jira is down, the error is odd"): the reader sees `503 Service Unavailable`, not "no boards".
 - **D7**: the Information log line "Authentication is not valid" that is written for every non-success
   board status becomes truthful (status-specific). Wording is a DESIGN detail.
-- **D8** (N1 = A): Jira connections that use a **scoped API token** or **Jira Cloud OAuth** are routed through
-  the Atlassian gateway, and Jira's board endpoints do not accept those credentials even when they are valid
-  (`jira.md` lines 73 and 92). For them a 401 or 403 on the board list or board information gets the
-  method-specific sentence C1m, never C1. Test connection and the field list, which do work with those
-  credentials, use C1o when they are refused, never C1 either. DESIGN picks how the connector knows the method
-  (`RoutesViaAtlassianCloudGateway` already does).
-- **D9**: Jira `ValidateConnection` today classifies **every** non-2xx from `/myself` as `authentication_failed`
-  (`JiraWorkTrackingConnector.cs` lines 438-453), so a 503 reads as an auth failure; that contradicts D6. Only
-  401 and 403 keep `authentication_failed` and C1; other statuses get C2v with a non-credential code, and an
-  unreachable host keeps `connection_failed`. Health-verdict consequence: `ConnectionHealthService` maps the
-  code `authentication_failed` to the stored state `AuthenticationFailed` (line 33, 219). After D9 a Jira 503 no
-  longer stores that state; DESIGN confirms which state the non-credential code yields. ADR-184's single
-  verdict for real credential refusals is untouched: 401 and 403 still produce `authentication_failed`.
+- **D8** (restated 2026-11-04): Jira connections that use a **scoped API token** or **Jira Cloud OAuth** are routed
+  through the Atlassian gateway, and Jira's board endpoints do not accept those credentials even when they are
+  valid (`jira.md` lines 73 and 92). For them "Select Jira Board" is disabled with the reason in tooltip D1, and no
+  board call is made. Test connection works for them and shows T1 when refused.
+- **D9** (dropped 2026-11-04): `ValidateConnection`'s status logic is untouched. Jira classifies **every** non-2xx
+  from `/myself` as `authentication_failed`, so a 503 on Test connection still reads as an authentication failure.
+  That is a known defect left out of this Bug, with no Bug number. `ConnectionHealthService` is untouched.
 - **D10**: Azure DevOps has a second swallow: `GetBoardsForProject` (`AzureDevOpsWorkTrackingConnector.cs`
   lines 637-641, `catch (Exception) { return []; }`), called per project from `GetBoardsForProjects`
   (lines 610-619). Fixing only `GetBoards` would leave a rejected PAT as `200 []`. A failure of any project's
@@ -115,10 +111,9 @@ Q1 to Q8 above are binding. Derived decisions (D) that follow from them, for DES
   `GetBoardInformation` adopted it only partly. This Bug **finishes ADR-126 for Jira and ADO**. Proposed
   ADR-126 edit, applied in DELIVER: a dated "Adoption" note (Jira and ADO adopted for list and information;
   Linear not adopted, out of scope) so the next reader does not find a promise with no owner.
-- **ADR-184 framing**: the verdict (`authentication_failed`) and its classifier (`ValidateConnection`)
-  stay the single source of "credential refused"; this Bug adds callers of that sentence, not a second
-  classifier. ADR-184's rule "where the connector cannot say it was authentication, never say it was"
-  governs D6: only 401 (and 403 per Q7) get the credential sentence.
+- **ADR-184 framing**: unchanged. The verdict (`authentication_failed`) and its classifier (`ValidateConnection`)
+  stay as they are, and this Bug changes only the message string of that verdict (T1). The picker makes no claim
+  about authentication: it repeats what the tracker answered.
 
 ## Wave: DISCUSS / [REF] User stories
 
@@ -134,79 +129,84 @@ Tomas Weber administers Lighthouse for about ten Teams on one Jira Cloud connect
 picker and read "No boards to offer. Either this account is not a member of any Visual Task Board ..." (a
 ServiceNow sentence) because Jira had answered 401. He re-issued the API token, which changed nothing: the
 email next to it was the one that was wrong. The only other text he ever saw was a bare "401 Unauthorized".
-The same silent emptiness appears when Jira is down.
+The same silent emptiness appears when Jira is down. In his case Jira answered 401 to a valid token paired with
+the wrong email, so nothing in the answer pointed at the email, and only going through all the sign-in details would
+have found it.
 
 #### Elevator Pitch
 
 Before: When Jira refuses the connection's credentials or is down, Tomas cannot tell that from "this
 account has no boards", so he re-issues tokens that were never the problem.
 After: open a Team's General settings, press "Select Jira Board" -> sees, in red under the board field,
-"Jira refused the sign-in. Check the user name or email and the API token or personal access token ..." (C1),
-and the same sentence on the connection page when he presses Test connection.
-Decision enabled: check the user name or email and the token together instead of re-issuing the token or
-giving up on the boards.
+"Lighthouse could not read the boards from Jira: 401 Unauthorized. Check the connection's URL and sign-in
+details, then try again." (F1). Test connection says "Authentication failed for Jira. Check all of this
+connection's sign-in details." (T1).
+Decision enabled: go through every sign-in detail of the connection instead of re-issuing the token or giving up
+on the boards.
 
 #### Domain examples
 
 1. **Wrong email (the report)**: Tomas' connection to `https://acme-eng.atlassian.net` has Username
    `tomas.weber@acme-old.example` and a valid token that belongs to `tomas.weber@acme.example`. Jira answers
-   401. The picker shows C1.
+   401. The picker shows F1 with `401 Unauthorized`; Test connection shows T1. Neither names the email: both send
+   him to the sign-in details.
 2. **Jira down**: same connection, Jira answers `503 Service Unavailable` on the board list. The picker
-   shows C2 with "503 (Service Unavailable)" and does not mention credentials.
+   shows F1 with `503 Service Unavailable`. The sentence still mentions the sign-in details; the status beside it
+   tells him what happened.
 3. **Really no boards**: a Jira Cloud site with Team-managed projects only answers `200` with zero boards.
-   The picker shows the neutral C5, not the ServiceNow sentence.
+   The picker shows E1, not the ServiceNow sentence.
 4. **Scoped API token (valid)**: Anika Rossi's connection to `https://acme-eng.atlassian.net` uses a scoped
-   token with `read:jira-user` and `read:jira-work`. Jira answers the board list with 401 although the token is
-   fine. The picker shows C1m, which says boards cannot be offered to this kind of sign-in and that the Team's
-   query can be typed by hand; Test connection on the same connection says Connected.
+   token with `read:jira-user` and `read:jira-work`. "Select Jira Board" is disabled, and hovering it shows D1,
+   which says Jira does not offer boards to this sign-in and to enter the query by hand. No board call is made.
+   Test connection on the same connection says Connected.
 
 #### UAT scenarios
 
-1. **A refused Jira credential is named in the picker, on 401 and on 403.** Given Tomas' Jira Cloud
+1. **A refused Jira credential is told in the picker, on 401 and on 403.** Given Tomas' Jira Cloud
    connection and Jira answers 401 on the board list (example 1) or 403 on it (the account has no Jira
-   Software licence), When he opens "Select Jira Board", Then he reads C1 in both cases, the board field stays
-   disabled and Confirm stays disabled.
-2. **Test connection says the same thing.** Given the same connection and Jira answers 401 on the account
-   check, When he presses Test connection, Then he reads C1 with technical detail "Jira returned 401
-   Unauthorized." and no input is highlighted.
-3. **Jira being down or unreachable is not reported as a credential problem.** Given Jira answers 503 to the
-   board list, or does not answer at all (timeout), or answers 503 to Test connection, When Tomas opens the
-   picker or presses Test connection, Then he reads C2 (picker, 503), C3 naming the URL (timeout) or C2v
-   (Test connection, 503), and no sentence about the user name, email or token; the connection's stored
-   health state is not set to authentication failed by the 503.
+   Software licence), When he opens "Select Jira Board", Then he reads F1 with that answer in it, the board field
+   stays disabled and Confirm stays disabled.
+2. **Test connection sends him to all the sign-in details.** Given the same connection and Jira answers 401 on the
+   account check, When he presses Test connection, Then he reads T1 with technical detail "Jira returned 401
+   Unauthorized." and the API Token field highlighted as today.
+3. **Jira being down or unreachable reads as what it is.** Given Jira answers 503 to the board list, or does not
+   answer at all (timeout), When Tomas opens the picker, Then he reads F1 with `503 Service Unavailable` or
+   `no answer`. The sentence keeps "Check the connection's URL and sign-in details", which the maintainer accepted
+   because the status sits in the sentence. Test connection's 503 stays out of this Bug.
 4. **A genuinely empty board list is not a fault.** Given Jira answers 200 with zero boards, When Tomas
-   opens the picker, Then he reads C5 (Jira) and no "Visual Task Board" wording; and for a ServiceNow
-   connection the picker still reads today's sentence.
-5. **A board that cannot be read is not confirmable.** Given the board list loaded and Jira answers 401 or
-   403 for the chosen board's configuration, When Tomas picks the board, Then he reads C1; for another
-   failing status or an unreachable Jira he reads C4; Confirm stays disabled in all cases.
-6. **The field list tells the truth on a 401.** Given Jira answers 401 or 403 on its field list while
-   Tomas validates additional fields, When validation runs, Then he reads C1 and not "needs to be able to
-   browse at least one project"; for a 500 the existing field-list text remains.
-7. **A valid scoped token or OAuth sign-in is not told to check email and token.** Given Anika Rossi's
-   connection uses a scoped API token (or Jira Cloud OAuth) and Jira answers 401 on the board list, When she
-   opens "Select Jira Board", Then she reads C1m and no sentence about the email or the API token; and when
-   Jira refuses that connection on Test connection or the field list, she reads C1o, also without the email
-   sentence.
+   opens the picker, Then he reads E1 and no "Visual Task Board" wording; a ServiceNow connection reads E1 too.
+5. **A board that cannot be read whole is not confirmable.** Given the board list loaded and Jira refuses, fails or
+   answers unusably on the chosen board's configuration, status list, work items or work item type list, When Tomas
+   picks the board, Then he reads F2 with that answer in it and Confirm stays disabled. A board without its states or
+   types is never offered. The one exception: a board whose saved filter is refused keeps its existing sentence
+   (`board_filter_unreadable`), which names the filter to share.
+6. **A valid scoped token or OAuth sign-in is not sent to a picker that cannot work.** Given Anika Rossi's
+   connection uses a scoped API token (or Jira Cloud OAuth), When she reaches the Team or Portfolio settings or the
+   create flow, Then "Select Jira Board" is disabled, hovering it shows D1, and no board call is made. In the create
+   flow the load-data step is skipped and Configure shows the same disabled button.
 
 #### Acceptance criteria
 
-- [ ] Scenarios 1 to 7 hold as automated tests (backend connector tests for the failure paths RCA
-      section 3 lists, including a 403 on the board list and a 503 on `/myself`; frontend tests for the
-      copy table).
+- [ ] Scenarios 1 to 6 hold as automated tests (backend connector tests for the failure paths RCA
+      section 3 lists, including a 403 on the board list; frontend tests for E1, D1 and the button).
 - [ ] No message or technical detail contains the email, the token or any header value.
-- [ ] The Information log line for a non-success board status names the real status and no longer claims
+- [ ] The log line for a non-success board status names the real status and no longer claims
       "Authentication is not valid" for a 503.
-- [ ] A 401 on the board list and the validate path produce the same message text from one source.
-- [ ] `ValidateConnection` gives `authentication_failed` and C1 only for 401 and 403; a 503 or any other status
-      gives C2v with a different code, so the stored connection health is not "authentication failed".
-- [ ] Scoped-token and OAuth connections never read C1: the board reads give C1m, Test connection and the
-      field list give C1o (D8).
+- [ ] `{answer}` covers well-formed JSON Lighthouse cannot use (a board entry with no id, a `/configuration` with no
+      columns, a status list or work item list without what it should hold): it reads
+      `an answer Lighthouse could not read`, the same as unparseable JSON.
+- [ ] A refused status list, `board/{id}/issue` or work item type list inside `GetBoardInformation` gives F2, and
+      never a board with no states or no types. A board that really holds no work items yet is still read.
+- [ ] `ValidateConnection` changes only its message: code, technical detail, highlighted field and status logic are
+      as today.
+- [ ] Scoped-token and OAuth connections show the button disabled with D1 on every screen that offers it, and make no
+      board call. Other Jira connections are unaffected.
 
 #### Outcome KPIs
 
 - **Who**: Lighthouse System Administrators setting up Jira Teams.
-- **Does what**: reach the right fix (email or token, or "wait, Jira is down") from the first sentence they read.
+- **Does what**: reach the right fix (go through the sign-in details, or "wait, Jira is down") from the first
+  sentence they read.
 - **By how much**: 0 community reports of "no boards" where the cause was a refused credential or a Jira
   outage, in the 90 days after release (baseline: 1 reported, plus the ones nobody reported).
 - **Measured by**: community and support thread review at the next two releases; no telemetry (see DEVOPS
@@ -215,17 +215,15 @@ giving up on the boards.
 
 #### Technical notes
 
-- Jira `GetBoards` and the paging loop `GetBoardsFromJira`, `GetBoardInformation` (its generic `catch` and
-  the empty-`BoardInformation` return on a non-success `/configuration`), `FieldListRefused`,
-  `ValidateConnection`. Line numbers in `rca.md`.
+- Jira `GetBoards` and the paging loop `GetBoardsFromJira`, `GetBoardInformation` (its generic `catch`),
+  `GetBoardInformationFromJira` (the empty return on a non-success `/configuration`), `MapStatusToCategory` and
+  `GetItemTypesForBoard` (the quiet returns), and the one T1 string in `ValidateConnection`. DESIGN Decision 2
+  lists each site.
 - `BoardWizard.tsx` already shows `ApiError.message` (`refusalOr`) and disables Confirm on a null
   `boardInformation`; no new frontend error path is expected.
-- `ValidateConnection` (`JiraWorkTrackingConnector.cs` lines 438-453) classifies every non-2xx as
-  `authentication_failed` today; the status branch (D9) is part of this story. The health verdict follows
-  the code (`ConnectionHealthService` line 219), see D9.
 - A Team can be configured without a board: the board wizard is an optional button next to the Team's query
   field, which is typed by hand, and `jira.md` lines 73 and 92 already say to "configure teams/portfolios
-  manually". That is why C1m may truthfully suggest typing the query.
+  manually". That is why D1 may truthfully say to enter the query by hand.
 - Depends on nothing.
 
 ### US-6499-02: Azure DevOps says why it gave no boards
@@ -243,42 +241,41 @@ and press Test connection on the connection page.
 
 Before: When the PAT is expired or Azure DevOps cannot be reached, the Azure DevOps picker says "No boards
 to offer" and Priya assumes the project has none.
-After: open a Team's General settings, press "Select Board" -> sees "Authentication failed for Azure
-DevOps. Check your Personal Access Token permissions and make sure it is still valid." (C6).
+After: open a Team's General settings, press "Select Board" -> sees "Lighthouse could not read the boards from
+Azure DevOps: Contoso: 401 Unauthorized. Check the connection's URL and sign-in details, then try again." (F1).
 Decision enabled: renew the PAT instead of searching for a missing board.
 
 #### Domain examples
 
 1. **Expired PAT**: connection `https://dev.azure.com/northwind` answers unauthorized (`VssUnauthorizedException`);
-   the picker shows C6, the same sentence Test connection shows today.
-2. **Azure DevOps unreachable**: the host does not answer; the picker shows C7 with what ADO said.
-3. **Organisation with no boards**: a project with no team boards answers an empty list; the picker shows
-   the neutral C5 (Azure DevOps wording).
+   the picker shows F1 with what Azure DevOps said, naming the project that failed.
+2. **Azure DevOps unreachable**: the host does not answer; the picker shows F1 with `no answer`.
+3. **Organisation with no boards**: a project with no team boards answers an empty list; the picker shows E1.
 4. **One project fails, the others answer**: the connection `https://dev.azure.com/northwind` has projects
    Fabrikam and Contoso; Azure DevOps answers Contoso's board list with a service error. The picker does not
-   quietly show only Fabrikam's boards as if Contoso had none; it shows C7.
+   quietly show only Fabrikam's boards as if Contoso had none; it shows F1 naming Contoso.
 
 #### UAT scenarios
 
-1. **An expired PAT is named in the picker.** Given Priya's PAT is rejected, When she opens "Select
-   Board", Then she reads C6 and Confirm stays disabled.
+1. **An expired PAT is told in the picker.** Given Priya's PAT is rejected, When she opens "Select
+   Board", Then she reads F1 with what Azure DevOps said and Confirm stays disabled.
 2. **A failing Azure DevOps is not reported as empty.** Given Azure DevOps answers with a service error or
-   cannot be reached, When she opens the picker, Then she reads C7 and not "no boards".
+   cannot be reached, When she opens the picker, Then she reads F1 and not "no boards".
 3. **A genuinely empty list is neutral.** Given the project has no boards, When she opens the picker,
-   Then she reads C5 (Azure DevOps wording).
+   Then she reads E1.
 4. **A board that cannot be read is not confirmable.** Given the list loaded and the chosen board's
-   information read fails, When she picks the board, Then she reads the reason and Confirm stays disabled.
+   information read fails, When she picks the board, Then she reads F2 and Confirm stays disabled.
 5. **One failing project is not an empty project.** Given the board read of one of Priya's projects fails
-   while the others answer, When she opens the picker, Then she reads C7 (or C6 if the PAT is rejected)
-   and not a list that silently lacks that project's boards.
+   while the others answer, When she opens the picker, Then she reads F1 naming that project and not a list that
+   silently lacks its boards.
 
 #### Acceptance criteria
 
 - [ ] Scenarios 1 to 5 hold as automated tests (the board list failure rows, the per-project failure in
       `GetBoardsForProject`, plus the board information read, in the ADO connector tests).
-- [ ] The ADO credential sentence on the picker is character-for-character the one `ValidateConnection`
-      returns (Q3).
-- [ ] The existing Error-level log for a failed board read is kept for non-refusal failures.
+- [ ] F1 names the failing project and Azure DevOps' answer, with a trailing full stop of that answer trimmed. Azure
+      DevOps' Test connection is unchanged.
+- [ ] The existing Error-level log for a failed board read is kept, for every failure.
 
 #### Outcome KPIs
 
@@ -292,14 +289,15 @@ Decision enabled: renew the PAT instead of searching for a missing board.
 - `AzureDevOpsWorkTrackingConnector.GetBoards` (`catch (Exception)` -> `[]`), `GetBoardInformation`
   (same) and the **second swallow** in `GetBoardsForProject` (lines 637-641, per project, called from
   `GetBoardsForProjects`, lines 610-619; D10). All three must stop returning empty, or a rejected PAT still
-  reads "no boards". Whether a single failing project fails the whole list or only shows a notice is a
-  DESIGN call; it must never read as that project having no boards. `AzureDevOpsReadException` exists; a board-specific factory is likely needed. Which exceptions
-  count as "credential" beyond `VssUnauthorizedException` (and 403) is a DESIGN call.
-- **Depends on US-6499-01** (slice 01) for the `BoardWizard` per-connector copy table, where ADO gets its own
-  C5 line. This is the one allowed direction: the later slice builds on the earlier, finished one; slice 01
-  does not wait on slice 02.
+  reads "no boards". One failing project fails the whole list (HELD-1). `AzureDevOpsReadException` exists. There
+  is no classification: 401, 403 and everything else reach the same sentence with what Azure DevOps said.
+- **Depends on US-6499-01** (slice 01) for E1 in `BoardWizard`. This is the one allowed direction: the later slice
+  builds on the earlier, finished one; slice 01 does not wait on slice 02.
 
 ## Wave: DISCUSS / [REF] Proposed copy and where it shows
+
+**Superseded in full by the 2026-11-04 block**, which replaced C1 to C11 with F1, F2, E1, T1 and D1. This section is
+kept as the record of the first proposal, and no test or slice follows it.
 
 All text is **proposed**, for the sketch walk-through at the start of DISTILL. "Board" is the tracker's own
 word (a literal tracker concept, not a configurable Terminology term); "Team" in the dialog title comes from
@@ -367,7 +365,7 @@ needed. Visualization skill: N/A, because nothing here charts data.
 | RBAC impact | None. The picker stays `SystemAdmin` (ADR-126 decision 4, unchanged); the refusal reaches only System Administrators, who can already read connection health. No new permission, no API-key scope change, and no component fetches `my-summary`; `useRbac()` is untouched. The verdict never contains credential values (AC). |
 | Lighthouse-Clients (CLI/MCP) versioning | N/A, because `/api/latest/wizards/...` is a UI-only System Administrator endpoint; a search of the clients repo for "wizards" found no match. The only wire change is `200 []` -> `400 {message, technicalDetails, fieldName}` for a failed read, the envelope ADR-126 already ships for ServiceNow. No changeset. |
 | Website marketing surface | N/A, because this is a bug fix with no new capability or claim. The website hot-links docs images from `main`; `jira_wizard.png` shows the happy path and does not change. |
-| Docs prose (for DELIVER finalize) | **Yes, owed**: `docs/concepts/worktrackingsystems/jira.md` line 92 says Lighthouse "will display 'No Boards available'" for scoped tokens; that sentence is wrong after this Bug. Replacement (N1 = A): the picker says Jira does not offer boards to scoped tokens, and the Team's query can be typed by hand or set up with a personal API token first; line 73 (OAuth) gets the same correction and keeps "Configure teams and portfolios manually". ADO page: check for a board-picker note. Per-feature screenshots: **N/A**, because the failure state is one red line of text and `jira_wizard.png` shows the happy path, which does not change. Demo data: N/A, because failure paths need a refused credential, not data. |
+| Docs prose (for DELIVER finalize) | **Yes, owed**: `docs/concepts/worktrackingsystems/jira.md` line 92 says Lighthouse "will display 'No Boards available'" for scoped tokens; that sentence is wrong after this Bug. Replacement: "Select Jira Board" is disabled for scoped tokens, its tooltip says why, and the Team's query is entered by hand; line 73 (OAuth) gets the same correction and keeps "Configure teams and portfolios manually". ADO page: check for a board-picker note. Per-feature screenshots: **N/A**, because the failure state is one red line of text and `jira_wizard.png` shows the happy path, which does not change. Demo data: N/A, because failure paths need a refused credential, not data. |
 | Release notes | Candidate for `/release` (not at finalize): customer pain first ("a refused Jira or Azure DevOps credential no longer reads as 'no boards'"). ADO "Release Notes" tag: maintainer decides. |
 | Usage-data event (DEVOPS pre-answer) | Proposed "N/A, because the change reports a failure and adds nothing to be used; a name-only 'board list refused' event would count failures, not use". DEVOPS confirms. |
 | Terminology | Copy uses "board", "Team" (Terminology), no tracker-specific heading words. |
@@ -376,14 +374,14 @@ needed. Visualization skill: N/A, because nothing here charts data.
 
 ## Wave: DISCUSS / [REF] Slices
 
-Briefs in `slices/`. Order: Jira first (it carries the shared credential sentence and the per-connector
-copy table, and the report), then ADO. **Slice 02 depends on slice 01** (the per-connector copy table); that is
-allowed because it runs in one direction, the later slice building on the finished earlier one.
+Briefs in `slices/`. Order: Jira first (it carries E1 and the report), then ADO. **Slice 02 depends on slice 01**
+(E1 in `BoardWizard`); that is allowed because it runs in one direction, the later slice building on the finished
+earlier one.
 
 | Slice | Story | Learning hypothesis (disproved if it fails) |
 |---|---|---|
-| 01 | US-6499-01 | The shared refusal channel carries Jira's 401 to the picker with no new frontend path. Disproved if `BoardWizard` needs more than the copy table. |
-| 02 | US-6499-02 | ADO's exception model maps to the same verdicts without a Jira-shaped abstraction. Disproved if a shared helper is needed to make it pass. |
+| 01 | US-6499-01 | The shared refusal channel carries Jira's 401 to the picker with no new frontend path. Disproved if `BoardWizard` needs a new error path. |
+| 02 | US-6499-02 | ADO's exception model fits the same template without a Jira-shaped abstraction. Disproved if a shared helper is needed to make it pass. |
 
 Taste tests: no slice adds 4+ components; no slice depends on a new abstraction; both disprove something;
 production-data criterion is met by running one picker against a deliberately wrong credential on a real
@@ -396,11 +394,11 @@ Jira and ADO sandbox in DELIVER (not synthetic only).
 | 1 | Problem in domain language | Problem sections above. |
 | 2 | Persona | Tomas Weber and Priya Nair, `config-admin`. |
 | 3 | 3+ examples with real data | Three each, with URLs and addresses. |
-| 4 | UAT 3-7 | Seven and five. |
+| 4 | UAT 3-7 | Six and five. |
 | 5 | AC from UAT | Embedded per story. |
-| 6 | Right-sized | One slice each: slice 01 about 1.5 days, slice 02 about 1 day (2.5 in total). |
+| 6 | Right-sized | One slice each: slice 01 about 1.5 days, slice 02 about 0.5 (about 2 in total). |
 | 7 | Technical notes | Per story. |
-| 8 | Dependencies | US-02 depends on US-01 (the per-connector copy table), one direction only. N1 to N3 are answered and folded in. |
+| 8 | Dependencies | US-02 depends on US-01 (E1 in `BoardWizard`), one direction only. N1 to N3 are answered and folded in. |
 | 9 | KPIs | Per story; measured by review, no telemetry. |
 
 DoR passes for both stories. Job traceability: both stories carry `job_id`; neither is `@infrastructure`; both have an
@@ -433,9 +431,8 @@ Not created in ADO, by the maintainer's decision; kept here for reference only:
 
 ## Wave: DISCUSS / Resolved
 
-The open questions N1 to N3 and the Q3 clarification are answered in the table below and are folded into
-the decisions D2, D8 and D9, the copy table (C1, C1m, C1o, C2v, C4), the scenarios, the acceptance criteria,
-the sketches, the Definition of Ready and both slice briefs. No question is open.
+The open questions N1 to N3 and the Q3 clarification were answered in the table below, and the 2026-11-04 block
+then replaced what they fed (D2, D8, D9 and the copy table). No question is open.
 
 ## Maintainer decisions on the DISCUSS questions (2026-11-02)
 
@@ -455,35 +452,39 @@ drawn). Paradigm: object-oriented, ports and adapters. ADR drafts in this folder
 `adr-draft-ado-board-list-fails-whole.md` (decision 3: fail the whole list, decided by the maintainer as HELD-1).
 Nothing outside this folder was edited. Revised after the DESIGN review
 against the AFK decisions at the end of this file (AFK-2 reversed, AFK-5 re-confirmed, AFK-6) and the maintainer's
-decisions on the held items.
+decisions on the held items. **Restated after the 2026-11-04 block:** Decisions 2 to 5, the diagram and the handoff
+now describe the simplified design; Decision 1 is history; `adr-draft-credential-verdict-per-connector.md` is
+superseded.
 
 ### [REF] Existing-system analysis (reuse first)
 
 | Need | What already exists | Verdict | Contract shape, universe, assertion |
 |---|---|---|---|
 | A typed "could not ask / was refused" answer | `WorkTrackingReadException` (abstract, carries a `ConnectionValidationResult`), `JiraReadException`, `AzureDevOpsReadException`; `WizardsController.AnsweringARefusalWithItsReason` catches the abstract type and answers `400 {verdict}`; `BoardWizard.refusalOr` shows the verdict text | **Reuse unchanged.** No new exception type, no controller change, no new frontend error path. | Pure data (an exception carrying a value). Nothing to assert beyond the verdict it carries. |
-| A place for "status -> sentence" knowledge | ServiceNow already did it: `ServiceNowValidationVerdict` and `ServiceNowBoardVerdict`, pure static classes that turn (status, facts) into a `ConnectionValidationResult`, called by both `ValidateConnection` and the board reads | **Copy the pattern per connector** (decision 1). | **Pure** (return-only). Universe: none; no I/O, no logging. Asserted by table tests; no collaborator can be injected because there is none. |
-| Which Jira connections go through the Atlassian gateway | `JiraWorkTrackingConnector.RoutesViaAtlassianCloudGateway(authenticationMethodKey)` | **Reuse** as the one input to C1 / C1m / C1o selection. | Pure predicate. |
-| Whether a Jira exception means "could not be asked" | `JiraCouldNotBeAsked` (`JiraWorkTrackingConnector.cs` lines 3760-3761), used by the release and membership reads | **Reuse** for the board reads and for the `ValidateConnection` timeout; no second mapping (Decision 2). | Pure predicate. |
-| Health state from a verdict | `ConnectionHealthService.StateFor`: code `authentication_failed` (or `secret_cannot_be_read`) -> `AuthenticationFailed`, **every other code -> `Unreachable`** | **Unchanged** (decision 2). | Pure mapping; only a pin test is added. |
-| Jira `GetBoards`, `GetBoardInformation`, field list | The existing read adapters | **Modify**: throw a read exception instead of returning empty. | **Bounded-change with an empty declared mutation set** (they read). Universe: the connection's own Jira over HTTP, GET only; no repository or database write; no health write. Asserted with the existing HTTP stub failing the test on any non-GET request and strict mocks for every collaborator that could write (the single-writer ArchUnitNET test already guards the health side). |
-| Jira `ValidateConnection` | The existing adapter | **Modify** (status ladder, timeout). | **Bounded-change.** Declared mutation set: the one in-memory entry `connectionsWhoseCredentialWasAccepted[connection.Id]` (line 456), set only after a 2xx. Universe: that dictionary plus GET requests. Asserted by a test that a 401, 403, 503 and a timeout leave the dictionary entry unset and a 2xx sets it. |
+| A place for "status -> sentence" knowledge | ServiceNow did it with `ServiceNowValidationVerdict` and `ServiceNowBoardVerdict` | **Not needed** (2026-11-04): F1 and F2 carry the tracker's answer, so nothing maps a status to a sentence. | None. |
+| Which Jira connections cannot use the picker | `JiraWorkTrackingConnector.RoutesViaAtlassianCloudGateway(authenticationMethodKey)` on the backend; `authenticationMethodKey` on the frontend's connection | **The frontend decides** (decision 4): the picker never opens for them, so the backend needs no branch. | Pure predicate. |
+| Whether a Jira exception means "could not be asked" | `JiraCouldNotBeAsked` (`JiraWorkTrackingConnector.cs` lines 3760-3761), used by the release and membership reads | **Reuse** for the board reads; no second mapping (Decision 2). | Pure predicate. |
+| Health state from a verdict | `ConnectionHealthService.StateFor` | **Unchanged**, and no test added. | Not touched. |
+| Jira `GetBoards`, `GetBoardInformation` | The existing read adapters | **Modify**: throw a read exception instead of returning empty, or a board with no states or types. | **Bounded-change with an empty declared mutation set** (they read). Universe: the connection's own Jira over HTTP, GET only; no repository or database write; no health write. |
+| Jira `ValidateConnection` | The existing adapter | **Modify one string** (T1). | No change of shape: the same result with a different message. |
 | ADO `GetBoards`, `GetBoardsForProject`, `GetBoardInformation` | The existing read adapters | **Modify**: outcome-or-failure instead of `[]` / empty. | **Bounded-change with an empty declared mutation set.** Universe: the organisation's ADO over the SDK clients, reads only. Asserted with SDK fakes that record calls (only `Get*Async`), strict mocks for the rest. |
 | `IBoardInformationProvider` (driving port) | Two read methods | **Unchanged.** | Reads only: it exposes no write method, so nothing to split. |
-| Per-wizard facts on the frontend | `IDataRetrievalWizard` registry entry (id, name, system types, contexts); both render sites already pass the entry's facts to the component (`boardType` from the wizard id) | **Extend** the entry with the empty-list sentence (decision 4). | Static data. |
+| Per-wizard facts on the frontend | `IDataRetrievalWizard` registry entry (id, name, system types, contexts) | **Extend** the entry with the sign-ins it cannot serve (decision 4). | Static data. |
 
-Contract shapes (Earned Trust / effect isolation) in one line: the verdict classes are **pure**; the five read
-adapters are **bounded-change with the universes in the table**, whose only new outcome is "throw a read
-exception instead of returning empty". The board reads are not a health writer: the stored verdict is still
-written only at refresh failure and Test connection (ADR-184 single writer,
-`ConnectionHealthSingleWriterArchUnitTest` stays green). Environment lies this design accounts for: Jira answers
-401 for a wrong email as well as a wrong token (neutral sentence, Q5), answers 401 on the board endpoints for a
-valid scoped token or OAuth sign-in (C1m, D8), and answers 403 for a missing licence as well as for a refused
-sign-in (C1 makes no claim about the token's life). No new probe is needed: no new adapter, and the DELIVER live
-check against a deliberately wrong credential on a real Jira and ADO sandbox is the empirical probe (DISCUSS
-taste test).
+Contract shapes (Earned Trust / effect isolation) in one line: the read adapters are **bounded-change with the
+universes in the table**, whose only new outcome is "throw a read exception instead of returning empty". The board
+reads are not a health writer: the stored verdict is still written only at refresh failure and Test connection
+(ADR-184 single writer, `ConnectionHealthSingleWriterArchUnitTest` stays green). Environment lies this design
+accounts for: Jira answers 401 for a wrong email as well as a wrong token (T1 and F1 name no single detail), and
+answers 401 on the board endpoints for a valid scoped token or OAuth sign-in (the disabled button, D8). No new probe
+is needed: no new adapter, and the DELIVER live check against a deliberately wrong credential on a real Jira and ADO
+sandbox is the empirical probe (DISCUSS taste test).
 
 ### [REF] Decision 1: where the one credential sentence lives
+
+**Superseded in full by the 2026-11-04 block.** There is no verdict class and no status ladder: F1 and F2 are built
+where the connector throws, and T1 is one string. This section is kept as the record of what was weighed; nothing
+below is to be built, including the log split at its end (see DEVOPS answer 3).
 
 | Option | Trade-offs |
 |---|---|
@@ -547,79 +548,85 @@ Rules that go with it:
   credential refusal at Information ("Jira refused the credential of {Connection} on {Read}: {Status}"), anything
   else at Warning naming the status. Both keep today's `RequestUri` and body fields.
 
-### [REF] Decision 2: exception and verdict shape; the controller; the health verdict
+### [REF] Decision 2: exception shape, the controller, what is removed
 
-**Exceptions.** Reuse `JiraReadException` and `AzureDevOpsReadException` as they are: the read methods throw
-`new JiraReadException(JiraConnectionVerdict....)` through their existing public constructors. No new
-exception type, no shared "credential refused" exception (it would carry nothing the verdict does not, and the
-controller already catches the abstract base). Rejected: a new `CredentialRefusedException` in the Interfaces
-namespace (a third place that must agree with the two ladders).
+**Exceptions.** Reuse `JiraReadException` and `AzureDevOpsReadException` as they are: the read methods throw them
+through their existing public constructors, carrying a failed `ConnectionValidationResult` whose message is F1 or F2.
+No new exception type: the controller already catches the abstract base.
 
-**Catching (board reads only).** The board reads (list and information, both connectors) no longer contain a
-catch-all that returns an empty value. The rule per method: `WorkTrackingReadException` passes through; a
-non-success status, and everything `JiraCouldNotBeAsked` recognises (`HttpRequestException`, including the one
-`ResolveCloudIdAsync` raises, which carries a status; `TaskCanceledException` for a timeout; `UriFormatException`)
-map through the verdict class; `JsonException` maps to the "unreadable" verdict; **any other exception on a board
-read is not caught** and reaches `UseExceptionHandler` as a 500, which `BoardWizard` renders as its fallback
-sentence (Decision 4). A bug in the connector is thus loud, never an empty list. This sentence is about the board
-reads only: the catch-alls that remain elsewhere, and why, are listed below. Paging: a failure on page 2 or later
-fails the whole list; the pages already read are discarded (a half list is the same lie as an empty one).
+**Catching (board reads only).** The board reads (list and information, both connectors) no longer turn any failure
+into an empty value. **Every failure gives F1 or F2, and there is no uncaught case**:
+
+| What happened | `{answer}` |
+|---|---|
+| A non-success status | that status and its reason, e.g. `503 Service Unavailable` |
+| What `JiraCouldNotBeAsked` recognises as no answer (`HttpRequestException`, `TaskCanceledException`) | `no answer` |
+| Anything else: unparseable JSON, well-formed JSON Lighthouse cannot use, an unexpected exception | `an answer Lighthouse could not read` |
+
+An unexpected exception on a board read is logged with its stack trace, so a bug in the connector is visible in the
+log and never an empty list. `board_filter_unreadable` passes through as it is: it is the one exception to F2, and the
+only `WorkTrackingReadException` that keeps its own sentence on the picker. Paging: a failure on page 2 or later fails
+the whole list; the pages already read are discarded (a half list is the same lie as an empty one).
+
+**Partial Jira board reads (maintainer decision, 2026-11-04).** `GetBoardInformation` reads more than the
+configuration: the status list, `board/{id}/issue` and the work item type list. A failure of any of them now fails the
+board with F2, so Confirm stays disabled, instead of returning a board with no states or no types. Three things to
+watch:
+
+- The status list and work item type list already raise `JiraReadException`, with a sentence written for other
+  screens. These two sites must turn it into F2, not pass it through, and `HowJiraAnswered` reads
+  `503 (Service Unavailable)` where F2 wants `503 Service Unavailable`. A `200` with an unusable body arrives there as
+  `200 (OK)` and reads `an answer Lighthouse could not read`.
+- `GetBoardInformationFromJira` awaits the query last, with a comment saying it is the only one of the three reads
+  that can throw. That stops being true: await all three together, so no failure is left unobserved.
+- A board that really holds no work items answers `{"issues":[]}`. That is a real answer, not a failure. So is a
+  status or type id the list lacks: that stays a warning and the id is left out.
 
 **`WizardsController`: unchanged.** It already turns any `WorkTrackingReadException` into `400 {verdict}`.
 The wire change is only that Jira and ADO now take that path (`200 []` -> `400`), the envelope ADR-126 already
 ships for ServiceNow. `IBoardInformationProvider` is unchanged; a genuine `200` with zero boards stays `200 []`.
 
-**Jira `ValidateConnection` and health.** The status branch moves into `FromStatus(Validation, ...)`:
-401 and 403 keep `authentication_failed`; any other status gives `unexpected_answer` (C2v); unreachable keeps
-`connection_failed`. `ConnectionHealthService` needs **no change**: `StateFor` maps only `authentication_failed`
-(and `secret_cannot_be_read`) to `AuthenticationFailed` and every other code to `Unreachable`, so a Jira 503 now
-stores `Unreachable` with the C2v message, which is the true state. Consequences to record in ADR-184 (an
-"Adoption" note, DELIVER): (a) the classifier for Jira is now status-aware, a 503 is no longer a credential
-verdict; (b) the single-verdict rule is untouched, 401 and 403 still produce `authentication_failed` and the
-stored message is C1 / C1o (reworded). `unexpected_answer` is read as `Unreachable` by `StateFor` only because
-it is not the rejected-credential code; a test pins that. `ConnectionHealthSingleWriterArchUnitTest` is
-unaffected (the picker reads do not write the verdict).
+**`ValidateConnection` and health: unchanged, for both connectors.** T1 replaces one string, at
+`JiraWorkTrackingConnector.cs` line 451. Status logic, timeout handling, `ConnectionHealthService` and ADR-184 are not
+touched, so a 503 on Test connection still reads as an authentication failure: a known defect left out of this Bug.
 
-**Timeout on `ValidateConnection` (decided).** Today Jira's `ValidateConnection` catches only
-`HttpRequestException` (line 471), so a timeout, which surfaces as a `TaskCanceledException`, falls into the
-`catch (Exception)` at lines 491-498 and reads "Connection validation failed due to an unexpected error" with code
-`validation_failed`. A timeout is "Jira did not answer", the same fact as an unreachable host, so it joins the
-unreachable arm: `connection_failed`, field Url, C3-style text. Implementation: reuse the existing classifier
-`JiraCouldNotBeAsked` (`JiraWorkTrackingConnector.cs` lines 3760-3761: `HttpRequestException`,
-`TaskCanceledException`, `JsonException`, `UriFormatException`) rather than a second mapping; the board reads use
-it to decide "could not be asked" and then pick the sentence (`JsonException` -> C9 unreadable, the rest ->
-C3, and for a malformed URL, where no host can be shown, a C3 worded without the host). Health consequence: the
-stored state for a timeout is `Unreachable` (code `connection_failed`), which is the true state.
+**What is removed, listed.**
 
-**Every remaining catch-all, listed (none of them is a board read; none returns an empty value).**
-
-| Catch-all | Returns | Decision |
+| Site | Today | Pinned by |
 |---|---|---|
-| Jira `ValidateConnection` `catch (Exception)`, lines 491-498 | `validation_failed`, "Connection validation failed due to an unexpected error." with `exception.Message` as technical detail | **Stays.** It is a non-empty, truthful verdict that names no credential (D6 holds: it does not say the sign-in was refused). With the timeout moved out, what is left is a genuinely unexpected fault; the unreadable-body case also lands here and keeps `validation_failed`. |
-| ADO `ValidateConnection` bare `catch`, lines 304-309 | `validation_failed`, same sentence, no detail | **Stays.** Same reason: non-empty, D6-compliant. DELIVER may add an Information log line with the exception, as Jira's arm has (today it is swallowed unlogged); not required by this Bug. |
-| Jira `ValidateTeamSettings` (line 1266) and `ValidatePortfolioSettings` (line 1307) `catch (Exception)`; ADO `ValidateTeamSettings` (line 341) and `ValidatePortfolioSettings` (line 379) | `validation_failed` with `exception.Message` | **Stay, out of scope.** Query validation, not a board read; each returns a non-empty verdict. |
-| Jira `TryWriteFields` (line 664), ADO `TryPatch` (line 548) | Failure of a write | **Stay, out of scope.** Write paths of other features. |
-| Jira release and membership reads (`JiraCouldNotBeAsked` filters, lines 3572, 3742, 3845) | "could not be asked" answer | **Stay.** Typed, filtered, already the pattern this design reuses. |
+| Jira `GetBoards` bare `catch`, line 511 | returns `[]` | `A_board_list_from_a_Jira_that_cannot_be_reached_reads_as_no_answer`, `A_board_list_that_times_out_reads_as_no_answer`, `A_board_list_Lighthouse_cannot_read_says_so` |
+| Jira `GetBoardsFromJira`, line 1124 | returns `[]` on a non-success status, on any page | `A_board_list_Jira_answers_with_a_failure_carries_that_answer`, `A_failure_on_the_second_page_fails_the_whole_board_list` |
+| Jira `GetBoardInformation` `catch (Exception)`, line 532 | returns an empty `BoardInformation` | `A_board_from_a_Jira_that_cannot_be_reached_reads_as_no_answer`, `A_board_read_that_times_out_reads_as_no_answer`, `A_board_Lighthouse_cannot_read_says_so` |
+| Jira `GetBoardInformationFromJira`, lines 724-730 | returns an empty `BoardInformation` on a non-success `/configuration` | `A_board_Jira_answers_with_a_failure_carries_that_answer` |
+| Jira `MapStatusToCategory`, lines 785-790 | a refused status list gives no states | `A_board_Jira_hands_over_only_in_part_carries_the_answer_of_the_part_it_refused`, `A_part_of_a_board_Lighthouse_cannot_read_says_so`, `A_part_of_a_board_that_cannot_be_reached_reads_as_no_answer` |
+| Jira `GetItemTypesForBoard`, lines 866-872 and 889-896 | a refused `board/{id}/issue` or work item type list gives no types | the same three tests |
+| ADO `GetBoards`, line 400 | returns `[]` | `A_project_list_nobody_answered_reads_as_no_answer` |
+| ADO `GetBoardsForProject`, lines 637-640 | returns `[]` | `One_project_failing_among_others_fails_the_whole_list_and_names_only_that_project` and its neighbours |
+| ADO `GetBoardInformation`, line 443, and its `Length != 2` guard, lines 413-417 | returns an empty `BoardInformation` | `A_board_nobody_answered_for_reads_as_no_answer`, `A_malformed_board_id_is_a_failed_read_and_never_an_empty_board` |
 
-ADO has the same timeout gap (a `TaskCanceledException` reaches the bare `catch`); it gets the same fix, a
-timeout joins its `HttpRequestException` arm (`connection_failed`, field Url). The only catch-alls removed are the
-five that return an empty value: Jira `GetBoards` (line 511) and
-`GetBoardInformation` (line 532), ADO `GetBoards` (line 400), `GetBoardInformation` (line 443) and
-`GetBoardsForProject` (lines 637-640).
+**Each Azure DevOps project's failure is logged inside its own task, before aggregation.** `GetBoardsForProject` writes
+its Error line where it catches the failure, then returns the failure as its outcome. The aggregate only composes F1,
+so two failing projects leave two lines, and neither depends on the other
+(`Each_failing_project_keeps_its_line_in_the_error_log`).
+
+**Catch-alls that stay (none is a board read; none returns an empty value).** `ValidateConnection` on both connectors,
+`ValidateTeamSettings` and `ValidatePortfolioSettings` on both, the write paths `TryWriteFields` and `TryPatch`, and the
+Jira release and membership reads. All out of scope and unchanged.
 
 ### [REF] Decision 3: Azure DevOps, a failing project in a multi-project list (decided: fail the whole list)
 
 **Decided by the maintainer (2026-11-02): Option A, fail the whole list** (D10 as written). The swallow in
 `GetBoardsForProject` (the `catch (Exception)` that returns `[]`, `AzureDevOpsWorkTrackingConnector.cs` lines
 637-640) goes; a per-project read returns an outcome (its boards, or its failure), never `[]` for a failure, and the
-aggregate decides. A project with zero boards is a genuine empty contribution. **A credential refusal (401,
-`VssUnauthorizedException`) on any project, or on the project list, fails the whole list with C6.** Any other
-per-project failure (Boards service disabled, 404, a timeout) fails the list with C7 naming the failing project(s)
-(first one plus "and N more"); a 403 on a project gives C10. Each failing project keeps its Error-level log line.
-Holds "a failing project never reads as having no boards" by construction; no wire change, no new UI state.
+aggregate decides. A project with zero boards is a genuine empty contribution. **Any failure of any project, or of
+the project list, fails the whole list with F1**, whose `{answer}` names each failing project and what Azure DevOps said
+about it. There is no credential or permission branch (2026-11-04): a 401, a 403, a disabled Boards service and a
+timeout take the same path. A trailing full stop in Azure DevOps' message is trimmed, because F1 adds its own. Each
+failing project keeps its Error-level log line.
+Holds "a failing project never reads as having no boards" by construction; no new UI state.
 Accepted consequence: a picker that works today (a PAT that cannot see one project, a project with Boards disabled)
 becomes unusable for every project; the Team's query can still be typed by hand. Test pins: one of two projects
-failing fails the list naming it; a refused credential on any project gives C6; a 403 on one project gives C10.
+failing fails the list naming only it; two failing are both named; a project nobody answered for reads `no answer`.
 
 Rejected, one line each:
 
@@ -629,53 +636,35 @@ Rejected, one line each:
   and a new picker state, a wire break on a UI-only endpoint, for a regression the hand-typed query already covers.
 
 Also rejected outright: "fail only when every project fails, otherwise partial and silent" (it is AFK-1 without the
-log line and without the credential rule).
-
-ADO classifiers (revised after the AFK-2 reversal; an ADO 403 is **not** a credential verdict anywhere):
-
-- `IsCredentialRefusal(exception)` = `VssUnauthorizedException`, or an HTTP response exception with status 401.
-  This is exactly what `ValidateConnection` classifies as `authentication_failed` today (its
-  `catch (VssUnauthorizedException)`, lines 265-274); `GetAllProjects`, `GetBoardsForProject` and
-  `GetBoardInformation` use the same classifier so the picker's C6 and Test connection's text cannot drift.
-- `IsPermissionRefusal(exception)` = a 403. **Test connection keeps today's mapping for it** (no change to
-  `ValidateConnection`; it lands on `connection_failed`, health `Unreachable`, per ADR-184 "where the connector
-  cannot say it was authentication, never say it was"). The picker gets its own sentence, **C10**: "Azure DevOps
-  refused access to {what was asked}: the account or token lacks permission to read boards{ in project X}. Check the
-  token's scopes and the account's permissions in Azure DevOps, then try again." It is never C6. ADR-126's
-  ServiceNow precedent (403 is `insufficient_permissions`) agrees.
-- DELIVER confirms which SDK exception type an ADO 403 raises (a `VssServiceException` with a status or an HTTP
-  exception) with a recorded fake before the classifier is written.
+log line).
 
 **`GetBoardInformation` malformed board id (slice 02).** The guard at lines 413-417 (`Length != 2`) returns an
 empty `BoardInformation`. An empty object is truthy on the frontend, so `BoardWizard` enables Confirm
 (`!boardInformation` is false, line 173) and hands an empty board back as if it had been read. That is the same
-lie as the empty list, so it becomes a typed `AzureDevOpsReadException` with **C11**: "Lighthouse could not
-understand which board was picked. Close the dialog and pick the board again." (code suggested:
-`invalid_board_id`). Its `catch (Exception)` at line 443 loses its empty return too (Decision 2).
+lie as the empty list, so it becomes a typed `AzureDevOpsReadException` carrying F2, with an answer saying the board id
+is not one Azure DevOps gave. Its `catch (Exception)` at line 443 loses its empty return too (Decision 2).
 
-### [REF] Decision 4: frontend copy and how the refusal text arrives
+### [REF] Decision 4: frontend copy, how the refusal text arrives, and the disabled button
 
 Refusal text: **no change**. `wizardService` already surfaces `ApiError.message` from the `400` body and
 `refusalOr` shows it; Jira and ADO simply start arriving there. Board information failures go through the
 same line (`setBoardInformation(null)` keeps Confirm disabled).
 
-Empty-list copy per connector: put it where the other per-connector wizard facts already are.
+Empty-list copy: E1 replaces `NO_BOARDS` in `BoardWizard`, one constant for every connector, so no prop and no
+per-connector table. ServiceNow's picker loses the table-and-filter hint, which the maintainer accepted; the detail
+stays in `servicenow.md` line 187.
 
-| Option | Trade-offs |
-|---|---|
-| **A. `emptyListMessage` on the `IDataRetrievalWizard` registry entry, passed as an optional `noBoardsMessage` prop by the two render sites** (**both get the prop edit**: `GeneralSettingsComponent.tsx` line 224 and `CreateWizardShell.tsx` line 148); `BoardWizard` falls back to a tracker-neutral sentence when absent. | One place per connector, next to name and system type; `BoardWizard` stays connector-agnostic; no id string-matching. Two render sites pass one more prop (same precedent as `boardType`). |
-| B. A table inside `BoardWizard` keyed by the wizard id or system type. | Needs a new prop anyway (the component is given neither) and repeats `boardType`'s id-matching. |
-| C. The backend sends the empty-list sentence. | Rejected: ServiceNow's empty list is a `200 []` by ADR-126 decision 3, and an array carries no text. |
+**The one frontend place that decides a wizard is unusable.** Suggested: `isWizardUsable(wizard, authenticationMethodKey)`
+in `models/DataRetrievalWizard/DataRetrievalWizard.ts`, next to `IDataRetrievalWizard`. Its input is the registry entry
+and the connection's `authenticationMethodKey`; the `jira.board` entry lists the sign-ins it cannot serve, in an
+optional field, along with the reason D1. `GeneralSettingsComponent` asks it to disable the button, and
+`useCreateWizard` asks it to skip the load-data step; nothing else compares sign-in keys. The name may change, the
+single place may not. It sits in the models module because five test files mock `components/DataRetrievalWizards`
+whole, so a new export there reads as undefined in about 45 of their tests.
 
-**Recommendation: A.**
-
-| Wizard entry | Empty-list sentence (DISCUSS C5) |
-|---|---|
-| `servicenow.board` | today's `NO_BOARDS` text, unchanged |
-| `jira.board` | "No boards are available to this connection. The account it signs in with may not have access to any board, or none of the boards it can see can be used here. Check the account's access in Jira, then try again." |
-| `ado.board` | the same, "in Azure DevOps" |
-| `linear.team` | the same, "in Linear". Kept although Linear is out of scope (Q2): Q4 asks that every connector but ServiceNow stop showing the "Visual Task Board" sentence, so this is the only Linear change and its read path is untouched. |
-| `BoardWizard` default (prop absent) | the same without a tracker name ("in the tracker") |
+**DELIVER item:** add `JiraOAuth: "jira.oauth"` to `AuthenticationMethodKeys` in
+`models/WorkTracking/WorkTrackingSystemConnection.ts`, where it is missing today, so the entry can name both sign-ins.
+`WorkTrackingSystemConnection.authenticationMethodKeys.test.ts` pins the whole list.
 
 **Loading look and failure look (slow-connection rule), for the picker and the board read:**
 
@@ -684,13 +673,13 @@ LOADING (list)                   LOADED                         FAILED (list)   
 +----------------------------+   +-------------------------+    +-------------------------+    +-------------------------+
 | Select Jira Board          |   | Select Jira Board       |    | Select Jira Board       |    | Select Jira Board       |
 |                            |   | [ Board          v ]    |    | [ Board         v ](off)|    | [ Board         v ](off)|
-|        ( spinner )         |   |                         |    | red: C1 / C2 / C3 / C1m |    | red: C5 (per connector) |
+|        ( spinner )         |   |                         |    | red: F1                 |    | red: E1                 |
 |  (no field, no text)       |   |                         |    |                         |    |                         |
 |        [Cancel][Confirm off]   |      [Cancel][Confirm]  |    |    [Cancel][Confirm off]|    |    [Cancel][Confirm off]|
 +----------------------------+   +-------------------------+    +-------------------------+    +-------------------------+
 
 BOARD READ (after picking)  loading: BoardInformationDisplay spinner, Confirm off
-                            failed : red line C1 / C1m / C4, board info cleared, Confirm off
+                            failed : red line F2, board info cleared, Confirm off
 ```
 
 What exists and is reused (no new control): the list's loading look is today's `CircularProgress` that
@@ -699,11 +688,10 @@ on its way); the failure look is the red `Typography color="error"` with the dis
 loading look is `BoardInformationDisplay loading`. **Gaps found and closed here, both inside slice 01:**
 (1) on a failed list `BoardWizard` leaves the previous `boards` state in place; set it to `[]` in the `catch`
 so a failure can never sit beside an old list; (2) the empty-list branch (`fetchedBoards.length === 0`) is the
-only one that may use the C5 copy, which a test pins by asserting a refused credential never renders C5 or the
-ServiceNow sentence. DISTILL pins both states; E2E needs no new wait (`data-widget-status` is the dashboard-widget
-contract, the dialog uses its spinner). Check by hand at a throttled connection in DELIVER. Visualization
-skill: N/A, nothing charts data. No keyed TanStack query is introduced: the dialog is mounted per opening
-(`open={true}` on mount), so a late answer for a closed dialog lands on an unmounted component; migrating the
+only one that may use E1. DISTILL pins both states; E2E needs no new wait (`data-widget-status` is the
+dashboard-widget contract, the dialog uses its spinner). Check by hand at a throttled connection in DELIVER.
+Visualization skill: N/A, nothing charts data. No keyed TanStack query is introduced: the dialog is mounted per
+opening (`open={true}` on mount), so a late answer for a closed dialog lands on an unmounted component; migrating the
 picker to a query is out of scope for a Bug.
 
 **Gap 3, a superseded board-information answer (slice 01).** `handleBoardChange` (`BoardWizard.tsx` lines
@@ -716,49 +704,27 @@ only while `latestSelection` still equals the board it asked for. Rejected: an `
 effect; stays the next step if the list read ever needs cancelling) and a request counter (the same guard with a
 number instead of an id, no gain). The same ref also stops a late answer after the selection was cleared.
 
-**Fallback sentences.** The two canned lines ("Failed to load boards. Please try again.", "Failed to read the
-board. Please try again.") say nothing about what happened and are reached only when the failure never came
-from the backend (the request did not reach Lighthouse, or Lighthouse itself failed with a 500). Suggested
-replacements, for the DISTILL sketch walk: "Lighthouse could not get an answer to its request for the list of
-boards (the request did not complete, or Lighthouse failed unexpectedly). Reload the page and try again." and the
-same with "for this board".
+**Fallback sentences.** Today's two canned lines ("Failed to load boards. Please try again.", "Failed to read the
+board. Please try again.") stay, reached only when the failure never came from the backend.
 
 ### [REF] Decision 5: test strategy (high level; scenarios belong to DISTILL)
 
-- **Pure verdict tables** (`JiraConnectionVerdict`, `AzureDevOpsConnectionVerdict`): one table test per ladder,
-  read x status x sign-in kind, pinning the sentence, the code and the field. This is the mutation-testing
-  target (80% kill rate, per-feature); a sentence not pinned is a surviving mutant.
-- **Connector tests through the existing `IBoardInformationProvider` / `IWorkTrackingConnector` ports with the
-  existing HTTP stubs** (Jira) **and SDK fakes** (ADO). Failure paths per connector, which RCA section 3 notes
-  have none today: board list 401, 403, 503, timeout/no answer, malformed body, **failure on page 2 after page 1
-  succeeded**, `200 []`; board information 401, 403, 503, non-success `/configuration`, transport; scoped-token
-  and OAuth sign-in (C1m, C1o); `ValidateConnection` 401, 403, 503, unreachable, **a timeout (a
-  `TaskCanceledException` gives `connection_failed` and C3-style text, not `validation_failed`; Decision 2)**, an
-  unreadable body (`validation_failed`, kept); field list 401/403 (C1) versus 500 (today's text).
-  `JiraFieldLookupTest.cs` line 157 (`browse at least one project` asserted on a 403 field list) **is expected to
-  change** with D4; it is rewritten to the C1 sentence, not deleted. ADO: project list unauthorized, a
-  credential refusal on any project (C6 for the whole list, Decision 3), a 403 on the board
-  list (C10, never C6; Test connection for the same 403 keeps today's text and a health state of `Unreachable`,
-  pinned), zero projects, board information failures, **a malformed board id gives a typed failure (C11),
-  never an empty `BoardInformation`**. The multi-project failing-project scenarios follow Decision 3 (fail the whole
-  list: one of two projects failing gives C7 naming the failing project, a refused credential on any gives C6) and
-  are written now. DELIVER confirms the exact SDK exception type an ADO 403 raises (a
-  `VssServiceException` with a status, or an HTTP exception) with a recorded fake before writing the classifier.
-- **Driving port**: `WizardsController` test that a `JiraReadException` and an `AzureDevOpsReadException` from the
-  provider answer `400` with the verdict body, and that `200 []` stays `200`. One end-to-end API test through the
-  host (as ServiceNow's) is enough for the wire shape.
-- **Health**: `ConnectionHealthService` test that `unexpected_answer` stores `Unreachable` and 401 still stores
-  `AuthenticationFailed`. No change to production health code, only a pin.
-- **Frontend (Vitest + RTL)**: `BoardWizard` shows a refusal message verbatim, never C5, with the field and
-  Confirm disabled; shows the spinner and no sentence while loading; per-connector C5 from the registry entry;
-  board-read failure clears the board information; **a superseded answer is ignored**: pick board A, pick board
-  B, resolve A's answer last (both a success and a refusal): B's state is untouched, Confirm reflects B only, and
-  the spinner of B is not cleared by A; a late answer after the selection was cleared changes nothing; the two
-  fallback sentences render when the failure never came from the backend. The two `BoardWizard.test.tsx` assertions that pin "Visual
-  Task Board" (lines 161 and 341) become the ServiceNow-only case. No new Playwright spec (E2E is a thin sanity
-  check; the picker's happy path is covered).
-- **No architecture rule** against `catch { return []; }` (Q8, binding). The pure ladders plus per-connector
-  failure-path tests are the guard.
+- **Connector tests through the existing ports with the existing HTTP stubs** (Jira) **and fake SDK clients** (ADO),
+  in untagged classes. Jira board list: 401, 403, 503, no answer, timeout, an unusable body, **a failure on page 2
+  after page 1 succeeded**, `200 []`. Jira board read: 401, 403, 404, 503, no answer, timeout, an unusable body, and
+  each part of a partial read. T1 with its code, detail and field. ADO: a failing project, two failing, an unusable
+  project list, zero projects, projects without boards, a board read failing, **a malformed board id gives F2, never
+  an empty `BoardInformation`**.
+- **Driving port**: `WizardsController` over the real connector, for each connector and each read, asserting the
+  `400` and the exact sentence.
+- **Frontend (Vitest + RTL)**: `BoardWizard` shows a refusal message verbatim, never E1, with the field and
+  Confirm disabled; E1 on an empty list; a board-read failure keeps Confirm disabled; **a superseded answer is
+  ignored**: pick board A, pick board B, resolve A's answer last (both a success and a refusal): B's state is
+  untouched, Confirm reflects B only, and the spinner of B is not cleared by A; a late answer after the selection was
+  cleared changes nothing. The disabled button with D1 on the settings and create screens, with no board call. The
+  `BoardWizard.test.tsx` assertions that pin "Visual Task Board" change to E1. No new Playwright spec (E2E is a thin
+  sanity check; the picker's happy path is covered).
+- **No architecture rule** against `catch { return []; }` (Q8, binding). Per-connector failure-path tests are the guard.
 - **DELIVER live check** (not CI): a deliberately wrong credential on a real Jira and ADO sandbox.
 
 ### [REF] Component diagram (hexagonal view; N = new, M = modified, - = unchanged)
@@ -766,19 +732,19 @@ same with "for this board".
 ```
  DRIVING ADAPTERS                APPLICATION / PORTS                 DRIVEN ADAPTERS (trackers)
  ----------------                -------------------                 --------------------------
- BoardWizard.tsx        (M: latest-selection guard, fallbacks)
-                                 IBoardInformationProvider (-)       JiraWorkTrackingConnector     (M)
-   registry entry       (M)  --> GetBoards / GetBoardInformation     --> |- GetBoards, GetBoardInformation (M: throws; no catch-all)
-   emptyListMessage     (N)           ^                                  |- ValidateConnection       (M: status branch)
- WizardsController      (-)           |  throws                          |- field-list refusal       (M)
-   catch abstract only                | WorkTrackingReadException (-)  JiraConnectionVerdict        (N, pure)
-                                      |   |- JiraReadException        (-)  JiraReadException          (-)
+ BoardWizard.tsx        (M: E1, latest-selection guard)
+ Settings, create flow  (M: disabled button, D1)
+   isWizardUsable       (N, pure)
+   registry entry       (M)      IBoardInformationProvider (-)       JiraWorkTrackingConnector     (M)
+                             --> GetBoards / GetBoardInformation     --> |- GetBoards, GetBoardInformation and its
+ WizardsController      (-)           ^                                  |  parts (M: throw F1 / F2; nothing quiet)
+   catch abstract only                |  throws                          |- ValidateConnection (M: one string, T1)
+                                      | WorkTrackingReadException (-)  JiraReadException          (-)
  Connection page (Test) (-) --> IWorkTrackingConnector (-)           AzureDevOpsWorkTrackingConnector (M)
    shows verdict text           ValidateConnection (shape -)           |- GetBoards, GetBoardsForProject,
-                                                                       |  GetBoardInformation (M: malformed board id throws C11), Validate (M)
- ConnectionHealthService (-)  <-- StateFor: only "authentication_    AzureDevOpsConnectionVerdict  (N, pure)
-   (unchanged; 503 now lands     failed" is AuthenticationFailed      AzureDevOpsReadException      (-)
-   in Unreachable)                                                  ServiceNow, Linear connectors   (-)
+                                                                       |  GetBoardInformation (M: throw F1 / F2)
+ ConnectionHealthService (-)                                         AzureDevOpsReadException      (-)
+                                                                    ServiceNow, Linear connectors   (-)
  DOMAIN (Models): ConnectionValidationResult (-), Board (-), BoardInformation (-)  -- no domain change
  Events: none.  Persistence: none.  New external call: none (same Jira/ADO endpoints as today).
 ```
@@ -786,42 +752,38 @@ same with "for this board".
 ### [REF] Context map, glossary, ARCHITECTURE.md (design answer)
 
 Unchanged from DISCUSS: Tracker integration only, no new edge, no event. The DISCUSS-proposed glossary row
-"Read refusal" still applies. Add one line to the Tracker integration entry of `ARCHITECTURE.md` section 4 in
-DELIVER: each connector keeps one pure verdict class that turns a tracker's answer into the sentence both
-Test connection and the board reads show (the shared "credential refused" factory DISCUSS asked DESIGN to
-decide: it is per connector, not shared). ADR-126 gets its dated "Adoption" note; ADR-184 gets the status-aware
-Jira classifier note; both edits are listed in the two ADR drafts.
+"Read refusal" still applies. No `ARCHITECTURE.md` section 4 change: there is no new class to describe. ADR-126 gets
+its dated "Adoption" note. ADR-184 gets none: its classifier is untouched.
 
 ### [REF] Handoff to DISTILL / DEVOPS
 
-- **Slices**: 01 = `JiraConnectionVerdict` + Jira reads/validate/field list + `BoardWizard` registry copy (all
-  connectors' C5, `boards = []` on failure, the superseded-answer guard, the two fallback sentences). 02 =
-  `AzureDevOpsConnectionVerdict` + the ADO read paths, including the malformed-board-id typed failure and the
-  403 permission sentence. Order and one-direction dependency as in DISCUSS. Method and string names in this
-  design are suggested; DELIVER may rename them.
-- **Gate (AFK-6)**: the DISTILL sketch walk of all new copy (C1 as reworded, C1m, C1o, C2, C2v, C3, C4, C5,
-  C6, C7, C9, C10, C11, and the two frontend fallbacks) gates DELIVER.
+- **Slices**: 01 = Jira reads, partial reads included, the T1 string, E1, `boards = []` on failure, the
+  superseded-answer guard, the disabled button with D1, and `JiraOAuth` in the frontend key list. 02 = the ADO read
+  paths, including the malformed-board-id failure. Order and one-direction dependency as in DISCUSS. Method and
+  string names in this design are suggested; DELIVER may rename them.
+- **Gate (AFK-6)**: the DISTILL sketch walk of all new copy gated DELIVER; it is done, and the 2026-11-04 block
+  holds its outcome.
 - **External integrations** (annotation for platform-architect): Jira REST (`/rest/agile/1.0/board`, `.../configuration`,
   `/myself`, `/field`) and Azure DevOps Work/Project APIs, both already integrated. Contract tests recommended
   for Jira and Azure DevOps (consumer-driven contracts, for .NET e.g. PactNet) to catch a changed status or error
   body for the refused-credential case; this Bug adds none and relies on the live sandbox check.
 - **Usage-data event**: DEVOPS to confirm the DISCUSS pre-answer, N/A (a failure is reported, nothing is used).
 - **Enforcement tooling**: none new (Q8); the existing ArchUnitNET suite keeps guarding the health single writer.
-- **Sketch walk at the start of DISTILL**: C1 to C8 as in DISCUSS (C1 as reworded in Decision 1), plus the new
-  C9, C10, C11, the project-naming C7, the two fallbacks, and the four picker states above.
+- **Sketch walk at the start of DISTILL**: done, see the 2026-11-04 block.
 
 ### [REF] HELD for the maintainer
 
-- **HELD-1, ADO multi-project list (Decision 3): decided, fail the whole list (Option A).** A refused credential on
-  any project gives C6, any other project failure gives C7 naming the failing project(s). Every ADO scenario can be
-  written now, the multi-project one included.
+- **HELD-1, ADO multi-project list (Decision 3): decided, fail the whole list (Option A).** Any project failing gives
+  F1 naming the failing project(s). Every ADO scenario can be written now, the multi-project one included.
 - N3 (Jira 401 = 403 on the board list), AFK-5: re-confirmed by the maintainer. It stands, and diverges from
   ADR-126's ServiceNow 403 rung (`insufficient_permissions`) as a deliberate, recorded divergence.
 
 Closed since the first draft: ADO 403 on Test connection (AFK-2 reversed: today's mapping stays, no
-change) and the Jira timeout (decided in Decision 2).
+change). The Jira timeout on Test connection was decided in the first draft and dropped by the 2026-11-04 block.
 
 ## AFK decisions (2026-11-02, orchestrator; the maintainer reviews them on return)
+
+History. The maintainer's decisions below and the 2026-11-04 block replaced what these say about C-numbered sentences.
 
 | # | Decision | Why |
 |---|---|---|
@@ -846,15 +808,15 @@ deployment unit. Answers below are explicit; nothing is a silent N/A.
    `docs/settings/usagedata.md` is not touched. (If the maintainer later wants a signal, the only acceptable
    shape is name-only, value 25.)
 2. **CI and pipeline: no change.** No new test category, no new workflow, no new job. All new tests are plain
-   NUnit unit tests (connector failure paths with a faked HTTP handler or SDK client, the pure verdict classes,
-   a `ConnectionHealthService.StateFor` pin) and Vitest tests (`BoardWizard` copy table); they run in the
-   existing `ci_backend.yml` default filter (`Category!=Integration`) and `ci_frontend.yml`. The live-connector
+   NUnit unit tests (connector failure paths with a faked HTTP handler or SDK client) and Vitest tests; they run in
+   the existing `ci_backend.yml` default filter (`Category!=Integration`) and `ci_frontend.yml`. The live-connector
    categories (`JiraIntegration`, `AdoIntegration`) are opt-in inputs of `ci_backend.yml` and are **not needed**
    and must not be added to the fix. The DESIGN's live check against a deliberately wrong credential on a real
    Jira and ADO sandbox is a **manual DELIVER step**, run by hand against the maintainer's sandboxes, never in
-   CI, recorded in the DELIVER log (wrong email, wrong token, scoped token, ADO bad PAT). Linear: not touched,
-   so the key shared with CI is not exercised. `ci_e2e.yml` and the verify workflows: no new Playwright spec
-   (E2E stays a thin sanity check; the existing wizard walking skeleton is unchanged).
+   CI, recorded in the DELIVER log (wrong email, wrong token, ADO bad PAT). For a scoped token and for OAuth the live
+   check covers the disabled button and Test connection, not a board read, because the picker never opens for them.
+   Linear: not touched, so the key shared with CI is not exercised. `ci_e2e.yml` and the verify workflows: no new
+   Playwright spec (E2E stays a thin sanity check; the existing wizard walking skeleton is unchanged).
    **Placement rule (review F1):** CI runs `Category!=Integration` (`ci_backend.yml:114`), and
    `JiraWorkTrackingConnectorTest.cs` (lines 17-18) and `AzureDevOpsWorkTrackingConnectorTest.cs` (lines 16-17)
    carry `[Category("Integration")]`, so a test added there is silently skipped in CI. New failure-path tests go
@@ -864,59 +826,57 @@ deployment unit. Answers below are explicit; nothing is a silent N/A.
    Static gates apply unchanged (review F6): `dotnet build` with `TreatWarningsAsErrors`, `pnpm build` (Biome +
    `tsc`), and no new SonarCloud issues.
 3. **Observability: one operator-visible change, an improvement.**
-   - Jira "Authentication is not valid" Information line (written for every non-success board status) becomes
-     two truthful lines: a credential refusal (401/403) stays Information, "Jira refused the credential of
-     {Connection} on {Read}: {Status}"; anything else is Warning naming the status. `RequestUri` and body fields
-     are kept. The same phrase is also written by `ValidateConnection` (`JiraWorkTrackingConnector.cs:442`, besides
-     the board line at `:1118`); **both** get the same split (review F3). Jira gains no Error line.
+   - Jira (decided by the maintainer, 2026-11-04): one Error line per failed Jira board read, carrying `{answer}`,
+     with no status split, the same as Azure DevOps. It replaces the "Authentication is not valid" Information line at
+     `JiraWorkTrackingConnector.cs:1118` and the Warning lines of the failed reads: `:727` (the configuration), `:787`
+     (a refused status list), `:868` (the board issue read) and `:892` (the work item type list), since the user now
+     sees each of these failures. The missing-id warnings at `:794` (status) and `:900` (work item type) stay Warnings:
+     the read succeeded and one id is left out. The picker no longer classifies by status, so neither does its log
+     line. The test pins the truth of the line (`503 Service Unavailable`, no "Authentication is not valid"), not its
+     level.
    - Azure DevOps (review F2): today the ADO board reads log at **Error** (`AzureDevOpsWorkTrackingConnector.cs`
      lines 402, 445, 639). Rule: a line where the read fails and the user sees the failure stays **Error**
-     (unchanged); a line where the failure is survived would be Warning, and the decided design has none.
-     Decided (HELD-1 = fail the whole list): :402, :445 and :639 all stay Error, no change, because the user sees
-     every one of these failures in the picker. No ADO log level changes, so there is no operator-visible ADO log
-     change. Nothing may log the email, token or a header value.
+     (unchanged). :402, :445 and :639 all stay Error, because the user sees every one of these failures in the picker.
+     No ADO log level changes. Nothing may log the email, token or a header value.
    - The old text "Authentication is not valid" appears only at `JiraWorkTrackingConnector.cs:442` and `:1118`
      (repo-wide grep done in this wave, hits elsewhere are this folder's own documents). No alert, dashboard or
-     test keys on it, so the "grep before removal" deferral is **closed**: the phrase is replaced with no
-     compatibility shim.
-   - Connection health store: Jira Test connection with a 503 or other non-401/403 status now stores
-     `Unreachable` (code `unexpected_answer`) instead of `AuthenticationFailed`. `ConnectionHealthService`
-     is unchanged; 401/403 still give `AuthenticationFailed`. Operators will see fewer false "Authentication
-     failed" states; the admin popover shows the C2v text. Board reads still write no health verdict (single
-     writer, ADR-184).
+     test keys on it. `:1118` is replaced with no compatibility shim. `:442` keeps its phrase for a Test connection
+     503 until the known defect is fixed: it sits in `ValidateConnection`, which this Bug leaves alone.
 4. **Release and rollback: trivial.** No EF migration, no setting, no feature flag, no data change. Rollback is
    reverting the commit(s) (or the previous release), which restores `200 []` for failures. The wire change
    (`200 []` becomes `400 {verdict}` on a failure of Jira and ADO board list/information) is consumed by the
    frontend `BoardWizard` only, shipped in the same build as the backend, so no version skew. Checked:
    `grep -ril "wizards"` and `/boards` over `/storage/repos/lighthouse-clients` (ts, md, json, no node_modules)
    returns nothing, so the CLI/MCP does not call the wizard endpoints and needs no version bump or release.
-   Self-hosted users running an old frontend against a new backend does not occur (one bundle). Health-verdict
-   rows written by the new code (a Jira 503 stored as `Unreachable`) stay after a revert (review F5); they are
-   harmless and stale only until the next Test connection or refresh rewrites them.
+   Self-hosted users running an old frontend against a new backend does not occur (one bundle).
 5. **Mutation testing (per-feature, 80% minimum), targets:**
-   - Stryker.NET: `JiraConnectionVerdict` and `AzureDevOpsConnectionVerdict` (status ladders: 401/403 vs
-     other, C1/C1m/C1o, host-only, no secrets in text), the board-read catch ladders in
-     `JiraWorkTrackingConnector` (`GetBoards`, `GetBoardInformation`, field list, `ValidateConnection` status
-     branch) and `AzureDevOpsWorkTrackingConnector` (`GetBoards`, `GetBoardsForProject(s)`, the 401/403 versus
-     other per-project rule). Per the Stryker traps: mutate by file, skip the acceptance suite, run last on
+   - Stryker.NET: the failure and empty-list rules of the board reads in `JiraWorkTrackingConnector` (`GetBoards`,
+     `GetBoardsFromJira`, `GetBoardInformation`: what fills `{answer}`, and that an empty answer stays empty); the
+     three partial reads, each with the rule that a refused, unusable or unanswered read fails the board with F2: the
+     status list (`MapStatusToCategory`; an id the list lacks stays a warning), the work item type list and the board
+     issue read (both `GetItemTypesForBoard`; a board with no work items stays a real answer), with
+     `board_filter_unreadable` as the one exception, which keeps its own sentence; and the whole-list failure in
+     `AzureDevOpsWorkTrackingConnector` (`GetBoards`, `GetBoardsForProject(s)`, `GetBoardInformation`). **Enabling the
+     partial-read tests is a DELIVER step before the Stryker run:** skipped tests kill nothing, so those mutants would
+     all survive. Per the Stryker traps: mutate by file, skip the acceptance suite, run last on
      frozen code, and kill survivors with targeted tests rather than hours of reruns. **Config (review F4):**
-   start from `docs/feature/fix-jira-dc-portfolio-refusal/mutation/stryker.6019.connector.json`, which has
-   `thresholds.break` 0; set **`break: 80`** for these targets. Its name-based test-case filter also runs the
-   Integration-tagged connector classes, which helps the kill rate (the new tests in untagged classes still carry
-   the kills CI sees). DELIVER outputs, named explicitly: the `mutate` globs (the two verdict class files and
-   the two connector files above) and the config path, e.g. `docs/feature/bug-6499-jira-auth-failure-shows-no-boards/mutation/stryker.6499.connector.json`,
-   plus the StrykerJS config for `BoardWizard`.
-   - StrykerJS: `BoardWizard` empty-list/failure copy table (per connector, ServiceNow keeps today's text) and
-     its guard that keeps Confirm disabled on a failure.
-   - Not targets: `WizardsController` (unchanged), `ConnectionHealthService` (pin test only).
+     start from `docs/feature/fix-jira-dc-portfolio-refusal/mutation/stryker.6019.connector.json`, which has
+     `thresholds.break` 0; set **`break: 80`** for these targets. Its name-based test-case filter also runs the
+     Integration-tagged connector classes, which helps the kill rate (the new tests in untagged classes still carry
+     the kills CI sees). DELIVER outputs, named explicitly: the `mutate` globs (the two connector files) and the
+     config path, `docs/feature/bug-6499-jira-auth-failure-shows-no-boards/mutation/stryker.6499.connector.json`,
+     plus the StrykerJS config.
+   - StrykerJS: the disabled-button guard (`isWizardUsable` or its final name, and both places that ask it), E1 on the
+     empty branch only, and the guard that keeps Confirm disabled on a failure.
+   - Not targets: `WizardsController` and `ConnectionHealthService` (both unchanged).
 6. **Docs at finalize (DELIVER, not now):** `docs/concepts/worktrackingsystems/jira.md` line 73 (the "board
    wizard is empty" row for OAuth) and line 92 (the scoped-token note says Lighthouse displays "No Boards
-   available"; after the fix it shows the C1m sentence saying boards cannot be offered to this sign-in): reword
-   to the shipped sentence, and add a short troubleshooting line that a refused credential now shows in the
-   picker. `azuredevops.md` line ~194 (what the picker shows): add that a refused PAT or a permission problem is
-   named in the picker instead of an empty list. Per-feature screenshots: only if the DISTILL sketch walk adds
-   a visible new state worth a shot (decide at finalize, say so explicitly). Also owed from DISCUSS: ADR-126
-   and ADR-184 adoption notes, the glossary row "Read refusal" in ADR-270, `jobs.yaml` REVISED note. No release
+   available"; after the fix the button is disabled and its tooltip D1 says why): reword to the shipped behaviour, and
+   add a short troubleshooting line that a failed board read now says what Jira answered in the picker.
+   `azuredevops.md` line ~194 (what the picker shows): add that a refused PAT or a failing project is named in the
+   picker instead of an empty list. Per-feature screenshots: only if the DISTILL sketch walk adds
+   a visible new state worth a shot (decide at finalize, say so explicitly). Also owed from DISCUSS: the ADR-126
+   adoption note, the glossary row "Read refusal" in ADR-270, `jobs.yaml` REVISED note. No release
    notes at finalize (written at /release). Terminology: copy and docs use the configurable terms.
 
 ### AFK decisions (DEVOPS)
@@ -925,11 +885,11 @@ deployment unit. Answers below are explicit; nothing is a silent N/A.
 |---|---|---|
 | DEVOPS-1 | No usage-data event (N/A, bug fix). | Nothing to count; avoids a catalogue entry whose only useful property would be a verdict code. |
 | DEVOPS-2 | No new test category, workflow or CI job; new failure-path tests live in untagged classes, never in the two Integration-tagged connector test classes; live Jira/ADO check is a manual DELIVER step against sandboxes. | Live categories are opt-in, flaky and cost API quota; unit tests cover the failure paths deterministically. |
-| DEVOPS-3 | Jira: refusal Information, everything else Warning, split applied at both `:442` and `:1118`; the old phrase is removed (grep done, no consumer). ADO: lines :402/:445/:639 keep Error, except a project skipped under AFK-1 which is Warning (an operator-visible change under that option only). | A user-fixable Jira state is not an application error and the old text was false for a 503; for ADO the Error stays wherever the user still sees the failure. |
-| DEVOPS-4 | Jira 503 on Test connection stores `Unreachable` (health service unchanged). | Matches ADR-184 and DESIGN Decision 2; true state. |
+| DEVOPS-3 | Decided by the maintainer: Jira writes one Error line per failed board read, with no status split, the same as Azure DevOps, carrying `{answer}`. It replaces `:727`, `:787` (a refused status list), `:868`, `:892` and the old phrase at `:1118` (grep done, no consumer). The missing-id cases at `:794` and `:900` stay Warnings. `:442` keeps its phrase for a Test connection 503 until the known defect is fixed. ADO: lines :402/:445/:639 keep Error. | The user sees every one of these failures, and the picker no longer classifies by status, so one rule fits both connectors. The old text was false for a 503. |
+| DEVOPS-4 | Struck on 2026-11-04: Test connection's health handling is unchanged, so a Jira 503 there still stores `AuthenticationFailed`. | A known defect left out of this Bug. |
 | DEVOPS-5 | No Lighthouse-Clients change or release. | Clients do not call the wizard endpoints (grep empty). |
 | DEVOPS-6 | Rollback = revert; no feature flag. | No data or schema change; flag would add a branch for a pure correctness fix. |
-| DEVOPS-7 | Mutation targets as listed in answer 5. | Per-feature strategy in CLAUDE.md. |
+| DEVOPS-7 | Mutation targets as listed in answer 5: the failure and empty-list rules, the disabled-button guard and the ADO whole-list failure. | Per-feature strategy in CLAUDE.md. |
 
 HELD for the maintainer: none left. HELD-1 (ADO multi-project list: fail the whole list) and the N3 re-confirmation
 (AFK-5) are decided in the section below; the DISTILL sketch walk (AFK-6) gates DELIVER.
@@ -943,3 +903,340 @@ Binding; they close every HELD item above.
 | HELD-1 (ADO multi-project list) | **Fail the whole list.** Any project whose board read fails makes the picker show the failure sentence naming the failing project(s) (C7); a refused credential on any project shows C6. This is Option A of DESIGN Decision 3 and DISCUSS D10 as originally written; AFK-1 (skip) and Option B (partial + notice) are rejected. Accepted consequence: a project with Boards disabled, or one the token cannot see, blocks the picker for every project; the Team's query can still be typed by hand. ADO board-read log lines keep Error level. |
 | AFK-5 / N3 re-confirmed | **Keep 401 = 403** on the Jira board list: one credential sentence for both, worded without "revoked or expired". Recorded as a deliberate divergence from ADR-126's ServiceNow 403 rung. |
 | Follow-up Story (Q6, "show why a refresh failed") | **Not created.** The draft stays here for reference only; it is not tracked in ADO. |
+
+## Maintainer decisions: simplified copy (2026-11-04, start of DISTILL)
+
+Binding, and they **supersede** everything above that disagrees, including Q3, Q4, Q7, N1, N2, N3, D2, D4, D8,
+D9, the DESIGN decisions on per-status classification, and the copy table C1 to C11. The fix itself stands:
+Jira and Azure DevOps board reads stop turning failure into emptiness (D1, D10), and an Azure DevOps list fails
+as a whole, naming the failing project (HELD-1). Sketch walk done. Every question is answered, including those the
+DISTILL review raised, which are at the end of this block.
+
+Why: about 15 sentences said the same thing in different words. A template carrying the tracker's own answer
+tells the reader as much, and the picker no longer has to tell a 401 from a 403 or a 503.
+
+### The copy
+
+| Id | Where | Text |
+|---|---|---|
+| F1 | Board list failed, Jira and Azure DevOps, every cause | Lighthouse could not read the boards from {tracker}: {answer}. Check the connection's URL and sign-in details, then try again. |
+| F2 | Board information failed, Jira and Azure DevOps, every cause except the one named under the DISTILL review answers | Lighthouse could not read this board from {tracker}: {answer}. Check the connection's URL and sign-in details, then try again. |
+| E1 | Empty list, every connector including ServiceNow; replaces `NO_BOARDS`, no per-connector table | No boards are available to this connection. The account may not have access to any board, or none of the boards it can see can be used by Lighthouse. |
+| T1 | Jira Test connection, every Jira sign-in, message of the existing `authentication_failed` result | Authentication failed for Jira. Check all of this connection's sign-in details. |
+| D1 | Tooltip on the disabled "Select Jira Board" button | Jira does not offer boards to scoped API tokens or Jira Cloud (OAuth). Enter the query by hand. |
+
+`{answer}` is what the tracker said: `401 Unauthorized`, `503 Service Unavailable`, `no answer` for an
+unreachable host or a timeout, `an answer Lighthouse could not read` for unparseable JSON and for well-formed JSON
+Lighthouse cannot use (a board entry with no id, a `/configuration` with no columns), or Azure DevOps' own message
+with the failing project named. A trailing full stop in Azure DevOps' message is trimmed, because F1 and F2 add their
+own. A malformed Azure DevOps board id is F2 with an answer saying so, never an empty `BoardInformation`.
+
+### Decisions
+
+- **Failure sentence**: F1 and F2, the shorter wording without the email hint. No credential classification on
+  the picker for either connector: no 401/403/5xx branches, no separate Azure DevOps 403 sentence.
+- **Empty list**: E1 for all four connectors. ServiceNow's failure verdicts are unchanged; only the frontend
+  empty line changes. ServiceNow's picker loses the table-and-filter hint, which is accepted: that detail stays in
+  `servicenow.md` line 187.
+- **Scoped API token and Jira Cloud OAuth**: "Select Jira Board" is **disabled, with the reason in a tooltip**
+  (D1), on the Team and Portfolio settings and create screens, decided from the connection's
+  `authenticationMethodKey`. The picker never opens, so no board call is made. The create flow skips the
+  load-data step when no wizard is usable, and shows the same disabled button on Configure. A disabled MUI button
+  fires no pointer events, so the tooltip needs a wrapping element.
+- **Test connection**: T1 replaces the one string. Code, technical detail and the highlighted API Token field
+  stay as they are. `ValidateConnection`'s status logic and `ConnectionHealthService` are untouched.
+
+### Dropped from this Bug
+
+C1 to C11, the two new frontend fallback sentences (today's canned lines stay), the field-list rewording (a Jira
+field-list 401 still says it needs to browse a project), and the `ValidateConnection` status and timeout changes.
+
+**Known defect left out, with no Bug number:** a 503 on Test connection still reads as an authentication failure. No
+follow-up Bugs go on the board for now.
+
+`adr-draft-credential-verdict-per-connector.md` is superseded by this block. `adr-draft-ado-board-list-fails-whole.md`
+is rewritten in terms of F1 and F2 and reads alone.
+
+### Still in scope
+
+The `latestSelection` guard, `boards = []` on a failed list, a failure on page 2 failing the whole Jira list, partial
+Jira board reads (below), `JiraOAuth` in the frontend key list, the truthful log line, the failure-path tests, the live
+sandbox check, `jira.md` lines 73 and 92 (now describing the disabled button), ADR-126, ADR-270 and `jobs.yaml` edits
+at finalize.
+
+### Maintainer decisions on the DISTILL review (2026-11-04)
+
+Binding; they replace everything that was held or open in the first DISTILL pass.
+
+| # | Decision |
+|---|---|
+| T1 for every sign-in | T1 is one neutral string for every Jira sign-in method, as in the table above. The token mention was dropped so the text fits every sign-in: an OAuth connection has no token to check. Code, technical detail and field stay. |
+| F1 and F2 for every cause | They stay one sentence each, including for a 503 or a timeout, and keep "Check the connection's URL and sign-in details". Accepted because the status sits in the sentence. |
+| Partial Jira board reads | **In slice 01.** A refused status list or `board/{id}/issue` inside `GetBoardInformation` now fails with F2, so Confirm stays disabled, instead of returning a board with no states or types. |
+| `board_filter_unreadable` | Stays as it is, and is **the one exception to F2**: a board whose saved filter is refused keeps its own sentence naming the filter to share. |
+| Log level | One Error line per failed Jira board read, with no status split, the same as Azure DevOps, carrying `{answer}`. DEVOPS answer 3 names the sites. |
+| DELIVER rigor profile | `standard` for both slices. |
+| Follow-up Bugs | None on the board for now. The 503 on Test connection is recorded above as a known defect left out, with no Bug number. |
+
+### Estimate
+
+About 2 days: slice 01 about 1.5, slice 02 about 0.5.
+
+## Wave: DISTILL / [REF] Prior Wave Consultation
+
+2026-11-04. The sketch walk was done before this wave started, and its outcome is "Maintainer decisions: simplified
+copy" above. Copy ids in these sections (F1, F2, E1, T1, D1) are that block's.
+
+| Artifact | Read |
+|---|---|
+| This `feature-delta.md`: the 2026-11-04 decision block first, then DESIGN Decision 5, DEVOPS answers and AFK-DEVOPS | yes |
+| `slices/slice-01-jira-picker-says-why.md`, `slices/slice-02-ado-picker-says-why.md` (scope) | yes |
+| `docs/architecture/atdd-infrastructure-policy.md` (inherited; one row appended) | yes |
+| `docs/ci-learnings.md`, Vitest/RTL and NUnit sections | yes, applied |
+| `docs/feature/bug-6458-typed-category-entries/feature-delta.md`, `docs/feature/epic-5074-blocked-items/distill/red-classification.md` (precedent) | yes |
+| Separate `discuss/`, `design/`, `devops/` folders | none: those waves live in this file |
+| `docs/product/kpi-contracts.yaml` | not applicable: DEVOPS records no usage-data event and no outcome KPI for this bug |
+
+`[lang-mode]` C# and TypeScript, per the policy. `[policy-mode]` inherit. `[port-mode]` not applicable: the policy
+excludes the Python state-delta port, `__SCAFFOLD__` stubs and property-based harnesses here.
+
+## Wave: DISTILL / [REF] Reconciliation result
+
+Reconciliation passed: no contradiction that blocks a scenario. The 2026-11-04 block settles the DISCUSS, DESIGN
+and DEVOPS differences, and its "Maintainer decisions on the DISTILL review" settle what the first pass held. All
+scenarios are written against F1, F2, E1, T1 and D1. How each point was closed:
+
+1. **F2 "every cause" against the existing filter verdict.** Decided: `board_filter_unreadable` stays, the one
+   exception to F2. `JiraBoardQueryAssemblyTest` keeps pinning it.
+2. **Partial Jira board reads.** Decided: in slice 01, with F2. The new tests are in the inventory, and the tests that
+   pinned the quiet degrade are under "Tests DELIVER changes".
+3. **`{answer}` for Azure DevOps has no fixed format beyond naming the project.** Where no project is involved the
+   tests pin the exact sentence. Where one is, they pin the sentence's two halves, the project and Azure DevOps'
+   own message, so DELIVER may choose the separator.
+4. **A double full stop.** The block now says a trailing full stop in Azure DevOps' message is trimmed. The tests use
+   a message with no final full stop, so DELIVER adds the trim with a case of its own.
+5. **What counts as "could not read".** The block now defines `{answer}` to cover well-formed JSON Lighthouse cannot
+   use, and the tests pin it.
+6. **Log level.** Decided: one Error line per failed Jira board read, with no status split (DEVOPS-3). The test pins
+   the truth of the line (no "Authentication is not valid" on a 503, status and reason named), not its level.
+7. **`:442`.** The same untruthful phrase sits in `ValidateConnection`, which the block leaves untouched. No test
+   asks for it to change.
+8. **T1 on sign-ins without an email.** Decided: one neutral string for every Jira sign-in. See "T1 finding" below.
+
+## Wave: DISTILL / [REF] Scenario inventory
+
+No scenario tags appear in the code (project rule); this table is the only classification. Every row is skipped:
+`[Ignore(...)]` with a plain reason, `it.skip` or `it.skip.each`. Kind: **D** driving port end to end, **E** error
+path, **B** boundary or edge, **G** guard on behaviour the fix must keep.
+
+**92 cases over 48 test methods: backend 66 over 35, frontend 26 over 13.** Error and edge methods are 39 of 48
+(81%), against the 40% target. Guards are the other 9.
+
+### Slice 01: `JiraBoardReadFailureTest`
+
+| Scenario | Cases | Kind |
+|---|---|---|
+| An administrator asking for the boards of a Jira that refuses them is told what Jira said (F1, 401) | 1 | D, E |
+| An administrator asking for a board of a Jira that refuses it is told what Jira said (F2, 403) | 1 | D, E |
+| A board list Jira answers with a failure carries that answer (401, 403, 503) | 3 | E |
+| A board list from a Jira that cannot be reached reads as `no answer` | 1 | E |
+| A board list that times out reads as `no answer` | 1 | E |
+| A board list Lighthouse cannot read says so | 2 | E |
+| A failure on the second page fails the whole board list | 1 | E |
+| A board list over two pages still offers every board | 1 | G |
+| A Jira that really has no boards for this account stays an empty list | 2 | G |
+| A failed board list is logged with what Jira answered and not as a bad credential | 1 | E |
+| A board Jira answers with a failure carries that answer (401, 403, 404, 503) | 4 | E |
+| A board from a Jira that cannot be reached reads as `no answer` | 1 | E |
+| A board read that times out reads as `no answer` | 1 | E |
+| A board Lighthouse cannot read says so | 2 | E |
+| A board Jira hands over only in part carries the answer of the part it refused (status list, work items, work item type list; 403, 503) | 6 | E |
+| A part of a board Lighthouse cannot read says so (the same three parts; page of HTML, `{}`) | 6 | E |
+| A part of a board that cannot be reached reads as `no answer` (the same three parts) | 3 | E |
+| A part of a board that times out reads as `no answer` (the same three parts) | 3 | E |
+| A board Jira hands over whole still gives its states and types | 1 | G |
+| A board that holds no work items yet is a real answer and not a failure | 1 | G |
+| Test connection on a refused credential says to check all the sign-in details (T1, with code, technical detail and field) | 1 | E |
+
+### Slice 01: frontend
+
+| File | Scenario | Cases | Kind |
+|---|---|---|---|
+| `BoardWizard.test.tsx` | Says the same thing about an empty list on a `Board` and a `Team` picker (E1) | 2 | B |
+| `BoardWizard.test.tsx` | Shows what the tracker said about a board and cannot be confirmed (F2) | 1 | E |
+| `BoardWizard.test.tsx` | Takes away the boards of the last answer when the list is refused | 1 | E |
+| `BoardWizard.test.tsx` | Keeps the newer board when the older one answers last | 1 | E |
+| `BoardWizard.test.tsx` | Says nothing about the older board being refused after the newer one answered | 1 | E |
+| `BoardWizard.test.tsx` | Keeps waiting for the newer board when the older one arrives first or is refused first | 2 | E |
+| `BoardWizard.test.tsx` | Ignores an answer that arrives after the selection was cleared | 1 | E |
+| `GeneralSettingsComponent.test.tsx` | Shows the picker disabled and says why (D1; scoped token and OAuth, Team and Portfolio) | 4 | B |
+| `GeneralSettingsComponent.test.tsx` | Leaves the picker usable for `jira.cloud` and `jira.datacenter` | 2 | G |
+| `CreateWizard.boardPicker.test.tsx` | Goes straight to Configure, with the picker disabled and the reason on it | 4 | B |
+| `CreateWizard.boardPicker.test.tsx` | Going back from Configure returns to choosing the connection | 2 | B |
+| `CreateWizard.boardPicker.test.tsx` | Still offers the picker on the Load Data step for `jira.cloud` and `jira.datacenter` | 4 | G |
+| `WorkTrackingSystemConnection.authenticationMethodKeys.test.ts` | Includes every Jira sign-in, so the picker rule can name them | 1 | B |
+
+### Slice 02: `AzureDevOpsBoardReadFailureTest`
+
+| Scenario | Cases | Kind |
+|---|---|---|
+| An administrator asking for the boards of an Azure DevOps that refuses them is told what it said (F1) | 1 | D, E |
+| An administrator asking for a board of an Azure DevOps that refuses it is told what it said (F2) | 1 | D, E |
+| A rejected token on the only project fails the list and names the project | 1 | E |
+| One project failing among others fails the whole list and names only that project | 1 | E |
+| Two projects failing are both named | 1 | E |
+| A status Azure DevOps sent without a sentence of its own still reaches the picker | 1 | E |
+| Each failing project keeps its line in the error log | 1 | E |
+| A project list nobody answered reads as `no answer` (unreachable, two kinds of timeout) | 3 | E |
+| A project nobody answered for reads as `no answer` and is named | 3 | E |
+| A board nobody answered for reads as `no answer` | 3 | E |
+| A malformed board id is a failed read and never an empty board | 4 | E |
+| An organisation with no projects stays an empty list | 1 | G |
+| Projects without boards stay an empty list | 1 | G |
+| Boards of every project that answers are offered | 1 | G |
+
+Tier B (state-machine property tests): not applicable; the policy excludes them here and the picker's journey is
+short. The two copy-carrying `An_administrator_...` scenarios of each connector pin the exact final sentence once.
+
+### Self-completeness audit
+
+13 of 15, **COMPLETE**. C2a (no state diagram of the picker's selection in a test docstring) and C6c (no test
+throws an exception type outside the listed failures) are open, both low severity and within delivery scope. C4a,
+C4b and C5b count as passing because nothing here mutates and Team and Portfolio behave alike. No specification
+ambiguity blocks a scenario.
+
+## Wave: DISTILL / [REF] Walking skeleton
+
+None required: this is a bug fix. The nearest thing is the four `An_administrator_...` scenarios, which enter at
+`WizardsController` with the real connector over a fake transport and assert the 400 and the sentence.
+
+E2E: no new spec. A failure path needs a refused credential, which demo data cannot give, and the scoped-token
+button is pinned on every screen by the component tests. `jira.spec.ts` uses an ordinary Jira connection, so its
+picker walk is unchanged.
+
+## Wave: DISTILL / [REF] Adapter coverage
+
+| Adapter | Real-I/O scenario | Covered by |
+|---|---|---|
+| `JiraWorkTrackingConnector` board reads | fake transport under the real connector (policy row), no network | `JiraBoardReadFailureTest` |
+| `JiraWorkTrackingConnector.ValidateConnection` (one string) | fake transport under the real connector | `JiraBoardReadFailureTest`, T1 scenario |
+| `AzureDevOpsWorkTrackingConnector` board reads | fake project and board clients under the real connector (row appended to the policy) | `AzureDevOpsBoardReadFailureTest` |
+| Real Jira and Azure DevOps sandboxes | **no CI scenario, by decision**: manual DELIVER live check (wrong email, wrong token, bad PAT; for a scoped token and OAuth, the disabled button and Test connection, not a board read) | DEVOPS answer 2. Also run the `JiraIntegration` and `AdoIntegration` categories once, because narrowing a connector `catch` may break something pinned only there |
+
+What the fakes cannot show: the exact exception the Azure DevOps SDK raises for a real 401, 403 or timeout. Three
+kinds of "no answer" are covered, but the live check is what confirms the mapping.
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+| Driving port | Scenario |
+|---|---|
+| `GET wizards/{id}/boards`, Jira and Azure DevOps | `An_administrator_asking_for_the_boards_...`, through the real `WizardsController` and connector |
+| `GET wizards/{id}/boards/{boardId}`, Jira and Azure DevOps | `An_administrator_asking_for_a_board_...` |
+| Same endpoints over HTTP | not repeated: `ServiceNowConnectionAcceptanceTest` already pins the 400 and the verdict through the host, and the controller catches the abstract type, so the wire shape is shared |
+| The Test connection endpoint, Jira | T1 at the connector; the controller's handling of a failed verdict is unchanged |
+| Board picker dialog | `BoardWizard.test.tsx` |
+| Team and Portfolio settings | `GeneralSettingsComponent.test.tsx`, both contexts |
+| Team and Portfolio create flows | `CreateWizard.boardPicker.test.tsx`, through the real registry, hook and shell |
+
+## Wave: DISTILL / [REF] Scaffolds
+
+One production change, and a test could not compile without it. `AzureDevOpsWorkTrackingConnector.GetClientAsync`
+went from `private` to `internal virtual`, with a comment saying why. Behaviour is unchanged. `WorkHttpClient` and
+`ProjectHttpClient` had no seam, and a real local server would have meant faking the SDK's location discovery. No
+other scaffold: `JiraReadException`, `AzureDevOpsReadException`, `BoardWizard` and the registry already exist. The
+disabled button is asserted through the rendered screens, so the tests do not fix where the one deciding place sits
+(DESIGN Decision 4 suggests it).
+
+## Wave: DISTILL / [REF] Test placement
+
+| File | New or extended |
+|---|---|
+| `Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs` | new, untagged (DEVOPS-2) |
+| `Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs` | new, untagged (DEVOPS-2) |
+| `Lighthouse.Frontend/src/components/DataRetrievalWizards/BoardWizard.test.tsx` | extended |
+| `Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx` | extended |
+| `Lighthouse.Frontend/src/components/Common/CreateWizards/CreateWizard.boardPicker.test.tsx` | new: the existing create-flow tests mock the wizard registry, and these need the real one |
+| `Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.authenticationMethodKeys.test.ts` | new: pins the whole frontend key list |
+
+**Skipped tests and Biome.** `noSkippedTests` became an error on 2026-11-03, so `it.skip` now fails `pnpm build`.
+The 6 plain `it.skip` calls (5 in `BoardWizard.test.tsx`, 1 in the key test) carry a narrow `biome-ignore` saying why.
+The 7 `it.skip.each` declarations (20 cases) carry none, because the rule does not see them. So Biome will **not**
+report them if one is forgotten: DELIVER must enable all 26 cases and delete the 6 suppressions, and
+`grep -rn "it\.skip" Lighthouse.Frontend/src` must come back empty.
+
+## Wave: DISTILL / [REF] Tests DELIVER changes
+
+Found by running the existing suites against a throwaway fix, partial reads included (Jira, Azure DevOps, wizard and
+connection health tests: 861 passed, 22 failed), plus reading the live-only classes, which that run excludes. The 22
+are 8 that pinned the quiet degrade and 14 that fail only through one fixture line; with that line changed, the same
+two classes fail on exactly the 8. Changed, not deleted.
+
+| Test | Why | Change |
+|---|---|---|
+| `BoardWizard.test.tsx`, "names both reasons a connection may have no board to offer" | pins the old `NO_BOARDS` text; fails with E1 | replaced by the E1 scenario |
+| `BoardWizard.test.tsx`, "displays fetched boards in autocomplete", the `/not a member of any Visual Task Board/i` absence check | stays green but no longer proves anything | point it at E1 |
+| `JiraBoardQueryAssemblyTest`, `GetBoardInformation_PartOfTheBoardCannotBeRead_LogsWhatJiraAnsweredBeforeCarryingOn` (all 3 cases: `configuration`, `issue`, `status`) | pinned the quiet degrade: each now throws | rewrite to expect the refusal, or delete in favour of `A_board_Jira_hands_over_only_in_part_...`, whose log half the new log line then needs |
+| `JiraBoardOriginalNamesTest`, `A_work_item_type_list_that_cannot_be_read_gives_no_types_and_a_warning_naming_the_answer` (4 cases) | pinned the quiet degrade for the work item type list | expect F2 with the answer; the `200` cases read `an answer Lighthouse could not read` |
+| `JiraBoardOriginalNamesTest`, `A_status_list_that_cannot_be_read_gives_no_states_but_the_types_are_still_original` | pinned the quiet degrade for the status list | expect F2 |
+| `JiraBoardQueryAssemblyTest`, the `BuildResponse` fixture | answers the status list with `[]`, which Lighthouse reads as unusable, so 14 tests of the board's query, the filter refusal among them, fail for a reason that is not theirs | one line: `path.EndsWith("status")` answers `JiraWireFormat.TheStatusListOf(JiraWireFormat.AnEnglishStatuses)`. Proved with a throwaway run |
+| `AzureDevOpsWorkTrackingConnectorTest`, `GetBoardInformation_BoardIdIsNotContainingTwoGuids_ReturnsEmpty` (live category) | pins the empty board | expect the failure, or delete in favour of the new untagged test |
+| `JiraScopedTokenIntegrationTest`, `GetBoards_ReturnsCorrectBoards` (live category) | asserts `Is.Empty`, which held only because the failure was swallowed | expect `JiraReadException` |
+
+Not changed, but mention-worthy: `Slice05AnyBrokenCredentialSaysSoSpecifications`,
+`Slice08HealthThatChecksItselfSpecifications` and `TaskManagerIcon.test.tsx` use "Authentication failed for Jira."
+as their own fixture text, so T1 does not touch them.
+
+**A placement trap.** Five test files `vi.mock` `components/DataRetrievalWizards` whole, with only
+`getWizardsForSystem` on the mock: `useCreateWizard.test.ts`, `CreateTeamWizard.test.tsx`,
+`CreatePortfolioWizard.test.tsx` and both `*.licenseCheck.test.tsx`. A new export from that module which the hook or
+shell imports turns about 45 of their tests red with no change in behaviour. Put the rule on the wizard entry or in
+a separate module, or extend those mocks first.
+
+## Wave: DISTILL / [REF] T1 finding (decided)
+
+Decided by the maintainer on 2026-11-04: T1 is one neutral string for every Jira sign-in. This is the finding that led
+there, kept because it says which sign-ins reach T1.
+
+Asked: do Jira OAuth connections reach T1, given they have no email or token? **Yes, and so does a second sign-in.**
+
+`ValidateConnection` has no branch on the sign-in method. `jira.oauth` routes through the Atlassian gateway
+(`RoutesViaAtlassianCloudGateway`), takes `OAuthBearerAuthStrategy`, and calls `rest/api/2/myself` like any other
+connection. Any non-success answer returns the `authentication_failed` result, whose message becomes T1.
+
+| Sign-in | Options it has | Reaches T1 when |
+|---|---|---|
+| `jira.cloud`, `jira.scopedtoken` | Url, Username, token | Jira refuses |
+| `jira.datacenter` | Url, Personal Access Token, **no user name** | Jira refuses |
+| `jira.oauth` | Url, Client ID, Client Secret, **no email, no token** | a token Lighthouse still holds as fresh is refused (revoked at Atlassian, scope removed) |
+
+- Not every OAuth failure gets there. When the refresh itself fails, or no credential exists,
+  `EnsureFreshTokenAsync` throws a plain exception, and `ValidateConnection` answers `validation_failed`, "Connection
+  validation failed due to an unexpected error."
+- The result also names `ApiToken` as the field to highlight, and `jira.oauth` has no such option. That predates
+  this Bug, and the maintainer left the field as it is. How the screen handles it was not checked.
+- The stored health verdict carries the same message, so T1 also appears in the connection popover.
+
+The T1 test uses `jira.cloud`: `ValidateConnection` has no branch on the sign-in, so one case covers the one string.
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- Local runs: `dotnet test --filter` on the class names with the live categories excluded, never the unfiltered
+  suite. Frontend: `pnpm install` once per worktree, then `pnpm vitest run <files>`.
+- No new package, environment variable, key or migration.
+- The maintainer's Jira and Azure DevOps sandboxes for the manual live check.
+
+## Wave: DISTILL / [REF] Proposed slice order for DELIVER
+
+Slice 01, then slice 02, the one allowed direction. Suggested enabling order:
+
+| # | Slice | Enable | Turns on |
+|---|---|---|---|
+| 1 | 01 | `JiraBoardReadFailureTest`: the two `An_administrator_...` first, then list, page 2, log line, board | Jira reads stop answering failure with emptiness |
+| 2 | 01 | `JiraBoardReadFailureTest`: the partial-read group, with the fixture line and the 8 tests under "Tests DELIVER changes" in the same step | a board is never offered without its states or types |
+| 3 | 01 | T1 test | Test connection message |
+| 4 | 01 | `BoardWizard.test.tsx`: E1, F2, refused list, the superseded-answer group | picker copy and the `latestSelection` guard |
+| 5 | 01 | key test, `GeneralSettingsComponent.test.tsx`, then `CreateWizard.boardPicker.test.tsx` | `JiraOAuth`, the disabled button and the skipped step |
+| 6 | 02 | `AzureDevOpsBoardReadFailureTest`: the two `An_administrator_...` first, then projects, `no answer`, malformed id | Azure DevOps reads stop answering failure with emptiness |
+
+Step 4 is what slice 02's E1 relies on. Each step ships alone, green. Run the live categories once per
+connector before narrowing its `catch`.

@@ -1061,7 +1061,7 @@ describe("GeneralSettingsComponent", () => {
 			expect(screen.getByText(GUIDANCE)).toBeInTheDocument();
 		});
 
-		// AC-A2. No layout shift and no empty helper row for a connector that has nothing to explain.
+		// No layout shift and no empty helper row for a connector that has nothing to explain.
 		it("leaves a connector with nothing to explain exactly as it was", () => {
 			const { container } = render(
 				<GeneralSettingsComponent
@@ -1119,6 +1119,92 @@ describe("GeneralSettingsComponent", () => {
 				screen.queryByRole("button", { name: "Select Jira Board" }),
 			).not.toBeInTheDocument();
 		});
+	});
+
+	describe("a Jira connection whose sign-in Jira offers no boards to", () => {
+		const NO_BOARDS_FOR_THIS_SIGN_IN =
+			"Jira does not offer boards to scoped API tokens or Jira Cloud (OAuth). Enter the query by hand.";
+
+		const aJiraConnectionSigningInWith = (
+			authenticationMethodKey: string,
+		): IWorkTrackingSystemConnection => ({
+			...mockWorkTrackingSystems[0],
+			authenticationMethodKey,
+		});
+
+		const renderTheSettingsOf = (
+			authenticationMethodKey: string,
+			settingsContext: "team" | "portfolio",
+		) => {
+			const getBoards = vi.fn().mockResolvedValue([]);
+
+			render(
+				<ApiServiceContext.Provider
+					value={createMockApiServiceContext({
+						wizardService: { getBoards, getBoardInformation: vi.fn() },
+					})}
+				>
+					<GeneralSettingsComponent
+						settings={testSettings}
+						onSettingsChange={mockOnSettingsChange}
+						workTrackingSystems={mockWorkTrackingSystems}
+						selectedWorkTrackingSystem={aJiraConnectionSigningInWith(
+							authenticationMethodKey,
+						)}
+						settingsContext={settingsContext}
+					/>
+				</ApiServiceContext.Provider>,
+			);
+
+			return getBoards;
+		};
+
+		beforeEach(() => {
+			rbac.isSystemAdmin = true;
+		});
+
+		it.skip.each([
+			["jira.scopedtoken", "team"],
+			["jira.scopedtoken", "portfolio"],
+			["jira.oauth", "team"],
+			["jira.oauth", "portfolio"],
+		] as const)(
+			"shows the picker disabled and says why for %s on %s settings",
+			async (authenticationMethodKey, settingsContext) => {
+				const user = userEvent.setup();
+				const getBoards = renderTheSettingsOf(
+					authenticationMethodKey,
+					settingsContext,
+				);
+
+				const picker = screen.getByRole("button", {
+					name: "Select Jira Board",
+				});
+				expect(picker).toBeDisabled();
+
+				await user.hover(picker.parentElement ?? picker);
+				expect((await screen.findByRole("tooltip")).textContent).toBe(
+					NO_BOARDS_FOR_THIS_SIGN_IN,
+				);
+
+				await userEvent.click(picker, { pointerEventsCheck: 0 });
+				expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+				expect(getBoards).not.toHaveBeenCalled();
+			},
+		);
+
+		it.skip.each(["jira.cloud", "jira.datacenter"])(
+			"leaves the picker usable for %s",
+			async (authenticationMethodKey) => {
+				const getBoards = renderTheSettingsOf(authenticationMethodKey, "team");
+
+				await userEvent.click(
+					screen.getByRole("button", { name: "Select Jira Board" }),
+				);
+
+				await waitFor(() => expect(getBoards).toHaveBeenCalledOnce());
+			},
+		);
 	});
 
 	describe("the query is committed when the field is left", () => {
