@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
 
         public override Feature? GetById(int id)
         {
-            return GetAll().SingleOrDefault(f => f.Id == id);
+            return GetFeatures().SingleOrDefault(f => f.Id == id);
         }
 
         public override Feature? GetByPredicate(Func<Feature, bool> predicate)
