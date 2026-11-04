@@ -122,6 +122,8 @@ test("a delivery is unforecastable while one team has no throughput, then report
 			TEAM_WITHOUT_THROUGHPUT,
 		);
 		await deletionDialog.delete();
+		// The forecast is redone in the background after a delete, and an open page does not update itself.
+		await waitForBackgroundUpdates(request);
 	});
 
 	await test.step("the delivery can now be forecast and publishes dates", async () => {
