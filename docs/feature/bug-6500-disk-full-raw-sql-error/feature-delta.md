@@ -973,3 +973,16 @@ Handoff to DISTILL: the placement and category rules (DO-2), the 5xx-body search
 The follow-up Bug for the unpaced retry loop (Q4, "Pause between failed update retries") is **not created**. The draft
 stays here for reference only; it is not tracked in ADO.
 
+## Maintainer decision: scope cut to the reported case (2026-11-04)
+
+The design above was about four days of work for a Bug that should be small. The maintainer cut it to: translate the
+one reported exception into plain language where the administrator reads it. Early detection stays out, as in Q5.
+
+| Topic | Decision |
+|---|---|
+| What ships | `RecentProblemsSink` replaces the row text when the exception, or one inside it, is Postgres `53100` or SQLite error 13, using the sentences from the fault-class table. |
+| Overrides | Q2 (every fault class, every site) and Q7 (information disclosure). |
+| Not done | The other fault classes, slices 03 and 04, the classifier, `/health/startup`. They stay here for reference and are not tracked. |
+| Waves | DISTILL and the roadmap skipped at the maintainer's word; a plain test-first fix in `RecentProblemsSinkTest`. |
+| Activity section | Unchanged: a failed refresh shows `Failed` with no text, so no driver text reaches it. |
+
