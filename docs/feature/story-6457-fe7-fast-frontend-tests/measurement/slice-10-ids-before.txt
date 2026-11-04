@@ -1,0 +1,57 @@
+src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing when the page is left without an edit
+src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing when the query is edited back to what was saved before the field is left
+src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing when the query is focused and left without a change
+src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves nothing while the query is being typed and the field is still focused
+src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves the edited query once, after the field is left
+src/components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx :: ModifyProjectSettings query field saves the edited query when the page is left straight after the field
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features a Portfolio being created is not asked for its size
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features a Portfolio holding 101 Features shows the note with its count, as information
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features a Portfolio holding exactly 100 Features shows no note
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features the could-not-check message uses the instance's own word for Portfolios
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features the note asks for the size of the Portfolio being edited
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features the note uses the instance's own words for Features and Portfolios
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features when the size cannot be checked, the page says so and stays usable
+src/components/Common/ProjectSettings/ModifyProjectSettings.sizeNote.test.tsx :: The Portfolio's settings say when it holds more than 100 Features while the size is on its way the page shows no note and no warning
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings Linear schema-driven behavior hides WorkItemTypesComponent when schema says isWorkItemTypesRequired is false
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings Linear schema-driven behavior validates successfully without work item types and data retrieval value for Linear portfolio
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio following the Portfolios' Estimation default shows it, and picking a field of its own saves that choice
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Dependency Field switching the connection shows the default of the connection now chosen
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Feature Owner Field switching the connection shows the default of the connection now chosen
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Parent Override Field picking another entry makes the value the Portfolio's own
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Parent Override Field shows the followed field as the selected first entry
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Parent Override Field switching the connection shows the default of the connection now chosen
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Parent Override Field switching to a connection whose default names nothing shows None
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Parent Override Field switching to a connection whose tracker holds no default offers no connection default
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a Portfolio that follows the connection's Size Estimate Field switching the connection shows the default of the connection now chosen
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a caller that leaves saving on is not stopped by the license
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings a caller that switches saving off says why, whatever the license allows
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings auto-saves a valid portfolio field change after the debounce window
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback holds back autosave while a mapping's name hides one of its states in To Do
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback holds back autosave while a new mapping is named after a Doing state it does not group
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback holds back autosave while a new mapping's state sits in two categories
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback holds back autosave while two complete mappings share a source state
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback names the To Do States field when no To Do state is configured
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback renders no warning while the form can be saved
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback saves an unrelated edit although a stored mapping is named after a state another mapping groups
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings blocked autosave feedback shows no warning for a mapping row still being filled in, and other edits still save
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Default Amount of Work Items is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Doing States is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Done States is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Missing Default Work Item Percentile is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Missing Historical Days is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Name is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when To Do States is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Work Item Query is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not auto-save when Work Item Types is invalid
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings does not render a Save button
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings handles adding and removing states
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings handles adding and removing work item types
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings handles project settings change
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings handles work tracking system change
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings refreshes dependent portfolio data after a valid state-mapping change
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings renders components correctly after loading
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings renders loading state initially
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings staleness relocated to Flow Metrics hides the staleness field when the threshold is 0 (opt-in off)
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings staleness relocated to Flow Metrics seeds the revealed field with the portfolio default of 14 on opt-in
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings staleness relocated to Flow Metrics surfaces the staleness threshold in Flow Metrics Configuration, not a standalone Flow Signals group
+src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx :: ModifyProjectSettings suppresses auto-save when portfolio data updates are not permitted
