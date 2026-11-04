@@ -42,7 +42,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// The forecast is the one thing a scenario usually scripts, and it is scripted per check rather than
     /// replaced wholesale. A scenario about which levels held has to choose the forecast a check produced,
     /// or it is asserting sampling noise; and the simulation is also the one cost that grows several times
-    /// over under the coverage run CI uses. Where a scenario is about the check running end to end, it asks
+    /// over when the suite runs under coverage. Where a scenario is about the check running end to end, it asks
     /// for the shipped engine instead, with its starting number pinned and fewer runs than production uses.
     ///
     /// Nothing here names a type of the check's own code. Every scenario talks to the check over the wire

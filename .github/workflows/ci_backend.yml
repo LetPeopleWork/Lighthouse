@@ -97,10 +97,8 @@ jobs:
           /d:sonar.host.url="https://sonarcloud.io" \
           /d:sonar.sources="Lighthouse.Backend" \
           /d:sonar.language="cs" \
-          /d:sonar.cs.opencover.reportsPaths="**/TestResults/**/coverage.opencover.xml" \
           /d:sonar.cs.vstest.reportsPaths="**/TestResults/*.trx" \
-          /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,tools/**,**/.github/**,**/.vscode/**,**/docs/**,chart/**,.githooks/**,.claude/**,.nwave/**" \
-          /d:sonar.coverage.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Scripts/**,chart/**,.githooks/**,.claude/**,.nwave/**"
+          /d:sonar.exclusions="**/Lighthouse.Migrations.Sqlite/**,**/Lighthouse.Migrations.Postgres/**,**/Lighthouse.Frontend/**,**/Lighthouse.EndToEndTests/**,Lighthouse.Frontend/**,Lighthouse.EndToEndTests/**,Scripts/**,tools/**,**/.github/**,**/.vscode/**,**/docs/**,chart/**,.githooks/**,.claude/**,.nwave/**"
     
     - name: Build Backend (composite)
       uses: ./.github/actions/build-backend
@@ -145,13 +143,7 @@ jobs:
         echo "filter=$filter"
         echo "filter=$filter" >> $GITHUB_OUTPUT
 
-    - name: Test Backend (with Coverage)
-      if: ${{ inputs.run_sonar }}
-      run: |
-        dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include="[Lighthouse]*" RunConfiguration.MaxCpuCount=0
-
-    - name: Test Backend (without Coverage)
-      if: ${{ !inputs.run_sonar }}
+    - name: Test Backend
       run: |
         dotnet test -c Release --no-build --no-restore ./Lighthouse.Backend --filter "${{ steps.filter.outputs.filter }}" --logger trx -- RunConfiguration.MaxCpuCount=0
 
@@ -196,7 +188,8 @@ jobs:
         name: sonar-report-backend
         path: .sonarqube/out/.sonar/report-task.txt
 
-    # Warn only until the backend budget has held on post-push main runs without a warning.
+    # Warn only until the backend budget has held on post-push main runs without a warning. The limits are
+    # in coverage-run seconds, so they are looser on a plain run until they are measured on one.
     - name: Check test-time budget
       run: |
         python3 --version
