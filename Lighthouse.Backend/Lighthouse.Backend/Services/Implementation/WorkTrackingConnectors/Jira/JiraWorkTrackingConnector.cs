@@ -1181,9 +1181,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             var root = boardsJson.RootElement;
 
-            if (!root.TryGetProperty("values", out var valuesElement))
+            if (!root.TryGetProperty("values", out var valuesElement) || valuesElement.ValueKind != JsonValueKind.Array)
             {
-                return boards;
+                throw new InvalidOperationException("The board list answer carries no 'values' array.");
             }
 
             foreach (var boardElement in valuesElement.EnumerateArray())

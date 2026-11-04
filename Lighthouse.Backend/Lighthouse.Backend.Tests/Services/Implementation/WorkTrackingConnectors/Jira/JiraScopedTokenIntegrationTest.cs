@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        public async Task GetBoards_ReturnsCorrectBoards()
+        public async Task GetBoards_WithAScopedToken_FailsAsUnreadableInsteadOfAnsweringEmpty()
         {
             var subject = CreateSubject();
             var connection = CreateWorkTrackingSystemConnection();

@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [TestFixture]
     public class JiraBoardReadFailureTest
     {
-        private const string PendingTheJiraBoardFix = "pending: a failed Jira board read still answers as empty";
-
         private const string BoardId = "8";
 
         private const string TheBoardsWorkItems = $"board/{BoardId}/issue";
@@ -101,6 +99,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(AGatewayPage)]
         [TestCase(ABoardListEntryWithoutAnId)]
+        [TestCase("{}")]
+        [TestCase("{\"errorMessages\":[]}")]
+        [TestCase("{\"values\":\"none\"}")]
         public async Task A_board_list_Lighthouse_cannot_read_says_so(string body)
         {
             var subject = AConnectorOver(AJira(boards: _ => Responding(HttpStatusCode.OK, body)));
