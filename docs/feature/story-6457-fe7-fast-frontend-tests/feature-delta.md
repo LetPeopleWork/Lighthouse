@@ -789,10 +789,11 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   300-row test removed with rows. Measured (indicative, not quiet, 5 alternating pairs): summed test seconds of the four
   files -34.5 % (the two edited files -65.7 %); allow-list 23 to 13.
 - **09 (slice 8).** What a save asks and the clearing of defaults extracted (`whatASaveAsks.ts`,
-  `defaultsKeepingOnlyFields.ts`) with 79 direct tests covering every default of every tracker type's set; 23 form tests
-  removed with rows, two kept as renders because breaking the component's call of the function left everything else green
-  (22 call sites broken once each, none uncaught at close). Measured (indicative, not quiet, 5 alternating pairs): summed
-  test seconds of the touched files -10.3 % (pairs 1 to 4: -22.6 %; pair 5 ran at load 12); allow-list 13 to 13.
+  `defaultsKeepingOnlyFields.ts`) with 79 direct tests covering every default of every tracker type's set; 20 form tests
+  removed with rows, five kept as renders (two because breaking the component's call of the function left everything else
+  green, three because no other test opened the Add Field dialog on a cancelled add or a deleted new row); 22 call sites
+  broken once each plus 10 logic mutants, none uncaught at close. Measured (indicative, not quiet, 5 alternating pairs):
+  summed test seconds of the touched files -21.3 % (99 tests to 164); allow-list 13 to 13.
 - **10 (slice 9).** No extraction needed (`contextGridLayout` was already exported): 65 of the 108 context cases moved to 88
   direct tests of that function, 43 stay as renders; each call-site setting proven by mutation. Measured (indicative, not
   quiet, 5 alternating pairs): summed test seconds of the touched files -63.3 %; allow-list 13 to 13.

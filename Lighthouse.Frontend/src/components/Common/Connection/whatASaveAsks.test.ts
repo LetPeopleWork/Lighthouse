@@ -412,7 +412,13 @@ describe("whyUpdate", () => {
 					withFollowers({ featureOwnerFieldForPortfolios: 2 }),
 					"Epic",
 				),
-			).toMatchObject({ defaults: ["Epic Owner Field"] });
+			).toEqual({
+				because: "defaults",
+				teams: 0,
+				portfolios: 2,
+				defaults: ["Epic Owner Field"],
+				changes: ["owners"],
+			});
 		});
 
 		it("names each label once when the Teams' and the Portfolios' defaults of one kind both changed", () => {
@@ -448,19 +454,37 @@ describe("whyUpdate", () => {
 					}),
 					"Feature",
 				),
-			).toMatchObject({
+			).toEqual({
+				because: "defaults",
+				teams: 0,
+				portfolios: 6,
 				defaults: ["Dependency Field", "Size Estimate Field"],
 				changes: ["dependencies", "sizes"],
 			});
 		});
 
 		it.each([
-			["parentOverrideForPortfolios", "dependencyFieldForPortfolios"],
-			["dependencyFieldForPortfolios", "sizeEstimateFieldForPortfolios"],
-			["sizeEstimateFieldForPortfolios", "featureOwnerFieldForPortfolios"],
+			[
+				"parentOverrideForPortfolios",
+				"dependencyFieldForPortfolios",
+				["Parent Override Field", "Dependency Field"],
+				["parents", "dependencies"],
+			],
+			[
+				"dependencyFieldForPortfolios",
+				"sizeEstimateFieldForPortfolios",
+				["Dependency Field", "Size Estimate Field"],
+				["dependencies", "sizes"],
+			],
+			[
+				"sizeEstimateFieldForPortfolios",
+				"featureOwnerFieldForPortfolios",
+				["Size Estimate Field", "Feature Owner Field"],
+				["sizes", "owners"],
+			],
 		] as const)(
 			"counts 3 Portfolios following both %s and %s once",
-			(first, second) => {
+			(first, second, labels, changes) => {
 				expect(
 					whyUpdate(
 						false,
@@ -472,7 +496,13 @@ describe("whyUpdate", () => {
 						),
 						"Feature",
 					),
-				).toMatchObject({ teams: 0, portfolios: 3 });
+				).toEqual({
+					because: "defaults",
+					teams: 0,
+					portfolios: 3,
+					defaults: labels,
+					changes,
+				});
 			},
 		);
 
@@ -498,7 +528,13 @@ describe("whyUpdate", () => {
 					),
 					"Feature",
 				),
-			).toMatchObject({ teams: 0, portfolios: 3 });
+			).toEqual({
+				because: "defaults",
+				teams: 0,
+				portfolios: 3,
+				defaults: ["Parent Override Field"],
+				changes: ["parents"],
+			});
 		});
 
 		it("leaves out a group that follows another default only", () => {
@@ -518,7 +554,13 @@ describe("whyUpdate", () => {
 					),
 					"Feature",
 				),
-			).toMatchObject({ teams: 0, portfolios: 2 });
+			).toEqual({
+				because: "defaults",
+				teams: 0,
+				portfolios: 2,
+				defaults: ["Dependency Field"],
+				changes: ["dependencies"],
+			});
 		});
 
 		it("treats every default as its own group of that size when the server sends no groups", () => {
@@ -533,10 +575,16 @@ describe("whyUpdate", () => {
 					}),
 					"Feature",
 				),
-			).toMatchObject({ teams: 3, portfolios: 2 });
+			).toEqual({
+				because: "defaults",
+				teams: 3,
+				portfolios: 2,
+				defaults: ["Parent Override Field", "Dependency Field"],
+				changes: ["parents", "dependencies"],
+			});
 		});
 
-		it("covers every default the connection can offer in one table", () => {
+		it("names each label of the defaults read while updating once", () => {
 			const updating = ConnectionDefaultNames.filter(
 				(name) => !name.startsWith("estimation"),
 			);
@@ -548,13 +596,17 @@ describe("whyUpdate", () => {
 					withFollowers(Object.fromEntries(updating.map((name) => [name, 1]))),
 					"Feature",
 				),
-			).toMatchObject({
+			).toEqual({
+				because: "defaults",
+				teams: 1,
+				portfolios: 4,
 				defaults: [
 					"Parent Override Field",
 					"Dependency Field",
 					"Size Estimate Field",
 					"Feature Owner Field",
 				],
+				changes: ["parents", "dependencies", "sizes", "owners"],
 			});
 		});
 	});
@@ -613,7 +665,12 @@ describe("whyUpdate", () => {
 					),
 					"Feature",
 				),
-			).toMatchObject({ defaults: 2, teams: 1, portfolios: 1 });
+			).toEqual({
+				because: "estimation",
+				teams: 1,
+				portfolios: 1,
+				defaults: 2,
+			});
 		});
 	});
 
@@ -626,6 +683,12 @@ describe("whyUpdate", () => {
 				withFollowers({ parentOverrideForTeams: 3, estimationForTeams: 4 }),
 				"Feature",
 			),
-		).toMatchObject({ because: "defaults", teams: 3, portfolios: 0 });
+		).toEqual({
+			because: "defaults",
+			teams: 3,
+			portfolios: 0,
+			defaults: ["Parent Override Field"],
+			changes: ["parents"],
+		});
 	});
 });

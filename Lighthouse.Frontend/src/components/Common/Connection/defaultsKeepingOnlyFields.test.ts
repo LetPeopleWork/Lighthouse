@@ -63,13 +63,21 @@ describe("defaultsKeepingOnlyFields", () => {
 		);
 	});
 
-	it("leaves a default that names no field as it is", () => {
+	it("leaves a default that names no field as it is, and keeps the ones whose field is there", () => {
 		expect(
 			defaultsKeepingOnlyFields(
-				{ parentOverrideForTeams: null, estimationForTeams: null },
-				[],
+				{
+					parentOverrideForTeams: null,
+					parentOverrideForPortfolios: 12,
+					estimationForTeams: inPoints,
+				},
+				[field(12), field(13)],
 			),
-		).toEqual({ parentOverrideForTeams: null, estimationForTeams: null });
+		).toEqual({
+			parentOverrideForTeams: null,
+			parentOverrideForPortfolios: 12,
+			estimationForTeams: inPoints,
+		});
 	});
 
 	it("returns no defaults for none", () => {

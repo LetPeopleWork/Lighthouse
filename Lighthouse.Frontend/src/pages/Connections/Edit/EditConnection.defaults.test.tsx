@@ -34,7 +34,7 @@ import EditConnectionPage from "./EditConnection";
  * who; the names go to the log. Nobody following means no question at all.
  *
  * The page is real down to its editors; only the server, the router and the usage data reporter are
- * stand-ins. Each scenario is skipped until DELIVER builds the slice it belongs to.
+ * stand-ins.
  */
 
 const { mockNavigate, reportUsage, route } = vi.hoisted(() => ({

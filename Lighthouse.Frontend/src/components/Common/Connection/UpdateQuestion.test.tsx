@@ -84,6 +84,13 @@ describe("UpdateQuestion", () => {
 				says: `1 Portfolio follows the Parent Override Field default. ${UntilUpdated}`,
 			},
 			{
+				case: "three Portfolios",
+				terms: TheDefaultWords,
+				why: theDefaultsChanged(0, 3),
+				title: "Update 0 Teams and 3 Portfolios?",
+				says: `3 Portfolios follow the Parent Override Field default. ${UntilUpdated}`,
+			},
+			{
 				case: "Teams and Portfolios",
 				terms: TheDefaultWords,
 				why: theDefaultsChanged(3, 2),

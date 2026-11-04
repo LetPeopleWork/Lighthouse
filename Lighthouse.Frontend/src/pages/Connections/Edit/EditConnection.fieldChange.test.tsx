@@ -111,6 +111,14 @@ const TheDefaultWords: Words = {
 	portfolios: "Portfolios",
 };
 
+const SquadsAndPrograms: Words = {
+	team: "Squad",
+	teams: "Squads",
+	portfolio: "Program",
+	portfolios: "Programs",
+};
+
+// Dialogs open and close without animating, so a dialog that closes has left the page by the next tick.
 // Dialogs open and close without animating, so a dialog that closes has left the page by the next tick.
 const NoAnimations = createTheme({
 	transitions: { duration: { enteringScreen: 0, leavingScreen: 0 } },
@@ -291,6 +299,9 @@ const whenPriyaRenamesStoryPoints = async () => {
 	fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 	await theFieldDialogCloses();
 };
+
+const theRowOf = (displayName: string) =>
+	screen.getByText(displayName).closest("li") as HTMLElement;
 
 const whenPriyaRemovesStoryPoints = () =>
 	fireEvent.click(screen.getByRole("button", { name: "delete" }));
@@ -490,6 +501,18 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			expect(screen.getByDisplayValue(NordwindJiraDc)).toBeInTheDocument();
 		});
 
+		it("the explanation names the Teams and Portfolios in the words this instance uses", async () => {
+			await givenPriyaOpensNordwindJiraDc({ words: SquadsAndPrograms });
+			await whenPriyaAddsFixVersions();
+
+			whenPriyaPressesSave();
+
+			const question = await theQuestion("Update 4 Squads and 2 Programs?");
+			expect(question).toHaveTextContent(
+				"You changed the Additional Fields. Their values only fill in once each Squad and Program on this connection has been updated.",
+			);
+		});
+
 		it("changing a field no longer promises it will load with the next refresh", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 
@@ -563,6 +586,32 @@ describe("changing a connection's Additional Fields asks whether to update its T
 				await thenSheIsBackOnTheOverview();
 			},
 		);
+
+		it("a field Priya started to add and then cancelled asks no question", async () => {
+			const server = await givenPriyaOpensNordwindJiraDc();
+			fireEvent.click(screen.getByRole("button", { name: "Add Field" }));
+			const dialog = await fillTheFieldDialog(FixVersions, "fixVersions");
+			fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+			await theFieldDialogCloses();
+
+			whenPriyaPressesSave();
+
+			await thenTheConnectionIsSavedWith(server, StoryPoints);
+			thenNoQuestionIsAsked();
+		});
+
+		it("a field Priya added and removed again before saving asks no question", async () => {
+			const server = await givenPriyaOpensNordwindJiraDc();
+			await whenPriyaAddsFixVersions();
+			fireEvent.click(
+				within(theRowOf(FixVersions)).getByRole("button", { name: "delete" }),
+			);
+
+			whenPriyaPressesSave();
+
+			await thenTheConnectionIsSavedWith(server, StoryPoints);
+			thenNoQuestionIsAsked();
+		});
 
 		// Stored values and rules hang off a field's id, and the server gives a field that comes back
 		// under a new id a fresh one, so it loads it again even though its name and reference are as before.

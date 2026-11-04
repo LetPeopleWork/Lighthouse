@@ -86,7 +86,7 @@ condition above).
 ### Allow-list entries (`src/tests/timeBudget/slowTests.ts`) belonging to these files
 
 None (grep for the four file names and the directories: no entry). Nothing to delete or lower. No real wait in the four
-files either (one zero-delay `setTimeout` flush, `theNextTick`, at `EditConnection.fieldChange.test.tsx:400`, stays).
+files either (one zero-delay `setTimeout` flush, `theNextTick`, in `EditConnection.fieldChange.test.tsx`, stays).
 
 ## Classification of every test of the two Edit page files
 
@@ -244,7 +244,8 @@ leave about 6 s of summed test time on the table and the question logic still pr
 ## Delta
 
 Commits (pre-slice `608f3017f`): `f959554ee` extraction (no test file changed; the 275 tests of the two directories passed
-unmodified at it), `65b9bfd4b` test rewrite; this report is the close-report commit. Files changed since the pre-slice
+unmodified at it), `65b9bfd4b` test rewrite, `73b296192` first close report; the revision after the review (three renders restored,
+function tests tightened, logic mutants, ids-after list, re-measured timing) is the commit that carries this text. Files changed since the pre-slice
 commit (`git diff --name-only 608f3017f`, apart from this report, the declaration and `feature-delta.md`):
 `whatASaveAsks.ts` (new), `defaultsKeepingOnlyFields.ts` (new), `ModifyConnectionSettings.tsx`, `whatASaveAsks.test.ts`
 (new), `defaultsKeepingOnlyFields.test.ts` (new), `EditConnection.defaults.test.tsx`, `EditConnection.fieldChange.test.tsx`,
@@ -258,49 +259,63 @@ was needed for Biome.
 
 | Measure | Before | After |
 |---|---|---|
-| Test count, the five files (defaults, fieldChange, UpdateQuestion, plus the two new) | 99 | 160 (28 + 29 + 24 + 68 + 11) |
-| Ids of the four-file preserved set | 137 | 114 (23 missing, all in the table below; 114 unchanged) |
-| Ids declared to leave | 25 | 23 (two stay, see "Deviations") |
+| Test count, the five files (defaults, fieldChange, UpdateQuestion, plus the two new) | 99 | 164 (31 + 29 + 25 + 68 + 11) |
+| Ids of the four-file preserved set | 137 | 117 (20 missing, all in the table below; 117 unchanged; list saved as `slice-08-ids-after.txt`, a set diff against `slice-08-ids-before.txt` shows only those 20 removed and none added) |
+| Ids declared to leave | 25 | 20 (five stay, see "Deviations") |
 | `expect(` removed / added, `EditConnection.defaults.test.tsx` | n/a | 8 / 0 |
-| `expect(` removed / added, `EditConnection.fieldChange.test.tsx` | n/a | 3 / 0 |
-| `expect(` removed / added, `UpdateQuestion.test.tsx` | n/a | 0 / 0 (a case table added; its one `expect(` is the existing shape) |
+| `expect(` removed / added, `EditConnection.fieldChange.test.tsx` | n/a | 2 / 0 |
+| `expect(` removed / added, `UpdateQuestion.test.tsx` | n/a | 0 / 1 (the added "fields" case table has one `expect(`; the pin case for 3 Portfolios is a row of the existing table) |
 | Line coverage, both directories | 90.51 | 90.54 |
 | Branch coverage, both directories | 82.50 | 82.72 |
 | Statements / functions, both directories | 89.59 / 87.50 | 89.62 / 87.56 |
-| File time, the touched files (indicative (not quiet); summed test seconds, 5 alternating pairs) | 90.32 s | 81.05 s (-10.3 %; pairs 1 to 4: 71.76 s to 55.56 s, -22.6 %) |
+| File time, the touched files (indicative (not quiet); summed test seconds, 5 alternating pairs) | 92.14 s | 72.49 s (-21.3 %) |
 | Allow-list length (`slowTests.ts`) | 13 | 13 (no entry belongs to these files; file untouched) |
 
 Time: five alternating before/after pairs back to back, `LIGHTHOUSE_TEST_WORKERS=2` both sides, only the touched test
 files (before = `EditConnection.defaults`, `EditConnection.fieldChange` and `UpdateQuestion` tests from a temporary
 worktree of `608f3017f`; after = the same three plus the two new files), the sum of per-test durations from the JSON report.
-Indicative (not quiet): load average 3 to 5 for pairs 1 to 4; pair 5 after ran while another session pushed the load to 12.
+Indicative (not quiet): load average 3 to 6.5 over the ten runs (pair 1 before was the highest, 6.5); no pair ran under
+clearly higher load than the rest, so all five are in the sum. Measured again after the review revision restored three
+renders. The first measurement, before the restores (164 tests were then 160), is kept for the record: pairs 1 to 4 gave
+71.76 s to 55.56 s (-22.6 %); its pair 5 "after" ran while another session pushed the load to 12 (25.49 s) and set the
+sum to 90.32 s against 81.05 s (-10.3 %), which is why it was measured again.
 
-| Pair | Before (s, 99 tests) | After (s, 160 tests) |
+| Pair | Before (s, 99 tests) | After (s, 164 tests) |
 |---|---|---|
-| 1 | 17.83 | 13.54 |
-| 2 | 17.95 | 14.40 |
-| 3 | 17.63 | 13.62 |
-| 4 | 18.35 | 14.00 |
-| 5 | 18.56 | 25.49 (load 12) |
-| Sum | 90.32 | 81.05 |
+| 1 | 18.30 | 14.62 |
+| 2 | 18.79 | 14.67 |
+| 3 | 18.39 | 13.94 |
+| 4 | 18.11 | 15.01 |
+| 5 | 18.55 | 14.25 |
+| Sum | 92.14 | 72.49 |
 
 The saving is smaller than the 6 s of 26 s the declaration expected for the same reason as the spread: the two edited page
-files carried 15 and 10 ids at 0.18 to 0.30 s, and a render per id was all they cost; the whole wizard (7 s) and the 28 + 27
+files carried 15 and 10 ids at 0.18 to 0.30 s, and a render per id was all they cost; the whole wizard (7 s) and the 31 + 27
 wiring tests stay.
 
-Coverage: directory run as in the "Coverage (before)" section, 17 files, 336 tests passed. `whatASaveAsks.ts` is at 96 %
+Coverage: directory run as in the "Coverage (before)" section, 17 files, 340 tests passed. `whatASaveAsks.ts` is at 96 %
 statements (uncovered: lines 55 and 84, the `label` of `estimationForTeams` and `estimationForPortfolios`, which the
 form's Estimation rows never ask for).
 
 ### Deviations
 
-1. Two of the declared 25 ids stay as renders, because breaking the component's call of the extracted function left every
-   other test green until they were put back (see the mutation table):
+1. Five of the declared 25 ids stay as renders. Two because breaking the component's call of the extracted function left
+   every other test green until they were put back (see the mutation table):
    - `... a followed Estimation default left as it was asks nothing when another default changes` (row 11): the only test
      that fails when `changedEstimationDefaultsWithFollowers` is called without the loaded defaults (mutation 6).
    - `... a changed featureOwnerFieldForPortfolios default 2 Portfolios follow asks whether to update them` (row 4): the
      `it.each` of four defaults shrank to its one `featureOwnerFieldForPortfolios` row, which is the only one that fails when
      `whyUpdate` is given another word for Feature (mutation 10). The expect line is unchanged; three of its four rows left.
+   Three more after the review, with their original ids and bodies: the review found that the cancelled add and the
+   added-and-removed field were the only tests that opened the Add Field dialog on that path, so no test covered a cancelled add
+   or a deleted new row (the editor state, not an extracted function):
+   - `... a field Priya started to add and then cancelled asks no question` and `... a field Priya added and removed again
+     before saving asks no question` (rows 7 and 8). With a cancelled add that keeps the field (`handleCancelEdit` calling
+     `onChange([...fields, editingField])`) the first fails and only it; with a delete that leaves the new row
+     (`f.id !== fieldToDelete.id || f.id < 0`) the second fails and only it. The file was restored after each.
+   - `... the explanation names the Teams and Portfolios in the words this instance uses` (row 6), restored with its
+     `SquadsAndPrograms` words: it costs about 0.2 s, and it is the only page test with the renamed words; the same wording is
+     also pinned in `UpdateQuestion.test.tsx` with a mocked terminology hook.
 2. The other rows of the declaration hold unchanged. Function cases are more numerous than the "about 40" expected (68 + 11),
    because every default of the table is asserted by name; they add about 0.1 s.
 
@@ -362,12 +377,40 @@ Every other call-site argument that matters is in the table; none is caught by n
 | fieldChange :: ... with one Squad and one Program ... | same, case `one Squad and one Program` | `Update 1 Squad and 1 Program?` |
 | fieldChange :: ... with no Portfolio ... | same, case `no Portfolio`; usage `{3, 0}` in `whyUpdate` | `Update 3 Teams and 0 Portfolios?` |
 | fieldChange :: ... with no Team ... | same, case `no Team`; usage `{0, 2}` in `whyUpdate` | `Update 0 Teams and 2 Portfolios?` |
-| fieldChange :: ... the explanation names the Teams and Portfolios in the words this instance uses | `UpdateQuestion.test.tsx` case `Squads and Programs` (description) | the full sentence with `Squad and Program`; the kept wiring test `adding a field and pressing Save asks ...` proves the counts reach it |
-| fieldChange :: ... a field Priya started to add and then cancelled asks no question | `whatASaveAsks.test.ts` `fieldsChangedSince ... nothing changed is no change` | false; the wiring tests `a save with only a new name` and `a new API token` keep "no question" on a render, and mutation 1 fails them |
-| fieldChange :: ... a field Priya added and removed again before saving asks no question | same | same |
 | fieldChange :: ... swapping the names and references of two fields asks the question | `fieldsChangedSince ... the names and references of two fields swapped is a change` | true; the id is part of the compared key (`... back under a new id ...`) |
 | fieldChange :: ... a field change on a connection no Team or Portfolio uses is saved straight away without a question | `whyUpdate ... asks nothing on a connection no Team or Portfolio uses` | null |
 
-`expect(` lines: `EditConnection.defaults.test.tsx` lost 8 (the loop `expect` of the `it.each` of four stays, three rows left),
-`EditConnection.fieldChange.test.tsx` lost 3. The tests that left without an `expect(` line of their own used the helpers
+`expect(` lines: `EditConnection.defaults.test.tsx` lost 8 (the loop `expect` of the `it.each` of four stays, one row is left of the
+four), `EditConnection.fieldChange.test.tsx` lost 2. The one test that left without an `expect(` line of its own used the helpers
 `thenTheConnectionIsSavedWith` and `thenNoQuestionIsAsked`, which stay.
+
+Notes on what the page still proves:
+- The renamed words in the question (`Squad`, `Program`, `Epic`) are pinned in `UpdateQuestion.test.tsx` with a mocked
+  terminology hook, and by the one restored page test for the Additional Fields explanation; no other page test covers them.
+- The Estimation "nobody follows" page path (the removed `a changed Estimation default nobody follows saves without asking
+  anything`) is proven by the direct test `leaves out a changed Estimation default nobody follows` plus the shared call
+  wiring: the wiring test `a default nobody follows saves without asking anything` goes through the same `whyUpdate` call, and
+  mutations 7 and 8 fail the Estimation render that stays.
+
+### Logic mutants inside the extracted files
+
+Broken once by hand, the three function test files run (`whatASaveAsks`, `defaultsKeepingOnlyFields`, `UpdateQuestion`), file
+restored after each.
+
+| File | Mutant | Failed | First failing test |
+|---|---|---|---|
+| `whatASaveAsks.ts` | `followersIn` counts per changed default instead of per group | 4 | `whyUpdate ... counts 3 Portfolios following both ... once` |
+| `whatASaveAsks.ts` | `sameEstimation` ignores the unit | 1 | `changedEstimationDefaultsWithFollowers sees another unit as a change` |
+| `whatASaveAsks.ts` | `sameEstimation` ignores the category values | 1 | `... sees other category values as a change` |
+| `whatASaveAsks.ts` | null and undefined defaults compared as different | 2 | `... counts unset becoming null as no change` |
+| `whatASaveAsks.ts` | a changed field asks even when nobody uses the connection | 2 | `whyUpdate ... asks nothing on a connection no Team or Portfolio uses` |
+| `whatASaveAsks.ts` | the field key leaves the id out | 2 | `fieldsChangedSince ... back under a new id ...` |
+| `whatASaveAsks.ts` | a default with no followers counted (`> 0` to `>= 0`) | 3 | `... leaves out a changed default nobody follows, though others have followers` |
+| `defaultsKeepingOnlyFields.ts` | every default written as null | 4 | `clears a default whose field is no longer in the list and leaves the others as they were` |
+| `defaultsKeepingOnlyFields.ts` | no default ever cleared | 8 | same |
+| `defaultsKeepingOnlyFields.ts` | a default naming no field cleared too (`!kept.has(fieldId)` for a null) | 0 | equivalent: a null default is written back as null |
+
+The test `leaves a default that names no field as it is` now also holds a default whose field is there, so the
+"always null" mutant fails it too. Where the removed page tests asserted wording, the function tests compare the whole
+result with `toEqual` (`because`, counts, `defaults`, `changes`); the single-default sentence `3 Portfolios follow the Parent
+Override Field default.` is pinned in `UpdateQuestion.test.tsx`.
