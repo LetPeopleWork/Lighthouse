@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -36,6 +37,7 @@ namespace Lighthouse.Backend.Tests.API
         [
             new InvalidOperationException("no database to ask"),
             new SqliteException("no database to ask", 1),
+            new DbUpdateException("the first sign-in could not be saved"),
         ];
 
         private Mock<ILicenseService> licenseServiceMock;
@@ -381,13 +383,7 @@ namespace Lighthouse.Backend.Tests.API
         {
             var logger = new Mock<ILogger<LicenseController>>();
 
-            rbacMock
-                .Setup(rbac => rbac.CanSatisfyRequirementAsync(
-                    It.IsAny<ClaimsPrincipal>(),
-                    RbacGuardRequirement.SystemAdmin,
-                    It.IsAny<int?>(),
-                    It.IsAny<CancellationToken>()))
-                .ThrowsAsync(reason);
+            TheAdministratorCheckThrows(reason);
 
             licenseServiceMock.Setup(s => s.GetLicenseData()).Returns((ALicense(), true));
 
@@ -431,6 +427,40 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(answered.LicenseNumber, Is.Null);
                 Assert.That(answered.ExpiryDate, Is.EqualTo(ALicense().ExpiryDate));
             }
+        }
+
+        [TestCaseSource(nameof(ReasonsTheCheckCouldNotBeMade))]
+        public async Task ImportLicense_TheAdministratorCheckCouldNotBeMade_AnswersTheStoredLicenseWithoutTheDetails(Exception reason)
+        {
+            TheAdministratorCheckThrows(reason);
+            licenseServiceMock.Setup(s => s.ImportLicense("{}")).ReturnsAsync(ALicense());
+            licenseServiceMock.Setup(s => s.GetLicenseData()).Returns((ALicense(), true));
+
+            var result = await subject.ImportLicense(CreateMockFormFile("license.json", "{}"));
+
+            Assert.That(result, Is.InstanceOf<OkObjectResult>(), "the licence is stored, so the import succeeded");
+
+            var answered = (LicenseStatusDto)((OkObjectResult)result).Value!;
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answered.Name, Is.Null);
+                Assert.That(answered.Email, Is.Null);
+                Assert.That(answered.Organization, Is.Null);
+                Assert.That(answered.LicenseNumber, Is.Null);
+                Assert.That(answered.ExpiryDate, Is.EqualTo(ALicense().ExpiryDate));
+            }
+        }
+
+        [Test]
+        public async Task ImportLicense_TheStatusAnswerFailsAfterTheLicenseIsStored_IsNotReportedAsAFailedImport()
+        {
+            TheAdministratorCheckThrows(new NotSupportedException("not a failure of the import"));
+            licenseServiceMock.Setup(s => s.ImportLicense("{}")).ReturnsAsync(ALicense());
+            licenseServiceMock.Setup(s => s.GetLicenseData()).Returns((ALicense(), true));
+
+            await Assert.ThrowsAsync<NotSupportedException>(
+                () => subject.ImportLicense(CreateMockFormFile("license.json", "{}")));
         }
 
         [Test]
@@ -480,6 +510,17 @@ namespace Lighthouse.Backend.Tests.API
                     It.IsAny<int?>(),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(satisfied);
+        }
+
+        private void TheAdministratorCheckThrows(Exception reason)
+        {
+            rbacMock
+                .Setup(rbac => rbac.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    RbacGuardRequirement.SystemAdmin,
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(reason);
         }
 
         private LicenseController CreateSubject(ClaimsPrincipal caller, ILogger<LicenseController>? logger = null)

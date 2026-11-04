@@ -70,13 +70,13 @@ namespace Lighthouse.Backend.API
                 {
                     return BadRequest("Invalid license file");
                 }
-
-                return await GetLicenseStatus(cancellationToken);
             }
             catch (Exception ex)
             {
                 return BadRequest($"Error processing license file: {ex.Message}");
             }
+
+            return await GetLicenseStatus(cancellationToken);
         }
 
         [HttpDelete]

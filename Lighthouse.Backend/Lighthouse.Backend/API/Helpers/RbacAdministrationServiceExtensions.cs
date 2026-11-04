@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
+using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 using System.Security.Claims;
 
@@ -35,7 +36,7 @@ namespace Lighthouse.Backend.API.Helpers
             // Said out loud on the way past. Withholding is the safe answer to a question that could not
             // be asked, but it is the same answer a genuine fault in the permission check would produce,
             // and an authorisation bug that only ever shows up as a missing row is one nobody reports.
-            catch (Exception couldNotBeAsked) when (couldNotBeAsked is DbException or InvalidOperationException)
+            catch (Exception couldNotBeAsked) when (couldNotBeAsked is DbException or DbUpdateException or InvalidOperationException)
             {
                 // Stryker disable once String: that this is said at warning level is the behaviour; the
                 // sentence is for whoever reads the log and is not something a test should freeze.
