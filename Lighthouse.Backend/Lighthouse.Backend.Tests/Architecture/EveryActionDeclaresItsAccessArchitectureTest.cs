@@ -20,6 +20,21 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void APublicMethodWithNoVerbUnderAClassRouteIsReported()
+        {
+            AssertReportedOnce<PublicMethodUnderAClassRoute>(nameof(PublicMethodUnderAClassRoute.AnswersAnyVerb));
+        }
+
+        [TestCase(typeof(SignedInOnlyAttribute))]
+        [TestCase(typeof(CheckedInHandlerAttribute))]
+        public void AMarkerCanSitOnlyOnAnAction(Type marker)
+        {
+            var usage = marker.GetCustomAttribute<AttributeUsageAttribute>();
+
+            Assert.That(usage?.ValidOn, Is.EqualTo(AttributeTargets.Method));
+        }
+
+        [Test]
         public void AuthorizeAloneDoesNotCount()
         {
             AssertReportedOnce<AuthorizeOnly>(nameof(AuthorizeOnly.Act));
@@ -53,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void AMarkerWithAGuardAtOneLevelIsRejected()
+        public void AMarkerWithAGuardOnTheActionIsRejected()
         {
             AssertReportedOnce<MarkerAndGuardOnTheAction>(nameof(MarkerAndGuardOnTheAction.Act));
         }
@@ -95,12 +110,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void AnActionGuardUnderAClassMarkerIsAccepted()
-        {
-            Assert.That(AccessRule.Violations([typeof(ActionGuardUnderClassMarker)]), Is.Empty);
-        }
-
-        [Test]
         public void StackedClassAndActionGuardsAreAccepted()
         {
             Assert.That(AccessRule.Violations([typeof(StackedGuards)]), Is.Empty);
@@ -133,9 +142,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .GetTypes()
                 .Where(type => typeof(ControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
                 .ToList();
-            var actionCount = controllers.Sum(controller => controller
-                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
-                .Count(method => method.GetCustomAttributes<Attribute>(inherit: true).OfType<IActionHttpMethodProvider>().Any()));
+            var actionCount = controllers.Sum(controller => AccessRule.ActionsOf(controller).Count());
 
             var reported = AccessRule.Violations(controllers);
 
@@ -159,6 +166,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             private const int MinimumReasonLength = 25;
 
+            private static readonly Type[] FrameworkTypes = [typeof(object), typeof(ControllerBase), typeof(Controller)];
+
             [GeneratedRegex(@"\{\*{0,2}([A-Za-z_][A-Za-z0-9_]*)")]
             private static partial Regex RouteParameter();
 
@@ -169,12 +178,13 @@ namespace Lighthouse.Backend.Tests.Architecture
                     .ToList();
             }
 
-            private static IEnumerable<MethodInfo> ActionsOf(Type controller)
+            public static IEnumerable<MethodInfo> ActionsOf(Type controller)
             {
                 return controller
                     .GetMethods(BindingFlags.Public | BindingFlags.Instance)
                     .Where(method => !method.IsDefined(typeof(NonActionAttribute), inherit: true))
-                    .Where(method => method.GetCustomAttributes<Attribute>(inherit: true).OfType<IActionHttpMethodProvider>().Any());
+                    .Where(method => !method.IsSpecialName)
+                    .Where(method => !FrameworkTypes.Contains(method.GetBaseDefinition().DeclaringType));
             }
 
             private static IEnumerable<string> Problems(Type controller, MethodInfo action)
@@ -183,22 +193,17 @@ namespace Lighthouse.Backend.Tests.Architecture
                 var onAction = action.GetCustomAttributes<Attribute>(inherit: true).ToList();
                 var onEither = onClass.Concat(onAction).ToList();
 
-                return DeclarationProblems(onClass, onAction, onEither)
-                    .Concat(ReasonProblems(onEither))
+                return DeclarationProblems(onAction, onEither)
+                    .Concat(ReasonProblems(onAction))
                     .Concat(ScopeKeyProblems(onEither))
                     .Select(problem => $"{controller.Name}.{action.Name}: {problem}");
             }
 
-            private static IEnumerable<string> DeclarationProblems(List<Attribute> onClass, List<Attribute> onAction, List<Attribute> onEither)
+            private static IEnumerable<string> DeclarationProblems(List<Attribute> onAction, List<Attribute> onEither)
             {
                 var guards = onEither.OfType<RbacGuardAttribute>().ToList();
-                var markers = onEither.OfType<AccessMarkerAttribute>().ToList();
+                var markers = onAction.OfType<AccessMarkerAttribute>().ToList();
                 var anonymous = onEither.OfType<AllowAnonymousAttribute>().Any();
-
-                var classHasGuard = onClass.OfType<RbacGuardAttribute>().Any();
-                var classHasMarker = onClass.OfType<AccessMarkerAttribute>().Any();
-                var actionHasGuard = onAction.OfType<RbacGuardAttribute>().Any();
-                var actionHasMarker = onAction.OfType<AccessMarkerAttribute>().Any();
 
                 if (!guards.Any(guard => guard.Check) && markers.Count == 0 && !anonymous)
                 {
@@ -220,20 +225,15 @@ namespace Lighthouse.Backend.Tests.Architecture
                     yield return "SignedInOnly and CheckedInHandler cannot both apply";
                 }
 
-                if ((classHasMarker && classHasGuard) || (actionHasMarker && actionHasGuard))
+                if (markers.Count > 0 && guards.Count > 0)
                 {
-                    yield return "a marker and an RbacGuard sit at the same level";
-                }
-
-                if (actionHasMarker && classHasGuard)
-                {
-                    yield return "a class-level RbacGuard still runs under an action-level marker";
+                    yield return "an RbacGuard, on the action or on its class, still runs under a marker";
                 }
             }
 
-            private static IEnumerable<string> ReasonProblems(List<Attribute> onEither)
+            private static IEnumerable<string> ReasonProblems(List<Attribute> onAction)
             {
-                return onEither
+                return onAction
                     .OfType<AccessMarkerAttribute>()
                     .Where(marker => marker.Reason.Trim().Length < MinimumReasonLength)
                     .Select(marker => $"the reason on {marker.GetType().Name} is blank or shorter than {MinimumReasonLength} characters");
@@ -362,14 +362,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             public string Act() => string.Empty;
         }
 
-        [SignedInOnly(AGoodReason)]
-        private class ActionGuardUnderClassMarker : ControllerBase
-        {
-            [RbacGuard]
-            [HttpGet]
-            public string Act() => string.Empty;
-        }
-
         [RbacGuard(RbacGuardRequirement.AnyScopedAdmin)]
         private class StackedGuards : ControllerBase
         {
@@ -404,7 +396,15 @@ namespace Lighthouse.Backend.Tests.Architecture
             [HttpGet("hidden")]
             public string Hidden() => string.Empty;
 
-            public string NotRoutedAtAll() => string.Empty;
+            public string AnAccessor => string.Empty;
+
+            public override string ToString() => string.Empty;
+        }
+
+        [Route("api/things")]
+        private class PublicMethodUnderAClassRoute : ControllerBase
+        {
+            public string AnswersAnyVerb() => string.Empty;
         }
     }
 }

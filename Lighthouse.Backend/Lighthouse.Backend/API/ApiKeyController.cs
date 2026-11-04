@@ -15,7 +15,6 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/apikeys")]
     [ApiController]
     [Authorize]
-    [CheckedInHandler("Each action works only on the caller's own API keys, and a new key may not carry broader rights than the caller holds.")]
     public class ApiKeyController(
         IApiKeyService apiKeyService,
         IRbacAdministrationService rbacAdministrationService) : ControllerBase
@@ -23,6 +22,7 @@ namespace Lighthouse.Backend.API
         /// <summary>
         /// Creates a new API key. The plaintext key is returned only once.
         /// </summary>
+        [CheckedInHandler("The new key belongs to the caller and may carry no right the caller lacks; a caller on a restricted key must name a scope within it.")]
         [HttpPost]
         [EnableRateLimiting(RateLimitingConfiguration.ApiKeysPolicy)]
         [ProducesResponseType<ApiKeyCreationResult>(StatusCodes.Status201Created)]
@@ -104,6 +104,7 @@ namespace Lighthouse.Backend.API
         /// <summary>
         /// Returns metadata for all API keys. Never includes the plaintext key or hash.
         /// </summary>
+        [CheckedInHandler("Lists only the API keys the caller owns, and never a key's plaintext or hash.")]
         [HttpGet]
         [ProducesResponseType<IEnumerable<ApiKeyInfo>>(StatusCodes.Status200OK)]
         public IActionResult GetApiKeys()
@@ -121,6 +122,7 @@ namespace Lighthouse.Backend.API
         /// <summary>
         /// Deletes an API key by ID.
         /// </summary>
+        [CheckedInHandler("Deletes only an API key the caller owns; any other id answers as if it did not exist.")]
         [HttpDelete("{id}")]
         [EnableRateLimiting(RateLimitingConfiguration.ApiKeysPolicy)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

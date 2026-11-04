@@ -20,7 +20,6 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/[controller]")]
     [ApiController]
     [Authorize]
-    [CheckedInHandler("Lists and work items answer only for Features the caller may read; moving a Feature needs write access to every Portfolio it belongs to, and the Feature it moves next to must be readable too.")]
     public class FeaturesController : ControllerBase
     {
         private readonly IFeatureRepository featureRepository;
@@ -67,6 +66,7 @@ namespace Lighthouse.Backend.API
         /// Every Feature the caller may read, across every Portfolio, in the order the forecast draws from.
         /// Free on every instance - this is the list every screen reads, not the paid re-ordering page.
         /// </summary>
+        [CheckedInHandler("Returns only the Features the caller may read and leaves out the rest.")]
         [HttpGet]
         public async Task<ActionResult<List<FeatureDto>>> GetAllFeatures()
         {
@@ -75,6 +75,7 @@ namespace Lighthouse.Backend.API
             return Ok(features);
         }
 
+        [CheckedInHandler("Returns only those of the named Features the caller may read and leaves out the rest.")]
         [HttpGet("ids")]
         public async Task<ActionResult<List<FeatureDto>>> GetFeatureDetailsById([FromQuery] List<int> featureIds)
         {
@@ -88,6 +89,7 @@ namespace Lighthouse.Backend.API
             return Ok(featureDetails);
         }
 
+        [CheckedInHandler("Returns only those of the named Features the caller may read and leaves out the rest.")]
         [HttpGet("references")]
         public async Task<ActionResult<List<FeatureDto>>> GetFeatureDetailsByReference([FromQuery] List<string> featureReferences)
         {
@@ -101,6 +103,7 @@ namespace Lighthouse.Backend.API
             return Ok(featureDetails);
         }
 
+        [CheckedInHandler("A Feature the caller may not read answers as if it did not exist, so its work items stay out of reach.")]
         [HttpGet("{featureId:int}/workitems")]
         public async Task<ActionResult<List<WorkItemDto>>> GetFeatureWorkItems(int featureId)
         {
@@ -128,6 +131,7 @@ namespace Lighthouse.Backend.API
         /// Bottom, and "above/below a named Feature" — arrives here, because they differ only in which row
         /// the client names as the target.
         /// </summary>
+        [CheckedInHandler("Needs write access to every Portfolio the Feature belongs to; a Feature or target the caller may not read answers as if it did not exist.")]
         [HttpPatch("{featureId:int}/rank")]
         [LicenseGuard(RequirePremium = true)]
         public async Task<ActionResult> MoveFeature(int featureId, [FromBody] JsonElement move)

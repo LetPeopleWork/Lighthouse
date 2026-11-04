@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/deliveries/{deliveryId:int}/notes")]
     [Route("api/latest/deliveries/{deliveryId:int}/notes")]
     [ApiController]
-    [CheckedInHandler("Each action looks up the Portfolio of the Delivery and requires read access to it, or write access to change notes; only its author may edit or delete a signed note.")]
     public class DeliveryNotesController(
         LighthouseAppContext context,
         IDeliveryRepository deliveryRepository,
@@ -25,6 +24,7 @@ namespace Lighthouse.Backend.API
         ILighthouseClock clock)
         : ControllerBase
     {
+        [CheckedInHandler("Looks up the Portfolio of the Delivery and requires read access to it.")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<DeliveryNoteDto>>> GetNotes(int deliveryId)
         {
@@ -45,6 +45,7 @@ namespace Lighthouse.Backend.API
             return Ok(notes.Select(note => ToDto(note, currentAuthor)).ToList());
         }
 
+        [CheckedInHandler("Looks up the Portfolio of the Delivery and requires write access to it.")]
         [HttpPost]
         public async Task<ActionResult<DeliveryNoteDto>> AddNote(int deliveryId, [FromBody] DeliveryNoteRequest request)
         {
@@ -79,6 +80,7 @@ namespace Lighthouse.Backend.API
             return Ok(ToDto(note, author));
         }
 
+        [CheckedInHandler("Requires write access to the Portfolio of the Delivery, and only its author may edit a signed note.")]
         [HttpPut("{noteId:int}")]
         public async Task<ActionResult<DeliveryNoteDto>> UpdateNote(int deliveryId, int noteId, [FromBody] DeliveryNoteRequest request)
         {
@@ -115,6 +117,7 @@ namespace Lighthouse.Backend.API
             return Ok(ToDto(note, author));
         }
 
+        [CheckedInHandler("Requires write access to the Portfolio of the Delivery, and only its author may delete a signed note.")]
         [HttpDelete("{noteId:int}")]
         public async Task<IActionResult> DeleteNote(int deliveryId, int noteId)
         {

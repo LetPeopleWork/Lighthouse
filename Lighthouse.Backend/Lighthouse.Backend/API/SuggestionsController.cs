@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/[controller]")]
     [ApiController]
     [Authorize]
-    [CheckedInHandler("Each action offers suggestions only from the Teams or Portfolios the caller may read.")]
     public class SuggestionsController : ControllerBase
     {
         private readonly ILogger<SuggestionsController> logger;
@@ -32,6 +31,7 @@ namespace Lighthouse.Backend.API
             this.rbacAdministrationService = rbacAdministrationService;
         }
 
+        [CheckedInHandler("Offers only the work item types of the Teams the caller may read.")]
         [HttpGet("workitemtypes/teams")]
         public async Task<ActionResult<List<string>>> GetWorkItemTypesForTeams()
         {
@@ -46,6 +46,7 @@ namespace Lighthouse.Backend.API
             return Ok(workItemTypes.ToList());
         }
 
+        [CheckedInHandler("Offers only the work item types of the Portfolios the caller may read.")]
         [HttpGet("workitemtypes/projects")]
         public async Task<ActionResult<List<string>>> GetWorkItemTypesForProjects()
         {
@@ -60,6 +61,7 @@ namespace Lighthouse.Backend.API
             return Ok(workItemTypes.ToList());
         }
 
+        [CheckedInHandler("Offers only the states of the Teams the caller may read.")]
         [HttpGet("states/teams")]
         public async Task<ActionResult<StatesCollectionDto>> GetStatesForTeams()
         {
@@ -77,6 +79,7 @@ namespace Lighthouse.Backend.API
             return Ok(statesCollection);
         }
 
+        [CheckedInHandler("Offers only the states of the Portfolios the caller may read.")]
         [HttpGet("states/projects")]
         public async Task<ActionResult<StatesCollectionDto>> GetStatesForProjects()
         {
