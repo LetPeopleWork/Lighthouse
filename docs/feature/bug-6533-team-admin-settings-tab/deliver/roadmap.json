@@ -1,0 +1,156 @@
+{
+  "roadmap": {
+    "project_id": "bug-6533-team-admin-settings-tab",
+    "created_at": "2026-11-04T00:00:00Z",
+    "total_steps": 6
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Scoped admins load the Settings tab",
+      "description": "Give /summary what the settings forms read, load it in the Team and Portfolio Settings tabs, and prove it with a real scoped-admin session.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The connection summary carries the non-secret fields the settings forms read, for everyone who may read the full list",
+          "criteria": [
+            "GET /worktrackingsystemconnections/summary returns exactly six keys per connection for a Team Admin and a Portfolio Admin: id, name, workTrackingSystem, additionalFieldDefinitions, defaults, supportedDefaults",
+            "The key set is asserted as exact, not as contains, so a new field such as options or usage data fails the test",
+            "GET /worktrackingsystemconnections stays System Admin only: Team Admin and Portfolio Admin still get 403",
+            "Someone who may manage RBAC gets 200 on /summary even when the enforcement gate is not satisfied, as they already do on the full list",
+            "A Team Admin or Viewer gets the same answer as before in that gate state: the reorder widens nothing for them"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S2_ConnectionListPayloadShapeTests.cs",
+          "scenario_name": "S2_TeamAdmin_GetSummary_CarriesTheFieldsTheSettingsFormReads and S2_PortfolioAdmin_GetSummary_CarriesTheFieldsTheSettingsFormReads",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/WorkTrackingSystemConnectionSummaryDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S2_ConnectionListPayloadShapeTests.cs"
+          ],
+          "implementation_notes": "Bugfix flow: no DISTILL scaffold exists, so write the failing regression tests yourself in RED. Change AssertSummaryShape to the exact six-key set and rewrite the two existing ...Only tests (S2_TeamAdmin_GetSummary_Returns200WithIdNameAndWorkTrackingSystemOnly and its Portfolio twin), which pin the old contract. The existing S2_AnyCaller_ResponseBodyNeverContainsSecretValue_Regression cannot catch a leak through a new field, so the exact-key assertion is the real guard. Reuse AdditionalFieldDefinitionDto, ConnectionDefaultsDto and the SupportedDefaults construction from WorkTrackingSystemConnectionDto; do not duplicate the name-conversion logic. Confirm ConnectionDefaultsDto and AdditionalFieldDefinitionDto hold nothing secret. Gate fix: in CanSatisfyAnyScopedAdminAsync, check CanManageRbacAsync before IsEnforcementGateSatisfiedAsync, matching the SystemAdmin requirement. The gate fails when the premium licence has lapsed or no System Admin row exists, so cover the state your fixture can reach, for example an emergency subject or a lapsed licence. Backend test filter: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". Worktrees lack the gitignored licence fixture: exactly 2 Licensing failures are environmental."
+        },
+        {
+          "id": "01-02",
+          "name": "The Team and Portfolio Settings tabs load the connection summary",
+          "criteria": [
+            "With the full connection list rejecting with 403 and the summary resolving, the Team Settings form renders for a Team Admin with the Team's connection selected",
+            "With the same setup, the Portfolio Settings form renders for a Portfolio Admin with the Portfolio's connection selected",
+            "A System Admin still sees both forms with the connection selected",
+            "Additional-field pickers and the connection-default entries still offer their values from summary data",
+            "The Overview page and the connection, Team and Portfolio create and edit pages behave as before: the full-list read still calls the full list"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx",
+          "scenario_name": "a Team Admin whose full connection list is refused still sees the settings form; in PortfolioDetail.test.tsx: a Portfolio Admin whose full connection list is refused still sees the settings form",
+          "deps": [
+            "01-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.ts",
+            "Lighthouse.Frontend/src/services/Api/WorkTrackingSystemService.test.ts",
+            "Lighthouse.Frontend/src/services/Api/ResponseShapeGuard.test.ts",
+            "Lighthouse.Frontend/src/tests/MockApiServiceProvider.ts",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx"
+          ],
+          "implementation_notes": "Bugfix flow: write the failing regression tests yourself in RED. The mock setup is what makes them real: the full-list method must reject with an ApiError 403 and the summary method must resolve, so that reverting the wiring turns the test red. Do not catch the 403 or fall back to an empty list: a save would write connection id 0. The summary has no options or authentication fields, and the deserialiser passes options through as undefined into a model that types it as required. Default it safely, and trace every field the settings forms and their children read from a connection (GeneralSettingsComponent, connectionDefaultEntry, ModifyTeamSettings, ModifyProjectSettings, and the data-retrieval wizards). Report any field /summary lacks instead of silently dropping it. The deserialised summary needs the class instance, because forms call workTrackingSystemGetDataRetrievalDisplayName(). This worktree has no node_modules, so run pnpm install first. Run pnpm test and pnpm build; pnpm build rewrites files through Biome, so check git status afterwards."
+        },
+        {
+          "id": "01-03",
+          "name": "A real Team Admin and Portfolio Admin session reach the loaded Settings form",
+          "criteria": [
+            "In the @rbac spec, the Team Admin session opens its Team's Settings tab and sees the loaded form: the connection selector shows the seeded connection's name",
+            "In the same spec, the Portfolio Admin session does the same on its Portfolio's Settings tab",
+            "A visible tab alone does not satisfy the check, because the tab was visible while the bug was present",
+            "The check goes through page-object members, with no inline page.locator() in the spec"
+          ],
+          "test_file": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+          "scenario_name": "@rbac E2E",
+          "deps": [
+            "01-02"
+          ],
+          "files_to_modify": [
+            "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+            "Lighthouse.EndToEndTests/tests/models/teams/TeamDetailPage.ts",
+            "Lighthouse.EndToEndTests/tests/models/portfolios/PortfolioDetailPage.ts"
+          ],
+          "implementation_notes": "Keep this thin: extend the existing scoped sessions around lines 418-476 of the spec, do not add a new flow. Both page objects only have goToSettings(); add a settings-form accessor to each. The spec runs in ci_verifyauth.yml through pnpm run test:rbac. Try to run it locally, without the fix as well if you can, to see it fail first. The maintainer has agreed the first real run may be in CI if the identity provider cannot be started here: in that case commit it, and state plainly in your report that it has not been run. Never claim it passed. Run pnpm build in Lighthouse.EndToEndTests for Biome."
+        },
+        {
+          "id": "01-04",
+          "name": "A Portfolio Admin's save keeps an Owning Team they cannot read, and the enforcement gate goes back as it was",
+          "criteria": [
+            "A Portfolio Admin who cannot read the Portfolio's Owning Team reads the settings, saves them unchanged, and the Owning Team is still stored",
+            "Someone who can read the Owning Team can still clear it by saving no owner",
+            "Someone who can read the Owning Team can still change it",
+            "With RBAC off, clearing the Owning Team still works",
+            "CanSatisfyAnyScopedAdminAsync checks the enforcement gate before the right to manage RBAC, as it did before this fix"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+          "scenario_name": "UpdatePortfolio_OwningTeamTheCallerCannotRead_KeepsTheOwner",
+          "deps": [
+            "01-03"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs"
+          ],
+          "implementation_notes": "GetPortfolioSettings hides an owner the caller cannot read, the form sends that null back on every save, and SyncTeams then clears the owner. Fix on the write side in UpdatePortfolio: when the save names no owner and a stored owner exists that GetReadableTeamIdsAsync does not return for this caller, keep the stored owner. Keep the read filter and SyncTeams as they are. A null from GetReadableTeamIdsAsync means no filtering applies, so an explicit clear goes through. Revert the reorder from b3becc934 and remove CanSatisfyRequirementAsync_AnyScopedAdmin_LicenceLapsed_EmergencySubjectIsAllowed, because the Team and Portfolio read checks run the same gate first, so a System Admin cannot reach the tab in that state anyway. Keep the TeamAdminIsStillRefused test if it still says something true. The first test must round-trip: read as the caller, then save what was read."
+        },
+        {
+          "id": "01-05",
+          "name": "The real settings forms load and save from a summary-shaped connection",
+          "criteria": [
+            "The real ModifyTeamSettings renders with a summary-shaped connection, with no options and no authentication fields, and shows that connection selected",
+            "The real ModifyProjectSettings does the same",
+            "Saving from each real form sends that connection's id, not 0",
+            "The stand-in page tests are named for what they prove: which connection read the page asks for"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+          "scenario_name": "a connection read from the summary is selected and saved by its id",
+          "deps": [
+            "01-04"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx"
+          ],
+          "implementation_notes": "Tests only: the code they cover already exists, so they may pass at once. Prove each can fail by breaking the connection id or selection temporarily, and say so in your report. Build the connection the way getConnectionSummaries does, as a WorkTrackingSystemConnection instance from the six summary fields. If either test finds a real defect, stop and report it."
+        },
+        {
+          "id": "01-06",
+          "name": "The Owning Team survives a real save, whether or not it was loaded",
+          "criteria": [
+            "Against a real DbContext, a Portfolio Admin who cannot read the Owning Team reads and saves the settings, and the stored Owning Team is unchanged, both when that Team works one of the Portfolio's Features and when it works none",
+            "Against a real DbContext, someone who can read the Owning Team clears it by saving no owner, and it is cleared in the database, in both of those cases",
+            "Against a real DbContext, someone who can read the Owning Team changes it, and the new owner is stored",
+            "The two page tests are named for what they prove, with no claim that the form is seen"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioOwningTeamSaveIntegrationTest.cs",
+          "scenario_name": "A Portfolio Admin's save keeps an Owning Team that works no Feature",
+          "deps": [
+            "01-05"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/Helpers/PortfolioExtensions.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PortfolioOwningTeamSaveIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/PortfolioControllerTest.cs",
+            "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx",
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx"
+          ],
+          "implementation_notes": "PortfolioRepository.GetById does not Include OwningTeam, so on the save path portfolio.OwningTeam is null unless the Team is already tracked through FeatureWork. KeepOwningTeamTheCallerCannotRead reads that navigation, and the mocked controller tests hide this. Read the stored owner from the scalar portfolio.OwningTeamId instead. Measure the real behaviour first and report it: with the navigation unloaded, setting it to null may be a no-op, so the owner may survive by accident and a legitimate clear may silently do nothing. If a clear does not persist, make SyncTeams clear the foreign key as well. Do not add OwningTeam to GetAllProjectsWithIncludes unless the tests show it is needed, because that query is on hot paths."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}
