@@ -393,14 +393,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 logger.LogInformation("Getting Boards for System {ConnectionName}", workTrackingSystemConnection.Name);
 
                 var projects = await GetAllProjects(workTrackingSystemConnection);
-                var boards = await GetBoardsForProjects(projects, workTrackingSystemConnection);
 
-                return boards;
+                return await GetBoardsForProjects(projects, workTrackingSystemConnection);
+            }
+            catch (WorkTrackingReadException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error getting boards");
-                return [];
+                throw AzureDevOpsReadException.BoardListUnreadable(AzureDevOpsReadException.HowAzureDevOpsAnswered(ex), ex.Message);
             }
         }
 
@@ -612,13 +615,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         {
             var workClient = await GetClientAsync<WorkHttpClient>(workTrackingSystemConnection);
 
-            var tasks = projects.Select(async project => await GetBoardsForProject(project, workClient));
+            var tasks = projects.Select(project => GetBoardsForProject(project, workClient)).ToList();
 
             var boardsPerProject = await Task.WhenAll(tasks);
-            return boardsPerProject.SelectMany(b => b);
+
+            var failures = boardsPerProject.Select(read => read.Failure).OfType<string>().ToList();
+            if (failures.Count > 0)
+            {
+                throw AzureDevOpsReadException.BoardListUnreadable(string.Join("; ", failures), string.Join(" | ", failures));
+            }
+
+            return boardsPerProject.SelectMany(read => read.Boards);
         }
 
-        private async Task<IEnumerable<Board>> GetBoardsForProject(TeamProjectReference project,
+        private async Task<(IEnumerable<Board> Boards, string? Failure)> GetBoardsForProject(TeamProjectReference project,
             WorkHttpClient workClient)
         {
             try
@@ -628,16 +638,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                     () => workClient.GetBoardsAsync(new TeamContext(project.Id)),
                     CancellationToken.None);
 
-                return boardsPerProject.Select(boardReference => new Board
+                return (boardsPerProject.Select(boardReference => new Board
                 {
                     Id = $"{project.Id}|{boardReference.Id.ToString()}",
                     Name = $"{project.Name} - {boardReference.Name}"
-                });
+                }), null);
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error getting Boards for Project {ProjectName}", project.Name);
-                return [];
+                return ([], $"{project.Name}: {AzureDevOpsReadException.HowAzureDevOpsAnswered(ex)}");
             }
         }
 

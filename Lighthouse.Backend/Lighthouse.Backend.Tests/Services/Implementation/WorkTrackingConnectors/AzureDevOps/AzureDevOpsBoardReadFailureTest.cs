@@ -55,7 +55,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string ABoardOfTheWorkingProject = "Stories";
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task An_administrator_asking_for_the_boards_of_an_Azure_DevOps_that_refuses_them_is_told_what_it_said()
         {
             var organisation = new AnOrganisation { ProjectListFailure = ARefusal() };
@@ -83,7 +82,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_rejected_token_on_the_only_project_fails_the_list_and_names_the_project()
         {
             var organisation = new AnOrganisation().WithAProjectThatFails(AFailingProject, ARefusal());
@@ -101,7 +99,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task One_project_failing_among_others_fails_the_whole_list_and_names_only_that_project()
         {
             var organisation = new AnOrganisation()
@@ -124,7 +121,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task Two_projects_failing_are_both_named()
         {
             var organisation = new AnOrganisation()
@@ -142,7 +138,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_status_Azure_DevOps_sent_without_a_sentence_of_its_own_still_reaches_the_picker()
         {
             var organisation = new AnOrganisation()
@@ -155,7 +150,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task Each_failing_project_keeps_its_line_in_the_error_log()
         {
             var log = new RecordingLogger<AzureDevOpsWorkTrackingConnector>();
@@ -169,7 +163,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [TestCaseSource(nameof(WaysOfGettingNoAnswer))]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_project_list_nobody_answered_reads_as_no_answer(Exception silence)
         {
             var organisation = new AnOrganisation { ProjectListFailure = silence };
@@ -180,7 +173,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [TestCaseSource(nameof(WaysOfGettingNoAnswer))]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_project_nobody_answered_for_reads_as_no_answer_and_is_named(Exception silence)
         {
             var organisation = new AnOrganisation().WithAProjectThatFails(AFailingProject, silence);
@@ -206,7 +198,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_project_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
         {
             var fault = AnUnexpectedFault();
@@ -223,7 +214,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_project_that_breaks_unexpectedly_fails_the_list_and_keeps_its_stack_trace()
         {
             var fault = AnUnexpectedFault();
@@ -260,7 +250,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_full_stop_ending_what_Azure_DevOps_said_about_the_project_list_is_not_doubled()
         {
             var organisation = new AnOrganisation { ProjectListFailure = ARefusalEndingInAFullStop() };
@@ -271,7 +260,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task A_full_stop_ending_what_Azure_DevOps_said_about_a_project_is_not_doubled()
         {
             var organisation = new AnOrganisation().WithAProjectThatFails(AFailingProject, ARefusalEndingInAFullStop());
@@ -319,7 +307,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task An_organisation_with_no_projects_stays_an_empty_list()
         {
             var boards = await new AnOrganisation().Connector().GetBoards(AConnection());
@@ -328,7 +315,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task Projects_without_boards_stay_an_empty_list()
         {
             var organisation = new AnOrganisation().WithAProject(AWorkingProject);
@@ -339,7 +325,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheAzureDevOpsBoardFix)]
         public async Task Boards_of_every_project_that_answers_are_offered()
         {
             var organisation = new AnOrganisation()

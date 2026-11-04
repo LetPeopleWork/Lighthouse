@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
+using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps
@@ -70,6 +71,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 + "larger than the others Lighthouse asks for.",
                 $"GET _apis/wit/fields answered {WhatAdoSaid(refusal)}",
                 AdditionalFieldsFieldName));
+
+        /// <summary>
+        /// The board list could not be read. The answer is what Azure DevOps said, or "no answer", or
+        /// "an answer Lighthouse could not read"; where projects failed, each one is named with its answer.
+        /// </summary>
+        public static AzureDevOpsReadException BoardListUnreadable(string answer, string technicalDetails)
+            => new(ConnectionValidationResult.Failure(
+                "board_list_unreadable",
+                $"Lighthouse could not read the boards from Azure DevOps: {answer}. Check the connection's URL and sign-in details, then try again.",
+                technicalDetails));
+
+        /// <summary>
+        /// What to tell the administrator Azure DevOps answered with: its own message for a failure it
+        /// reported, "no answer" when nothing came back, and a fixed phrase for anything else. A full stop
+        /// ending the message is dropped because the sentence around it supplies one.
+        /// </summary>
+        internal static string HowAzureDevOpsAnswered(Exception failure)
+            => failure switch
+            {
+                HttpRequestException or TimeoutException or OperationCanceledException => "no answer",
+                VssException => WhatAdoSaid(failure).TrimEnd('.'),
+                _ => "an answer Lighthouse could not read",
+            };
 
         /// <summary>
         /// When Azure DevOps answers with a body its own error contract does not recognise - a proxy's
