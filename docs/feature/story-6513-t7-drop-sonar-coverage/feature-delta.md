@@ -478,3 +478,103 @@ maps onto it like this:
 - *Revert-ability*: two independent slices, each a plain revert.
 - Not applicable here: domain events, outbox, unit of work, value objects, optimistic concurrency, JSON column versus
   child table (no product state is touched).
+
+## Wave: DEVOPS / [REF] Decisions
+
+Read from the files on `main`: `ci.yml`, `ci_changes.yml`, `ci_frontend.yml`, `ci_backend.yml`, `ci_sonar_gates.yml`,
+`.github/actions/build-frontend/action.yml`, `Scripts/test-selection/path-classifier.sh`. Written under the DESIGN
+revision (two commands per stack, the guard asks `isCiRun`, run kind "scaled", DISTILL skipped, no five-run wait).
+
+**1. Usage-data event.** N/A, because this is CI and test tooling that nobody uses in the product. No event is added;
+`UsageDataEventName` and `docs/settings/usagedata.md` stay as they are.
+
+**2. Push plan: one push, two commits.** What a push costs: `ci_changes.yml` turns `backend`, `frontend` and `e2e` on
+for any diff that touches `.github/workflows/ci*.yml` (`github_changes`), and its comment says such an edit reruns every
+connector. S1 edits `ci_frontend.yml` (the budget comment) and S2 edits `ci_backend.yml` and `ci.yml`, so each slice
+alone is a full run: full backend, E2E and live connector suites, with the Linear key shared with CI. Even S1 without
+that comment would still run the backend, because `.github/actions/` is in `BACKEND_REGEX` (non-integration tests only).
+Pushed separately that is two such runs; pushed together it is one. If the first push went red, the next run's diff
+window would span both slices anyway. Recommendation: commit S1 and S2 as two commits (each stays a plain revert) and
+push them together once, after the local gates are green (`pnpm test`, `pnpm build`, `dotnet build`, mutation on
+`timeBudgetOptions.ts`) and after DELIVER step 0 has read the conditions of both Sonar quality gates. If either gate lists
+a coverage condition, stop before the push: that contradicts the maintainer's check and is theirs to settle. The connector
+categories are not a precondition locally.
+
+**3. Rollback.** A plain `git revert` of the slice's commit; there is no data or environment to undo. The two lists
+below name the CI and Sonar surface. The revert also undoes everything else in the slice: the guard files and their tests,
+`vitest.config.ts`, the `test:coverage` script, the comments in `ci_frontend.yml` and `ci.yml`, and
+`Lighthouse.Backend/Test-Coverage.ps1`.
+- S1 revert restores: `pnpm run sonarreport` in `build-frontend/action.yml`, the `sonarreport` script, the line
+  `sonar.javascript.lcov.reportPaths=coverage/lcov.info` in `Lighthouse.Frontend/sonar-project.properties`, and the old
+  guard (run kind "coverage", `COVERAGE_FACTOR`). `sonar.testExecutionReportPaths` is never removed.
+- S2 revert restores: the step "Test Backend (with Coverage)", the `if: ${{ !inputs.run_sonar }}` and the name "Test
+  Backend (without Coverage)" on the other step, and in `dotnet sonarscanner begin` the two properties
+  `sonar.cs.opencover.reportsPaths` and `sonar.coverage.exclusions`.
+- After a revert the Sonar coverage figure returns on the next main run. The days in between have no coverage point;
+  that gap is not recoverable and is accepted. Either slice reverts alone. A coverage condition on a quality gate
+  is caught before the push (see item 2); if one is added later, revert that stack's slice, because a gate without a
+  report fails on that condition.
+- If the guard goes red on a CI run, raise `LIMIT_FACTOR` (one constant) rather than switching the guard off;
+  `LIGHTHOUSE_TIME_BUDGET=warn` stays the maintainer's emergency switch. A later T4 commit that touches `LIMIT_FACTOR`
+  may conflict with a late revert of S1; resolve it by hand.
+
+**4. Verification after the push.** All in the run of workflow "Build And Deploy Lighthouse" for the pushed commit.
+
+| Check | Where | What to see |
+|---|---|---|
+| Frontend tests ran with no coverage | job "Verify Frontend" (`frontend`), step "Build Frontend (composite)", inner step "Test Frontend and Sonar report" | the command is `pnpm test`; no v8 coverage table is printed; step green |
+| Backend tests ran with no coverage | job "Verify Backend" (`backend`), step "Test Backend" (the old "Test Backend (with Coverage)" is gone) | the `dotnet test` line has `--logger trx` and no `--collect`; no `coverage.opencover.xml` attachment line |
+| `sonar-report.xml` still read | inner step "Test Frontend and Sonar report", then inner step "Frontend SonarCloud" | the test step writes `sonar-report.xml` and `test-results.json` (the step "Extract frontend per-test timings" reads the latter and must still print its top-20 list); the scan log names `sonar-report.xml` and has no warning about a missing `coverage/lcov.info` |
+| `.trx` still read | job "Verify Backend": steps "Extract backend per-test timings" and "End SonarCloud analysis" | the first finds `.trx` files (no "No TRX files found"); the scanner reads `**/TestResults/*.trx` and warns about no missing opencover report |
+| Both Sonar projects report, gate passes | job `sonar-gates` (workflow "Verify SonarCloud Quality Gates"), steps "Wait for Frontend Quality Gate" and "Wait for Backend Quality Gate"; artifacts `sonar-report-frontend` and `sonar-report-backend` | both steps green; on SonarCloud, `LetPeopleWork_Lighthouse_Frontend` and `LetPeopleWork_Lighthouse` show an analysis of the pushed commit, issues still reported, coverage empty or no longer updated |
+| Guard log line | inner step "Test Frontend and Sonar report" | the reporter's start line contains `scaled run` and its summary says `limit factor 3`; not `coverage run`, not `plain run` |
+| Per-file check unchanged | job "Verify Frontend", step "Check test-time budget" | runs and is green (looser until T4) |
+
+The manual proof that a `CI=true pnpm test` run with a planted 9 s test goes red is local (DESIGN's manual check), not a
+CI check.
+
+**5. Comparing CI time.** Frontend "Duration" on main falls into two groups (about 610-830 s and 1,070-1,160 s, same
+tests, probably runner speed), so a median across groups, or a before/after pair from different groups, says nothing.
+This replaces the "median of at least 5 main runs" in the DISCUSS KPI table. The saving is read two ways.
+(a) Same group: assign each run to a group by something coverage does not touch, the durations of the steps "Install
+dependencies" and "Build Frontend" in the same job. Compare the duration of "Test Frontend and Sonar report" of the
+plain run only with the last coverage runs on main that fall in the same group. A pair from different groups is
+discarded, not averaged.
+(b) Summed per-test seconds: download the `test-timings-frontend` artifact (columns `file`, `test_name`, `duration_ms`,
+`outcome`) from a coverage run and from the first plain run, join on `file` and `test_name`, keep tests present in both,
+and compare the sums and their ratio. This is still exposed to runner speed, so it is read together with (a), but it
+removes worker scheduling and test-count noise. The backend gets the same two reads with `test-timings-backend` and the
+step "Test Backend"; its runner groups are not characterised, so a backend figure carries that caveat. One plain run per
+group is a small sample: report it as such, and let T4 take the first calibrated figure.
+
+**6. Environments and new infrastructure.** N/A, because nothing is deployed and no environment, secret, runner, cache
+or service is added. The only external system is SonarCloud, whose scan inputs shrink.
+
+**7. `Lighthouse.Backend/Test-Coverage.ps1`.** Stays local only: CI never calls it and `ci_backend.yml` runs plain
+`dotnet test`. It is a new file in the style of `Start-DevServer.ps1` (comment-based help, `[CmdletBinding()]`,
+`$ErrorActionPreference = 'Stop'`), created in DELIVER slice S2. Its arguments, from the step "Test Backend (with
+Coverage)" minus what only CI needs:
+
+| CI argument | Local script |
+|---|---|
+| `-c Release --no-build --no-restore` | dropped: CI built in an earlier step; locally `dotnet test` builds |
+| `./Lighthouse.Backend` | kept, joined to `$PSScriptRoot` so the script runs from any directory |
+| `--filter "<computed in CI>"` | replaced by the project default `TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration`; a `-Filter` parameter can replace it deliberately |
+| `--logger trx` | dropped: only the Sonar scan and the timings steps read `.trx` |
+| `--collect:"XPlat Code Coverage"` | kept: the point of the script |
+| `-- ...Format=opencover` and `...Include="[Lighthouse]*"` | dropped: only Sonar read opencover; the default Cobertura file serves a local look, and arguments after `--` replace the local worker cap |
+| `-- RunConfiguration.MaxCpuCount=0` | dropped: it would override `LIGHTHOUSE_TEST_WORKERS` |
+
+So the command is `dotnet test <Lighthouse.Backend path> --filter "<default filter>" --collect:"XPlat Code Coverage"`,
+and the script ends by printing where the `coverage.cobertura.xml` files landed (`TestResults/<guid>/` under the test
+project). Its help text says: local only, for checking that a behaviour-free rewrite did not lower coverage;
+`coverlet.collector` in `Lighthouse.Backend.Tests.csproj` stays for this. DELIVER confirms by running it once that the
+default filter keeps the live-connector tests out (nothing reaches the network) and that the Cobertura file is written.
+
+**8. Added after review.**
+- S2 also corrects the comment in `ForecastRealityCheckAcceptanceTest.cs` that says "the coverage run CI uses", which is
+  false once CI collects none.
+- `docs/ci-learnings.md` names `sonarreport`, so S1 changes that line itself rather than leaving it for finalize: the
+  push must not leave a rule that points at a removed script.
+- `Test-Coverage.ps1`: CI filters with `Category!=` and the project `CLAUDE.md` with `TestCategory!=`. DELIVER runs the
+  script's filter with `--list-tests` and confirms it leaves out the live-connector tests before relying on it.
