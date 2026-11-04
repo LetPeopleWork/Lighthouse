@@ -1,0 +1,40 @@
+sampled 12.1 s
+self time by area:
+   17.2 %  (native/vm)
+   14.1 %  pkg react
+   13.4 %  pkg react-dom
+   12.4 %  node core
+    8.9 %  pkg jsdom
+    5.9 %  pkg @mui/material
+    4.7 %  pkg vitest
+    4.1 %  pkg @mui/system
+    2.7 %  pkg @mui/utils
+    2.5 %  pkg @emotion/serialize
+    2.4 %  lighthouse src
+    2.2 %  pkg @tanstack/query-core
+    2.2 %  pkg @emotion/styled
+    1.2 %  pkg @asamuzakjp/dom-selector
+    1.0 %  pkg @emotion/utils
+    0.8 %  pkg @emotion/hash
+top functions by self time:
+   10.6 %  (idle)  (native/vm)
+    5.5 %  ReactElement  pkg react
+    4.2 %  get  node core
+    3.7 %  (garbage collector)  (native/vm)
+    3.5 %  process.env.NODE_ENV.exports.createElement  pkg react
+    2.1 %  process.env.NODE_ENV.exports.jsxDEV  pkg react
+    2.0 %  (anon)  pkg @emotion/styled
+    1.5 %  wrapSafe  node core
+    1.4 %  _runInlinedModule  pkg vitest
+    1.4 %  get  pkg vitest
+    1.2 %  useSlot  pkg @mui/material
+    1.2 %  Script  node core
+self time by Lighthouse source file:
+    0.7 %  src/pages/Common/MetricsView/BaseMetricsView.tsx
+    0.4 %  src/pages/Common/MetricsView/WidgetShell.tsx
+    0.4 %  src/hooks/useMetricsData.ts
+    0.3 %  src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx
+    0.1 %  src/components/Common/InfoPopoverButton/InfoPopoverButton.tsx
+    0.1 %  src/tests/HeldMetricsService.ts
+    0.1 %  src/utils/date/localDate.ts
+    0.1 %  src/pages/Common/MetricsView/widgetStatus.ts

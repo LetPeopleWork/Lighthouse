@@ -1,0 +1,2 @@
+$ pnpm exec vitest run src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx --pool=forks --execArgv=--cpu-prof --execArgv=--cpu-prof-dir=/storage/repos/Lighthouse/docs/feature/story-6457-fe7-fast-frontend-tests/measurement/profile-2026-11-04/BaseMetricsView.loading.test
+exit 0

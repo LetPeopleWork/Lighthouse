@@ -1,0 +1,40 @@
+sampled 8.2 s
+self time by area:
+   23.0 %  (native/vm)
+   18.2 %  node core
+   13.6 %  pkg jsdom
+    9.0 %  pkg react
+    8.5 %  pkg react-dom
+    5.5 %  pkg vitest
+    2.8 %  pkg @tanstack/query-core
+    2.7 %  lighthouse src
+    1.9 %  pkg @mui/material
+    1.6 %  pkg @mui/system
+    1.5 %  pkg @asamuzakjp/dom-selector
+    1.4 %  pkg vite
+    1.4 %  pkg @testing-library/dom
+    1.2 %  pkg css-tree
+    0.8 %  pkg @mui/utils
+    0.7 %  pkg @emotion/serialize
+top functions by self time:
+   15.0 %  (idle)  (native/vm)
+    5.6 %  get  node core
+    4.5 %  (garbage collector)  (native/vm)
+    3.9 %  process.env.NODE_ENV.exports.jsxDEV  pkg react
+    2.7 %  ReactElement  pkg react
+    2.6 %  Script  node core
+    2.6 %  _runInlinedModule  pkg vitest
+    2.0 %  wrapSafe  node core
+    1.4 %  compileSourceTextModule  node core
+    0.9 %  process.env.NODE_ENV.exports.createElement  pkg react
+    0.9 %  implForWrapperWithInterface  pkg jsdom
+    0.8 %  getPackageScopeConfig  node core
+self time by Lighthouse source file:
+    0.7 %  src/pages/Common/MetricsView/BaseMetricsView.tsx
+    0.5 %  src/hooks/useMetricsData.ts
+    0.5 %  src/pages/Common/MetricsView/BaseMetricsView.test.tsx
+    0.2 %  src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx
+    0.1 %  src/utils/date/localDate.ts
+    0.1 %  src/pages/Common/MetricsView/widgetStatus.ts
+    0.1 %  src/pages/Common/MetricsView/ragRules.ts
+    0.1 %  src/components/Common/WorkItemsDialog/workItemColumns.tsx
