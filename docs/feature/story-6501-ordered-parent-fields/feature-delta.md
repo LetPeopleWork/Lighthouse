@@ -239,7 +239,7 @@ Advanced Configuration
 | The first source that has a value gives the parent; the rest are ignored   |
 | for that Work Item.                                                        |
 |                                                                            |
-| (o) Set here        ( ) Connection default: Caused by, then Parent         |
+| (o) Set here   ( ) Connection default: Is caused by, then Parent (Jira's own) |
 |                                                                            |
 |  1  ::  Is caused by                                   [ up ][ down ][ x ] |
 |  2  ::  Program Ref                                    [ up ][ down ][ x ] |
@@ -307,7 +307,7 @@ System constraints (all stories): one parent per record; installs keep **the sam
 before and after the upgrade, except the items named in AC-1.6 (UPGRADE-1 (A)); the migration is expand-only and writes
 today's behaviour explicitly; the upgrade queues one re-read of every Jira owner and every Azure DevOps override owner;
 the tracker's own parent is read only when it is in the list;
-no new request on the fetch path for installs with one source.
+no new request on the fetch path for installs with one source, except that an Azure DevOps owner that had an override reads relations on every refresh from the upgrade on (see AC-2.4 and DEVOPS).
 
 ### US-01 — A Jira Team or Portfolio reads its parent from the first source that yields one (slice 01, ADO #6501)
 
@@ -342,8 +342,10 @@ missing children.
 5. **Portfolio.** Feature PAY-7 has no Program Ref and a Caused-by link to PRG-2 -> parent row PRG-2, same rule.
 6. **Existing install.** Hans Weber's Team has Parent Override Field = Caused by. After the upgrade the list reads
    "Is caused by", then "Parent (Jira's own)"; every Work Item whose override yielded a parent has the parent it had, and an
-   item with no Caused-by link and a Jira Parent now hangs under that Parent. A Team with no override reads
-   `[Parent (Jira's own)]` and changes nothing.
+   item with no Caused-by link and a Jira Parent keeps hanging under that Parent (Jira already fell back to its own
+   Parent for an empty override). What can move: on Data Center an item with no Jira Parent now reads the instance's
+   parent field, and an item whose only Caused-by link is no Feature Lighthouse holds falls through to the next entry.
+   A Team with no override reads `[Parent (Jira's own)]` and changes nothing.
 
 #### Acceptance Criteria
 
@@ -359,15 +361,16 @@ missing children.
 - AC-1.6 A Team or Portfolio the upgrade migrated shows exactly one visible list (`[X, Parent (Jira's own)]` for override
   X, `[Parent (Jira's own)]` for none) and every Work Item whose override yields a parent, or whose owner had no override,
   keeps the parent it had. The upgrade re-reads every Jira owner and every Azure DevOps override owner once, and these
-  items move: an item whose override is empty or names nothing usable now hangs under Jira's own Parent (on Data Center,
-  the instance's parent field; on Azure DevOps, its native parent), and an item whose only link candidate is no stored
-  Feature falls through to the next entry.
+  items move: on Data Center an item with an empty Jira Parent now reads the instance's parent field; on Azure DevOps an
+  item of an override owner with no override value now hangs under its native parent; and on any tracker with link
+  entries an item whose only link candidate is no stored Feature falls through to the next entry. On Jira an item with
+  an empty override already fell back to Jira's own Parent, so it does not move.
 - AC-1.7 Saving a different list (an entry added, removed or moved) refetches the owner's items on the next refresh.
 - AC-1.8 An entry matching nothing on this tracker is reported in Refresh History per entry and does not stop the next
   entries being read.
 - AC-1.9 An Additional Field cannot be removed from its connection while any Team or Portfolio lists it; the refusal
   names the owner.
-- AC-1.10 A sixth entry and a repeated entry are refused on save with a plain message, and nothing is saved.
+- AC-1.10 A sixth entry, a repeated entry and an empty list are refused on save with a plain message, and nothing is saved.
 - AC-1.11 While "Parent (Jira's own)" is not in the list, the settings say so and name the consequence before saving.
 
 #### UAT scenarios (BDD)
@@ -407,10 +410,12 @@ Scenario: Without Jira's own Parent in the list a native-only Work Item has no F
 Scenario: An existing install keeps the parents it had and moves only the items named
   Given Hans Weber's Team named "Caused by" as its only Parent Override Field
   And another Team had no Parent Override Field
-  And one item of Hans Weber's Team has no Caused-by link and has a Jira Parent
+  And item PAY-310 of Hans Weber's Team has a Caused-by link to Feature PAY-7
+  And item PAY-311 has no Caused-by link and the Jira Parent PAY-1
+  And item PAY-312 has a Caused-by link to the incident INC-88 only, and the Jira Parent PAY-1
   When both Teams refresh after the upgrade
-  Then every Work Item whose override yielded a parent, and every Work Item of the other Team, has the parent it had before
-  And the item with no Caused-by link and a Jira Parent now shows under that Parent
+  Then PAY-310, PAY-311 and every Work Item of the other Team have the parent they had before
+  And PAY-312, which hung under INC-88, now shows under PAY-1
   And Hans Weber's list reads "Is caused by" then "Parent (Jira's own)"
   And the other Team's list reads "Parent (Jira's own)"
   And the upgrade queued one re-read of each Jira owner
@@ -430,11 +435,18 @@ Scenario Outline: A list that cannot be kept is refused
     | action                                                            | message                               |
     | saves a list of six sources                                       | "A list holds at most 5 sources"      |
     | saves "Is caused by" twice                                        | "Is caused by is already in the list" |
-    | removes "Program Ref" from the connection while the Team lists it | "Program Ref is used by Payments Core" |
+    | saves a list of no sources                                        | "A list needs at least one source"    |
+
+Scenario: A field a Team lists cannot be removed from the connection
+  Given Maria's Payments Core lists "Program Ref" among its parent sources
+  And a System Admin has opened the Jira connection page
+  When they remove "Program Ref" from the connection and save
+  Then nothing is saved and they are told "Program Ref is used by Payments Core"
 ```
 
 AC coverage: AC-1.1/1.2 scenarios 1-2; 1.3/1.4/1.11 scenario 4; 1.5 scenario 3; 1.6 scenario 5; 1.7 is pinned in
-scenario 2 (the move refetches) and by the fingerprint test in DISTILL; 1.8 scenario 6; 1.9/1.10 scenario 7.
+scenario 2 (the move refetches) and by the fingerprint test
+`Saving_a_different_list_moves_the_owners_fingerprint_and_a_follower_renders_the_defaults_list`; 1.8 scenario 6; 1.9/1.10 scenario 7.
 
 #### Technical notes
 
@@ -534,15 +546,18 @@ Scenario: An existing install keeps the parents it had and moves only the items 
   And item 4713 now shows under 9050
   And its list reads "Custom.EpicLink" then "Parent (Azure DevOps' own)"
 
-Scenario: A Team that reads only fields keeps its dependencies
-  Given a Team lists "Custom.EpicLink" only and its Portfolio shows dependencies
-  When the Team refreshes
-  Then the dependencies shown are the ones shown before the upgrade
+Scenario: A Team that reads only fields leaves its Portfolio's dependencies as they were
+  Given the Portfolio "Retail Rollout" reads its dependencies from the Predecessor relation
+  And Feature 4711 waits on 4702 through that relation
+  And the Team "Payments Mobile" lists "Custom.EpicLink" only
+  When "Payments Mobile" refreshes and then "Retail Rollout" refreshes
+  Then Feature 4711 still waits on 4702 only, as it did before the Team's list was saved
 
 Scenario: Changing the list refetches, and a field in use cannot be removed
   Given Tomas saved a different order of the Team's parent sources
-  Then the next refresh refetches the Team's items
-  And removing "Custom.ProgramRef" from the connection is refused, naming the Team
+  When the Team's next refresh runs
+  Then it refetches the Team's items
+  And when a System Admin removes "Custom.ProgramRef" from the connection and saves, the save is refused, naming the Team
 ```
 
 #### Technical notes
@@ -618,6 +633,22 @@ Scenario: An old single default keeps its result
   Then the default lists "Is caused by" then "Parent (Jira's own)"
   And the Teams that follow it have the parents they had
 
+Scenario: An unset default shows the tracker's own parent as the only source
+  Given nobody has ever set the Teams default on the Jira connection
+  When Maria opens a Team that follows that default
+  Then its list reads "Parent (Jira's own)" only
+
+Scenario Outline: A default list is held to the same rules as a Team's
+  Given a System Admin has opened the Teams default of the Jira connection
+  When they <action>
+  Then nothing is saved and they are told <message>
+
+  Examples:
+    | action                          | message                          |
+    | save a list of six sources      | "A list holds at most 5 sources" |
+    | save "Is caused by" twice       | "Is caused by is already in the list" |
+    | save a list of no sources       | "A list needs at least one source" |
+
 Scenario: A default cannot name a field the connection lacks
   Given the Teams default lists "Program Ref"
   When a System Admin removes "Program Ref" from the connection and saves
@@ -688,8 +719,8 @@ Gate: the 8 items. Outcome KPIs are checked in addition.
 | 1 | Problem in domain language | Real gap restated: several non-native sources and an own Parent that is not wanted; Maria's 29 of 120 under the housekeeping epic |
 | 2 | Persona with characteristics | Maria Santos, config-admin, Jira DC, 14 Teams; Tomas Novak on ADO |
 | 3 | 3+ domain examples with real data | US-01: six; US-02: five; US-03: four |
-| 4 | UAT in Given/When/Then, 3-7 scenarios | US-01: 7 (two are outlines); US-02: 6; US-03: 5 |
-| 5 | AC derived from UAT | AC coverage line under US-01; AC-2.x and 3.x each map to a scenario |
+| 4 | UAT in Given/When/Then, 3-7 scenarios | US-01: 8 (two are outlines; the field-in-use rule was split out at review so its Given is the connection page); US-02: 6; US-03: 7 (one outline, one for the unset default) |
+| 5 | AC derived from UAT | AC coverage line under US-01; AC-2.x and most of 3.x map to a UAT scenario; AC-3.1 and the unset default in AC-3.3 are pinned by the list rule tests and the DISTILL tests instead |
 | 6 | Right-sized | Slice 01: 2-3 days (top of the band, watch item); 02: 1; 03: 1; total 4-5 days |
 | 7 | Technical notes | Each story |
 | 8 | Dependencies resolved or tracked | P1 done; P2 open and not blocking; slices 02 and 03 depend on slice 01 |
@@ -717,6 +748,8 @@ edit). Peer review: the first review returned NEEDS_REVISION; this is the revise
 - **Usage data (DEVOPS) proposal: one name-only event**, emitted when an owner or default is saved with two or more
   parent sources, appended to `UsageDataEventName` with the next integer and listed in `docs/settings/usagedata.md`; no
   properties. Emitted in DELIVER in slice 01. Settled in DEVOPS (Q6).
+- **Continuous-improvement check: N/A, because** this is a standalone Story, not a new feature Epic, so the
+  `/continuous-improvement before <epic-id>` check at DISCUSS does not apply.
 - **Context map:** answered above (3 contexts, 2 terms, no new event, no new edge, same UI surface).
 - **Terminology:** prose uses Feature, Work Item, Team, Portfolio (seeded defaults); UI copy goes through `getTerm`.
   Literal tracker values stay literal: "Is caused by", "Parent (Jira's own)", "Custom.EpicLink".
@@ -906,7 +939,7 @@ behaviour with no override).
 | Column type | text, **not `jsonb`**: SQLite `TEXT`, PostgreSQL `text`. `jsonb` would normalise key order and spacing and break byte equality with the serialiser |
 | Element | `ParentSourceEntry`: `Kind` (enum `ParentSourceKind`: `TrackerParent` = 0, `AdditionalField` = 1, append-only like `SettingSource`) then `AdditionalFieldDefinitionId` (int, null for `TrackerParent`) |
 | Examples | `[{"Kind":1,"AdditionalFieldDefinitionId":12},{"Kind":0,"AdditionalFieldDefinitionId":null}]` and `[{"Kind":0,"AdditionalFieldDefinitionId":null}]` |
-| Converter (M-1) | A `ValueConverter<ParentSources?, string?>` on a **nullable** property. **NULL stays NULL**: it means "no own value" (a follower) and is never turned into an empty list, unlike the two precedents, whose converters map a blank value to `new List<...>()` (`LighthouseAppContext.cs:630-633`, `:654-657`) because for them "empty" is a legal value. Here an empty list is *not* a legal value (1..5 entries) and an empty list read for a follower would silently turn "follow the default" into "own, nothing". Write: `value.Entries` serialised with null options. Read: `null` stays `null`; blank text is read as `null`; any other text deserialises to `List<ParentSourceEntry>` and goes through the validating factory (`ParentSources.Of`), and a text the factory refuses **throws rather than being repaired**, because a silently repaired list changes where parents come from. Writes of such text are only possible through the migration's data step (proved by the round trip) or a hand edit. A test reads a row with NULL and asserts `null`, and a row with a bad text and asserts the loud failure |
+| Converter (M-1) | A `ValueConverter<ParentSources?, string?>` on a **nullable** property. **NULL stays NULL**: it means "no own value" (a follower) and is never turned into an empty list, unlike the two precedents, whose converters map a blank value to `new List<...>()` (`LighthouseAppContext.cs:630-633`, `:654-657`) because for them "empty" is a legal value. Here an empty list is *not* a legal value (1..5 entries) and an empty list read for a follower would silently turn "follow the default" into "own, nothing". Write: `value.Entries` serialised with null options. Read: `null` stays `null`; blank text is read as `null`; any other text deserialises to `List<ParentSourceEntry>` and goes through the validating factory (`ParentSources.Of`), and a text the factory refuses **throws rather than being repaired**, because a silently repaired list changes where parents come from. Writes of such text are only possible through the migration's data step (proved by the round trip) or a hand edit. A test reads a row with NULL and asserts `null`, and a row with a bad text and asserts the loud failure. **Blast radius and recovery of such a row:** the throw happens when the owner is loaded, so every read that loads that one owner fails (its settings page, its refresh, a connection save that scans it) until the row is corrected; other owners are unaffected. The recovery is to fix or null the `ParentSources` text of that row in the database (NULL makes it follow its default again), which needs database access, as does the hand edit that could have caused it |
 | Comparer (M-1) | `ValueComparer<ParentSources?>`: both null are equal, null versus a value is unequal, otherwise equal when the serialised texts are equal (as the precedents compare). Hash: `0` for null, else the text's hash. Snapshot: the value itself, because `ParentSources` is immutable (the precedents deserialise a copy only because their lists are mutable) |
 | Construction by the serialiser (M-1) | `ParentSourceEntry` has public **get-only** properties (`Kind`, `AdditionalFieldDefinitionId`) and a **private `[JsonConstructor]`** whose parameter names match them. That constructor **throws on invalid input** (TrackerParent with an id, AdditionalField without one, an unknown kind), the same check the per-kind factories use, so the read path cannot build an invalid entry. `ParentSources` itself is never deserialised by the serialiser: the converter reads the array of entries and calls `ParentSources.Of`, and **it does not catch** the entry constructor's exception or `Of`'s refusal, so a bad text fails loudly. Nothing is public-settable. DELIVER proves by a **round-trip test** that `System.Text.Json` with **null options** (the converter's call) really builds the entry through the private constructor, and a test feeds the serialiser each invalid shape and asserts the throw reaches the caller |
 
@@ -953,11 +986,12 @@ two columns follow the default list the same way. Nothing in the new build **rea
 rule 5), so they cannot become a second source of truth; they exist for the build one release back.
 
 **Rollback limit (stated, tested, and the reason this is not called safe).** A build one release back reads only the
-legacy column and then falls back to the tracker's own parent. For a list of the two legacy shapes it behaves exactly
-like the list. For every other shape it resolves as the projection: `[A, B, TrackerParent]` reads A, then the own
+legacy column and then falls back to the tracker's own parent. For a list of the two legacy shapes it behaves like the
+list on the data it could read; it cannot read the Data Center parent field after an empty `ParentKey`, nor the native
+parent of an Azure DevOps override owner (its relations are skipped), and both are rollback limits. For every other shape it resolves as the projection: `[A, B, TrackerParent]` reads A, then the own
 parent (B is lost); `[TrackerParent, A]` reads A first (the order is lost); `[A, B]` reads A, then the own parent (the
 decision not to use the own parent is lost). Edits made on the older build are not carried forward: rolling forward
-again restores each list as it was when the rollback happened. The rollback test (DD-9) pins both halves.
+again restores each list as it was when the rollback happened. DD-9 pins what the list and the old column read for each shape as literal expectations; no test runs against the previous build.
 
 **Down step.** `Down` drops the new columns (four) and nothing else; because the legacy columns were written through,
 they already hold what the older schema needs, so no data step is run on the way down. The migration test runs `Down`
@@ -1154,9 +1188,10 @@ HELD-A and HELD-B.
   `JiraReadingVersion`, `FetchFingerprint.ForConnection`, `FetchFingerprint.cs:113-116`, `:129`, because whether `X` is a
   link type is known only when reading; ADO override owners through the new fingerprint form above). Golden constants at
   `JiraReadingVersionFingerprintTest.cs:34-36` are regenerated.
-  - Items that move, once, on the re-read: (1) an item whose override field is empty or names nothing usable and that has
-    Jira's own Parent (`ParentKey`) now hangs under it; (2) on Data Center, the same item hangs under the instance's
-    parent field, which an override owner did not read before; (3) on Azure DevOps, an item of an override owner with no
+  - Items that move, once, on the re-read: (1) ~~an item whose override field is empty and that has Jira's own Parent
+    now hangs under it~~ (struck, see the correction after this decision: Jira already fell back to its own Parent for an
+    empty override, so those items do not move); (2) on Data Center, an item with an empty `ParentKey` now reads the
+    instance's parent field, which an override owner did not read before; (3) on Azure DevOps, an item of an override owner with no
     override value now hangs under its native Hierarchy-Reverse parent; (4) an item whose only link candidate is no stored
     Feature, held today, falls through to the next entry. They may start counting towards a Feature, so Feature sizes and
     forecasts move once. Items whose override yields a parent, and every item of an owner with no override, keep their
@@ -1302,7 +1337,8 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
 - **Connectors, recorded payloads (Strategy A walking skeleton)**: Jira issue with native parent + Caused-by link + custom
   field; ADO item with two custom fields + native parent + a relation-type entry (finding named, rest still read);
   request-count pin: an install with one source makes no more requests than before (the ADO relations-skip restated for
-  a list: relations are read when a `TrackerParent` or a relation-type entry is listed or dependencies are read).
+  a list: relations are read when a `TrackerParent` is listed or dependencies are read; a relation-type entry does
+  not force the read and raises one finding. Corrected in DISTILL, 2026-11-04).
 - **Migration test on SQLite and Postgres** (as the Teams parent-override migration's): seed legacy rows, run the real
   migration, read through EF. Legacy X -> `[X, TrackerParent]`, own none -> `[TrackerParent]`, followers NULL,
   connection defaults. **Round trip:** for every migrated shape the stored text deserialises and serialises back to the
@@ -1310,9 +1346,8 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
   The Down step is run too: the legacy columns still hold the projection, the new columns are gone.
 - **Write-through and rollback**: a table of lists -> legacy value (the golden projection test: `[X, TrackerParent]` -> X;
   `[TrackerParent]` -> NULL; `[A, B, TrackerParent]` -> A; `[TrackerParent, A]` -> A; `[A, B]` -> A; a connection default
-  likewise). A rollback test reads only the legacy column through a minimal stand-in for the previous build's rule
-  (value, else the tracker's own parent) and asserts it equals the new rule for both legacy shapes, and equals the
-  documented limited result for every other shape.
+  likewise). The rollback results are stated as literal expectations per shape (what the list reads, and which
+  old column value it writes); no test is run against the previous build or a stand-in for its rule.
 - **Fingerprint**: order and entry sensitivity; golden values (a) `[X, TrackerParent]` renders in the new form (`F:<X>,P`, which queues the one-time re-read),
   (b) a follower of a default renders what the default renders (the effective list, not the owner's own NULL),
   (c) `[TrackerParent]` renders `-`, (d) a property test over every list of up to five entries from fields 1..3 plus
@@ -1336,8 +1371,8 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
 - **Frontend**: RTL for `ParentSourcesList` (reorder by button and drag, add disabled at five, picker excludes listed
   fields, consequence line when `TrackerParent` is absent, unknown-field row, follow/own switch); loading and failure
   states pinned through the host page. No scenario tags in code.
-- **E2E**: one thin Playwright sanity check through the Page Object Model on demo data (a Team with two sources); not a
-  matrix.
+- **E2E**: none (maintainer, DISTILL 2026-11-04). The browser-to-API step is pinned by the same literal list text on
+  both sides, and one skipped live case in `JiraWorkTrackingConnectorTest` reads an ordered list against real Jira.
 
 ### Component diagram
 
@@ -1371,7 +1406,7 @@ LOADING (page)             LOADED                                 COULD NOT LOAD
 
 Maintainability: one ordering rule, one place. Reliability: for an untouched install the same `ParentReferenceId`, by
 golden fingerprint and migration test, with the exceptions UPGRADE-1 names (DD-4). Testability: pure
-selector. Operability: no new tracker request, no new event, one finding per failing entry; one extra database read per
+selector. Operability: no new event, one finding per failing entry; an Azure DevOps owner that had an override reads relations on every refresh from the upgrade on, which is more requests than before; one extra database read per
 fetch for an install with a link entry. Earned Trust: no new external dependency; the one
 environmental assumption is that the data step writes the same bytes on SQLite and Postgres, probed by the migration
 round-trip test on both (the only place a provider can "lie"). External integrations: Jira and Azure DevOps already read
@@ -1521,7 +1556,14 @@ operational cost is in section 3.
   run in the regular CI. Put the new migration test, Down-step test and JSON round-trip test in that folder, one fixture
   that is parametrised over SQLite (in-process) and Postgres (`SharedPostgresContainer`, one shared container, a fresh
   database per fixture). Do **not** tag them `Integration`: that would skip them in CI. Connector tests on recorded
-  payloads stay in the unit tree (no live tracker, no `JiraIntegration` / `AdoIntegration` tags). Architecture rules 1-5
+  payloads stay in the unit tree (no live tracker, no `JiraIntegration` / `AdoIntegration` tags). The one live ordered-list
+  case lives in `JiraWorkTrackingConnectorTest` under `Integration` and `JiraIntegration`, so it runs only in the
+  path-scoped job that runs when the `jira_connector` filter fires. That filter (`JIRA_REGEX` in
+  `Scripts/test-selection/path-classifier.sh`) covers only `Services/Implementation/WorkTrackingConnectors/Jira/` in
+  production and tests; the shared filter adds `Models/WorkTrackingSystemConnection*`, `WorkTrackingSystems.cs`,
+  connector base folders and csproj files. It does **not** cover `Models/ParentSource*`, `WorkTrackingSystemOptionsOwner`,
+  `WorkItemBase`, `ParentSourceSelector` or `FetchFingerprint`, so a change only there never runs the live case; DELIVER
+  either adds those paths to the filter or runs the live case by hand before release. Architecture rules 1-5
   go in the existing ArchUnit fixture and use IL dependencies (Release build drops async edges).
 - **HistoricalSchemaPatch.** The new nullable columns `Teams.ParentSources`, `Portfolios.ParentSources`,
   `WorkTrackingSystemConnections.ParentSourcesForTeams` / `ParentSourcesForPortfolios` (all `TEXT`) must be appended to
@@ -1534,8 +1576,7 @@ operational cost is in section 3.
   edited by this design (confirmed: the design lists no startup, DI-root or middleware change; DI additions, if any, are
   in the existing service registration), so the "Program.cs edit forces the full Integration suite" rule does **not**
   apply. These workflows do apply the new migration at startup on both providers over the demo data, which is a free
-  second probe. The one thin Playwright check (a Team with two sources, through the Page Object Model) runs there, no
-  new workflow. If DELIVER does touch `Program.cs`, that rule turns on and the live connector categories run.
+  second probe. There is no Playwright check for this story (dropped at DISTILL, 2026-11-04), so no new workflow. If DELIVER does touch `Program.cs`, that rule turns on and the live connector categories run.
 - **Local gates** unchanged: `dotnet build`, `pnpm build`, the filtered `dotnet test` from CLAUDE.md.
 
 ### 3. Migration operations
@@ -1549,8 +1590,11 @@ operational cost is in section 3.
   version back reads the legacy columns (kept in sync by write-through) and ignores the new ones, so a rolling upgrade
   does not break it; lists of the two legacy shapes resolve identically, the others as the documented rollback limit.
 - **Rollback.** Write-through keeps the legacy integer columns equal to the projection of every list written by the new
-  build, so rolling the app back one release resolves legacy-shaped lists exactly and others as the stated limit
-  (first field, then the tracker's own parent). The `Down` step drops the four new columns only; the test runs `Down`
+  build, so rolling the app back one release resolves legacy-shaped lists like the list, within the limits below, and others as
+  the stated limit (first field, then the tracker's own parent). The old build cannot read the Data Center parent field
+  after an empty `ParentKey`, nor the native parent of an Azure DevOps override owner whose relations it skips; both are
+  rollback limits. A rollback also changes `JiraReadingVersion` back, which changes every Jira fingerprint again, so it
+  costs a second one-time full re-read per Jira owner, with the same rate-limit exposure as the upgrade's. The `Down` step drops the four new columns only; the test runs `Down`
   and asserts the legacy columns still hold the projection and the new columns are gone. The rollback plan is written
   first in the runbook for the release: restore previous image, no data step to undo, edits made on the older build are
   not carried forward (lists return as they were when rolling forward again).
@@ -1562,10 +1606,10 @@ operational cost is in section 3.
     original-names bump). Azure DevOps override owners also read relations on every refresh from then on.
   - Jira rate limits: Jira Cloud's cost-based limits throttle with 429 and `Retry-After`; the existing connector
     retry/back-off applies. The exposure is a large Jira install (hundreds of Teams on one site and token) whose first
-    refresh round after upgrade is heavier. Mitigation without code: the install can stagger by refresh interval; not
-    blocking.
-  - Visible change: some existing items newly hang under their own Parent (see UPGRADE-1 in DD-4). The release note
-    says so and says "first refresh after upgrading re-reads your data once".
+    refresh round after upgrade is heavier. The exposure is accepted: no mitigation is built, and the connector's
+    `Retry-After` back-off is the only control. An install can stagger by refresh interval, but nothing here does it.
+  - Visible change: some existing items move (see the corrected list in UPGRADE-1, DD-4). The release note says so,
+    says Feature sizes and forecasts may change once, and says "first refresh after upgrading re-reads your data once".
   - Linear, CSV and ServiceNow owners ignore the setting and queue nothing.
 
 ### 4. Observability
@@ -1600,7 +1644,7 @@ Run last, on frozen code, with the acceptance suite excluded (it takes 80 minute
 | Stack | Targets (mutate patterns) | Notes |
 |---|---|---|
 | Stryker.NET | `Models/**/ParentSources.cs`, `ParentSourceEntry.cs`, `Services/**/ParentSourceSelector.cs` (`Choose`, `ChooseProvisionally`, `HangUnder`), the projection to the legacy int (inside `ParentSources` or its owner write-through), the migration projection (the SQL is not mutated by Stryker; it is pinned by the round-trip test on both providers plus the golden projection table), `FetchFingerprint` rendering of the list | Line-span and whole-file `mutate` patterns do not work in .NET; select per file. Kill survivors with one targeted test rather than long reruns |
-| StrykerJS | `ParentSourcesList.tsx` and `reduceParentSources` (add, remove, move, cap at five, picker exclusion, consequence line condition) | Add a feature config like `stryker.config.story-6249-*.mjs`: mutate only the changed files; `break: 80` |
+| StrykerJS | `ParentSourcesList.tsx` and `reduceParentSources` (add, remove, move, cap at five, picker exclusion, consequence line condition) | Add a feature config like `stryker.config.story-6501-*.mjs`: mutate only the changed files; `break: 80` |
 
 ### 7. Docs at finalize (explicit; DELIVER's finalize owns them, not now)
 
@@ -1613,8 +1657,8 @@ Run last, on frozen code, with the acceptance suite excluded (it takes 80 minute
 | `docs/concepts/worktrackingsystems/azuredevops.md` (line ~222) | Yes | Custom field entries, relation-type entry, the relations-read condition |
 | `docs/settings/systeminfo.md` | Yes | The per-entry refresh finding in Refresh History |
 | `docs/settings/usagedata.md` | Yes | The row in section 1, in the slice that emits it |
-| Per-feature screenshots, demo data (a Team with two sources) | Yes | At finalize, per feature, not at `/release` |
-| Release notes | Not written at finalize (they are written at `/release`), but **release note required: some existing items may newly hang under their own Parent on upgrade** (UPGRADE-1 (A), DD-4); also say the first refresh re-reads data once. The ADO Story carries the `Release Notes` tag | Checklist item for finalize and `/release` |
+| ~~Per-feature screenshots, demo data (a Team with two sources)~~ | **Dropped** (maintainer, DISTILL 2026-11-04) | The demo data reads from one CSV connection and the control is hidden on CSV, so it cannot show a Team with two sources. No Jira or Azure DevOps demo connection is added for this story |
+| Release notes | Not written at finalize (they are written at `/release`), but **release note required: some existing items may move on upgrade (a Data Center item with no Jira Parent reads the instance's parent field, an Azure DevOps item of an override owner hangs under its native parent, an item whose only link is no Feature falls through to the next source), and Feature sizes and forecasts may change once** (UPGRADE-1 (A), DD-4); also say the first refresh re-reads data once, and that Azure DevOps owners that had an override now read relations on every refresh. The ADO Story carries the `Release Notes` tag | Checklist item for finalize and `/release` |
 | ADR promotion, ADR-270 and `ARCHITECTURE.md` section 4, `jobs.yaml` | Yes | As DESIGN listed |
 
 ### AFK decisions (DEVOPS)
@@ -1640,3 +1684,267 @@ other owner to `[TrackerParent]`; the new fall-through rule applies everywhere; 
 nothing usable newly hang under their own Parent (or the Data Center parent field) and may start counting towards a
 Feature, so Feature sizes and forecasts move once; **a release note is required**. Option (B), the per-owner legacy
 flag (`AtFaceValue`), is rejected and removed from the design, the ADR draft, the slices and DEVOPS.
+
+**Correction (DISTILL review, verified against the code):** on Jira an item with an empty override already falls back to
+`issue.ParentKey` today (`JiraWorkTrackingConnector.cs:1899`, and `HangUnder` keeps the parent for an empty key), so such
+items do **not** move, and class (1) of "Items that move" above is struck. What does move: (a) on Data Center an item with
+an empty `ParentKey` now reads the instance's parent field; (b) on Azure DevOps an item of an override owner with no override
+value now hangs under its native parent; (c) an item whose only link candidate is no stored Feature falls through to the
+next entry. The release note stays required.
+
+## Maintainer decisions (DISTILL sketch walk-through, 2026-11-04)
+
+Binding. They supersede the DISCUSS sketch, DD-7 and DD-9 where they disagree. This closes pre-requisite P3.
+
+| Topic | Decision |
+|---|---|
+| Layout | **As sketched.** The heading is "Parent sources" on Team and Portfolio settings, and it replaces "Parent Override" on the connection page too. |
+| Override is a list | **Confirmed by the maintainer:** the override is a list as well, not only the default. "Set here" on a Team or Portfolio holds its own ordered list, the same control and rules as the connection default. |
+| Reorder | **Up and down buttons only. No drag.** Supersedes DD-7's drag enhancement: no `useDragReorder` hook, `ItemListManager` stays untouched, and the "::" handle leaves the sketch. |
+| Last row | **The remove button on the only remaining row is disabled,** with the tooltip "A list needs at least one source". The server still refuses an empty list. |
+| Linear, CSV, ServiceNow | **The Parent sources control is hidden on trackers that do not read it.** Supersedes Q11, A6's "offered, ignored" and the out-of-scope line "hiding the control there". Their parent behaviour is unchanged; docs say the setting applies to Jira and Azure DevOps only. |
+
+### Test weight (maintainer, 2026-11-04)
+
+Keep heavy tests few. Rules, conversions and validation are pinned at the cheapest level that can show them: plain unit and table tests on the domain and on `reduceParentSources`; acceptance scenarios at the application-service port; one thin HTTP skeleton per flow; one or two rendered wiring tests per user flow; ~~one Playwright sanity check~~ (dropped by the later decision on the DISTILL upstream issues). Where DD-9 reads as a wider list of host-level or rendered tests, this rule wins. Drag tests are gone with the drag.
+
+## Wave: DISTILL / [REF] Scope and reconciliation (2026-11-04)
+
+Nothing was compiled or run; no commit, no ADO. The compile check and the fail-for-the-right-reason run belong to the orchestrator.
+
+Reconciliation of DISCUSS, DESIGN, DEVOPS and the DISTILL maintainer decisions: **no contradiction that blocks the scenarios**; one real issue below, and the stale wording the last section supersedes is listed as such.
+
+Superseded, not contradictions: DD-7's drag enhancement and the "::" handle; DD-9's "reorder by button and drag"; Q11, A6's "offered, ignored" and the out-of-scope line about hiding the control; the DISCUSS sketch's "On Linear/CSV the control is unchanged". The heading "Parent sources" replaces "Parent Override" on the connection page too.
+
+Design claims checked against the code (line references have moved, the claims hold; DELIVER re-greps as DESIGN says):
+
+| Claim | Code today |
+|---|---|
+| `HangUnder` writes `ParentReferenceId` only for a non-empty key, one override slot | holds (`ParentSourceSelector.cs`) |
+| `Place` returns `NotAsked` for anything not ambiguous | holds (`ParentResolution.cs`) |
+| Copy constructor copies `ParentCandidatesFromLinks` | holds (`WorkItemBase.cs:16`) |
+| Jira `ParentReferenceId = issue.ParentKey` | now `JiraWorkTrackingConnector.cs:1899` (was 1879) |
+| Jira populate then hang | now `:1915` / `:1918` / `:1948` (was 1895 / 1897 / 1914) |
+| Data Center field readers | now `:327`, `:335`, `:1359`, `:1370`, `:1984`, `:2001` |
+| ADO direct parent writes | now `AzureDevOpsWorkTrackingConnector.cs:148` and `:713` (was 694) |
+| ADO reads of the override | now `:798`, `:977`, `:983`, `:1417`, `:1538` |
+| Save guard predicates | `ConnectionSaveService.cs:91-120`, as described |
+| `ParentPlacementRule` is matched in a total switch | holds (`ParentPlacementReport.cs:60-64`), so no `OnlyCandidate` member is scaffolded; the lone-candidate test asserts "not `OnlyFeatureAmongLinks`" |
+
+## Wave: DISTILL / [REF] Upstream issues
+
+1. **Closed (maintainer, 2026-11-04): the Playwright check, its page object and the finalize demo-data item are dropped; a skipped live ordered-list case sits in `JiraWorkTrackingConnectorTest` instead, and the same literal list text is pinned in the frontend and backend tests.** Original issue, kept for the record: E2E "on seeded demo data" cannot show the control. DD-9 and the maintainer's E2E rule want one Playwright check on demo data "a Team with two sources". The demo data reads from one **CSV** connection (`DemoDataFactory.CreateDemoWorkTrackingSystemConnection`), and the maintainer decided (2026-11-04) that the control is **hidden on CSV**. So demo data cannot carry the check. Taken here, until the maintainer says otherwise: the one E2E check builds a Team on a Jira connection through the API helpers, as `DeliverySourcePicker.spec.ts` does (live Jira credentials, which CI already holds), and never refreshes it. Finalize's "demo data (a Team with two sources)" item in DEVOPS section 7 has the same problem: a Jira or Azure DevOps demo connection would have to be added to the demo data, or that item is dropped.
+2. **Scaffold signature versus design.** DESIGN has `HangUnder` read the link entries from the record's own readings. The record does not carry them yet and `WorkItemBase` is an existing entity, so the scaffold takes the readings as an argument: `HangUnder(record, readings, choice)`. DELIVER may reshape it; the three `HangUnder` tests then change their call, nothing else.
+3. **Closed (maintainer, 2026-11-04): a relation-type entry reads no relations and raises one finding; DD-9 is corrected in place.** Original issue: DD-9 and the reader table disagree about when Azure DevOps reads relations (slice 02). DD-9 ("Connectors" bullet) says relations are read "when a `TrackerParent` **or a relation-type entry** is listed or dependencies are read". The reader table (DESIGN, "Constraint and priority data"), the ADO paragraph of DD-3 and slice 02's scope all say relations are read when the list holds `TrackerParent` or dependencies are read, **and that a relation-type entry or an unclassifiable field no longer forces the read**. The Azure DevOps scenario pins the second form (three places against one, and the more specific text): `[X]` with a relation-type or unclassifiable X reads no relations and raises one finding. If the maintainer prefers DD-9's wording, one sentence of that scenario flips; nothing else depends on it.
+4. **What the written scenario bodies cannot show (second pass).** (a) The Jira harness cannot show that records needing no stored Features are equal before and after the second pass, nor that the stored Features are read once: both need arrangement at `WorkItemServiceTest` level, left to DELIVER. (b) The Data Center scenario answers the deployment as `Server` but the harness serves only the Cloud search endpoint, so DELIVER may have to serve the Data Center path. (c) The connection harness's stand-in tracker hangs an item under the first field it is handed, so "reads the new order" is shown by which field it was asked to read first. (d) The live Jira case shows the link entry and the own-parent-only-when-listed rule on `LGHTHSDMO-1726`; which of two filled sources wins would need an item carrying two different parents seeded in the test project, which was not done.
+
+## Wave: DISTILL / [REF] Test weight
+
+The maintainer's rule (few heavy tests, cheapest level per behaviour) was applied as follows. Counts are test methods, with parameter rows in brackets. Every test is skipped (`[Ignore]` / `it.skip` / `test.skip`).
+
+| Level | Slice 01 | Notes |
+|---|---|---|
+| Backend plain unit and table | 18 [about 62 rows] | `ParentSourcesTest` 6 [22], `ParentSourceSelectorOrderTest` 6 [22], `ParentResolutionLoneCandidateTest` 4, `FetchFingerprintParentSourcesTest` 2 [6, plus an enumeration of the 64 valid lists over three fields and the own Parent] |
+| Backend application-service scenarios | 5 (Jira refresh) | `ParentSourcesRefreshScenarios`, bodies written (second pass) |
+| Backend HTTP | 2 [3 rows] | one host built once: save a list and read it back; refusals for a sixth entry and a duplicate |
+| Backend migration (real SQLite and Postgres) | 2 | one class; Postgres from the shared container with a fresh database |
+| Frontend pure | 6 declarations [22 rows] | `reduceParentSources` and its helpers |
+| Frontend rendered | 3 on the control, 2 on the host | the host pair is "shown on Jira, hidden on Linear" |
+
+Heavy tests, and why each earns its cost: (a) the migration class, because two real providers are the only place the data step's SQL text can disagree with the serialiser, and it also runs the Down step; (b) the HTTP fixture, one host for the fixture, because the DTO, the refusal mapping and the write-through are only seen together there; (c) the Jira refresh scenarios, five of them on one host built once for the fixture; (d) `A_refresh_places_every_Work_Item_by_its_own_readings_and_counts_only_the_ambiguous_one`, a real database with the real work item service, because the retraction and "stored Features read once" claims are about that seam.
+
+Loading and failure looks: the list adds no request and renders inside the form. The existing `ModifyTeamSettings` tests ("renders loading state initially", "shows the could-not-load words when the settings cannot be fetched") show the loading and failure words but did not assert that the Advanced Configuration section stays away, so one small rendered test was added to that file, "shows no Advanced Configuration, where the Parent sources sit, while the settings load or when they cannot be loaded", and it runs now (it passes on today's code, since the section is already hidden). The row for a saved field the loaded definitions do not hold ("Unknown field (id 14)") is pinned in the control's rendered test.
+
+## Wave: DISTILL / [REF] Scenarios, slice 01 (Jira reads the parent sources in order)
+
+Untagged by design; the classification lives here.
+
+| Scenario | Level | File |
+|---|---|---|
+| One to five different entries are kept in the order given (4 rows) | unit | `Models/ParentSourcesTest.cs` |
+| An empty list, a sixth entry, a duplicate (field or own Parent), a field with no id are refused with the reason (5 rows) | unit | same |
+| A list projects to the first field an older build reads, or nothing (5 rows, the golden projection) | unit | same |
+| The stored text is the exact text the upgrade writes, and reads back identically (2 rows) | unit | same |
+| Stored text the rules refuse fails loudly (5 rows) | unit | same |
+| The first listed source with a value wins; order decides; no value hands over; nothing is guessed; a field wins though it names no Feature; a source that cannot be read yields nothing; a link to a stored Feature wins; a link whose only candidate is no stored Feature falls through; a Portfolio does not narrow (11 rows) | unit | `Services/Implementation/Parents/ParentSourceSelectorOrderTest.cs` |
+| Several candidates: the oldest link wins | unit | same |
+| The connector's provisional choice stops at the first link needing a Feature test (7 rows) | unit | same |
+| Applying a choice moves the shown key to the winning link entry; an empty choice retracts; applying twice is a no-op (3) | unit | same |
+| A lone candidate is judged like several (Team Feature, Team non-Feature, Portfolio, none) (4) | unit | `Models/ParentResolutionLoneCandidateTest.cs` |
+| A list renders each entry and position; no new form matches an old fingerprint (6 rows + 64-list enumeration) | unit | `Services/Implementation/WorkItems/FetchFingerprintParentSourcesTest.cs` |
+| The upgrade lists each override with the own Parent, followers stay NULL, defaults list; round trip; Down keeps the old columns | migration, both providers | `Integration/Containers/ParentSourcesUpgradeMigrationTests.cs` |
+| A Team admin saves a list and reads it back in order; a sixth entry and a duplicate are refused and nothing is saved | HTTP | `API/Integration/OrderedParentSources/ParentSourcesSettingsApiIntegrationTest.cs` |
+| A refresh places every Work Item by its own readings and counts only the ambiguous one; moving a source up moves the item; Data Center parent field only when listed; an unmatched entry is named and the next read; after the upgrade only the items named change parent | application service | `API/Integration/OrderedParentSources/ParentSourcesRefreshScenarios.cs` (5, bodies written) |
+| Readings survive the wrap; a changed list moves only its owner's fingerprint and a follower renders the default's list | model, no host | `API/Integration/OrderedParentSources/ParentSourcesOwnerScenarios.cs` (2) |
+| A field cannot be removed while any list holds it, in any place, an owner's or the default | application service | `ConnectionParentSourcesScenarios.cs` (counted under slice 03) |
+| The list writes its first field into the old column and a follower leaves it; a build one release back agrees with the list for the two shapes it can express and gives the documented limited result for the rest (5 + 1 + 6 rows) | unit | `Models/ParentSourcesOwnerWriteThroughTest.cs` |
+| Entries are written and read with the default options as the upgrade writes them; an invalid entry is never built by the serialiser | unit | `Models/ParentSourceEntrySerialiserTest.cs` |
+| One ordered list read against real Jira, read-only, skipped | live | `JiraWorkTrackingConnectorTest.GetWorkItemsForTeam_UseOrderedParentSources_ReadsTheLinkAndTheOwnParentOnlyWhenListed` |
+| Reorder by buttons, no drag; the last row cannot be removed; the picker offers only what is not listed; at five add is off with its reason; an unknown field reads "Unknown field (id N)"; the consequence line when the own Parent is absent | frontend | `parentSources.test.ts`, `ParentSourcesList.test.tsx` |
+| The control reads "Parent sources" on Jira and is absent on Linear, CSV and ServiceNow | frontend host | `pages/Common/AdvancedInputs/AdvancedInputs.parentSources.test.tsx` |
+
+Error and edge share: about half of the unit rows are refusals, fall-throughs or no-value cases.
+
+## Wave: DISTILL / [REF] Adapter coverage, slice 01
+
+| Adapter | Real-I/O scenario |
+|---|---|
+| EF `LighthouseAppContext` (the new text columns, the data step) | the migration class on SQLite and Postgres |
+| HTTP API (Team settings GET and PUT) | `ParentSourcesSettingsApiIntegrationTest` |
+| Jira connector, recorded payloads (readings, Data Center field) | `ParentSourcesRefreshScenarios`, through the Jira wire-format builders; one skipped live case in `JiraWorkTrackingConnectorTest` |
+| React control and host | rendered tests above; the browser-to-API step is pinned by the same literal list text on both sides |
+
+## Wave: DISTILL / [REF] Driving adapter coverage, slice 01
+
+Team settings endpoints: the HTTP fixture. The refresh (scheduled or manual): the first application-service scenario. The settings page: the rendered host test, whose list text is the one the HTTP fixture posts. The Portfolio settings endpoint is the same controller seam as the Team's and is **not** exercised separately; DELIVER adds a Portfolio row to the HTTP refusal table if the Portfolio controller turns out to hold its own refusal code.
+
+## Wave: DISTILL / [REF] Production scaffolds, slice 01
+
+Each carries `SCAFFOLD:`; `grep -rn "SCAFFOLD: Story 6501" Lighthouse.Backend/Lighthouse.Backend Lighthouse.Frontend/src` lists them.
+
+- `Models/ParentSourceEntry.cs` (new): `ParentSourceKind` enum and `ParentSourceEntry` record, plain values.
+- `Models/ParentSources.cs` (new): the value object. Every member throws `NotImplementedException("SCAFFOLD: ...")`; `ParentSourcesViolation` and `ParentSourcesOutcome` are plain values.
+- `Models/ParentReadings.cs` (new): `ParentReading`, `ParentReadingAt`, `ParentReadings`, plain values.
+- `Models/ParentChoice.cs` (new): plain value.
+- `ParentSourceSelector.cs`: added `Choose`, `ChooseProvisionally` and the `HangUnder(record, readings, choice)` overload, all throwing. Existing members untouched.
+- `FetchFingerprint.cs`: added `RenderParentSources`, throwing. Existing members untouched.
+- `components/Common/ConnectionDefault/parentSources.ts` and `ParentSourcesList.tsx` (new), throwing.
+
+Not scaffolded, on purpose: the owner and connection members (`ParentSources` property, mutators, write-through), the DTO members, the record's `ParentReadings`, the new migration and its columns. They change existing contracts or the EF model, so the tests that need them are the application-service scenarios and the HTTP fixture (raw JSON, which compiles without them). The second pass added additive throwing scaffolds for the pieces the scenario bodies call: `OwnParentSources`, `FollowParentSourcesDefault` and `TheEffectiveParentSources` on the owner, `SetParentSourcesDefaultForTeams` and `...ForPortfolios` on the connection, and a `[NotMapped]` `ParentReadings` property on the work item record that nothing sets and the copy constructor does not carry. They are methods and a not-mapped property, so the EF model is unchanged.
+
+## Wave: DISTILL / [REF] Test placement, slice 01
+
+Backend unit tests sit beside the code they pin (`Models/`, `Services/Implementation/Parents/`, `Services/Implementation/WorkItems/`); the migration class is in `Integration/Containers/` with **no** `Integration` category, so CI runs it on both providers; the scenarios and the HTTP fixture are in a new `API/Integration/OrderedParentSources/`. Frontend tests are beside the component. The scenario harnesses gained vocabulary (additive): `ParentPlacementAcceptanceTest` (entries, a list the Team owns, custom field values, a Data Center switch), `ConnectionDefaultsAcceptanceTest` (a default and an owner's list saved and read by name) and `NamedDependencyLinkAcceptanceTest` (a Team's list).
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER, slice 01
+
+1. The migration test pins the previous migration ids (`20261023085259_...` for SQLite, `20261023085311_...` for Postgres). If another migration lands first, bump them.
+2. Add the four new TEXT columns to `HistoricalSchemaPatch.ColumnsAddedAfterTheseFixturesPinnedTheirSchema` in the same step as the migration, or the old-schema fixtures turn red naming the column (DEVOPS AFK-D2).
+3. The new settings field goes through the whole path (`SettingsOwnerDtoBase`, the sync helper and `SettingsOwnerDtoRoundTripTest`, hand-built PUT payloads, pinned payload shapes), per `docs/ci-learnings.md`.
+4. The existing `ParentResolutionPlacementTest.One_candidate_is_not_a_question_for_the_pick` asserts today's behaviour for a lone link; replace its lone half with `ParentResolutionLoneCandidateTest` when `Place` changes.
+5. Accessible names the rendered tests rely on: `Move {name} up`, `Move {name} down`, `Remove {name}`, a combobox named "Add a source", the heading "Parent sources", the texts "A list holds at most 5 sources" and "A list needs at least one source" (the last as the tooltip of the disabled remove button). Change the tests with the control if its names differ.
+6. The DEVOPS usage event is emitted by the frontend save path; no test was written for it here (see "Left to DELIVER").
+7. Copy a licence file into a fresh worktree (two Licensing tests).
+
+## Wave: DISTILL / [REF] Left to DELIVER, slice 01
+
+The five architecture rules (new ArchUnit rules, each watched to fail once); the `WorkItemServiceTest` arrangements that move from `ParentCandidatesFromLinks` to readings, with the "records needing no stored Features are equal before and after, stored Features read once" checks; the `JiraReadingVersionFingerprintTest` golden regeneration; the null-stays-null and bad-text tests on the EF converter (they need the converter and its column, which DELIVER writes); the usage-data event test. The scenario bodies, the owner write-through and rollback table and the entry serialiser tests are written (second pass).
+
+## Wave: DISTILL / [REF] Scenarios, slice 02 (Azure DevOps reads the parent sources in order)
+
+| Scenario | Level | File |
+|---|---|---|
+| The tracker reads its own parent only when the list holds it (5 rows); serves Jira's Data Center lookup and Azure DevOps' relations read | unit | `Services/Implementation/Parents/ParentSourceSelectorOwnParentTest.cs` |
+| The second custom field gives the parent when the first is empty, and the order decides | application service | `API/Integration/OrderedParentSources/AzureDevOpsParentSourcesScenarios.cs` |
+| The native parent and the relations are read only when the list or the dependencies ask; an unclassifiable field is read as a field and reads no relations | application service | same |
+| A relation type in the list is named in Refresh History and the other entries still give parents | application service | same |
+| After the upgrade an item with no field value and a native parent hangs under it, once; relations are read from then on | application service | same |
+| A Team that reads only fields keeps the dependencies it showed | application service | same |
+| An Azure DevOps row reads "Parent (Azure DevOps' own)" | frontend unit | `parentSources.test.ts` (slice 01 file, one row) |
+
+Not duplicated here, on purpose: "changing the list refetches" and "a field in use cannot be removed" are tracker-neutral and are pinned once in slice 01 (fingerprint and connection-save scenarios). The routing of the connector's two direct parent writes through the one helper is the architecture rule on parent assignments, which DELIVER adds; the helper itself is pinned by the `HangUnder` tests of slice 01.
+
+Weight: 1 unit method [5 rows] and 5 application-service scenarios (bodies written in the second pass). No new HTTP or rendered test: a Team's settings page and its save are the same code for either tracker.
+
+## Wave: DISTILL / [REF] Adapter coverage and driving adapters, slice 02
+
+| Adapter | Real-I/O scenario |
+|---|---|
+| Azure DevOps connector over the faked work item tracking client (real connector, real service, real database) | the five scenarios above |
+| Azure DevOps API | none live; the contract is the recorded work item, as in the named-dependency scenarios |
+
+The driving adapter is the refresh, covered by the same scenarios. The settings endpoints are covered by slice 01's HTTP fixture.
+
+## Wave: DISTILL / [REF] Production scaffolds, slice 02
+
+- `ParentSourceSelector.ReadsTheTrackersOwnParent(ParentSources)`: an overload, throwing. The existing overload is untouched.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER, slice 02
+
+1. Slice 01's model, migration, API and control are built first.
+2. Build the scenarios on the harness the named-dependency scenarios use (`NamedDependencyLinkAcceptanceTest`, `AnAzureDevOpsOrganisation`); the request count is read off the faked client's calls.
+3. ADO owners with an override read relations on every refresh after the upgrade (more requests; watch for 429 back-off, DEVOPS section 3).
+
+## Wave: DISTILL / [REF] Scenarios, slice 03 (the connection default holds the parent sources)
+
+| Scenario | Level | File |
+|---|---|---|
+| A change of the default refreshes exactly the Teams that follow it, and a Team with its own list is left alone | application service | `API/Integration/OrderedParentSources/ConnectionParentSourcesScenarios.cs` |
+| A new Team follows the default and reads its list on the first refresh | application service | same |
+| A System Admin saves the default as a list and reads it back; the old number on the wire is its first field; a save that leaves the list out changes nothing, an explicit null clears it | application service, over the connection harness | same |
+| The connection page shows the Teams default as the same ordered list under "Parent sources" and saves the new order | frontend host | `components/Common/Connection/ModifyConnectionSettings.parentSources.test.tsx` |
+| An old single default shows as the field then the tracker's own parent, and its followers keep their parents | covered | the Jira slice's migration class (connection defaults) and its upgrade scenario |
+| A default cannot name a field the connection lacks, and the refusal names the default | covered | the Jira slice's connection-save scenario ("any list holds it", a default included) |
+| A default list obeys the same one-to-five, no-duplicate rules; its legacy projection | covered | `ParentSourcesTest` (the same value object and the same projection function) |
+| The control is hidden on Linear, CSV and ServiceNow on the connection page | covered | the connection already offers only the defaults its tracker supports (`supportedDefaults`); `parentSourcesAreOffered` pins the rule for the Team and Portfolio pages |
+
+Weight: 4 application-service scenarios (bodies written in the second pass; the fourth is the field-in-use rule shared with the Jira slice) and 1 rendered test. No new unit or HTTP test.
+
+## Wave: DISTILL / [REF] Adapter coverage and driving adapters, slice 03
+
+The connection save and the follower queueing run over the real database in the connection harness; the connection page is the rendered test. The Portfolios default is the same code with its own column and is **not** given its own scenario; DELIVER adds a Portfolio row to the third scenario's payload check.
+
+## Wave: DISTILL / [REF] Production scaffolds, slice 03
+
+None. Everything slice 03 needs to compile is slice 01's scaffolds; the connection's list members change an existing contract (the defaults payload and the EF model), so that test body is left to DELIVER.
+
+## Wave: DISTILL / [REF] Pre-requisites for DELIVER, slice 03
+
+1. Slice 01 first; the two registry rows in `ConnectionFieldDefaults.cs` move to the list in this slice and leave the legacy-column rule's allow-list.
+2. The existing tests that name the old label or arrange the single default move with the code: `ModifyConnectionSettings.directionTips.test.tsx` (the "Parent Override Field" row and its About button), `ModifyConnectionSettings.test.tsx`, `ConnectionDefaultsDtoTest`, and the connection-defaults scenarios named in the class comment of `ConnectionParentSourcesScenarios`.
+3. `ConnectionParentSourcesScenarios` builds on `ConnectionDefaultsAcceptanceTest`; extend that harness rather than adding a host.
+
+## Wave: DISTILL / [REF] Totals and what is unwritten
+
+| Level | Methods or declarations | Rows | Skipped |
+|---|---|---|---|
+| Backend plain unit and table | 24 (19, plus the owner write-through and rollback table with 3, and the entry serialiser with 2) | about 90 | all (`[Ignore]` on the fixture) |
+| Backend application-service scenarios, bodies written | 16: Jira refresh 5, owner and record 2, connection 4, Azure DevOps 5 | | all |
+| Backend live (real Jira, read-only) | 1, in `JiraWorkTrackingConnectorTest` | | `[Ignore]` and the class's `Integration` categories |
+| Backend HTTP (one host, built once) | 2 | 3 | all |
+| Backend migration, both providers | 2 | | all |
+| Frontend pure | 6 | 22 | all (`it.skip`) |
+| Frontend rendered | 3 on the control, 2 on the Team host, 1 on the connection page | | all |
+
+Second pass: `dotnet build` of `Lighthouse.Backend.Tests.csproj` and `pnpm exec tsc -b` both finish clean; no test was run. Still left to DELIVER: the five architecture rules, the `WorkItemServiceTest` arrangements, the EF converter's null-stays-null and bad-text tests, the Jira reading-version golden regeneration and the usage-data event test, all listed under slice 01 "Left to DELIVER"; a Portfolio-specific HTTP row and a Portfolio default scenario. Loading and failure are pinned by the new `ModifyTeamSettings` test named above. Playwright is gone from the story.
+
+Fix pass after the review gate: the entry constructor validates, so refused lists are built from stored text; the connection scenarios seed a Portfolio default and the HTTP refusals start from a saved list and include the empty list; the saved-list text is pinned at the request body in `TeamService.test.ts` and posted byte-identically by the backend HTTP test (the host test now compares objects); every `it.skip` carries a narrow Biome suppression where Biome flags it (`it.skip.each` is not flagged); the hostless record-and-owner test moved to `Models/ParentSourcesOnTheRecordAndOwnerTest.cs`.
+
+## Maintainer decisions on the DISTILL upstream issues (2026-11-04)
+
+Binding. They close upstream issues 1 and 3 and the "unwritten on purpose" note on the scenario bodies.
+
+| Topic | Decision |
+|---|---|
+| Application-service scenarios | **Written in DISTILL,** with real Given/When/Then bodies, still skipped. Where a body needs a contract that is not there yet, it is written against the planned shape as far as the code compiles, and what is missing is named. |
+| Playwright check | **Dropped, with its page object.** No UI run is needed for this story. A live ordered-list case joins `JiraWorkTrackingConnectorTest` (real Jira, read-only on the test project), next to the existing parent override tests. The finalize "demo data (a Team with two sources)" item is dropped too. |
+| Browser-to-API step | Without Playwright nothing covers it end to end, so the same literal JSON for a saved list is pinned on both sides: the frontend's rendered save test and the backend's HTTP test. |
+| Azure DevOps relation-type entry | **Reads no relations and raises one finding.** DD-9's "or a relation-type entry" is wrong and is corrected. |
+
+## Wave: DISTILL / [REF] Fail-for-the-right-reason check (2026-11-04)
+
+Every Story 6501 test except the live Jira case was unskipped once, run, and skipped again.
+
+| Stack | Result | Reason |
+|---|---|---|
+| Backend | 74 fail on a scaffold | Behaviour unbuilt, as intended |
+| Backend | 16 fail on an assertion or a missing column | Behaviour unbuilt: connection refuses `parentSourcesForTeams` (4), Team settings carry no list (3), lone candidate not placed and readings not carried (4), serialiser does not refuse a bad entry (3), the migration's columns are absent (2) |
+| Backend | 12 pass | 10 existing `ParentSourceSelector` tests caught by the name filter, 1 existing link test, 1 serialiser round trip that needs no new behaviour |
+| Frontend | 25 fail on a scaffold, 2 on the missing control | Behaviour unbuilt, as intended |
+| Frontend | 1 failed for the wrong reason, then corrected | An absence check threw because today's page shows "Parent Override Field" twice. It now counts matches. |
+
+No test failed on set-up, a fixture or an import. The live Jira case was not run.
+
+Rerun after the review fixes (2026-11-04): backend 73 fail on a scaffold and 17 on an assertion or a missing column, frontend 26 on a scaffold and 4 on the missing control or a missing line, all because the behaviour is unbuilt. None failed on set-up, a fixture or an import. The request-body pin in `TeamService.test.ts` already passes, because it pins text the code hands on unchanged. With everything skipped, the backend suite and all frontend tests pass.
+
+## Wave: DISTILL / [REF] Final review gate (2026-11-04)
+
+DISCUSS and DEVOPS and DESIGN conditionally approved, DISTILL approved, no blocker and no high open. The conditions were applied in the fix pass.
+
+Open lows for DELIVER, to pick up when each file is touched:
+
+- Rewrite "second pass" in `ParentSourcesOnTheRecordAndOwnerTest.cs` and `ParentSourceSelectorOrderTest.cs` as plain behaviour.
+- Arrange the starting list in the Given of the last test in `ParentSourcesSettingsApiIntegrationTest.cs`.
+- Remove the hedge "check that when this is first run" from the live case in `JiraWorkTrackingConnectorTest.cs`, once it has run.
+- The Linear host check in `AdvancedInputs.parentSources.test.tsx` overlaps the `parentSourcesAreOffered` table; keep it as the one wiring check or drop it.
+- The `jira_connector` path filter does not cover `Models/ParentSource*`, `ParentSourceSelector` or `FetchFingerprint`, so a later change only there skips the live Jira case. Slice 01 touches the connector, so it runs then.

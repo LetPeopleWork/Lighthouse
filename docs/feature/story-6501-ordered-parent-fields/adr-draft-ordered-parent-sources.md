@@ -36,17 +36,21 @@ the owner tables after this ships. The settings DTOs are the public `api/v1` sur
 4. **Legacy columns are written through for one release.** Whenever a list is set, the legacy integer column is written
    with the list's projection: `[X, TrackerParent]` writes X, `[TrackerParent]` writes NULL, any other shape writes its
    first field id or NULL. Nothing in the new build reads the legacy columns. A later release drops them.
-   **Rollback limit.** A build one release back reads only the legacy column and then the tracker's own parent. It
-   behaves exactly like the list for the two legacy shapes; for any other shape it resolves as the first field then the
-   own parent, so the order, the later fields and a list without the own parent are not honoured. Edits made on the
+   **Rollback limit.** A build one release back reads only the legacy column and then the tracker's own parent. For
+   the two legacy shapes it behaves like the list on the data the old build could read; for any other shape it resolves as
+   the first field then the own parent, so the order, the later fields and a list without the own parent are not honoured.
+   It also cannot read what the new build reads in two places: on Jira Data Center the instance's parent field after an
+   empty parent key, and on Azure DevOps the native parent of an owner that had an override, whose relations the old build
+   skipped. Both are rollback limits. Edits made on the
    older build are not carried forward. This is a one-release convenience with that stated limit, not a guarantee.
 5. **One rule, one place; the record keeps what the second pass needs.** Connectors read each entry into a reading (no
    value, field value, link candidates, the tracker's own parent, cannot be read) and attach the ordered readings to the
    record as a transient, unpersisted value for the duration of one refresh. `ParentSourceSelector` alone orders them:
    first entry that yields wins; a link entry yields only a Feature Lighthouse holds (Teams narrow; a Portfolio does not),
    a single candidate included; the tracker's own parent only
-   when listed. The selector only **returns** a choice; one helper (`HangUnder`) is the single place that assigns the stored
-   parent and the shown link values, and an empty choice clears them. The connector runs a provisional pass without Feature
+   when listed. The selector only **returns** a choice; one helper (`HangUnder`) is the single place that assigns `ParentReferenceId` and
+   sets or clears the shown values of link entries on a refresh (other writers of those shown values, such as write-back,
+   are untouched), and an empty choice clears the parent. The connector runs a provisional pass without Feature
    knowledge and stops at the first link reading that needs a Feature test; the work item refresh then runs the full pass,
    with the stored Features, on exactly those records, and may retract a provisional key. To make that possible a single
    link candidate is now judged by the same narrowing as several (the placement function no longer treats one candidate as
@@ -101,13 +105,13 @@ Full text: the DESIGN's DD-4.
 
 ## Consequences
 
-Positive: one ordering rule, tested as a table; Epic 6474 carries three plain nullable text columns; no new tracker
-request, no new event, no new edge on the context map; the class of "own parent silently wins" disappears because it is an
+Positive: one ordering rule, tested as a table; Epic 6474 carries three plain nullable text columns; no new event, no
+new edge on the context map; the class of "own parent silently wins" disappears because it is an
 entry.
 
 Negative, stated honestly: the "field in use" guard loads one connection's owners and scans their lists in memory (the
 legacy column holds only a list's first field, so it cannot serve as a filter); the data step builds JSON text in SQL on
-two providers (probed by a round-trip test on both); the rollback is exact only for the two legacy shapes; two
+two providers (probed by a round-trip test on both); the rollback matches the list only for the two legacy shapes and, even for them, not on Data Center parent fields or Azure DevOps native parents; a stored row whose text the rules refuse throws when its owner is loaded, so a hand-edited or damaged row stops that one owner (and every request that loads it) rather than being repaired, and the recovery is to correct or clear the column of that row in the database, after which the owner follows its default or reads the tracker's own parent; the new build asks Azure DevOps for the relations of every override owner on each refresh, which is more requests than before (watch for rate-limit back-off); two
 fingerprint renderings coexist for one release; and an install with a link entry reads the stored Features once per
 fetch where it read them only for ambiguous links before. What the upgrade does to already-configured owners is UPGRADE-1 (above): some existing items move once.
 
@@ -128,5 +132,5 @@ trusted. Rows 6 to 9 are tests.
 | 5 | Nothing reads the legacy columns except the write-through, the EF mapping and the migrations | New source-scan allow-list; the compiler alone does not find these readers because the legacy members are concrete properties |
 | 6 | Fingerprint stable for legacy shapes, new forms never collide with them | Golden-value test plus a property test; `FetchShapingPropertyGuardTest` records the registered property |
 | 7 | The migration keeps every parent and its text round-trips | Migration test on SQLite and Postgres, including `Down` |
-| 8 | Write-through and rollback limit | Golden table list -> legacy value, and a rollback test against a stand-in for the older rule |
+| 8 | Write-through and rollback limit | Golden table list -> legacy value, and literal expectations of what the list and the old column read for each shape (no test against the previous build) |
 | 9 | List rules | Property tests on `ParentSources`; the frontend reducer mirrors them (mutation-tested) |
