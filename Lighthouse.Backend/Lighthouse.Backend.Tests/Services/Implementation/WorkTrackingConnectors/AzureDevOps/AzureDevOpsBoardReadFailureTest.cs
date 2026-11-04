@@ -54,6 +54,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string ABoardOfTheWorkingProject = "Stories";
 
+        private const string TheDetailsOfABoardWithNoTypesOrNoStates = $"Board '{ABoardId}' came back with no work item types or no states";
+
         [Test]
         public async Task An_administrator_asking_for_the_boards_of_an_Azure_DevOps_that_refuses_them_is_told_what_it_said()
         {
@@ -131,8 +133,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(failure!.Verdict.Message, Does.Contain(AFailingProject));
-                Assert.That(failure.Verdict.Message, Does.Contain(AnotherFailingProject));
+                Assert.That(
+                    failure!.Verdict.Message,
+                    Is.EqualTo($"{TheFirstHalfOfTheListSentence}{AFailingProject}: {WhatAzureDevOpsSaid}; {AnotherFailingProject}: {WhatAzureDevOpsSaid}{TheLastHalfOfTheSentences}"));
+                Assert.That(failure.Verdict.Code, Is.EqualTo("board_list_unreadable"));
+                Assert.That(
+                    failure.Verdict.TechnicalDetails,
+                    Is.EqualTo($"{AFailingProject}: {WhatAzureDevOpsSaid} | {AnotherFailingProject}: {WhatAzureDevOpsSaid}"));
             }
         }
 
@@ -293,6 +300,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("x|")]
         [TestCase("|y")]
         [TestCase("a|b")]
+        [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523|x")]
+        [TestCase("x|e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
         public async Task A_malformed_board_id_is_a_failed_read_and_never_an_empty_board(string malformedBoardId)
         {
             var organisation = new AnOrganisation();
@@ -300,10 +309,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
                 () => organisation.Connector().GetBoardInformation(AConnection(), malformedBoardId));
 
-            Assert.That(
-                failure!.Verdict.Message,
-                Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}the board id is not one Azure DevOps gave{TheLastHalfOfTheSentences}"),
-                "An empty board would enable Confirm and write nothing, and a sentence with no answer in it says nothing either.");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    failure!.Verdict.Message,
+                    Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}the board id is not one Azure DevOps gave{TheLastHalfOfTheSentences}"),
+                    "An empty board would enable Confirm and write nothing, and a sentence with no answer in it says nothing either.");
+                Assert.That(failure.Verdict.Code, Is.EqualTo("board_unreadable"));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"Board id '{malformedBoardId}' does not hold a project and a board"));
+            }
         }
 
         [Test]
@@ -314,7 +328,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
                 () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
 
-            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo(TheDetailsOfABoardWithNoTypesOrNoStates));
+            }
         }
 
         [Test]
@@ -325,7 +343,52 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
                 () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
 
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo(TheDetailsOfABoardWithNoTypesOrNoStates));
+            }
+        }
+
+        [Test]
+        public async Task A_board_with_work_item_types_but_no_column_that_maps_them_to_a_state_is_a_failed_read()
+        {
+            var organisation = new AnOrganisation { BoardAnswer = ABoard(AColumn((BoardColumnType)99, "Active")) };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
             Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+        }
+
+        [Test]
+        public async Task A_board_whose_only_states_are_doing_states_is_still_read()
+        {
+            var organisation = new AnOrganisation { BoardAnswer = ABoard(AColumn(BoardColumnType.InProgress, "Active")) };
+
+            var board = await organisation.Connector().GetBoardInformation(AConnection(), ABoardId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(board.ToDoStates, Is.Empty);
+                Assert.That(board.DoingStates, Is.EqualTo(Just("Active")));
+                Assert.That(board.DoneStates, Is.Empty);
+            }
+        }
+
+        [Test]
+        public async Task A_board_whose_only_states_are_done_states_is_still_read()
+        {
+            var organisation = new AnOrganisation { BoardAnswer = ABoard(AColumn(BoardColumnType.Outgoing, "Closed")) };
+
+            var board = await organisation.Connector().GetBoardInformation(AConnection(), ABoardId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(board.ToDoStates, Is.Empty);
+                Assert.That(board.DoingStates, Is.Empty);
+                Assert.That(board.DoneStates, Is.EqualTo(Just("Closed")));
+            }
         }
 
         [Test]

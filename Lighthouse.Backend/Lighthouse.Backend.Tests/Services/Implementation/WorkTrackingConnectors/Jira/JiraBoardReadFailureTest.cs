@@ -74,27 +74,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoards(AConnection()));
 
-            Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(answer)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(answer)));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"GET rest/agile/latest/board answered {answer}."));
+            }
         }
 
         [Test]
         public async Task A_board_list_from_a_Jira_that_cannot_be_reached_reads_as_no_answer()
         {
-            var subject = AConnectorOver(AJira(boards: _ => throw new HttpRequestException("No such host is known.")));
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira(boards: _ => throw new HttpRequestException("No such host is known.")), log);
 
             var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoards(AConnection()));
 
-            Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(WhatSilenceReads)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(WhatSilenceReads)));
+                Assert.That(failure.Verdict.Code, Is.EqualTo("board_list_unreadable"));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(HttpRequestException)}: {WhatSilenceReads}"));
+                Assert.That(log.Written(LogLevel.Error), Has.Count.EqualTo(1));
+            }
         }
 
         [Test]
         public async Task A_board_list_that_times_out_reads_as_no_answer()
         {
-            var subject = AConnectorOver(AJira(boards: _ => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")));
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira(boards: _ => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")), log);
 
             var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoards(AConnection()));
 
-            Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(WhatSilenceReads)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(WhatSilenceReads)));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(TaskCanceledException)}: {WhatSilenceReads}"));
+                Assert.That(log.Written(LogLevel.Error), Has.Count.EqualTo(1));
+            }
         }
 
         [TestCase(AGatewayPage)]
@@ -123,6 +140,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(WhatAnUnreadableAnswerReads)));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(InvalidOperationException)}: {WhatAnUnreadableAnswerReads}"));
                 Assert.That(log.Everything.Select(entry => entry.Failure), Has.Some.SameAs(fault));
             }
         }
@@ -188,27 +206,44 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoardInformation(AConnection(), BoardId));
 
-            Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(answer)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(answer)));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"GET rest/agile/latest/board/{BoardId}/configuration answered {answer}."));
+            }
         }
 
         [Test]
         public async Task A_board_from_a_Jira_that_cannot_be_reached_reads_as_no_answer()
         {
-            var subject = AConnectorOver(AJira(configuration: _ => throw new HttpRequestException("No such host is known.")));
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira(configuration: _ => throw new HttpRequestException("No such host is known.")), log);
 
             var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoardInformation(AConnection(), BoardId));
 
-            Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(WhatSilenceReads)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(WhatSilenceReads)));
+                Assert.That(failure.Verdict.Code, Is.EqualTo("board_unreadable"));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(HttpRequestException)}: {WhatSilenceReads}"));
+                Assert.That(log.Written(LogLevel.Error), Has.Count.EqualTo(1));
+            }
         }
 
         [Test]
         public async Task A_board_read_that_times_out_reads_as_no_answer()
         {
-            var subject = AConnectorOver(AJira(configuration: _ => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")));
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira(configuration: _ => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")), log);
 
             var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoardInformation(AConnection(), BoardId));
 
-            Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(WhatSilenceReads)));
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(WhatSilenceReads)));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(TaskCanceledException)}: {WhatSilenceReads}"));
+                Assert.That(log.Written(LogLevel.Error), Has.Count.EqualTo(1));
+            }
         }
 
         [TestCase(AGatewayPage)]
@@ -234,6 +269,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(WhatAnUnreadableAnswerReads)));
+                Assert.That(failure.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(InvalidOperationException)}: {WhatAnUnreadableAnswerReads}"));
                 Assert.That(log.Everything.Select(entry => entry.Failure), Has.Some.SameAs(fault));
             }
         }
