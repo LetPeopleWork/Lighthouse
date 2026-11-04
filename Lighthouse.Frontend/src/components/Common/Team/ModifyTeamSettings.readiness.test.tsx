@@ -1,7 +1,6 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type {
 	IReadinessSetting,
 	IRefinementSettings,
@@ -12,6 +11,7 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { pastTheAutosaveDelay } from "../../../tests/pastTheAutosaveDelay";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
@@ -160,15 +160,6 @@ const replaceTheNumberIn = async (label: string, value: string) => {
 	await userEvent.clear(field);
 	await userEvent.type(field, value);
 };
-
-const AUTOSAVE_DELAY_AND_MARGIN_MS = DEBOUNCE_MS + 200;
-
-// The clock is moved on rather than waited out, so the autosave's timer has surely run by the
-// time nothing is checked as saved, however slowly the machine is going.
-const pastTheAutosaveDelay = () =>
-	act(async () => {
-		await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_AND_MARGIN_MS);
-	});
 
 beforeEach(() => {
 	vi.useFakeTimers({ shouldAdvanceTime: true });

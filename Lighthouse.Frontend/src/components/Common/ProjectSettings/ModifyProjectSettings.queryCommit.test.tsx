@@ -1,7 +1,6 @@
-import { act, screen, waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import {
@@ -11,6 +10,7 @@ import {
 	createMockSuggestionService,
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
+import { pastTheAutosaveDelay } from "../../../tests/pastTheAutosaveDelay";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import ModifyProjectSettings from "./ModifyProjectSettings";
@@ -37,13 +37,6 @@ vi.mock("../../../hooks/useRbac", () => ({
 
 // A full page render plus a typed query can take several seconds on a loaded machine.
 vi.setConfig({ testTimeout: 20000 });
-
-// The clock is moved on rather than waited out, so a pending autosave has surely fired by the
-// time nothing is checked as saved.
-const pastTheAutosaveDelay = () =>
-	act(async () => {
-		await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 200);
-	});
 
 describe("ModifyProjectSettings query field", () => {
 	const mockSaveProjectSettings = vi.fn();

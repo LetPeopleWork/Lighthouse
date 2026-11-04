@@ -1,12 +1,5 @@
-import {
-	act,
-	fireEvent,
-	screen,
-	waitFor,
-	within,
-} from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -16,6 +9,7 @@ import {
 } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { pastTheAutosaveDelay } from "../../../tests/pastTheAutosaveDelay";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
@@ -207,13 +201,6 @@ vi.mock("../Tags/TagsComponent", () => ({
 		</div>
 	),
 }));
-
-// The clock is moved on rather than waited out, so a pending autosave has surely fired by the
-// time nothing is checked as saved.
-const pastTheAutosaveDelay = () =>
-	act(async () => {
-		await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 200);
-	});
 
 describe("ModifyTeamSettings", () => {
 	const mockGetWorkTrackingSystems = vi.fn();

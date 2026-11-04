@@ -7,7 +7,6 @@ import {
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IRefinementSettings } from "../../../models/Refinement/Refinement";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -18,6 +17,7 @@ import type { ITeamService } from "../../../services/Api/TeamService";
 import { actAndSettle } from "../../../tests/actAndSettle";
 import { inSequence } from "../../../tests/inSequence";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
+import { pastTheAutosaveDelay } from "../../../tests/pastTheAutosaveDelay";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
@@ -162,15 +162,6 @@ const theRefinementLastSaved = () => {
 	const saved = calls[calls.length - 1]?.[0] as ITeamSettings | undefined;
 	return saved?.refinement;
 };
-
-const AUTOSAVE_DELAY_AND_MARGIN_MS = DEBOUNCE_MS + 200;
-
-// The clock is moved on rather than waited out, so the autosave's timer has surely run by the
-// time nothing is checked as saved, however slowly the machine is going.
-const pastTheAutosaveDelay = () =>
-	act(async () => {
-		await vi.advanceTimersByTimeAsync(AUTOSAVE_DELAY_AND_MARGIN_MS);
-	});
 
 beforeEach(() => {
 	vi.useFakeTimers({ shouldAdvanceTime: true });

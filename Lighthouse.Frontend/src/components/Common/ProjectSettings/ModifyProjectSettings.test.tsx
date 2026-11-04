@@ -1,5 +1,4 @@
 import {
-	act,
 	fireEvent,
 	render,
 	screen,
@@ -7,7 +6,6 @@ import {
 	within,
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEBOUNCE_MS } from "../../../hooks/useModifySettings";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -19,6 +17,7 @@ import {
 	createMockSuggestionService,
 	createMockTeamService,
 } from "../../../tests/MockApiServiceProvider";
+import { pastTheAutosaveDelay } from "../../../tests/pastTheAutosaveDelay";
 import { createMockProjectSettings } from "../../../tests/TestDataProvider";
 import ModifyProjectSettings from "./ModifyProjectSettings";
 
@@ -249,13 +248,6 @@ vi.mock("../../../hooks/useRbac", () => ({
 		},
 	}),
 }));
-
-// The clock is moved on rather than waited out, so a pending autosave has surely fired by the
-// time nothing is checked as saved.
-const pastTheAutosaveDelay = () =>
-	act(async () => {
-		await vi.advanceTimersByTimeAsync(DEBOUNCE_MS + 200);
-	});
 
 describe("ModifyProjectSettings", () => {
 	const mockGetWorkTrackingSystems = vi.fn();
