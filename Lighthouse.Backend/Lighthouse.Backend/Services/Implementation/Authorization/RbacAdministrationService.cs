@@ -378,14 +378,14 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return true;
             }
 
-            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
-            {
-                return false;
-            }
-
             if (await CanManageRbacAsync(principal, cancellationToken))
             {
                 return true;
+            }
+
+            if (!await IsEnforcementGateSatisfiedAsync(cancellationToken))
+            {
+                return false;
             }
 
             var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);

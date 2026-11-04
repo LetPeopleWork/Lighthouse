@@ -3471,6 +3471,48 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             Assert.That(status.UnassignedUserCount, Is.EqualTo(2));
         }
 
+        [Test]
+        public async Task CanSatisfyRequirementAsync_AnyScopedAdmin_LicenceLapsed_EmergencySubjectIsAllowed()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
+            var principal = BuildPrincipal(new Claim("sub", "auth0|break-glass"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserProfile { Id = 22, Subject = "auth0|break-glass", SubjectClaimType = "sub" });
+            var subject = CreateSubject(context, emergencySubjects: ["auth0|break-glass"]);
+
+            var allowed = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.AnyScopedAdmin);
+
+            Assert.That(allowed, Is.True);
+        }
+
+        [Test]
+        public async Task CanSatisfyRequirementAsync_AnyScopedAdmin_LicenceLapsed_TeamAdminIsStillRefused()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
+            var teamAdmin = new UserProfile { Id = 31, Subject = "auth0|team-admin", SubjectClaimType = "sub" };
+            context.UserProfiles.Add(teamAdmin);
+            context.UserPermissions.Add(new UserPermission
+            {
+                UserProfileId = 31,
+                Role = UserRole.TeamAdmin,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 5,
+            });
+            await context.SaveChangesAsync();
+            var principal = BuildPrincipal(new Claim("sub", "auth0|team-admin"));
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(teamAdmin);
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var allowed = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.AnyScopedAdmin);
+
+            Assert.That(allowed, Is.False);
+        }
+
         private RbacAdministrationService CreateSubject(
             LighthouseAppContext context,
             IReadOnlyList<string> emergencySubjects,

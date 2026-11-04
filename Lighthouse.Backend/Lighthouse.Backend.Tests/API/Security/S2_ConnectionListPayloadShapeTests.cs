@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        public async Task S2_TeamAdmin_GetSummary_Returns200WithIdNameAndWorkTrackingSystemOnly()
+        public async Task S2_TeamAdmin_GetSummary_CarriesTheFieldsTheSettingsFormReads()
         {
             client.AsTeamAdmin(TeamScopeId);
 
@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        public async Task S2_PortfolioAdmin_GetSummary_Returns200WithIdNameAndWorkTrackingSystemOnly()
+        public async Task S2_PortfolioAdmin_GetSummary_CarriesTheFieldsTheSettingsFormReads()
         {
             client.AsPortfolioAdmin(PortfolioScopeId);
 
@@ -165,6 +165,9 @@ namespace Lighthouse.Backend.Tests.API.Security
                 "id",
                 "name",
                 "workTrackingSystem",
+                "additionalFieldDefinitions",
+                "defaults",
+                "supportedDefaults",
             };
 
             foreach (var item in document.RootElement.EnumerateArray())
