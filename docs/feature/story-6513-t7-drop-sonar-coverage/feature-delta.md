@@ -578,3 +578,12 @@ default filter keeps the live-connector tests out (nothing reaches the network) 
   push must not leave a rule that points at a removed script.
 - `Test-Coverage.ps1`: CI filters with `Category!=` and the project `CLAUDE.md` with `TestCategory!=`. DELIVER runs the
   script's filter with `--list-tests` and confirms it leaves out the live-connector tests before relying on it.
+
+## Wave: DELIVER / [REF] Start (2026-11-04)
+
+- **Rigor profile:** `standard`, agreed by the maintainer: Sonnet for crafters, Haiku for reviewers, Stryker on
+  `timeBudgetOptions.ts` last, on frozen code.
+- **Quality gate check (step 0):** both Sonar projects use the gate "Lighthouse". Its conditions are
+  `new_reliability_rating`, `new_security_rating`, `new_maintainability_rating`, `new_duplicated_lines_density`,
+  `new_security_hotspots_reviewed` and `new_violations`, read from the public API on 2026-11-04. None is a coverage
+  condition, so the maintainer's check holds and T7 goes on.

@@ -1,0 +1,162 @@
+{
+  "roadmap": {
+    "project_id": "story-6513-t7-drop-sonar-coverage",
+    "created_at": "2026-11-04",
+    "total_steps": 5,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "CI stops collecting code coverage on both stacks; Sonar's general analysis and the time-budget guard stay as they are; each stack keeps one normal and one opt-in local coverage command."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "S1 Frontend",
+      "description": "The guard asks about CI, then CI runs the plain tests.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The guard asks whether it runs on CI",
+          "description": "A run scales its limits and never retires entries when it is a CI run or a coverage run. Rename the run kind coverage to scaled, coverageFactor to limitFactor, COVERAGE_FACTOR to LIMIT_FACTOR, and the log text to scaled run and limit factor.",
+          "criteria": [
+            "CI set with no --coverage gives the run kind scaled; neither gives plain; --coverage alone gives scaled",
+            "CI set to an empty string, false or FALSE gives plain, and a run of vitest with CI=FALSE confirms Vitest reads it the same way (no bail)",
+            "A scaled run multiplies limits by the factor and never retires an entry; a plain run multiplies by 1 and retires a passed test under a quarter of the budget",
+            "The reporter prints scaled run and limit factor 3 on a scaled run",
+            "git grep -n -i coverage over the non-test guard files timeBudgetOptions.ts, compareToAllowList.ts, timeBudgetReporter.ts and vitest.config.ts returns only the --coverage argument check and the coverage settings of Vitest itself",
+            "pnpm build and the touched tests are clean in Lighthouse.Frontend; dotnet build has zero warnings when backend files changed; comments follow the project rule, with no internal references and no nWave scenario tags"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetOptions.test.ts",
+          "scenario_name": "A CI run with no coverage keeps today's limits",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetOptions.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetOptions.test.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.test.ts",
+            "Lighthouse.Frontend/vitest.config.ts"
+          ],
+          "dependencies": [],
+          "estimated_size": "S",
+          "implementation_notes": "DISTILL was skipped by the maintainer, so this step writes its own test rows. See the Revision section of feature-delta.md, which wins over older text. Do not revert this step alone while 01-02 stays; revert the slice."
+        },
+        {
+          "id": "01-02",
+          "name": "Frontend CI runs the plain tests; coverage becomes opt-in",
+          "description": "The test step runs pnpm test, sonarreport becomes test:coverage, and Sonar no longer reads lcov. One CI-shaped run proves the guard and the reports.",
+          "criteria": [
+            "build-frontend/action.yml runs pnpm test; --coverage appears only in the test:coverage script",
+            "sonar-project.properties has no sonar.javascript.lcov.reportPaths; sonar.testExecutionReportPaths stays",
+            "git grep sonarreport returns nothing outside docs/feature and docs/evolution",
+            "The comment above Check test-time budget says its limits are in coverage-run seconds and looser on a plain run until they are measured on one; check_budget.py and test-time-budget.json are unchanged (git diff shows neither)",
+            "toolchain-pins.test.mjs passes",
+            "One run with CI=true and no --coverage over a planted 9 s test and a planted 5 s test: the run goes red, names the 9 s test, does not name the 5 s test, skips the stale check, and writes sonar-report.xml and test-results.json; the planted tests are removed afterwards",
+            "pnpm test:coverage over one small test file prints a coverage table; pnpm test over the same file prints none; @vitest/coverage-v8 stays in package.json",
+            "Comments name no internal references: git diff shows no T4, D1, AC or slice ids in added comment lines",
+            "pnpm build and the touched tests are clean in Lighthouse.Frontend; dotnet build has zero warnings when backend files changed; comments follow the project rule, with no internal references and no nWave scenario tags"
+          ],
+          "test_file": "None (configuration; manual planted-test check)",
+          "scenario_name": "A plain CI-shaped run still fails a slow test",
+          "files_to_modify": [
+            ".github/actions/build-frontend/action.yml",
+            ".github/workflows/ci_frontend.yml",
+            "Lighthouse.Frontend/package.json",
+            "Lighthouse.Frontend/sonar-project.properties",
+            "docs/ci-learnings.md",
+            "docs/product/architecture/adr-269-frontend-layer-rules-are-checked-by-fallow-and-ratcheted-in-an-enforcement-test.md",
+            "docs/product/kpi-contracts.yaml"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Step name Test Frontend and Sonar report stays. Check test-time budget, check_budget.py and test-time-budget.json are otherwise unchanged. In the ADR and the KPI contract change only the command name. That a planted fast listed test does not retire on CI is pinned at unit level in 01-01; the maintainer cut the end-to-end proof down to one manual check."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "S2 Backend",
+      "description": "One plain test step and a local coverage script.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Backend CI runs without the collector; a local coverage script",
+          "description": "One Test Backend step with no coverage collector, no opencover settings in the scanner, and a new local script Lighthouse.Backend/Test-Coverage.ps1.",
+          "criteria": [
+            "ci_backend.yml has one step named Test Backend with no if: line, with --logger trx and RunConfiguration.MaxCpuCount=0, and no --collect",
+            "git grep for opencover, XPlat Code Coverage and coverage.exclusions in .github returns nothing",
+            "sonar.cs.vstest.reportsPaths stays, and the run_sonar conditions on the Sonar steps stay",
+            "The ci.yml comment no longer says with coverage, and the comment above the backend budget step says its limits are in coverage-run seconds and looser on a plain run until they are measured on one",
+            "The comment in ForecastRealityCheckAcceptanceTest.cs no longer claims CI uses a coverage run",
+            "Test-Coverage.ps1 has CmdletBinding, ErrorActionPreference Stop and a -Filter parameter defaulting to the live-connector exclusion, and passes none of the CI-only arguments or anything after --",
+            "dotnet test --list-tests with the default filter shows no test of the live-connector categories",
+            "Test-Coverage.ps1 run once with -Filter narrowed to one small test class writes a coverage.cobertura.xml",
+            "coverlet.collector stays in the test project; actionlint reports nothing on the changed workflows",
+            "pnpm build and the touched tests are clean in Lighthouse.Frontend; dotnet build has zero warnings when backend files changed; comments follow the project rule, with no internal references and no nWave scenario tags"
+          ],
+          "test_file": "None (configuration)",
+          "scenario_name": "The backend runs plain in CI and coverage stays available locally",
+          "files_to_modify": [
+            ".github/workflows/ci_backend.yml",
+            ".github/workflows/ci.yml",
+            "Lighthouse.Backend/Test-Coverage.ps1",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs"
+          ],
+          "dependencies": [],
+          "estimated_size": "S",
+          "implementation_notes": "CI filters with Category!= and CLAUDE.md with TestCategory!=; confirm the spelling chosen selects what is intended. The backend budget step stays --warn-only."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Close",
+      "description": "Mutation and local gates on frozen code, then one push of both slices and the CI read.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "Mutation and full local gates on frozen code",
+          "description": "Stryker on timeBudgetOptions.ts, then the full local gates. One commit per slice stays, so each is a plain revert.",
+          "criteria": [
+            "Stryker on timeBudgetOptions.ts reports at least 80 %, survivors killed or listed with a reason, recorded in the feature's mutation folder",
+            "pnpm test, pnpm build, dotnet build and the filtered dotnet test are green"
+          ],
+          "test_file": "None (gates)",
+          "scenario_name": "Gates before the push",
+          "files_to_modify": [
+            "docs/feature/story-6513-t7-drop-sonar-coverage/mutation/results.md (create)"
+          ],
+          "dependencies": [
+            "01-02",
+            "02-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Lead-owned."
+        },
+        {
+          "id": "03-02",
+          "name": "Push once and read CI",
+          "description": "On the maintainer's word, push both slices together, then check the DEVOPS verification table and read the saving as the DEVOPS section says.",
+          "criteria": [
+            "Every row of the DEVOPS verification table is checked on the first main run and recorded",
+            "The saving is read from same-group runs and summed per-test seconds, and recorded with whatever runs exist"
+          ],
+          "test_file": "None (CI read)",
+          "scenario_name": "CI after the push",
+          "files_to_modify": [
+            "docs/feature/story-6513-t7-drop-sonar-coverage/feature-delta.md"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Lead-owned. A red run reverts or fixes the stack concerned."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}
