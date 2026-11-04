@@ -232,6 +232,42 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task UpdatePortfolio_StoredOwnerNotLoadedAndUnreadable_KeepsTheOwner()
+        {
+            var owner = new Team { Id = 2, Name = "Hidden Owner" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeamId = owner.Id };
+            ArrangeStoredPortfolio(portfolio, owner, readableTeamIds: []);
+            var subject = CreateSubject();
+
+            var settings = new PortfolioSettingDto(portfolio) { OwningTeam = null };
+            await subject.UpdatePortfolio(42, settings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.OwningTeamId, Is.EqualTo(owner.Id));
+                Assert.That(portfolio.OwningTeam, Is.SameAs(owner));
+            }
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_StoredOwnerNotLoadedAndReadable_SavingNoOwnerClearsIt()
+        {
+            var owner = new Team { Id = 2, Name = "Owner" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeamId = owner.Id };
+            ArrangeStoredPortfolio(portfolio, owner, readableTeamIds: [owner.Id]);
+            var subject = CreateSubject();
+
+            var settings = new PortfolioSettingDto(portfolio) { OwningTeam = null };
+            await subject.UpdatePortfolio(42, settings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolio.OwningTeamId, Is.Null);
+                Assert.That(portfolio.OwningTeam, Is.Null);
+            }
+        }
+
+        [Test]
         public async Task UpdatePortfolio_OwningTeamTheCallerCanRead_SavingNoOwnerClearsIt()
         {
             var owner = new Team { Id = 2, Name = "Owner" };

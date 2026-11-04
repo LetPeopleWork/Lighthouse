@@ -169,22 +169,23 @@ namespace Lighthouse.Backend.API
         }
 
         // The settings leave out an Owning Team the caller cannot read, so the form sends no owner back.
-        // That must not read as "clear the owner", or any save by such a caller would wipe it.
+        // That must not read as "clear the owner", or any save by such a caller would wipe it. The stored owner
+        // is read from its id: the loaded Portfolio only carries the Team itself when something else pulled it in.
         private async Task KeepOwningTeamTheCallerCannotRead(Portfolio portfolio, PortfolioSettingDto portfolioSetting)
         {
-            var storedOwner = portfolio.OwningTeam;
-            if (portfolioSetting.OwningTeam is not null || storedOwner is null)
+            if (portfolioSetting.OwningTeam is not null || portfolio.OwningTeamId is not { } storedOwnerId)
             {
                 return;
             }
 
             var readableTeamIds = await rbacAdministrationService
-                .GetReadableTeamIdsAsync(User, [storedOwner.Id], HttpContext?.RequestAborted ?? default)
+                .GetReadableTeamIdsAsync(User, [storedOwnerId], HttpContext?.RequestAborted ?? default)
                 .ConfigureAwait(false);
 
-            if (!readableTeamIds.Contains(storedOwner.Id))
+            if (!readableTeamIds.Contains(storedOwnerId))
             {
-                portfolioSetting.OwningTeam = new EntityReferenceDto(storedOwner.Id, storedOwner.Name);
+                var storedOwnerName = teamRepository.GetById(storedOwnerId)?.Name ?? string.Empty;
+                portfolioSetting.OwningTeam = new EntityReferenceDto(storedOwnerId, storedOwnerName);
             }
         }
 

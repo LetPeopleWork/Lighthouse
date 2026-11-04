@@ -95,11 +95,9 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static void SyncTeams(Portfolio project, PortfolioSettingDto portfolioSetting, IRepository<Team> teamRepo)
         {
-            project.OwningTeam = null;
-            if (portfolioSetting.OwningTeam != null)
-            {
-                project.OwningTeam = teamRepo.GetById(portfolioSetting.OwningTeam.Id);
-            }
+            var owningTeam = portfolioSetting.OwningTeam == null ? null : teamRepo.GetById(portfolioSetting.OwningTeam.Id);
+            project.OwningTeam = owningTeam;
+            project.OwningTeamId = owningTeam?.Id;
         }
 
         private static void SyncServiceLevelExpectation(Portfolio project, PortfolioSettingDto portfolioSetting)
