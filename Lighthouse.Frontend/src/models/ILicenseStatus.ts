@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// Backend serialises absent optional members as JSON null (not omitted), so accept
-// null and normalise to undefined to keep the `string | undefined` / `Date | undefined` contract.
+// The dates arrive as JSON null when absent, and the licensee's details are left out altogether
+// for anyone but a System Admin, so accept both and normalise to `string | undefined` / `Date | undefined`.
 const optionalString = z
 	.string()
 	.nullish()
