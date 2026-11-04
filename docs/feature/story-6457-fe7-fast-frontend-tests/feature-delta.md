@@ -788,8 +788,11 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   tests; exactly one test renders the 143-row list (extended with the page-2 line and numbers); nine large-list tests and the
   300-row test removed with rows. Measured (indicative, not quiet, 5 alternating pairs): summed test seconds of the four
   files -34.5 % (the two edited files -65.7 %); allow-list 23 to 13.
-- **09 (slice 8).** Field-change and default resolution per tracker type; every tracker field set a test relied on is listed
-  at `09-01` so none is lost.
+- **09 (slice 8).** What a save asks and the clearing of defaults extracted (`whatASaveAsks.ts`,
+  `defaultsKeepingOnlyFields.ts`) with 79 direct tests covering every default of every tracker type's set; 23 form tests
+  removed with rows, two kept as renders because breaking the component's call of the function left everything else green
+  (22 call sites broken once each, none uncaught at close). Measured (indicative, not quiet, 5 alternating pairs): summed
+  test seconds of the touched files -10.3 % (pairs 1 to 4: -22.6 %; pair 5 ran at load 12); allow-list 13 to 13.
 - **10 (slice 9).** No extraction needed (`contextGridLayout` was already exported): 65 of the 108 context cases moved to 88
   direct tests of that function, 43 stay as renders; each call-site setting proven by mutation. Measured (indicative, not
   quiet, 5 alternating pairs): summed test seconds of the touched files -63.3 %; allow-list 13 to 13.

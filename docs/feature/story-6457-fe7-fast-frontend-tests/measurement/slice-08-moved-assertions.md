@@ -243,10 +243,131 @@ leave about 6 s of summed test time on the table and the question logic still pr
 
 ## Delta
 
-Filled at close: commits, files changed since `608f3017f`, `expect(` removed/added per file, test counts, coverage
-after, file time after (alternating pairs), allow-list length (unchanged at its current length: no entry belongs to
-these files), and one row per removed id in the table:
+Commits (pre-slice `608f3017f`): `f959554ee` extraction (no test file changed; the 275 tests of the two directories passed
+unmodified at it), `65b9bfd4b` test rewrite; this report is the close-report commit. Files changed since the pre-slice
+commit (`git diff --name-only 608f3017f`, apart from this report, the declaration and `feature-delta.md`):
+`whatASaveAsks.ts` (new), `defaultsKeepingOnlyFields.ts` (new), `ModifyConnectionSettings.tsx`, `whatASaveAsks.test.ts`
+(new), `defaultsKeepingOnlyFields.test.ts` (new), `EditConnection.defaults.test.tsx`, `EditConnection.fieldChange.test.tsx`,
+`UpdateQuestion.test.tsx`. `slowTests.ts`, `setupTests.ts`, `EditConnection.tsx`, `UpdateQuestion.tsx`,
+`CreateConnectionWizard.tsx` and every other production file are untouched.
+
+RED: skipped for the extraction (behaviour-free, the existing tests are the net). The bodies moved as written, with two
+placement choices: `fieldOfDefault` sits with the table in `whatASaveAsks.ts` (the defaults section of the form and
+`defaultsKeepingOnlyFields` both import it), and `NOBODY` stays in the component (it seeds state there). No helper split
+was needed for Biome.
+
+| Measure | Before | After |
+|---|---|---|
+| Test count, the five files (defaults, fieldChange, UpdateQuestion, plus the two new) | 99 | 160 (28 + 29 + 24 + 68 + 11) |
+| Ids of the four-file preserved set | 137 | 114 (23 missing, all in the table below; 114 unchanged) |
+| Ids declared to leave | 25 | 23 (two stay, see "Deviations") |
+| `expect(` removed / added, `EditConnection.defaults.test.tsx` | n/a | 8 / 0 |
+| `expect(` removed / added, `EditConnection.fieldChange.test.tsx` | n/a | 3 / 0 |
+| `expect(` removed / added, `UpdateQuestion.test.tsx` | n/a | 0 / 0 (a case table added; its one `expect(` is the existing shape) |
+| Line coverage, both directories | 90.51 | 90.54 |
+| Branch coverage, both directories | 82.50 | 82.72 |
+| Statements / functions, both directories | 89.59 / 87.50 | 89.62 / 87.56 |
+| File time, the touched files (indicative (not quiet); summed test seconds, 5 alternating pairs) | 90.32 s | 81.05 s (-10.3 %; pairs 1 to 4: 71.76 s to 55.56 s, -22.6 %) |
+| Allow-list length (`slowTests.ts`) | 13 | 13 (no entry belongs to these files; file untouched) |
+
+Time: five alternating before/after pairs back to back, `LIGHTHOUSE_TEST_WORKERS=2` both sides, only the touched test
+files (before = `EditConnection.defaults`, `EditConnection.fieldChange` and `UpdateQuestion` tests from a temporary
+worktree of `608f3017f`; after = the same three plus the two new files), the sum of per-test durations from the JSON report.
+Indicative (not quiet): load average 3 to 5 for pairs 1 to 4; pair 5 after ran while another session pushed the load to 12.
+
+| Pair | Before (s, 99 tests) | After (s, 160 tests) |
+|---|---|---|
+| 1 | 17.83 | 13.54 |
+| 2 | 17.95 | 14.40 |
+| 3 | 17.63 | 13.62 |
+| 4 | 18.35 | 14.00 |
+| 5 | 18.56 | 25.49 (load 12) |
+| Sum | 90.32 | 81.05 |
+
+The saving is smaller than the 6 s of 26 s the declaration expected for the same reason as the spread: the two edited page
+files carried 15 and 10 ids at 0.18 to 0.30 s, and a render per id was all they cost; the whole wizard (7 s) and the 28 + 27
+wiring tests stay.
+
+Coverage: directory run as in the "Coverage (before)" section, 17 files, 336 tests passed. `whatASaveAsks.ts` is at 96 %
+statements (uncovered: lines 55 and 84, the `label` of `estimationForTeams` and `estimationForPortfolios`, which the
+form's Estimation rows never ask for).
+
+### Deviations
+
+1. Two of the declared 25 ids stay as renders, because breaking the component's call of the extracted function left every
+   other test green until they were put back (see the mutation table):
+   - `... a followed Estimation default left as it was asks nothing when another default changes` (row 11): the only test
+     that fails when `changedEstimationDefaultsWithFollowers` is called without the loaded defaults (mutation 6).
+   - `... a changed featureOwnerFieldForPortfolios default 2 Portfolios follow asks whether to update them` (row 4): the
+     `it.each` of four defaults shrank to its one `featureOwnerFieldForPortfolios` row, which is the only one that fails when
+     `whyUpdate` is given another word for Feature (mutation 10). The expect line is unchanged; three of its four rows left.
+2. The other rows of the declaration hold unchanged. Function cases are more numerous than the "about 40" expected (68 + 11),
+   because every default of the table is asserted by name; they add about 0.1 s.
+
+### Mutation table (wiring)
+
+Each call site in `ModifyConnectionSettings.tsx` was broken once (one replacement, in the committed file), the six
+`ModifyConnectionSettings`/`EditConnection`/wizard test files run, the file restored with `git checkout`. After the last one
+`git diff -- ModifyConnectionSettings.tsx` was empty. "Failed" is the count of failing tests; the first is named.
+
+| # | Call site broken | Failed | First failing test (surviving id) |
+|---|---|---|---|
+| 0 | fields flag of `whyUpdate` always false | 23 | `defaults ... an Additional Field and a followed default changed in one save ask only the Additional Fields question` |
+| 1 | fields flag always true | 12 | `defaults ... a save that changes neither a default nor a field sends the defaults as they were and asks nothing` |
+| 2 | fields flag compares current with itself | 23 | same as 0 |
+| 3 | `changedDefaultsToUpdateFollowersOf` without the loaded defaults | 1 | `... a save that changes neither a default nor a field ...` |
+| 4 | same, current defaults replaced by the loaded | 6 | `... asks whether to update the 3 Teams that follow it, and Save and update says so` |
+| 5 | same, usage replaced by nobody | 6 | same as 4 |
+| 6 | `changedEstimationDefaultsWithFollowers` without the loaded defaults | 0 before row 11 was kept; 1 after | `... a followed Estimation default left as it was asks nothing when another default changes` |
+| 7 | same, current defaults replaced by the loaded | 1 | `the Estimation default a changed Estimation default 4 Teams follow asks only to save ...` |
+| 8 | same, usage replaced by nobody | 1 | same as 7 |
+| 9 | `whyUpdate` given nobody as usage | 30 | `... asks whether to update the 3 Teams ...` |
+| 10 | `whyUpdate` given another word for Feature | 0 before row 4 was kept; 1 after | `... a changed featureOwnerFieldForPortfolios default 2 Portfolios follow asks ...` |
+| 11 | the two defaults arguments swapped (Estimation for the updating list) | 7 | `... asks whether to update the 3 Teams ...` |
+| 12 | the question never asked | 31 | `saving a changed default removing the field a default names clears that default in the save ...` |
+| 13 | answer carries `additionalFieldsChanged` always false | 4 | `... an Additional Field and a followed default changed ...` |
+| 14 | answer carries it always true | 4 | `... asks whether to update the 3 Teams ...` |
+| 15 | answer compares current with itself | 4 | `... an Additional Field and a followed default changed ...` |
+| 16 | `defaultsKeepingOnlyFields` not called (defaults left) | 1 | `saving a changed default removing the field a default names clears that default in the save, and leaves the others as they were` |
+| 17 | called with the stale field list | 1 | same as 16 |
+| 18 | called with an empty field list | 1 | same as 16 |
+| 19 | section row filter by group inverted | 20 | `ModifyConnectionSettings.directionTips ... on a Jira connection ...` |
+| 20 | section row label with another word for Feature | 3 | `the section on the connection page a Jira connection shows a Defaults for Teams and Portfolios section ...` |
+| 21 | section reads the chosen field without the Estimation rule | 2 | `the Estimation default a changed Estimation default 4 Teams follow asks only to save ...` |
+
+Not run: swapping the two arguments of `fieldsChangedSince` (the comparison is symmetric, so the result is the same).
+Every other call-site argument that matters is in the table; none is caught by nothing.
+
+### Removed ids
 
 | Removed id (file :: suffix) | Moved to | Assertion kept as |
 |---|---|---|
-| (filled at close from the 25 rows above) | | |
+| defaults :: ... a changed parentOverrideForPortfolios default 2 Portfolios follow asks whether to update them | `whatASaveAsks.test.ts` `whyUpdate ... %s names its label and what changes` | label `Parent Override Field`, change `parents`, 2 Portfolios; sentence in `UpdateQuestion.test.tsx` "the Teams' and the Portfolios' Parent Override defaults" |
+| defaults :: ... a changed dependencyFieldForPortfolios default ... | same test, `dependencyFieldForPortfolios` | `Dependency Field`, `dependencies`, 2 Portfolios; sentence in the `UpdateQuestion` Dependency case |
+| defaults :: ... a changed sizeEstimateFieldForPortfolios default ... | same test, `sizeEstimateFieldForPortfolios` | `Size Estimate Field`, `sizes`, 2 Portfolios; sentence in the `UpdateQuestion` Size Estimate case |
+| defaults :: ... a changed featureOwnerFieldForPortfolios default ... | stays (row of the shrunk `it.each`) and in the same function test | see Deviations; also `Feature Owner Field`, `owners`, with the renamed-Feature label asserted |
+| defaults :: ... 3 Portfolios following both the Parent Override Field and Dependency Field defaults, both changed, are counted once | `whatASaveAsks.test.ts` `counts 3 Portfolios following both %s and %s once` | portfolios 3, teams 0, from `followerGroups` |
+| defaults :: ... both the Dependency Field and Size Estimate Field ... | same, second pair | same |
+| defaults :: ... both the Size Estimate Field and Feature Owner Field ... | same, third pair | same; the joined sentence is in `UpdateQuestion.test.tsx` |
+| defaults :: ... a changed Dependency default says its followers' dependencies change once updated | `whatASaveAsks.test.ts` `leaves out a group that follows another default only` | portfolios 2 (not 3), label and change from the table |
+| defaults :: ... Portfolios following a changed default and another one left as it was are all asked about | `whatASaveAsks.test.ts` `counts a whole group when it follows a changed default and another one left as it was` | portfolios 3 |
+| defaults :: ... a changed default nobody follows saves without asking, though other defaults have followers | `whatASaveAsks.test.ts` `changedDefaultsToUpdateFollowersOf ... leaves out a changed default nobody follows, though others have followers` | empty list, so `whyUpdate` is null; the wiring "default nobody follows saves without asking" stays as a render |
+| defaults :: ... a followed Estimation default left as it was asks nothing when another default changes | stays (mutation 6); function side in `changedEstimationDefaultsWithFollowers ... leaves out a followed Estimation default that stayed as it was` | see Deviations |
+| defaults :: the Estimation default a changed Estimation default nobody follows saves without asking anything | `whatASaveAsks.test.ts` `leaves out a changed Estimation default nobody follows` | empty list |
+| defaults :: the Estimation default a changed Portfolios' Estimation default asks about the Portfolios that follow it | `whatASaveAsks.test.ts` `asks about the Portfolios that follow a changed Portfolios' Estimation default` | `because: estimation`, portfolios 2, defaults 1; the sentence is in `UpdateQuestion.test.tsx` "one Estimation default" |
+| defaults :: the Estimation default changing only the unit of a followed Estimation default asks before saving | `whatASaveAsks.test.ts` `sees another unit as a change` (also field, non-numeric flag, category values, removed, null) | the Estimation default listed |
+| defaults :: saving a changed default removing the field the Teams' Estimation default reads clears that default in the save | `defaultsKeepingOnlyFields.test.ts` `clears an Estimation default when the field inside its bundle is gone` (and `estimationForPortfolios`) | `estimationForTeams: null`, the others as they were; the same call is proven by the form test that removes `Caused By` |
+| fieldChange :: ... with one of each the question reads as such | `UpdateQuestion.test.tsx` `when an Additional Field changed` case `one of each`; `whatASaveAsks.test.ts` `whyUpdate ... asks about everyone on a connection used by {teams: 1, portfolios: 1}` | title `Update 1 Team and 1 Portfolio?` with the default words |
+| fieldChange :: ... with Squads and Programs ... | same file, case `Squads and Programs` | title `Update 4 Squads and 2 Programs?` and the description in the renamed words |
+| fieldChange :: ... with one Squad and one Program ... | same, case `one Squad and one Program` | `Update 1 Squad and 1 Program?` |
+| fieldChange :: ... with no Portfolio ... | same, case `no Portfolio`; usage `{3, 0}` in `whyUpdate` | `Update 3 Teams and 0 Portfolios?` |
+| fieldChange :: ... with no Team ... | same, case `no Team`; usage `{0, 2}` in `whyUpdate` | `Update 0 Teams and 2 Portfolios?` |
+| fieldChange :: ... the explanation names the Teams and Portfolios in the words this instance uses | `UpdateQuestion.test.tsx` case `Squads and Programs` (description) | the full sentence with `Squad and Program`; the kept wiring test `adding a field and pressing Save asks ...` proves the counts reach it |
+| fieldChange :: ... a field Priya started to add and then cancelled asks no question | `whatASaveAsks.test.ts` `fieldsChangedSince ... nothing changed is no change` | false; the wiring tests `a save with only a new name` and `a new API token` keep "no question" on a render, and mutation 1 fails them |
+| fieldChange :: ... a field Priya added and removed again before saving asks no question | same | same |
+| fieldChange :: ... swapping the names and references of two fields asks the question | `fieldsChangedSince ... the names and references of two fields swapped is a change` | true; the id is part of the compared key (`... back under a new id ...`) |
+| fieldChange :: ... a field change on a connection no Team or Portfolio uses is saved straight away without a question | `whyUpdate ... asks nothing on a connection no Team or Portfolio uses` | null |
+
+`expect(` lines: `EditConnection.defaults.test.tsx` lost 8 (the loop `expect` of the `it.each` of four stays, three rows left),
+`EditConnection.fieldChange.test.tsx` lost 3. The tests that left without an `expect(` line of their own used the helpers
+`thenTheConnectionIsSavedWith` and `thenNoQuestionIsAsked`, which stay.
