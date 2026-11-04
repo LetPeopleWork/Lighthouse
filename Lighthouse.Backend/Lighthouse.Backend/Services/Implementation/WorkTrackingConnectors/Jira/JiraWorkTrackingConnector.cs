@@ -448,7 +448,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
                     return ConnectionValidationResult.Failure(
                         "authentication_failed",
-                        "Authentication failed for Jira.",
+                        "Authentication failed for Jira. Check all of this connection's sign-in details.",
                         $"Jira returned {(int)response.StatusCode} {response.ReasonPhrase}.",
                         JiraWorkTrackingOptionNames.ApiToken);
                 }

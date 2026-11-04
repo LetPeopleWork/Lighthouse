@@ -23,8 +23,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     {
         private const string PendingTheJiraBoardFix = "pending: a failed Jira board read still answers as empty";
 
-        private const string PendingTheTestConnectionMessage = "pending: Test connection still says only that authentication failed";
-
         private const string BoardId = "8";
 
         private const string TheBoardsWorkItems = $"board/{BoardId}/issue";
@@ -324,7 +322,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheTestConnectionMessage)]
         public async Task Test_connection_on_a_refused_credential_says_to_check_all_the_sign_in_details()
         {
             var subject = AConnectorOver(AJira(myself: _ => Responding(HttpStatusCode.Unauthorized, "{}")));
