@@ -452,6 +452,23 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
+        public async Task MoveFeature_MovedFeatureIsInAPortfolioTheCallerCannotRead_AnswersNotFoundWithoutPlacing()
+        {
+            const int hiddenPortfolioId = 7;
+            var moved = AFeatureInPortfolio(101, hiddenPortfolioId);
+            var target = AFeatureInPortfolio(102, 1);
+            features.AddRange([moved, target]);
+            TheCallerCannotRead(hiddenPortfolioId);
+
+            var response = await CreateSubject().MoveFeature(moved.Id, MoveCommandNaming(target.Id));
+
+            Assert.That(response, Is.InstanceOf<NotFoundResult>());
+            featureRankingServiceMock.Verify(
+                x => x.PlaceAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Test]
         public async Task MoveFeature_TargetIsInAPortfolioTheCallerCannotRead_AnswersNotFoundWithoutPlacing()
         {
             const int hiddenPortfolioId = 7;

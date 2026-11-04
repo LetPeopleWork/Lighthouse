@@ -442,6 +442,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             ThenNoFreshForecastWasAskedFor();
         }
 
+        // The same promise for the Feature being moved: a refusal here would confirm the id belongs to a
+        // Portfolio the caller cannot read, and walking the ids would then list them all.
+        [Test]
+        public async Task Moving_a_feature_the_caller_cannot_read_answers_as_if_that_feature_did_not_exist()
+        {
+            var mine = GivenAPortfolio("Launch Alignment");
+            var secret = GivenAPortfolio("Confidential Acquisition");
+            var ids = GivenTheTrackersOrderReads(row => row == 1 ? [secret] : [mine], SearchIndex, LegacyImporter, PartnerCatalogue);
+            await GivenThisInstanceOwnsTheOrder();
+            var theOrderingColumns = GivenTheOrderingColumnsAsStored();
+            GivenTheCallerMayWrite(mine);
+
+            var movingNobody = await WhenTheProductOwnerTriesToPlaceItAbove(TheIdOfNoFeature, ids[0]);
+            var movingTheHidden = await WhenTheProductOwnerTriesToPlaceItAbove(ids[1], ids[0]);
+
+            ThenTheAnswerSaysNoSuchFeature(movingTheHidden);
+            ThenTheAnswersCannotBeToldApart(movingTheHidden, movingNobody);
+            ThenNoFeatureChangedItsPlace(theOrderingColumns);
+            ThenNoFreshForecastWasAskedFor();
+        }
+
         [Test]
         public async Task A_feature_moves_next_to_one_the_caller_may_only_read()
         {

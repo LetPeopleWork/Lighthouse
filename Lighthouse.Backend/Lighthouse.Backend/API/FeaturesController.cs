@@ -143,6 +143,11 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
+            if (!await TheCallerMayRead(feature))
+            {
+                return NotFound();
+            }
+
             // While the tracker owns the order, a place written here is one nobody reads. Accepting it would
             // leave the caller looking at an unmoved list with no way to tell why.
             if (featureOrderingPolicyProvider.GetPolicy() != FeatureOrderingPolicy.ManualOrder)
@@ -156,7 +161,7 @@ namespace Lighthouse.Backend.API
                 return Forbid();
             }
 
-            // Only now, so a caller who may not move anything cannot use the answer to learn which ids exist.
+            // Only now, so a caller refused the move gets the same answer whatever target they named.
             // An unknown target falls through: the ranking service answers it, with the same 404.
             var target = targetFeatureId is null ? null : featureRepository.GetById(targetFeatureId.Value);
             if (target is not null && !await TheCallerMayRead(target))
