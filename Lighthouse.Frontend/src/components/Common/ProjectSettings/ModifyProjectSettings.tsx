@@ -15,15 +15,12 @@ import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import { getDefaultPortfolioSchema } from "../../../models/Common/DataRetrievalSchemaDefaults";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeam } from "../../../models/Team/Team";
-import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import AdvancedInputsComponent from "../../../pages/Common/AdvancedInputs/AdvancedInputs";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { fireAndForget } from "../../../utils/fireAndForget";
 import {
-	type IStoredStateSettings,
-	mappingAutoSaveBlockers,
 	storedStateSettingsOf,
 	validateStateMappings,
 } from "../../../utils/stateMappingValidation";
@@ -42,6 +39,7 @@ import DependenciesComponent from "./Advanced/DependenciesComponent";
 import FeatureSizeComponent from "./Advanced/FeatureSizeComponent";
 import OwnershipComponent from "./Advanced/OwnershipComponent";
 import PortfolioSizeNote from "./PortfolioSizeNote";
+import { portfolioAutoSaveBlockers } from "./portfolioAutoSaveBlockers";
 
 interface ModifyProjectSettingsProps {
 	title: string;
@@ -57,67 +55,6 @@ interface ModifyProjectSettingsProps {
 	disableSave?: boolean;
 	/** Why saving is switched off, when the person editing should be told. */
 	notSavedReason?: string;
-}
-
-// Autosave is the only save trigger, so an invalid form has to name what blocks it.
-function portfolioAutoSaveBlockers(
-	s: IPortfolioSettings,
-	system: IWorkTrackingSystemConnection | null,
-	isDefault: boolean,
-	getTerm: (key: string) => string,
-	stored: IStoredStateSettings | undefined,
-): string[] {
-	const schema = s.dataRetrievalSchema;
-	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const reasons: string[] = [];
-	if (s.name === "") {
-		reasons.push("Enter a Name");
-	}
-	if (s.defaultAmountOfWorkItemsPerFeature === undefined) {
-		reasons.push(
-			`Set a Default Number of ${getTerm(TERMINOLOGY_KEYS.WORK_ITEMS)} per ${featureTerm}`,
-		);
-	}
-	if (
-		s.usePercentileToCalculateDefaultAmountOfWorkItems &&
-		!(s.defaultWorkItemPercentile > 0 && s.percentileHistoryInDays >= 30)
-	) {
-		reasons.push(
-			`Set a ${featureTerm} Size Percentile above 0 and a History in Days of at least 30`,
-		);
-	}
-	if (
-		schema?.isWorkItemTypesRequired !== false &&
-		s.workItemTypes.length === 0
-	) {
-		reasons.push(
-			`Add at least one ${getTerm(TERMINOLOGY_KEYS.WORK_ITEM)} Type`,
-		);
-	}
-	if (s.toDoStates.length === 0) {
-		reasons.push("Add at least one To Do State");
-	}
-	if (s.doingStates.length === 0) {
-		reasons.push("Add at least one Doing State");
-	}
-	if (s.doneStates.length === 0) {
-		reasons.push("Add at least one Done State");
-	}
-	reasons.push(...mappingAutoSaveBlockers(s.stateMappings, s, stored));
-	if (isDefault) {
-		return reasons;
-	}
-	if (system === null) {
-		reasons.push(`Select a ${getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM)}`);
-	} else if (
-		schema?.isRequired !== false &&
-		(s.dataRetrievalValue ?? "") === ""
-	) {
-		reasons.push(
-			`Enter a ${schema?.displayLabel ?? system.workTrackingSystemGetDataRetrievalDisplayName()}`,
-		);
-	}
-	return reasons;
 }
 
 const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
