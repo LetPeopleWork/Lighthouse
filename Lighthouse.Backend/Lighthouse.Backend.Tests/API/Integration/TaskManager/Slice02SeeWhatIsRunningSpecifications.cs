@@ -31,6 +31,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
 
         private TaskCompletionSource theTrackerMayAnswer = null!;
 
+        private TaskCompletionSource theTrackerWasAsked = null!;
+
         private readonly List<UpdateKey> admittedByHand = [];
 
         private readonly record struct SeededPortfolio(int Id, string Name);
@@ -85,11 +87,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
         private void GivenTheTrackerDoesNotAnswerUntilWeSaySo()
         {
             theTrackerMayAnswer = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            theTrackerWasAsked = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
 
             ConnectorMock
                 .Setup(c => c.GetWorkItemsForTeam(It.IsAny<Team>(), It.IsAny<CancellationToken>()))
                 .Returns(async () =>
                 {
+                    theTrackerWasAsked.TrySetResult();
                     await theTrackerMayAnswer.Task;
                     return [];
                 });
@@ -103,8 +107,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
                 });
         }
 
-        private void GivenThatTeamIsDeletedWhileItsRefreshIsStillRunning(SeededTeam team)
+        private async Task GivenThatTeamIsDeletedWhileItsRefreshIsStillRunning(SeededTeam team)
         {
+            // The refresh is marked in progress before it looks its team up, so deleting on that signal alone
+            // can beat the lookup, and a refresh that finds no team ends at once and leaves the list.
+            // Waiting for the tracker to be asked is what makes the refresh really be mid-flight.
+            await theTrackerWasAsked.Task.WaitAsync(TimeSpan.FromSeconds(30));
+
             using var scope = Factory.Services.CreateScope();
             var teams = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
             teams.Remove(team.Id);

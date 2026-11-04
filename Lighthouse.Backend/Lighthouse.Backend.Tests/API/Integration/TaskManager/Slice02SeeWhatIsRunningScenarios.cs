@@ -93,7 +93,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
             GivenTheTrackerDoesNotAnswerUntilWeSaySo();
 
             await WhenARefreshOfThatTeamIsUnderWay(team);
-            GivenThatTeamIsDeletedWhileItsRefreshIsStillRunning(team);
+            await GivenThatTeamIsDeletedWhileItsRefreshIsStillRunning(team);
 
             await ThenTheTaskListStillDescribesThatWorkByTypeAndId(team);
         }
