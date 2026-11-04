@@ -59,7 +59,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task An_administrator_asking_for_a_board_of_a_Jira_that_refuses_it_is_told_what_Jira_said()
         {
             var connection = AConnection();
@@ -186,7 +185,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(HttpStatusCode.Forbidden, "403 Forbidden")]
         [TestCase(HttpStatusCode.NotFound, "404 Not Found")]
         [TestCase(HttpStatusCode.ServiceUnavailable, "503 Service Unavailable")]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_Jira_answers_with_a_failure_carries_that_answer(HttpStatusCode status, string answer)
         {
             var subject = AConnectorOver(AJira(configuration: _ => Responding(status, "{}")));
@@ -197,7 +195,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_from_a_Jira_that_cannot_be_reached_reads_as_no_answer()
         {
             var subject = AConnectorOver(AJira(configuration: _ => throw new HttpRequestException("No such host is known.")));
@@ -208,7 +205,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_read_that_times_out_reads_as_no_answer()
         {
             var subject = AConnectorOver(AJira(configuration: _ => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")));
@@ -220,7 +216,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase(AGatewayPage)]
         [TestCase(AnAnswerWithoutABoardConfiguration)]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_Lighthouse_cannot_read_says_so(string body)
         {
             var subject = AConnectorOver(AJira(configuration: _ => Responding(HttpStatusCode.OK, body)));
@@ -231,7 +226,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
         {
             var fault = AnUnexpectedFault();
@@ -306,7 +300,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingThePartialBoardFix)]
         public async Task A_board_Jira_hands_over_whole_still_gives_its_states_and_types()
         {
             var subject = AConnectorOver(StubTransport.AnsweringWith(request => TheHealthyAnswerAt(request.RequestUri?.AbsolutePath ?? string.Empty)));
@@ -323,7 +316,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore(PendingThePartialBoardFix)]
         public async Task A_board_that_holds_no_work_items_yet_is_a_real_answer_and_not_a_failure()
         {
             var subject = AConnectorOver(ABoardWhere(TheBoardsWorkItems, () => Responding(HttpStatusCode.OK, "{\"issues\":[]}")));

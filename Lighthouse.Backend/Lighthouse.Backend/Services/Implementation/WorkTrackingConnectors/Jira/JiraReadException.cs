@@ -95,6 +95,16 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 $"Lighthouse could not read the boards from Jira: {answer}. Check the connection's URL and sign-in details, then try again.",
                 technicalDetails));
 
+        /// <summary>
+        /// A single board could not be read. The answer is what Jira said (status and reason), or
+        /// "no answer", or "an answer Lighthouse could not read".
+        /// </summary>
+        public static JiraReadException BoardUnreadable(string answer, string technicalDetails)
+            => new(ConnectionValidationResult.Failure(
+                "board_unreadable",
+                $"Lighthouse could not read this board from Jira: {answer}. Check the connection's URL and sign-in details, then try again.",
+                technicalDetails));
+
         /// <summary>Whose refresh, or which screen, a list that could not be read stops.</summary>
         public enum ReadFor { TeamRefresh, PortfolioRefresh, Validation }
 

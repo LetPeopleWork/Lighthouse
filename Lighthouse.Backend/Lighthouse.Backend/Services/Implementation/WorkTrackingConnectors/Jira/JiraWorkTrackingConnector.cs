@@ -539,10 +539,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 throw;
             }
+            catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
+            {
+                logger.LogError(exception, "Jira could not be asked for Board {BoardId} of {ConnectionName}", boardId, workTrackingSystemConnection.Name);
+                throw JiraReadException.BoardUnreadable("no answer", exception.Message);
+            }
             catch (Exception exception)
             {
-                logger.LogWarning(exception, "Could not read Board {BoardId} for System {ConnectionName}", boardId, workTrackingSystemConnection.Name);
-                return new BoardInformation();
+                logger.LogError(exception, "Reading Board {BoardId} of {ConnectionName} failed unexpectedly", boardId, workTrackingSystemConnection.Name);
+                throw JiraReadException.BoardUnreadable("an answer Lighthouse could not read", exception.Message);
             }
         }
 
@@ -733,11 +738,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning(
-                    "Could not read the configuration of Board {BoardId}: Jira answered {StatusCode} ({ReasonPhrase}). The board is reported with no query, no work item types and no states.",
-                    boardId, (int)response.StatusCode, response.ReasonPhrase);
+                var answer = $"{(int)response.StatusCode} {response.ReasonPhrase ?? response.StatusCode.ToString()}";
+                logger.LogError(
+                    "Jira refused the configuration of Board {BoardId}: {Answer} at {RequestUri}",
+                    boardId, answer, response.RequestMessage?.RequestUri);
 
-                return boardInformation;
+                throw JiraReadException.BoardUnreadable(answer, $"GET {BoardsEndpoint}/{boardId}/configuration answered {answer}.");
             }
 
             var boardConfigResponseBody = await response.Content.ReadAsStringAsync();

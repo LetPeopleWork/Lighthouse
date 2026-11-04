@@ -389,7 +389,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        [TestCase($"board/{BoardId}/configuration")]
+        [Test]
+        public async Task GetBoardInformation_TheConfigurationIsRefused_LogsWhatJiraAnsweredAsAnError()
+        {
+            var logger = new Mock<ILogger<JiraWorkTrackingConnector>>();
+
+            await Assert.ThrowsAsync<JiraReadException>(() => BoardReadOver(AReadableBoardExcept($"board/{BoardId}/configuration"), logger.Object));
+
+            logger.Verify(
+                log => log.Log(
+                    LogLevel.Error,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => NamesTheStatusAndTheReason(state)),
+                    It.IsAny<Exception>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once);
+        }
+
         [TestCase($"board/{BoardId}/issue")]
         [TestCase("rest/api/latest/status")]
         public async Task GetBoardInformation_PartOfTheBoardCannotBeRead_LogsWhatJiraAnsweredBeforeCarryingOn(string refusedPath)
