@@ -40,6 +40,8 @@ API keys are intended for non-browser clients. They complement interactive sign-
 5. Optionally expand **Scopes** to restrict the key to specific teams or portfolios. Each scope row picks a scope type (System / Team / Portfolio), a role, and — for team/portfolio scopes — the specific entity.
 6. Create the key and copy the generated plaintext value immediately.
 
+A key can also create keys through the API. A key with scopes must name scopes for the new key, within its own rights: asking for a key without scopes is refused, because such a key would carry all of its owner's rights.
+
 ![Create API Key Dialog](../assets/settings/apikeys_create.png)
 
 {: .important}

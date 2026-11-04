@@ -1,0 +1,22 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/API/LicenseController.cs",
+      "**/API/ApiKeyController.cs",
+      "**/API/DTO/LicenseStatusDto.cs",
+      "**/API/Helpers/RbacAdministrationServiceExtensions.cs",
+      "**/API/FeaturesController.cs",
+      "**/API/DeliveriesController.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~API.LicenseControllerTest|FullyQualifiedName~ApiKeyControllerTest|FullyQualifiedName~API.SystemInfoControllerTest|FullyQualifiedName~API.FeaturesControllerTest|FullyQualifiedName~API.DeliveriesControllerTest)&FullyQualifiedName!~API.Integration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

@@ -269,9 +269,11 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   add the Data Center route and its response shape next to the Cloud one. Not automated because: a
   Cloud-shaped fixture passes either way.
 - **A shared validate endpoint is not gated on one workflow's permission**: a create-only RBAC guard
-  on a validate endpoint returns 403 to scoped admins who are editing. Fix: leave it unguarded when it
-  has no side effects and redacts secrets, or work out the gate from the request's intent. Not automated
-  because: it is an RBAC design decision.
+  on a validate endpoint returns 403 to scoped admins who are editing. Fix: guard it with the requirement
+  that holds for everyone who can reach it, such as `AnyScopedAdmin`. Removing the guard is not the fix:
+  that left the validate endpoints open to Viewers (Bug #6534). Not automated because: which requirement
+  fits is an RBAC design decision. That an action declares one at all is enforced by
+  `EveryActionDeclaresItsAccessArchitectureTest`.
 
 ### Tests (NUnit, integration, live connectors)
 

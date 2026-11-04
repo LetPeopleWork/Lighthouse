@@ -144,6 +144,8 @@ The color of the 🛡️ icon indicates the license status. You will also see th
 When you click on the License icon, you will see the full license details:
 ![License Details](../assets/licensing/licenseinformation.png)
 
+With [RBAC](../settings/rbac.html) enabled, only a System Admin sees who the license belongs to: the name, email, organization and license number. Everyone else sees whether the license is valid and when it expires.
+
 This includes the details of the person who ordered the license as well as the organization.
 
 {: .important}

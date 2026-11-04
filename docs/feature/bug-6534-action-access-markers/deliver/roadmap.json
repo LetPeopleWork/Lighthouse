@@ -1,0 +1,219 @@
+{
+  "roadmap": {
+    "project_id": "bug-6534-action-access-markers",
+    "created_at": "2026-11-04T00:00:00Z",
+    "total_steps": 8,
+    "notes": "After the steps, not in them: docs (ADR-006 amendment, rbac.md, ci-learnings lines 271-274), the by-hand Team Admin and Portfolio Admin Save check, and the mutation run. The RemoveEach report-id probe is left out as Low, with no Bug."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Holes closed",
+      "description": "Close the five access holes the RCA found, one small commit each: the single-connection read, both validate endpoints, Features pulled into a Delivery from another Portfolio, the rank target, and the licensee details. Rigor: thorough.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Reading one connection needs a System Admin",
+          "criteria": [
+            "GET /worktrackingsystemconnections/{id} answers 403 to a Viewer, a Team Admin and a Portfolio Admin",
+            "A System Admin gets 200 with the full connection, secrets blanked, as today",
+            "A non-admin gets 403 for an id that does not exist too, so the answer reveals no ids",
+            "A System Admin's read still registers a predefined additional field that has drifted, and a refused read writes nothing",
+            "With auth off, proven on a plain host that also has RBAC off, the read behaves as today"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S2_ConnectionListPayloadShapeTests.cs",
+          "scenario_name": "S2_Viewer_GetSingleConnection_Returns403, S2_TeamAdmin_GetSingleConnection_Returns403, S2_PortfolioAdmin_GetSingleConnection_Returns403, S2_SystemAdmin_GetSingleConnection_Returns200WithSecretsBlanked, S2_AuthOff_GetSingleConnection_BehavesAsToday",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S2_ConnectionListPayloadShapeTests.cs"
+          ],
+          "implementation_notes": "Bugfix flow: no DISTILL scaffold, so write the failing regression tests yourself in RED, at HTTP level, and assert the status and body rather than the attribute. Add [RbacGuard(SystemAdmin)] to the single GET, as on the list, PUT and DELETE. The write in EnsurePredefinedAdditionalFieldsRegistered stays: a maintainer decision. S2's host authenticates for real but decides roles with ClaimsDrivenRbacAdministrationService, a test double; the guard filter itself is real. Drift on a read is already pinned by Slice05PredefinedFieldSpecifications: keep it green. Add the auth-off test explicitly on a plain host; S2's rootFactory is one, so check that it sees the seeded connection. WorkTrackingSystemConnectionControllerTest calls the action directly, so no filter runs there. Tests: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". dotnet build must be warning-free."
+        },
+        {
+          "id": "01-02",
+          "name": "Validating Team and Portfolio settings needs an admin of some kind",
+          "criteria": [
+            "A Team Admin, a Portfolio Admin and a System Admin all get through on POST /teams/validate and POST /portfolios/validate and receive the connector's answer",
+            "A Viewer, whether unscoped or scoped to a Team or Portfolio, gets 403 on both and the tracker is never asked",
+            "With auth off, proven on a plain host that also has RBAC off, both behave as today, including the licence limit answering 403 above the free limit",
+            "The real RBAC service admits Team Admins and Portfolio Admins, direct or group-derived, and refuses a Viewer, for this requirement",
+            "With RBAC on and a lapsed licence, the real service refuses everyone this requirement, a System Admin included, just as create and write refuse"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S16_ValidateEndpointAccessTests.cs",
+          "scenario_name": "S16_Viewer_ValidateTeamSettings_Returns403AndNeverAsksTheTracker, S16_TeamAdmin_ValidatePortfolioSettings_GetsTheConnectorsAnswer, S16_PortfolioAdmin_ValidateTeamSettings_GetsTheConnectorsAnswer, S16_AuthOff_Validate_BehavesAsToday",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S16_ValidateEndpointAccessTests.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs"
+          ],
+          "implementation_notes": "Bugfix flow: write the failing regression tests yourself in RED. Add [RbacGuard(AnyScopedAdmin)] to both validate actions and flip CreateRightsControllerGuardTest.cs:35-56 to assert that requirement, renaming both tests; drop the failure messages that argue for no guard. HTTP tests must replace IWorkTrackingConnectorFactory, or validate runs a real query: ManualSortingAcceptanceTest shows the host setup. Build the host once per fixture. The HTTP host decides roles with ClaimsDrivenRbacAdministrationService, whose AnyScopedAdmin is only a stand-in, and RbacAdministrationServiceTest covers the real one only for a lapsed licence: add the real Team Admin, Portfolio Admin, group-derived and Viewer cases there. Everyone who may save qualifies, because write needs TeamAdmin or PortfolioAdmin on the scope. Precondition: with RBAC on and a lapsed licence, validate refuses everyone, a System Admin included, just as CanCreateTeam and the write checks do. Pin that in RbacAdministrationServiceTest, because the claims double has no licence gate. Prove auth off on a plain host in S16. Tests: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". dotnet build must be warning-free."
+        },
+        {
+          "id": "01-03",
+          "name": "A hand-picked Delivery only takes in Features of its own Portfolio",
+          "criteria": [
+            "Creating a manual Delivery with a Feature outside its Portfolio answers 404 with the same wording as an unknown id, and stores nothing",
+            "Adding such a Feature on update answers the same 404 and leaves the Delivery's Features, name and date as stored",
+            "A Feature belonging to several Portfolios, the Delivery's among them, stays selectable on create and update",
+            "An update keeping a stored Feature that has since left the Portfolio succeeds; once dropped, that Feature cannot be added back",
+            "The rule holds for every caller, including System Admin and RBAC off; rule-based and source-bound selection are unchanged"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryFeatureSelectionScopeIntegrationTest.cs",
+          "scenario_name": "APortfolioAdminCannotPullAFeatureOfAnotherPortfolioIntoTheirDelivery, AnUpdateKeepsAStoredFeatureThatHasLeftThePortfolio",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/DeliveriesControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveryFeatureSelectionScopeIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/DeliveriesControllerIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryReadStabilityIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryWriteRefusalIntegrationTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ArchivedDeliveryStaleAggregateRaceIntegrationTest.cs"
+          ],
+          "implementation_notes": "Bugfix flow: RED first proves the hole end to end on real SQLite: as Portfolio Admin of P1, create a P1 Delivery holding a Feature of P2 and read its likelihood through GET /deliveries/portfolio/{P1}. The RCA only read this from the DTO. If it cannot be reproduced, stop and report. Checked, nothing legitimate relies on it: the picker lists portfolio.features, rule-based reads the Portfolio's Features, source-bound and a release into Manual never read FeatureIds. Must stay working: the edit dialog sends delivery.features back, and a refresh can drop a Feature from the Portfolio while the Delivery keeps it. Decide per id: accepted if the Feature is in the Delivery's Portfolio or the Delivery already held it when the request arrived. Snapshot the held ids from existingDelivery.Features right after GetByIdForUpdate, before ApplyModeTransition, because Unbind and ReplaceFeatures change what the Delivery holds. Create holds nothing, so one rule serves both, and GetByIdForUpdate and GetFeaturesByIds already load what it needs. Fold outside ids into the existing missing-id answer: no second wording. A Feature in no Portfolio counts as outside unless held. DeliveriesControllerTest stubs Features without Portfolios (lines 154, 650, 1019, 1160, 1705, 1881): give them the Delivery's Portfolio, never weaken the rule. DeliveriesControllerIntegrationTest and the ArchivedDelivery*IntegrationTest seeds (FeatureIds() takes every Feature) may need the same; you may touch any other test that seeds a Delivery with Features of a foreign Portfolio. Beyond the RED proof, tests may run with RBAC off, since the rule holds for every caller. Tests: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". dotnet build must be warning-free."
+        },
+        {
+          "id": "01-04",
+          "name": "A Feature can only be moved next to a Feature the caller may read",
+          "criteria": [
+            "A move naming a target the caller cannot read answers 404, with the same status and body as an unknown target",
+            "That refused move changes no Feature's place and starts no forecast run",
+            "A move next to a readable Feature behaves as before, including a target readable through a Viewer grant, through one of several Portfolios, or in no Portfolio",
+            "A caller who may not move the Feature still gets 403 whatever target they name; Move to Bottom is unchanged",
+            "With auth off, proven on a plain host that also has RBAC off, moves behave as today"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/Slice03RelativeMovesScenarios.cs",
+          "scenario_name": "A move next to a Feature the caller cannot read answers as if that Feature did not exist",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/FeaturesControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/Slice03RelativeMovesScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ManualSorting/Slice03RelativeMovesSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/FeatureMoveAuthOffIntegrationTest.cs"
+          ],
+          "implementation_notes": "Bugfix flow: write the failing regression tests yourself in RED. Check the target in MoveFeature after the CanMove verdict, so a caller without the move right keeps getting 403 and learns nothing about ids. Reuse GetReadablePortfolioIds and IsReadableBy; they go through FeatureReadability, the one place this rule lives. Leave an unknown target to PlaceAsync: the service still answers it, and FeaturesControllerTest stubs that do not know the target keep working. The UI cannot reach the new refusal: the move menu targets visible rows, and both the feature lists and /features filter by the same rule. ManualSortingAcceptanceTest has no scoped-role scenario yet; the claims double filters readable Portfolios per grant, so Client.AsPortfolioAdmin works there. TestAuthHandler splits the roles header on commas, so a caller holding two grants (Portfolio Admin of P1, Viewer of P2) needs only a small client helper. Compare the response with one for a truly unknown id rather than a hard-coded body. The ManualSorting host always authenticates, so the auth-off proof needs its own plain host, with the same premium licence double and the ManualOrder policy. Tests: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". dotnet build must be warning-free."
+        },
+        {
+          "id": "01-05",
+          "name": "Licensee details are shown to System Admins only",
+          "criteria": [
+            "A Viewer, a Team Admin and a Portfolio Admin get no name, email, organisation or licence number from GET /license; the four keys are absent from the JSON",
+            "They still get hasLicense, isValid, expiryDate, validFrom and canUsePremiumFeatures, with the same values",
+            "A System Admin sees every field as today",
+            "When the admin check cannot be answered the call still succeeds, the details stay hidden, and a warning is logged",
+            "With auth off and with RBAC off every field is shown as today; POST /license/import follows the same rule"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S17_LicenseDetailsTests.cs",
+          "scenario_name": "S17_Viewer_GetLicense_IsToldNothingAboutTheLicensee, S17_SystemAdmin_GetLicense_SeesEveryField, S17_AuthOff_GetLicense_SeesEveryField",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/API/LicenseController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DTO/LicenseStatusDto.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/LicenseControllerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S17_LicenseDetailsTests.cs"
+          ],
+          "implementation_notes": "Bugfix flow: write the failing regression tests yourself in RED. Copy SystemInfoController: the MaySeeEverything check (signed in, SystemAdmin requirement, DbException and InvalidOperationException caught and logged as a warning), with the fields named in one narrowing method on the DTO, as SystemInfo.WithoutWhatOnlyAnAdministratorMaySee. Use SystemAdmin, not SystemAdminOrBootstrap, so details never reach everyone during bootstrap; a bootstrap importer gets the narrowed answer. Keep the keys off the wire as SystemInfo.Encryption does; LicenseStatusSchema is nullish, so that parses. GetLicenseStatus turns async and ImportLicense calls it, so await it there. New constructor arguments mean LicenseControllerTest needs a signed-in caller, or the tests at lines 93, 269 and 305 go red: see CreateSubject in SystemInfoControllerTest. Use a plain host for auth off: it proves the disabled handler counts as signed in. Frontend readers checked, no change needed: useLicenseRestrictions, useFeatureOrdering, SystemSettingsTab, SurveyNudge and premiumVerdict read only canUsePremiumFeatures. LicenseStatusPopover is the live display and hides all four rows when empty, its Renew link drops the prefill and its support mail prints N/A. LicenseStatusDialog is imported by its test only. Tests: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". dotnet build must be warning-free."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Every action declares its access",
+      "description": "Add the two markers and a reflection rule with no allowlist, then mark every remaining action so nothing can stay undecided. Two commits, each green: the rule proven on test-only types, then the scan of the real controllers with all markers. Rigor: standard.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Two reasoned markers, and a rule proven to fail on what it must reject",
+          "criteria": [
+            "SignedInOnly and CheckedInHandler can sit on an action or a controller, carry a reason, and change nobody's access",
+            "The rule reports, by Controller.Action, an action with no declaration, one with only [Authorize], and any RbacGuard with Check = false",
+            "The rule rejects AllowAnonymous with anything else, both markers together, a marker with RbacGuard at one level, and a class guard under an action marker",
+            "The rule rejects a blank or too short reason, a scoped requirement with a null or blank key, and a key that is no parameter of the class and action routes",
+            "The rule accepts an action guard under a class marker, stacked class and action guards, and a guard whose parameter comes from the class route"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs",
+          "scenario_name": "AnActionWithoutADeclarationIsReported, AuthorizeAloneDoesNotCount, AGuardThatChecksNothingIsRejected, AllowAnonymousWithAGuardIsRejected, AllowAnonymousWithAMarkerIsRejected, BothMarkersTogetherAreRejected, AMarkerWithAGuardAtOneLevelIsRejected, AClassGuardUnderAnActionMarkerIsRejected, ABlankReasonIsRejected, ATooShortReasonIsRejected, AScopedGuardWithNoKeyIsRejected, AScopedGuardWhoseKeyIsNoRouteParameterIsRejected",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/SignedInOnlyAttribute.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/CheckedInHandlerAttribute.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs"
+          ],
+          "implementation_notes": "Bugfix flow: write the failing tests yourself in RED. Both attributes live beside RbacGuardAttribute: Method|Class, Inherited, not IAuthorizeData, no filter. Write the rule per rca.md 5.3 as a pure function over the controller types it is handed, in the test file, with one test case per rejection. Actions are found as in 5.3: public instance methods with an IActionHttpMethodProvider attribute, excluding NonAction. An RbacGuard with Check = false checks nothing and a scoped requirement with no key answers 500 at run time, so neither counts as a declaration; Check = false is used nowhere today; this commit gives it test-only controllers and 02-02 hands it the real ones, so the build stays green with no allowlist. Make test-only controllers private nested types, so MVC never registers them. Two deliberate changes to the RCA: leave the attribute constructors free of the RCA's throw, because a throwing attribute crashes action discovery at start-up and could not be seen by the rule; the rule refuses blank reasons, floor about 25 characters. And a class-level RbacGuard under an action-level marker is rejected, not treated as an override: filters add up, so the marker would understate what runs. Scoped requirements are the five RbacGuardAttribute lists; route keys may sit in class-level templates and carry constraints such as {teamId:int}. Tests: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". dotnet build must be warning-free."
+        },
+        {
+          "id": "02-02",
+          "name": "Every controller action states who may call it and why",
+          "criteria": [
+            "The rule passes over every controller in the production assembly with no allowlist, and the scan finds at least 40 controllers and 200 actions",
+            "Actions whose access is decided in the handler or service, and GET /license, carry CheckedInHandler; those open to anyone signed in, and POST /surveynudge, carry SignedInOnly",
+            "AuthorizationController carries a reason on each action: status and my-summary SignedInOnly, the other seventeen CheckedInHandler",
+            "No caller's access changes: every existing [Authorize] stays and the existing suite passes untouched",
+            "Each reason says in plain language why the action is open or which check decides it, with no internal references"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs",
+          "scenario_name": "EveryProductionActionDeclaresItsAccess",
+          "deps": [
+            "01-01",
+            "01-02",
+            "01-03",
+            "01-04",
+            "01-05",
+            "02-01"
+          ],
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/ApiKeyController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/AppSettingsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/AuthController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/BlackoutPeriodsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveriesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/DeliveryNotesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/FeaturesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/LicenseController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/OptionalFeaturesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/PortfoliosController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/RecurringBlackoutRulesController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/ReportsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/SuggestionsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/SurveyNudgeController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/SystemInfoController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TeamsController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/TerminologyController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/UpdateController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/VersionController.cs",
+            "Lighthouse.Backend/Lighthouse.Backend/API/WorkTrackingSystemConnectionsController.cs"
+          ],
+          "implementation_notes": "RED: hand the rule the real controllers (typeof(RbacGuardAttribute).Assembly) and see it list exactly the 63 unmarked actions. Stop and report any other finding rather than working round it: a conflict on a real controller, a Check = false, or a scoped guard with a bad key, which answers 500 in production. GREEN: use rca.md 3.4 and 5.4 for category and gist, with these overrides from feature-delta.md: two markers, no separate Bugs, a reason per Authorization action. Expect 46 CheckedInHandler (the 45 of category 3 plus GET /license, which now behaves like /systeminfo) and 17 SignedInOnly (the 16 of category 2 plus POST /surveynudge, whose reason says one dismissal snoozes the prompt for everybody). Class level only where all actions share a reason (ApiKey, Features, Suggestions, DeliveryNotes), action level otherwise. Re-read each cited check before writing its reason: nobody has exercised these with a Viewer. Prove the scan bites by removing one marker temporarily, and say so in your report. Comments that only said an action is unguarded on purpose, such as in AppSettingsController, may go once the reason says it. Tests: dotnet test --filter \"TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration\". dotnet build must be warning-free."
+        },
+        {
+          "id": "02-03",
+          "name": "The unused licence dialog is gone",
+          "criteria": [
+            "LicenseStatusDialog.tsx and its test no longer exist",
+            "No production or test code imports it",
+            "LicenseStatusPopover and LicenseStatusIcon behave as before: their tests pass unchanged",
+            "pnpm test and pnpm build are clean"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx",
+          "scenario_name": "existing LicenseStatusPopover and LicenseStatusIcon tests stay green",
+          "deps": [],
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusDialog.tsx",
+            "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusDialog.test.tsx"
+          ],
+          "implementation_notes": "Behaviour-free removal of dead code, asked for by the maintainer: only its own test imports the dialog. No new test: RED is NOT_APPLICABLE. If anything else turns out to import it, stop and report. Commit as refactor(license), separate from every other step."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}

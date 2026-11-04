@@ -60,6 +60,7 @@ The System Admin role is the only role that is **not** scoped to a specific team
 | Create a new portfolio | ✅ † | ❌ | ❌ | ❌ |
 | Clone a team / portfolio | ✅ | ❌ | ❌ | ❌ |
 | Delete a team / portfolio | ✅ | ❌ | ❌ | ❌ |
+| See who the [license](../licensing/licensing.html) belongs to (name, email, organization, license number) | ✅ | ❌ | ❌ | ❌ |
 | Edit settings on assigned team / portfolio | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
 | Read assigned team / portfolio (metrics, features, etc.) | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
 | Create, edit and delete [reports](../reports/reports.html) on assigned team / portfolio | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
@@ -229,9 +230,9 @@ Behaviour of the buttons and row actions on the Overview page:
 
 ## API Keys interplay
 
-[API Keys](./apikeys.html) are an alternative authentication path for non-browser clients (CLI, MCP servers). When RBAC is enabled, an API key inherits the role assignments of the user who created it. Treat API keys as a credential for that user — they can do exactly what the owning user can do, no more and no less.
+[API Keys](./apikeys.html) are an alternative authentication path for non-browser clients (CLI, MCP servers). When RBAC is enabled, an API key inherits the role assignments of the user who created it. Treat API keys as a credential for that user: an unrestricted key can do exactly what the owning user can do, no more and no less.
 
-To restrict what an API key can reach, scope the **owner's** roles rather than the key. Lighthouse does not currently support per-key role narrowing.
+To restrict what a key can reach, give it [scopes](./apikeys.html) when you create it. A key can never do more than its owner, whatever its scopes say. A key with scopes cannot create a key without them, so it cannot be used to widen its own access.
 
 ---
 

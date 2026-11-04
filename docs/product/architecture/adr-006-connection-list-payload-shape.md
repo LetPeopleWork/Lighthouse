@@ -87,3 +87,12 @@ carries six fields: those three plus `additionalFieldDefinitions`, `defaults` an
 above lists `AdditionalFieldDefinitions` as metadata to keep from a Viewer, and that still holds: `/summary` stays
 `AnyScopedAdmin`, so a Viewer is refused. Authentication details, options, write-back mappings and usage stay on the
 full list, and a test pins the summary's exact key set.
+
+## Amendment, 2026-11-04 (Bug #6534)
+
+The lock-down above covered the list but left `GET /worktrackingsystemconnections/{id}` with no guard, so any signed-in
+user could read one connection's full metadata by id. It now needs a System Admin, like the list, `PUT` and `DELETE`.
+The frontend has no caller of this route. `POST /teams/validate` and `POST /portfolios/validate` went the same way: they
+now take `AnyScopedAdmin`, which holds for everyone who can reach Save or a create wizard, and refuses a Viewer.
+
+Every controller action now has to declare its access, so this kind of gap fails a test instead of waiting to be found.
