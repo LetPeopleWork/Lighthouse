@@ -191,6 +191,57 @@ guard in the test-run step; `LIGHTHOUSE_BUDGET_WARN_ONLY` controls the per-file 
    coverage. Alternative: remove it, one dependency fewer to patch.
 3. **Sonar history**: new runs show no coverage and the coverage history ends. Recommendation: accept, per D-6513-2.
 
+## Wave: DESIGN / [REF] Revision by the maintainer, 2026-11-04 (wins over everything below and above it)
+
+The maintainer simplified T7 after the first DESIGN. Where this section and any other part of this document disagree,
+this section holds. The sections below are kept as the record of what was weighed.
+
+| Id | Decision (maintainer, 2026-11-04) |
+|---|---|
+| R1 | **Two commands per stack, nothing more.** One normal command, used by CI and locally, and one opt-in local command that collects coverage. |
+| R2 | **The guard asks "am I on CI?", not "is `--coverage` on?".** A run scales its limits by 3 and never retires entries when it is a CI run or a coverage run. Replaces D1, D2, the `"ci"` run kind, `ciFactor`, `factorFor` and the exhaustive switch. |
+| R3 | **DISTILL is skipped**, in the maintainer's words ("distill is not really needed", then "yes exactly" to skipping it). The next wave is DEVOPS, then DELIVER. |
+| R4 | **The five-run wait is dropped.** T7 does not wait for FE7's after-measurement, which replaces D-6513-5's order. T4 still follows T7. |
+
+| Stack | Normal (CI and local) | Opt-in, local only |
+|---|---|---|
+| Frontend | `pnpm test` | `pnpm test:coverage`, replacing `sonarreport` |
+| Backend | `dotnet test` | new `Lighthouse.Backend/Test-Coverage.ps1`, wrapping `dotnet test --collect:"XPlat Code Coverage"`; `coverlet.collector` stays |
+
+The change to the guard, in `timeBudgetOptions.ts`:
+
+```ts
+const limitsScaled = isCiRun(env) || argv.some((argument) => COVERAGE_SWITCHED_ON.has(argument));
+runKind: limitsScaled ? "scaled" : "plain",
+```
+
+**Why this is enough.** CI already gets "scaled limits, never retires" as a coverage run, so a plain CI run keeps
+exactly today's limits and retirement. The hazard the first DESIGN named (a third kind falling through a two-way
+ternary) cannot happen, because there is no third kind. Before and after, for each run:
+
+| Run | Today | After T7 |
+|---|---|---|
+| CI | coverage kind: limits x 3, never retires | scaled kind: limits x 3, never retires |
+| Local `pnpm test` | plain: limits x 1, retires | same |
+| Local `pnpm test:coverage` | coverage kind: limits x 3, never retires | scaled kind: same |
+| Local `CI=true pnpm test` | plain | scaled; intended, that is the CI-shaped run |
+
+**One rename, engineering choice.** Left as it is, a CI run with no coverage would print `coverage run` and `coverage
+factor 3`, which would send the next reader looking for coverage that is not there. So the kind `"coverage"` becomes
+`"scaled"`, `coverageFactor` becomes `limitFactor`, `COVERAGE_FACTOR` becomes `LIMIT_FACTOR`, and the log says
+`scaled run` and `limit factor 3`. It touches about 25 lines, most of them in tests.
+
+**What T4 loses, knowingly.** CI and the local coverage run share one factor. If T4 measures a different figure for
+plain CI, it sets `LIMIT_FACTOR` to that figure, and a local coverage run inherits it. That is acceptable: the coverage
+run is opt-in and rare, and T4 can split the factor then if it ever matters.
+
+**Tests.** One or two rows in `timeBudgetOptions.test.ts` (`CI` set with no `--coverage` gives `"scaled"`; neither gives
+`"plain"`), the renames in the existing tests, and one manual check that a planted 9 s test turns a `CI=true` run red.
+
+**Still as written below:** the per-file check is left alone and goes looser until T4 (D5), the step name stays (D6),
+`coverlet.collector` stays (D8), both slices stand, and S1 and S2 remove the same CI and Sonar settings. S1's AC4 now
+reads against R2. Mutation testing shrinks to the one changed expression, so it runs on `timeBudgetOptions.ts` only.
+
 ## Wave: DESIGN / [REF] Decisions (propose mode, maintainer AFK, 2026-11-04)
 
 Shape: test infrastructure and CI only. Recommended option taken for every engineering choice and recorded here. Read
