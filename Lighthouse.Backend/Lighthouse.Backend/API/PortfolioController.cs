@@ -141,6 +141,8 @@ namespace Lighthouse.Backend.API
 
             return await this.GetEntityByIdAnExecuteAction(portfolioRepository, portfolioId, async portfolio =>
             {
+                await KeepOwningTeamTheCallerCannotRead(portfolio, portfolioSetting);
+
                 if (portfolio.WorkItemRelatedSettingsChanged(portfolioSetting))
                 {
                     // Drop this portfolio's claim on its Features rather than deleting them: another
@@ -164,6 +166,26 @@ namespace Lighthouse.Backend.API
                 var updatedPortfolioSettings = new PortfolioSettingDto(portfolio);
                 return updatedPortfolioSettings;
             });
+        }
+
+        // The settings leave out an Owning Team the caller cannot read, so the form sends no owner back.
+        // That must not read as "clear the owner", or any save by such a caller would wipe it.
+        private async Task KeepOwningTeamTheCallerCannotRead(Portfolio portfolio, PortfolioSettingDto portfolioSetting)
+        {
+            var storedOwner = portfolio.OwningTeam;
+            if (portfolioSetting.OwningTeam is not null || storedOwner is null)
+            {
+                return;
+            }
+
+            var readableTeamIds = await rbacAdministrationService
+                .GetReadableTeamIdsAsync(User, [storedOwner.Id], HttpContext?.RequestAborted ?? default)
+                .ConfigureAwait(false);
+
+            if (!readableTeamIds.Contains(storedOwner.Id))
+            {
+                portfolioSetting.OwningTeam = new EntityReferenceDto(storedOwner.Id, storedOwner.Name);
+            }
         }
 
         [HttpGet("settings")]

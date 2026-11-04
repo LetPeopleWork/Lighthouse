@@ -211,6 +211,85 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task UpdatePortfolio_OwningTeamTheCallerCannotRead_KeepsTheOwner()
+        {
+            var owner = new Team { Id = 2, Name = "Hidden Owner" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeam = owner, OwningTeamId = owner.Id };
+            ArrangeStoredPortfolio(portfolio, owner, readableTeamIds: []);
+            var subject = CreateSubject();
+
+            var read = await subject.GetPortfolioSettings(42);
+            var readSettings = (PortfolioSettingDto)((OkObjectResult)read.Result!).Value!;
+            var ownerShownToTheCaller = readSettings.OwningTeam;
+            await subject.UpdatePortfolio(42, readSettings);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ownerShownToTheCaller, Is.Null);
+                Assert.That(portfolio.OwningTeam, Is.SameAs(owner));
+            }
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_OwningTeamTheCallerCanRead_SavingNoOwnerClearsIt()
+        {
+            var owner = new Team { Id = 2, Name = "Owner" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeam = owner, OwningTeamId = owner.Id };
+            ArrangeStoredPortfolio(portfolio, owner, readableTeamIds: [owner.Id]);
+            var subject = CreateSubject();
+
+            var read = await subject.GetPortfolioSettings(42);
+            var settings = (PortfolioSettingDto)((OkObjectResult)read.Result!).Value!;
+            settings.OwningTeam = null;
+            await subject.UpdatePortfolio(42, settings);
+
+            Assert.That(portfolio.OwningTeam, Is.Null);
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_OwningTeamTheCallerCanRead_CanChangeIt()
+        {
+            var owner = new Team { Id = 2, Name = "Owner" };
+            var newOwner = new Team { Id = 3, Name = "New Owner" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeam = owner, OwningTeamId = owner.Id };
+            ArrangeStoredPortfolio(portfolio, owner, readableTeamIds: [owner.Id, newOwner.Id]);
+            teamRepoMock.Setup(x => x.GetById(newOwner.Id)).Returns(newOwner);
+            var subject = CreateSubject();
+
+            var read = await subject.GetPortfolioSettings(42);
+            var settings = (PortfolioSettingDto)((OkObjectResult)read.Result!).Value!;
+            settings.OwningTeam = new EntityReferenceDto(newOwner.Id, newOwner.Name);
+            await subject.UpdatePortfolio(42, settings);
+
+            Assert.That(portfolio.OwningTeam, Is.SameAs(newOwner));
+        }
+
+        [Test]
+        public async Task UpdatePortfolio_WithRbacOff_SavingNoOwnerClearsIt()
+        {
+            var owner = new Team { Id = 2, Name = "Owner" };
+            var portfolio = new Portfolio { Id = 42, Name = "Portfolio", OwningTeam = owner, OwningTeamId = owner.Id };
+            ArrangeStoredPortfolio(portfolio, owner, readableTeamIds: [owner.Id]);
+            var subject = CreateSubject();
+
+            var read = await subject.GetPortfolioSettings(42);
+            var settings = (PortfolioSettingDto)((OkObjectResult)read.Result!).Value!;
+            settings.OwningTeam = null;
+            await subject.UpdatePortfolio(42, settings);
+
+            Assert.That(portfolio.OwningTeam, Is.Null);
+        }
+
+        private void ArrangeStoredPortfolio(Portfolio portfolio, Team owner, int[] readableTeamIds)
+        {
+            portfolioRepoMock.Setup(x => x.OneWithoutForecasts(portfolio.Id)).Returns(portfolio);
+            portfolioRepoMock.Setup(x => x.GetById(portfolio.Id)).Returns(portfolio);
+            teamRepoMock.Setup(x => x.GetById(owner.Id)).Returns(owner);
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadableTeamIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(readableTeamIds);
+        }
 
         [Test]
         public async Task GetPortfolioSettings_PortfolioNotFound_ReturnsNotFoundResult()
