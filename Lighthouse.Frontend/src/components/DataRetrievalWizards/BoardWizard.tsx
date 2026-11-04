@@ -9,7 +9,7 @@ import {
 	TextField,
 	Typography,
 } from "@mui/material";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { IBoard } from "../../models/Boards/Board";
 import type { IBoardInformation } from "../../models/Boards/BoardInformation";
 import type { DataRetrievalWizardProps } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
@@ -17,12 +17,12 @@ import { ApiError } from "../../services/Api/ApiError";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import BoardInformationDisplay from "../DataRetrieval/BoardInformationDisplay";
 
-// Boards are shared, not roled, so an empty list has two causes nothing on the instance can tell
-// apart (ADR-126). Name both, assert neither.
+// An empty list has causes nothing on the instance can tell apart, so the copy names the
+// possibilities and asserts none of them.
 const NO_BOARDS =
-	"No boards to offer. Either this account is not a member of any Visual Task Board, or none of the boards it can see carries both a table and a filter.";
+	"No boards are available to this connection. The account may not have access to any board, or none of the boards it can see can be used by Lighthouse.";
 
-// The backend words its own refusals (ADR-126); only a failure that never reached it needs copy here.
+// The backend words its own refusals; only a failure that never reached it needs copy here.
 const refusalOr = (err: unknown, fallback: string): string =>
 	err instanceof ApiError && err.message ? err.message : fallback;
 
@@ -41,6 +41,7 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	const [loading, setLoading] = useState<boolean>(false);
 	const [fetchingBoardInfo, setFetchingBoardInfo] = useState<boolean>(false);
 	const [error, setError] = useState<string>("");
+	const latestSelectionId = useRef<string | null>(null);
 
 	const loadBoards = useCallback(async () => {
 		setLoading(true);
@@ -56,6 +57,7 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 				setError(NO_BOARDS);
 			}
 		} catch (error_) {
+			setBoards([]);
 			setError(refusalOr(error_, "Failed to load boards. Please try again."));
 			console.error("Error loading boards:", error_);
 		} finally {
@@ -75,21 +77,28 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 		async (board: IBoard) => {
 			setFetchingBoardInfo(true);
 			setError("");
+			const isStillSelected = () => latestSelectionId.current === board.id;
 
 			try {
 				const info = await wizardService.getBoardInformation(
 					workTrackingSystemConnectionId,
 					board.id,
 				);
-				setBoardInformation(info);
+				if (isStillSelected()) {
+					setBoardInformation(info);
+				}
 			} catch (error_) {
 				console.error("Error fetching board information:", error_);
-				setBoardInformation(null);
-				setError(
-					refusalOr(error_, "Failed to read the board. Please try again."),
-				);
+				if (isStillSelected()) {
+					setBoardInformation(null);
+					setError(
+						refusalOr(error_, "Failed to read the board. Please try again."),
+					);
+				}
 			} finally {
-				setFetchingBoardInfo(false);
+				if (isStillSelected()) {
+					setFetchingBoardInfo(false);
+				}
 			}
 		},
 		[wizardService, workTrackingSystemConnectionId],
@@ -98,12 +107,14 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 	const handleBoardChange = useCallback(
 		(_: unknown, newValue: IBoard | null) => {
 			setSelectedBoard(newValue);
+			latestSelectionId.current = newValue?.id ?? null;
 			if (newValue) {
 				fetchBoardInformation(newValue).catch((error) => {
 					console.error("Error fetching board information:", error);
 				});
 			} else {
 				setBoardInformation(null);
+				setFetchingBoardInfo(false);
 			}
 		},
 		[fetchBoardInformation],
@@ -115,12 +126,14 @@ const BoardWizard: React.FC<DataRetrievalWizardProps> = ({
 		}
 
 		// Reset state
+		latestSelectionId.current = null;
 		setSelectedBoard(null);
 		setBoardInformation(null);
 		setError("");
 	};
 
 	const handleCancel = () => {
+		latestSelectionId.current = null;
 		setSelectedBoard(null);
 		setBoardInformation(null);
 		setError("");

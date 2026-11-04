@@ -13,6 +13,9 @@ import BoardWizard from "./BoardWizard";
 const REFUSAL =
 	"ServiceNow refused to read the table 'vtb_board' with this account. Grant the account a role that can read that table.";
 
+const NOTHING_TO_OFFER =
+	"No boards are available to this connection. The account may not have access to any board, or none of the boards it can see can be used by Lighthouse.";
+
 describe("BoardWizard", () => {
 	const mockOnComplete = vi.fn();
 	const mockOnCancel = vi.fn();
@@ -157,9 +160,7 @@ describe("BoardWizard", () => {
 			expect(screen.getByText("Project X Board")).toBeInTheDocument();
 		});
 
-		expect(
-			screen.queryByText(/not a member of any Visual Task Board/i),
-		).not.toBeInTheDocument();
+		expect(screen.queryByText(NOTHING_TO_OFFER)).not.toBeInTheDocument();
 	});
 
 	it("disables Confirm button when no board is selected", async () => {
@@ -317,34 +318,6 @@ describe("BoardWizard", () => {
 		await waitFor(() => {
 			expect(screen.getByText(REFUSAL)).toBeInTheDocument();
 		});
-	});
-
-	// Boards are shared, not roled, so an empty list has two causes that nothing
-	// on the instance can tell apart — the account is a member of no board, or none of its boards
-	// carries both a table and a filter. The copy names both and asserts neither.
-	it("names both reasons a connection may have no board to offer", async () => {
-		mockGetBoards.mockResolvedValue([]);
-
-		render(
-			<ApiServiceContext.Provider value={mockApiServiceContext}>
-				<BoardWizard
-					open={true}
-					workTrackingSystemConnectionId={1}
-					onComplete={mockOnComplete}
-					onCancel={mockOnCancel}
-				/>
-			</ApiServiceContext.Provider>,
-		);
-
-		await waitFor(() => {
-			expect(screen.getByRole("dialog")).toHaveTextContent(
-				/not a member of any Visual Task Board/i,
-			);
-		});
-
-		expect(screen.getByRole("dialog")).toHaveTextContent(
-			/both a table and a filter/i,
-		);
 	});
 
 	// The backend words its own refusals. Only a failure that never reached the backend
@@ -993,8 +966,6 @@ describe("BoardWizard", () => {
 	});
 
 	describe("telling an empty list from a failed one", () => {
-		const NOTHING_TO_OFFER =
-			"No boards are available to this connection. The account may not have access to any board, or none of the boards it can see can be used by Lighthouse.";
 		const THE_LIST_WAS_REFUSED =
 			"Lighthouse could not read the boards from Jira: 401 Unauthorized. Check the connection's URL and sign-in details, then try again.";
 		const THE_BOARD_WAS_REFUSED =
@@ -1015,7 +986,7 @@ describe("BoardWizard", () => {
 			</ApiServiceContext.Provider>
 		);
 
-		it.skip.each(["Board", "Team"] as const)(
+		it.each(["Board", "Team"] as const)(
 			"says the same thing about an empty list on a %s picker",
 			async (boardType) => {
 				mockGetBoards.mockResolvedValue([]);
@@ -1027,8 +998,7 @@ describe("BoardWizard", () => {
 			},
 		);
 
-		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
-		it.skip("shows what the tracker said about a board and cannot be confirmed", async () => {
+		it("shows what the tracker said about a board and cannot be confirmed", async () => {
 			mockGetBoards.mockResolvedValue(mockBoards);
 			mockGetBoardInformation.mockRejectedValue(
 				new ApiError(400, THE_BOARD_WAS_REFUSED),
@@ -1044,8 +1014,7 @@ describe("BoardWizard", () => {
 			expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 		});
 
-		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
-		it.skip("takes away the boards of the last answer when the list is refused", async () => {
+		it("takes away the boards of the last answer when the list is refused", async () => {
 			mockGetBoards.mockImplementation((connectionId: number) =>
 				connectionId === 1
 					? Promise.resolve(mockBoards)
@@ -1122,8 +1091,7 @@ describe("BoardWizard", () => {
 			await userEvent.click(await screen.findByText(boardName));
 		};
 
-		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
-		it.skip("keeps the newer board when the older one answers last", async () => {
+		it("keeps the newer board when the older one answers last", async () => {
 			const { sprint, kanban } = await thePickerWithBothBoardsAskedFor();
 
 			await kanban.arrives();
@@ -1141,8 +1109,7 @@ describe("BoardWizard", () => {
 			expect(mockOnComplete).toHaveBeenCalledWith(kanbanBoard);
 		});
 
-		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
-		it.skip("says nothing about the older board being refused after the newer one answered", async () => {
+		it("says nothing about the older board being refused after the newer one answered", async () => {
 			const { sprint, kanban } = await thePickerWithBothBoardsAskedFor();
 
 			await kanban.arrives();
@@ -1155,7 +1122,7 @@ describe("BoardWizard", () => {
 			expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
 		});
 
-		it.skip.each(["arrives", "isRefused"] as const)(
+		it.each(["arrives", "isRefused"] as const)(
 			"keeps waiting for the newer board when the older one %s first",
 			async (howTheOlderOneEnds) => {
 				const { sprint } = await thePickerWithBothBoardsAskedFor();
@@ -1172,8 +1139,7 @@ describe("BoardWizard", () => {
 			},
 		);
 
-		// biome-ignore lint/suspicious/noSkippedTests: written ahead of the fix, and enabled when the fix lands
-		it.skip("ignores an answer that arrives after the selection was cleared", async () => {
+		it("ignores an answer that arrives after the selection was cleared", async () => {
 			const sprint = anAnswerStillOnItsWay(sprintBoard);
 			mockGetBoards.mockResolvedValue(mockBoards);
 			mockGetBoardInformation.mockReturnValue(sprint.promise);
