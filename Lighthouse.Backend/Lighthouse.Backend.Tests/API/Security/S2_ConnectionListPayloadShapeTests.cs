@@ -15,6 +15,8 @@ namespace Lighthouse.Backend.Tests.API.Security
         private const string NonSecretValue = "https://example.test/project";
         private const string SecretKey = "PersonalAccessToken";
         private const string NonSecretKey = "Url";
+        private const string AdditionalFieldName = "Story Points";
+        private const string AdditionalFieldReference = "customfield_10016";
         private const int TeamScopeId = 11;
         private const int PortfolioScopeId = 22;
 
@@ -93,6 +95,29 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
             await AssertSummaryShape(response);
+        }
+
+        [Test]
+        public async Task S2_TeamAdmin_GetSummary_CarriesTheConnectionsAdditionalFieldsAndSupportedDefaults()
+        {
+            client.AsTeamAdmin(TeamScopeId);
+
+            var response = await client.GetAsync(SummaryPath);
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            using var document = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+            var summary = document.RootElement.EnumerateArray().Single();
+            var field = summary.GetProperty("additionalFieldDefinitions").EnumerateArray().Single();
+            var supportedDefaults = summary.GetProperty("supportedDefaults").EnumerateArray()
+                .Select(d => d.GetString()).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(field.GetProperty("id").GetInt32(), Is.GreaterThan(0));
+                Assert.That(field.GetProperty("displayName").GetString(), Is.EqualTo(AdditionalFieldName));
+                Assert.That(supportedDefaults, Does.Contain("estimationForTeams"));
+                Assert.That(supportedDefaults, Has.Count.EqualTo(SupportedConnectionDefaults.For(WorkTrackingSystems.Jira).Count));
+            }
         }
 
         [Test]
@@ -204,6 +229,12 @@ namespace Lighthouse.Backend.Tests.API.Security
                 Value = SecretValue,
                 IsSecret = true,
                 IsOptional = false,
+            });
+
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = AdditionalFieldName,
+                Reference = AdditionalFieldReference,
             });
 
             dbContext.WorkTrackingSystemConnections.Add(connection);
