@@ -70,7 +70,7 @@ When at least one OAuth connection exists, system admins see a cloud icon in the
 | HTTP 400 *invalid_scope* | One of the seven scopes is missing from the app permissions. The most common cause is forgetting to check the **Granular scopes** tab separately from **Classic scopes**. | Re-open the app under **Permissions → Jira API**, check both tabs, confirm `offline_access` is also ticked, retry. |
 | Auth-type dropdown does not show **Jira Cloud (OAuth)** | The instance has no Premium licence, or it has lapsed. | Confirm the licence status in **Settings → Licensing**. |
 | Yellow *"Reconnect required"* banner appears on a connection that was syncing fine | A silent refresh attempt failed — most often a revoked grant or `offline_access` removed from the app. | Click **Reconnect** on the banner and complete the consent flow again. If the banner reappears immediately, re-check that `offline_access` is granted on the Atlassian app. |
-| Connection shows **Connected** but the board wizard is empty | Boards endpoint does not support OAuth (3LO) — Atlassian limitation, same as scoped API tokens. | Configure teams and portfolios manually. See the [scoped-token](#scopes) caveat above for the same restriction. |
+| Connection shows **Connected** but **Select Jira Board** is disabled | Boards endpoint does not support OAuth (3LO) — Atlassian limitation, same as scoped API tokens. The button's tooltip says so. | Configure teams and portfolios manually. See the [scoped-token](#scopes) caveat above for the same restriction. |
 
 For deeper issues, capture the failing callback URL from the browser's address bar (it contains the `error=` / `error_description=` parameters) and include it when reporting the problem.
 
@@ -89,7 +89,7 @@ If you want to syncronize back data from Lighthouse to Jira, you additionally ne
 - *write:jira-work*
 
 {: .note}
-With the Scoped Access Tokens, it's **not possible** to load any boards. This is a restriction by Jira, as the endpoint to load the boards does not support this method of authentication. Lighthouse will display "No Boards available" in that case. Either just manually configure your teams/portfolios, or start out with a personal API Token, and then switch to the scoped token once you are done with your configuration.
+With the Scoped Access Tokens, it's **not possible** to load any boards. This is a restriction by Jira, as the endpoint to load the boards does not support this method of authentication. Lighthouse disables **Select Jira Board** in that case, and its tooltip says why. Either just manually configure your teams/portfolios, or start out with a personal API Token, and then switch to the scoped token once you are done with your configuration.
 
 ### Jira Data Center (Personal Access Token)
 The above description is true if you are working against a Jira Cloud instance. In case you are connecting to an on-premise Jira version (*Server* or *Data Center*), there are small differences. Lighthouse supports Jira Server and Data Center from version 8 onwards.
@@ -276,6 +276,8 @@ Use the Jira Board Wizard to automatically discover and import configuration fro
 You may adjust all those values to your liking after that. For example, if the state mapping is not what you want to use.
 
 {: .note}
+If the Wizard cannot read your boards, or the board you selected, it says what Jira answered, for example *401 Unauthorized*, or *no answer* if Jira could not be reached. Check the connection's URL and sign-in details, then try again. If Jira answers but offers no board Lighthouse can use, the Wizard says so: the account may not have access to any board.
+
 Please be aware that this is a one-time operation. Lighthouse does not keep your settings in sync with the selected board. If you make changes in your Jira board, you must either update them manually, or rerun the Wizard.
 
 # Dependencies

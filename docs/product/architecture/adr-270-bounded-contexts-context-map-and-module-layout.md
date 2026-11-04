@@ -340,6 +340,7 @@ class, table or wire field. The glossary lists only terms that matter or drift.
 | Connection | Lighthouse's link to one tracker instance, with its credential | `WorkTrackingSystemConnection` | |
 | Translation | Turning a tracker record into a Work Item or Feature during a fetch | `*WorkItemMapper`s, `WorkItemCategoryCrossing` | Code says "mapper" for translation; keep "mapping" for Organisation set-up's concept |
 | Connection stopped working | One fact about the connection, whatever the cause | health verdict per refresh, `UnreadableSecretException` | Target event |
+| Read refusal | A tracker read that failed, carrying the sentence the user reads, and never an empty answer | `WorkTrackingReadException`, `JiraReadException`, `AzureDevOpsReadException` | |
 
 ### Work Items
 

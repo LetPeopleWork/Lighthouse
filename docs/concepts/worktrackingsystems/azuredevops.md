@@ -196,6 +196,8 @@ Use the Azure DevOps Board Wizard to automatically discover and import configura
 
 ![Select Azure DevOps Board](../../assets/concepts/azuredevops_wizard.png)
 
+If the Wizard cannot read the boards, it says what Azure DevOps answered. When a single Project fails, for example because the token cannot see it, no boards are listed and the Wizard names that Project, so a Project that failed never looks like one with no boards. You can still enter the query by hand.
+
 You may adjust all those values to your liking after that. For example, if the state mapping is not what you want to use.
 
 {: .note}

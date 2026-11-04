@@ -6452,6 +6452,9 @@ jobs:
       Unchanged, and made stronger rather than weaker: a connection nothing has observed reads Unknown,
       not Healthy. A probe that ran always records what it found, including that it could not reach the
       tracker - so Unknown keeps meaning "nobody has asked yet" and nothing else.
+      REVISED 2026-11-04 (Bug 6499). The same promise now reaches the board picker and the Test connection
+      sentence: a Jira or Azure DevOps read that fails says what the tracker answered, instead of looking
+      like a connection with no boards. No score change.
     job_story: >
       When a connection's credential stops working - a revoked token, an expired PAT, a deprovisioned
       owner -

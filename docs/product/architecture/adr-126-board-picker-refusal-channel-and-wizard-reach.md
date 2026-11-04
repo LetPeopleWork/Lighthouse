@@ -167,6 +167,15 @@ survives the next refactor.
   the layering rule, but it is one more thing to keep honest — a probe that no adapter's board method
   leaks a connector-specific exception past the port belongs in the ArchUnitNET fixture.
 
+## Adoption
+
+Bug 6499 (2026-11-04) adopted the refusal channel for Jira and Azure DevOps through `JiraReadException` and
+`AzureDevOpsReadException`. A failed list or board read now reaches `BoardWizard` as a verdict, with one generic
+sentence per read that carries what the tracker answered, and an empty list says the same thing for every connector.
+That replaces the connector-specific empty copy in decision 3: ServiceNow's failure verdicts are unchanged, its
+empty hint is gone. How the Azure DevOps list fails is
+[ADR-278](./adr-278-azure-devops-board-list-fails-whole.md).
+
 ## Related
 
 - [ADR-125](./adr-125-servicenow-visual-task-board-picker.md) — what the picker reads and what it
