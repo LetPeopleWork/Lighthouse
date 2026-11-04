@@ -15,6 +15,11 @@ export const STEPS = [
 	"Configure",
 	"Name & Create",
 ];
+export const STEP_CHOOSE_CONNECTION = 0;
+export const STEP_LOAD_DATA = 1;
+export const STEP_CONFIGURE = 2;
+export const STEP_NAME_CREATE = 3;
+
 const offersAnyWizard = (
 	wizards: IDataRetrievalWizard[],
 	connection: IWorkTrackingSystemConnection,
@@ -22,11 +27,6 @@ const offersAnyWizard = (
 	wizards.some((wizard) =>
 		isWizardUsable(wizard, connection.authenticationMethodKey),
 	);
-
-export const STEP_CHOOSE_CONNECTION = 0;
-export const STEP_LOAD_DATA = 1;
-export const STEP_CONFIGURE = 2;
-export const STEP_NAME_CREATE = 3;
 
 export type WizardEntityType = "team" | "portfolio";
 
