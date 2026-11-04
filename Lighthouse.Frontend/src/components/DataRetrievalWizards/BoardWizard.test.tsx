@@ -1014,6 +1014,31 @@ describe("BoardWizard", () => {
 			expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
 		});
 
+		it("takes away the first board's information when the next board cannot be read", async () => {
+			mockGetBoards.mockResolvedValue(mockBoards);
+			mockGetBoardInformation.mockImplementation(
+				(_: number, boardId: string) =>
+					boardId === "1"
+						? Promise.resolve(mockBoardInformation)
+						: Promise.reject(new ApiError(400, THE_BOARD_WAS_REFUSED)),
+			);
+
+			render(thePickerFor(1));
+			await userEvent.click(await screen.findByLabelText("Board"));
+			await userEvent.click(await screen.findByText("Sprint Board"));
+			expect(await screen.findByText("board-1")).toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Confirm" })).toBeEnabled();
+
+			await userEvent.click(screen.getByLabelText("Board"));
+			await userEvent.click(await screen.findByText("Kanban Board"));
+
+			expect(
+				await screen.findByText(THE_BOARD_WAS_REFUSED),
+			).toBeInTheDocument();
+			expect(screen.queryByText("board-1")).not.toBeInTheDocument();
+			expect(screen.getByRole("button", { name: "Confirm" })).toBeDisabled();
+		});
+
 		it("takes away the boards of the last answer when the list is refused", async () => {
 			mockGetBoards.mockImplementation((connectionId: number) =>
 				connectionId === 1

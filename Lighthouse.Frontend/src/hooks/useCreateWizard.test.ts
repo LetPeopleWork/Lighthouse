@@ -474,6 +474,20 @@ describe("useCreateWizard", () => {
 			act(() => result.current.handleBack());
 			expect(result.current.validationError).toBeNull();
 		});
+
+		it("goes from STEP_NAME_CREATE back to STEP_CONFIGURE when no wizards are offered", async () => {
+			const args = makeHookArgs();
+			const { result } = renderHook(() => useCreateWizard(args));
+			await waitFor(() => expect(result.current.loading).toBe(false));
+
+			act(() => result.current.selectConnection(makeConnection(1)));
+			fillConfig(result, everyConfigInputFilled);
+			await act(() => result.current.handleNext());
+			expect(result.current.activeStep).toBe(STEP_NAME_CREATE);
+
+			act(() => result.current.handleBack());
+			expect(result.current.activeStep).toBe(STEP_CONFIGURE);
+		});
 	});
 
 	describe("handleCreate", () => {

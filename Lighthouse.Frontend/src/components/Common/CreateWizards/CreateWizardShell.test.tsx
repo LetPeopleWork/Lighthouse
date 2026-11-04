@@ -281,6 +281,34 @@ describe("CreateWizardShell", () => {
 			).toBeInTheDocument();
 		});
 
+		it("disables the wizard button by the sign-in of the selected connection, not the first one", () => {
+			const unservedWizard: IDataRetrievalWizard = {
+				...wizard,
+				unservedSignIns: {
+					authenticationMethodKeys: ["jira.scopedtoken"],
+					reason: "Boards are not offered to scoped tokens.",
+				},
+			};
+			render(
+				<CreateWizardShell
+					{...baseProps()}
+					activeStep={STEP_LOAD_DATA}
+					connections={[
+						makeConnection(1, "ADO Connection"),
+						{
+							...makeConnection(2, "Scoped Jira"),
+							authenticationMethodKey: "jira.scopedtoken",
+						},
+					]}
+					selectedConnectionId={2}
+					availableWizards={[unservedWizard]}
+				/>,
+			);
+			expect(
+				screen.getByRole("button", { name: "Select Board" }),
+			).toBeDisabled();
+		});
+
 		it("calls onSetActiveWizard when a wizard button is clicked", async () => {
 			const user = userEvent.setup();
 			const onSetActiveWizard = vi.fn();
