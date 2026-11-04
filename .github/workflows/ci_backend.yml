@@ -30,10 +30,6 @@ on:
         required: false
         type: string
         default: 'false'
-      run_sonar:
-        required: false
-        type: boolean
-        default: false
 
 jobs:
   backend:
@@ -56,12 +52,10 @@ jobs:
         fetch-depth: '0'
 
     - name: Remove Frontend sonar-project.properties
-      if: ${{ inputs.run_sonar }}
       run: |
         rm ./Lighthouse.Frontend/sonar-project.properties
 
     - name: Set up JDK 17
-      if: ${{ inputs.run_sonar }}
       uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
       with:
         java-version: 17
@@ -83,12 +77,10 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Install SonarCloud scanner
-      if: ${{ inputs.run_sonar }}
       run: |
         dotnet tool install --global dotnet-sonarscanner
 
     - name: Begin SonarCloud analysis
-      if: ${{ inputs.run_sonar }}
       run: |
         dotnet sonarscanner begin \
           /k:"LetPeopleWork_Lighthouse" \
@@ -177,12 +169,10 @@ jobs:
         if-no-files-found: warn
 
     - name: End SonarCloud analysis
-      if: ${{ inputs.run_sonar }}
       run: |
         dotnet sonarscanner end /d:sonar.token="${{ secrets.SONAR_TOKEN }}"
 
     - name: Upload Sonar report metadata
-      if: ${{ inputs.run_sonar }}
       uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
       with:
         name: sonar-report-backend

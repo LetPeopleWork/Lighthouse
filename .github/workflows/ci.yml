@@ -58,9 +58,6 @@ jobs:
       servicenow_connector: ${{ needs.changes.outputs.servicenow_connector }}
       github_connector: ${{ needs.changes.outputs.github_connector }}
       connector_shared: ${{ needs.changes.outputs.connector_shared }}
-      # Backend Sonar scan runs on every backend CI run — PRs and
-      # pushes to main — so the quality gate always evaluates the code just pushed.
-      run_sonar: true
     secrets: inherit
 
   frontend:
