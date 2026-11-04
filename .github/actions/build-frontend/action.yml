@@ -60,7 +60,7 @@ runs:
     - name: Test Frontend and Sonar report
       if: ${{ inputs.run-tests == 'true' }}
       shell: bash
-      run: pnpm run sonarreport
+      run: pnpm test
       working-directory: ./Lighthouse.Frontend
       env:
         CI: true

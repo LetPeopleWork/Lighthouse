@@ -71,11 +71,20 @@ describe("the time-budget reporter", () => {
 	});
 
 	it("closes the report with a summary naming the mode and the number of offenders", () => {
-		finish(reporterWith(), aRunWithOneTest(5000));
+		finish(reporterWith({ runKind: "scaled" }), aRunWithOneTest(5000));
 
 		expect(printed[printed.length - 1]).toBe(
 			"Time budget: fail mode, budget 2 s, limit factor 2, first-test allowance 0.5 s, 1 offenders",
 		);
+	});
+
+	it("names a limit factor of 1 on a plain run, whatever factor is configured", () => {
+		finish(
+			reporterWith({ runKind: "plain", limitFactor: 3 }),
+			aRunWithOneTest(5000),
+		);
+
+		expect(printed[printed.length - 1]).toContain("limit factor 1,");
 	});
 
 	it("names a scaled run and its limit factor", () => {

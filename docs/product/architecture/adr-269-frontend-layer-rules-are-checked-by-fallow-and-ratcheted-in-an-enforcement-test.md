@@ -32,7 +32,7 @@ graph, checks zone rules in 0.4 s, and found the same 21 imports as a hand count
 - **The list is never loosened.** A new leak is fixed, not listed: move the shared piece to a layer both sides may
   import (usually `components`, `hooks` or `models`), or pass it in from the page. A rule whose leaks are all gone
   keeps its rule with no entries.
-- **It runs in the Vitest suite**: `pnpm test` locally, `pnpm run sonarreport` in the frontend CI job. Not in
+- **It runs in the Vitest suite**: `pnpm test`, locally and in the frontend CI job. Not in
   `prebuild` as well.
 - **Fallow is used for boundaries only.** Its dead-code, duplication and health reports are not enforced.
 

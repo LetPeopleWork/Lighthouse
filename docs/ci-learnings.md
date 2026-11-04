@@ -113,7 +113,7 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
   carries `new Date()` inside the callback, or putting an inline `new Date()`/`[]`/`{}` into
   `useEffect`/`useMemo` dependencies, loops forever. Under `--coverage` it kills the worker, and live
   it causes React #185. Fix: build it once outside the callback, or memoise it. Before pushing, run
-  touched test files with `CI=true pnpm run sonarreport`. Not automated because:
+  touched test files with `CI=true pnpm test`. Not automated because:
   `useExhaustiveDependencies` checks which dependencies are listed, not whether they are stable.
 - **`Test timed out in 5000ms` in files you did not touch**: added tests shift the load on marginal
   files. Fix: prove the cause by excluding your new files, then give the marginal tests an explicit

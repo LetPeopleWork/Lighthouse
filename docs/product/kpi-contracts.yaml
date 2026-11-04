@@ -1994,7 +1994,7 @@ outcomes:
     ga_baseline: "Frontend 7,630 (run 38553818860, 14 Oct 11:02, commit b73a10fad: Vitest 7585 passed | 44 skipped | 1 todo (7630); 479 passed | 2 skipped (481) files). Backend 10,198 (run 38570239004). The 7,204-7,540 frontend counts in the evidence table are earlier 13-14 Oct runs."
     measurement_scope: vendor_repository
     measured_by: >
-      CI logs: the Vitest summary line (Tests N passed | M skipped | K todo (T)) in the pnpm run sonarreport
+      CI logs: the Vitest summary line (Tests N passed | M skipped | K todo (T)) in the pnpm test
       step, total compared against run 38553818860; the dotnet test summary, passed + skipped + todo, compared against
       run 38570239004. Backend counts compared only between runs with the same test filter. Cross-check: passed-row count of the matching test-timings CSV.
     measurement_window: at every slice boundary and the DoD check point
