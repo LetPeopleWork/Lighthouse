@@ -108,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public async Task GetWorkItemsForTeam_UseParentOverride_SetsParentRelationCorrect()
         {
             var subject = CreateSubject();
-            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
+            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey in (LGHTHSDMO-1726)");
 
             team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
             {
@@ -126,10 +126,40 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
+        [Ignore("Story 6501: reads the live test project and is not to be run until the connector reads an ordered list. LGHTHSDMO-1726 shows that a link entry is read and that the tracker's own parent is read only when listed; which of two filled sources wins needs an item carrying two different parents, which the project does not hold, so one would have to be seeded.")]
+        public async Task GetWorkItemsForTeam_UseOrderedParentSources_ReadsTheLinkAndTheOwnParentOnlyWhenListed()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey in (LGHTHSDMO-1726)");
+            team.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = 1,
+                DisplayName = "Parent Link Override",
+                Reference = "customrelationfield"
+            });
+
+            team.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(1), ParentSourceEntry.TrackerParent]).List!);
+            var withTheLinkListed = (await subject.GetWorkItemsForTeam(team, CancellationToken.None))
+                .Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            team.OwnParentSources(ParentSources.Of([ParentSourceEntry.TrackerParent]).List!);
+            var withOnlyTheOwnParentListed = (await subject.GetWorkItemsForTeam(team, CancellationToken.None))
+                .Single(wi => wi.ReferenceId == "LGHTHSDMO-1726");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(withTheLinkListed.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"),
+                    "The link entry comes first and names a parent.");
+                Assert.That(withOnlyTheOwnParentListed.ParentReferenceId, Is.Empty,
+                    "With the link left out of the list it is not read. Its label says the item has no own Jira parent; check that when this is first run.");
+            }
+        }
+
+        [Test]
         public async Task GetFeaturesForProject_UseParentOverride_SetsParentRelationCorrect()
         {
             var subject = CreateSubject();
-            var portfolio = CreatePortfolio("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey = LGHTHSDMO-1726");
+            var portfolio = CreatePortfolio("project = LGHTHSDMO AND labels = NoProperParentLink AND issuekey in (LGHTHSDMO-1726)");
             portfolio.WorkItemTypes.Clear();
             portfolio.WorkItemTypes.Add("Story");
             

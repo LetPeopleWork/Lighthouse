@@ -164,6 +164,20 @@ namespace Lighthouse.Backend.Models
 
         public void FollowParentOverrideDefault() => ParentOverride = StoredSetting.FollowingTheDefault;
 
+        // SCAFFOLD: Story 6501. The three members below throw until the owner holds a list.
+        public void OwnParentSources(ParentSources list)
+            => throw UnbuiltOnThisOwner(nameof(OwnParentSources));
+
+        public void FollowParentSourcesDefault()
+            => throw UnbuiltOnThisOwner(nameof(FollowParentSourcesDefault));
+
+        /// <summary>The owner's own list while it owns one, else the connection default's, else the tracker's own parent alone.</summary>
+        public ParentSources TheEffectiveParentSources()
+            => throw UnbuiltOnThisOwner(nameof(TheEffectiveParentSources));
+
+        private NotImplementedException UnbuiltOnThisOwner(string member)
+            => new($"SCAFFOLD: Story 6501, {member} on {GetType().Name} is not built yet.");
+
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own parent, whatever the default says.</param>
         public void OwnParentOverride(int? additionalFieldDefinitionId) => ParentOverride = StoredSetting.Owning(additionalFieldDefinitionId);
 

@@ -27,6 +27,16 @@ namespace Lighthouse.Backend.Models
         /// <summary>The Parent Override Field every Portfolio on this connection reads while it follows the default.</summary>
         public int? ParentOverrideForPortfolios { get; set; }
 
+        // SCAFFOLD: Story 6501. Throw until the connection holds its two default lists.
+        public void SetParentSourcesDefaultForTeams(ParentSources? list)
+            => throw UnbuiltOnThisConnection(nameof(SetParentSourcesDefaultForTeams));
+
+        public void SetParentSourcesDefaultForPortfolios(ParentSources? list)
+            => throw UnbuiltOnThisConnection(nameof(SetParentSourcesDefaultForPortfolios));
+
+        private NotImplementedException UnbuiltOnThisConnection(string member)
+            => new($"SCAFFOLD: Story 6501, {member} on {GetType().Name} is not built yet.");
+
         /// <summary>The Dependency Field every Portfolio on this connection reads while it follows the default.</summary>
         public int? DependencyFieldForPortfolios { get; set; }
 

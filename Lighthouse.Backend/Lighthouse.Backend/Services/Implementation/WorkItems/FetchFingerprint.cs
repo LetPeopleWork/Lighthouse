@@ -100,6 +100,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return Digest(string.Join(BetweenProperties, whatIsAskedForAndHowTheAnswerIsRead));
         }
 
+        // SCAFFOLD: Story 6501. How an effective parent source list renders into the fingerprint.
+        public static string RenderParentSources(ParentSources parentSources)
+            => throw new NotImplementedException("SCAFFOLD: Story 6501, FetchFingerprint.RenderParentSources is not built yet.");
+
         /// <summary>
         /// The connection's share of <see cref="For"/>: what changes for every Team and Portfolio on
         /// <paramref name="connection"/> at once.

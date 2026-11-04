@@ -407,6 +407,79 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected Task WhenTheAdminSetsTheEstimationDefault(ConnectionDefault theDefault, string fieldName, string unit, bool startUpdates = false)
             => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = AnEstimationBundle(TheFieldIdIn(read, fieldName), unit), startUpdates);
 
+        // --- Parent sources: the ordered list as the default and as an owner's own ---
+
+        /// <summary>How the list names the tracker's own parent in a scenario; every other source is an Additional Field's name.</summary>
+        protected const string TheTrackersOwnParentSource = "Parent (Jira's own)";
+
+        private const string ParentSourcesForTeamsMember = "parentSourcesForTeams";
+
+        protected Task WhenTheAdminSetsTheTeamsListTo(bool startUpdates, params string[] sources)
+            => SaveTheConnection(read => DefaultsOf(read)[ParentSourcesForTeamsMember] = TheListOf(read, sources), startUpdates);
+
+        /// <summary>The save leaves the list out of the defaults it sends back, as a script that has never heard of it would.</summary>
+        protected Task WhenAScriptSavesTheConnectionLeavingTheTeamsListOut()
+            => SaveTheConnection(read => DefaultsOf(read).Remove(ParentSourcesForTeamsMember), startUpdates: false);
+
+        /// <summary>The save sends the list as an explicit null: the admin cleared it.</summary>
+        protected Task WhenTheAdminClearsTheTeamsList()
+            => SaveTheConnection(read => DefaultsOf(read)[ParentSourcesForTeamsMember] = null, startUpdates: false);
+
+        protected async Task GivenTheTeamsListIs(params string[] sources)
+        {
+            await WhenTheAdminSetsTheTeamsListTo(false, sources);
+            ThenTheSaveIsAccepted();
+        }
+
+        protected async Task GivenThePortfoliosListIs(params string[] sources)
+        {
+            await SaveTheConnection(read => DefaultsOf(read)["parentSourcesForPortfolios"] = TheListOf(read, sources), startUpdates: false);
+            ThenTheSaveIsAccepted();
+        }
+
+        /// <summary>The sources the connection page shows for the Portfolios' default, in order, by the names it shows.</summary>
+        protected async Task<IReadOnlyList<string>> TheSourcesOfThePortfoliosDefaultOn(string connection)
+        {
+            var read = await TheConnectionAsThePageReadsIt(connection);
+
+            return NamesOfTheSources(read, connection, DefaultsOf(read)["parentSourcesForPortfolios"]);
+        }
+
+        protected async Task GivenTheTeamOwnsTheList(string team, params string[] sources)
+        {
+            var settings = await TheSettingsOf(team);
+            var connectionRead = await TheConnectionAsThePageReadsIt(await TheConnectionOf(team));
+            settings["parentOverrideSource"] = "Own";
+            settings["parentSources"] = TheListOf(connectionRead, sources);
+
+            await PutTheOwner(team, settings);
+            ThenTheOwnerSaveIsAccepted();
+        }
+
+        /// <summary>The sources the connection page shows for the Teams' default, in order, by the names it shows.</summary>
+        protected async Task<IReadOnlyList<string>> TheSourcesOfTheTeamsDefaultOn(string connection)
+            => NamesOfTheSources(await TheConnectionAsThePageReadsIt(connection), connection, DefaultsOf(await TheConnectionAsThePageReadsIt(connection))[ParentSourcesForTeamsMember]);
+
+        /// <summary>The sources a Team's settings page shows as its own list or the default's it follows, in order, by name.</summary>
+        protected async Task<IReadOnlyList<string>> TheSourcesTheSettingsOfShow(string team)
+            => NamesOfTheSources(await TheConnectionAsThePageReadsIt(await TheConnectionOf(team)), await TheConnectionOf(team), (await TheSettingsOf(team))["parentSources"]);
+
+        /// <summary>The number the old pages and scripts still read: the first field of the Teams' default, or nothing.</summary>
+        protected async Task<int?> TheOldNumberTheConnectionStillCarriesForTeams(string connection)
+            => DefaultsOf(await TheConnectionAsThePageReadsIt(connection))["parentOverrideForTeams"]?.GetValue<int>();
+
+        protected Task<int> TheNumberOfTheField(string connection, string fieldName) => TheFieldId(connection, fieldName);
+
+        private static JsonArray TheListOf(JsonObject connectionRead, string[] sources)
+            => new(sources.Select(source => source == TheTrackersOwnParentSource
+                ? (JsonNode)new JsonObject { ["kind"] = "TrackerParent" }
+                : new JsonObject { ["kind"] = "AdditionalField", ["additionalFieldDefinitionId"] = TheFieldIdIn(connectionRead, source) }).ToArray());
+
+        private static List<string> NamesOfTheSources(JsonObject connectionRead, string connection, JsonNode? list)
+            => [.. (list as JsonArray ?? new JsonArray()).OfType<JsonObject>().Select(entry => entry["kind"]!.GetValue<string>() == "TrackerParent"
+                ? TheTrackersOwnParentSource
+                : TheFieldNamedIn(connectionRead, connection, entry["additionalFieldDefinitionId"]!.GetValue<int>())!)];
+
         /// <summary>The default is sent as empty: the admin cleared it.</summary>
         protected Task WhenTheAdminClearsTheDefault(ConnectionDefault theDefault)
             => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = null, startUpdates: false);

@@ -91,6 +91,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         private const int ThePortfoliosOverrideField = 4713;
 
+        private const int TheFirstFieldOfAParentSourceList = 4720;
+
         private static readonly DateTime TheDayEverythingWasLastTouched = new(2026, 9, 1, 8, 0, 0, DateTimeKind.Utc);
 
         private readonly Dictionary<string, AnIssueOnTheTracker> issues = new(StringComparer.Ordinal);
@@ -119,6 +121,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         // Set once this scenario has filled the database; until then nothing was written to it.
         private bool theDatabaseIsFilled;
+
+        // The custom fields the instance defines, by name, in the order it hands out their ids.
+        private readonly List<string> customFieldsTheTrackerDefines = [];
+
+        private int nextFieldOfAParentSourceList = TheFirstFieldOfAParentSourceList;
+
+        private bool theInstanceIsJiraDataCenter;
 
         [OneTimeSetUp]
         public void StartTheLighthouseEveryScenarioRunsOn()
@@ -171,6 +180,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             theDatabaseIsFilled = false;
 
             issues.Clear();
+            customFieldsTheTrackerDefines.Clear();
+            nextFieldOfAParentSourceList = TheFirstFieldOfAParentSourceList;
+            theInstanceIsJiraDataCenter = false;
             requestsTheTrackerAnswered.Clear();
             warningsOfTheLastRefresh = [];
 
@@ -247,6 +259,104 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// </summary>
         protected void ThePortfolioReadsItsFeaturesParentsFromAPhraseBothEndsShare()
             => TheOverrideNames(thePortfolio, ThePortfoliosOverrideField, CausedBy.Name);
+
+        // ----- Parent sources: an ordered list a Team or a Portfolio reads -------------------------------
+
+        /// <summary>The Caused-by link, as an entry of the Team's list.</summary>
+        protected ParentSourceEntry TheTeamsCausedByLink() => AnEntryNaming(theTeam, TheUpwardPhrase, isACustomField: false);
+
+        /// <summary>A custom field the instance defines, as an entry of the Team's list.</summary>
+        protected ParentSourceEntry TheTeamsCustomField(string name) => AnEntryNaming(theTeam, name, isACustomField: true);
+
+        /// <summary>An entry naming something the instance has neither as a field nor as a link type.</summary>
+        protected ParentSourceEntry TheTeamsEntryThatMatchesNothing(string reference) => AnEntryNaming(theTeam, reference, isACustomField: false);
+
+        /// <summary>The instance is Jira Data Center, which keeps a Team's parent in the Epic Link field as well.</summary>
+        protected void TheInstanceIsJiraDataCenter()
+        {
+            theInstanceIsJiraDataCenter = true;
+            customFieldsTheTrackerDefines.Add("Epic Link");
+        }
+
+        protected ParentSourceEntry TheOtherTeamsCausedByLink() => AnEntryNaming(theOtherTeam, TheUpwardPhrase, isACustomField: false);
+
+        protected ParentSourceEntry ThePortfoliosCausedByLink() => AnEntryNaming(thePortfolio, TheUpwardPhrase, isACustomField: false);
+
+        /// <summary>
+        /// The list the Team owns from now on. Before the first refresh it is part of the Team the scenario
+        /// describes; afterwards it is saved the way a settings save leaves it, so the next refresh sees it.
+        /// </summary>
+        protected void TheTeamListsTheParentSources(params ParentSourceEntry[] sources)
+            => TheOwnerListsTheParentSources<Team>(theTeam, sources);
+
+        protected void ThePortfolioListsTheParentSources(params ParentSourceEntry[] sources)
+            => TheOwnerListsTheParentSources<Portfolio>(thePortfolio, sources);
+
+        /// <summary>The Team reads whatever its connection's default lists.</summary>
+        protected void TheTeamFollowsTheConnectionsList() => theTeam.FollowParentSourcesDefault();
+
+        /// <summary>The default every Team on the Team's connection follows while it has no list of its own.</summary>
+        protected void TheConnectionsListForTeamsIs(params ParentSourceEntry[] sources)
+            => theTeam.WorkTrackingSystemConnection.SetParentSourcesDefaultForTeams(AValidList(sources));
+
+        protected void TheOtherTeamFollowsTheConnectionsList() => theOtherTeam.FollowParentSourcesDefault();
+
+        /// <summary>The Team as the database holds it, for what a scenario reads off the owner itself.</summary>
+        protected Team TheStoredTeam()
+        {
+            using var scope = theRunningLighthouse.Services.CreateScope();
+
+            return scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(theTeam.Id)!;
+        }
+
+        /// <summary>The Work Item carries this value in a custom field of the instance.</summary>
+        protected void TheIssueHoldsInTheField(string key, string fieldName, string value)
+            => TheIssue(key).CustomFieldValues[fieldName] = value;
+
+        /// <summary>What the Additional Field behind a link entry shows on a Work Item once the refresh is done.</summary>
+        protected string WhatTheLinkEntryShowsOnTheWorkItem(string key, ParentSourceEntry linkEntry)
+            => ShownIn(TheStoredWorkItem(key), linkEntry.AdditionalFieldDefinitionId!.Value);
+
+        private static ParentSources AValidList(ParentSourceEntry[] sources)
+            => ParentSources.Of(sources).List ?? throw new AssertionException("The scenario describes a list the rules refuse.");
+
+        private ParentSourceEntry AnEntryNaming(IWorkItemQueryOwner owner, string reference, bool isACustomField)
+        {
+            var id = nextFieldOfAParentSourceList++;
+            owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = id,
+                DisplayName = reference,
+                Reference = reference,
+            });
+
+            if (isACustomField && !customFieldsTheTrackerDefines.Contains(reference))
+            {
+                customFieldsTheTrackerDefines.Add(reference);
+            }
+
+            return ParentSourceEntry.Field(id);
+        }
+
+        private void TheOwnerListsTheParentSources<TOwner>(TOwner described, ParentSourceEntry[] sources)
+            where TOwner : WorkTrackingSystemOptionsOwner
+        {
+            var list = AValidList(sources);
+            if (!theDatabaseIsFilled)
+            {
+                described.OwnParentSources(list);
+                return;
+            }
+
+            using var scope = theRunningLighthouse.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<TOwner>>();
+            var stored = repository.GetById(described.Id)!;
+            stored.OwnParentSources(list);
+            repository.Update(stored);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
+        private string CustomFieldIdOf(string name) => JiraWireFormat.TheCustomFieldIdAt(customFieldsTheTrackerDefines.IndexOf(name));
 
         // ----- What the tracker holds ----------------------------------------------------------------------
 
@@ -574,15 +684,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
             var body = path switch
             {
-                _ when path.EndsWith(JiraWireFormat.ServerInfoEndpoint, StringComparison.Ordinal) => JiraWireFormat.ACloudDeployment,
+                _ when path.EndsWith(JiraWireFormat.ServerInfoEndpoint, StringComparison.Ordinal)
+                    => theInstanceIsJiraDataCenter ? "{\"deploymentType\":\"Server\"}" : JiraWireFormat.ACloudDeployment,
                 _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                 _ when path.EndsWith(JiraWireFormat.CredentialCheckEndpoint, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
-                _ when path.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal) => JiraWireFormat.TheFieldListDefining([]),
+                _ when path.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal) => JiraWireFormat.TheFieldListDefining(customFieldsTheTrackerDefines),
                 _ when path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal)
                     => JiraWireFormat.TheLinkTypeListDefining([JiraWireFormat.ALinkTypeDefinition(0, CausedBy)]),
                 _ when path.EndsWith("/changelog", StringComparison.Ordinal) => TheFullHistoryAt(path),
                 _ when path.Contains(JiraWireFormat.SearchEndpoint, StringComparison.Ordinal)
-                    => JiraWireFormat.OnePageOf(TheIssuesAskedForBy(JiraConnectorTestSetup.JqlOf(request)).Select(issue => issue.OnTheWire())),
+                    => JiraWireFormat.OnePageOf(TheIssuesAskedForBy(JiraConnectorTestSetup.JqlOf(request)).Select(issue => issue.OnTheWire(CustomFieldIdOf))),
                 _ => "{}",
             };
 
@@ -644,6 +755,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
             public bool HistoryTooLongForTheSearch { get; set; }
 
+            public Dictionary<string, string> CustomFieldValues { get; } = new(StringComparer.Ordinal);
+
             public void RememberTheOrderOf(string counterpart)
             {
                 if (!orderTheLinksWereDescribedIn.Contains(counterpart))
@@ -666,7 +779,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                 return history;
             }
 
-            public string OnTheWire()
+            public string OnTheWire(Func<string, string> customFieldIdOf)
             {
                 var upward = orderTheLinksWereDescribedIn.Where(StillStands).Select(CausedBy.LinkWhoseInwardIssueIs);
                 var downward = DownwardLinks.Select(CausedBy.LinkWhoseOutwardIssueIs);
@@ -680,13 +793,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
                 var history = TheHistory();
                 var ownParent = OwnParent.Length == 0 ? string.Empty : ", \"parent\": {\"key\": \"" + OwnParent + "\"}";
+                var customFields = string.Concat(CustomFieldValues.Select(field => ", \"" + customFieldIdOf(field.Key) + "\": \"" + field.Value + "\""));
 
                 return JiraWireFormat.AnIssueWithItsHistory(
                     Key,
                     IssueType,
                     created,
                     JiraWireFormat.AnInstant(Updated),
-                    ownParent,
+                    ownParent + customFields,
                     links,
                     HistoryTooLongForTheSearch ? [] : history,
                     HistoryTooLongForTheSearch ? 31 : null);

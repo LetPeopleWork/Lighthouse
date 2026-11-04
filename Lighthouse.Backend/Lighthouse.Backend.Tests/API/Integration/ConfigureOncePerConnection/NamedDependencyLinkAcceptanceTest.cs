@@ -574,6 +574,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             adoTeams[name] = team;
         }
 
+        /// <summary>A field or relation type of the tracker, as an entry the Team can list among its parent sources.</summary>
+        protected ParentSourceEntry TheTeamsSource(string adoTeam, string reference)
+        {
+            var connection = adoTeams[adoTeam].WorkTrackingSystemConnection;
+            var fieldId = TheParentOverrideFieldId + 1000 + connection.AdditionalFieldDefinitions.Count;
+
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = fieldId,
+                DisplayName = reference,
+                Reference = reference,
+            });
+
+            return ParentSourceEntry.Field(fieldId);
+        }
+
+        /// <summary>The Team owns this ordered list as its parent sources.</summary>
+        protected void TheTeamListsTheParentSources(string adoTeam, params ParentSourceEntry[] sources)
+            => adoTeams[adoTeam].OwnParentSources(ParentSources.Of(sources).List ?? throw new AssertionException("The scenario describes a list the rules refuse."));
+
         /// <summary>The Team names <paramref name="reference"/> as its Parent Override Field.</summary>
         protected void TheTeamNamesAsItsParentOverrideField(string adoTeam, string reference)
         {

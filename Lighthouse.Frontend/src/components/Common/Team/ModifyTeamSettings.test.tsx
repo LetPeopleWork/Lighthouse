@@ -382,6 +382,43 @@ describe("ModifyTeamSettings", () => {
 		).toBeInTheDocument();
 	});
 
+	it("shows no Advanced Configuration, where the Parent sources sit, while the settings load or when they cannot be loaded", async () => {
+		mockGetTeamSettings.mockReturnValueOnce(new Promise(() => undefined));
+		const loading = render(
+			<ModifyTeamSettings
+				title="Modify Team Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getTeamSettings={mockGetTeamSettings}
+				saveTeamSettings={mockSaveTeamSettings}
+				validateTeamSettings={mockValidateTeamSettings}
+			/>,
+		);
+
+		expect(screen.getByText("Loading...")).toBeInTheDocument();
+		expect(
+			screen.queryByText("AdvancedInputsComponent"),
+		).not.toBeInTheDocument();
+		loading.unmount();
+
+		mockGetTeamSettings.mockRejectedValueOnce(new Error("offline"));
+		render(
+			<ModifyTeamSettings
+				title="Modify Team Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getTeamSettings={mockGetTeamSettings}
+				saveTeamSettings={mockSaveTeamSettings}
+				validateTeamSettings={mockValidateTeamSettings}
+			/>,
+		);
+
+		expect(
+			await screen.findByText("Error loading data. Please try again later."),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByText("AdvancedInputsComponent"),
+		).not.toBeInTheDocument();
+	});
+
 	it("renders components correctly after loading", async () => {
 		await renderModifyTeamSettings();
 

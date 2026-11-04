@@ -33,6 +33,10 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
         public static bool ReadsTheTrackersOwnParent(IWorkItemQueryOwner owner)
             => !owner.ParentOverrideAdditionalFieldDefinitionId.HasValue;
 
+        // SCAFFOLD: Story 6501. Throws until the ordering rule is built.
+        public static bool ReadsTheTrackersOwnParent(ParentSources list)
+            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.ReadsTheTrackersOwnParent(list) is not built yet.");
+
         /// <summary>
         /// What one record hangs under, or nothing when the override yielded nothing - in which case the
         /// caller is left holding whatever the tracker reported for itself, exactly as before.
@@ -57,6 +61,16 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
 
             return workItem.GetAdditionalFieldValue(owner.ParentOverrideAdditionalFieldDefinitionId) ?? string.Empty;
         }
+
+        // SCAFFOLD: Story 6501. The members below throw until the ordering rule is built.
+        public static ParentChoice Choose(ParentReadings readings, StoredFeatures storedFeatures, ParentNarrowing narrowing)
+            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.Choose is not built yet.");
+
+        public static ParentChoice ChooseProvisionally(ParentReadings readings, ParentNarrowing narrowing)
+            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.ChooseProvisionally is not built yet.");
+
+        public static void HangUnder(WorkItemBase record, ParentReadings readings, ParentChoice choice)
+            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.HangUnder(choice) is not built yet.");
 
         /// <summary>
         /// Hangs a record under the key its links resolved to, and shows that key in the Additional Field that

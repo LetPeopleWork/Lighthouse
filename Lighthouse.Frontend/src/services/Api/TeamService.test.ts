@@ -139,6 +139,24 @@ describe("TeamService", () => {
 		);
 	});
 
+	it("sends a saved list of parent sources as the text the backend reads", async () => {
+		const settings = Object.assign(createMockTeamSettings(), {
+			parentSources: [
+				{ kind: "AdditionalField", additionalFieldDefinitionId: 2 },
+				{ kind: "TrackerParent" },
+			],
+		});
+		mockedAxios.put.mockResolvedValueOnce({ data: settings });
+
+		await teamService.updateTeam(settings);
+
+		// The backend's HTTP test posts this same text; change them together.
+		const sentBody = JSON.stringify(mockedAxios.put.mock.calls[0][1]);
+		expect(sentBody).toContain(
+			'"parentSources":[{"kind":"AdditionalField","additionalFieldDefinitionId":2},{"kind":"TrackerParent"}]',
+		);
+	});
+
 	it("should update throughput for a team", async () => {
 		mockedAxios.post.mockResolvedValueOnce({});
 
