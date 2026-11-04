@@ -173,19 +173,20 @@ namespace Lighthouse.Backend.API
         // is read from its id: the loaded Portfolio only carries the Team itself when something else pulled it in.
         private async Task KeepOwningTeamTheCallerCannotRead(Portfolio portfolio, PortfolioSettingDto portfolioSetting)
         {
-            if (portfolioSetting.OwningTeam is not null || portfolio.OwningTeamId is not { } storedOwnerId)
+            var storedOwnerId = portfolio.OwningTeamId;
+            if (portfolioSetting.OwningTeam is not null || storedOwnerId is null)
             {
                 return;
             }
 
             var readableTeamIds = await rbacAdministrationService
-                .GetReadableTeamIdsAsync(User, [storedOwnerId], HttpContext?.RequestAborted ?? default)
+                .GetReadableTeamIdsAsync(User, [storedOwnerId.Value], HttpContext?.RequestAborted ?? default)
                 .ConfigureAwait(false);
 
-            if (!readableTeamIds.Contains(storedOwnerId))
+            if (!readableTeamIds.Contains(storedOwnerId.Value))
             {
-                var storedOwnerName = teamRepository.GetById(storedOwnerId)?.Name ?? string.Empty;
-                portfolioSetting.OwningTeam = new EntityReferenceDto(storedOwnerId, storedOwnerName);
+                var storedOwnerName = teamRepository.GetById(storedOwnerId.Value)?.Name ?? string.Empty;
+                portfolioSetting.OwningTeam = new EntityReferenceDto(storedOwnerId.Value, storedOwnerName);
             }
         }
 
