@@ -94,8 +94,7 @@ warnings that never fail it. Read them, and report anything worth improving:
   frontend's equivalent. Check every unit it names over budget against an earlier main run's
   `test-timings-backend` / frontend artifact. Did our change make it slower, or was it already over?
   Also compare the total integration time between the two runs.
-- **Sonar on new code:** issues and hotspots that are not failing the gate yet, and coverage on new
-  code that is close to the threshold.
+- **Sonar on new code:** issues and hotspots that are not failing the gate yet.
 
 Report each finding in one line: what it is, whether this push caused it, and a suggested improvement.
 **Do not fix any of them on your own**: they are suggestions for the maintainer to schedule. A green run
@@ -116,7 +115,6 @@ For each failed job:
    - **Compile / build error** — narrow to the offending file, fix, run the relevant local gate (`pnpm build`, `dotnet build`) to verify before re-pushing.
    - **Test failure** — read the assertion, reproduce locally if quick, fix production code (NOT the test) unless the test is genuinely wrong.
    - **Flaky test** — same test reliably passes elsewhere but failed once. Do NOT auto-quarantine. Record under "Suspected flake" in learnings; ask the user before disabling anything.
-   - **Coverage drop** — check the Sonar gate; don't try to game coverage by adding trivial tests.
    - **EF migration script** — must use the `CreateMigration` PowerShell script per CLAUDE.md, never `dotnet ef migrations add` directly.
    - **Pipeline infra** (artifact upload, runner, network) — surface to user; do not "fix" by retry-spamming.
 
@@ -135,7 +133,7 @@ The `sonar-gates` job (`ci_sonar_gates.yml`) is the gate. Diagnose it with the *
    sonar api GET "/api/qualitygates/project_status?projectKey=LetPeopleWork_Lighthouse&branch=main"
    sonar api GET "/api/qualitygates/project_status?projectKey=LetPeopleWork_Lighthouse_Frontend&branch=main"
    ```
-   The `conditions[]` array names each metric and its `status` (`OK`/`ERROR`). Identify which conditions failed and on which project (`new_violations`, `new_coverage`, `new_duplicated_lines_density`, `new_security_hotspots_reviewed`, …).
+   The `conditions[]` array names each metric and its `status` (`OK`/`ERROR`). Identify which conditions failed and on which project (`new_violations`, `new_duplicated_lines_density`, `new_security_hotspots_reviewed`, …).
 
 2. For each failing condition, list the offending issues. Quick human-readable view:
    ```bash
@@ -152,26 +150,20 @@ The `sonar-gates` job (`ci_sonar_gates.yml`) is the gate. Diagnose it with the *
    sonar api GET "/api/rules/show?key=<ruleKey>"
    ```
 
-4. For coverage-on-new-code failures, find the uncovered lines on the changed files:
-   ```bash
-   sonar api GET "/api/measures/component?component=<componentKey>&metricKeys=uncovered_lines,coverage,new_coverage&branch=<branch>"
-   ```
-   (`<componentKey>` is `<key>:<path/to/file>`.) Add tests that exercise *behaviour*, not lines (TDD doctrine — see CLAUDE.md).
-
-5. For duplication failures:
+4. For duplication failures:
    ```bash
    sonar api GET "/api/duplications/show?key=<componentKey>&branch=<branch>"
    ```
    Remember CLAUDE.md's rule: don't abstract structurally-similar code that represents different business concepts. If the duplication is across genuinely different domains, propose the suppression with justification rather than forcing a bad abstraction.
 
-6. For security hotspots:
+5. For security hotspots:
    ```bash
    sonar api GET "/api/hotspots/search?projectKey=<key>&branch=<branch>"
    sonar api GET "/api/hotspots/show?hotspot=<hotspotKey>"
    ```
    Review, fix, or mark as Safe with a justification (only if it really is safe).
 
-7. Apply fixes per Step 4's TDD/commit discipline. Then **wait for the next push to re-run Sonar** — don't re-trigger CI manually unless asked.
+6. Apply fixes per Step 4's TDD/commit discipline. Then **wait for the next push to re-run Sonar** — don't re-trigger CI manually unless asked.
 
 ## Step 6 — make it impossible to repeat (every fix, no exceptions)
 

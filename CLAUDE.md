@@ -235,6 +235,13 @@ A change is **not done** until every gate below passes locally. CI enforces them
     (`Limit: 60, Remaining: 0`) means repeated full runs exhausted the **unauthenticated** GitHub API
     quota. Another reason not to run the suite unfiltered in a loop.
 
+### Coverage (opt-in, both stacks)
+
+CI collects no coverage, and the Sonar quality gate has no coverage condition. `pnpm test` and `dotnet test` are the
+normal commands, in CI and locally. Collect coverage only for a specific reason, such as checking that a behaviour-free
+rewrite did not lose any: `pnpm test:coverage` on the frontend and `Lighthouse.Backend/Test-Coverage.ps1` on the backend,
+which leaves out the live-connector categories unless you pass your own `-Filter`.
+
 ### Local test worker cap (both stacks)
 
 `LIGHTHOUSE_TEST_WORKERS` sets how many workers `pnpm test` and `dotnet test` use. Unset or empty and not CI, each

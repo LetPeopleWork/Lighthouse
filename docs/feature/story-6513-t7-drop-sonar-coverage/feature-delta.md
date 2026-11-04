@@ -587,3 +587,31 @@ default filter keeps the live-connector tests out (nothing reaches the network) 
   `new_reliability_rating`, `new_security_rating`, `new_maintainability_rating`, `new_duplicated_lines_density`,
   `new_security_hotspots_reviewed` and `new_violations`, read from the public API on 2026-11-04. None is a coverage
   condition, so the maintainer's check holds and T7 goes on.
+
+## Wave: DELIVER / [REF] CI read after the push (step 03-02, 2026-11-04)
+
+Run 41840356297 at `fb8a93446`, one run, all gates green.
+
+| Check | Result |
+|---|---|
+| Frontend runs plain | "Test Frontend and Sonar report" ran `pnpm test`; no coverage table |
+| Guard | `scaled run`, `limit factor 3`, 0 offenders |
+| `sonar-report.xml` read | "Frontend SonarCloud" parsed it |
+| `.trx` read | "End SonarCloud analysis" parsed it; analysis successful |
+| Gate | `sonar-gates` green for both projects |
+| Per-file check | "Check test-time budget" green on both stacks |
+
+**The saving, one run, so a first read rather than a verdict.** Summed test seconds place this run with the fast
+runners: 639 s, against 852-893 s on fast-group coverage runs and 1,597-1,724 s on slow-group ones.
+
+| Measure | This run | Fast-group coverage runs |
+|---|---|---|
+| Vitest Duration | 501.89 s, 9,412 tests | 610-830 s |
+| Summed test seconds, files in both | 630 s | 868 s (-27.4 %) |
+| Slowest test | 2.77 s | 3.99-4.52 s |
+| Slowest file | 17.5 s | 21.8-30.6 s |
+| Frontend composite step | 10 min 23 s | not read |
+
+The backend's "Test Backend" took 658 s, against 836-912 s on the three recent full runs with coverage, but the test
+selection of those runs was not compared, so this is direction only. No plain run has landed on a slow runner yet, so
+the plain slow-group figure is unknown.
