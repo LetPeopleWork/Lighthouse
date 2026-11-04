@@ -55,6 +55,7 @@ describe("what keeps a Team's settings from being auto-saved", () => {
 		["no Done state", { doneStates: [] }, "Add at least one Done State"],
 		["no work item type", { workItemTypes: [] }, "Add at least one Task Type"],
 		["no query", { dataRetrievalValue: "" }, "Enter a JQL Query"],
+		["no query at all", { dataRetrievalValue: undefined }, "Enter a JQL Query"],
 	])("names %s", (_, change, reason) => {
 		expect(blockersOf(change)).toEqual([reason]);
 	});

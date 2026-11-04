@@ -80,6 +80,14 @@ describe("defaultsKeepingOnlyFields", () => {
 		});
 	});
 
+	it("leaves an Estimation default that names no field as it is", () => {
+		const unitOnly = { ...inPoints, additionalFieldDefinitionId: null };
+
+		expect(
+			defaultsKeepingOnlyFields({ estimationForTeams: unitOnly }, [field(12)]),
+		).toEqual({ estimationForTeams: unitOnly });
+	});
+
 	it("returns no defaults for none", () => {
 		expect(defaultsKeepingOnlyFields({}, [field(11)])).toEqual({});
 	});

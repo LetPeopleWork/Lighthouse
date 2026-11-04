@@ -113,6 +113,11 @@ describe("time-budget options", () => {
 
 		it.each([
 			["the watch flag is given", {}, ["node", "vitest.mjs", "--watch"]],
+			[
+				"the watch flag is given next to a run command",
+				{},
+				["node", "vitest.mjs", "run", "--watch"],
+			],
 			["no run command is given on a developer machine", {}, noRunArgv],
 		])("is off in watch mode when %s", (_name, env, argv) => {
 			expect(resolveTimeBudgetOptions(env, argv).mode).toBe("off");

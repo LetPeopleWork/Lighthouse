@@ -77,6 +77,14 @@ describe("whether a step lets the reader move on", () => {
 	});
 });
 
+describe("what a stale save tells the person", () => {
+	it("says somebody else changed the report and to reload", () => {
+		expect(STALE_SAVE).toBe(
+			"This report was changed by someone else. Reload to see their changes.",
+		);
+	});
+});
+
 describe("which failures of a save are told apart", () => {
 	it("takes a 409 for somebody else's change, and nothing else", () => {
 		expect(isStaleSave(refusedWith(409))).toBe(true);

@@ -117,6 +117,26 @@ describe("what stops an owner from holding the window", () => {
 	});
 });
 
+describe("which window an owner is told about when both are too long", () => {
+	it("names Now when Now starts furthest back, though Then is listed first", () => {
+		const draft = { ...backToBack("14", "90"), thenEnd: "2026-10-01" };
+
+		expect(limitOfFor(draft, templates)(ownerKeeping(7, "2026-10-01"))).toEqual(
+			{
+				keptSince: "1 Oct 2026",
+				window: "Now",
+				windowStarts: "5 Jul 2026",
+			},
+		);
+	});
+
+	it("names no limit while the day Then ends is no calendar day", () => {
+		const draft = { ...backToBack("90", "90"), thenEnd: "not-a-day" };
+
+		expect(limitOfFor(draft, templates)(keepsSinceAugust)).toBeNull();
+	});
+});
+
 describe("which owners the window can be created on", () => {
 	const limitOf = limitOfFor(backToBack("90", "30"), templates);
 

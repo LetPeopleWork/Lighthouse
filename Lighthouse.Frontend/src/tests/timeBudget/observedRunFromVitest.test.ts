@@ -5,7 +5,13 @@ import {
 	type VitestRunOutcome,
 	vitestRunOutcome,
 } from "./observedRunFromVitest.ts";
-import { aCase, aModule, aSuite, type FakeCase } from "./vitestFakes.ts";
+import {
+	aCase,
+	aModule,
+	aSuite,
+	type FakeCase,
+	type FakeParent,
+} from "./vitestFakes.ts";
 
 const reportsFile = "src/pages/Reports/ReportsPage.test.tsx";
 const settingsFile = "src/pages/Teams/ModifyTeamSettings.test.tsx";
@@ -164,6 +170,15 @@ describe("naming Vitest tests like the JSON reporter", () => {
 
 	it("uses the bare title for a test at module level", () => {
 		expect(nameOf(aCase("works", { type: "module" }))).toBe("works");
+	});
+
+	it("counts a suite that has no title as an empty title", () => {
+		const untitled = {
+			type: "suite",
+			parent: { type: "module" },
+		} as unknown as FakeParent;
+
+		expect(nameOf(aCase("works", untitled))).toBe(" works");
 	});
 
 	it("keeps an it.each row title as written", () => {

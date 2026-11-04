@@ -447,6 +447,42 @@ describe("time-budget comparison", () => {
 			expect(verdict.findings).toEqual([]);
 		});
 
+		it("is stale when only another file has a test of that name", () => {
+			const verdict = compareToAllowList(
+				aRun([
+					aTest({ file: settingsFile, name: slowOne }),
+					aTest({ name: "some other test" }),
+				]),
+				listed(),
+				plainRun,
+			);
+
+			expect(verdict.findings).toEqual([
+				{
+					kind: "stale",
+					file: reportsFile,
+					name: slowOne,
+					why: "test-absent",
+				},
+			]);
+		});
+
+		it("does not judge a skipped test, however long the budget would say it took", () => {
+			const verdict = compareToAllowList(
+				aRun([
+					aTest({
+						name: "walks the whole wizard",
+						seconds: 9,
+						state: "skipped",
+					}),
+				]),
+				[],
+				plainRun,
+			);
+
+			expect(verdict.findings).toEqual([]);
+		});
+
 		it("is ignored when a filter skipped the test", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ name: slowOne, seconds: 0, state: "skipped" })]),

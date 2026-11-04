@@ -246,6 +246,16 @@ describe("changedEstimationDefaultsWithFollowers", () => {
 		},
 	);
 
+	it("leaves out a cleared default that is no Estimation default, though it has followers", () => {
+		expect(
+			changedEstimationDefaultsWithFollowers(
+				{ parentOverrideForTeams: 11 },
+				{ parentOverrideForTeams: null },
+				withFollowers({ parentOverrideForTeams: 3 }),
+			),
+		).toEqual([]);
+	});
+
 	it("leaves out a changed Estimation default nobody follows", () => {
 		expect(
 			changedEstimationDefaultsWithFollowers(
@@ -418,6 +428,24 @@ describe("whyUpdate", () => {
 				portfolios: 2,
 				defaults: ["Epic Owner Field"],
 				changes: ["owners"],
+			});
+		});
+
+		it("names the Estimation Field once for both Estimation defaults, with nothing they change", () => {
+			expect(
+				whyUpdate(
+					false,
+					["estimationForTeams", "estimationForPortfolios"],
+					[],
+					withFollowers({ estimationForTeams: 1, estimationForPortfolios: 1 }),
+					"Feature",
+				),
+			).toEqual({
+				because: "defaults",
+				teams: 1,
+				portfolios: 1,
+				defaults: ["Estimation Field"],
+				changes: [],
 			});
 		});
 
