@@ -13,19 +13,19 @@ prove that.
 
 | Check | Result |
 |---|---|
-| Backend, 2 classes un-skipped, today's code | 66 cases: 58 failed, 8 passed |
-| Backend, same, throwaway fix | 66 of 66 passed |
+| Backend, 2 classes un-skipped, today's code | 74 cases: 66 failed, 8 passed |
+| Backend, same, throwaway fix | 74 of 74 passed |
 | Frontend, new tests un-skipped, today's code | 26 cases: 19 failed, 7 passed |
 | Frontend, same, throwaway fix | 26 of 26 passed |
 | Existing Jira, Azure DevOps, wizard and health tests, throwaway fix | 861 passed, 22 failed: 8 pin the quiet degrade, 14 fail through one fixture line. With that line changed, the two classes concerned fail on exactly the 8. See "Tests DELIVER changes" in `feature-delta.md` |
-| Hand-off state, backend | `dotnet build` 0 warnings, 0 errors. New classes, `WizardsControllerTest` and `Architecture`: 349 passed, 66 skipped, 0 failed |
+| Hand-off state, backend | `dotnet build` 0 warnings, 0 errors. New classes, `WizardsControllerTest` and `Architecture`: 349 passed, 74 skipped, 0 failed |
 | Hand-off state, frontend | `pnpm biome check ./src` clean, `pnpm tsc -b` clean. The 4 touched files: 61 passed, 26 skipped, 0 failed, 0 time-budget offenders |
 
 Legend: **RED** fails today because the behaviour is missing, which is the correct signal.
 **PASS-WHEN-ENABLED** passes today: a guard on behaviour the fix must keep, skipped only for one-at-a-time
 enabling, and classified honestly. No test is BROKEN (setup, import or fixture failure).
 
-## Backend: `JiraBoardReadFailureTest` (slice 01), 43 cases
+## Backend: `JiraBoardReadFailureTest` (slice 01), 45 cases
 
 | Test | Cases | Class | Reason |
 |---|---|---|---|
@@ -35,6 +35,7 @@ enabling, and classified honestly. No test is BROKEN (setup, import or fixture f
 | `A_board_list_from_a_Jira_that_cannot_be_reached_reads_as_no_answer` | 1 | RED | bare `catch` returns `[]` |
 | `A_board_list_that_times_out_reads_as_no_answer` | 1 | RED | bare `catch` returns `[]` |
 | `A_board_list_Lighthouse_cannot_read_says_so` (page of HTML, entry with no id) | 2 | RED | bare `catch` returns `[]` |
+| `A_board_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace` | 1 | RED | bare `catch` returns `[]` and logs nothing |
 | `A_failure_on_the_second_page_fails_the_whole_board_list` | 1 | RED | non-success on page 2 returns `[]` |
 | `A_board_list_over_two_pages_still_offers_every_board` | 1 | PASS-WHEN-ENABLED | paging guard; shows the second page is really requested |
 | `A_Jira_that_really_has_no_boards_for_this_account_stays_an_empty_list` | 2 | PASS-WHEN-ENABLED | an empty list must stay empty |
@@ -43,6 +44,7 @@ enabling, and classified honestly. No test is BROKEN (setup, import or fixture f
 | `A_board_from_a_Jira_that_cannot_be_reached_reads_as_no_answer` | 1 | RED | generic `catch` returns an empty `BoardInformation` |
 | `A_board_read_that_times_out_reads_as_no_answer` | 1 | RED | generic `catch` returns an empty `BoardInformation` |
 | `A_board_Lighthouse_cannot_read_says_so` (page of HTML, `{}`) | 2 | RED | generic `catch` returns an empty `BoardInformation` |
+| `A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace` | 1 | RED | generic `catch` returns an empty `BoardInformation` |
 | `A_board_Jira_hands_over_only_in_part_carries_the_answer_of_the_part_it_refused` (status list, work items, work item type list; 403, 503) | 6 | RED | the part is logged and the board comes back without its states or types, no exception |
 | `A_part_of_a_board_Lighthouse_cannot_read_says_so` (the same three parts; page of HTML, `{}`) | 6 | RED | no exception: a status or type list is logged and left out, unusable work items end in the generic `catch` |
 | `A_part_of_a_board_that_cannot_be_reached_reads_as_no_answer` (the same three parts) | 3 | RED | no exception, as above |
@@ -51,7 +53,7 @@ enabling, and classified honestly. No test is BROKEN (setup, import or fixture f
 | `A_board_that_holds_no_work_items_yet_is_a_real_answer_and_not_a_failure` | 1 | PASS-WHEN-ENABLED | an empty board must not become a failure when the quiet returns go |
 | `Test_connection_on_a_refused_credential_says_to_check_all_the_sign_in_details` | 1 | RED | message is still "Authentication failed for Jira." |
 
-## Backend: `AzureDevOpsBoardReadFailureTest` (slice 02), 23 cases
+## Backend: `AzureDevOpsBoardReadFailureTest` (slice 02), 29 cases
 
 | Test | Cases | Class | Reason |
 |---|---|---|---|
@@ -65,6 +67,12 @@ enabling, and classified honestly. No test is BROKEN (setup, import or fixture f
 | `A_project_list_nobody_answered_reads_as_no_answer` (unreachable, 2 timeouts) | 3 | RED | outer `catch` returns `[]` |
 | `A_project_nobody_answered_for_reads_as_no_answer_and_is_named` (unreachable, 2 timeouts) | 3 | RED | per-project `catch` returns `[]` |
 | `A_board_nobody_answered_for_reads_as_no_answer` (unreachable, 2 timeouts) | 3 | RED | `catch` returns an empty `BoardInformation` |
+| `A_project_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace` | 1 | RED | outer `catch` returns `[]`; the log half already holds |
+| `A_project_that_breaks_unexpectedly_fails_the_list_and_keeps_its_stack_trace` | 1 | RED | per-project `catch` returns `[]`; the log half already holds |
+| `A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace` | 1 | RED | `catch` returns an empty `BoardInformation`; the log half already holds |
+| `A_full_stop_ending_what_Azure_DevOps_said_about_the_project_list_is_not_doubled` | 1 | RED | outer `catch` returns `[]`, so no sentence exists yet |
+| `A_full_stop_ending_what_Azure_DevOps_said_about_a_project_is_not_doubled` | 1 | RED | per-project `catch` returns `[]` |
+| `A_full_stop_ending_what_Azure_DevOps_said_about_a_board_is_not_doubled` | 1 | RED | `catch` returns an empty `BoardInformation` |
 | `A_malformed_board_id_is_a_failed_read_and_never_an_empty_board` (4 ids) | 4 | RED | `Length != 2` guard returns an empty `BoardInformation` |
 | `An_organisation_with_no_projects_stays_an_empty_list` | 1 | PASS-WHEN-ENABLED | an empty list must stay empty |
 | `Projects_without_boards_stay_an_empty_list` | 1 | PASS-WHEN-ENABLED | an empty list must stay empty |
@@ -93,4 +101,4 @@ connection list without ever being on Configure. It now waits for Configure firs
 
 ## Summary
 
-92 cases: 77 RED, 15 PASS-WHEN-ENABLED, 0 BROKEN.
+100 cases: 85 RED, 15 PASS-WHEN-ENABLED, 0 BROKEN.

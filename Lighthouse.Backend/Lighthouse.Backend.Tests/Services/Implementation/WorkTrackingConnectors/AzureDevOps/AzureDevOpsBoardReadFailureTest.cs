@@ -32,7 +32,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string WhatAzureDevOpsSaid = "VS30063: You are not authorized to access https://dev.azure.com";
 
+        private const string WhatAzureDevOpsSaidEndingInAFullStop = WhatAzureDevOpsSaid + ".";
+
         private const string WhatSilenceReads = "no answer";
+
+        private const string WhatAnUnreadableAnswerReads = "an answer Lighthouse could not read";
 
         private const string TheFirstHalfOfTheListSentence = "Lighthouse could not read the boards from Azure DevOps: ";
 
@@ -201,6 +205,97 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatSilenceReads}{TheLastHalfOfTheSentences}"));
         }
 
+        [Test]
+        [Ignore(PendingTheAzureDevOpsBoardFix)]
+        public async Task A_project_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
+        {
+            var fault = AnUnexpectedFault();
+            var log = new RecordingLogger<AzureDevOpsWorkTrackingConnector>();
+            var organisation = new AnOrganisation { ProjectListFailure = fault };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector(log).GetBoards(AConnection()));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheListSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+                Assert.That(log.Everything.Select(entry => entry.Failure), Has.Some.SameAs(fault));
+            }
+        }
+
+        [Test]
+        [Ignore(PendingTheAzureDevOpsBoardFix)]
+        public async Task A_project_that_breaks_unexpectedly_fails_the_list_and_keeps_its_stack_trace()
+        {
+            var fault = AnUnexpectedFault();
+            var log = new RecordingLogger<AzureDevOpsWorkTrackingConnector>();
+            var organisation = new AnOrganisation()
+                .WithAProject(AWorkingProject, ABoardOfTheWorkingProject)
+                .WithAProjectThatFails(AFailingProject, fault);
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector(log).GetBoards(AConnection()));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Does.Contain(AFailingProject));
+                Assert.That(failure.Verdict.Message, Does.Contain(WhatAnUnreadableAnswerReads));
+                Assert.That(log.Everything.Select(entry => entry.Failure), Has.Some.SameAs(fault));
+            }
+        }
+
+        [Test]
+        [Ignore(PendingTheAzureDevOpsBoardFix)]
+        public async Task A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
+        {
+            var fault = AnUnexpectedFault();
+            var log = new RecordingLogger<AzureDevOpsWorkTrackingConnector>();
+            var organisation = new AnOrganisation { BoardFailure = fault };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector(log).GetBoardInformation(AConnection(), ABoardId));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+                Assert.That(log.Everything.Select(entry => entry.Failure), Has.Some.SameAs(fault));
+            }
+        }
+
+        [Test]
+        [Ignore(PendingTheAzureDevOpsBoardFix)]
+        public async Task A_full_stop_ending_what_Azure_DevOps_said_about_the_project_list_is_not_doubled()
+        {
+            var organisation = new AnOrganisation { ProjectListFailure = ARefusalEndingInAFullStop() };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector().GetBoards(AConnection()));
+
+            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheListSentence}{WhatAzureDevOpsSaid}{TheLastHalfOfTheSentences}"));
+        }
+
+        [Test]
+        [Ignore(PendingTheAzureDevOpsBoardFix)]
+        public async Task A_full_stop_ending_what_Azure_DevOps_said_about_a_project_is_not_doubled()
+        {
+            var organisation = new AnOrganisation().WithAProjectThatFails(AFailingProject, ARefusalEndingInAFullStop());
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector().GetBoards(AConnection()));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Does.Contain(WhatAzureDevOpsSaid));
+                Assert.That(failure.Verdict.Message, Does.Not.Contain(".."));
+            }
+        }
+
+        [Test]
+        [Ignore(PendingTheAzureDevOpsBoardFix)]
+        public async Task A_full_stop_ending_what_Azure_DevOps_said_about_a_board_is_not_doubled()
+        {
+            var organisation = new AnOrganisation { BoardFailure = ARefusalEndingInAFullStop() };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
+            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAzureDevOpsSaid}{TheLastHalfOfTheSentences}"));
+        }
+
         [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
         [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523-e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
         [TestCase("first|second|third")]
@@ -266,6 +361,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         private static VssUnauthorizedException ARefusal() => new(WhatAzureDevOpsSaid);
+
+        private static VssUnauthorizedException ARefusalEndingInAFullStop() => new(WhatAzureDevOpsSaidEndingInAFullStop);
+
+        private static InvalidOperationException AnUnexpectedFault() => new("Sequence contains no elements");
 
         private static WorkTrackingSystemConnection AConnection()
             => new()

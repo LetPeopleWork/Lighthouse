@@ -1,0 +1,219 @@
+{
+  "roadmap": {
+    "project_id": "bug-6499-jira-auth-failure-shows-no-boards",
+    "created_at": "2026-11-04",
+    "total_steps": 8,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Bug 6499: a failing Jira or Azure DevOps board read reaches the board picker as a sentence carrying the tracker's own answer (F1 for the list, F2 for one board), instead of reading as 'no boards'. A genuinely empty list shows E1 for every connector. A Jira connection whose sign-in can never list boards (scoped API token, Jira Cloud OAuth) gets the picker disabled with tooltip D1 and makes no board call. Jira Test connection reads T1 for every Jira sign-in. Slice 01 is Jira plus the shared picker; slice 02 is Azure DevOps and builds on slice 01 (E1 in the picker). Copy ids are those of 'Maintainer decisions: simplified copy' in feature-delta.md.",
+    "rigor": "standard (crafter sonnet, reviewer haiku), agreed with the maintainer at the DISTILL review 2026-11-04",
+    "preconditions": [
+      "The tests are already written and skipped (DISTILL). Each step's crafter enables its group, makes it pass and changes the existing tests named under 'Tests DELIVER changes' in feature-delta.md; nothing is deleted without a replacement that pins the same behaviour.",
+      "Steps run strictly serially, each on the one before: 01-01 to 01-06, then 02-01 and 02-02. Slice 02 starts only when slice 01 is finished (it relies on E1 from 01-05).",
+      "Local runs: dotnet test --filter on the class names with the live-connector categories excluded, never the unfiltered suite; frontend: pnpm install once per worktree, then pnpm vitest run on the named files. The Linear key is shared with CI, so the Linear live category is never run for this Bug.",
+      "Live-run rule: the live JiraIntegration and AdoIntegration runs need the maintainer's sandbox. If a live run cannot happen, stop and report; do not narrow the catch.",
+      "Run the maintainer's live check (wrong email, wrong token, bad PAT; for a scoped token and OAuth, the disabled button and Test connection) at the end of each slice; it is a manual step with no CI scenario.",
+      "Comments are rare, in plain language, written for a stranger, and never cite internal ids such as F1, F2, E1, T1, D1, scenario or slice numbers, or ADR numbers; say the reason itself. Git commands are prefixed LEAN_CTX_DISABLED=1. Conventional commits, one focused commit per step, each green on its own. Nothing is pushed. Mutation testing, docs, ADR-126/ADR-270/jobs.yaml edits and the architecture summary belong to the orchestrator's quality gate and finalize, not to these steps."
+    ]
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice 01: the Jira picker says why",
+      "description": "A failing Jira board read reaches the picker as F1 or F2 carrying Jira's answer, a board is never offered without its states or types, Test connection reads T1, the picker shows E1 for an empty list and ignores superseded answers, and scoped-token and OAuth connections get the button disabled with D1 on every screen that offers it.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The Jira board list fails with what Jira said",
+          "description": "Commit type: fix(connectors). Read docs/ci-learnings.md (backend section) first. NAMED NOTE, do this BEFORE narrowing any catch: run the JiraIntegration category once (dotnet test --filter \"TestCategory=JiraIntegration\") against the maintainer's sandbox and record which tests are red beforehand; the fakes cannot prove which exceptions the Jira SDK and HTTP stack raise, and some live-only tests pin the swallowed failure. If the live run cannot happen, stop and report; do not narrow the catch. Then in JiraBoardReadFailureTest enable, in this order: the driving-port scenario for the list (F1 for a 401), the list group (401, 403, 503, unreachable, timeout, unreadable, second page, two-page happy path, genuinely empty list), A_board_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace, and the log-line scenario. Jira's GetBoards catch logs nothing today, so that unexpected-exception test needs an Error line carrying the exception there. Size accepted: the step is large, but each scenario exercises one connector method. In JiraWorkTrackingConnector, GetBoards and its paging read (GetBoardsFromJira) stop returning empty and throw JiraReadException carrying the list sentence. {answer} is the status and its reason as Jira sent it, with a space, so 503 reads '503 Service Unavailable' without parentheses; 'no answer' for an unreachable host or a timeout (reuse the existing could-not-be-asked recognition); 'an answer Lighthouse could not read' for unparseable JSON and for a board entry with no id. A failure on page two fails the whole list and discards page one. An unexpected exception is logged with its stack trace and still surfaces as a failure. The Information line 'Authentication is not valid' at GetBoardsFromJira (:1118) is replaced by one Error line carrying the answer. Also change the live-only JiraScopedTokenIntegrationTest.GetBoards_ReturnsCorrectBoards from Is.Empty to expecting JiraReadException (it held only because the failure was swallowed). Gates: dotnet build zero warnings; JiraBoardReadFailureTest list group and the Jira connector tests green.",
+          "criteria": [
+            "Asking for the boards of a Jira that answers 401, 403 or 503 gives a 400 whose sentence reads 'Lighthouse could not read the boards from Jira: <status> <reason>. Check the connection's URL and sign-in details, then try again.' (the reason written without parentheses, for example '503 Service Unavailable')",
+            "An unreachable Jira or a request that times out reads 'no answer' in the sentence",
+            "A page of HTML, unparseable JSON, or a board entry with no id reads 'an answer Lighthouse could not read' in the sentence",
+            "When the second page fails, the whole list fails and none of the first page's boards is offered; a list over two pages that both answer still offers every board",
+            "A Jira with no boards for this account still answers an empty list, which is not a failure",
+            "An unexpected exception on the list still surfaces as a failure, never an empty list, pinned by A_board_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace in JiraBoardReadFailureTest.cs",
+            "A failed list read writes one Error log line that names the status and reason Jira sent and never says the authentication is not valid",
+            "The live JiraIntegration category was run once before any catch was narrowed and its result is recorded in the commit body; if it could not run, the step stopped and reported"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+          "scenario_name": "An administrator asking for the boards of a Jira that refuses them is told what Jira said; board list failure groups; a failure on the second page fails the whole board list; a board list over two pages still offers every board; a Jira that really has no boards stays an empty list; a failed board list is logged with what Jira answered",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraScopedTokenIntegrationTest.cs"
+          ],
+          "dependencies": [],
+          "implementation_notes": "Backend uses NUnit with fakes under the real connector. Controller and IBoardInformationProvider are unchanged: the controller already turns any read exception into a 400 with the verdict. No classification by status on the picker; the answer goes into the sentence. Comments rare, plain language, and never cite internal ids such as F1 or ADR numbers."
+        },
+        {
+          "id": "01-02",
+          "name": "A single Jira board read fails with what Jira said",
+          "description": "Commit type: fix(connectors). In JiraBoardReadFailureTest enable, in this order: the driving-port scenario for a board (F2 for a 403), the board group (401, 403, 404, 503, unreachable, timeout, unreadable, a board with no work items yet, a whole board), and A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace. Size accepted: each scenario exercises one connector method. In JiraWorkTrackingConnector, GetBoardInformation (its generic catch) and GetBoardInformationFromJira (the non-success configuration answer, :724-730) stop returning an empty BoardInformation and throw JiraReadException carrying the board sentence, with {answer} as in the list step; 'an answer Lighthouse could not read' also covers a configuration with no columns. board_filter_unreadable passes through unchanged. The Warning at :727 for the failed configuration read is replaced by one Error line carrying the answer. An unexpected exception is logged with its stack trace and still surfaces as a failure. The partial reads (status list, board issue read, work item type list) are the step after the next. Gates: dotnet build zero warnings; the board group and the Jira connector tests green.",
+          "criteria": [
+            "Asking for a board of a Jira that answers 401, 403, 404 or 503 gives a 400 whose sentence reads 'Lighthouse could not read this board from Jira: <answer>. Check the connection's URL and sign-in details, then try again.'",
+            "An unreachable Jira or a request that times out reads 'no answer' in the sentence",
+            "A page of HTML, unparseable JSON, or a configuration with no columns reads 'an answer Lighthouse could not read'",
+            "A board that answers whole still gives its states and types, and a board that holds no work items yet is still read",
+            "A board whose saved filter is refused keeps its existing sentence naming the filter",
+            "An unexpected exception on a board read still surfaces as a failure, never an empty board, pinned by A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace in JiraBoardReadFailureTest.cs",
+            "A failed board read writes one Error log line naming the status and reason Jira sent"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+          "scenario_name": "An administrator asking for a board of a Jira that refuses it is told what Jira said; a board Jira answers with a failure carries that answer; a board from a Jira that cannot be reached reads as no answer; a board read that times out reads as no answer; a board Lighthouse cannot read says so; a board Jira hands over whole still gives its states and types; a board that holds no work items yet is a real answer",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs"
+          ],
+          "dependencies": ["01-01"],
+          "implementation_notes": "The 14 board-query tests in JiraBoardQueryAssemblyTest must stay green here; the status-list fixture change belongs to the partial-read step, so keep the quiet partial reads as they are in this step. Comments rare, plain language, and never cite internal ids such as F2 or ADR numbers."
+        },
+        {
+          "id": "01-03",
+          "name": "A Jira board is never offered without its states or types",
+          "description": "Commit type: fix(connectors). In the same commit, in this order: first change the BuildResponse fixture of JiraBoardQueryAssemblyTest so that path.EndsWith(\"status\") answers JiraWireFormat.TheStatusListOf(JiraWireFormat.AnEnglishStatuses) (today it answers [], which the fix reads as unusable, and 14 unrelated tests of the board's query, the filter refusal among them, would go red); then enable the partial-read groups of JiraBoardReadFailureTest (status list, board/{id}/issue, work item type list, each for 403, 503, an unusable body, unreachable and a timeout). In JiraWorkTrackingConnector the three partial reads of GetBoardInformation (the status-to-category mapping, the board issue read and the work item type list) stop degrading quietly. Await the three reads together, not the query last, so no failure is left unobserved (the old comment saying the query is the only one that can throw becomes false and is removed). The status list and work item type list already raise JiraReadException with a sentence written for other screens: the two list sites convert that exception into the board failure sentence rather than passing it through. {answer} reads '503 Service Unavailable', never '503 (Service Unavailable)'; a 200 with an unusable body reads 'an answer Lighthouse could not read'. One Error line carrying the answer replaces the Warning sites for the refused status list (:787), the board issue read (:868) and the work item type list (:892). The missing-id warnings (:794 status, :900 work item type) stay Warnings and the id is left out; a board with no work items ({\"issues\":[]}) is a real answer. Change the existing tests named under 'Tests DELIVER changes': in JiraBoardQueryAssemblyTest the three cases of GetBoardInformation_PartOfTheBoardCannotBeRead_LogsWhatJiraAnsweredBeforeCarryingOn now expect the refusal (or are deleted in favour of the new partial-read scenario once its log half is pinned there); in JiraBoardOriginalNamesTest the four cases of the work item type list that cannot be read and the status list that cannot be read now expect the board failure with the answer (the 200 cases read 'an answer Lighthouse could not read'). The status list and work item type list reader is shared with other screens whose own sentences must not change. Gates: dotnet build zero warnings; JiraBoardReadFailureTest, JiraBoardQueryAssemblyTest, JiraBoardOriginalNamesTest and the connection health tests green, and the existing tests of the other screens that share the status and work item type list reader (the original-names refresh and refused-list tests, for example JiraRefreshOriginalNamesTest, JiraOriginalNamesRefusedListTest and JiraOriginalNamesTest) stay green untouched.",
+          "criteria": [
+            "A board whose status list, board/{id}/issue read or work item type list is refused with 403 or 503 gives the board failure sentence carrying that answer (for example '503 Service Unavailable'), and Confirm stays disabled; Lighthouse never offers a board with no states or no types because a part could not be read",
+            "A part that answers 200 with a page of HTML or '{}' reads 'an answer Lighthouse could not read', and a part that cannot be reached or times out reads 'no answer', for each of the three parts",
+            "A board that answers whole still gives its states and types, and a board that holds no work items yet is still read",
+            "A status or work item type id the list lacks stays a warning and the id is left out of the board",
+            "A board whose saved filter is refused still reads its own sentence naming the filter",
+            "The existing board-query tests of JiraBoardQueryAssemblyTest (14 tests) stay green with no change other than the response fixture, and the replaced quiet-degrade tests now pin the failure",
+            "A failed partial read writes one Error log line naming the part's status and reason; the missing-id cases still write a Warning",
+            "The other screens that read the same status and work item type lists keep their own sentences, shown by their existing tests staying green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+          "scenario_name": "A board Jira hands over only in part carries the answer of the part it refused; a part of a board Lighthouse cannot read says so; a part that cannot be reached reads as no answer; a part that times out reads as no answer",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardQueryAssemblyTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardOriginalNamesTest.cs"
+          ],
+          "dependencies": ["01-02"],
+          "implementation_notes": "The fixture line and the 8 quiet-degrade tests must change in this same step; split across steps leaves 14 tests red. Only the board read converts the shared readers' exceptions. Comments rare, plain language, and never cite internal ids such as F2 or ADR numbers."
+        },
+        {
+          "id": "01-04",
+          "name": "Jira Test connection reads the neutral sign-in message",
+          "description": "Commit type: fix(connectors). Enable the Test connection scenario in JiraBoardReadFailureTest. In JiraWorkTrackingConnector, the authentication_failed result of ValidateConnection gets the message 'Authentication failed for Jira. Check all of this connection's sign-in details.' Its code, technical detail and highlighted field are unchanged, and ValidateConnection's status logic and the 'Authentication is not valid' log phrase at :442 stay as they are. Gate: dotnet build zero warnings; JiraBoardReadFailureTest, Slice05AnyBrokenCredentialSaysSoSpecifications and Slice08HealthThatChecksItselfSpecifications green, and TaskManagerIcon.test.tsx (pnpm vitest run) green; those three use 'Authentication failed for Jira.' as their own fixture text and must pass untouched.",
+          "criteria": [
+            "Test connection on a refused Jira credential shows 'Authentication failed for Jira. Check all of this connection's sign-in details.' with today's error code, technical detail and highlighted field, for every Jira sign-in; the test pins it through jira.cloud because ValidateConnection does not branch on the sign-in",
+            "Slice05AnyBrokenCredentialSaysSoSpecifications, Slice08HealthThatChecksItselfSpecifications and TaskManagerIcon.test.tsx stay green with no change to them",
+            "The Test connection log phrase at :442 is unchanged"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs",
+          "scenario_name": "Test connection on a refused credential says to check all the sign-in details",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/Jira/JiraBoardReadFailureTest.cs"
+          ],
+          "dependencies": ["01-03"],
+          "implementation_notes": "A 503 on Test connection still reads as an authentication failure: a known defect left out of this Bug. Do not touch status logic or ConnectionHealthService. Comments rare, plain language, and never cite internal ids such as T1 or ADR numbers."
+        },
+        {
+          "id": "01-05",
+          "name": "The picker shows the empty-list sentence and ignores superseded board answers",
+          "description": "Commit type: fix(frontend). Read docs/ci-learnings.md (frontend section) first. Enable in BoardWizard.test.tsx, in this order: E1 on a Board and on a Team picker, F2 for a refused board and Confirm disabled, the refused list taking away the boards of the last answer, then the superseded-answer group (the newer board kept when the older answers last, the older board's refusal saying nothing after the newer answered, the newer board's spinner kept when the older arrives or is refused first, an answer after the selection was cleared ignored). In BoardWizard replace the NO_BOARDS text with E1 for the empty branch only and for every connector, set boards to an empty list when the list read fails, and guard board-information answers with a ref holding the most recent selection, so an answer, a refusal or the end of loading is applied only while the board it asked for is still the latest selection (null once cleared). Today's two canned fallback lines stay for failures that never came from the backend. Change the existing tests: 'names both reasons a connection may have no board to offer' is replaced by the E1 scenario, and the absence check on 'not a member of any Visual Task Board' inside 'displays fetched boards in autocomplete' is pointed at E1. Remove the biome-ignore lint/suspicious/noSkippedTests line from every test enabled here and enable every it.skip.each in the file (those carry no suppression and Biome will not report a forgotten one). Gates: pnpm vitest run on BoardWizard.test.tsx, then pnpm build with zero errors and warnings, then git status to keep Biome --write rewrites in the commit.",
+          "criteria": [
+            "An empty board list shows 'No boards are available to this connection. The account may not have access to any board, or none of the boards it can see can be used by Lighthouse.' on both a Board and a Team picker, for every connector",
+            "A refused or failing board list shows the sentence the backend sent verbatim, never the empty-list sentence, shows no boards from an earlier answer, and Confirm stays disabled",
+            "A refused board shows the sentence the backend sent for that board, clears the board information and keeps Confirm disabled",
+            "When the older of two selections answers after the newer one, the newer board's information stays and Confirm hands back the newer board; an older refusal that arrives later shows nothing",
+            "While the newer selection is still loading, an older answer or refusal arriving first does not stop its spinner or show its result",
+            "An answer arriving after the selection was cleared changes nothing",
+            "grep -rn \"it\\.skip\" Lighthouse.Frontend/src/components/DataRetrievalWizards/BoardWizard.test.tsx finds nothing and the file carries no noSkippedTests suppression"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/DataRetrievalWizards/BoardWizard.test.tsx",
+          "scenario_name": "Says the same thing about an empty list on a Board and a Team picker; shows what the tracker said about a board and cannot be confirmed; takes away the boards of the last answer when the list is refused; the superseded-answer group (keeps the newer board, says nothing about the older refusal, keeps waiting for the newer board, ignores an answer after the selection was cleared)",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/DataRetrievalWizards/BoardWizard.tsx",
+            "Lighthouse.Frontend/src/components/DataRetrievalWizards/BoardWizard.test.tsx"
+          ],
+          "dependencies": ["01-04"],
+          "implementation_notes": "Frontend uses Vitest and React Testing Library; name matchers are unanchored, so use exact strings. No new error path: the refusal text already arrives through the existing 400 handling, and the controller and wizardService are unchanged (the learning hypothesis is disproved if one needs a change; stop and report). Slice 02 relies on the empty-list sentence from this step. Comments rare, plain language, and never cite internal ids such as E1 or ADR numbers."
+        },
+        {
+          "id": "01-06",
+          "name": "Scoped-token and OAuth Jira connections get a disabled picker button with a reason",
+          "description": "Commit type: feat(frontend). Add JiraOAuth: 'jira.oauth' to AuthenticationMethodKeys in WorkTrackingSystemConnection.ts and enable the key test, which pins the whole list. Add one decision function, isWizardUsable(wizard, authenticationMethodKey), and the optional field on the wizard definition that lists the sign-ins a wizard cannot serve together with the reason text, in models/DataRetrievalWizard/DataRetrievalWizard.ts. It MUST live in the models module, not in components/DataRetrievalWizards: five test files mock that components module wholesale with only getWizardsForSystem on the mock (useCreateWizard.test.ts, CreateTeamWizard.test.tsx, CreatePortfolioWizard.test.tsx and both licenseCheck tests), so a new export there reads as undefined and turns about 45 of their tests red with no change in behaviour. Give the Jira board entry in DataRetrievalWizardRegistry.ts the two unserved sign-ins (jira.scopedtoken and jira.oauth) and the text 'Jira does not offer boards to scoped API tokens or Jira Cloud (OAuth). Enter the query by hand.' GeneralSettingsComponent asks the function to disable the 'Select Jira Board' button and shows the reason as its tooltip on a wrapping element (a disabled MUI button fires no pointer events), for Team and Portfolio, on settings and create screens. useCreateWizard asks the same function to skip the load-data step when no wizard is usable, and the Configure step shows the same disabled button; going back from Configure returns to choosing the connection. No other place compares sign-in keys. Enable, in order: the key test, the GeneralSettingsComponent group (disabled with reason for scoped token and OAuth on Team and Portfolio; usable for jira.cloud and jira.datacenter), then CreateWizard.boardPicker.test.tsx (straight to Configure with the disabled picker, back-navigation, still offered on the Load Data step for cloud and datacenter). Remove the biome-ignore lint/suspicious/noSkippedTests line from the key test and enable every it.skip.each in these three files. Gates: pnpm vitest run on the three files plus the five mocking files (they must stay green untouched), grep -rn \"it\\.skip\" Lighthouse.Frontend/src empty for the files of this Bug, then pnpm build with zero errors and warnings, then git status to keep Biome --write rewrites in the commit.",
+          "criteria": [
+            "For a Jira connection signed in with a scoped API token or Jira Cloud (OAuth), the 'Select Jira Board' button is disabled on the Team and Portfolio settings screens and on the Configure step of both create flows, and hovering it shows 'Jira does not offer boards to scoped API tokens or Jira Cloud (OAuth). Enter the query by hand.'; the picker never opens and no board call is made",
+            "For jira.cloud and jira.datacenter connections, and for other trackers, the button is enabled and the picker opens as before, including on the create flow's Load Data step",
+            "In the create flows a scoped-token or OAuth connection goes straight from choosing the connection to Configure, skipping the load-data step, and going back from Configure returns to choosing the connection",
+            "The frontend sign-in key list contains every Jira sign-in, including jira.oauth",
+            "The five test files that mock the wizard module wholesale stay green with no change to them",
+            "grep -rn \"it\\.skip\" Lighthouse.Frontend/src returns nothing for these files and no biome-ignore lint/suspicious/noSkippedTests line remains in them"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateWizard.boardPicker.test.tsx",
+          "scenario_name": "Includes every Jira sign-in, so the picker rule can name them; shows the picker disabled and says why (scoped token and OAuth, Team and Portfolio); leaves the picker usable for jira.cloud and jira.datacenter; goes straight to Configure with the picker disabled and the reason on it; going back from Configure returns to choosing the connection; still offers the picker on the Load Data step for cloud and datacenter",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.ts",
+            "Lighthouse.Frontend/src/models/DataRetrievalWizard/DataRetrievalWizard.ts",
+            "Lighthouse.Frontend/src/components/DataRetrievalWizards/DataRetrievalWizardRegistry.ts",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.tsx",
+            "Lighthouse.Frontend/src/hooks/useCreateWizard.ts",
+            "Lighthouse.Frontend/src/models/WorkTracking/WorkTrackingSystemConnection.authenticationMethodKeys.test.ts",
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/CreateWizards/CreateWizard.boardPicker.test.tsx"
+          ],
+          "dependencies": ["01-05"],
+          "implementation_notes": "The tests assert the disabled button through the rendered screens, so they do not fix where the deciding function lives; the models module is the only constraint, because of the wholesale mocks. Reuse the existing button and tooltip styles; the sketch was approved in the DISTILL sketch walk. Check by hand with the browser throttled to a slow connection that the picker shows its spinner while the list is on its way and the could-not-load sentence on a failure. At the end of slice 01 run the manual live check against a real Jira Cloud site (wrong Username, then right; a scoped-token connection with the button disabled). Comments rare, plain language, and never cite internal ids such as D1 or ADR numbers."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice 02: the Azure DevOps picker says why",
+      "description": "A failing Azure DevOps board read reaches the picker as F1 or F2 carrying what Azure DevOps said, any failing project fails the whole list and is named, a malformed board id is a failed read, and an empty list stays an empty list. Starts only after slice 01 is finished.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "The Azure DevOps board list fails with what Azure DevOps said, naming the failing project",
+          "description": "Commit type: fix(connectors). Read docs/ci-learnings.md (backend section) first. NAMED NOTE, do this BEFORE narrowing any catch: run the AdoIntegration category once (dotnet test --filter \"TestCategory=AdoIntegration\") against the maintainer's sandbox and record which tests are red beforehand; the fakes cannot prove which exception the Azure DevOps SDK raises for a real 401, 403 or timeout, and the live category is where that mapping is confirmed. If the live run cannot happen, stop and report; do not narrow the catch. Then enable in AzureDevOpsBoardReadFailureTest, in this order: the driving-port scenario for the list, a rejected token on the only project, one project failing among others, two failing projects, a status sent without a sentence of its own, A_project_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace, A_project_that_breaks_unexpectedly_fails_the_list_and_keeps_its_stack_trace, A_full_stop_ending_what_Azure_DevOps_said_about_the_project_list_is_not_doubled, A_full_stop_ending_what_Azure_DevOps_said_about_a_project_is_not_doubled, the error-log scenario, the 'no answer' groups for the project list and for a project, and the three guards (an organisation with no projects, projects without boards, boards of every answering project). In AzureDevOpsWorkTrackingConnector, GetBoards and the per-project board read (GetBoardsForProject, called per project from GetBoardsForProjects) stop swallowing Exception and throw AzureDevOpsReadException carrying the list sentence; without the per-project change a rejected token still ends as an empty list. A project's failure is written to the error log inside its own task before the results are combined, so two failing projects leave two lines (the Error lines at :402 and :639 are kept). Any failing project, or a failing project list, fails the whole list; {answer} names each failing project with what Azure DevOps said about it, with a trailing full stop of that message trimmed; a timeout reads 'no answer'. An empty list stays an empty list. One step, by decision: all scenarios exercise one method, the list walk, and the three guards pass when enabled, so they carry no failing work. Gates: dotnet build zero warnings; the list group and the Azure DevOps connector tests green. If making the tests pass needs an abstraction shared with Jira, stop and take it to DESIGN.",
+          "criteria": [
+            "Asking for the boards of an Azure DevOps that refuses or fails gives a 400 whose sentence reads 'Lighthouse could not read the boards from Azure DevOps: <what it said>. Check the connection's URL and sign-in details, then try again.'",
+            "With two projects of which one fails, the whole list fails, the sentence names the failing project only, and the other project's boards are not shown; with two failing projects both are named",
+            "Each failing project leaves its own Error line in the log",
+            "A request that times out, a project list nobody answered and a project nobody answered for read 'no answer' (the project named where one is involved)",
+            "A trailing full stop in Azure DevOps' own message does not appear doubled in the sentence, pinned by A_full_stop_ending_what_Azure_DevOps_said_about_the_project_list_is_not_doubled and A_full_stop_ending_what_Azure_DevOps_said_about_a_project_is_not_doubled in AzureDevOpsBoardReadFailureTest.cs",
+            "An unexpected exception on the list still surfaces as a failure, never an empty list, pinned by A_project_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace and A_project_that_breaks_unexpectedly_fails_the_list_and_keeps_its_stack_trace in AzureDevOpsBoardReadFailureTest.cs",
+            "An organisation with no projects, and projects without boards, still give an empty list; boards of every answering project are offered when all answer",
+            "An empty Azure DevOps list shows the empty-list sentence in the picker, as pinned by the shared empty-list test in BoardWizard.test.tsx ('Says the same thing about an empty list on a Board and a Team picker'), which stays green",
+            "The live AdoIntegration category was run once before any catch was narrowed and its result is recorded in the commit body; if it could not run, the step stopped and reported"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs",
+          "scenario_name": "An administrator asking for the boards of an Azure DevOps that refuses them is told what it said; a rejected token on the only project fails the list and names the project; one project failing among others fails the whole list and names only that project; two failing projects are both named; each failing project keeps its line in the error log; a project list or project nobody answered for reads as no answer; an organisation with no projects and projects without boards stay an empty list",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs"
+          ],
+          "dependencies": ["01-06"],
+          "implementation_notes": "No credential or permission branch: a 401, a 403, a disabled Boards service and a timeout take the same path. Where no project is involved the tests pin the exact sentence; where one is, they pin its two halves (the project, Azure DevOps' own message), so the separator is the crafter's choice. ValidateConnection and Test connection for Azure DevOps stay unchanged. The {answer} rule: an exception from the Azure DevOps SDK keeps its own message; anything else reads 'an answer Lighthouse could not read'. The GetClientAsync seam made internal virtual in DISTILL stays. Comments rare, plain language, and never cite internal ids such as F1 or ADR numbers."
+        },
+        {
+          "id": "02-02",
+          "name": "A single Azure DevOps board read fails with what Azure DevOps said",
+          "description": "Commit type: fix(connectors). Enable in AzureDevOpsBoardReadFailureTest, in this order: the driving-port scenario for a board, the 'board nobody answered for reads no answer' group, the malformed board id group, A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace, and A_full_stop_ending_what_Azure_DevOps_said_about_a_board_is_not_doubled. In AzureDevOpsWorkTrackingConnector, GetBoardInformation stops swallowing Exception (the Error line at :445 is kept) and throws AzureDevOpsReadException carrying the board sentence; its guard that expects two parts throws instead of returning an empty BoardInformation, with an answer saying the id is not one Azure DevOps gave. A timeout reads 'no answer'. Change the live-only test GetBoardInformation_BoardIdIsNotContainingTwoGuids_ReturnsEmpty in AzureDevOpsWorkTrackingConnectorTest to expect the failure (or delete it in favour of the new untagged malformed-id test). Gates: dotnet build zero warnings; AzureDevOpsBoardReadFailureTest and the Azure DevOps connector tests green. At the end run the manual live check against the demo Azure DevOps org: revoked PAT, then valid.",
+          "criteria": [
+            "Asking for a board of an Azure DevOps that refuses or fails gives a 400 whose sentence reads 'Lighthouse could not read this board from Azure DevOps: <what it said>. Check the connection's URL and sign-in details, then try again.', and Confirm stays disabled",
+            "A board nobody answered for, and a request that times out, read 'no answer'",
+            "A malformed board id gives the board failure sentence with an answer saying so, never an empty board",
+            "An unexpected exception on a board read still surfaces as a failure, never an empty board, pinned by A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace in AzureDevOpsBoardReadFailureTest.cs",
+            "A trailing full stop in Azure DevOps' message about a board does not appear doubled, pinned by A_full_stop_ending_what_Azure_DevOps_said_about_a_board_is_not_doubled",
+            "The existing Error-level log for a failed board read is kept"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs",
+          "scenario_name": "An administrator asking for a board of an Azure DevOps that refuses it is told what it said; a board nobody answered for reads as no answer; a malformed board id is a failed read and never an empty board",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsBoardReadFailureTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnectorTest.cs"
+          ],
+          "dependencies": ["02-01"],
+          "implementation_notes": "The live AdoIntegration run was done in 02-01 before any catch was narrowed; the stop-and-report rule there covers this step too. The {answer} rule: an exception from the Azure DevOps SDK keeps its own message; anything else reads 'an answer Lighthouse could not read'. Comments rare, plain language, and never cite internal ids such as F2 or ADR numbers."
+        }
+      ]
+    }
+  ]
+}

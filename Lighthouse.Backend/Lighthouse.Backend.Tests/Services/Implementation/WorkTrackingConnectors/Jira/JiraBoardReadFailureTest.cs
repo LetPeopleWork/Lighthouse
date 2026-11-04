@@ -122,6 +122,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [Test]
         [Ignore(PendingTheJiraBoardFix)]
+        public async Task A_board_list_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
+        {
+            var fault = AnUnexpectedFault();
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira(boards: _ => throw fault), log);
+
+            var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoards(AConnection()));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardListSentence(WhatAnUnreadableAnswerReads)));
+                Assert.That(log.Everything.Select(entry => entry.Failure), Has.Some.SameAs(fault));
+            }
+        }
+
+        [Test]
+        [Ignore(PendingTheJiraBoardFix)]
         public async Task A_failure_on_the_second_page_fails_the_whole_board_list()
         {
             var subject = AConnectorOver(AJira(boards: request => IsTheSecondPage(request)
@@ -221,6 +238,23 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoardInformation(AConnection(), BoardId));
 
             Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(WhatAnUnreadableAnswerReads)));
+        }
+
+        [Test]
+        [Ignore(PendingTheJiraBoardFix)]
+        public async Task A_board_read_that_breaks_unexpectedly_is_a_failure_and_keeps_its_stack_trace()
+        {
+            var fault = AnUnexpectedFault();
+            var log = new RecordingLogger<JiraWorkTrackingConnector>();
+            var subject = JiraConnectorTestSetup.AConnectorOver(AJira(configuration: _ => throw fault), log);
+
+            var failure = await Assert.ThrowsAsync<JiraReadException>(() => subject.GetBoardInformation(AConnection(), BoardId));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(WhatAnUnreadableAnswerReads)));
+                Assert.That(log.Everything.Select(entry => entry.Failure), Has.Some.SameAs(fault));
+            }
         }
 
         [TestCase(TheStatusList, HttpStatusCode.Forbidden, "403 Forbidden")]
@@ -341,6 +375,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private const string TheLastOfTwoPages = "{\"isLast\":true,\"values\":[{\"id\":2,\"name\":\"Bugs\"}]}";
 
         private static readonly string[] TheBoardsOfBothPages = ["Stories", "Bugs"];
+
+        private static InvalidOperationException AnUnexpectedFault() => new("Sequence contains no elements");
 
         private static string TheBoardListSentence(string answer)
             => $"Lighthouse could not read the boards from Jira: {answer}. Check the connection's URL and sign-in details, then try again.";

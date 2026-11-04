@@ -1014,7 +1014,8 @@ scenarios are written against F1, F2, E1, T1 and D1. How each point was closed:
    tests pin the exact sentence. Where one is, they pin the sentence's two halves, the project and Azure DevOps'
    own message, so DELIVER may choose the separator.
 4. **A double full stop.** The block now says a trailing full stop in Azure DevOps' message is trimmed. The tests use
-   a message with no final full stop, so DELIVER adds the trim with a case of its own.
+   a message with no final full stop; the trim cases (project list, project, board) are DISTILL rows in
+   `AzureDevOpsBoardReadFailureTest`, skipped until DELIVER.
 5. **What counts as "could not read".** The block now defines `{answer}` to cover well-formed JSON Lighthouse cannot
    use, and the tests pin it.
 6. **Log level.** Decided: one Error line per failed Jira board read, with no status split (DEVOPS-3). The test pins
@@ -1029,8 +1030,8 @@ No scenario tags appear in the code (project rule); this table is the only class
 `[Ignore(...)]` with a plain reason, `it.skip` or `it.skip.each`. Kind: **D** driving port end to end, **E** error
 path, **B** boundary or edge, **G** guard on behaviour the fix must keep.
 
-**92 cases over 48 test methods: backend 66 over 35, frontend 26 over 13.** Error and edge methods are 39 of 48
-(81%), against the 40% target. Guards are the other 9.
+**100 cases over 56 test methods: backend 74 over 43, frontend 26 over 13.** Error and edge methods are 47 of 56
+(84%), against the 40% target. Guards are the other 9.
 
 ### Slice 01: `JiraBoardReadFailureTest`
 
@@ -1042,6 +1043,7 @@ path, **B** boundary or edge, **G** guard on behaviour the fix must keep.
 | A board list from a Jira that cannot be reached reads as `no answer` | 1 | E |
 | A board list that times out reads as `no answer` | 1 | E |
 | A board list Lighthouse cannot read says so | 2 | E |
+| A board list that breaks unexpectedly is a failure and keeps its stack trace | 1 | E |
 | A failure on the second page fails the whole board list | 1 | E |
 | A board list over two pages still offers every board | 1 | G |
 | A Jira that really has no boards for this account stays an empty list | 2 | G |
@@ -1050,6 +1052,7 @@ path, **B** boundary or edge, **G** guard on behaviour the fix must keep.
 | A board from a Jira that cannot be reached reads as `no answer` | 1 | E |
 | A board read that times out reads as `no answer` | 1 | E |
 | A board Lighthouse cannot read says so | 2 | E |
+| A board read that breaks unexpectedly is a failure and keeps its stack trace | 1 | E |
 | A board Jira hands over only in part carries the answer of the part it refused (status list, work items, work item type list; 403, 503) | 6 | E |
 | A part of a board Lighthouse cannot read says so (the same three parts; page of HTML, `{}`) | 6 | E |
 | A part of a board that cannot be reached reads as `no answer` (the same three parts) | 3 | E |
@@ -1090,6 +1093,12 @@ path, **B** boundary or edge, **G** guard on behaviour the fix must keep.
 | A project list nobody answered reads as `no answer` (unreachable, two kinds of timeout) | 3 | E |
 | A project nobody answered for reads as `no answer` and is named | 3 | E |
 | A board nobody answered for reads as `no answer` | 3 | E |
+| A project list that breaks unexpectedly is a failure and keeps its stack trace | 1 | E |
+| A project that breaks unexpectedly fails the list and keeps its stack trace | 1 | E |
+| A board read that breaks unexpectedly is a failure and keeps its stack trace | 1 | E |
+| A full stop ending what Azure DevOps said about the project list is not doubled (F1) | 1 | E |
+| A full stop ending what Azure DevOps said about a project is not doubled (F1) | 1 | E |
+| A full stop ending what Azure DevOps said about a board is not doubled (F2) | 1 | E |
 | A malformed board id is a failed read and never an empty board | 4 | E |
 | An organisation with no projects stays an empty list | 1 | G |
 | Projects without boards stay an empty list | 1 | G |
