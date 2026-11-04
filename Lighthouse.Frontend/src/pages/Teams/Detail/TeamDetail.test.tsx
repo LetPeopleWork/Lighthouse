@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IUpdateStatus } from "../../../services/UpdateSubscriptionService";
 import {
@@ -11,6 +12,7 @@ import {
 	createMockRbacService,
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
+	createMockWorkTrackingSystemService,
 } from "../../../tests/MockApiServiceProvider";
 import TeamDetail from "./TeamDetail";
 
@@ -27,9 +29,29 @@ vi.mock("./TeamMetricsView", () => ({
 	default: () => <div data-testid="team-metrics-view">Team Metrics View</div>,
 }));
 
-vi.mock("../../../components/Common/Team/ModifyTeamSettings", () => ({
-	default: () => <div data-testid="team-settings-editor">Settings Editor</div>,
-}));
+// The stand-in loads connections the way the real form does and shows which one it selected, or that
+// the load was refused.
+vi.mock("../../../components/Common/Team/ModifyTeamSettings", async () => {
+	const { useEffect, useState } = await import("react");
+	return {
+		default: ({
+			getWorkTrackingSystems,
+		}: {
+			getWorkTrackingSystems: () => Promise<{ name: string }[]>;
+		}) => {
+			const [outcome, setOutcome] = useState("Settings Editor");
+			useEffect(() => {
+				Promise.resolve()
+					.then(getWorkTrackingSystems)
+					.then(
+						(systems) => setOutcome(`Connection: ${systems[0]?.name}`),
+						() => setOutcome("Connections refused"),
+					);
+			}, [getWorkTrackingSystems]);
+			return <div data-testid="team-settings-editor">{outcome}</div>;
+		},
+	};
+});
 
 // Mock the useTerminology hook
 vi.mock("../../../services/TerminologyContext", () => ({
@@ -541,6 +563,44 @@ describe("TeamDetail component", () => {
 					callsAfterDeferred + 1,
 				);
 			});
+		});
+	});
+
+	describe("settings tab connection read", () => {
+		beforeEach(() => {
+			mockParams = { id: "1", tab: "settings" };
+		});
+
+		it("a Team Admin whose full connection list is refused still sees the settings form", async () => {
+			const mockTeamService = createMockTeamService();
+			mockTeamService.getTeam = vi.fn().mockResolvedValue(mockTeam);
+			const mockUpdateService = createMockUpdateSubscriptionService();
+			mockUpdateService.getUpdateStatus = vi.fn().mockResolvedValue(null);
+			const workTrackingSystemService = createMockWorkTrackingSystemService();
+			workTrackingSystemService.getConfiguredWorkTrackingSystems = vi
+				.fn()
+				.mockRejectedValue(new ApiError(403, "Forbidden"));
+			workTrackingSystemService.getConnectionSummaries = vi
+				.fn()
+				.mockResolvedValue([{ id: 7, name: "Team Jira" }]);
+
+			render(
+				<BrowserRouter>
+					<ApiServiceContext.Provider
+						value={createMockApiServiceContext({
+							teamService: mockTeamService,
+							updateSubscriptionService: mockUpdateService,
+							workTrackingSystemService,
+						})}
+					>
+						<TeamDetail />
+					</ApiServiceContext.Provider>
+				</BrowserRouter>,
+			);
+
+			expect(
+				await screen.findByText("Connection: Team Jira"),
+			).toBeInTheDocument();
 		});
 	});
 

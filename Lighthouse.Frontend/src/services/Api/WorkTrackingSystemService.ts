@@ -77,6 +77,7 @@ export interface ISaveConnectionChoice {
 export interface IWorkTrackingSystemService {
 	getWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]>;
 	getConfiguredWorkTrackingSystems(): Promise<IWorkTrackingSystemConnection[]>;
+	getConnectionSummaries(): Promise<IWorkTrackingSystemConnection[]>;
 	addNewWorkTrackingSystemConnection(
 		newWorkTrackingSystemConnection: IWorkTrackingSystemConnection,
 	): Promise<IWorkTrackingSystemConnection>;
@@ -141,6 +142,25 @@ export class WorkTrackingSystemService
 		});
 	}
 
+	/**
+	 * The connections as a Team or Portfolio Admin may read them: name, system, additional fields and
+	 * defaults, without options, authentication or usage. Every role may call it, a System Admin included.
+	 */
+	async getConnectionSummaries(): Promise<IWorkTrackingSystemConnection[]> {
+		return await this.withErrorHandling(async () => {
+			const response = await this.apiService.get<
+				IWorkTrackingSystemConnection[]
+			>("/worktrackingsystemconnections/summary");
+
+			return BaseApiService.asArray(
+				response.data,
+				"/worktrackingsystemconnections/summary",
+			).map((connection) =>
+				this.deserializeWorkTrackingSystemConnection(connection),
+			);
+		});
+	}
+
 	async addNewWorkTrackingSystemConnection(
 		newWorkTrackingSystemConnection: IWorkTrackingSystemConnection,
 	): Promise<IWorkTrackingSystemConnection> {
@@ -188,7 +208,7 @@ export class WorkTrackingSystemService
 		return new WorkTrackingSystemConnection({
 			name: workTrackingSystemConnection.name,
 			workTrackingSystem: workTrackingSystemConnection.workTrackingSystem,
-			options: workTrackingSystemConnection.options,
+			options: workTrackingSystemConnection.options ?? [],
 			id: workTrackingSystemConnection.id,
 			authenticationMethodKey:
 				workTrackingSystemConnection.authenticationMethodKey,

@@ -565,7 +565,7 @@ const PortfolioDetail: React.FC = () => {
 									<ModifyProjectSettings
 										title="Edit Portfolio"
 										getWorkTrackingSystems={() =>
-											workTrackingSystemService.getConfiguredWorkTrackingSystems()
+											workTrackingSystemService.getConnectionSummaries()
 										}
 										getProjectSettings={() =>
 											portfolioService.getPortfolioSettings(portfolio.id)

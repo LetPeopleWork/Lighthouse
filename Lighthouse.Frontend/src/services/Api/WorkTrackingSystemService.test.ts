@@ -182,6 +182,37 @@ describe("WorkTrackingSystemService", () => {
 		);
 	});
 
+	it("reads the summary from its own endpoint as a connection without options", async () => {
+		mockedAxios.get.mockResolvedValueOnce({
+			data: [
+				{
+					id: 4,
+					name: "Jira Cloud",
+					workTrackingSystem: "Jira",
+					additionalFieldDefinitions: [
+						{ id: 9, displayName: "Size", reference: "customfield_1" },
+					],
+					defaults: { parentOverrideForTeams: 9 },
+					supportedDefaults: ["parentOverrideForTeams"],
+				},
+			],
+		});
+
+		const [summary] = await workTrackingSystemService.getConnectionSummaries();
+
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/worktrackingsystemconnections/summary",
+		);
+		expect(summary).toBeInstanceOf(WorkTrackingSystemConnection);
+		expect(summary.options).toEqual([]);
+		expect(summary.workTrackingSystemGetDataRetrievalDisplayName()).toBe(
+			"JQL Query",
+		);
+		expect(summary.additionalFieldDefinitions).toHaveLength(1);
+		expect(summary.defaults).toEqual({ parentOverrideForTeams: 9 });
+		expect(summary.supportedDefaults).toEqual(["parentOverrideForTeams"]);
+	});
+
 	it("should add a new work tracking system connection", async () => {
 		const newConnection: IWorkTrackingSystemConnection = {
 			id: 0,

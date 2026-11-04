@@ -349,6 +349,7 @@ export const createMockWorkTrackingSystemService =
 	(): IWorkTrackingSystemService => {
 		return {
 			getConfiguredWorkTrackingSystems: vi.fn().mockResolvedValue([{ id: 1 }]),
+			getConnectionSummaries: vi.fn().mockResolvedValue([{ id: 1 }]),
 			getWorkTrackingSystems: vi.fn(),
 			addNewWorkTrackingSystemConnection: vi.fn(),
 			updateWorkTrackingSystemConnection: vi.fn(),

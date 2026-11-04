@@ -6,11 +6,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Feature } from "../../../models/Feature";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../../services/Api/LicensingService";
 import type { IOptionalFeatureService } from "../../../services/Api/OptionalFeatureService";
 import type { IPortfolioService } from "../../../services/Api/PortfolioService";
 import type { ITeamService } from "../../../services/Api/TeamService";
+import type { IWorkTrackingSystemService } from "../../../services/Api/WorkTrackingSystemService";
 import type {
 	IUpdateStatus,
 	IUpdateSubscriptionService,
@@ -23,6 +25,7 @@ import {
 	createMockRbacService,
 	createMockTeamService,
 	createMockUpdateSubscriptionService,
+	createMockWorkTrackingSystemService,
 } from "../../../tests/MockApiServiceProvider";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import PortfolioDetail from "./PortfolioDetail";
@@ -84,13 +87,31 @@ vi.mock("../../../components/Common/ActionButton/ActionButton", () => ({
 	),
 }));
 
+// The stand-in loads connections the way the real form does and shows which one it selected, or that
+// the load was refused.
 vi.mock(
 	"../../../components/Common/ProjectSettings/ModifyProjectSettings",
-	() => ({
-		default: () => (
-			<div data-testid="portfolio-settings-editor">Settings Editor</div>
-		),
-	}),
+	async () => {
+		const { useEffect, useState } = await import("react");
+		return {
+			default: ({
+				getWorkTrackingSystems,
+			}: {
+				getWorkTrackingSystems: () => Promise<{ name: string }[]>;
+			}) => {
+				const [outcome, setOutcome] = useState("Settings Editor");
+				useEffect(() => {
+					Promise.resolve()
+						.then(getWorkTrackingSystems)
+						.then(
+							(systems) => setOutcome(`Connection: ${systems[0]?.name}`),
+							() => setOutcome("Connections refused"),
+						);
+				}, [getWorkTrackingSystems]);
+				return <div data-testid="portfolio-settings-editor">{outcome}</div>;
+			},
+		};
+	},
 );
 
 const mockPortfolioService: IPortfolioService = createMockPortfolioService();
@@ -119,10 +140,13 @@ mockUpdateSubscriptionService.getUpdateStatus = mockGetUpdateStatus;
 
 const MockApiServiceProvider = ({
 	children,
+	workTrackingSystemService,
 }: {
 	children: React.ReactNode;
+	workTrackingSystemService?: IWorkTrackingSystemService;
 }) => {
 	const mockContext = createMockApiServiceContext({
+		workTrackingSystemService,
 		portfolioService: mockPortfolioService,
 		teamService: mockTeamService,
 		licensingService: mockLicensingService,
@@ -403,6 +427,37 @@ describe("PortfolioDetail component", () => {
 
 	afterEach(() => {
 		vi.clearAllMocks();
+	});
+
+	describe("settings tab connection read", () => {
+		it("a Portfolio Admin whose full connection list is refused still sees the settings form", async () => {
+			const workTrackingSystemService = createMockWorkTrackingSystemService();
+			workTrackingSystemService.getConfiguredWorkTrackingSystems = vi
+				.fn()
+				.mockRejectedValue(new ApiError(403, "Forbidden"));
+			workTrackingSystemService.getConnectionSummaries = vi
+				.fn()
+				.mockResolvedValue([{ id: 7, name: "Portfolio Jira" }]);
+
+			render(
+				<MockApiServiceProvider
+					workTrackingSystemService={workTrackingSystemService}
+				>
+					<MemoryRouter initialEntries={["/portfolios/2/settings"]}>
+						<Routes>
+							<Route
+								path="/portfolios/:id/:tab"
+								element={<PortfolioDetail />}
+							/>
+						</Routes>
+					</MemoryRouter>
+				</MockApiServiceProvider>,
+			);
+
+			expect(
+				await screen.findByText("Connection: Portfolio Jira"),
+			).toBeInTheDocument();
+		});
 	});
 
 	describe("settings tab update deferral", () => {

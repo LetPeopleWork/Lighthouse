@@ -634,7 +634,7 @@ const TeamDetail: React.FC = () => {
 									<ModifyTeamSettings
 										title={`Edit ${teamTerm}`}
 										getWorkTrackingSystems={() =>
-											workTrackingSystemService.getConfiguredWorkTrackingSystems()
+											workTrackingSystemService.getConnectionSummaries()
 										}
 										getTeamSettings={() =>
 											teamService.getTeamSettings(team.id).then(settingsLoaded)

@@ -39,6 +39,10 @@ describe("list endpoints given a response that is not an array", () => {
 			() => new WorkTrackingSystemService().getConfiguredWorkTrackingSystems(),
 		],
 		[
+			"WorkTrackingSystemService.getConnectionSummaries",
+			() => new WorkTrackingSystemService().getConnectionSummaries(),
+		],
+		[
 			"VersionService.getNewReleases",
 			() => new VersionService().getNewReleases(),
 		],
