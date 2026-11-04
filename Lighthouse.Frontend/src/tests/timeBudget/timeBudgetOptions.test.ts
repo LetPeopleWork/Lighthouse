@@ -39,17 +39,33 @@ describe("time-budget options", () => {
 			expect(resolveTimeBudgetOptions({}, plainArgv).runKind).toBe("plain");
 		});
 
-		it("is a coverage run when coverage is asked for", () => {
+		it("is a scaled run on CI even when coverage is not asked for", () => {
+			expect(resolveTimeBudgetOptions({ CI: "true" }, plainArgv).runKind).toBe(
+				"scaled",
+			);
+		});
+
+		it("is a scaled run when coverage is asked for on CI", () => {
 			expect(
 				resolveTimeBudgetOptions({ CI: "true" }, coverageArgv).runKind,
-			).toBe("coverage");
+			).toBe("scaled");
 		});
 
 		it.each([
-			["--coverage", "coverage"],
-			["--coverage=true", "coverage"],
-			["--coverage.enabled", "coverage"],
-			["--coverage.enabled=true", "coverage"],
+			["an empty CI", ""],
+			["CI=false", "false"],
+			["CI=FALSE", "FALSE"],
+		])("is a plain run with %s and no coverage", (_name, ci) => {
+			expect(resolveTimeBudgetOptions({ CI: ci }, plainArgv).runKind).toBe(
+				"plain",
+			);
+		});
+
+		it.each([
+			["--coverage", "scaled"],
+			["--coverage=true", "scaled"],
+			["--coverage.enabled", "scaled"],
+			["--coverage.enabled=true", "scaled"],
 			["--coverage=false", "plain"],
 			["--coverage.enabled=false", "plain"],
 			["--coverage.reporter=text", "plain"],

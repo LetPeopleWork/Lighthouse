@@ -52,7 +52,7 @@ export class TimeBudgetReporter implements Reporter {
 		const prefix = options.annotation === "none" ? "" : options.annotation;
 		for (const line of verdict.lines) console.log(`${prefix}${line}`);
 		console.log(
-			`Time budget: ${options.mode} mode, budget ${options.budgetSeconds} s, coverage factor ${options.coverageFactor}, first-test allowance ${options.firstTestAllowanceSeconds} s, ${verdict.findings.length} offenders`,
+			`Time budget: ${options.mode} mode, budget ${options.budgetSeconds} s, limit factor ${options.limitFactor}, first-test allowance ${options.firstTestAllowanceSeconds} s, ${verdict.findings.length} offenders`,
 		);
 		if (verdict.failing) process.exitCode = 1;
 	}

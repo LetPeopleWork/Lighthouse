@@ -1,5 +1,5 @@
 export type TimeBudgetMode = "off" | "warn" | "fail";
-export type RunKind = "plain" | "coverage";
+export type RunKind = "plain" | "scaled";
 
 export interface TimeBudgetOptions {
 	mode: TimeBudgetMode;
@@ -8,8 +8,8 @@ export interface TimeBudgetOptions {
 	budgetSeconds: number;
 	/** Extra seconds granted to the first test of each file. */
 	firstTestAllowanceSeconds: number;
-	/** Multiplier applied to every limit when the run is a coverage run. */
-	coverageFactor: number;
+	/** Multiplier applied to every limit when the run is scaled. */
+	limitFactor: number;
 }
 
 export interface AllowListEntry {
@@ -67,7 +67,7 @@ function limitFor(
 ): number {
 	const base = entry?.ceilingSeconds ?? options.budgetSeconds;
 	const scaled =
-		options.runKind === "coverage" ? base * options.coverageFactor : base;
+		options.runKind === "scaled" ? base * options.limitFactor : base;
 	return test.firstInFile ? scaled + options.firstTestAllowanceSeconds : scaled;
 }
 
@@ -90,7 +90,7 @@ function staleReason(
 		(test) => test.file === entry.file && test.name === entry.name,
 	);
 	if (!ran) return "test-absent";
-	// A coverage run slows tests down, so it can keep an entry but never retire it.
+	// A scaled run is judged against stretched limits, so it can keep an entry but never retire it.
 	// Only a passed test can retire an entry: a failed one may simply have failed fast.
 	const retiresEntries = options.runKind === "plain" && ran.state === "passed";
 	if (retiresEntries && ran.seconds < options.budgetSeconds / 4) {

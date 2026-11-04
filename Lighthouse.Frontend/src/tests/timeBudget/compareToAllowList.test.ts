@@ -13,9 +13,9 @@ const plainRun: TimeBudgetOptions = {
 	runKind: "plain",
 	budgetSeconds: 2,
 	firstTestAllowanceSeconds: 0.5,
-	coverageFactor: 2,
+	limitFactor: 2,
 };
-const coverageRun: TimeBudgetOptions = { ...plainRun, runKind: "coverage" };
+const scaledRun: TimeBudgetOptions = { ...plainRun, runKind: "scaled" };
 
 const reportsFile = "src/pages/Reports/ReportsPage.test.tsx";
 const settingsFile = "src/pages/Teams/ModifyTeamSettings.test.tsx";
@@ -160,12 +160,12 @@ describe("time-budget comparison", () => {
 			],
 			["a first test over the scaled limit plus allowance", true, 4.6, true],
 		])(
-			"coverage run scales the budget by the coverage factor: %s",
+			"scaled run scales the budget by the limit factor: %s",
 			(_name, firstInFile, seconds, offends) => {
 				const verdict = compareToAllowList(
 					aRun([aTest({ name: "the one judged", seconds, firstInFile })]),
 					[],
-					coverageRun,
+					scaledRun,
 				);
 
 				expect(verdict.findings.map((finding) => finding.name)).toEqual(
@@ -178,7 +178,7 @@ describe("time-budget comparison", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ seconds: 5 })]),
 				[],
-				coverageRun,
+				scaledRun,
 			);
 
 			expect(verdict.findings).toEqual([
@@ -304,12 +304,12 @@ describe("time-budget comparison", () => {
 			],
 			["a first test over the scaled ceiling plus allowance", 12.6, true, true],
 		])(
-			"in a coverage run its ceiling is scaled like the budget: %s",
+			"in a scaled run its ceiling is scaled like the budget: %s",
 			(_name, seconds, firstInFile, offends) => {
 				const verdict = compareToAllowList(
 					aRun([aTest({ name: slowOne, seconds, firstInFile })]),
 					listed(),
-					coverageRun,
+					scaledRun,
 				);
 
 				expect(verdict.findings).toEqual(
@@ -523,21 +523,21 @@ describe("time-budget comparison", () => {
 			]);
 		});
 
-		it("is not judged against a scaled quarter of the budget in a coverage run", () => {
+		it("is not judged against a scaled quarter of the budget in a scaled run", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ name: slowOne, seconds: 0.8 })]),
 				listed(),
-				coverageRun,
+				scaledRun,
 			);
 
 			expect(verdict.findings).toEqual([]);
 		});
 
-		it("never retires in a coverage run, however quickly the test ran", () => {
+		it("never retires in a scaled run, however quickly the test ran", () => {
 			const verdict = compareToAllowList(
 				aRun([aTest({ name: slowOne, seconds: 0.3 })]),
 				listed(),
-				coverageRun,
+				scaledRun,
 			);
 
 			expect(verdict.findings).toEqual([]);
@@ -558,8 +558,8 @@ describe("time-budget comparison", () => {
 				aRun([aTest({ name: slowOne, seconds: 5, firstInFile: true })]),
 				listed({ ceilingSeconds: 1.1 }),
 				{
-					...coverageRun,
-					coverageFactor: 3,
+					...scaledRun,
+					limitFactor: 3,
 					firstTestAllowanceSeconds: 0.31,
 				},
 			);

@@ -73,12 +73,12 @@ export function resolveTimeBudgetOptions(
 	const timingsMeaningless =
 		env[STRYKER_WORKER_VARIABLE] !== undefined || isWatchRun(env, argv);
 	const mode = timingsMeaningless ? "off" : requested;
+	const limitsScaled =
+		isCiRun(env) || argv.some((argument) => COVERAGE_SWITCHED_ON.has(argument));
 
 	return {
 		mode,
-		runKind: argv.some((argument) => COVERAGE_SWITCHED_ON.has(argument))
-			? "coverage"
-			: "plain",
+		runKind: limitsScaled ? "scaled" : "plain",
 		annotation: annotationFor(env, mode),
 	};
 }

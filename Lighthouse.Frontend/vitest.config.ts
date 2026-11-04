@@ -8,9 +8,9 @@ import { TimeBudgetReporter } from "./src/tests/timeBudget/timeBudgetReporter.ts
 
 // Per-test budget in seconds on a quiet machine.
 const BUDGET_SECONDS = 2;
-// Coverage runs are about 2-3x slower per test, so every limit is scaled by this. It applies to any run with
-// coverage switched on, in CI and on a developer machine alike, on purpose.
-const COVERAGE_FACTOR = 3;
+// CI machines are slower than a developer's, and a run with coverage switched on is slower again, so every limit
+// is multiplied by this on CI and on any coverage run. A plain run on a developer machine keeps the limits as they are.
+const LIMIT_FACTOR = 3;
 // The first test of a file pays for the cold first render and module warm-up inside the test, so it gets extra time.
 const FIRST_TEST_ALLOWANCE_SECONDS = 0.31;
 
@@ -49,7 +49,7 @@ export default defineConfig({
 			new TimeBudgetReporter({
 				...budgetSwitches,
 				budgetSeconds: BUDGET_SECONDS,
-				coverageFactor: COVERAGE_FACTOR,
+				limitFactor: LIMIT_FACTOR,
 				firstTestAllowanceSeconds: FIRST_TEST_ALLOWANCE_SECONDS,
 				allowList: slowTests,
 				workers,

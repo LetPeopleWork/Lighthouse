@@ -15,7 +15,7 @@ function reporterWith(overrides: Partial<TimeBudgetReporterOptions> = {}) {
 		runKind: "plain",
 		budgetSeconds: 2,
 		firstTestAllowanceSeconds: 0.5,
-		coverageFactor: 2,
+		limitFactor: 2,
 		annotation: "none",
 		allowList: [],
 		workers: 2,
@@ -74,8 +74,17 @@ describe("the time-budget reporter", () => {
 		finish(reporterWith(), aRunWithOneTest(5000));
 
 		expect(printed[printed.length - 1]).toBe(
-			"Time budget: fail mode, budget 2 s, coverage factor 2, first-test allowance 0.5 s, 1 offenders",
+			"Time budget: fail mode, budget 2 s, limit factor 2, first-test allowance 0.5 s, 1 offenders",
 		);
+	});
+
+	it("names a scaled run and its limit factor", () => {
+		const scaled = reporterWith({ runKind: "scaled", limitFactor: 3 });
+		scaled.onInit();
+		finish(scaled, aRunWithOneTest(5000));
+
+		expect(printed[0]).toContain("scaled run");
+		expect(printed[printed.length - 1]).toContain("limit factor 3");
 	});
 
 	it("leaves the exit code alone on a clean run", () => {
