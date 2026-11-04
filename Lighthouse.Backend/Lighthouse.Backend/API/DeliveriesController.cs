@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.API
 
             var delivery = NewDelivery(request, portfolioId, sourcePreview);
 
-            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview, PublishingState.NothingYet);
+            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview, PublishingState.NothingYet, []);
             if (selectionError != null)
             {
                 return selectionError;
@@ -210,8 +210,10 @@ namespace Lighthouse.Backend.API
             // trying to grant the permission, so the notice vanishing would read as the fix having
             // worked.
             var howItWasPublishing = WhatThisDeliveryWasPublishing(existingDelivery);
+            var featuresAlreadyHeld = existingDelivery.Features.Select(feature => feature.Id).ToHashSet();
 
-            var selectionError = ApplyModeTransition(request, existingDelivery, sourcePreview, releasingFromASource, howItWasPublishing);
+            var selectionError = ApplyModeTransition(
+                request, existingDelivery, sourcePreview, releasingFromASource, howItWasPublishing, featuresAlreadyHeld);
             if (selectionError != null)
             {
                 return selectionError;
@@ -239,7 +241,8 @@ namespace Lighthouse.Backend.API
             Delivery delivery,
             PortfolioSourcePreview? sourcePreview,
             bool releasingFromASource,
-            PublishingState howItWasPublishing)
+            PublishingState howItWasPublishing,
+            HashSet<int> featuresAlreadyHeld)
         {
             if (delivery.SelectionMode == DeliverySelectionMode.SourceBound)
             {
@@ -260,7 +263,7 @@ namespace Lighthouse.Backend.API
                 delivery.Reschedule(UtcDateOf(request));
             }
 
-            return ApplyFeatureSelection(request, delivery, sourcePreview, howItWasPublishing);
+            return ApplyFeatureSelection(request, delivery, sourcePreview, howItWasPublishing, featuresAlreadyHeld);
         }
 
         /// <summary>
@@ -439,12 +442,16 @@ namespace Lighthouse.Backend.API
         /// because one payload shape serves all three modes.
         /// </summary>
         private IActionResult? ApplyFeatureSelection(
-            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, PublishingState howItWasPublishing)
+            UpdateDeliveryRequest request,
+            Delivery delivery,
+            PortfolioSourcePreview? sourcePreview,
+            PublishingState howItWasPublishing,
+            HashSet<int> featuresAlreadyHeld)
         {
             return request.SelectionMode switch
             {
                 DeliverySelectionMode.RuleBased => CreateRuleBasedDelivery(request, delivery),
-                DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery),
+                DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery, featuresAlreadyHeld),
                 DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview, howItWasPublishing),
                 // The enum converter accepts any number, so a caller can name a mode that does not
                 // exist. That is a malformed request rather than something broken on our side.
@@ -606,9 +613,23 @@ namespace Lighthouse.Backend.API
                 : null;
         }
 
-        private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(UpdateDeliveryRequest request, Delivery delivery)
+        /// <summary>
+        /// A Delivery reads back a forecast for every Feature it holds, so one picked from another
+        /// Portfolio would show that Portfolio's forecast to somebody who may only read this one. It is
+        /// answered as an id that does not exist, because any other answer would tell the caller the
+        /// Feature is there.
+        ///
+        /// What the Delivery already holds stays selectable: a refresh can take a Feature out of the
+        /// Portfolio, and the edit dialog sends every held Feature back on each save, so refusing it
+        /// would stop the Delivery being edited at all.
+        /// </summary>
+        private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(
+            UpdateDeliveryRequest request, Delivery delivery, HashSet<int> featuresAlreadyHeld)
         {
-            var featureList = deliveryRepository.GetFeaturesByIds(request.FeatureIds);
+            var featureList = deliveryRepository.GetFeaturesByIds(request.FeatureIds)
+                .Where(feature => featuresAlreadyHeld.Contains(feature.Id)
+                    || feature.Portfolios.Exists(portfolio => portfolio.Id == delivery.PortfolioId))
+                .ToList();
 
             var missingIds = request.FeatureIds
                 .Except(featureList.Select(f => f.Id))

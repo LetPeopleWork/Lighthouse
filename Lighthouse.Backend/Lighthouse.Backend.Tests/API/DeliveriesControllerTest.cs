@@ -150,7 +150,7 @@ namespace Lighthouse.Backend.Tests.API
             var date = DateTime.UtcNow.AddDays(30);
             var featureIds = new List<int> { 1, 2 };
 
-            var features = GetTestFeatures(featureIds);
+            var features = GetTestFeatures(featureIds, portfolioId);
             deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(features);
 
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
@@ -452,7 +452,7 @@ namespace Lighthouse.Backend.Tests.API
             deliveryRepositoryMock.Verify(x => x.Remove(It.IsAny<int>()), Times.Never);
         }
 
-        private static List<Feature> GetTestFeatures(List<int> ids)
+        private static List<Feature> GetTestFeatures(List<int> ids, int portfolioId)
         {
             return ids.Select(id => new Feature
             {
@@ -460,7 +460,8 @@ namespace Lighthouse.Backend.Tests.API
                 Name = $"Feature {id}",
                 Order = "1000",
                 Type = "Epic",
-                State = "New"
+                State = "New",
+                Portfolios = { new Portfolio { Id = portfolioId } }
             }).ToList();
         }
 
@@ -636,8 +637,9 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             const int deliveryId = 1;
             var existingDelivery = new Delivery("Original Name", DateTime.UtcNow.AddDays(10), 1);
-            var feature1 = new Feature { Id = 1, Name = "Feature 1" };
-            var feature2 = new Feature { Id = 2, Name = "Feature 2" };
+            var portfolio = new Portfolio { Id = existingDelivery.PortfolioId };
+            var feature1 = new Feature { Id = 1, Name = "Feature 1", Portfolios = { portfolio } };
+            var feature2 = new Feature { Id = 2, Name = "Feature 2", Portfolios = { portfolio } };
 
             var request = new UpdateDeliveryRequest
             {
@@ -1015,7 +1017,7 @@ namespace Lighthouse.Backend.Tests.API
             // Arrange
             const int portfolioId = 1;
             var featureIds = new List<int> { 1 };
-            var features = GetTestFeatures(featureIds);
+            var features = GetTestFeatures(featureIds, portfolioId);
             deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(features);
 
             var request = new UpdateDeliveryRequest
@@ -1156,7 +1158,7 @@ namespace Lighthouse.Backend.Tests.API
             deliveryRepositoryMock.Setup(x => x.GetByIdForUpdate(deliveryId)).Returns(existingDelivery);
 
             var featureIds = new List<int> { 1 };
-            var features = GetTestFeatures(featureIds);
+            var features = GetTestFeatures(featureIds, existingDelivery.PortfolioId);
             deliveryRepositoryMock.Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>())).Returns(features);
 
             var request = new UpdateDeliveryRequest
@@ -1593,6 +1595,13 @@ namespace Lighthouse.Backend.Tests.API
                 new DeliverySourceSnapshot(TheNameJiraHolds, TheDayTheReleaseShipped, TheWorkTaggedAgainstTheRelease));
         }
 
+        private static Feature AFeatureOfThePortfolio(int id)
+        {
+            var feature = AFeature(id);
+            feature.Portfolios.Add(new Portfolio { Id = ThePortfolioItLivesIn });
+            return feature;
+        }
+
         private static Feature AFeature(int id)
         {
             return new Feature { Id = id, Name = $"Feature {id}", ReferenceId = $"LGH-{id}", Order = "1000", Type = "Epic", State = "New" };
@@ -1670,7 +1679,7 @@ namespace Lighthouse.Backend.Tests.API
 
             deliveryRepositoryMock
                 .Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()))
-                .Returns(new List<Feature> { AFeature(1) });
+                .Returns(new List<Feature> { AFeatureOfThePortfolio(1) });
 
             var renameItNow = AnUpdateChoosingByHand(TestToday.AFutureDate);
             var secondResult = await CreateSubject().UpdateDelivery(TheDeliveryBeingEdited, renameItNow);
@@ -1703,7 +1712,7 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
             deliveryRepositoryMock
                 .Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()))
-                .Returns(new List<Feature> { AFeature(1) });
+                .Returns(new List<Feature> { AFeatureOfThePortfolio(1) });
             GivenTheReleaseResolvesTo(TheReleaseJiraHolds, AResolvedRelease(), AFeature(1));
             GivenTheReleaseResolvesTo(TheOtherReleaseJiraHolds, TheOtherReleaseAsItResolves(), AFeature(2));
 
@@ -1879,7 +1888,7 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
             deliveryRepositoryMock
                 .Setup(x => x.GetFeaturesByIds(It.IsAny<IEnumerable<int>>()))
-                .Returns(new List<Feature> { AFeature(1) });
+                .Returns(new List<Feature> { AFeatureOfThePortfolio(1) });
             GivenTheReleaseResolvesTo(TheReleaseJiraHolds, AResolvedRelease(), AFeature(1));
             GivenTheReleaseResolvesTo(TheOtherReleaseJiraHolds, TheOtherReleaseAsItResolves(), AFeature(2));
 

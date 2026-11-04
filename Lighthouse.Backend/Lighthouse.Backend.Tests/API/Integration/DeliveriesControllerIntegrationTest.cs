@@ -108,6 +108,35 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
         
         [Test]
+        public async Task CreateDelivery_FeatureOfAnotherPortfolio_IsRefusedLikeAnUnknownIdWithRbacOff()
+        {
+            // Arrange
+            var portfolio = await AddPortfolio();
+            var foreignFeature = await AddFeatureOfAnotherPortfolio(portfolio);
+
+            var request = new UpdateDeliveryRequest
+            {
+                Name = "Release 1",
+                Date = DateTime.UtcNow.AddDays(30),
+                FeatureIds = [foreignFeature.Id],
+                SelectionMode = DeliverySelectionMode.Manual,
+            };
+
+            var content = new StringContent(JsonSerializer.Serialize(request), Encoding.UTF8, "application/json");
+
+            // Act
+            var response = await Client.PostAsync($"/api/latest/deliveries/portfolio/{portfolio.Id}", content);
+
+            // Assert
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+                Assert.That(await response.Content.ReadAsStringAsync(), Is.EqualTo($"Feature with ID {foreignFeature.Id} does not exist"));
+                Assert.That(await GetDeliveries(portfolio.Id), Is.Empty);
+            }
+        }
+
+        [Test]
         public async Task CreateDelivery_WithValidData_ReturnsOk()
         {
             // Arrange
@@ -531,6 +560,24 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return portfolioRepository.GetAll().Single();
         }
 
+        private async Task<Feature> AddFeatureOfAnotherPortfolio(Portfolio portfolio)
+        {
+            var feature = new Feature(portfolio.Teams.Single(), 10) { Name = "Foreign Feature", Order = "12" };
+
+            var otherPortfolio = new Portfolio
+            {
+                Name = "Other Portfolio",
+                WorkTrackingSystemConnection = portfolio.WorkTrackingSystemConnection,
+            };
+            otherPortfolio.UpdateFeatures([feature]);
+
+            var portfolioRepository = ServiceProvider.GetService<IRepository<Portfolio>>();
+            portfolioRepository.Add(otherPortfolio);
+            await portfolioRepository.Save();
+
+            return feature;
+        }
+
         private async Task<List<Feature>> AddFeatures(Portfolio portfolio)
         {
             var featureRepository = ServiceProvider.GetService<IRepository<Feature>>();
@@ -551,7 +598,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 features.Add(feature);
             }
 
-            portfolio.UpdateFeatures(features);
+            portfolio.UpdateFeatures([.. portfolio.Features, .. features]);
             await featureRepository.Save();
 
             return featureRepository.GetAll().ToList();
