@@ -72,6 +72,11 @@ for that sample's F, never below its plain median, rounded up to the next 0.5 s.
 ceilings, which is the point of the flake bound: a busy machine must not fail a listed test that has not got slower.
 A residual false failure on an unmeasured, busier machine is answered by a re-run, never a retry in the reporter.
 
+Review finding rejected (2026-11-04): the `RefinementView.paging` ceiling of 5.0 s does not break the rule above. The
+oversubscribed sample over-1 read 4.94 s, F = 1 for that sample and the first-test allowance is 0.31 s, giving 4.63,
+rounded up to 5.0. The seed's `worst` field shows the largest raw value (CI 7.34 s), not the sample that set the
+ceiling, which is what misled the review.
+
 `calibration-2026-11-03/seed-allow-list.json` holds, per entry: key, family (rewrite slice or none), first-in-file,
 plain median, ceiling and worst sample. Step 01-08 seeds `slowTests.ts` from it without a fresh full run.
 

@@ -804,6 +804,7 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   allow-list 13 to 13 (the one entry stays).
 - **12 (slice 11).** Profile first (the budget file says "not profiled yet"); extractions named after profiling; loading and
   failure looks stay pinned by named tests (existing `BaseMetricsView.loading` tests keep their role).
+  *2026-11-04: slice 11 was dropped on measured payoff in 12-01 (under 2 s of 27 s, FE5 not landed); 12-02 did not run.*
 
 ### Phase 13 - slice 12
 - **13-01.** Declaration: names the tail (every `slowTests.ts` entry still listed after the last shipped rewrite slice, plus `DataGridBase.paging` and `featureChildItemsDialog`), universe, before ids, seconds, coverage.
@@ -814,6 +815,7 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   and runner include checked first; survivors killed with a follow-up test commit or listed, no hours of reruns.
 - **13-05.** CI after-measurement by job result, Duration median from job logs (KPI 16), KPI 14 zero unlisted offenders.
 - **13-06.** Closing report, T4 hand-off (frontend half leaves T4 at its pick-up), ARCHITECTURE.md/ADR-270 "no concept added".
+- *2026-11-04: the sweep declared no rewrites (13-01), so 13-02 is the allow-list review, done after 13-03 or from CI timings. Agreed order of 2026-11-04: Stryker runs alongside other work at concurrency 2; 13-03 waits for a quiet window and may be replaced by CI.*
 
 ### Roadmap build notes (contradictions found while reading the inputs)
 1. The walking skeleton is **WS1-WS10** in DISTILL, not WS1-WS6; the roadmap uses ten.
@@ -878,9 +880,19 @@ Local coverage alone is 1.35x per test (median); an oversubscribed machine adds 
 `measurement/calibration-2026-11-03/seed-allow-list.json` (ceilings 2.5-5.0 s). Detail and the CI log Duration command:
 `measurement/slice-01a-calibration.md`.
 
+*2026-11-04, on D4: the coverage factor F applies to every run that has coverage switched on, not only CI, so a local
+`vitest run --coverage` also gets F = 3 on purpose (its tests are slower for the same reason).*
+
+*2026-11-04, on D2: the guard covers `vitest run` invocations (`pnpm test`, the CI coverage run), not IDE watch runs.
+The VS Code Vitest extension (vitest.explorer 1.52.2) starts Vitest itself with `watch: true` and no `run` argument, so
+`timeBudgetOptions.ts` reads it as a watch run and turns the guard off. D2's claim that it works for IDE runs holds
+only in that no reporter wiring is needed; it does not enforce there.*
+
 ## Wave: DELIVER / [REF] Allow-list retirement map (seeded 2026-11-03)
 
 The thirty tests the time budget lets through today, each with its ceiling in seconds on a quiet machine and what is expected to retire it.
+
+*2026-11-04: this map reflects the seed of 2026-11-03. The live list in `slowTests.ts` has 13 entries.*
 
 | file | test | ceiling (s) | expected to retire it |
 |---|---|---|---|

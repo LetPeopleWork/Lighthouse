@@ -132,6 +132,9 @@ must not be lower at close.
 | File time, five files (indicative, not quiet; summed test seconds, mean of 5 alternating pairs, 6 workers, budget off) | 82.31 s (104.4 88.3 88.2 61.4 69.2) | 71.44 s (79.8 70.1 72.0 58.5 76.8), -13.2 % |
 | Allow-list entries removed / lowered | 7 | 2 removed, 0 lowered, 5 kept |
 
+Reading of the "Ready rule with Yes votes 1.85 -> 2.71 s" figure: it is over its 2.5 s ceiling, but it was a
+loaded-machine reading; the sweep read 1.21 s for the same test.
+
 ## Moved assertions
 
 | Old test (file :: test) | Assertion text | New location (file) | New test (name) |
@@ -189,9 +192,39 @@ switched off" had been removed as if `discussionRules.test.ts` covered it. It do
 helper, not that `ReadinessSettings` hands the helper the threshold currently shown. The one remaining page test
 starts from a stored 4 and ends at 4, so passing the remembered threshold instead of the shown one would have
 gone unnoticed. The test is back, unchanged, as a page test; it fails when `ReadinessSettings` passes the
-remembered threshold instead of the shown one, and passes with the real code. Only the "refused" page test stays
-removed, because its extra case (a threshold of 0) is asserted in `discussionRules.test.ts` and its wiring is the
-same. Counts above are corrected (removed 1, not 2; 123 ids after, 30 gone). The restored test ran in about 1.5 s
+remembered threshold instead of the shown one, and passes with the real code. Counts above are corrected (removed 1, not 2; 123 ids after, 30 gone). The restored test ran in about 1.5 s
 (limit 2 s), so no allow-list entry came back. The three autosave test files now take their wait from
 `DEBOUNCE_MS` plus a margin instead of a hard-coded 600. All timing figures remain indicative: the machine was
 loaded throughout.
+
+## Second review revision (2026-11-04)
+
+The whole-feature review found that no page test switched a rule off at a refused value (0) and back on, so
+nothing proved that `ReadinessSettings.tsx` hands `rememberOnSwitchOff` the threshold currently shown on that path.
+The earlier revision above left the "refused" page test removed; that was wrong, and this note replaces it. The test
+"switches a rule that was refused when switched off back on at its last allowed threshold" is back, with its
+original id and body (taken from the file before the rewrite), using the file's fake clock. Its rule logic
+stays asserted in `discussionRules.test.ts` too.
+
+Counts after this revision: 124 ids in the five files (the earlier 123 plus the restored one), 29 gone (all moved
+to unit tests), removed outright 0. The time-budget guard in fail mode reported 0 offenders on the readiness file
+and `discussionRules.test.ts` (38 tests); no allow-list entry comes back.
+
+Breaks tried against the call site and the rule helper, each reverted afterwards (production diff empty after the last):
+
+| Break | Failing tests |
+|---|---|
+| `ReadinessSettings.tsx:184` passes a fixed `7` instead of the threshold shown | `switches a rule back on at the threshold it had before`, `switches a rule back on at the threshold it was changed to before it was switched off`, `switches a rule that was refused when switched off back on at its last allowed threshold` |
+| `ReadinessSettings.tsx:184` passes the remembered threshold instead of the shown one | `switches a rule back on at the threshold it was changed to before it was switched off` only. The restored "refused" test passes here: at 0 the helper refuses the value and keeps the remembered one either way. |
+| `discussionRules.ts:30` drops `isUsableThreshold(current)` from `rememberOnSwitchOff` (page file alone) | `switches a rule that was refused when switched off back on at its last allowed threshold` only |
+| the same break, page file and `discussionRules.test.ts` | the same page test and `keeps the last allowed threshold when the rule is switched off at one that is refused` |
+
+So the restored page test is what fails when the refused value is no longer filtered on the page path, and the
+"changed to before" test is what fails when the wrong threshold is handed on. Each is needed.
+
+Timing of the two restored page tests (machine loaded, load average 11 to 13): in a full run with the guard in warn
+mode "switches a rule back on at the threshold it was changed to before it was switched off" took 2.18 s and the
+"refused" test 2.88 s, both over the 2 s limit and reported as the run's 2 offenders; alone on the same loaded
+machine they read 1.73 s and 2.34 s. These are load readings, not a reason to add allow-list entries now: on a
+quiet machine the earlier plain run of the file reported 0 offenders. If a quiet run (13-03 or CI) shows either over
+its limit, they are the entries to add.

@@ -174,8 +174,11 @@ Breaks tried against `ReportsPage.pickLimit.test.tsx` (5 tests), each reverted a
 
 ### Preserved ids
 
-Before 44, after 44. Five ids kept their test name and suite title and changed only the file part, from the two page
-files to `ReportsPage.pickLimit.test.tsx`:
+Before 44, after 44. Five ids kept their test name and suite title and changed the file part, from the two page
+files to `ReportsPage.pickLimit.test.tsx`. Four of them kept their body as well. "Select all picks every row, on every
+page" changed its body too: it was 101 rows over the production page size of 100 and now is 51 rows, so the second page
+is proven at a test-only page size of 10, not at the production size of 100 (see Wiring that stays for the seam).
+The five ids:
 
 - removal :: Picking reports Select all picks every row, on every page
 - removal :: Picking reports above 50 picked, Remove is disabled and says at most 50

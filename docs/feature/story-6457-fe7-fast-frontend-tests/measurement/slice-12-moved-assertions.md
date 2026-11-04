@@ -153,3 +153,9 @@ A first coverage run under load of 10 timed out in three tests (`ModifyTeamSetti
 ## Table of removed or shrunk assertions
 
 No row: nothing is removed or shrunk at declaration. Rows are added here before any edit in 13-02.
+
+## Entries 12 and 13 under load (2026-11-04)
+
+Entries 12 (`ThirdPartyPackagesSection.paging`, 3.18 s) and 13 (`RefinementView.paging`, 6.40 s) ran over their
+ceilings under load, so a local `pnpm test` on a busy machine can fail on them. The maintainer's decision on local
+load (2026-11-03) is to leave the guard enforcing and to re-run when the only failures are these load-only ones.
