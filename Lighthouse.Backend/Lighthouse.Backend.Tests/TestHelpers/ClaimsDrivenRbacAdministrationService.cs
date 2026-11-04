@@ -54,6 +54,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public Task<bool> CanManageRbacAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
             => Task.FromResult(ExtractGrants(principal).Contains(SystemAdminGrant));
 
+        public Task<bool> IsRestrictedApiKeyAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
+            => Task.FromResult(false);
+
         public Task<RbacStatus> GetStatusAsync(CancellationToken cancellationToken = default)
             => Task.FromResult(new RbacStatus
             {

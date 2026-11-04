@@ -612,6 +612,16 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                    && role == UserRole.SystemAdmin;
         }
 
+        public async Task<bool> IsRestrictedApiKeyAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
+        {
+            if (!TryGetApiKeyId(principal, out var apiKeyId))
+            {
+                return false;
+            }
+
+            return await context.ApiKeyPermissions.AnyAsync(permission => permission.ApiKeyId == apiKeyId, cancellationToken);
+        }
+
         public async Task<bool> CanManageTeamMembershipAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
         {
             if (await CanManageRbacAsync(principal, cancellationToken))

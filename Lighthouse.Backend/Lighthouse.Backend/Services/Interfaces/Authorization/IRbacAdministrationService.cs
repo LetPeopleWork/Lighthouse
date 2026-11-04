@@ -59,6 +59,8 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
 
         Task<bool> CanManageRbacAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
 
+        Task<bool> IsRestrictedApiKeyAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default);
+
         Task<bool> CanManageTeamMembershipAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default);
 
         Task<bool> CanManagePortfolioMembershipAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default);

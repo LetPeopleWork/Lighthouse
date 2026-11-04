@@ -41,6 +41,12 @@ namespace Lighthouse.Backend.API
                 return Forbid();
             }
 
+            // A key without scope rows carries all of its owner's rights, so a restricted key must name its scope.
+            if (request.Scope is null or { Count: 0 } && await rbacAdministrationService.IsRestrictedApiKeyAsync(User, cancellationToken))
+            {
+                return BroaderScopeRefused();
+            }
+
             if (request.Scope is { Count: > 0 })
             {
                 foreach (var scopeEntry in request.Scope)
@@ -59,9 +65,7 @@ namespace Lighthouse.Backend.API
 
                     if (!callerCanGrant)
                     {
-                        return StatusCode(
-                            StatusCodes.Status403Forbidden,
-                            "Cannot issue API key with broader scope than your own permissions.");
+                        return BroaderScopeRefused();
                     }
                 }
             }
@@ -75,6 +79,13 @@ namespace Lighthouse.Backend.API
                 request.Scope);
 
             return StatusCode(StatusCodes.Status201Created, result);
+        }
+
+        private ObjectResult BroaderScopeRefused()
+        {
+            return StatusCode(
+                StatusCodes.Status403Forbidden,
+                "Cannot issue API key with broader scope than your own permissions.");
         }
 
         private static RbacGuardRequirement? MapScopeEntryToRequirement(ApiKeyScopeDto scopeEntry)
