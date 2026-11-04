@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.API
 #pragma warning restore S6960
     {
         [HttpGet]
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
         public async Task<ActionResult<WorkTrackingSystemConnectionDto>> GetWorkTrackingSystemConnection(int workTrackingSystemConnectionId)
         {
             return await this.GetEntityByIdAnExecuteAction(repository, workTrackingSystemConnectionId, async connection =>

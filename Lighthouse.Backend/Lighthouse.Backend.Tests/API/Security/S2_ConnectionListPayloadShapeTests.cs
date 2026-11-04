@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,18 +18,29 @@ namespace Lighthouse.Backend.Tests.API.Security
         private const string NonSecretKey = "Url";
         private const string AdditionalFieldName = "Story Points";
         private const string AdditionalFieldReference = "customfield_10016";
+        private const string PredefinedFieldName = "Flagged";
+        private const string DriftedPredefinedFieldReference = "customfield_stale";
+        private const string ConnectionName = "Primary Jira";
         private const int TeamScopeId = 11;
         private const int PortfolioScopeId = 22;
+        private const int ConnectionIdNobodyHolds = 999999;
 
         private readonly TestWebApplicationFactory<Program> rootFactory;
         private readonly WebApplicationFactory<Program> factory;
         private readonly HttpClient client;
+        private int seededConnectionId;
 
         public S2_ConnectionListPayloadShapeTests()
         {
             rootFactory = new TestWebApplicationFactory<Program>();
             factory = TestWebApplicationFactory<Program>.WithTestAuthentication(rootFactory);
             client = factory.CreateClient();
+        }
+
+        [SetUp]
+        public void StartFromOneSeededConnection()
+        {
+            rootFactory.UseFreshDatabase();
             SeedConnection();
         }
 
@@ -166,12 +178,210 @@ namespace Lighthouse.Backend.Tests.API.Security
             }
         }
 
+        [Test]
+        public async Task S2_Viewer_GetSingleConnection_Returns403()
+        {
+            client.AsViewer();
+
+            var response = await client.GetAsync(SeededConnectionPath);
+
+            await AssertRefused(response);
+        }
+
+        [Test]
+        public async Task S2_TeamAdmin_GetSingleConnection_Returns403()
+        {
+            client.AsTeamAdmin(TeamScopeId);
+
+            var response = await client.GetAsync(SeededConnectionPath);
+
+            await AssertRefused(response);
+        }
+
+        [Test]
+        public async Task S2_PortfolioAdmin_GetSingleConnection_Returns403()
+        {
+            client.AsPortfolioAdmin(PortfolioScopeId);
+
+            var response = await client.GetAsync(SeededConnectionPath);
+
+            await AssertRefused(response);
+        }
+
+        [Test]
+        public async Task S2_NonAdmins_GetSingleConnectionThatDoesNotExist_Returns403SoTheAnswerRevealsNoIds()
+        {
+            var path = ConnectionPath(ConnectionIdNobodyHolds);
+
+            var viewer = await StatusWithIdentity(c => c.AsViewer(), path);
+            var teamAdmin = await StatusWithIdentity(c => c.AsTeamAdmin(TeamScopeId), path);
+            var portfolioAdmin = await StatusWithIdentity(c => c.AsPortfolioAdmin(PortfolioScopeId), path);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(viewer, Is.EqualTo(HttpStatusCode.Forbidden));
+                Assert.That(teamAdmin, Is.EqualTo(HttpStatusCode.Forbidden));
+                Assert.That(portfolioAdmin, Is.EqualTo(HttpStatusCode.Forbidden));
+            }
+        }
+
+        [Test]
+        public async Task S2_SystemAdmin_GetSingleConnection_Returns200WithSecretsBlanked()
+        {
+            client.AsSystemAdmin();
+
+            var response = await client.GetAsync(SeededConnectionPath);
+
+            await AssertFullConnectionWithSecretsBlanked(response);
+        }
+
+        [Test]
+        public async Task S2_SystemAdmin_GetSingleConnectionThatDoesNotExist_Returns404()
+        {
+            client.AsSystemAdmin();
+
+            var response = await client.GetAsync(ConnectionPath(ConnectionIdNobodyHolds));
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        }
+
+        [Test]
+        public async Task S2_SystemAdmin_GetSingleConnection_ReconcilesADriftedPredefinedField()
+        {
+            await GivenThePredefinedFieldHasDrifted();
+            client.AsSystemAdmin();
+
+            var response = await client.GetAsync(SeededConnectionPath);
+
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+            var predefinedFields = StoredPredefinedFields();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(predefinedFields, Has.Count.EqualTo(1));
+                Assert.That(predefinedFields[0].Reference, Is.Not.EqualTo(DriftedPredefinedFieldReference));
+            }
+        }
+
+        [Test]
+        public async Task S2_NonAdmins_GetSingleConnection_LeaveADriftedPredefinedFieldAsItIs()
+        {
+            await GivenThePredefinedFieldHasDrifted();
+
+            await ReadTheConnectionAsEveryNonAdmin();
+
+            var predefinedFields = StoredPredefinedFields();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(predefinedFields, Has.Count.EqualTo(1));
+                Assert.That(predefinedFields[0].Reference, Is.EqualTo(DriftedPredefinedFieldReference));
+            }
+        }
+
+        [Test]
+        public async Task S2_NonAdmins_GetSingleConnection_RegisterNoMissingPredefinedField()
+        {
+            await ReadTheConnectionAsEveryNonAdmin();
+
+            Assert.That(StoredPredefinedFields(), Is.Empty);
+        }
+
+        [Test]
+        public async Task S2_AuthOff_GetSingleConnection_BehavesAsToday()
+        {
+            using var authOffClient = rootFactory.CreateClient();
+
+            var response = await authOffClient.GetAsync(SeededConnectionPath);
+            var unknownConnection = await authOffClient.GetAsync(ConnectionPath(ConnectionIdNobodyHolds));
+
+            await AssertFullConnectionWithSecretsBlanked(response);
+            Assert.That(unknownConnection.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
+        }
+
+        private string SeededConnectionPath => ConnectionPath(seededConnectionId);
+
+        private static string ConnectionPath(int connectionId) => $"{FullListPath}/{connectionId}";
+
         private async Task<string> GetWithIdentity(Func<HttpClient, HttpClient> applyIdentity, string path)
+        {
+            var response = await ResponseWithIdentity(applyIdentity, path);
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        private async Task<HttpStatusCode> StatusWithIdentity(Func<HttpClient, HttpClient> applyIdentity, string path)
+        {
+            var response = await ResponseWithIdentity(applyIdentity, path);
+            return response.StatusCode;
+        }
+
+        private async Task<HttpResponseMessage> ResponseWithIdentity(Func<HttpClient, HttpClient> applyIdentity, string path)
         {
             using var scopedClient = factory.CreateClient();
             applyIdentity(scopedClient);
-            var response = await scopedClient.GetAsync(path);
-            return await response.Content.ReadAsStringAsync();
+            return await scopedClient.GetAsync(path);
+        }
+
+        private async Task ReadTheConnectionAsEveryNonAdmin()
+        {
+            await StatusWithIdentity(c => c.AsViewer(), SeededConnectionPath);
+            await StatusWithIdentity(c => c.AsTeamAdmin(TeamScopeId), SeededConnectionPath);
+            await StatusWithIdentity(c => c.AsPortfolioAdmin(PortfolioScopeId), SeededConnectionPath);
+        }
+
+        private static async Task AssertRefused(HttpResponseMessage response)
+        {
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
+                Assert.That(body, Does.Not.Contain(ConnectionName));
+                Assert.That(body, Does.Not.Contain(NonSecretValue));
+            }
+        }
+
+        private async Task AssertFullConnectionWithSecretsBlanked(HttpResponseMessage response)
+        {
+            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            var body = await response.Content.ReadAsStringAsync();
+            using var document = JsonDocument.Parse(body);
+            var connection = document.RootElement;
+            var options = connection.GetProperty("options").EnumerateArray().ToList();
+            var fieldNames = connection.GetProperty("additionalFieldDefinitions").EnumerateArray()
+                .Select(field => field.GetProperty("displayName").GetString());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(connection.GetProperty("id").GetInt32(), Is.EqualTo(seededConnectionId));
+                Assert.That(connection.GetProperty("name").GetString(), Is.EqualTo(ConnectionName));
+                Assert.That(fieldNames, Does.Contain(AdditionalFieldName));
+                Assert.That(options.Single(o => o.GetProperty("key").GetString() == NonSecretKey).GetProperty("value").GetString(), Is.EqualTo(NonSecretValue));
+                Assert.That(options.Single(o => o.GetProperty("key").GetString() == SecretKey).GetProperty("value").GetString(), Is.Empty);
+                Assert.That(body, Does.Not.Contain(SecretValue));
+            }
+        }
+
+        private async Task GivenThePredefinedFieldHasDrifted()
+        {
+            using var scope = rootFactory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>();
+            var connection = repository.GetById(seededConnectionId)!;
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                DisplayName = PredefinedFieldName,
+                Reference = DriftedPredefinedFieldReference,
+                IsPredefined = true,
+            });
+            await repository.Save();
+        }
+
+        private List<AdditionalFieldDefinition> StoredPredefinedFields()
+        {
+            using var scope = rootFactory.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>();
+            return repository.GetById(seededConnectionId)!.AdditionalFieldDefinitions
+                .Where(field => field.IsPredefined)
+                .ToList();
         }
 
         private static async Task AssertSummaryShape(HttpResponseMessage response)
@@ -212,7 +422,7 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             var connection = new WorkTrackingSystemConnection
             {
-                Name = "Primary Jira",
+                Name = ConnectionName,
                 WorkTrackingSystem = WorkTrackingSystems.Jira,
                 AuthenticationMethodKey = "pat",
             };
@@ -239,6 +449,7 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             dbContext.WorkTrackingSystemConnections.Add(connection);
             dbContext.SaveChanges();
+            seededConnectionId = connection.Id;
         }
     }
 }
