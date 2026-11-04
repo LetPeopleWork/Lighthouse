@@ -985,3 +985,72 @@ summed test time and `.ts` logic tests (median 0.3 ms) 3 %. The rewrite slices a
 
 Found in passing (follow-ups, not in this Story's scope): two order-dependent tests in `PortfolioDetail.test.tsx` fail under
 `--sequence.shuffle` seeds 11 and 33; four Reports and settings tests hit the 5 s test timeout only on a heavily loaded machine.
+
+## Wave: DELIVER / [REF] CI after-measurement (step 13-05, 2026-11-04)
+
+**Two qualifying runs, not five, by the maintainer's decision of 2026-11-04** ("who cares about the five runs"). Both ran
+the final code, both frontend jobs passed, and neither artifact has a failed row.
+
+Vitest `Duration` on `main` falls into two groups for the same tests on the same image, about 610-830 s and about
+1,070-1,160 s, which look like hosted runners of different speed. A median mostly reports which runners a run got, so
+the baseline of 930.9 s, a median across both groups, cannot be compared with anything. Both final runs landed in the
+slow group, so this table compares slow-group runs only.
+
+| Run | When | Code | Tests | Duration (s) | Summed test seconds | Tests over 6 s | Slowest file (s) |
+|---|---|---|---|---|---|---|---|
+| 41428581254 | 2026-11-02 | before FE7 | 8,970 | 1,069.85 | 1,619 | 3 | 61.4 |
+| 41571118814 | 2026-11-03 | before FE7 | 9,049 | 1,111.24 | 1,694 | 2 | 67.9 |
+| 41623081035 | 2026-11-03 | part of FE7 | 9,079 | 1,127.52 | 1,724 | 3 | 67.4 |
+| 41700742607 | 2026-11-03 | part of FE7 | 9,241 | 1,129.68 | 1,678 | 1 | 64.4 |
+| 41759568998 | 2026-11-04 | part of FE7 | 9,284 | 1,159.46 | 1,713 | 1 | 43.2 |
+| 41812134355 | 2026-11-04 | final | 9,367 | 1,109.46 | 1,597 | 1 | 40.9 |
+| 41819715132 | 2026-11-04 | final | 9,378 | 1,133.41 | 1,634 | 1 | 44.4 |
+
+**KPI 16, CI step minutes: not met, and no verdict.** The final runs' Duration sits inside the range of the runs before
+FE7. Two runs on one side and two on the other, with ranges that overlap, prove nothing either way. Summed test seconds
+are about the same or a little lower with about 320 to 410 more tests, also inside the spread. The test share of Duration is
+only about half: import, environment and transform take the rest, and FE7 did not touch them.
+
+**KPI 14, no test over the budget apart from the allow-list: met.** Both runs report 0 offenders. The one test over 6 s
+in each is `RefinementView.paging`, which is listed. The allow-list went from 30 at the seed to 13 during these runs,
+and to 3 at step 13-02, which no CI run has exercised yet. Its deletions rest on these same two runs, every deleted
+entry being under 4.5 s against a CI limit of 6 s.
+
+**What did change on CI:** the slowest file went from about 61-68 s to about 41-44 s, and tests over 6 s from 2-3 to 1.
+What FE7 shows on CI is fewer outliers rather than a shorter run. The remaining levers for the CI minutes are T7 #6513
+(drop coverage) and, if the maintainer wants it, T8 #6514 (sharding).
+
+## Wave: DELIVER / [REF] Closing report (step 13-06, 2026-11-04)
+
+Measured figures only. Every per-slice figure is indicative, because the machine was shared: summed test seconds of the
+touched files, before and after in alternating pairs. Slice 2 found no configuration change that passes the A/B rule, so
+slice 3 adopted nothing.
+
+| Slice | Files | Measured change | Estimate (about 50 %) |
+|---|---|---|---|
+| 4 | ModifyTeamSettings family | -13.2 % | not reached |
+| 5 | Reports pages | -22.7 % | not reached |
+| 6 | Reports tab and wizards | -12.4 % (-4.4 % over the four pairs under equal load) | not reached |
+| 7 | RefinementView | -34.5 % | not reached |
+| 8 | EditConnection, CreateConnectionWizard | -21.3 % | not reached |
+| 9 | WorkItemsDialog | -63.3 % | reached |
+| 10 | ModifyProjectSettings | -49.0 % | about reached |
+| 11 | OverviewDashboard, BaseMetricsView | dropped on measured payoff; revisit after FE5 #6393 | n/a |
+| 12 | Sweep | no rewrites; allow-list review only | not reached |
+
+- **One wall median:** none. Step 13-03, the only suite wall measurement, was dropped by the maintainer, so the Story has
+  no before-and-after wall figure. The closest evidence is the CI table above.
+- **Allow-list length:** 3 (30 at the seed). Budget B stays 2 s.
+- **Mutation:** 97.76 % on the extracted production files, on direct tests only.
+- **Estimates not reached:** six of the eight rewrite slices, and "minutes off CI".
+- **Known gap on ceilings:** step 13-02 kept the three ceilings at 3.5, 2.5 and 5.0 s. The loaded local readings of two
+  of them, 3.18 s and 6.40 s, sit above their ceilings; the quiet reading that would settle them was step 13-03. Under
+  the maintainer's rule a local failure caused only by load is answered by a re-run.
+- **T4 hand-off:** the frontend half of T4 #6462 is already done, because FE7 made both frontend budgets fail the build.
+  It is to be removed from T4's brief at pick-up, leaving the backend half and one recalibration on the plain CI run after
+  T7. Recorded in the Epic workspace.
+- **Architecture:** the `ARCHITECTURE.md` test-stack line is current, since Vitest and React Testing Library are
+  unchanged. The context map and architecture overview need no change, because this is test tooling that adds no
+  concept, context, edge or domain event.
+- **Docs:** release notes N/A, written at /release. Product docs and screenshots N/A, because nothing a user sees
+  changed. Developer docs: the guard's switches are in `docs/ci-learnings.md` and the guard's own comments.

@@ -543,6 +543,7 @@ From the 2026-10-31 analysis of slow and memory-hungry test runs (`/nw-buddy`). 
 - Elevator Pitch. **Before**: a slow file only shows up as a trend weeks later. **After**: CI fails on the commit that adds it. **Decision enabled**: the gains from T2 and FE7 stay.
 - AC:
   - [ ] Budgets re-derived on at least 5 main runs after the fixes; `--warn-only` removed on both stacks; a planted slow file fails.
+- Hand-off from FE7 #6457 (2026-11-04): both frontend budgets already fail the build, so the frontend half of this Story is done and is to be removed from the brief at pick-up. What stays is the backend half, plus one recalibration of the frontend limits on the plain CI run after T7 #6513.
 
 ## Wave: DISCUSS / [REF] Out of scope
 
