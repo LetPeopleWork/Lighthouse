@@ -403,7 +403,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error getting boards");
-                throw AzureDevOpsReadException.BoardListUnreadable(AzureDevOpsReadException.HowAzureDevOpsAnswered(ex), ex.Message);
+                var answer = AzureDevOpsReadException.HowAzureDevOpsAnswered(ex);
+                throw AzureDevOpsReadException.BoardListUnreadable(answer, $"{ex.GetType().Name}: {answer}");
             }
         }
 
@@ -412,7 +413,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             try
             {
                 var splitBoardId = boardId.Split('|');
-                if (splitBoardId.Length != 2)
+                if (splitBoardId.Length != 2 || !splitBoardId.All(part => Guid.TryParse(part, out _)))
                 {
                     throw AzureDevOpsReadException.BoardUnreadable("the board id is not one Azure DevOps gave", $"Board id '{boardId}' does not hold a project and a board");
                 }
@@ -428,9 +429,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 var teamId = ExtractTeamIdFromBoard(board);
                 var query = await ExtractWiqlQueryForBoard(workClient, projectId, teamId);
 
-                var workItemTypes = ExtractWorkItemTypesFromBoard(board);
+                var workItemTypes = ExtractWorkItemTypesFromBoard(board).ToList();
 
                 var (toDoStates, doingStates, doneStates) = ExtractStateMappingFromBoard(board);
+
+                if (workItemTypes.Count == 0 || !toDoStates.Concat(doingStates).Concat(doneStates).Any())
+                {
+                    throw AzureDevOpsReadException.BoardUnreadable("an answer Lighthouse could not read", $"Board '{boardId}' came back with no work item types or no states");
+                }
 
                 return new BoardInformation
                 {
@@ -448,7 +454,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error getting board information for board {BoardId}", boardId);
-                throw AzureDevOpsReadException.BoardUnreadable(AzureDevOpsReadException.HowAzureDevOpsAnswered(ex), ex.Message);
+                var answer = AzureDevOpsReadException.HowAzureDevOpsAnswered(ex);
+                throw AzureDevOpsReadException.BoardUnreadable(answer, $"{ex.GetType().Name}: {answer}");
             }
         }
 

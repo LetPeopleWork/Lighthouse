@@ -515,12 +515,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
             {
                 logger.LogError(exception, "Jira could not be asked for the boards of {Connection}", workTrackingSystemConnection.Name);
-                throw JiraReadException.BoardListUnreadable("no answer", exception.Message);
+                throw JiraReadException.BoardListUnreadable("no answer", $"{exception.GetType().Name}: no answer");
             }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Reading the boards of {Connection} failed unexpectedly", workTrackingSystemConnection.Name);
-                throw JiraReadException.BoardListUnreadable("an answer Lighthouse could not read", exception.Message);
+                throw JiraReadException.BoardListUnreadable("an answer Lighthouse could not read", $"{exception.GetType().Name}: an answer Lighthouse could not read");
             }
         }
 
@@ -542,12 +542,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException)
             {
                 logger.LogError(exception, "Jira could not be asked for Board {BoardId} of {ConnectionName}", boardId, workTrackingSystemConnection.Name);
-                throw JiraReadException.BoardUnreadable("no answer", exception.Message);
+                throw JiraReadException.BoardUnreadable("no answer", $"{exception.GetType().Name}: no answer");
             }
             catch (Exception exception)
             {
                 logger.LogError(exception, "Reading Board {BoardId} of {ConnectionName} failed unexpectedly", boardId, workTrackingSystemConnection.Name);
-                throw JiraReadException.BoardUnreadable("an answer Lighthouse could not read", exception.Message);
+                throw JiraReadException.BoardUnreadable("an answer Lighthouse could not read", $"{exception.GetType().Name}: an answer Lighthouse could not read");
             }
         }
 

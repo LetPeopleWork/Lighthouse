@@ -97,12 +97,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         /// ending the message is dropped because the sentence around it supplies one.
         /// </summary>
         internal static string HowAzureDevOpsAnswered(Exception failure)
-            => failure switch
+        {
+            const string unreadable = "an answer Lighthouse could not read";
+
+            switch (failure)
             {
-                HttpRequestException or TimeoutException or OperationCanceledException => "no answer",
-                VssException => WhatAdoSaid(failure).TrimEnd('.'),
-                _ => "an answer Lighthouse could not read",
-            };
+                case HttpRequestException or TimeoutException or OperationCanceledException:
+                    return "no answer";
+                case VssException:
+                    var said = WhatAdoSaid(failure).TrimEnd('.', ' ', '\t', '\r', '\n');
+                    return said.Length == 0 ? unreadable : said;
+                default:
+                    return unreadable;
+            }
+        }
 
         /// <summary>
         /// When Azure DevOps answers with a body its own error contract does not recognise - a proxy's

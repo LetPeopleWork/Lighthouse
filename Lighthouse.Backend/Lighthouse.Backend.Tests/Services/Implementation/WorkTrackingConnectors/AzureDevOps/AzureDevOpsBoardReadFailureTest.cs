@@ -15,6 +15,8 @@ using Microsoft.TeamFoundation.Work.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Moq;
+using WorkBoard = Microsoft.TeamFoundation.Work.WebApi.Board;
+using WorkBoardColumn = Microsoft.TeamFoundation.Work.WebApi.BoardColumn;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
@@ -156,7 +158,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector(log).GetBoards(AConnection()));
 
-            Assert.That(log.Written(LogLevel.Error), Has.Some.Contains(AFailingProject));
+            var errors = log.Written(LogLevel.Error).ToList();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(errors, Has.Count.EqualTo(1));
+                Assert.That(errors, Has.All.Contains(AFailingProject));
+            }
         }
 
         [TestCaseSource(nameof(WaysOfGettingNoAnswer))]
@@ -282,6 +289,10 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase("e7b3c1df-8d70-4943-98a7-ef00c7a0c523-e7b3c1df-8d70-4943-98a7-ef00c7a0c523")]
         [TestCase("first|second|third")]
         [TestCase("Jambalaya")]
+        [TestCase("|")]
+        [TestCase("x|")]
+        [TestCase("|y")]
+        [TestCase("a|b")]
         public async Task A_malformed_board_id_is_a_failed_read_and_never_an_empty_board(string malformedBoardId)
         {
             var organisation = new AnOrganisation();
@@ -289,14 +300,108 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
                 () => organisation.Connector().GetBoardInformation(AConnection(), malformedBoardId));
 
-            var message = failure!.Verdict.Message;
+            Assert.That(
+                failure!.Verdict.Message,
+                Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}the board id is not one Azure DevOps gave{TheLastHalfOfTheSentences}"),
+                "An empty board would enable Confirm and write nothing, and a sentence with no answer in it says nothing either.");
+        }
+
+        [Test]
+        public async Task A_board_Azure_DevOps_answers_with_no_columns_is_a_failed_read_and_never_an_empty_board()
+        {
+            var organisation = new AnOrganisation { BoardAnswer = ABoard() };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
+            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+        }
+
+        [Test]
+        public async Task A_board_whose_columns_map_no_states_is_a_failed_read_and_never_an_empty_board()
+        {
+            var organisation = new AnOrganisation { BoardAnswer = ABoard(new WorkBoardColumn { ColumnType = BoardColumnType.Incoming, StateMappings = new Dictionary<string, string>() }) };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
+            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+        }
+
+        [Test]
+        public async Task A_normal_board_is_read_into_its_work_item_types_and_states()
+        {
+            var organisation = new AnOrganisation
+            {
+                BoardAnswer = ABoard(
+                    AColumn(BoardColumnType.Incoming, "New"),
+                    AColumn(BoardColumnType.InProgress, "Active"),
+                    AColumn(BoardColumnType.Outgoing, "Closed")),
+            };
+
+            var board = await organisation.Connector().GetBoardInformation(AConnection(), ABoardId);
+
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(message, Does.StartWith(TheFirstHalfOfTheBoardSentence));
-                Assert.That(message, Does.EndWith(TheLastHalfOfTheSentences));
-                Assert.That(message, Has.Length.GreaterThan(TheFirstHalfOfTheBoardSentence.Length + TheLastHalfOfTheSentences.Length),
-                    "An empty board would enable Confirm and write nothing, and a sentence with no answer in it says nothing either.");
+                Assert.That(board.WorkItemTypes, Is.EqualTo(Just("User Story")));
+                Assert.That(board.ToDoStates, Is.EqualTo(Just("New")));
+                Assert.That(board.DoingStates, Is.EqualTo(Just("Active")));
+                Assert.That(board.DoneStates, Is.EqualTo(Just("Closed")));
             }
+        }
+
+        [Test]
+        public async Task A_status_Azure_DevOps_sent_with_an_empty_message_reads_as_the_status_alone()
+        {
+            var organisation = new AnOrganisation { BoardFailure = new VssServiceResponseException(HttpStatusCode.ServiceUnavailable, string.Empty, null) };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
+            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}503 (ServiceUnavailable){TheLastHalfOfTheSentences}"));
+        }
+
+        [Test]
+        public async Task A_message_ending_in_a_full_stop_and_a_space_is_not_left_with_a_stray_full_stop()
+        {
+            var organisation = new AnOrganisation { BoardFailure = new VssUnauthorizedException(WhatAzureDevOpsSaid + ". ") };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
+            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAzureDevOpsSaid}{TheLastHalfOfTheSentences}"));
+        }
+
+        [Test]
+        public async Task A_refusal_with_no_message_at_all_reads_as_an_unreadable_answer()
+        {
+            var organisation = new AnOrganisation { BoardFailure = new VssUnauthorizedException(string.Empty) };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
+            Assert.That(failure!.Verdict.Message, Is.EqualTo($"{TheFirstHalfOfTheBoardSentence}{WhatAnUnreadableAnswerReads}{TheLastHalfOfTheSentences}"));
+        }
+
+        [Test]
+        public async Task The_technical_details_of_a_board_list_that_broke_unexpectedly_carry_no_raw_exception_text()
+        {
+            var organisation = new AnOrganisation { ProjectListFailure = AnUnexpectedFault() };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(() => organisation.Connector().GetBoards(AConnection()));
+
+            Assert.That(failure!.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(InvalidOperationException)}: {WhatAnUnreadableAnswerReads}"));
+        }
+
+        [Test]
+        public async Task The_technical_details_of_a_board_that_broke_unexpectedly_carry_no_raw_exception_text()
+        {
+            var organisation = new AnOrganisation { BoardFailure = AnUnexpectedFault() };
+
+            var failure = await Assert.ThrowsAsync<AzureDevOpsReadException>(
+                () => organisation.Connector().GetBoardInformation(AConnection(), ABoardId));
+
+            Assert.That(failure!.Verdict.TechnicalDetails, Is.EqualTo($"{nameof(InvalidOperationException)}: {WhatAnUnreadableAnswerReads}"));
         }
 
         [Test]
@@ -343,6 +448,22 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         private static VssUnauthorizedException ARefusalEndingInAFullStop() => new(WhatAzureDevOpsSaidEndingInAFullStop);
 
         private static InvalidOperationException AnUnexpectedFault() => new("Sequence contains no elements");
+
+        private static List<string> Just(string only) => [only];
+
+        private static WorkBoard ABoard(params WorkBoardColumn[] columns)
+            => new() { Columns = columns.ToList(), Links = ALinkToTheTeam() };
+
+        private static WorkBoardColumn AColumn(BoardColumnType type, string state)
+            => new() { ColumnType = type, StateMappings = new Dictionary<string, string> { ["User Story"] = state } };
+
+        private static ReferenceLinks ALinkToTheTeam()
+        {
+            var links = new ReferenceLinks();
+            links.AddLink("team", "https://dev.azure.com/lighthouse-test/project/_apis/teams/team-id");
+
+            return links;
+        }
 
         private static WorkTrackingSystemConnection AConnection()
             => new()
@@ -393,6 +514,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             public Exception? BoardFailure { get; init; }
 
+            public WorkBoard? BoardAnswer { get; init; }
+
             public AnOrganisation WithAProject(string name, params string[] boardNames)
             {
                 var project = AddProject(name);
@@ -432,6 +555,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 {
                     work.Setup(client => client.GetBoardAsync(It.IsAny<TeamContext>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
                         .ThrowsAsync(BoardFailure);
+                }
+
+                if (BoardAnswer is not null)
+                {
+                    work.Setup(client => client.GetBoardAsync(It.IsAny<TeamContext>(), It.IsAny<string>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(BoardAnswer);
+                    work.Setup(client => client.GetTeamFieldValuesAsync(It.IsAny<TeamContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()))
+                        .ReturnsAsync(new TeamFieldValues
+                        {
+                            Field = new FieldReference { ReferenceName = "System.AreaPath" },
+                            Values = [new TeamFieldValue { Value = "Project", IncludeChildren = true }],
+                        });
                 }
 
                 return new ConnectorOverFakeClients(work.Object, projectClient.Object, logger);
