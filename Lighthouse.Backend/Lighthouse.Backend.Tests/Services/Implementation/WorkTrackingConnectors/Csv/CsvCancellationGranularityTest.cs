@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     public class CsvCancellationGranularityTest
     {
         /// <summary>
-        /// About 229 KB, which CsvHelper pulls in roughly fifty buffer-sized bites. Enough that a parse can
+        /// About 229 KB, which CsvHelper pulls in several buffer-sized bites. Enough that a parse can
         /// be stopped well inside the rows rather than at a boundary it was about to reach anyway.
         /// </summary>
         private const int RowsTheUploadHolds = 5000;
