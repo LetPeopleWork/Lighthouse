@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Moq;
 using System.Linq.Expressions;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace Lighthouse.Backend.Tests.API
 {
@@ -31,6 +32,9 @@ namespace Lighthouse.Backend.Tests.API
         private Mock<IWorkItemRepository> workItemRepositoryMock;
         private Mock<IBlackoutPeriodService> blackoutPeriodServiceMock;
         private Mock<IRbacAdministrationService> rbacAdministrationServiceMock;
+        private Mock<IFeatureRankingService> featureRankingServiceMock;
+        private Mock<IFeatureOrderingPolicyProvider> featureOrderingPolicyProviderMock;
+        private FeatureMoveVerdict moveVerdict;
 
         [SetUp]
         public void Setup()
@@ -40,6 +44,10 @@ namespace Lighthouse.Backend.Tests.API
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             blackoutPeriodServiceMock.Setup(s => s.GetEffectiveBlackoutDays(It.IsAny<DateTime>(), It.IsAny<DateTime>())).Returns([]);
             rbacAdministrationServiceMock = new Mock<IRbacAdministrationService>();
+            featureRankingServiceMock = new Mock<IFeatureRankingService>();
+            featureOrderingPolicyProviderMock = new Mock<IFeatureOrderingPolicyProvider>();
+            featureOrderingPolicyProviderMock.Setup(x => x.GetPolicy()).Returns(FeatureOrderingPolicy.ManualOrder);
+            moveVerdict = FeatureMoveVerdict.Allowed;
 
             features.Clear();
             parentFeatures.Clear();
@@ -443,6 +451,75 @@ namespace Lighthouse.Backend.Tests.API
             Assert.That(response.Result, Is.InstanceOf<NotFoundResult>());
         }
 
+        [Test]
+        public async Task MoveFeature_TargetIsInAPortfolioTheCallerCannotRead_AnswersNotFoundWithoutPlacing()
+        {
+            const int hiddenPortfolioId = 7;
+            var moved = AFeatureInPortfolio(101, 1);
+            var target = AFeatureInPortfolio(102, hiddenPortfolioId);
+            features.AddRange([moved, target]);
+            TheCallerCannotRead(hiddenPortfolioId);
+
+            var response = await CreateSubject().MoveFeature(moved.Id, MoveCommandNaming(target.Id));
+
+            Assert.That(response, Is.InstanceOf<NotFoundResult>());
+            featureRankingServiceMock.Verify(
+                x => x.PlaceAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Test]
+        public async Task MoveFeature_TargetIsUnknown_LeavesTheAnswerToTheRankingService()
+        {
+            const int unknownTargetId = 987654;
+            var moved = AFeatureInPortfolio(101, 1);
+            features.Add(moved);
+            featureRankingServiceMock
+                .Setup(x => x.PlaceAsync(moved.Id, unknownTargetId, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(FeatureMovePlacement.TargetNotFound);
+
+            var response = await CreateSubject().MoveFeature(moved.Id, MoveCommandNaming(unknownTargetId));
+
+            Assert.That(response, Is.InstanceOf<NotFoundResult>());
+            featureRankingServiceMock.Verify(
+                x => x.PlaceAsync(moved.Id, unknownTargetId, true, It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Test]
+        public async Task MoveFeature_CallerMayNotMoveTheFeature_NeverLooksAtTheTarget()
+        {
+            const int hiddenPortfolioId = 7;
+            var moved = AFeatureInPortfolio(101, 1);
+            var target = AFeatureInPortfolio(102, hiddenPortfolioId);
+            features.AddRange([moved, target]);
+            TheCallerCannotRead(hiddenPortfolioId);
+            moveVerdict = new FeatureMoveVerdict(false, FeatureMoveVerdict.NoWriteOnEveryPortfolio, []);
+
+            var response = await CreateSubject().MoveFeature(moved.Id, MoveCommandNaming(target.Id));
+
+            Assert.That(response, Is.InstanceOf<ForbidResult>());
+            featureRepositoryMock.Verify(x => x.GetById(target.Id), Times.Never);
+        }
+
+        private void TheCallerCannotRead(int portfolioId)
+        {
+            rbacAdministrationServiceMock
+                .Setup(x => x.GetReadablePortfolioIdsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IEnumerable<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync((ClaimsPrincipal _, IEnumerable<int> ids, CancellationToken _) => ids.Distinct().Where(id => id != portfolioId).ToArray());
+        }
+
+        private Feature AFeatureInPortfolio(int featureId, int portfolioId)
+        {
+            var feature = CreateFeatureById(featureId);
+            feature.Portfolios.Add(new Portfolio { Id = portfolioId, Name = $"Portfolio {portfolioId}" });
+
+            return feature;
+        }
+
+        private static JsonElement MoveCommandNaming(int targetFeatureId)
+            => JsonDocument.Parse($"{{\"beforeFeatureId\":{targetFeatureId}}}").RootElement;
+
         private Feature CreateFeatureByReferenceId(string referenceId)
         {
             var feature = new Feature
@@ -499,9 +576,9 @@ namespace Lighthouse.Backend.Tests.API
             featureMoveAuthorizationMock
                 .Setup(x => x.GetVerdictsAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<IReadOnlyCollection<Feature>>(), It.IsAny<ISet<int>>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ClaimsPrincipal _, IReadOnlyCollection<Feature> requested, ISet<int> _, CancellationToken _) =>
-                    requested.ToDictionary(feature => feature.Id, _ => FeatureMoveVerdict.Allowed));
+                    requested.ToDictionary(feature => feature.Id, _ => moveVerdict));
 
-            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, Mock.Of<IFeatureRankingService>(), Mock.Of<IFeatureOrderingPolicyProvider>(), new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyDecision(new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyHonourPolicy(), Mock.Of<Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService>(licence => licence.CanUsePremiumFeatures())));
+            return new FeaturesController(featureRepositoryMock.Object, workItemRepositoryMock.Object, blackoutPeriodServiceMock.Object, rbacAdministrationServiceMock.Object, Mock.Of<Lighthouse.Backend.Services.Interfaces.WorkItems.IBlockedItemService>(), featurePositionMapMock.Object, featureMoveAuthorizationMock.Object, featureRankingServiceMock.Object, featureOrderingPolicyProviderMock.Object, new Lighthouse.Backend.Tests.TestDoubles.FakeLighthouseClock(DateTimeOffset.UtcNow), new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyDecision(new Lighthouse.Backend.Services.Implementation.Dependencies.DependencyHonourPolicy(), Mock.Of<Lighthouse.Backend.Services.Interfaces.Licensing.ILicenseService>(licence => licence.CanUsePremiumFeatures())));
         }
     }
 }

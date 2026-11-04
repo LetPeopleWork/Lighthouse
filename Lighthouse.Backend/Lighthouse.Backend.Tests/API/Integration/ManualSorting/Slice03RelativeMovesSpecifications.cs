@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Moq;
@@ -284,6 +285,34 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
                 Assert.That((int)response.Status, Is.LessThan(500),
                     $"...and it is the caller's mistake, not the instance falling over. Body: {Excerpt(response.Body)}");
             }
+        }
+
+        private static void ThenTheAnswerSaysNoSuchFeature((HttpStatusCode Status, string Body) response)
+        {
+            Assert.That(response.Status, Is.EqualTo(HttpStatusCode.NotFound), $"Body: {Excerpt(response.Body)}");
+        }
+
+        private static void ThenTheAnswersCannotBeToldApart(
+            (HttpStatusCode Status, string Body) response,
+            (HttpStatusCode Status, string Body) other)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.Status, Is.EqualTo(other.Status), $"Body: {Excerpt(response.Body)}");
+                Assert.That(WithoutTheTraceId(response.Body), Is.EqualTo(WithoutTheTraceId(other.Body)));
+            }
+        }
+
+        // Every request gets a trace id of its own, whatever it asked for, so it tells a caller nothing.
+        private static string WithoutTheTraceId(string body) => TraceId().Replace(body, string.Empty);
+
+        [GeneratedRegex("\"traceId\":\"[^\"]*\"")]
+        private static partial Regex TraceId();
+
+        private void ThenNoFeatureChangedItsPlace(List<(string ReferenceId, int? ManualRank, string SourceOrder)> before)
+        {
+            Assert.That(ReadStoredOrderingColumns(), Is.EqualTo(before),
+                "A refused move writes nothing, so every Feature keeps the place it held.");
         }
 
         private void ThenTheTrackersOwnValuesAreUnchangedFrom(List<(string ReferenceId, int? ManualRank, string SourceOrder)> before)

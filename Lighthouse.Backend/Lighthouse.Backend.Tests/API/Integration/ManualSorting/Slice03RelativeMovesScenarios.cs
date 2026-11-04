@@ -19,6 +19,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
         private const string BillingGateway = "Move billing to the new gateway";
         private const string MobileApprovals = "Ship the mobile approvals flow";
         private const string ReportingWarehouse = "Archive the reporting warehouse";
+        private const int TheIdOfNoFeature = 987654;
 
         // insert-at-target (D4) in its plainest
         // form: the moved Feature takes the place the target held, the block between the two shifts by
@@ -415,6 +416,116 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
             await WhenTheProductOwnerPlacesItAbove(ids[2], ids[0]);
 
             ThenTheTrackersOwnValuesAreUnchangedFrom(whatTheTrackerWrote);
+        }
+
+        // The answer has to match an unknown id exactly: any difference tells the caller that a Feature of
+        // a Portfolio they cannot read exists.
+        [Test]
+        public async Task A_move_next_to_a_feature_the_caller_cannot_read_answers_as_if_that_feature_did_not_exist()
+        {
+            var mine = GivenAPortfolio("Launch Alignment");
+            var secret = GivenAPortfolio("Confidential Acquisition");
+            var ids = GivenTheTrackersOrderReads(row => row == 1 ? [secret] : [mine], SearchIndex, LegacyImporter, PartnerCatalogue);
+            await GivenThisInstanceOwnsTheOrder();
+            var theOrderingColumns = GivenTheOrderingColumnsAsStored();
+            GivenTheCallerMayWrite(mine);
+
+            var aboveNobody = await WhenTheProductOwnerTriesToPlaceItAbove(ids[2], TheIdOfNoFeature);
+            var aboveTheHidden = await WhenTheProductOwnerTriesToPlaceItAbove(ids[2], ids[1]);
+            var belowNobody = await WhenTheProductOwnerTriesToPlaceItBelow(ids[0], TheIdOfNoFeature);
+            var belowTheHidden = await WhenTheProductOwnerTriesToPlaceItBelow(ids[0], ids[1]);
+
+            ThenTheAnswerSaysNoSuchFeature(aboveTheHidden);
+            ThenTheAnswersCannotBeToldApart(aboveTheHidden, aboveNobody);
+            ThenTheAnswersCannotBeToldApart(belowTheHidden, belowNobody);
+            ThenNoFeatureChangedItsPlace(theOrderingColumns);
+            ThenNoFreshForecastWasAskedFor();
+        }
+
+        [Test]
+        public async Task A_feature_moves_next_to_one_the_caller_may_only_read()
+        {
+            var mine = GivenAPortfolio("Launch Alignment");
+            var watched = GivenAPortfolio("New Product Initiative");
+            var ids = GivenTheTrackersOrderReads(row => row == 0 ? [watched] : [mine], SearchIndex, LegacyImporter);
+            await GivenThisInstanceOwnsTheOrder();
+            GivenTheCallerRunsOnePortfolioAndOnlyWatchesAnother(runs: mine, watches: watched);
+
+            await WhenTheProductOwnerPlacesItAbove(ids[1], ids[0]);
+
+            GivenTheCallerAdministersTheInstance();
+            ThenTheOrderReads(await WhenTheProductOwnerOpensTheFeaturesView(), LegacyImporter, SearchIndex);
+        }
+
+        [Test]
+        public async Task One_readable_portfolio_is_enough_to_make_a_target_readable()
+        {
+            var mine = GivenAPortfolio("Launch Alignment");
+            var watched = GivenAPortfolio("New Product Initiative");
+            var secret = GivenAPortfolio("Confidential Acquisition");
+            var target = GivenAFeatureTheTrackerRanked(SearchIndex, "FTR-1", "1", watched, secret);
+            var moved = GivenAFeatureTheTrackerRanked(LegacyImporter, "FTR-2", "2", mine);
+            await GivenThisInstanceOwnsTheOrder();
+            GivenTheCallerRunsOnePortfolioAndOnlyWatchesAnother(runs: mine, watches: watched);
+
+            await WhenTheProductOwnerPlacesItAbove(moved, target);
+
+            GivenTheCallerAdministersTheInstance();
+            ThenTheOrderReads(await WhenTheProductOwnerOpensTheFeaturesView(), LegacyImporter, SearchIndex);
+        }
+
+        [Test]
+        public async Task A_feature_in_no_portfolio_is_a_target_anybody_may_name()
+        {
+            var mine = GivenAPortfolio("Launch Alignment");
+            var target = GivenAFeatureTheTrackerRanked("Left behind by a deleted portfolio", "FTR-ORPHAN", "1");
+            var moved = GivenAFeatureTheTrackerRanked(LegacyImporter, "FTR-2", "2", mine);
+            await GivenThisInstanceOwnsTheOrder();
+            GivenTheCallerMayWrite(mine);
+
+            await WhenTheProductOwnerPlacesItAbove(moved, target);
+
+            GivenTheCallerAdministersTheInstance();
+            ThenTheOrderReads(await WhenTheProductOwnerOpensTheFeaturesView(), LegacyImporter, "Left behind by a deleted portfolio");
+        }
+
+        // The refusal comes before the target is looked at, so naming ids cannot be used to find out which exist.
+        [Test]
+        public async Task A_caller_who_may_not_move_the_feature_gets_the_same_refusal_whatever_target_they_name()
+        {
+            var watched = GivenAPortfolio("New Product Initiative");
+            var secret = GivenAPortfolio("Confidential Acquisition");
+            var ids = GivenTheTrackersOrderReads(row => row == 2 ? [secret] : [watched], SearchIndex, LegacyImporter, PartnerCatalogue);
+            await GivenThisInstanceOwnsTheOrder();
+            var theOrderingColumns = GivenTheOrderingColumnsAsStored();
+            GivenTheCallerMayOnlyRead(watched);
+
+            var nextToAReadableOne = await WhenTheProductOwnerTriesToPlaceItAbove(ids[1], ids[0]);
+            var nextToTheHiddenOne = await WhenTheProductOwnerTriesToPlaceItAbove(ids[1], ids[2]);
+            var nextToNobody = await WhenTheProductOwnerTriesToPlaceItAbove(ids[1], TheIdOfNoFeature);
+
+            ThenTheInstanceRefusesTheCaller(nextToAReadableOne);
+            ThenTheInstanceRefusesTheCaller(nextToTheHiddenOne);
+            ThenTheInstanceRefusesTheCaller(nextToNobody);
+            ThenTheAnswersCannotBeToldApart(nextToTheHiddenOne, nextToNobody);
+            ThenNoFeatureChangedItsPlace(theOrderingColumns);
+            ThenNoFreshForecastWasAskedFor();
+        }
+
+        // Move to Bottom names nobody, so the Features it passes on the way down stay out of the question.
+        [Test]
+        public async Task Move_to_bottom_still_passes_features_the_caller_cannot_read()
+        {
+            var mine = GivenAPortfolio("Launch Alignment");
+            var secret = GivenAPortfolio("Confidential Acquisition");
+            var ids = GivenTheTrackersOrderReads(row => row == 0 ? [mine] : [secret], SearchIndex, LegacyImporter);
+            await GivenThisInstanceOwnsTheOrder();
+            GivenTheCallerMayWrite(mine);
+
+            await WhenTheProductOwnerSendsItToTheBottom(ids[0]);
+
+            GivenTheCallerAdministersTheInstance();
+            ThenTheOrderReads(await WhenTheProductOwnerOpensTheFeaturesView(), LegacyImporter, SearchIndex);
         }
     }
 }

@@ -109,8 +109,7 @@ namespace Lighthouse.Backend.API
                 return NotFound();
             }
 
-            var readablePortfolioIdSet = await GetReadablePortfolioIds(feature.Portfolios.Select(p => p.Id));
-            if (!IsReadableBy(feature, readablePortfolioIdSet))
+            if (!await TheCallerMayRead(feature))
             {
                 return NotFound();
             }
@@ -154,6 +153,14 @@ namespace Lighthouse.Backend.API
             if (!verdicts[feature.Id].CanMove)
             {
                 return Forbid();
+            }
+
+            // Only now, so a caller who may not move anything cannot use the answer to learn which ids exist.
+            // An unknown target falls through: the ranking service answers it, with the same 404.
+            var target = targetFeatureId is null ? null : featureRepository.GetById(targetFeatureId.Value);
+            if (target is not null && !await TheCallerMayRead(target))
+            {
+                return NotFound();
             }
 
             var placement = await featureRankingService.PlaceAsync(featureId, targetFeatureId, placeBefore, RequestAborted);
@@ -253,6 +260,13 @@ namespace Lighthouse.Backend.API
             var readablePortfolioIdSet = await GetReadablePortfolioIds(features.SelectMany(f => f.Portfolios).Select(p => p.Id));
 
             return await featureMoveAuthorization.GetVerdictsAsync(User, features, readablePortfolioIdSet, RequestAborted);
+        }
+
+        private async Task<bool> TheCallerMayRead(Feature feature)
+        {
+            var readablePortfolioIdSet = await GetReadablePortfolioIds(feature.Portfolios.Select(p => p.Id));
+
+            return IsReadableBy(feature, readablePortfolioIdSet);
         }
 
         private static bool IsReadableBy(Feature feature, HashSet<int> readablePortfolioIds)
