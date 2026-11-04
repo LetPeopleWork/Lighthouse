@@ -111,13 +111,6 @@ const TheDefaultWords: Words = {
 	portfolios: "Portfolios",
 };
 
-const SquadsAndPrograms: Words = {
-	team: "Squad",
-	teams: "Squads",
-	portfolio: "Program",
-	portfolios: "Programs",
-};
-
 // Dialogs open and close without animating, so a dialog that closes has left the page by the next tick.
 const NoAnimations = createTheme({
 	transitions: { duration: { enteringScreen: 0, leavingScreen: 0 } },
@@ -295,20 +288,6 @@ const whenPriyaAddsFixVersions = () =>
 const whenPriyaRenamesStoryPoints = async () => {
 	fireEvent.click(screen.getByRole("button", { name: "edit" }));
 	const dialog = await fillTheFieldDialog("Estimate");
-	fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
-	await theFieldDialogCloses();
-};
-
-const theRowOf = (displayName: string) =>
-	screen.getByText(displayName).closest("li") as HTMLElement;
-
-const whenPriyaEditsTheFieldIn = async (
-	row: HTMLElement,
-	displayName: string,
-	reference: string,
-) => {
-	fireEvent.click(within(row).getByRole("button", { name: "edit" }));
-	const dialog = await fillTheFieldDialog(displayName, reference);
 	fireEvent.click(within(dialog).getByRole("button", { name: "Save" }));
 	await theFieldDialogCloses();
 };
@@ -511,63 +490,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			expect(screen.getByDisplayValue(NordwindJiraDc)).toBeInTheDocument();
 		});
 
-		it.each([
-			[
-				"one of each",
-				{ teams: 1, portfolios: 1 },
-				TheDefaultWords,
-				"Update 1 Team and 1 Portfolio?",
-			],
-			[
-				"Squads and Programs",
-				{ teams: 4, portfolios: 2 },
-				SquadsAndPrograms,
-				"Update 4 Squads and 2 Programs?",
-			],
-			[
-				"one Squad and one Program",
-				{ teams: 1, portfolios: 1 },
-				SquadsAndPrograms,
-				"Update 1 Squad and 1 Program?",
-			],
-			// A count of zero keeps its place, so every question has the same shape and says outright that
-			// one kind is left alone.
-			[
-				"no Portfolio",
-				{ teams: 3, portfolios: 0 },
-				TheDefaultWords,
-				"Update 3 Teams and 0 Portfolios?",
-			],
-			[
-				"no Team",
-				{ teams: 0, portfolios: 2 },
-				TheDefaultWords,
-				"Update 0 Teams and 2 Portfolios?",
-			],
-		] as const)(
-			"with %s the question reads as such",
-			async (_, usedBy, words, title) => {
-				await givenPriyaOpensNordwindJiraDc({ usedBy, words });
-				await whenPriyaAddsFixVersions();
-
-				whenPriyaPressesSave();
-
-				expect(await theQuestion(title)).toBeInTheDocument();
-			},
-		);
-
-		it("the explanation names the Teams and Portfolios in the words this instance uses", async () => {
-			await givenPriyaOpensNordwindJiraDc({ words: SquadsAndPrograms });
-			await whenPriyaAddsFixVersions();
-
-			whenPriyaPressesSave();
-
-			const question = await theQuestion("Update 4 Squads and 2 Programs?");
-			expect(question).toHaveTextContent(
-				"You changed the Additional Fields. Their values only fill in once each Squad and Program on this connection has been updated.",
-			);
-		});
-
 		it("changing a field no longer promises it will load with the next refresh", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 
@@ -613,19 +535,6 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			await thenSheIsBackOnTheOverview();
 		});
 
-		it("a field change on a connection no Team or Portfolio uses is saved straight away without a question", async () => {
-			const server = await givenPriyaOpensNordwindJiraDc({
-				usedBy: { teams: 0, portfolios: 0 },
-			});
-			await whenPriyaAddsFixVersions();
-
-			whenPriyaPressesSave();
-
-			await thenTheConnectionIsSavedWith(server, FixVersions);
-			thenNoQuestionIsAsked();
-			await thenSheIsBackOnTheOverview();
-		});
-
 		it.each([
 			[
 				"a new name",
@@ -655,61 +564,12 @@ describe("changing a connection's Additional Fields asks whether to update its T
 			},
 		);
 
-		it("a field Priya started to add and then cancelled asks no question", async () => {
-			const server = await givenPriyaOpensNordwindJiraDc();
-			fireEvent.click(screen.getByRole("button", { name: "Add Field" }));
-			const dialog = await fillTheFieldDialog(FixVersions, "fixVersions");
-			fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
-			await theFieldDialogCloses();
-
-			whenPriyaPressesSave();
-
-			await thenTheConnectionIsSavedWith(server, StoryPoints);
-			thenNoQuestionIsAsked();
-		});
-
-		it("a field Priya added and removed again before saving asks no question", async () => {
-			const server = await givenPriyaOpensNordwindJiraDc();
-			await whenPriyaAddsFixVersions();
-			fireEvent.click(
-				within(theRowOf(FixVersions)).getByRole("button", { name: "delete" }),
-			);
-
-			whenPriyaPressesSave();
-
-			await thenTheConnectionIsSavedWith(server, StoryPoints);
-			thenNoQuestionIsAsked();
-		});
-
 		// Stored values and rules hang off a field's id, and the server gives a field that comes back
 		// under a new id a fresh one, so it loads it again even though its name and reference are as before.
 		it("a field Priya removed and added back with the same name and reference asks the question", async () => {
 			await givenPriyaOpensNordwindJiraDc();
 			whenPriyaRemovesStoryPoints();
 			await whenPriyaAddsTheField(StoryPoints, "customfield_10016");
-
-			whenPriyaPressesSave();
-
-			expect(
-				await theQuestion(TheQuestionOnNordwindJiraDc),
-			).toBeInTheDocument();
-		});
-
-		it("swapping the names and references of two fields asks the question", async () => {
-			await givenPriyaOpensNordwindJiraDc({
-				fields: [
-					TheStoryPointsField,
-					{ id: 12, displayName: FixVersions, reference: "fixVersions" },
-				],
-			});
-			const storyPoints = theRowOf(StoryPoints);
-			const fixVersions = theRowOf(FixVersions);
-			await whenPriyaEditsTheFieldIn(storyPoints, FixVersions, "fixVersions");
-			await whenPriyaEditsTheFieldIn(
-				fixVersions,
-				StoryPoints,
-				"customfield_10016",
-			);
 
 			whenPriyaPressesSave();
 

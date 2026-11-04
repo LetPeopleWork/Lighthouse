@@ -213,6 +213,62 @@ describe("UpdateQuestion", () => {
 		});
 	});
 
+	describe("when an Additional Field changed", () => {
+		const UntilFieldsFilled = (team: string, portfolio: string) =>
+			`You changed the Additional Fields. Their values only fill in once each ${team} and ${portfolio} on this connection has been updated. Save only: they fill in with the next scheduled update instead.`;
+
+		it.each([
+			{
+				case: "one of each",
+				terms: TheDefaultWords,
+				teams: 1,
+				portfolios: 1,
+				title: "Update 1 Team and 1 Portfolio?",
+			},
+			{
+				case: "Squads and Programs",
+				terms: SquadsAndPrograms,
+				teams: 4,
+				portfolios: 2,
+				title: "Update 4 Squads and 2 Programs?",
+			},
+			{
+				case: "one Squad and one Program",
+				terms: SquadsAndPrograms,
+				teams: 1,
+				portfolios: 1,
+				title: "Update 1 Squad and 1 Program?",
+			},
+			{
+				case: "no Portfolio",
+				terms: TheDefaultWords,
+				teams: 3,
+				portfolios: 0,
+				title: "Update 3 Teams and 0 Portfolios?",
+			},
+			{
+				case: "no Team",
+				terms: TheDefaultWords,
+				teams: 0,
+				portfolios: 2,
+				title: "Update 0 Teams and 2 Portfolios?",
+			},
+		])(
+			"with $case it asks $title and names the words this instance uses",
+			({ terms, teams, portfolios, title }) => {
+				words.current = terms;
+
+				askBecause({ because: "fields", teams, portfolios });
+
+				expect(
+					screen.getByRole("dialog", { name: title }),
+				).toHaveAccessibleDescription(
+					UntilFieldsFilled(terms.team, terms.portfolio),
+				);
+			},
+		);
+	});
+
 	describe("its answers", () => {
 		it.each([
 			{ answer: "Cancel", called: "onCancel" },

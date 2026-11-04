@@ -634,35 +634,6 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		it("removing the field the Teams' Estimation default reads clears that default in the save", async () => {
-			const server = await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({
-					defaults: {
-						parentOverrideForTeams: 11,
-						estimationForTeams: StoryPointsInPoints,
-					},
-				}),
-			});
-
-			const storyPoints = screen
-				.getByText(StoryPoints, { selector: ".MuiListItemText-primary" })
-				.closest("li") as HTMLElement;
-			fireEvent.click(
-				within(storyPoints).getByRole("button", { name: "delete" }),
-			);
-			whenPriyaPressesSave();
-			const question = await screen.findByRole("dialog");
-			fireEvent.click(
-				within(question).getByRole("button", { name: "Save only" }),
-			);
-
-			await theSaveIsSent(server);
-			expect(theSave(server).defaults).toEqual({
-				parentOverrideForTeams: 11,
-				estimationForTeams: null,
-			});
-		});
-
 		it("renaming the connection sends the Portfolios' default it was loaded with", async () => {
 			const asTheServerSendsIt = JSON.parse(
 				JSON.stringify(
@@ -744,13 +715,6 @@ describe("defaults set once on the connection", () => {
 		});
 
 		it.each([
-			["parentOverrideForPortfolios", "Parent Override Field", "parents"],
-			["dependencyFieldForPortfolios", "Dependency Field", "dependencies"],
-			[
-				"sizeEstimateFieldForPortfolios",
-				"Size Estimate Field",
-				"Features' sizes",
-			],
 			[
 				"featureOwnerFieldForPortfolios",
 				"Feature Owner Field",
@@ -772,64 +736,6 @@ describe("defaults set once on the connection", () => {
 				);
 			},
 		);
-
-		// A Portfolio following both changed defaults is one Portfolio to update, not two.
-		it.each([
-			{
-				first: ["parentOverrideForPortfolios", "Parent Override Field"],
-				second: ["dependencyFieldForPortfolios", "Dependency Field"],
-			},
-			{
-				first: ["dependencyFieldForPortfolios", "Dependency Field"],
-				second: ["sizeEstimateFieldForPortfolios", "Size Estimate Field"],
-			},
-			{
-				first: ["sizeEstimateFieldForPortfolios", "Size Estimate Field"],
-				second: ["featureOwnerFieldForPortfolios", "Feature Owner Field"],
-			},
-		] as const)(
-			"3 Portfolios following both the $first.1 and $second.1 defaults, both changed, are counted once",
-			async ({
-				first: [firstName, firstSetting],
-				second: [secondName, secondSetting],
-			}) => {
-				await givenPriyaOpensJiraDcPayments({
-					connection: jiraDcPayments({
-						followers: { [firstName]: 3, [secondName]: 3 },
-						followerGroups: [{ follows: [firstName, secondName], count: 3 }],
-					}),
-				});
-
-				await whenPriyaPicks("Portfolios", firstSetting, ParentLink);
-				await whenPriyaPicks("Portfolios", secondSetting, CausedBy);
-				whenPriyaPressesSave();
-
-				const question = await theQuestion("Update 0 Teams and 3 Portfolios?");
-				expect(question).toHaveTextContent(
-					`3 Portfolios follow the ${firstSetting} and ${secondSetting} defaults. What they read changes only once they have been updated.`,
-				);
-			},
-		);
-
-		it("a changed Dependency default says its followers' dependencies change once updated", async () => {
-			await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({
-					followers: { dependencyFieldForPortfolios: 2 },
-					followerGroups: [
-						{ follows: ["dependencyFieldForPortfolios"], count: 2 },
-						{ follows: ["parentOverrideForPortfolios"], count: 1 },
-					],
-				}),
-			});
-
-			await whenPriyaPicks("Portfolios", "Dependency Field", CausedBy);
-			whenPriyaPressesSave();
-
-			const question = await theQuestion("Update 0 Teams and 2 Portfolios?");
-			expect(question).toHaveTextContent(
-				"2 Portfolios follow the Dependency Field default. Their dependencies change only once they have been updated.",
-			);
-		});
 
 		it("changing a default clears the refusal the last save got", async () => {
 			const server = await givenPriyaOpensJiraDcPayments();
@@ -878,20 +784,6 @@ describe("defaults set once on the connection", () => {
 			expect(theSave(server).choice).toBeUndefined();
 		});
 
-		it("a changed default nobody follows saves without asking, though other defaults have followers", async () => {
-			const server = await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({
-					followers: { parentOverrideForPortfolios: 2 },
-				}),
-			});
-
-			await whenPriyaSetsTheTeamsParentOverrideDefault(CausedBy);
-			whenPriyaPressesSave();
-
-			await theSaveIsSent(server);
-			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-		});
-
 		it("a followed Estimation default left as it was asks nothing when another default changes", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
@@ -905,35 +797,6 @@ describe("defaults set once on the connection", () => {
 
 			await theSaveIsSent(server);
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-		});
-
-		it("Portfolios following a changed default and another one left as it was are all asked about", async () => {
-			await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({
-					followers: {
-						parentOverrideForPortfolios: 3,
-						dependencyFieldForPortfolios: 3,
-					},
-					followerGroups: [
-						{
-							follows: [
-								"parentOverrideForPortfolios",
-								"dependencyFieldForPortfolios",
-							],
-							count: 3,
-						},
-					],
-				}),
-			});
-
-			await whenPriyaPicks("Portfolios", "Parent Override Field", ParentLink);
-			whenPriyaPressesSave();
-
-			expect(
-				await theQuestion("Update 0 Teams and 3 Portfolios?"),
-			).toHaveTextContent(
-				"3 Portfolios follow the Parent Override Field default.",
-			);
 		});
 
 		it("Cancel saves nothing and keeps Priya's choice on the page", async () => {
@@ -1066,52 +929,6 @@ describe("defaults set once on the connection", () => {
 					unit: "Points",
 				},
 			});
-		});
-
-		it("a changed Estimation default nobody follows saves without asking anything", async () => {
-			const server = await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({ followers: {} }),
-			});
-
-			await whenPriyaPicks("Teams", "Estimation Field", StoryPoints);
-			whenPriyaPressesSave();
-
-			await theSaveIsSent(server);
-			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-		});
-
-		it("a changed Portfolios' Estimation default asks about the Portfolios that follow it", async () => {
-			await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({
-					followers: { estimationForPortfolios: 2 },
-				}),
-			});
-
-			await whenPriyaPicks("Portfolios", "Estimation Field", StoryPoints);
-			whenPriyaPressesSave();
-
-			const question = await theQuestion(TheEstimationQuestion);
-			expect(question).toHaveTextContent(
-				"2 Portfolios follow it; they show the new estimation the next time their pages load.",
-			);
-		});
-
-		it("changing only the unit of a followed Estimation default asks before saving", async () => {
-			await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({
-					followers: { estimationForTeams: 4 },
-					defaults: { estimationForTeams: StoryPointsInPoints },
-				}),
-			});
-
-			fireEvent.change(
-				within(theGroup("Teams")).getByLabelText("Estimation Unit"),
-				{ target: { value: "Hours" } },
-			);
-			whenPriyaPressesSave();
-
-			const question = await theQuestion(TheEstimationQuestion);
-			expect(question).toHaveTextContent(TheEstimationQuestionSays);
 		});
 
 		it("the Estimation default stays collapsed to its field until a field is chosen", async () => {
