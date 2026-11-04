@@ -32,25 +32,27 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void ValidateTeamSettings_HasNoRbacGuardAttribute()
+        public void ValidateTeamSettings_IsGuardedOnAnyScopedAdminRequirement()
         {
             var attribute = GetRbacGuardAttribute(typeof(TeamsController), nameof(TeamsController.ValidateTeamSettings));
 
+            Assert.That(attribute, Is.Not.Null, "TeamsController.ValidateTeamSettings must carry an RbacGuard attribute.");
             Assert.That(
-                attribute,
-                Is.Null,
-                "Under v1, ValidateTeamSettings is reachable by any authenticated user. The endpoint is shared by the System-Admin-only Create flow and by the Team-Admin / Portfolio-Admin Edit-and-Save flow; gating it on CanCreateTeam (= sysadmin-only) breaks save-edits for scoped admins. The subsequent write endpoints (POST /teams for create, PUT /teams/{id} for edit) enforce the proper scope.");
+                attribute!.Requirement,
+                Is.EqualTo(RbacGuardRequirement.AnyScopedAdmin),
+                "Validating runs the settings' query against the tracker with the stored credential, so a Viewer must not reach it. The route carries no scope, and both the create flow and a scoped admin's Save call it, so every kind of admin has to be admitted.");
         }
 
         [Test]
-        public void ValidatePortfolioSettings_HasNoRbacGuardAttribute()
+        public void ValidatePortfolioSettings_IsGuardedOnAnyScopedAdminRequirement()
         {
             var attribute = GetRbacGuardAttribute(typeof(PortfoliosController), nameof(PortfoliosController.ValidatePortfolioSettings));
 
+            Assert.That(attribute, Is.Not.Null, "PortfoliosController.ValidatePortfolioSettings must carry an RbacGuard attribute.");
             Assert.That(
-                attribute,
-                Is.Null,
-                "Under v1, ValidatePortfolioSettings is reachable by any authenticated user. Same reasoning as ValidateTeamSettings — the validate endpoint is shared between Create (sysadmin) and Edit-and-Save (scoped admin) flows; the write endpoints downstream enforce scope.");
+                attribute!.Requirement,
+                Is.EqualTo(RbacGuardRequirement.AnyScopedAdmin),
+                "Validating runs the settings' query against the tracker with the stored credential, so a Viewer must not reach it. The route carries no scope, and both the create flow and a scoped admin's Save call it, so every kind of admin has to be admitted.");
         }
 
         private static RbacGuardAttribute? GetRbacGuardAttribute(Type controllerType, string methodName)

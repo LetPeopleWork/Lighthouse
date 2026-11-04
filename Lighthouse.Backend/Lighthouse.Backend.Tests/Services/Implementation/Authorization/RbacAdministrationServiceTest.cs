@@ -29,6 +29,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         private Mock<ICurrentUserProfileService> currentUserProfileService;
         private readonly FakeTimeProvider time = new(TheClocksInstant);
 
+        private const int CallerProfileId = 2;
+
         private static readonly DateTimeOffset TheClocksInstant = new(2026, 3, 14, 9, 30, 0, TimeSpan.Zero);
 
         /// <summary>
@@ -3495,6 +3497,107 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             var allowed = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.AnyScopedAdmin);
 
             Assert.That(allowed, Is.False);
+        }
+
+        [TestCase(UserRole.TeamAdmin, PermissionScopeType.Team, 5, true)]
+        [TestCase(UserRole.PortfolioAdmin, PermissionScopeType.Portfolio, 5, true)]
+        [TestCase(UserRole.SystemAdmin, PermissionScopeType.System, null, true)]
+        [TestCase(UserRole.Viewer, PermissionScopeType.Team, 5, false)]
+        [TestCase(UserRole.Viewer, PermissionScopeType.Portfolio, 5, false)]
+        public async Task CanSatisfyRequirementAsync_AnyScopedAdmin_DirectGrant_AdmitsEveryAdminAndRefusesAViewer(
+            UserRole role,
+            PermissionScopeType scopeType,
+            int? scopeId,
+            bool admitted)
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+            var principal = ACallerBesideASystemAdmin(context);
+            context.UserPermissions.Add(new UserPermission { UserProfileId = CallerProfileId, Role = role, ScopeType = scopeType, ScopeId = scopeId });
+            await context.SaveChangesAsync();
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var allowed = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.AnyScopedAdmin);
+
+            Assert.That(allowed, Is.EqualTo(admitted));
+        }
+
+        [TestCase(UserRole.TeamAdmin, PermissionScopeType.Team, true)]
+        [TestCase(UserRole.PortfolioAdmin, PermissionScopeType.Portfolio, true)]
+        [TestCase(UserRole.Viewer, PermissionScopeType.Team, false)]
+        [TestCase(UserRole.Viewer, PermissionScopeType.Portfolio, false)]
+        public async Task CanSatisfyRequirementAsync_AnyScopedAdmin_GroupDerivedGrant_AdmitsAnAdminAndRefusesAViewer(
+            UserRole role,
+            PermissionScopeType scopeType,
+            bool admitted)
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+            var principal = ACallerBesideASystemAdmin(context, new Claim("groups", "[\"mapped-group\"]"));
+            context.RbacGroupMappings.Add(new RbacGroupMapping { GroupValue = "mapped-group", Role = role, ScopeType = scopeType, ScopeId = 5 });
+            await context.SaveChangesAsync();
+            var subject = CreateSubject(context, emergencySubjects: [], groupClaimName: "groups");
+
+            var allowed = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.AnyScopedAdmin);
+
+            Assert.That(allowed, Is.EqualTo(admitted));
+        }
+
+        [Test]
+        public async Task CanSatisfyRequirementAsync_AnyScopedAdmin_CallerWithoutAnyGrant_IsRefused()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(true);
+            var principal = ACallerBesideASystemAdmin(context);
+            await context.SaveChangesAsync();
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var allowed = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.AnyScopedAdmin);
+
+            Assert.That(allowed, Is.False);
+        }
+
+        [TestCase(UserRole.SystemAdmin, PermissionScopeType.System, null)]
+        [TestCase(UserRole.TeamAdmin, PermissionScopeType.Team, 5)]
+        [TestCase(UserRole.PortfolioAdmin, PermissionScopeType.Portfolio, 5)]
+        public async Task CanSatisfyRequirementAsync_AnyScopedAdmin_LicenceLapsed_RefusesEveryAdminJustAsCreateAndWriteDo(
+            UserRole role,
+            PermissionScopeType scopeType,
+            int? scopeId)
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            licenseService.Setup(l => l.CanUsePremiumFeatures()).Returns(false);
+            var principal = ACallerBesideASystemAdmin(context);
+            context.UserPermissions.Add(new UserPermission { UserProfileId = CallerProfileId, Role = role, ScopeType = scopeType, ScopeId = scopeId });
+            await context.SaveChangesAsync();
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var canValidate = await subject.CanSatisfyRequirementAsync(principal, RbacGuardRequirement.AnyScopedAdmin);
+            var canCreate = await subject.CanCreateTeamAsync(principal, CancellationToken.None);
+            var canWrite = await subject.CanWriteTeamAsync(principal, 5, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(canValidate, Is.False);
+                Assert.That(canCreate, Is.False);
+                Assert.That(canWrite, Is.False);
+            }
+        }
+
+        private ClaimsPrincipal ACallerBesideASystemAdmin(LighthouseAppContext context, params Claim[] extraClaims)
+        {
+            context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });
+            context.UserPermissions.Add(new UserPermission { UserProfileId = 1, Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System });
+
+            var caller = new UserProfile { Id = CallerProfileId, Subject = "auth0|caller", SubjectClaimType = "sub" };
+            context.UserProfiles.Add(caller);
+
+            var principal = BuildPrincipal([new Claim("sub", "auth0|caller"), .. extraClaims]);
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(principal, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(caller);
+
+            return principal;
         }
 
         private RbacAdministrationService CreateSubject(

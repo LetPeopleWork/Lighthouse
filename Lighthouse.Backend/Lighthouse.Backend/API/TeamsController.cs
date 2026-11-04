@@ -182,6 +182,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckTeamConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.AnyScopedAdmin)]
         public async Task<ActionResult<object>> ValidateTeamSettings(TeamSettingDto teamSettingDto, CancellationToken cancellationToken = default)
         {
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(teamSettingDto.WorkTrackingSystemConnectionId);

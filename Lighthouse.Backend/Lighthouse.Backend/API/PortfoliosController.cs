@@ -123,6 +123,7 @@ namespace Lighthouse.Backend.API
 
         [HttpPost("validate")]
         [LicenseGuard(CheckPortfolioConstraint = true)]
+        [RbacGuard(RbacGuardRequirement.AnyScopedAdmin)]
         public async Task<ActionResult<object>> ValidatePortfolioSettings(PortfolioSettingDto portfolioSettingDto, CancellationToken cancellationToken = default)
         {
             var workTrackingSystem = workTrackingSystemConnectionRepository.GetById(portfolioSettingDto.WorkTrackingSystemConnectionId);
