@@ -14,6 +14,8 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API
@@ -21,6 +23,13 @@ namespace Lighthouse.Backend.Tests.API
     public class SystemInfoControllerTest
     {
         private static readonly int[] TheOnlyRow = [1];
+
+        private static readonly Exception[] ReasonsTheCheckCouldNotBeMade =
+        [
+            new InvalidOperationException("no database to ask"),
+            new SqliteException("no database to ask", 1),
+            new DbUpdateException("the first sign-in could not be saved"),
+        ];
 
         private Mock<ISystemInfoService> systemInfoServiceMock;
         private Mock<IRefreshLogService> refreshLogServiceMock;
@@ -332,8 +341,8 @@ namespace Lighthouse.Backend.Tests.API
         /// genuine fault in the permission check would produce, and an authorisation bug whose only
         /// symptom is a missing row on a settings page is one nobody ever reports.
         /// </summary>
-        [Test]
-        public async Task GetSystemInfo_TheAdministratorCheckCouldNotBeMade_WithholdsAndSaysSo()
+        [TestCaseSource(nameof(ReasonsTheCheckCouldNotBeMade))]
+        public async Task GetSystemInfo_TheAdministratorCheckCouldNotBeMade_WithholdsAndSaysSo(Exception reason)
         {
             var logger = new Mock<ILogger<SystemInfoController>>();
 
@@ -343,7 +352,7 @@ namespace Lighthouse.Backend.Tests.API
                     RbacGuardRequirement.SystemAdmin,
                     It.IsAny<int?>(),
                     It.IsAny<CancellationToken>()))
-                .ThrowsAsync(new InvalidOperationException("no database to ask"));
+                .ThrowsAsync(reason);
 
             systemInfoServiceMock.Setup(service => service.GetSystemInfo())
                 .Returns(AnInstanceWith(OneEmergencyAdmin, "instance · /app/data/keys"));

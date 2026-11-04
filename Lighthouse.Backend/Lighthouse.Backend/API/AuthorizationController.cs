@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.API
             return Ok(status);
         }
 
-        [SignedInOnly("Returns only the roles and rights of the caller who asks, never anybody else's.")]
+        [SignedInOnly("Returns the roles and rights of the caller who asks, and the display names of the System Admins so that a user without access knows whom to ask.")]
         [HttpGet("my-summary")]
         [ProducesResponseType<UserAuthorizationSummary>(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetAuthorizationSummary(CancellationToken cancellationToken)
@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.API
             return Ok(summary);
         }
 
-        [CheckedInHandler("The service refuses unless the instance has no System Admin yet, so only the first System Admin can ever be made this way.")]
+        [CheckedInHandler("The service refuses once a System Admin exists, so this works only on an instance that has none yet.")]
         [HttpPost("bootstrap/system-admin")]
         [EnableRateLimiting(RateLimitingConfiguration.BootstrapSystemAdminPolicy)]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
