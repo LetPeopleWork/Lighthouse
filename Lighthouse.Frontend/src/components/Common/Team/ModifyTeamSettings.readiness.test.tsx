@@ -487,6 +487,48 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
+	it("switches a rule that was refused when switched off back on at its last allowed threshold", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				minYes: 3,
+				minVoters: 3,
+				discussWhen: { no: 4, yesIf: 2 },
+			}),
+		);
+		const noRule = await screen.findByRole("checkbox", { name: NO_RULE });
+		await userEvent.click(noRule);
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: null,
+				yesIf: 2,
+			}),
+		);
+		await userEvent.click(noRule);
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: 4,
+				yesIf: 2,
+			}),
+		);
+
+		await replaceTheNumberIn(NO_THRESHOLD, "0");
+		await userEvent.click(noRule);
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: null,
+				yesIf: 2,
+			}),
+		);
+		await userEvent.click(noRule);
+
+		await waitFor(() =>
+			expect(theReadinessLastSaved()?.discussWhen).toEqual({
+				no: 4,
+				yesIf: 2,
+			}),
+		);
+	});
+
 	it("switches on a No rule stored as off at its default threshold", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
