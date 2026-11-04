@@ -1051,7 +1051,7 @@ The create dialog now includes a guided **scope-row builder** so you can compose
 ![Create API Key dialog with scope-row builder](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/settings/apikeys_create.png)
 
 ## Bugfixes and Improvements
-- **Connection-list visibility for scoped admins** — Team Admin and Portfolio Admin can now read the list of work-tracking-system connections, which is needed for the Edit-Settings tab on their assigned team or portfolio to load. Secret option values remain redacted at the DTO layer; only System Admin can create, edit, or delete connections.
+- **Connection-list visibility for scoped admins** — *Correction: this did not ship in this release, and the Settings tab stayed blank for scoped admins up to and including v26.11.1.2. Later versions fix it.* Team Admin and Portfolio Admin can now read the list of work-tracking-system connections, which is needed for the Edit-Settings tab on their assigned team or portfolio to load. Secret option values remain redacted at the DTO layer; only System Admin can create, edit, or delete connections.
 - **Manual Delivery date updates** — editing the Delivery date on a Manual Delivery sometimes appeared to do nothing: the forecast updated but the displayed date stayed put. Root cause was a timezone shift on westward zones; delivery dates now render in UTC and reflect changes immediately.
 - Updated various third-party libraries.
 

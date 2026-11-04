@@ -71,7 +71,7 @@ The System Admin role is the only role that is **not** scoped to a specific team
 | [Export several reports as one PDF](../reports/reports.html#a-pdf-of-several-reports): anyone who can read the reports | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
 | Manage users / group mappings | ✅ | ❌ | ❌ | ❌ |
 | Manage work tracking system connections | ✅ | ❌ | ❌ | ❌ |
-| List work tracking system connections | ✅ | ✅ | ✅ | ✅ |
+| Read connection names and the fields the settings need (never secrets or credentials) | ✅ | ✅ | ✅ | ❌ |
 | Install a Lighthouse update from within the app | ✅ | ❌ | ❌ | ❌ |
 
 † **Portfolio creation also requires at least one team to exist in the system.** This applies even to System Admin: a portfolio without any team to roll up is structurally meaningless, so the **Add Portfolio** button stays hidden until the first team is created.
@@ -291,7 +291,9 @@ That user is configured as an Emergency Admin in `appsettings.json`. To revoke t
 
 ### A team or portfolio admin sees the team/portfolio but the Edit settings tab won't load
 
-Earlier versions of Lighthouse gated the work-tracking-system-connection list to System Admin only, which broke the Edit Settings tab for scoped admins. As of vNext this is fixed — Team Admin and Portfolio Admin can read the connection list (with secret values redacted at the DTO layer). Editing connection details still requires System Admin.
+Up to and including v26.11.1.2, the Settings tab stays blank for a Team Admin or Portfolio Admin who is not a System Admin. Later versions fix this, so update Lighthouse. A scoped admin can then read each connection's name and the fields the settings form needs, but never its secrets or credentials. Editing a connection still requires System Admin.
+
+If you cannot update yet, a Team Admin can still change the SLE, WIP and forecast settings through the Quick Settings at the top of the team page. For anything else, ask a System Admin to make the change.
 
 ### Settings → Access says RBAC is disabled
 

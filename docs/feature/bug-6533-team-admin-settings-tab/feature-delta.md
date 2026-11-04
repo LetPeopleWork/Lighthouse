@@ -16,7 +16,7 @@ System Admins already see, so no sketch was needed.
 
 **Usage data:** N/A, because this restores an existing screen and no new behaviour needs counting.
 
-**Out of scope:** Bug #6534, the unguarded read of a single connection.
+**Out of scope:** Bug #6534, the unguarded read of a single connection, `POST validate` and the unfiltered `PUT` response.
 
 ## Wave: DELIVER / [REF] Decisions
 
@@ -36,3 +36,16 @@ System Admins already see, so no sketch was needed.
 - ADR-006 fixes the summary at three fields, so it gets a dated amendment at finalize, with the docs correction.
 - The `@rbac` check may have its first real run in CI if the identity provider cannot be started locally, agreed by
   the maintainer on 2026-11-04.
+
+## Wave: DELIVER / [REF] Finalize checklist
+
+- **Docs prose:** `docs/settings/rbac.md` corrected, in the troubleshooting entry and in the permissions table, which
+  also said a Viewer can list connections. The old release note carries a correction. ADR-006 amended.
+- **Screenshots:** N/A, because no screen's layout or copy changed.
+- **Demo data:** N/A, because no seeded data changed.
+- **Website assets:** N/A, because no screenshot or marketing claim changed.
+- **Lighthouse-Clients:** N/A, because `/summary` only gained fields, and a code search of the organisation found no
+  client calling the connection routes. That search covers indexed repositories only.
+- **ADR-270 and `ARCHITECTURE.md`:** N/A, because no context, concept or edge changed.
+- **Usage data:** N/A, as recorded in Scope.
+- **Release notes:** written at `/release`. #6533 carries the tag and its reporter.

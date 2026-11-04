@@ -73,3 +73,17 @@ Two endpoints, two stable shapes, two clean Swagger definitions, two unambiguous
 - Security: improved (admin-only metadata is now admin-only).
 - API clarity: improved (one route, one shape).
 - Maintainability: improved (no conditional response logic in the controller).
+
+---
+
+## Amendment, 2026-11-04 (Bug #6533)
+
+The frontend half of this decision never shipped: the backend was locked down and nothing called `/summary`, so the
+Settings tab stayed blank for scoped admins from `v26.5.14.2` to `v26.11.1.2`. The Team and Portfolio Settings tabs
+now read `/summary`.
+
+The claim that the form consumes only `id`, `name` and `workTrackingSystem` had also gone stale. The summary now
+carries six fields: those three plus `additionalFieldDefinitions`, `defaults` and `supportedDefaults`. The Context
+above lists `AdditionalFieldDefinitions` as metadata to keep from a Viewer, and that still holds: `/summary` stays
+`AnyScopedAdmin`, so a Viewer is refused. Authentication details, options, write-back mappings and usage stay on the
+full list, and a test pins the summary's exact key set.
