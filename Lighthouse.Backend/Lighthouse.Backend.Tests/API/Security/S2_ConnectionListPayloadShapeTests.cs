@@ -286,7 +286,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        public async Task S2_AuthOff_GetSingleConnection_BehavesAsToday()
+        public async Task S2_AuthOff_GetSingleConnection_AnswersAsForASystemAdmin()
         {
             using var authOffClient = rootFactory.CreateClient();
 

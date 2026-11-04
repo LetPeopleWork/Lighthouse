@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.API
 
             var delivery = NewDelivery(request, portfolioId, sourcePreview);
 
-            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview, PublishingState.NothingYet, []);
+            var selectionError = ApplyFeatureSelection(request, delivery, sourcePreview, PublishingState.NothingYet);
             if (selectionError != null)
             {
                 return selectionError;
@@ -210,10 +210,8 @@ namespace Lighthouse.Backend.API
             // trying to grant the permission, so the notice vanishing would read as the fix having
             // worked.
             var howItWasPublishing = WhatThisDeliveryWasPublishing(existingDelivery);
-            var featuresAlreadyHeld = existingDelivery.Features.Select(feature => feature.Id).ToHashSet();
 
-            var selectionError = ApplyModeTransition(
-                request, existingDelivery, sourcePreview, releasingFromASource, howItWasPublishing, featuresAlreadyHeld);
+            var selectionError = ApplyModeTransition(request, existingDelivery, sourcePreview, releasingFromASource, howItWasPublishing);
             if (selectionError != null)
             {
                 return selectionError;
@@ -241,8 +239,7 @@ namespace Lighthouse.Backend.API
             Delivery delivery,
             PortfolioSourcePreview? sourcePreview,
             bool releasingFromASource,
-            PublishingState howItWasPublishing,
-            HashSet<int> featuresAlreadyHeld)
+            PublishingState howItWasPublishing)
         {
             if (delivery.SelectionMode == DeliverySelectionMode.SourceBound)
             {
@@ -263,7 +260,7 @@ namespace Lighthouse.Backend.API
                 delivery.Reschedule(UtcDateOf(request));
             }
 
-            return ApplyFeatureSelection(request, delivery, sourcePreview, howItWasPublishing, featuresAlreadyHeld);
+            return ApplyFeatureSelection(request, delivery, sourcePreview, howItWasPublishing);
         }
 
         /// <summary>
@@ -442,16 +439,12 @@ namespace Lighthouse.Backend.API
         /// because one payload shape serves all three modes.
         /// </summary>
         private IActionResult? ApplyFeatureSelection(
-            UpdateDeliveryRequest request,
-            Delivery delivery,
-            PortfolioSourcePreview? sourcePreview,
-            PublishingState howItWasPublishing,
-            HashSet<int> featuresAlreadyHeld)
+            UpdateDeliveryRequest request, Delivery delivery, PortfolioSourcePreview? sourcePreview, PublishingState howItWasPublishing)
         {
             return request.SelectionMode switch
             {
                 DeliverySelectionMode.RuleBased => CreateRuleBasedDelivery(request, delivery),
-                DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery, featuresAlreadyHeld),
+                DeliverySelectionMode.Manual => CreateManualFeatureSelectionDelivery(request, delivery),
                 DeliverySelectionMode.SourceBound => BindDeliveryToSource(request, delivery, sourcePreview, howItWasPublishing),
                 // The enum converter accepts any number, so a caller can name a mode that does not
                 // exist. That is a malformed request rather than something broken on our side.
@@ -623,9 +616,10 @@ namespace Lighthouse.Backend.API
         /// Portfolio, and the edit dialog sends every held Feature back on each save, so refusing it
         /// would stop the Delivery being edited at all.
         /// </summary>
-        private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(
-            UpdateDeliveryRequest request, Delivery delivery, HashSet<int> featuresAlreadyHeld)
+        private NotFoundObjectResult? CreateManualFeatureSelectionDelivery(UpdateDeliveryRequest request, Delivery delivery)
         {
+            var featuresAlreadyHeld = delivery.Features.Select(feature => feature.Id).ToHashSet();
+
             var featureList = deliveryRepository.GetFeaturesByIds(request.FeatureIds)
                 .Where(feature => featuresAlreadyHeld.Contains(feature.Id)
                     || feature.Portfolios.Exists(portfolio => portfolio.Id == delivery.PortfolioId))

@@ -35,6 +35,9 @@ namespace Lighthouse.Backend.Tests.API.Security
         private static readonly DateTime ExpiryDate = new(2031, 6, 30, 0, 0, 0, DateTimeKind.Utc);
         private static readonly DateTime ValidFrom = new(2026, 7, 1, 0, 0, 0, DateTimeKind.Utc);
 
+        private static readonly string[] EveryoneButASystemAdmin =
+            [NoGrant, ViewerOfATeam, ViewerOfAPortfolio, TeamAdmin, PortfolioAdmin];
+
         private static readonly string[] WhatEveryoneMaySee =
             ["hasLicense", "isValid", "expiryDate", "validFrom", "canUsePremiumFeatures"];
 
@@ -111,24 +114,16 @@ namespace Lighthouse.Backend.Tests.API.Security
             rootFactory?.Dispose();
         }
 
-        [TestCase(NoGrant)]
-        [TestCase(ViewerOfATeam)]
-        [TestCase(ViewerOfAPortfolio)]
-        [TestCase(TeamAdmin)]
-        [TestCase(PortfolioAdmin)]
-        public async Task S17_Viewer_GetLicense_IsToldNothingAboutTheLicensee(string grant)
+        [TestCaseSource(nameof(EveryoneButASystemAdmin))]
+        public async Task S17_NonSystemAdmin_GetLicense_IsToldNothingAboutTheLicensee(string grant)
         {
             var answer = await AnswerTo(guardedClient, Reading(grant));
 
             Assert.That(answer.Select(field => field.Key), Is.EquivalentTo(WhatEveryoneMaySee));
         }
 
-        [TestCase(NoGrant)]
-        [TestCase(ViewerOfATeam)]
-        [TestCase(ViewerOfAPortfolio)]
-        [TestCase(TeamAdmin)]
-        [TestCase(PortfolioAdmin)]
-        public async Task S17_Viewer_GetLicense_StillGetsTheStateOfTheLicense(string grant)
+        [TestCaseSource(nameof(EveryoneButASystemAdmin))]
+        public async Task S17_NonSystemAdmin_GetLicense_StillGetsTheStateOfTheLicense(string grant)
         {
             var answer = await AnswerTo(guardedClient, Reading(grant));
 

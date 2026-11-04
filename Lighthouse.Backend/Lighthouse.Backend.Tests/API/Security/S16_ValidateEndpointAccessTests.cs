@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         [Test]
-        public async Task S16_AuthOff_Validate_BehavesAsToday()
+        public async Task S16_AuthOff_Validate_GetsTheConnectorsAnswer()
         {
             licenseService.Setup(s => s.CanUsePremiumFeatures()).Returns(false);
 

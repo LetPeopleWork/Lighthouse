@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
@@ -6,7 +7,6 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Data.Common;
 
 namespace Lighthouse.Backend.API
 {
@@ -47,46 +47,9 @@ namespace Lighthouse.Backend.API
         {
             var systemInfo = systemInfoService.GetSystemInfo();
 
-            return Ok(await MaySeeEverything(cancellationToken)
+            return Ok(await rbac.ConfirmsSystemAdminAsync(User, logger, cancellationToken)
                 ? systemInfo
                 : systemInfo.WithoutWhatOnlyAnAdministratorMaySee());
-        }
-
-        // Nobody is not an administrator. Asking about a caller who never signed in would answer a
-        // question about a user that does not exist, so the answer is settled here instead - withheld,
-        // which is the safe way round for a route that deliberately lets anonymous callers through in
-        // deployments that have no authentication at all.
-        //
-        // And a question that cannot be answered is not a yes. Deciding who is an administrator reaches
-        // the database, while everything else on this response is read from configuration and the
-        // running process - so a database that will not answer used to leave this endpoint working and
-        // must keep doing so. It is what the application shell fetches before it can draw anything at
-        // all, and failing it would take the whole interface down to withhold two fields.
-        private async Task<bool> MaySeeEverything(CancellationToken cancellationToken)
-        {
-            if (User?.Identity?.IsAuthenticated != true)
-            {
-                return false;
-            }
-
-            try
-            {
-                return await rbac.CanSatisfyRequirementAsync(
-                    User, RbacGuardRequirement.SystemAdmin, cancellationToken: cancellationToken);
-            }
-            // Said out loud on the way past. Withholding is the safe answer to a question that could not
-            // be asked, but it is the same answer a genuine fault in the permission check would produce -
-            // and an authorisation bug that only ever shows up as a missing row is one nobody reports.
-            catch (Exception couldNotBeAsked) when (couldNotBeAsked is DbException or InvalidOperationException)
-            {
-                // Stryker disable once String: that this is said at warning level is the behaviour; the
-                // sentence is for whoever reads the log and is not something a test should freeze.
-                logger.LogWarning(
-                    couldNotBeAsked,
-                    "Could not work out whether this caller administers the instance, so the system information was answered without what only an administrator may see.");
-
-                return false;
-            }
         }
 
         // Guarded where GetSystemInfo is not: the refresh history is instance-wide operational
