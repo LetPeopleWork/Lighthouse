@@ -3,11 +3,17 @@ using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Reflection;
+using System.Security.Claims;
 using System.Text;
 
 namespace Lighthouse.Backend.Tests.API
@@ -15,14 +21,35 @@ namespace Lighthouse.Backend.Tests.API
     [TestFixture]
     public class LicenseControllerTest
     {
+        private static readonly string[] WhatOnlyAnAdministratorMaySee =
+        [
+            nameof(LicenseStatusDto.Name),
+            nameof(LicenseStatusDto.Email),
+            nameof(LicenseStatusDto.Organization),
+            nameof(LicenseStatusDto.LicenseNumber),
+        ];
+
+        private static readonly ClaimsPrincipal SomebodyWhoSignedIn =
+            new(new ClaimsIdentity([new Claim("sub", "somebody")], "test"));
+
+        private static readonly Exception[] ReasonsTheCheckCouldNotBeMade =
+        [
+            new InvalidOperationException("no database to ask"),
+            new SqliteException("no database to ask", 1),
+        ];
+
         private Mock<ILicenseService> licenseServiceMock;
+        private Mock<IRbacAdministrationService> rbacMock;
         private LicenseController subject;
 
         [SetUp]
         public void SetUp()
         {
             licenseServiceMock = new Mock<ILicenseService>();
-            subject = new LicenseController(licenseServiceMock.Object);
+            rbacMock = new Mock<IRbacAdministrationService>();
+            AnsweringAsA(RbacGuardRequirement.SystemAdmin, satisfied: true);
+
+            subject = CreateSubject(SomebodyWhoSignedIn);
         }
 
         [Test]
@@ -221,12 +248,12 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetLicenseStatus_NoLicense_ReturnsCorrectLicenseStatus()
+        public async Task GetLicenseStatus_NoLicense_ReturnsCorrectLicenseStatus()
         {
             licenseServiceMock.Setup(s => s.GetLicenseData())
                               .Returns((null, false));
 
-            var result = subject.GetLicenseStatus();
+            var result = await subject.GetLicenseStatus();
             
             using (Assert.EnterMultipleScope())
             {
@@ -244,7 +271,7 @@ namespace Lighthouse.Backend.Tests.API
         [Test]
         [TestCase(true)]
         [TestCase(false)]
-        public void GetLicenseStatus_WithLicense_ReturnsCorrectLicenseStatus(bool isValidLicense)
+        public async Task GetLicenseStatus_WithLicense_ReturnsCorrectLicenseStatus(bool isValidLicense)
         {
             var licenseInfo = new LicenseInformation
             {
@@ -258,7 +285,7 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock.Setup(s => s.GetLicenseData())
                               .Returns((licenseInfo, isValidLicense));
 
-            var result = subject.GetLicenseStatus();
+            var result = await subject.GetLicenseStatus();
 
             using (Assert.EnterMultipleScope())
             {
@@ -278,7 +305,7 @@ namespace Lighthouse.Backend.Tests.API
         }
 
         [Test]
-        public void GetLicenseStatus_WithLicenseAndValidFrom_ReturnsValidFrom()
+        public async Task GetLicenseStatus_WithLicenseAndValidFrom_ReturnsValidFrom()
         {
             var validFromDate = new DateTime(2025, 1, 1);
             var licenseInfo = new LicenseInformation
@@ -294,7 +321,7 @@ namespace Lighthouse.Backend.Tests.API
             licenseServiceMock.Setup(s => s.GetLicenseData())
                               .Returns((licenseInfo, true));
 
-            var result = subject.GetLicenseStatus();
+            var result = await subject.GetLicenseStatus();
 
             using (Assert.EnterMultipleScope())
             {
@@ -305,6 +332,104 @@ namespace Lighthouse.Backend.Tests.API
                 var licenseStatus = okResult.Value as LicenseStatusDto;
                 Assert.That(licenseStatus, Is.Not.Null);
                 Assert.That(licenseStatus.ValidFrom, Is.EqualTo(validFromDate));
+            }
+        }
+
+        [Test]
+        public async Task GetLicenseStatus_ACallerWhoIsNoSystemAdmin_LosesOnlyTheLicenseeDetails()
+        {
+            AnsweringAsA(RbacGuardRequirement.SystemAdmin, satisfied: false);
+            licenseServiceMock.Setup(s => s.GetLicenseData()).Returns((ALicense(), true));
+            licenseServiceMock.Setup(s => s.CanUsePremiumFeatures()).Returns(true);
+
+            var whole = new LicenseStatusDto(ALicense(), true, true);
+            var narrowed = await Answered(subject.GetLicenseStatus());
+
+            var changed = typeof(LicenseStatusDto)
+                .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(property => !Equals(property.GetValue(whole), property.GetValue(narrowed)))
+                .Select(property => property.Name)
+                .ToList();
+
+            Assert.That(changed, Is.EquivalentTo(WhatOnlyAnAdministratorMaySee));
+        }
+
+        [Test]
+        public async Task GetLicenseStatus_ACallerWhoNeverSignedIn_IsNotAskedAboutAndGetsNoLicenseeDetails()
+        {
+            licenseServiceMock.Setup(s => s.GetLicenseData()).Returns((ALicense(), true));
+
+            var answered = await Answered(CreateSubject(new ClaimsPrincipal(new ClaimsIdentity())).GetLicenseStatus());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answered.Name, Is.Null);
+                Assert.That(answered.HasLicense, Is.True);
+            }
+
+            rbacMock.Verify(
+                rbac => rbac.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    It.IsAny<RbacGuardRequirement>(),
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [TestCaseSource(nameof(ReasonsTheCheckCouldNotBeMade))]
+        public async Task GetLicenseStatus_TheAdministratorCheckCouldNotBeMade_WithholdsAndSaysSo(Exception reason)
+        {
+            var logger = new Mock<ILogger<LicenseController>>();
+
+            rbacMock
+                .Setup(rbac => rbac.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    RbacGuardRequirement.SystemAdmin,
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
+                .ThrowsAsync(reason);
+
+            licenseServiceMock.Setup(s => s.GetLicenseData()).Returns((ALicense(), true));
+
+            var answered = await Answered(CreateSubject(SomebodyWhoSignedIn, logger.Object).GetLicenseStatus());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answered.Name, Is.Null, "a question that cannot be answered is not a yes");
+                Assert.That(answered.HasLicense, Is.True, "and the request still succeeds");
+
+                logger.Verify(
+                    written => written.Log(
+                        LogLevel.Warning,
+                        It.IsAny<EventId>(),
+                        It.IsAny<It.IsAnyType>(),
+                        reason,
+                        (Func<It.IsAnyType, Exception?, string>)It.IsAny<object>()),
+                    Times.Once,
+                    "the safe behaviour must not also be a silent one");
+            }
+        }
+
+        // The import route lets anybody in while the instance has no System Admin yet. That must not
+        // carry over to the details: a caller allowed to import is not thereby a System Admin.
+        [Test]
+        public async Task ImportLicense_ABootstrapImporter_GetsNoLicenseeDetails()
+        {
+            AnsweringAsA(RbacGuardRequirement.SystemAdmin, satisfied: false);
+            AnsweringAsA(RbacGuardRequirement.SystemAdminOrBootstrap, satisfied: true);
+
+            licenseServiceMock.Setup(s => s.ImportLicense("{}")).ReturnsAsync(ALicense());
+            licenseServiceMock.Setup(s => s.GetLicenseData()).Returns((ALicense(), true));
+
+            var answered = await Answered(subject.ImportLicense(CreateMockFormFile("license.json", "{}")));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answered.Name, Is.Null);
+                Assert.That(answered.Email, Is.Null);
+                Assert.That(answered.Organization, Is.Null);
+                Assert.That(answered.LicenseNumber, Is.Null);
+                Assert.That(answered.ExpiryDate, Is.EqualTo(ALicense().ExpiryDate));
             }
         }
 
@@ -344,6 +469,50 @@ namespace Lighthouse.Backend.Tests.API
             }
 
             licenseServiceMock.Verify(s => s.ClearLicense(), Times.Once);
+        }
+
+        private void AnsweringAsA(RbacGuardRequirement requirement, bool satisfied)
+        {
+            rbacMock
+                .Setup(rbac => rbac.CanSatisfyRequirementAsync(
+                    It.IsAny<ClaimsPrincipal>(),
+                    requirement,
+                    It.IsAny<int?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(satisfied);
+        }
+
+        private LicenseController CreateSubject(ClaimsPrincipal caller, ILogger<LicenseController>? logger = null)
+        {
+            return new LicenseController(
+                licenseServiceMock.Object,
+                rbacMock.Object,
+                logger ?? NullLogger<LicenseController>.Instance)
+            {
+                ControllerContext = new ControllerContext
+                {
+                    HttpContext = new DefaultHttpContext { User = caller },
+                },
+            };
+        }
+
+        private static async Task<LicenseStatusDto> Answered(Task<IActionResult> response)
+        {
+            return (LicenseStatusDto)((OkObjectResult)await response).Value!;
+        }
+
+        private static LicenseInformation ALicense()
+        {
+            return new LicenseInformation
+            {
+                Name = "John Doe",
+                Email = "john@doe.com",
+                Organization = "Doe Inc.",
+                LicenseNumber = "LN-1",
+                ExpiryDate = new DateTime(2031, 12, 31),
+                ValidFrom = new DateTime(2026, 1, 1),
+                Signature = "valid_signature"
+            };
         }
 
         private static IFormFile CreateMockFormFile(string fileName, string content)
