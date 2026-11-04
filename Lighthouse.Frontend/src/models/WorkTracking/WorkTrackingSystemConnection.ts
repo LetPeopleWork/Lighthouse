@@ -14,6 +14,7 @@ export const AuthenticationMethodKeys = {
 	JiraCloud: "jira.cloud",
 	JiraDataCenter: "jira.datacenter",
 	JiraScopedToken: "jira.scopedtoken",
+	JiraOAuth: "jira.oauth",
 	LinearApiKey: "linear.apikey",
 	ServiceNowBasic: "servicenow.basic",
 	None: "none",

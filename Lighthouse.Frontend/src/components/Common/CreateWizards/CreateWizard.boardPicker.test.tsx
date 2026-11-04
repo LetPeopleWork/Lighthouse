@@ -96,7 +96,7 @@ const anAdministratorChoosesTheConnection = async (
 };
 
 describe("creating on a Jira connection whose sign-in Jira offers no boards to", () => {
-	it.skip.each([
+	it.each([
 		["Team", "jira.scopedtoken"],
 		["Team", "jira.oauth"],
 		["Portfolio", "jira.scopedtoken"],
@@ -130,7 +130,7 @@ describe("creating on a Jira connection whose sign-in Jira offers no boards to",
 		},
 	);
 
-	it.skip.each(["Team", "Portfolio"] as const)(
+	it.each(["Team", "Portfolio"] as const)(
 		"going back from Configure on a %s returns to choosing the connection",
 		async (flow) => {
 			const { user } = await anAdministratorChoosesTheConnection(
@@ -147,7 +147,7 @@ describe("creating on a Jira connection whose sign-in Jira offers no boards to",
 		},
 	);
 
-	it.skip.each([
+	it.each([
 		["Team", "jira.cloud"],
 		["Team", "jira.datacenter"],
 		["Portfolio", "jira.cloud"],

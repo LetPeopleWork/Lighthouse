@@ -3,7 +3,10 @@ import { flushSync } from "react-dom";
 import { getWizardsForSystem } from "../components/DataRetrievalWizards";
 import type { IBoardInformation } from "../models/Boards/BoardInformation";
 import type { IDataRetrievalSchema } from "../models/Common/DataRetrievalSchema";
-import type { IDataRetrievalWizard } from "../models/DataRetrievalWizard/DataRetrievalWizard";
+import {
+	type IDataRetrievalWizard,
+	isWizardUsable,
+} from "../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { IWorkTrackingSystemConnection } from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
 export const STEPS = [
@@ -12,6 +15,14 @@ export const STEPS = [
 	"Configure",
 	"Name & Create",
 ];
+const offersAnyWizard = (
+	wizards: IDataRetrievalWizard[],
+	connection: IWorkTrackingSystemConnection,
+) =>
+	wizards.some((wizard) =>
+		isWizardUsable(wizard, connection.authenticationMethodKey),
+	);
+
 export const STEP_CHOOSE_CONNECTION = 0;
 export const STEP_LOAD_DATA = 1;
 export const STEP_CONFIGURE = 2;
@@ -156,7 +167,9 @@ export function useCreateWizard<TDto>({
 			entityType,
 		);
 		setAvailableWizards(wizards);
-		setActiveStep(wizards.length > 0 ? STEP_LOAD_DATA : STEP_CONFIGURE);
+		setActiveStep(
+			offersAnyWizard(wizards, connection) ? STEP_LOAD_DATA : STEP_CONFIGURE,
+		);
 	};
 
 	const currentBase = useCallback(
@@ -257,7 +270,13 @@ export function useCreateWizard<TDto>({
 
 	const handleBack = () => {
 		setValidationError(null);
-		if (activeStep === STEP_CONFIGURE && availableWizards.length === 0) {
+		if (
+			activeStep === STEP_CONFIGURE &&
+			!(
+				selectedConnection &&
+				offersAnyWizard(availableWizards, selectedConnection)
+			)
+		) {
 			setActiveStep(STEP_CHOOSE_CONNECTION);
 		} else {
 			setActiveStep((prev) => prev - 1);

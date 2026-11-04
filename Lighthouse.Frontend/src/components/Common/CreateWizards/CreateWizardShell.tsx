@@ -12,6 +12,7 @@ import type { IBoardInformation } from "../../../models/Boards/BoardInformation"
 import type { IDataRetrievalWizard } from "../../../models/DataRetrievalWizard/DataRetrievalWizard";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import StatesList from "../StatesList/StatesList";
+import WizardPickerButton from "../WizardPickerButton/WizardPickerButton";
 import WorkItemTypesComponent from "../WorkItemTypes/WorkItemTypesComponent";
 import WizardStepperFrame from "./WizardStepperFrame";
 
@@ -127,14 +128,17 @@ const CreateWizardShell: React.FC<CreateWizardShellProps> = ({
 }) => {
 	const renderWizardButtons = () =>
 		availableWizards.map((wizard) => (
-			<Button
+			<WizardPickerButton
 				key={wizard.id}
+				wizard={wizard}
+				authenticationMethodKey={
+					connections.find((c) => c.id === selectedConnectionId)
+						?.authenticationMethodKey
+				}
 				variant="contained"
 				onClick={() => onSetActiveWizard(wizard)}
 				sx={{ mr: 1 }}
-			>
-				{wizard.name}
-			</Button>
+			/>
 		));
 
 	const renderActiveWizardDialog = () =>

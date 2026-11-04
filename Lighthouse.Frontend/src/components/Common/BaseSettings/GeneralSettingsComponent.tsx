@@ -1,5 +1,4 @@
 import {
-	Button,
 	FormControl,
 	InputLabel,
 	MenuItem,
@@ -21,6 +20,7 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import { useTerminology } from "../../../services/TerminologyContext";
 import { getWizardsForSystem } from "../../DataRetrievalWizards";
 import InputGroup from "../InputGroup/InputGroup";
+import WizardPickerButton from "../WizardPickerButton/WizardPickerButton";
 
 interface GeneralSettingsComponentProps<T extends IBaseSettings> {
 	settings: T | null;
@@ -203,14 +203,16 @@ const GeneralSettingsComponent = <T extends IBaseSettings>({
 			{availableWizards.length > 0 && (
 				<Grid size={{ xs: 12 }}>
 					{availableWizards.map((wizard) => (
-						<Button
+						<WizardPickerButton
 							key={wizard.id}
+							wizard={wizard}
+							authenticationMethodKey={
+								selectedWorkTrackingSystem?.authenticationMethodKey
+							}
 							variant="outlined"
 							onClick={() => setActiveWizard(wizard)}
 							sx={{ mr: 1, mt: 1 }}
-						>
-							{wizard.name}
-						</Button>
+						/>
 					))}
 				</Grid>
 			)}

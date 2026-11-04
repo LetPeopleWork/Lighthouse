@@ -1163,7 +1163,7 @@ describe("GeneralSettingsComponent", () => {
 			rbac.isSystemAdmin = true;
 		});
 
-		it.skip.each([
+		it.each([
 			["jira.scopedtoken", "team"],
 			["jira.scopedtoken", "portfolio"],
 			["jira.oauth", "team"],
@@ -1193,7 +1193,7 @@ describe("GeneralSettingsComponent", () => {
 			},
 		);
 
-		it.skip.each(["jira.cloud", "jira.datacenter"])(
+		it.each(["jira.cloud", "jira.datacenter"])(
 			"leaves the picker usable for %s",
 			async (authenticationMethodKey) => {
 				const getBoards = renderTheSettingsOf(authenticationMethodKey, "team");

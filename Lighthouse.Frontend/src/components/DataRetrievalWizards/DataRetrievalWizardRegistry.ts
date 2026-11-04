@@ -2,7 +2,10 @@ import type {
 	IDataRetrievalWizard,
 	SettingsContext,
 } from "../../models/DataRetrievalWizard/DataRetrievalWizard";
-import type { WorkTrackingSystemType } from "../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	AuthenticationMethodKeys,
+	type WorkTrackingSystemType,
+} from "../../models/WorkTracking/WorkTrackingSystemConnection";
 import BoardWizard from "./BoardWizard";
 import CsvUploadWizard from "./CsvUploadWizard";
 
@@ -20,6 +23,14 @@ const dataRetrievalWizards: IDataRetrievalWizard[] = [
 		applicableSystemTypes: ["Jira"],
 		applicableSettingsContexts: ["team", "portfolio"],
 		component: BoardWizard,
+		unservedSignIns: {
+			authenticationMethodKeys: [
+				AuthenticationMethodKeys.JiraScopedToken,
+				AuthenticationMethodKeys.JiraOAuth,
+			],
+			reason:
+				"Jira does not offer boards to scoped API tokens or Jira Cloud (OAuth). Enter the query by hand.",
+		},
 	},
 	{
 		id: "ado.board",
