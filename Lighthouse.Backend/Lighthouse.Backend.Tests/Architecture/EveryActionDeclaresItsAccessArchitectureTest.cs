@@ -126,6 +126,27 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(reported, Has.Count.EqualTo(1));
         }
 
+        [Test]
+        public void EveryProductionActionDeclaresItsAccess()
+        {
+            var controllers = typeof(RbacGuardAttribute).Assembly
+                .GetTypes()
+                .Where(type => typeof(ControllerBase).IsAssignableFrom(type) && !type.IsAbstract)
+                .ToList();
+            var actionCount = controllers.Sum(controller => controller
+                .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly)
+                .Count(method => method.GetCustomAttributes<Attribute>(inherit: true).OfType<IActionHttpMethodProvider>().Any()));
+
+            var reported = AccessRule.Violations(controllers);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(controllers, Has.Count.GreaterThanOrEqualTo(40), "the scan found too few controllers");
+                Assert.That(actionCount, Is.GreaterThanOrEqualTo(200), "the scan found too few actions");
+                Assert.That(reported, Is.Empty, string.Join(Environment.NewLine, reported));
+            }
+        }
+
         private static void AssertReportedOnce<TController>(string action)
         {
             var reported = AccessRule.Violations([typeof(TController)]);

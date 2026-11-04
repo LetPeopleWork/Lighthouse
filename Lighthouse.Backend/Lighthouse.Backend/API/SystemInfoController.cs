@@ -41,6 +41,7 @@ namespace Lighthouse.Backend.API
         // An instance not enforcing access control satisfies this for everyone, and that is right: with
         // nobody to tell apart there is nobody to withhold it from, and a standalone operator is exactly
         // who needs to see which key they are on.
+        [CheckedInHandler("Open to everybody signed in because the interface needs it, but two details are withheld unless the caller is a System Admin.")]
         [HttpGet]
         [ProducesResponseType<SystemInfo>(StatusCodes.Status200OK)]
         public async Task<ActionResult<SystemInfo>> GetSystemInfo(CancellationToken cancellationToken)

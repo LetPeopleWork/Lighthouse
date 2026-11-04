@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API.DTO.Reports;
 using Lighthouse.Backend.Models.Reports;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Reports;
@@ -12,10 +13,12 @@ namespace Lighthouse.Backend.API
     [ApiController]
     public class ReportsController(IReportQueries queries, IReportOwnerLookup owners, IReportBulkCommands bulkCommands, IReportBulkRemover bulkRemover, IRbacAdministrationService rbacAdministrationService) : ControllerBase
     {
+        [CheckedInHandler("Lists only the reports of Teams and Portfolios the caller may read.")]
         [HttpGet]
         public async Task<ActionResult<ReportsAcrossOwners>> GetReports()
             => Ok(queries.ListAcross(await ReadableOwners()).Value);
 
+        [CheckedInHandler("Offers only the Teams and Portfolios the caller may read.")]
         [HttpGet("creation-options")]
         public async Task<ActionResult<ReportCreationOptions>> GetCreationOptions()
             => Ok(queries.CreationOptions(await ReadableOwners()).Value);
@@ -32,6 +35,7 @@ namespace Lighthouse.Backend.API
             return [.. readableTeamIds.Select(ReportOwner.Team), .. readablePortfolioIds.Select(ReportOwner.Portfolio)];
         }
 
+        [CheckedInHandler("Write access is checked for each Team or Portfolio named, and one the caller may not change is refused.")]
         [HttpPost("bulk")]
         [LicenseGuard(RequirePremium = true)]
         public async Task<ActionResult<ReportBulkCreation>> CreateForEach([FromBody] NewReportsForOwnersRequest request)
@@ -55,6 +59,7 @@ namespace Lighthouse.Backend.API
             return Ok(new ReportBulkCreation(outcomes));
         }
 
+        [CheckedInHandler("Write access is checked for each Team or Portfolio named, and one the caller may not change is refused.")]
         [HttpPost("bulk-removal")]
         public async Task<ActionResult<ReportBulkRemoval>> RemoveEach([FromBody] ReportRemovalRequest request)
         {

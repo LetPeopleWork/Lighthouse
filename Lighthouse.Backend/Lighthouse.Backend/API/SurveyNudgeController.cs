@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,7 @@ namespace Lighthouse.Backend.API
     [Authorize]
     public class SurveyNudgeController(IAppSettingService appSettingService) : ControllerBase
     {
+        [SignedInOnly("Returns only the date from which the survey prompt may appear again, which is not specific to any Team or Portfolio.")]
         [HttpGet]
         [ProducesResponseType<SurveyNudgeState>(StatusCodes.Status200OK)]
         public ActionResult<SurveyNudgeState> GetState()
@@ -25,6 +27,7 @@ namespace Lighthouse.Backend.API
             return Ok(new SurveyNudgeState(appSettingService.GetSurveyNudgeNextEligibleAt()));
         }
 
+        [SignedInOnly("Anybody signed in may answer the survey prompt, and one answer snoozes it for everybody on the instance.")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> RecordAction([FromBody] SurveyNudgeActionRequest request)

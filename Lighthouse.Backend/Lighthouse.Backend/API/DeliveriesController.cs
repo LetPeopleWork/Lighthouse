@@ -101,6 +101,7 @@ namespace Lighthouse.Backend.API
                 delivery.Id, delivery.Name, delivery.Date, delivery.PortfolioId, delivery.ConcurrencyToken, metricSnapshotCount);
         }
 
+        [CheckedInHandler("Looks up the Portfolio of the Delivery and requires read access to it, because the route carries no Portfolio id.")]
         [HttpGet("{deliveryId:int}/metrics-history")]
         [ProducesResponseType<DeliveryMetricsHistoryDto>(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetMetricsHistory(int deliveryId)
@@ -168,6 +169,7 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [CheckedInHandler("Looks up the Portfolio of the Delivery and requires write access to it, because the route carries no Portfolio id.")]
         [HttpPut("{deliveryId:int}")]
         public async Task<IActionResult> UpdateDelivery(
             int deliveryId,
@@ -304,6 +306,7 @@ namespace Lighthouse.Backend.API
             return await ResolveBoundSource(portfolio, request);
         }
 
+        [CheckedInHandler("Looks up the Portfolio of the Delivery and requires write access to it, because the route carries no Portfolio id.")]
         [HttpDelete("{deliveryId:int}")]
         public async Task<IActionResult> DeleteDelivery(int deliveryId)
         {
@@ -321,6 +324,7 @@ namespace Lighthouse.Backend.API
             return NoContent();
         }
 
+        [CheckedInHandler("Looks up the Portfolio of the Delivery and requires write access to it, because the route carries no Portfolio id.")]
         [HttpPost("{deliveryId:int}/archive")]
         public async Task<IActionResult> ArchiveDelivery(int deliveryId, [FromBody] ArchiveDeliveryRequest? request)
         {
@@ -350,6 +354,7 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
+        [CheckedInHandler("Looks up the Portfolio of the Delivery and requires write access to it, because the route carries no Portfolio id.")]
         [HttpPost("{deliveryId:int}/unarchive")]
         public async Task<IActionResult> UnarchiveDelivery(int deliveryId, [FromBody] ArchiveDeliveryRequest? request)
         {

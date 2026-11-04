@@ -1,5 +1,6 @@
 ﻿using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,7 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/[controller]")]
     [ApiController]
     [Authorize]
+    [CheckedInHandler("Each action offers suggestions only from the Teams or Portfolios the caller may read.")]
     public class SuggestionsController : ControllerBase
     {
         private readonly ILogger<SuggestionsController> logger;

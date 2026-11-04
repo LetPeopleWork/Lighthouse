@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.API
         OptionalFeatureApplierRegistry applierRegistry,
         ILogger<OptionalFeaturesController> logger) : ControllerBase
     {
+        [SignedInOnly("Optional features decide what the interface shows to everybody; only a System Admin may switch them.")]
         [HttpGet]
         public ActionResult<IEnumerable<OptionalFeature>> GetAll()
         {
@@ -24,6 +25,7 @@ namespace Lighthouse.Backend.API
             return Ok(optionalFeatures);
         }
 
+        [SignedInOnly("Optional features decide what the interface shows to everybody; only a System Admin may switch them.")]
         [HttpGet("{featureKey}")]
         public ActionResult<OptionalFeature> GetOptionalFeatureByKey(string featureKey)
         {

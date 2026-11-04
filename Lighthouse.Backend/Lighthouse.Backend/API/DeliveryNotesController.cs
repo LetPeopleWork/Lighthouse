@@ -3,6 +3,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
@@ -15,6 +16,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/deliveries/{deliveryId:int}/notes")]
     [Route("api/latest/deliveries/{deliveryId:int}/notes")]
     [ApiController]
+    [CheckedInHandler("Each action looks up the Portfolio of the Delivery and requires read access to it, or write access to change notes; only the author may edit or delete a note.")]
     public class DeliveryNotesController(
         LighthouseAppContext context,
         IDeliveryRepository deliveryRepository,

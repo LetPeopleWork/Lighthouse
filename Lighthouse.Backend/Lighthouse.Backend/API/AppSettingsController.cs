@@ -35,9 +35,7 @@ namespace Lighthouse.Backend.API
             return Ok();
         }
 
-        // Deliberately NOT guarded. Every feature list reads this to name its position column, so an
-        // instance administrator is not the only one who needs the answer - and the answer is which
-        // ordering the instance uses, which every viewer can already see in the list itself.
+        [SignedInOnly("Every Feature list reads which ordering the instance uses to name its position column, and the list itself already shows it to every reader.")]
         [HttpGet("FeatureOrdering")]
         public ActionResult<FeatureOrderingDto> GetFeatureOrdering()
         {

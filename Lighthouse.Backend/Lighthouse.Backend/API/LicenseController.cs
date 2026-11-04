@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.API
 
         // Asks for a System Admin and not for the bootstrap rule the import route accepts: while an
         // instance has no System Admin yet, that rule lets everybody through, and so would these details.
+        [CheckedInHandler("Open to everybody signed in because the interface needs it, but the licensee's details are withheld unless the caller is a System Admin.")]
         [HttpGet]
         [ProducesResponseType<LicenseStatusDto>(StatusCodes.Status200OK)]
         public async Task<IActionResult> GetLicenseStatus(CancellationToken cancellationToken = default)

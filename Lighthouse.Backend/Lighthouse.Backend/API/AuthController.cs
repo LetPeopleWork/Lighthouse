@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -87,6 +88,7 @@ namespace Lighthouse.Backend.API
             return Ok(sessionStatus);
         }
 
+        [SignedInOnly("Returns only the profile of the caller who asks, never anybody else's.")]
         [HttpGet("me")]
         [Authorize]
         [ProducesResponseType<CurrentUserProfileStatus>(StatusCodes.Status200OK)]

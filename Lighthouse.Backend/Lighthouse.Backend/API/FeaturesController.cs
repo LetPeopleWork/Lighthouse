@@ -20,6 +20,7 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/[controller]")]
     [ApiController]
     [Authorize]
+    [CheckedInHandler("Lists answer only with Features of Portfolios the caller may read, and moving a Feature needs write access to every Portfolio it belongs to.")]
     public class FeaturesController : ControllerBase
     {
         private readonly IFeatureRepository featureRepository;

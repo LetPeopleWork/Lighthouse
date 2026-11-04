@@ -41,6 +41,7 @@ namespace Lighthouse.Backend.API
             this.connectionUsage = connectionUsage;
         }
 
+        [SignedInOnly("Lists the default connection template of each supported tracker and reads no stored connection.")]
         [HttpGet("supported")]
         public ActionResult<IEnumerable<WorkTrackingSystemConnectionDto>> GetSupportedWorkTrackingSystemConnections()
         {

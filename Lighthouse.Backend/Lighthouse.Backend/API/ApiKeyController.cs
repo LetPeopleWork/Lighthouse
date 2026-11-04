@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Authorization;
@@ -14,6 +15,7 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/apikeys")]
     [ApiController]
     [Authorize]
+    [CheckedInHandler("Each action works only on the caller's own API keys, and a new key may not carry broader rights than the caller holds.")]
     public class ApiKeyController(
         IApiKeyService apiKeyService,
         IRbacAdministrationService rbacAdministrationService) : ControllerBase

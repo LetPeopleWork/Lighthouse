@@ -14,6 +14,7 @@ namespace Lighthouse.Backend.API
     {
         private readonly IBlackoutPeriodService blackoutPeriodService = blackoutPeriodService ?? throw new ArgumentNullException(nameof(blackoutPeriodService));
 
+        [SignedInOnly("The instance calendar of blackout periods that every forecast view reads; only a System Admin may change it.")]
         [HttpGet]
         public ActionResult<IEnumerable<BlackoutPeriod>> GetAll()
         {

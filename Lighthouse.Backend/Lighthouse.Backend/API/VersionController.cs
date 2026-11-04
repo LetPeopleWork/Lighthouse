@@ -38,6 +38,7 @@ namespace Lighthouse.Backend.API
             return Ok(version);
         }
 
+        [SignedInOnly("Public release information that the update banner shows to everybody, with nothing about this instance's data.")]
         [HttpGet("hasupdate")]
         public async Task<ActionResult> IsUpdateAvailable()
         {
@@ -45,6 +46,7 @@ namespace Lighthouse.Backend.API
             return Ok(isUpdateAvailable);
         }
 
+        [SignedInOnly("Public release notes of newer versions, the same for everybody and with nothing about this instance's data.")]
         [HttpGet("new")]
         public async Task<ActionResult<LighthouseRelease[]>> GetNewReleases()
         {
@@ -58,6 +60,7 @@ namespace Lighthouse.Backend.API
             return Ok(lighthouseReleases);
         }
 
+        [SignedInOnly("Says whether this installation can update itself, which is not private; installing an update is System Admin only.")]
         [HttpGet("updateSupported")]
         public ActionResult<bool> IsUpdateSupported()
         {
@@ -73,6 +76,7 @@ namespace Lighthouse.Backend.API
             return Ok(result);
         }
 
+        [SignedInOnly("Says how this installation was distributed, which the interface needs from every signed-in user.")]
         [HttpGet("distribution")]
         [ProducesResponseType<DistributionInfo>(StatusCodes.Status200OK)]
         public ActionResult<DistributionInfo> GetDistributionInfo()

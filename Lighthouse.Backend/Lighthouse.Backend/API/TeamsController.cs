@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.API
         OwnerSettingRefusals ownerSettingRefusals)
         : ControllerBase
     {
+        [CheckedInHandler("Returns only the Teams, and the Portfolios they work for, that the caller may read.")]
         [HttpGet]
         public async Task<IEnumerable<TeamDto>> GetTeams()
         {

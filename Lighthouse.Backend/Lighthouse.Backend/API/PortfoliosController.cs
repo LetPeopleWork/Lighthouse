@@ -33,6 +33,7 @@ namespace Lighthouse.Backend.API
         : ControllerBase
 #pragma warning restore S107
     {
+        [CheckedInHandler("Returns only the Portfolios, and the Teams in them, that the caller may read.")]
         [HttpGet]
         public async Task<IEnumerable<PortfolioDto>> GetPortfolios()
         {

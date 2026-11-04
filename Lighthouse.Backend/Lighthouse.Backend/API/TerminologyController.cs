@@ -16,6 +16,7 @@ namespace Lighthouse.Backend.API
     {
         private readonly ITerminologyService terminologyService = terminologyService ?? throw new ArgumentNullException(nameof(terminologyService));
 
+        [SignedInOnly("The terms every screen renders, the same for everybody and not specific to any Team or Portfolio.")]
         [HttpGet("all")]
         public ActionResult<IEnumerable<TerminologyEntry>> GetAllTerminology()
         {
