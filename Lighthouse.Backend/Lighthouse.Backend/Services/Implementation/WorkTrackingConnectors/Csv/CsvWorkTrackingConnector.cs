@@ -1,5 +1,4 @@
 using CsvHelper;
-using CsvHelper.Configuration;
 using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
@@ -9,6 +8,7 @@ using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
 using System.Globalization;
+using System.Text;
 
 namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 {
@@ -84,8 +84,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 {
                     var feature = new Feature(workItemBase, TheDependenciesOf(csv, project));
 
-                    var owningTeam = csv.GetField(GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
-                    var estimatedSizeString = csv.GetField(GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
+                    var owningTeam = FieldIn(csv, GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.OwningTeamHeader))?.Trim() ?? string.Empty;
+                    var estimatedSizeString = FieldIn(csv, GetOptionByKey(project.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.EstimatedSizeHeader))?.Trim();
                     var estimatedSize = 0;
 
                     if (!string.IsNullOrEmpty(estimatedSizeString) && int.TryParse(estimatedSizeString, out var parsedEstimatedSize))
@@ -208,19 +208,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private static WorkItemBase? CreateWorkItemBaseForRow(CsvReader csv, IWorkItemQueryOwner owner, HashSet<string> knownStates)
         {
-            var referenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
-            var name = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
-            var state = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateHeader)).Trim();
-            var type = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TypeHeader)).Trim();
-            var parentReferenceId = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader))?.Trim() ?? string.Empty;
-            var url = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.UrlHeader))?.Trim() ?? string.Empty;
+            var referenceId = FieldIn(csv, GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.IdHeader)).Trim();
+            var name = FieldIn(csv, GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.NameHeader)).Trim();
+            var state = FieldIn(csv, GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StateHeader)).Trim();
+            var type = FieldIn(csv, GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TypeHeader)).Trim();
+            var parentReferenceId = FieldIn(csv, GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ParentReferenceIdHeader))?.Trim() ?? string.Empty;
+            var url = FieldIn(csv, GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.UrlHeader))?.Trim() ?? string.Empty;
 
             var startedDate = ParseDateTime(csv, owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.StartedDateHeader);
             var closedDate = ParseDateTime(csv, owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.ClosedDateHeader);
             var createdDate = ParseDateTime(csv, owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.CreatedDateHeader);
 
             var tagSeperator = GetTagSeparator(owner.WorkTrackingSystemConnection);
-            var tags = csv.GetField(GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader))?.Split(tagSeperator).Select(x => x.Trim()) ?? [];
+            var tags = FieldIn(csv, GetOptionByKey(owner.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.TagsHeader))?.Split(tagSeperator).Select(x => x.Trim()) ?? [];
 
             var stateCategory = owner.MapStateToStateCategory(state);
 
@@ -260,7 +260,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             foreach (var field in connection.AdditionalFieldDefinitions)
             {
-                var value = csv.GetField(field.Reference)?.Trim();
+                var value = FieldIn(csv, field.Reference)?.Trim();
 
                 if (!string.IsNullOrEmpty(value))
                 {
@@ -286,7 +286,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
                 return BuildInterpolatedDoneJourney(owner, startedDate.Value, closedDate.Value);
             }
 
-            return BuildCurrentStateEnteredTransition(csv, stateEnteredDateColumn, mappedState, stateCategory);
+            return BuildCurrentStateEnteredTransition(csv, owner.WorkTrackingSystemConnection, stateEnteredDateColumn, mappedState, stateCategory);
         }
 
         private static readonly Dictionary<string, int> DemoStateJourneyWeights =
@@ -359,14 +359,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
         }
 
         private static IReadOnlyList<WorkItemStateTransition> BuildCurrentStateEnteredTransition(
-            CsvReader csv, string stateEnteredDateColumn, string mappedState, StateCategories stateCategory)
+            CsvReader csv, WorkTrackingSystemConnection connection, string stateEnteredDateColumn, string mappedState, StateCategories stateCategory)
         {
             if (stateCategory != StateCategories.Doing)
             {
                 return [];
             }
 
-            var stateEnteredDate = csv.GetField<DateTime?>(stateEnteredDateColumn);
+            var stateEnteredDate = DateIn(csv, connection, stateEnteredDateColumn);
 
             if (!stateEnteredDate.HasValue)
             {
@@ -386,7 +386,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private static DateTime? ParseDateTime(CsvReader reader, WorkTrackingSystemConnection connection, string columnName)
         {
-            var dateTime = reader.GetField<DateTime?>(GetOptionByKey(connection, columnName));
+            var dateTime = DateIn(reader, connection, GetOptionByKey(connection, columnName));
 
             if (dateTime.HasValue)
             {
@@ -395,6 +395,31 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             return dateTime;
         }
+
+        private static DateTime? DateIn(CsvReader csv, WorkTrackingSystemConnection connection, string column)
+        {
+            var text = FieldIn(csv, column);
+
+            return string.IsNullOrEmpty(text)
+                ? null
+                : DateTime.ParseExact(text, DateFormatsOf(connection), CultureInfo.InvariantCulture, DateTimeStyles.None);
+        }
+
+        private static string[] DateFormatsOf(WorkTrackingSystemConnection connection)
+        {
+            var dateFormat = GetAdditionalDateTimeFormat(connection);
+
+            return string.IsNullOrWhiteSpace(dateFormat)
+                ? ["yyyy-MM-dd"]
+                : [dateFormat, "yyyy-MM-dd"];
+        }
+
+        /// <summary>
+        /// Optional columns are simply left out of many uploads, and a row may stop short of a column the
+        /// header has. Both read as nothing here, where the reader itself would throw or answer empty.
+        /// </summary>
+        private static string? FieldIn(CsvReader csv, string column)
+            => csv.TryGetFieldIndex(column, out var index) && index < csv.FieldCount ? csv.GetString(index) : null;
 
         private bool IsValidCsv(IWorkItemQueryOwner owner)
         {
@@ -415,8 +440,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
             }
 
             using var csv = ReadCsv(owner);
-            var header = csv.HeaderRecord ?? [];
-
+            var header = csv.Headers;
 
             var requiredColumns = GetRequiredColumns(owner.WorkTrackingSystemConnection);
             var missing = requiredColumns.Except(header, StringComparer.OrdinalIgnoreCase).ToArray();
@@ -433,23 +457,33 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         private CsvReader ReadCsv(IWorkItemQueryOwner owner)
         {
-            string delimiter = GetDelimiter(owner.WorkTrackingSystemConnection);
-            var csvConfig = new CsvConfiguration(CultureInfo.InvariantCulture) { Delimiter = delimiter, IgnoreBlankLines = true, MissingFieldFound = null };
-            var csv = new CsvReader(ContentOf(owner), csvConfig);
+            var csv = OpenReader(ContentOf(owner), GetDelimiter(owner.WorkTrackingSystemConnection));
 
-            var dateFormat = GetAdditionalDateTimeFormat(owner.WorkTrackingSystemConnection);
-
-            var formats = string.IsNullOrWhiteSpace(dateFormat)
-                ? ["yyyy-MM-dd"]
-                : new[] { dateFormat, "yyyy-MM-dd" };
-
-            csv.Context.TypeConverterOptionsCache.GetOptions<DateTime>().Formats = formats;
-            csv.Context.TypeConverterOptionsCache.GetOptions<DateTime?>().Formats = formats;
-
-            csv.Read();
             csv.ReadHeader();
 
+            // Removal is computed as stored minus fetched, so an upload with nothing in it has to fail here:
+            // answering with no rows would delete every stored record.
+            if (csv.Headers.Count == 0)
+            {
+                csv.Dispose();
+                throw new InvalidDataException("The CSV upload has no header row.");
+            }
+
             return csv;
+        }
+
+        private static CsvReader OpenReader(TextReader content, string delimiter)
+        {
+            if (delimiter.Length == 1 && char.IsAscii(delimiter[0]))
+            {
+                return CsvReader.Create(content, new CsvReaderOptions { Separator = delimiter[0], MalformedData = CsvMalformedDataHandling.Throw });
+            }
+
+            // The delimiter is free text, but the reader only splits on one ASCII character. The separator
+            // stream bridges that, and it works on bytes rather than text.
+            var bytes = new MemoryStream(Encoding.UTF8.GetBytes(content.ReadToEnd()));
+
+            return CsvReader.Create(new CsvSeparatorStream(bytes, delimiter), new CsvReaderOptions { MalformedData = CsvMalformedDataHandling.Throw });
         }
 
         private static string[] GetRequiredColumns(WorkTrackingSystemConnection connection)
@@ -491,9 +525,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
         /// <summary>
         /// The other Features a row says it waits on, read from one column holding a list. A file uploaded
-        /// before this column existed has no header of that name, and CsvHelper is configured to hand back
-        /// nothing rather than throw for a header that is not there - so an older upload keeps working and
-        /// simply waits on nothing. Nothing here has been saved yet, so every reference names Feature nought
+        /// before this column existed has no header of that name, and a header that is not there reads as
+        /// nothing rather than throwing - so an older upload keeps working and simply waits on nothing. Nothing here has been saved yet, so every reference names Feature nought
         /// until the reconciler keys it to the row the Feature lands on.
         /// </summary>
         private static List<FeatureDependencyReference> TheDependenciesOf(CsvReader csv, Portfolio project)
@@ -507,7 +540,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv
 
             // A file exposes no fields of its own for a Portfolio to point at, so a Portfolio here goes on
             // reading this column whatever it has typed into that setting.
-            return DependencySourceSelector.TheTrackersOwnLinksOnly(DependencyFieldReferences.In(csv.GetField(column)));
+            return DependencySourceSelector.TheTrackersOwnLinksOnly(DependencyFieldReferences.In(FieldIn(csv, column)));
         }
 
         private static string GetDependsOnColumn(WorkTrackingSystemConnection connection)

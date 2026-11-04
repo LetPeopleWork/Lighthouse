@@ -615,6 +615,65 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        [TestCase("")]
+        [TestCase("\n\n")]
+        public async Task GetWorkItemsForTeam_UploadHasNoHeaderRow_FailsRatherThanAnsweringWithNoItems(string upload)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-required-only.csv");
+            team.DataRetrievalValue = upload;
+
+            await Assert.ThrowsAsync<InvalidDataException>(() => subject.GetWorkItemsForTeam(team, CancellationToken.None));
+        }
+
+        [Test]
+        [TestCase("ID,Name,State,Type,Started Date,Closed Date\nITEM-1,Bad\"quote,To Do,Task,,\n")]
+        [TestCase("ID,Name,State,Type,Started Date,Closed Date\nITEM-1,\"Bad\"quote,To Do,Task,,\n")]
+        [TestCase("ID,Name,State,Type,Started Date,Closed Date\nITEM-1,\"Never closed,To Do,Task,,\n")]
+        public async Task GetWorkItemsForTeam_UploadHasMalformedQuoting_FailsRatherThanGuessingTheValue(string upload)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-required-only.csv");
+            team.DataRetrievalValue = upload;
+
+            await Assert.CatchAsync<Exception>(() => subject.GetWorkItemsForTeam(team, CancellationToken.None));
+        }
+
+        [Test]
+        [TestCase(";")]
+        [TestCase("\t")]
+        [TestCase("||")]
+        [TestCase("§")]
+        public async Task GetWorkItemsForTeam_AnyDelimiterTheConnectionNames_ReadsTheColumns(string delimiter)
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-required-only.csv");
+            team.DataRetrievalValue = team.DataRetrievalValue.Replace(",", delimiter);
+            AdjustWorkTrackingSystemOption(team.WorkTrackingSystemConnection, CsvWorkTrackingOptionNames.Delimiter, delimiter);
+
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(workItems, Has.Count.EqualTo(5));
+                Assert.That(workItems[0].ReferenceId, Is.EqualTo("ITEM-001"));
+                Assert.That(workItems[0].Name, Is.EqualTo("User Story Title"));
+            }
+        }
+
+        [Test]
+        public async Task GetWorkItemsForTeam_RowStopsShortOfAnOptionalColumn_ReadsItAsNothing()
+        {
+            var subject = CreateSubject();
+            var team = CreateTeam("team-valid-required-only.csv");
+            team.DataRetrievalValue = "ID,Name,State,Type,Started Date,Closed Date,Tags\nITEM-1,Short row,To Do,Task,,\n";
+
+            var workItems = (await subject.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
+
+            Assert.That(workItems.Single().Tags, Is.Empty);
+        }
+
         private static string LoadCsvFile(string csvFileName)
         {
             var csvFileContent = File.ReadAllText($"Services/Implementation/WorkTrackingConnectors/Csv/{csvFileName}");
