@@ -41,6 +41,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string DuplicateNamesBoard = "107";
 
+        private const int ReadAttempts = 3;
+
         private static readonly string[] ScrumBoardDoingStates = ["In Progress", "In Prüfung"];
 
         private JiraWorkTrackingConnector english = null!;
@@ -134,14 +136,28 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var inEnglish = await Refreshing(english, englishConnection, board, settledDemoItems);
             var inGerman = await Refreshing(german, germanConnection, board, settledDemoItems);
 
+            // A scratch item can outlive the 15 minutes and still be deleted between the two reads, which
+            // are minutes apart. The English account is read once more, and only when the lists differ, so
+            // that an item whose presence changed on its own is told apart from one the accounts disagree on.
+            var inEnglishAfterwards = SameReferences(inEnglish, inGerman)
+                ? inEnglish
+                : await Refreshing(english, englishConnection, board, settledDemoItems);
+
+            var disagreed = ReferencesTheAccountsDisagreeOn(inEnglish, inEnglishAfterwards, inGerman);
+
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(inEnglish, Is.Not.Empty);
-                Assert.That(inGerman.Select(item => item.ReferenceId), Is.EquivalentTo(inEnglish.Select(item => item.ReferenceId)));
+                Assert.That(disagreed, Is.Empty,
+                    "Items the English account listed both before and after the German read must be listed through German too, and the other way round.");
 
                 foreach (var item in inGerman)
                 {
-                    var same = inEnglish.Single(other => other.ReferenceId == item.ReferenceId);
+                    var same = inEnglish.SingleOrDefault(other => other.ReferenceId == item.ReferenceId);
+                    if (same is null)
+                    {
+                        continue;
+                    }
 
                     Assert.That(item.State, Is.EqualTo(same.State), item.ReferenceId);
                     Assert.That(item.Type, Is.EqualTo(same.Type), item.ReferenceId);
@@ -187,7 +203,41 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             team.DoneStates.Clear();
             team.DoneStates.AddRange(board.DoneStates);
 
+            // A read is hundreds of calls over several minutes and Jira sometimes resets one of the connections.
+            // A reset says nothing about what the two accounts see, so it is tried again, but only a few times
+            // and never for an answer Jira actually gave (those carry a status code).
+            for (var attempt = 1; attempt < ReadAttempts; attempt++)
+            {
+                try
+                {
+                    return (await connector.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
+                }
+                catch (HttpRequestException lostConnection) when (lostConnection.StatusCode is null)
+                {
+                    TestContext.Progress.WriteLine($"Read attempt {attempt} lost its connection ({lostConnection.Message}); reading again.");
+                }
+            }
+
             return (await connector.GetWorkItemsForTeam(team, CancellationToken.None)).ToList();
+        }
+
+        private static bool SameReferences(List<WorkItem> first, List<WorkItem> second)
+            => first.Select(item => item.ReferenceId).ToHashSet().SetEquals(second.Select(item => item.ReferenceId));
+
+        private static List<string> ReferencesTheAccountsDisagreeOn(
+            List<WorkItem> englishBefore, List<WorkItem> englishAfter, List<WorkItem> german)
+        {
+            var before = englishBefore.Select(item => item.ReferenceId).ToHashSet();
+            var after = englishAfter.Select(item => item.ReferenceId).ToHashSet();
+            var inGerman = german.Select(item => item.ReferenceId).ToHashSet();
+
+            // An item English listed both before and after must be listed by German too; one that appeared or
+            // disappeared during the reads cannot be held against either account.
+            return before.Union(after).Union(inGerman)
+                .Where(reference => before.Contains(reference) == after.Contains(reference)
+                    && inGerman.Contains(reference) != before.Contains(reference))
+                .Order()
+                .ToList();
         }
 
         private static JiraWorkTrackingConnector ASubject()
