@@ -366,7 +366,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 _ when path.EndsWith(ServerInfoPath, StringComparison.Ordinal) => "{\"deploymentType\":\"Server\"}",
                 _ when path.EndsWith($"board/{BoardId}/configuration", StringComparison.Ordinal) => boardConfiguration,
                 _ when path.EndsWith($"board/{BoardId}/issue", StringComparison.Ordinal) => "{\"issues\":[]}",
-                _ when path.EndsWith("status", StringComparison.Ordinal) => "[]",
+                _ when path.EndsWith("status", StringComparison.Ordinal) => JiraWireFormat.TheStatusListOf(JiraWireFormat.AnEnglishStatuses),
                 _ when path.EndsWith("field", StringComparison.Ordinal) => "[]",
                 _ => "{}",
             };
@@ -408,15 +408,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         [TestCase($"board/{BoardId}/issue")]
         [TestCase("rest/api/latest/status")]
-        public async Task GetBoardInformation_PartOfTheBoardCannotBeRead_LogsWhatJiraAnsweredBeforeCarryingOn(string refusedPath)
+        public async Task GetBoardInformation_PartOfTheBoardCannotBeRead_LogsWhatJiraAnsweredAsAnError(string refusedPath)
         {
             var logger = new Mock<ILogger<JiraWorkTrackingConnector>>();
 
-            await BoardReadOver(AReadableBoardExcept(refusedPath), logger.Object);
+            await Assert.ThrowsAsync<JiraReadException>(() => BoardReadOver(AReadableBoardExcept(refusedPath), logger.Object));
 
             logger.Verify(
                 log => log.Log(
-                    LogLevel.Warning,
+                    LogLevel.Error,
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((state, _) => NamesTheStatusAndTheReason(state)),
                     It.IsAny<Exception>(),

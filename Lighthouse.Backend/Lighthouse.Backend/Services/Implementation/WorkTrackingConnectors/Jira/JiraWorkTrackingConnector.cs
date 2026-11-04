@@ -753,18 +753,29 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var workItemTypesTask = GetItemTypesForBoard(client, deployment, connectionId, boardId);
             var statusMappingTask = GetStateMappingForBoard(boardConfigJson, client, deployment, connectionId);
 
+            // Awaited together, so that no failure is left unobserved while another one is thrown.
+            await Task.WhenAll(jqlTask, workItemTypesTask, statusMappingTask);
+
             boardInformation.WorkItemTypes = await workItemTypesTask;
 
             var (toDoStates, doingStates, doneStates) = await statusMappingTask;
             boardInformation.ToDoStates = toDoStates;
             boardInformation.DoingStates = doingStates;
             boardInformation.DoneStates = doneStates;
-
-            // Awaited last because it is the only one of the three that can throw, and abandoning a running
-            // task leaves its own failure unobserved.
             boardInformation.DataRetrievalValue = await jqlTask;
 
             return boardInformation;
+        }
+
+        private JiraReadException ThePartOfTheBoardCannotBeRead(string boardPart, JiraReadException refused)
+        {
+            var answer = refused.HowJiraAnswered.Length == 0 || refused.HowJiraAnswered.StartsWith('2')
+                ? "an answer Lighthouse could not read"
+                : refused.HowJiraAnswered.Replace(" (", " ", StringComparison.Ordinal).TrimEnd(')');
+
+            logger.LogError(refused, "Jira did not hand over the {BoardPart} of the board: {Answer}", boardPart, answer);
+
+            return JiraReadException.BoardUnreadable(answer, refused.Verdict.TechnicalDetails ?? string.Empty);
         }
 
         private async
@@ -800,9 +811,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             catch (JiraReadException refused)
             {
-                logger.LogWarning(refused, "{Reason} The board is reported with no states mapped.", refused.Verdict.Message);
-
-                return ([], [], []);
+                throw ThePartOfTheBoardCannotBeRead("status list", refused);
             }
 
             foreach (var missingId in missingIds)
@@ -880,11 +889,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             if (!response.IsSuccessStatusCode)
             {
-                logger.LogWarning(
-                    "Could not read the work items of Board {BoardId}: Jira answered {StatusCode} ({ReasonPhrase}). The board is reported with no work item types.",
-                    boardId, (int)response.StatusCode, response.ReasonPhrase);
+                var answer = $"{(int)response.StatusCode} {response.ReasonPhrase ?? response.StatusCode.ToString()}";
+                logger.LogError("Jira refused the work items of Board {BoardId}: {Answer}", boardId, answer);
 
-                return [];
+                throw JiraReadException.BoardUnreadable(answer, $"GET {BoardsEndpoint}/{boardId}/issue answered {answer}.");
             }
 
             var json = await response.Content.ReadAsStringAsync();
@@ -903,12 +911,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             catch (JiraReadException refused)
             {
-                logger.LogWarning(
-                    refused,
-                    "Jira's list of work item types could not be read: Jira answered {HowJiraAnswered}. {Detail} The board is reported with no work item types.",
-                    refused.HowJiraAnswered, refused.Verdict.TechnicalDetails);
-
-                return [];
+                throw ThePartOfTheBoardCannotBeRead("work item type list", refused);
             }
 
             foreach (var missingId in missingIds)

@@ -25,8 +25,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private const string PendingTheTestConnectionMessage = "pending: Test connection still says only that authentication failed";
 
-        private const string PendingThePartialBoardFix = "pending: a board Jira only partly hands over still comes back with no states or no types";
-
         private const string BoardId = "8";
 
         private const string TheBoardsWorkItems = $"board/{BoardId}/issue";
@@ -247,7 +245,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(TheBoardsWorkItems, HttpStatusCode.ServiceUnavailable, "503 Service Unavailable")]
         [TestCase(TheWorkItemTypeList, HttpStatusCode.Forbidden, "403 Forbidden")]
         [TestCase(TheWorkItemTypeList, HttpStatusCode.ServiceUnavailable, "503 Service Unavailable")]
-        [Ignore(PendingThePartialBoardFix)]
         public async Task A_board_Jira_hands_over_only_in_part_carries_the_answer_of_the_part_it_refused(string part, HttpStatusCode status, string answer)
         {
             var subject = AConnectorOver(ABoardWhere(part, () => Responding(status, "{}")));
@@ -263,7 +260,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(TheBoardsWorkItems, "{}")]
         [TestCase(TheWorkItemTypeList, AGatewayPage)]
         [TestCase(TheWorkItemTypeList, "{}")]
-        [Ignore(PendingThePartialBoardFix)]
         public async Task A_part_of_a_board_Lighthouse_cannot_read_says_so(string part, string body)
         {
             var subject = AConnectorOver(ABoardWhere(part, () => Responding(HttpStatusCode.OK, body)));
@@ -276,7 +272,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(TheStatusList)]
         [TestCase(TheBoardsWorkItems)]
         [TestCase(TheWorkItemTypeList)]
-        [Ignore(PendingThePartialBoardFix)]
         public async Task A_part_of_a_board_that_cannot_be_reached_reads_as_no_answer(string part)
         {
             var subject = AConnectorOver(ABoardWhere(part, () => throw new HttpRequestException("No such host is known.")));
@@ -289,7 +284,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [TestCase(TheStatusList)]
         [TestCase(TheBoardsWorkItems)]
         [TestCase(TheWorkItemTypeList)]
-        [Ignore(PendingThePartialBoardFix)]
         public async Task A_part_of_a_board_that_times_out_reads_as_no_answer(string part)
         {
             var subject = AConnectorOver(ABoardWhere(part, () => throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout.")));
