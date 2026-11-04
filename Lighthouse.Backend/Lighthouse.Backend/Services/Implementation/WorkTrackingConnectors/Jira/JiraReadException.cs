@@ -35,6 +35,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         public string HowJiraAnswered { get; internal set; } = string.Empty;
 
+        /// <summary>The status code of the answer behind <see cref="HowJiraAnswered"/>; null when there was none.</summary>
+        public HttpStatusCode? AnsweredWithStatus { get; internal set; }
+
         /// <summary>
         /// Nothing in the configuration narrows what to fetch - no types, no states, no query of the
         /// operator's - so the JQL comes out saying nothing at all. Jira answers an empty query with either

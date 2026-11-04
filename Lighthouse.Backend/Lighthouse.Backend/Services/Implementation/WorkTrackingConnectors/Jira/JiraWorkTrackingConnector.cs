@@ -767,13 +767,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return boardInformation;
         }
 
-        private JiraReadException ThePartOfTheBoardCannotBeRead(string boardPart, JiraReadException refused)
+        private static JiraReadException TheBoardFailureFor(JiraReadException refused)
         {
-            var answer = refused.HowJiraAnswered.Length == 0 || refused.HowJiraAnswered.StartsWith('2')
+            var answer = refused.AnsweredWithStatus is null or HttpStatusCode.OK
                 ? "an answer Lighthouse could not read"
                 : refused.HowJiraAnswered.Replace(" (", " ", StringComparison.Ordinal).TrimEnd(')');
-
-            logger.LogError(refused, "Jira did not hand over the {BoardPart} of the board: {Answer}", boardPart, answer);
 
             return JiraReadException.BoardUnreadable(answer, refused.Verdict.TechnicalDetails ?? string.Empty);
         }
@@ -811,7 +809,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             catch (JiraReadException refused)
             {
-                throw ThePartOfTheBoardCannotBeRead("status list", refused);
+                throw TheBoardFailureFor(refused);
             }
 
             foreach (var missingId in missingIds)
@@ -911,7 +909,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             }
             catch (JiraReadException refused)
             {
-                throw ThePartOfTheBoardCannotBeRead("work item type list", refused);
+                throw TheBoardFailureFor(refused);
             }
 
             foreach (var missingId in missingIds)
@@ -2615,6 +2613,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 var refused = refusal(readFor, response.StatusCode, body);
                 refused.HowJiraAnswered = $"{(int)response.StatusCode} ({response.ReasonPhrase})";
+                refused.AnsweredWithStatus = response.StatusCode;
                 logger.LogError("{Detail}", refused.Verdict.TechnicalDetails);
                 throw refused;
             }

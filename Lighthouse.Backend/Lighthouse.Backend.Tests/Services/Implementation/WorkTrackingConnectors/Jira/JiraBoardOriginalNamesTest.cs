@@ -278,12 +278,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
-        [TestCase(HttpStatusCode.Forbidden, "[]", "403 Forbidden")]
-        [TestCase(HttpStatusCode.ServiceUnavailable, "<html>Service Unavailable</html>", "503 Service Unavailable")]
-        [TestCase(HttpStatusCode.OK, "[]", "an answer Lighthouse could not read")]
-        [TestCase(HttpStatusCode.OK, "<html>Sign in</html>", "an answer Lighthouse could not read")]
+        [TestCase(HttpStatusCode.Forbidden, "[]", "403 Forbidden", "403 Forbidden")]
+        [TestCase(HttpStatusCode.ServiceUnavailable, "<html>Service Unavailable</html>", "503 Service Unavailable", "503 ServiceUnavailable")]
+        [TestCase(HttpStatusCode.OK, "[]", "an answer Lighthouse could not read", "200 OK")]
+        [TestCase(HttpStatusCode.OK, "<html>Sign in</html>", "an answer Lighthouse could not read", "200 OK")]
         public async Task A_work_item_type_list_that_cannot_be_read_fails_the_board_with_the_answer(
-            HttpStatusCode answer, string body, string answerInTheSentence)
+            HttpStatusCode answer, string body, string answerInTheSentence, string answerInTheLog)
         {
             var log = new RecordingLogger<JiraWorkTrackingConnector>();
 
@@ -297,7 +297,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence(answerInTheSentence)));
-                Assert.That(log.Written(LogLevel.Error).Any(line => line.Contains(answerInTheSentence, StringComparison.Ordinal)), Is.True);
+                Assert.That(log.Written(LogLevel.Error), Has.Count.EqualTo(1));
+                Assert.That(log.Written(LogLevel.Error)[0], Does.Contain(answerInTheLog));
             }
         }
 
@@ -320,7 +321,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(failure!.Verdict.Message, Is.EqualTo(TheBoardSentence("403 Forbidden")));
-                Assert.That(log.Written(LogLevel.Error).Any(line => line.Contains("403 Forbidden", StringComparison.Ordinal)), Is.True);
+                Assert.That(log.Written(LogLevel.Error), Has.Count.EqualTo(1));
+                Assert.That(log.Written(LogLevel.Error)[0], Does.Contain("403 Forbidden"));
             }
         }
 
