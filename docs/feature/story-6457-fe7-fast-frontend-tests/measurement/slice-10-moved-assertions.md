@@ -233,7 +233,13 @@ whatever the blockers said. With the blockers call replaced by `[]` they still p
 No `expect(` line was removed or added in either page file (counts above), so the table is by test id. The seven removed
 ids each ran the loop body (a wait for loading, a click, a sleep, `expect(mockSaveProjectSettings).not.toHaveBeenCalled()`)
 and checked one rule of `portfolioAutoSaveBlockers`; as written they could not fail (see the finding), so their effective
-assertion was nothing. The rule is now asserted on the function, which can fail.
+assertion was nothing. The rule is now asserted on the function, which can fail. The component reaches every rule through
+one call with the whole settings object, so no field has its own wiring to lose: the kept Name and Work Item Query loop tests
+and the four "holds back autosave" tests prove that call.
+
+Adversarial review (2026-11-04): approved, no blocker or major. This line closes its one recommended change. Three minors
+stay as they are: the `as number` cast that lets the null-history case through, the `pastTheAutosaveDelay` helper copied
+between page test files as in slice 4, and the reworded reason beside the unchanged 20 s timeout in the queryCommit file.
 
 | Old test (file :: test) | Assertion text | New location (file) | New test (name) |
 |---|---|---|---|
