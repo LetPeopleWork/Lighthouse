@@ -159,3 +159,51 @@ No row: nothing is removed or shrunk at declaration. Rows are added here before 
 Entries 12 (`ThirdPartyPackagesSection.paging`, 3.18 s) and 13 (`RefinementView.paging`, 6.40 s) ran over their
 ceilings under load, so a local `pnpm test` on a busy machine can fail on them. The maintainer's decision on local
 load (2026-11-03) is to leave the guard enforcing and to re-run when the only failures are these load-only ones.
+
+## Allow-list review from CI timings (13-02, 2026-11-04)
+
+13-03 (the local quiet run) was dropped by the maintainer, so the CI timings of the final code decide. Source: the
+`test-timings-frontend` artifacts of main runs 41812134355 and 41819715132, both passed. They hold one row per test
+(file, name, duration in ms, outcome), so per-test seconds can be read. Both runs are in the slow group: the Vitest
+Duration was 1,109 s and 1,133 s, the CSV test sums 1,597 s and 1,634 s (9,367 and 9,378 rows, all Passed). These are
+coverage runs, so a reading is judged at limit x 3 (unlisted limit 6 s, 6.31 s for a first test in a file).
+
+Rule used: delete an entry only if both CI readings are under 4.5 s and the loaded local reading in the table above
+is under 1.5 s. Otherwise it stays.
+
+| # | Entry (test) | CI run 41812134355 (s) | CI run 41819715132 (s) | Local, loaded (s) | Decision | Reason |
+|---|---|---|---|---|---|---|
+| 1 | DataGridBase.paging, never scrolls for a page change ... | 4.19 | 4.44 | 1.18 | Deleted | Both under 4.5, local under 1.5 |
+| 2 | ModifyProjectSettings.queryCommit, saves the edited query once | 2.30 | 2.36 | 0.81 | Deleted | Same |
+| 3 | ModifyTeamSettings.queryCommit, saves a changed name after the debounce | 3.25 | 3.14 | 1.26 | Deleted | Same |
+| 4 | ModifyTeamSettings.queryCommit, saves the edited query once | 2.40 | 2.36 | 0.78 | Deleted | Same |
+| 5 | ModifyTeamSettings.queryCommit, saves the latest edit ... | 3.08 | 3.20 | 0.99 | Deleted | Same |
+| 6 | ModifyTeamSettings.refinementNeed, keeps an edited Ready rule | 3.04 | 3.50 | 1.21 | Deleted | Same |
+| 7 | ModifyTeamSettings.refinementNeed, saves a changed Ready rule | 2.40 | 2.96 | 1.03 | Deleted | Same |
+| 8 | WorkItemsDialog.paging, Priya on the second page of 243 | 4.83 | 4.99 | 1.55 | Stays, ceiling 3.5 kept | CI over 4.5 and local over 1.5; renders 243 Work Items |
+| 9 | DashboardHeader, opens popover | 3.08 | 3.19 | 1.20 | Deleted | Both under 4.5, local under 1.5 |
+| 10 | ReportsPage.removal, removes three trial reports | 3.00 | 2.54 | 0.86 | Deleted | Same |
+| 11 | ReportsPage.usageData, Retry and Leave it out | 3.32 | 3.65 | 0.79 | Deleted | Same |
+| 12 | ThirdPartyPackagesSection.paging, keeps sort and column filter | 3.16 | 3.54 | 3.18 | Stays, ceiling 2.5 kept | Local reading 3.18 is over 1.5 |
+| 13 | RefinementView.paging, Jonas pages to GR-0131 | 8.74 | 8.63 | 6.40 | Stays, ceiling 5.0 kept | CI and local both high; one render of 143 Work Items |
+| R1 | ModifyTeamSettings.readiness, back on at its last allowed threshold | 3.74 | 3.89 | n/a | No entry | Both CI readings under 4.5 |
+| R2 | ModifyTeamSettings.readiness, back on at the threshold it was changed to | 2.64 | 2.78 | n/a | No entry | Both CI readings under 4.5 |
+
+Ceilings: none raised, none lowered. A lower ceiling backed by CI would be 2.0 for entry 8 (4.99 / 3), 1.5 for entry 12
+(3.54 / 3) and 3.0 for entry 13 (8.74 / 3), but the loaded local readings (1.55, 3.18, 6.40) sit at or over those
+values, so lowering would only fail local runs on a busy machine. The quiet local figure that would justify them was
+the dropped step 13-03.
+
+Allow-list length: 13 before, 3 after (the seed step set it at 30). Budget B stays 2 s: the D4 rule needs every test
+over its threshold in the calibration samples to sit in a file a rewrite slice names, and the three remaining entries
+already are the tail; moving to 1 s would put the many 1 to 2 s tests unlisted.
+
+Unlisted offenders and stale findings: see the run result recorded in `feature-delta.md` Phase 13.
+
+Preserved ids: `slice-12-ids-after.txt` is saved from a run of the same 11 files and compared with the before list;
+see the line below.
+
+Result of the final code (2026-11-04): `LIGHTHOUSE_TIME_BUDGET=warn pnpm test` passed 607 files and 9,378 tests with no
+stale finding. Five unlisted offenders showed on this shared machine, each only just over the 2 s limit (2.02 to 2.68 s,
+loaded, local); their CI readings are all under 4.5 s, so none gets an entry. `slice-12-ids-after.txt` (161 ids, run of
+the same 11 files) is identical to `slice-12-ids-before.txt`: no id changed, none missing.
