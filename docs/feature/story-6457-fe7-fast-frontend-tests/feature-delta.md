@@ -815,6 +815,7 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
   and runner include checked first; survivors killed with a follow-up test commit or listed, no hours of reruns.
 - **13-05.** CI after-measurement by job result, Duration median from job logs (KPI 16), KPI 14 zero unlisted offenders.
 - **13-06.** Closing report, T4 hand-off (frontend half leaves T4 at its pick-up), ARCHITECTURE.md/ADR-270 "no concept added".
+- *2026-11-04, T4 (13-04): Stryker over the 15 files this Story moved logic out of (804 mutants, direct tests only) scored 95.27 % at the first run and 97.76 % after one round of follow-up tests; every file is at or above 80 %, and the 18 survivors left are equivalent mutants, each justified in `mutation/results.md`. Page tests were left out of the runner (they crashed it), so the figure is a lower bound.*
 - *2026-11-04: the sweep declared no rewrites (13-01), so 13-02 is the allow-list review, done after 13-03 or from CI timings. Agreed order of 2026-11-04: Stryker runs alongside other work at concurrency 2; 13-03 waits for a quiet window and may be replaced by CI.*
 
 ### Roadmap build notes (contradictions found while reading the inputs)
