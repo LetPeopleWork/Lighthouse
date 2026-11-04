@@ -188,8 +188,8 @@ jobs:
         name: sonar-report-backend
         path: .sonarqube/out/.sonar/report-task.txt
 
-    # Warn only until the backend budget has held on post-push main runs without a warning. The limits are
-    # in coverage-run seconds, so they are looser on a plain run until they are measured on one.
+    # Warn only until the backend budget has held on post-push main runs without a warning. The limits were
+    # measured on runs that collected coverage, which are slower, so they are looser on today's plain run.
     - name: Check test-time budget
       run: |
         python3 --version

@@ -57,8 +57,8 @@ jobs:
           name: sonar-report-frontend
           path: ./Lighthouse.Frontend/.scannerwork/report-task.txt
 
-      # A test file over its time budget fails the build. The limits are in coverage-run seconds and
-      # are looser on a plain run until they are measured on one.
+      # A test file over its time budget fails the build. The limits were measured on runs that collected
+      # coverage, which are slower, so they are looser on today's plain run until they are measured again.
       # To report it as a warning instead, set the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY
       # to true; empty, unset or false enforces. Any other value fails this step.
       - name: Check test-time budget
