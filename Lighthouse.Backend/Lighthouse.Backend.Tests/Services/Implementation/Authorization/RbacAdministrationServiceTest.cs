@@ -3584,6 +3584,59 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
             }
         }
 
+        [Test]
+        public async Task IsRestrictedApiKeyAsync_CallerHasNoApiKeyClaim_IsNotRestricted()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            await AddAScopeRowForApiKey(context, 77);
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var isRestricted = await subject.IsRestrictedApiKeyAsync(BuildPrincipal(new Claim("sub", "auth0|caller")));
+
+            Assert.That(isRestricted, Is.False);
+        }
+
+        [Test]
+        public async Task IsRestrictedApiKeyAsync_KeyHasNoScopeRows_IsNotRestricted()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            await AddAScopeRowForApiKey(context, 78);
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var isRestricted = await subject.IsRestrictedApiKeyAsync(AnApiKeyCaller(77));
+
+            Assert.That(isRestricted, Is.False);
+        }
+
+        [Test]
+        public async Task IsRestrictedApiKeyAsync_KeyHasScopeRows_IsRestricted()
+        {
+            using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
+            await AddAScopeRowForApiKey(context, 77);
+            var subject = CreateSubject(context, emergencySubjects: []);
+
+            var isRestricted = await subject.IsRestrictedApiKeyAsync(AnApiKeyCaller(77));
+
+            Assert.That(isRestricted, Is.True);
+        }
+
+        private static ClaimsPrincipal AnApiKeyCaller(int apiKeyId)
+            => BuildPrincipal(
+                new Claim("sub", "auth0|caller"),
+                new Claim(ApiKeyPrincipalFactory.ApiKeyIdClaimType, apiKeyId.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+
+        private static async Task AddAScopeRowForApiKey(LighthouseAppContext context, int apiKeyId)
+        {
+            context.ApiKeyPermissions.Add(new ApiKeyPermission
+            {
+                ApiKeyId = apiKeyId,
+                Role = UserRole.Viewer,
+                ScopeType = PermissionScopeType.Team,
+                ScopeId = 5,
+            });
+            await context.SaveChangesAsync();
+        }
+
         private ClaimsPrincipal ACallerBesideASystemAdmin(LighthouseAppContext context, params Claim[] extraClaims)
         {
             context.UserProfiles.Add(new UserProfile { Id = 1, Subject = "auth0|system-admin", SubjectClaimType = "sub" });

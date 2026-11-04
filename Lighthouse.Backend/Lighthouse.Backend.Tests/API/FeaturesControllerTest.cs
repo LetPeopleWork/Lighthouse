@@ -519,6 +519,23 @@ namespace Lighthouse.Backend.Tests.API
             featureRepositoryMock.Verify(x => x.GetById(target.Id), Times.Never);
         }
 
+        [Test]
+        public async Task MoveFeature_ToTheBottomWithNoTarget_PlacesTheFeatureWithoutLookingUpATarget()
+        {
+            var moved = AFeatureInPortfolio(101, 1);
+            features.Add(moved);
+            featureRankingServiceMock
+                .Setup(x => x.PlaceAsync(moved.Id, null, true, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(FeatureMovePlacement.Placed);
+
+            var response = await CreateSubject().MoveFeature(moved.Id, JsonDocument.Parse("{\"beforeFeatureId\":null}").RootElement);
+
+            Assert.That(response, Is.InstanceOf<OkResult>());
+            featureRankingServiceMock.Verify(x => x.PlaceAsync(moved.Id, null, true, It.IsAny<CancellationToken>()), Times.Once);
+            featureRepositoryMock.Verify(x => x.GetById(moved.Id), Times.Once);
+            featureRepositoryMock.Verify(x => x.GetById(It.Is<int>(id => id != moved.Id)), Times.Never);
+        }
+
         private void TheCallerCannotRead(int portfolioId)
         {
             rbacAdministrationServiceMock
