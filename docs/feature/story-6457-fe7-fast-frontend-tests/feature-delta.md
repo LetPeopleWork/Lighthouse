@@ -793,8 +793,11 @@ payoff; slice 10 (`11-*`) follows slice 4 (`05-02`); slice 11 (`12-*`) follows t
 - **10 (slice 9).** No extraction needed (`contextGridLayout` was already exported): 65 of the 108 context cases moved to 88
   direct tests of that function, 43 stay as renders; each call-site setting proven by mutation. Measured (indicative, not
   quiet, 5 alternating pairs): summed test seconds of the touched files -63.3 %; allow-list 13 to 13.
-- **11 (slice 10).** Reuses slice 4's helpers; three 500 ms sleeps (`ModifyProjectSettings.test.tsx` lines 590, 617, 722 at
-  the baseline) to a fake clock.
+- **11 (slice 10).** Reuses slice 4's helpers; every real wait in the two Project page files (three 500 ms sleeps and eleven
+  debounce waits) to a fake clock; `portfolioAutoSaveBlockers` extracted with 24 direct tests; seven blocker page tests
+  removed with rows, the two that stay now make a real edit (the old edit changed nothing, so they could not fail). Measured
+  (indicative, not quiet, 5 alternating pairs): summed test seconds of the touched files -49.0 % (pair 5 ran at load 8 to 9);
+  allow-list 13 to 13 (the one entry stays).
 - **12 (slice 11).** Profile first (the budget file says "not profiled yet"); extractions named after profiling; loading and
   failure looks stay pinned by named tests (existing `BaseMetricsView.loading` tests keep their role).
 

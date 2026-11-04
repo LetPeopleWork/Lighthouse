@@ -153,21 +153,107 @@ Line coverage (89.07) and branch coverage (76.19) must not be lower at close. Th
 `ModifyProjectSettings.tsx` are 108, 278-354 and 433 (the callbacks of the state-mapping, wait-state, cycle-time,
 feature-size, ownership and estimation components passed as props, and the reload action).
 
-## Delta (fill at close)
+## Delta
+
+Commits (pre-slice `6a789ebef`): `02995973f` extraction (no test file changed; the 126 tests of the directory passed
+unmodified at it), `fb9c8c540` test rewrite; this report is the close-report commit. Files changed since the pre-slice
+commit (`git diff --name-only 6a789ebef`, apart from this report and `feature-delta.md`): `portfolioAutoSaveBlockers.ts`
+(new), `ModifyProjectSettings.tsx`, `portfolioAutoSaveBlockers.test.ts` (new), `ModifyProjectSettings.test.tsx`,
+`ModifyProjectSettings.queryCommit.test.tsx`. `slowTests.ts`, `waitPastTheDebounce.ts`, `setupTests.ts`,
+`biome.json` and every other production file are untouched.
+
+RED: skipped for the extraction (behaviour-free, the existing tests are the net). The extraction differs from "verbatim"
+in one place: the file's cognitive complexity came to 16 (limit 15; in the component file the limit is switched off by an
+override in `biome.json`, which names the component file only), so the last block (the system and query check) became a
+private function of the new file, `connectionBlockers`. Same conditions, same sentences, same order.
 
 | Measure | Before | After |
 |---|---|---|
-| Test count (three files) | 57 | |
-| Preserved ids missing | n/a | |
-| Line coverage, ProjectSettings directory | 89.07 | |
-| Branch coverage, ProjectSettings directory | 76.19 | |
-| File time, three files (indicative, not quiet; summed test seconds, mean of 5 alternating pairs) | | |
-| Allow-list entries removed / lowered | 1 | |
+| Test count (three files; four with the new file) | 57 | 50 (+ 24 in `portfolioAutoSaveBlockers.test.ts` = 74) |
+| Preserved ids missing | n/a | 7, all listed in the table below; 50 unchanged |
+| `expect(` removed / added, `ModifyProjectSettings.test.tsx` | n/a | 0 / 0 (the seven removed ids shared one loop body) |
+| `expect(` removed / added, `ModifyProjectSettings.queryCommit.test.tsx` | n/a | 0 / 0 |
+| Line coverage, ProjectSettings directory | 89.07 | 90.16 |
+| Branch coverage, ProjectSettings directory | 76.19 | 76.87 |
+| `ModifyProjectSettings.tsx` lines / branches | 81.35 / 74.52 | 70.58 / 66.21 (the covered function left the file, so the share of uncovered prop callbacks rises; uncovered lines are now 215-291 and 370; the moved function is covered in its own file, judged by the directory total) |
+| File time, three files (indicative, not quiet; summed test seconds, 5 alternating pairs) | 141.58 s | 72.27 s (-49.0 %) |
+| Allow-list length (`slowTests.ts`) | 13 | 13 |
+| Allow-list entries removed / lowered | 1 | 0 / 0 |
 
-## Moved assertions
+Time: five alternating before/after pairs back to back, `LIGHTHOUSE_TEST_WORKERS=2` both sides, only the touched test
+files (before = the three files from a temporary worktree of `6a789ebef`; after = the same three plus the new file), the
+sum of per-test durations from the JSON report. Indicative (not quiet): load average 4 to 5 for pairs 1 to 4, 8 to 9 for
+pair 5.
 
-Filled at close, one row per removed or shrunk `expect(` against
-`git diff -U0 6a789ebef -- <file> | grep -c '^-.*expect('`.
+| Pair | Before (s, 57 tests) | After (s, 74 tests) |
+|---|---|---|
+| 1 | 25.14 | 12.12 |
+| 2 | 24.59 | 12.88 |
+| 3 | 26.23 | 12.41 |
+| 4 | 24.58 | 17.44 |
+| 5 | 41.04 | 17.42 |
+| Sum | 141.58 | 72.27 |
+
+The allow-list entry for the query field stays: the test still renders the whole form and types a query. Its wait is now
+a fake clock, and it ran in under a second in the not-quiet runs, but the declaration says only a quiet run may delete it.
+
+Coverage: directory run as in the "Coverage (before)" section, 9 files, 143 tests passed. The component file's own
+percentages fall because its covered function moved out; the directory total, which is the judged figure, rises.
+
+### Wiring proven by mutation
+
+Production code changed temporarily (a line altered, the touched test files run: the two page files and the new file),
+then restored with `git checkout`; `git status` after each batch showed only the test files. A "saves nothing" test is
+credited with a wait only if the mutation lets a save start and the test fails at its final assertion.
+
+| Wait (file:line before) | Mutation | Failing surviving test |
+|---|---|---|
+| `.test.tsx:585` | `canSave` forced to `true` | "suppresses auto-save when portfolio data updates are not permitted" (and the next one) |
+| `.test.tsx:612` | `canSave` ignores `disableSave` | "a caller that switches saving off says why, whatever the license allows" |
+| `.test.tsx:717` (Name, Work Item Query) | the blockers call replaced by `[]` | "does not auto-save when Name is invalid", "... Work Item Query is invalid" (plus the five blocker-warning tests) |
+| same | `isDefault` passed as `true` | "does not auto-save when Work Item Query is invalid" only |
+| same | the name rule disabled in the new file | "does not auto-save when Name is invalid" and three function tests |
+| same | the autosave gate ignores the blockers (`!formValid` removed in `useModifySettings.ts`) | both loop tests |
+| `.test.tsx:945, 1021, 1055, 1091` | the same `!formValid` mutation | "holds back autosave while a new mapping is named after a Doing state ...", "... a new mapping's state sits in two categories", "... a mapping's name hides one of its states in To Do", "... two complete mappings share a source state" (the warning text is still shown under it, so each fails at the saved assertion after the wait) |
+| call site | the mapping rule removed from the new file | the same four tests and "names a state mapping that is named after a state it does not group" |
+| call site | `system` passed as `null` | 12 tests (every save test) |
+| call site | `storedStateSettingsOf(stored)` replaced by `undefined` | "saves an unrelated edit although a stored mapping is named after a state another mapping groups" |
+| `queryCommit:122, 166, 194` | the unchanged-value guard removed in `GeneralSettingsComponent.tsx` and in `useModifySettings.ts` together (either one alone is not enough: each covers for the other) | "saves nothing when the query is focused and left without a change", "... edited back to what was saved ...", "saves nothing when the page is left without an edit" |
+| `queryCommit:132, 142` | the query committed on every keystroke | "saves nothing while the query is being typed and the field is still focused", "saves the edited query once, after the field is left" |
+| `queryCommit:155` | a second save sent 50 ms after the first | "saves the edited query once, after the field is left" |
+| `queryCommit:178` | the unsent-save flush on unmount removed | "saves the edited query when the page is left straight after the field" |
+
+A finding the mutation exposed in the old tests: the nine "does not auto-save when X is invalid" cases clicked "Remove
+ToDo", which removes a state that is not there, so the settings did not change and the autosave would not have fired
+whatever the blockers said. With the blockers call replaced by `[]` they still passed. The two cases that stay click
+"Add ToDo" instead, a real edit that is no remedy for a missing name or query; the mutations above fail them.
+
+### Moved assertions
+
+No `expect(` line was removed or added in either page file (counts above), so the table is by test id. The seven removed
+ids each ran the loop body (a wait for loading, a click, a sleep, `expect(mockSaveProjectSettings).not.toHaveBeenCalled()`)
+and checked one rule of `portfolioAutoSaveBlockers`; as written they could not fail (see the finding), so their effective
+assertion was nothing. The rule is now asserted on the function, which can fail.
 
 | Old test (file :: test) | Assertion text | New location (file) | New test (name) |
 |---|---|---|---|
+| `ModifyProjectSettings.test.tsx` :: does not auto-save when Default Amount of Work Items is invalid | `mockSaveProjectSettings` not called | `portfolioAutoSaveBlockers.test.ts` | names no default number of work items |
+| same :: ... Work Item Types is invalid | same | same | names no work item type; does not ask for work item types when the system does not need them |
+| same :: ... To Do States is invalid | same | same | names no To Do state |
+| same :: ... Doing States is invalid | same | same | names no Doing state |
+| same :: ... Done States is invalid | same | same | names no Done state |
+| same :: ... Missing Historical Days is invalid | same | same | a size percentile in use is named for a history that was never set / a history of 29 days; accepted with exactly 30 |
+| same :: ... Missing Default Work Item Percentile is invalid | same | same | a size percentile in use is named for a percentile of 0; accepted just above 0; not asked for while the default number is fixed |
+
+Kept as wiring (ids unchanged, each proven by a mutation above): "does not auto-save when Name is invalid", "does not
+auto-save when Work Item Query is invalid", "names the To Do States field when no To Do state is configured" and the four
+"holds back autosave" tests, "saves an unrelated edit although a stored mapping ...".
+
+### Deviations and what is not proven
+
+- The declaration said "the function body moves verbatim"; one block became a private function (complexity limit, above).
+- The two kept loop cases changed their click from "Remove ToDo" to "Add ToDo" (above), a change of the test body made so
+  that the test can fail. Their ids are unchanged.
+- The full `pnpm test` run (6 workers, load 8 to 11) showed 2 failures in files this slice does not touch
+  (`BulkReportWizard.test.tsx`, `ReportsPage.combinedPdf.test.tsx`) and 1 unhandled error; both files pass when run alone
+  (58 tests). Not run again in full.
