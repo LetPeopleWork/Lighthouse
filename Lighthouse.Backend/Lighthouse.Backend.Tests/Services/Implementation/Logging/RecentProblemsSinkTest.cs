@@ -2,6 +2,9 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Implementation.Logging;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Serilog.Events;
 using Serilog.Parsing;
 
@@ -43,6 +46,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Logging
         /// trimming does not know that, and the answer it gives has to be a word rather than a blank.
         /// </summary>
         private const string ANamespaceWithNothingAfterIt = "Lighthouse.Backend.Services.";
+
+        private const string DiskFullSqlState = "53100";
+
+        private const string OutOfMemorySqlState = "53200";
+
+        private const int SqliteFullErrorCode = 13;
+
+        private const int SqliteBusyErrorCode = 5;
+
+        private const string PostgresDiskFullSentence =
+            "Free disk space on the PostgreSQL volume: the database has run out of space.";
 
         private static readonly MessageTemplateParser TemplateParser = new();
 
@@ -236,6 +250,79 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Logging
             {
                 sink.Emit(AProblemSaying($"problem {number}"));
             }
+        }
+
+        [Test]
+        public void Emit_PostgresRanOutOfDiskSpace_NamesTheCauseAndTheFixInsteadOfTheDriverText()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+
+            sink.Emit(AProblemSaying(AComplaint, thrown: APostgresFailure(DiskFullSqlState)));
+
+            Assert.That(TheOnlyProblemIn(sink).Message, Is.EqualTo(PostgresDiskFullSentence));
+        }
+
+        // EF hands a failed save over as its own exception, so the driver's one is rarely the outermost.
+        [Test]
+        public void Emit_PostgresRanOutOfDiskSpaceBehindAWrappingException_StillNamesTheCause()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+            var wrapped = new InvalidOperationException(
+                "outer", new DbUpdateException("inner", APostgresFailure(DiskFullSqlState)));
+
+            sink.Emit(AProblemSaying(AComplaint, thrown: wrapped));
+
+            Assert.That(TheOnlyProblemIn(sink).Message, Is.EqualTo(PostgresDiskFullSentence));
+        }
+
+        [Test]
+        public void Emit_SqliteRanOutOfDiskSpace_NamesTheCauseAndTheFixInsteadOfTheDriverText()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+
+            sink.Emit(AProblemSaying(AComplaint, thrown: new SqliteException("database or disk is full", SqliteFullErrorCode)));
+
+            Assert.That(
+                TheOnlyProblemIn(sink).Message,
+                Is.EqualTo("Free disk space where Lighthouse keeps its data: the database is full."));
+        }
+
+        [Test]
+        public void Emit_SqliteRanOutOfDiskSpaceBehindAWrappingException_StillNamesTheCause()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+            var wrapped = new DbUpdateException("outer", new SqliteException("database or disk is full", SqliteFullErrorCode));
+
+            sink.Emit(AProblemSaying(AComplaint, thrown: wrapped));
+
+            Assert.That(
+                TheOnlyProblemIn(sink).Message,
+                Is.EqualTo("Free disk space where Lighthouse keeps its data: the database is full."));
+        }
+
+        [Test]
+        public void Emit_ADatabaseFailureOtherThanAFullDisk_KeepsTheMessageItWasLoggedWith()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+
+            sink.Emit(AProblemSaying(AComplaint, thrown: APostgresFailure(OutOfMemorySqlState)));
+
+            Assert.That(TheOnlyProblemIn(sink).Message, Is.EqualTo(AComplaint));
+        }
+
+        [Test]
+        public void Emit_ASqliteFailureOtherThanAFullDisk_KeepsTheMessageItWasLoggedWith()
+        {
+            var sink = new RecentProblemsSink(RoomForThree);
+
+            sink.Emit(AProblemSaying(AComplaint, thrown: new SqliteException("database is locked", SqliteBusyErrorCode)));
+
+            Assert.That(TheOnlyProblemIn(sink).Message, Is.EqualTo(AComplaint));
+        }
+
+        private static PostgresException APostgresFailure(string sqlState)
+        {
+            return new PostgresException("could not write to file", "ERROR", "ERROR", sqlState);
         }
 
         private static RecentProblem TheOnlyProblemIn(RecentProblemsSink sink)

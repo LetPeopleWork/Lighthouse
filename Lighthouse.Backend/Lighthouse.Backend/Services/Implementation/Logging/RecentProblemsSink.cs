@@ -1,6 +1,8 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Logging;
 using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.Data.Sqlite;
+using Npgsql;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Parsing;
@@ -38,6 +40,14 @@ namespace Lighthouse.Backend.Services.Implementation.Logging
         private const string UpdateTypeProperty = "UpdateType";
 
         private const string IdProperty = "Id";
+
+        private const string PostgresDiskFull =
+            "Free disk space on the PostgreSQL volume: the database has run out of space.";
+
+        private const string SqliteDiskFull =
+            "Free disk space where Lighthouse keeps its data: the database is full.";
+
+        private const int SqliteFullErrorCode = 13;
 
         private readonly Queue<RecentProblem> retained = new();
 
@@ -85,11 +95,29 @@ namespace Lighthouse.Backend.Services.Implementation.Logging
                 logEvent.Timestamp,
                 logEvent.Level.ToString(),
                 SourceOf(logEvent),
-                logEvent.RenderMessage(CultureInfo.InvariantCulture),
+                DiskFullSentenceFor(logEvent.Exception) ?? logEvent.RenderMessage(CultureInfo.InvariantCulture),
                 logEvent.Exception?.GetType().Name)
             {
                 Refresh = RefreshOf(logEvent),
             };
+
+        private static string? DiskFullSentenceFor(Exception? thrown)
+        {
+            for (var exception = thrown; exception is not null; exception = exception.InnerException)
+            {
+                if (exception is PostgresException { SqlState: PostgresErrorCodes.DiskFull })
+                {
+                    return PostgresDiskFull;
+                }
+
+                if (exception is SqliteException { SqliteErrorCode: SqliteFullErrorCode })
+                {
+                    return SqliteDiskFull;
+                }
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// What the event was a refresh of, for the few events that are about one. Only the reference is
