@@ -25,6 +25,8 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
     /// </summary>
     public static class ParentSourceSelector
     {
+        private delegate (string Key, bool NeedsStoredFeatures) LinkJudgement(ParentResolution links);
+
         /// <summary>
         /// Whether this Team or Portfolio still reads the parent the tracker reports for itself. Asked by
         /// anything that has to behave differently once the override is set - what to fetch as well as
@@ -62,15 +64,63 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
             return workItem.GetAdditionalFieldValue(owner.ParentOverrideAdditionalFieldDefinitionId) ?? string.Empty;
         }
 
-        // SCAFFOLD: Story 6501. The members below throw until the ordering rule is built.
+        /// <summary>
+        /// The final answer, for whoever holds the stored Features: the first position that yields a parent
+        /// wins. A field or the tracker's own parent yields whenever it has a value, even one naming no
+        /// Feature. Links yield only what placing them decides, so links that fail the Feature test hand over
+        /// to the next position.
+        /// </summary>
         public static ParentChoice Choose(ParentReadings readings, StoredFeatures storedFeatures, ParentNarrowing narrowing)
-            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.Choose is not built yet.");
+            => TheFirstThatYields(readings, links => (links.Place(storedFeatures, narrowing).Key, false));
 
+        /// <summary>
+        /// The same walk for a connector, which cannot see the stored Features. It stops at the first links that
+        /// need them and says so. The key it returns then is only the best a caller with nothing further to
+        /// ask could use: a lone candidate at face value, or nothing when there are several.
+        /// </summary>
         public static ParentChoice ChooseProvisionally(ParentReadings readings, ParentNarrowing narrowing)
-            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.ChooseProvisionally is not built yet.");
+            => TheFirstThatYields(readings, links => (links.Key, NeedAFeatureTest(links, narrowing)));
 
+        private static bool NeedAFeatureTest(ParentResolution links, ParentNarrowing narrowing)
+            => links.IsAmbiguous || (links.IsResolved && narrowing == ParentNarrowing.Narrow);
+
+        private static ParentChoice TheFirstThatYields(ParentReadings readings, LinkJudgement judgeLinks)
+            => readings.Positions
+                .Select((position, index) => WhatOnePositionYields(position.Reading, index, judgeLinks))
+                .FirstOrDefault(choice => choice.NeedsStoredFeatures || !string.IsNullOrEmpty(choice.Key))
+                ?? ParentChoice.NoParent;
+
+        private static ParentChoice WhatOnePositionYields(ParentReading reading, int position, LinkJudgement judgeLinks)
+        {
+            var (key, needsStoredFeatures) = reading.Kind switch
+            {
+                ParentReadingKind.FieldValue or ParentReadingKind.TrackersOwn => (reading.Key, false),
+                ParentReadingKind.LinkCandidates => judgeLinks(reading.Links),
+                _ => (string.Empty, false),
+            };
+
+            return new ParentChoice(key, position, needsStoredFeatures);
+        }
+
+        /// <summary>
+        /// Applies a choice to a record, and is the only thing that does. An empty key clears the parent, so a
+        /// provisional key that later fails the Feature test is taken back. A link type has no value of its own
+        /// to show, so the winning link entry's field shows the key and every other link entry's field shows
+        /// nothing: a key that was not acted on would send somebody looking for a parent that was never stored.
+        /// A field entry's value is the tracker's and stays as it is.
+        /// </summary>
         public static void HangUnder(WorkItemBase record, ParentReadings readings, ParentChoice choice)
-            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.HangUnder(choice) is not built yet.");
+        {
+            record.ParentReferenceId = choice.Key;
+
+            for (var position = 0; position < readings.Positions.Count; position++)
+            {
+                if (readings.Positions[position] is { Reading.Kind: ParentReadingKind.LinkCandidates, Source.AdditionalFieldDefinitionId: { } field })
+                {
+                    record.AdditionalFieldValues[field] = position == choice.WinnerPosition ? choice.Key : string.Empty;
+                }
+            }
+        }
 
         /// <summary>
         /// Hangs a record under the key its links resolved to, and shows that key in the Additional Field that

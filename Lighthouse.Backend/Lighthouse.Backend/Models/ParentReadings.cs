@@ -10,7 +10,6 @@ namespace Lighthouse.Backend.Models
     }
 
     /// <summary>What a connector found at one position of a parent source list, before anything is decided.</summary>
-    // SCAFFOLD: Story 6501. A plain value so the acceptance tests can describe a record's readings.
     public sealed record ParentReading(ParentReadingKind Kind, string Key, ParentResolution Links)
     {
         public static ParentReading NoValue { get; } = new(ParentReadingKind.NoValue, string.Empty, default);

@@ -4,6 +4,7 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -494,6 +495,47 @@ namespace Lighthouse.Backend.Tests.Architecture
                     "run seconds later, which is the disagreement having one decision exists to prevent.")
                 .Check(Architecture);
         }
+
+        /// <summary>
+        /// Where a parent comes from is a rule about the order an owner listed, so it is the same for every
+        /// tracker. Connectors only read; if the rule reached back into one, a second tracker would have to
+        /// copy it and the two would drift apart. Read from the compiled code, because a Release build drops
+        /// the references made inside async methods from what the ArchUnit model sees.
+        /// </summary>
+        [Test]
+        public void TheParentSourceSelector_ImportsNoConnector()
+        {
+            const string EverythingTheBackendWrote = @"^Lighthouse\.Backend($|\.)";
+
+            string[] theRuleAndItsValues =
+            [
+                typeof(ParentSourceSelector).FullName!,
+                typeof(ParentReadings).FullName!,
+                typeof(ParentReadingAt).FullName!,
+                typeof(ParentReading).FullName!,
+                typeof(ParentChoice).FullName!,
+            ];
+
+            using var module = IlDependencies.ReadModule(typeof(ParentSourceSelector).Assembly);
+
+            var offenders = IlDependencies
+                .DependentsIn(module, EverythingTheBackendWrote, ReachesAConnector)
+                .Where(dependent => theRuleAndItsValues.Contains(dependent.TypeName))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(IlDependencies.TypesIn(module, EverythingTheBackendWrote), Is.SupersetOf(theRuleAndItsValues),
+                    "A rule that names a type the build no longer has checks nothing.");
+                Assert.That(offenders, Is.Empty,
+                    "ParentSourceSelector and the values it works on decide for every tracker, so they cannot know " +
+                    "any one of them. What a tracker alone can read belongs in its connector, handed over as a " +
+                    "reading. Found: " + string.Join(", ", offenders.Select(offender => $"{offender.TypeName} -> {string.Join(", ", offender.Targets)}")));
+            }
+        }
+
+        private static bool ReachesAConnector(Mono.Cecil.TypeReference type)
+            => IlDependencies.ResidesInNamespaceMatching(type, ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern);
 
         /// <summary>
         /// Reading what a Feature waits on is free; letting it change a date is not. One file asks the

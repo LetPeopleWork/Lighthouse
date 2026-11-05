@@ -10,7 +10,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
     /// holds; a Portfolio does not, because the level above it is stored only once it has been read.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: enable one case at a time as the selector learns to read a list.")]
     public class ParentSourceSelectorOrderTest
     {
         private static readonly ParentSourceEntry OwnParent = ParentSourceEntry.TrackerParent;
@@ -121,11 +120,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
                 [At(ProgramRef, ParentReading.FieldValue("PAY-12")), At(CausedBy, LinksTo("PAY-7"))],
                 ParentNarrowing.Narrow, "PAY-12", false, 0);
 
-            yield return new("A Team's lone link is taken at face value, and the second pass must test it",
+            yield return new("A Team's lone link is taken at face value until the refresh has tested it against the stored Features",
                 [At(CausedBy, ParentReading.NoValue), At(ProgramRef, LinksTo("PAY-7")), At(Sponsor, ParentReading.FieldValue("PAY-12"))],
                 ParentNarrowing.Narrow, "PAY-7", true, 1);
 
-            yield return new("A Team's several link candidates name nothing yet, and the second pass must choose",
+            yield return new("A Team's several link candidates name nothing until the refresh has chosen among the stored Features",
                 [At(CausedBy, LinksTo("PAY-7", "PAY-8"))],
                 ParentNarrowing.Narrow, "", true, 0);
 
@@ -133,7 +132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
                 [At(CausedBy, LinksTo("PRG-2"))],
                 ParentNarrowing.DoNotNarrow, "PRG-2", false, 0);
 
-            yield return new("A Portfolio's several link candidates still need the second pass",
+            yield return new("A Portfolio's several link candidates still wait for the refresh to choose",
                 [At(CausedBy, LinksTo("PRG-2", "PRG-3"))],
                 ParentNarrowing.DoNotNarrow, "", true, 0);
 
