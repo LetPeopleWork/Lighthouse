@@ -10,8 +10,6 @@ namespace Lighthouse.Backend.Tests.Models
     /// it is wrapped for its owner, and an owner's fetch fingerprint moves with its list and only its list.
     /// Each is something a customer sees the effect of: a parent that goes missing after the wrap, and Teams
     /// that are re-read when they should not be.
-    ///
-    /// What is missing until the slice builds it: the copy constructor carrying the record's readings.
     /// </summary>
     [TestFixture]
     public class ParentSourcesOnTheRecordAndOwnerTest
@@ -20,11 +18,11 @@ namespace Lighthouse.Backend.Tests.Models
 
         /// <summary>
         /// Given a record carrying what each source of a list read, when it is wrapped as a Work Item of a Team and
-        /// as a Feature of a Portfolio, then the wrapped record carries the same readings, so the second pass still
-        /// knows where to look. A record wrapped without them would be placed as if nothing had been read.
+        /// as a Feature of a Portfolio, then the wrapped record carries the same readings, so the refresh can still
+        /// choose among them once it knows the stored Features. A record wrapped without them would be placed as if
+        /// nothing had been read.
         /// </summary>
         [Test]
-        [Ignore("Story 6501: needs the record carrying its readings across the wrap.")]
         public void The_readings_survive_being_wrapped_as_a_Work_Item_and_as_a_Feature()
         {
             var readings = ParentReadings.Of(new ParentReadingAt(

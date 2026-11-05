@@ -35,9 +35,12 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
         public static bool ReadsTheTrackersOwnParent(IWorkItemQueryOwner owner)
             => !owner.ParentOverrideAdditionalFieldDefinitionId.HasValue;
 
-        // SCAFFOLD: Story 6501. Throws until the ordering rule is built.
+        /// <summary>
+        /// Whether a list asks for the parent the tracker reports for itself to be read at all, wherever in
+        /// the list it stands.
+        /// </summary>
         public static bool ReadsTheTrackersOwnParent(ParentSources list)
-            => throw new NotImplementedException("SCAFFOLD: Story 6501, ParentSourceSelector.ReadsTheTrackersOwnParent(list) is not built yet.");
+            => list.Entries.Contains(ParentSourceEntry.TrackerParent);
 
         /// <summary>
         /// What one record hangs under, or nothing when the override yielded nothing - in which case the

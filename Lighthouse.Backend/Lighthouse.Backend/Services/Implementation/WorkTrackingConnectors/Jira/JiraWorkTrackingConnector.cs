@@ -325,12 +325,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
 
             var epicLinkFieldName = TheFieldTheInstanceHangsParentsOn(team, JiraFieldNames.EpicLinkFieldName);
+            var ownParentFieldName = TheFieldBehindTheListedOwnParent(team, JiraFieldNames.EpicLinkFieldName);
 
             var workItems = new List<WorkItem>();
 
             foreach (var issue in issues)
             {
-                var workItem = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences);
+                var workItem = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences, ownParentFieldName);
 
                 TrySetParentFromTheFieldTheInstanceHangsItOn(workItem, issue, epicLinkFieldName);
 
@@ -1357,6 +1358,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             var resolution = await ResolveTheAdditionalFieldReferences(portfolio.WorkTrackingSystemConnection, LinkTypesMayAnswer.WhatAnAdministratorTyped);
             var customFieldReferences = resolution.References;
             var portfolioLinkFieldName = TheFieldTheInstanceHangsParentsOn(portfolio, JiraFieldNames.ParentLinkFieldName);
+            var ownParentFieldName = TheFieldBehindTheListedOwnParent(portfolio, JiraFieldNames.ParentLinkFieldName);
 
             var theDependencyField = WhatTheNamedAdditionalFieldResolvedTo(
                 portfolio, portfolio.DependencyOverrideAdditionalFieldDefinitionId, customFieldReferences);
@@ -1366,7 +1368,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             foreach (var issue in issues)
             {
-                var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences);
+                var workItem = CreateWorkItemFromJiraIssue(issue, portfolio, customFieldReferences, ownParentFieldName);
                 TrySetParentFromTheFieldTheInstanceHangsItOn(workItem, issue, portfolioLinkFieldName);
 
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
@@ -1884,7 +1886,8 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             return string.Empty;
         }
 
-        private static WorkItemBase CreateWorkItemFromJiraIssue(Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences)
+        private static WorkItemBase CreateWorkItemFromJiraIssue(
+            Issue issue, IWorkItemQueryOwner workItemQueryOwner, Dictionary<string, ResolvedReference> customFieldReferences, string ownParentFieldName)
         {
             var state = issue.State
                 ?? throw new InvalidOperationException($"Issue {issue.Key} reached the work item factory without a state.");
@@ -1914,10 +1917,58 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             PopulateAdditionalFieldValues(issue, workItem, additionalFieldDefs, customFieldReferences);
 
+            workItem.ParentReadings = WhatEachParentSourceReads(issue, workItemQueryOwner, customFieldReferences, ownParentFieldName);
+
             var fromTheMatchingLinks = SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
             workItem.ParentCandidatesFromLinks = fromTheMatchingLinks.CandidatesWithTheirLinkDates;
 
             return workItem;
+        }
+
+        private static ParentReadings WhatEachParentSourceReads(
+            Issue issue,
+            IWorkItemQueryOwner workItemQueryOwner,
+            Dictionary<string, ResolvedReference> customFieldReferences,
+            string ownParentFieldName)
+        {
+            ParentReading WhatItReads(ParentSourceEntry entry)
+                => entry.Kind == ParentSourceKind.TrackerParent
+                    ? TheOwnParentReading(issue, ownParentFieldName)
+                    : WhatTheAdditionalFieldReads(
+                        issue, WhatTheNamedAdditionalFieldResolvedTo(workItemQueryOwner, entry.AdditionalFieldDefinitionId, customFieldReferences));
+
+            var positions = workItemQueryOwner.TheEffectiveParentSources().Entries
+                .Select(entry => new ParentReadingAt(entry, WhatItReads(entry)));
+
+            return ParentReadings.Of([.. positions]);
+        }
+
+        /// <summary>
+        /// The key Jira names, and when it names none, what the instance keeps in its parent field. Which
+        /// deployment this is never enters into it: that field is looked up by name against the ordinary
+        /// field list, so an instance of either kind that defines one under that name is read the same way.
+        /// </summary>
+        private static ParentReading TheOwnParentReading(Issue issue, string ownParentFieldName)
+        {
+            var key = string.IsNullOrEmpty(issue.ParentKey) ? issue.Fields.GetFieldValue(ownParentFieldName) : issue.ParentKey;
+
+            return string.IsNullOrEmpty(key) ? ParentReading.NoValue : ParentReading.TrackersOwn(key);
+        }
+
+        /// <summary>
+        /// Links read as links even when none of them matched, because the field showing a link entry's key
+        /// is found by that kind, and a record that lost its last link must stop showing the old key.
+        /// </summary>
+        private static ParentReading WhatTheAdditionalFieldReads(Issue issue, ResolvedReference reference)
+        {
+            if (reference.NamesALinkType)
+            {
+                return ParentReading.LinkCandidates(issue.Fields.ResolveParentFromLinks(reference.LinkTypeName, reference.Direction, issue.StandingLinks));
+            }
+
+            var value = issue.Fields.GetFieldValue(reference.FieldId);
+
+            return string.IsNullOrEmpty(value) ? ParentReading.NoValue : ParentReading.FieldValue(value);
         }
 
         /// <summary>
@@ -1983,6 +2034,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// </summary>
         private static string TheFieldTheInstanceHangsParentsOn(IWorkItemQueryOwner owner, string parentFieldName)
             => ParentSourceSelector.ReadsTheTrackersOwnParent(owner)
+                ? FieldNames[owner.WorkTrackingSystemConnectionId][parentFieldName]
+                : string.Empty;
+
+        /// <summary>
+        /// The resolved key of the field this instance keeps an item's parent in, for a list that holds the
+        /// tracker's own parent. A list without it never reads that parent, so the field is not looked up.
+        /// </summary>
+        private static string TheFieldBehindTheListedOwnParent(IWorkItemQueryOwner owner, string parentFieldName)
+            => ParentSourceSelector.ReadsTheTrackersOwnParent(owner.TheEffectiveParentSources())
                 ? FieldNames[owner.WorkTrackingSystemConnectionId][parentFieldName]
                 : string.Empty;
 

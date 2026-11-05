@@ -14,6 +14,7 @@ namespace Lighthouse.Backend.Models
             SyncedTransitions = workItemBase.SyncedTransitions;
             TransitionsAreItsWholeHistory = workItemBase.TransitionsAreItsWholeHistory;
             ParentCandidatesFromLinks = workItemBase.ParentCandidatesFromLinks;
+            ParentReadings = workItemBase.ParentReadings;
             RefreshFindings = workItemBase.RefreshFindings;
         }
 
@@ -79,8 +80,9 @@ namespace Lighthouse.Backend.Models
         public IReadOnlyList<ParentCandidate> ParentCandidatesFromLinks { get; set; } = [];
 
         /// <summary>
-        /// What each position of the owner's parent source list found for this record. Not stored.
-        /// SCAFFOLD: Story 6501. Nothing sets it yet and the copy constructor does not carry it.
+        /// What each position of the owner's parent source list found for this record, as this reading found
+        /// it. Which of them wins can depend on the Features Lighthouse holds, which only the refresh knows, so
+        /// the record has to carry them there. Not stored, because a later reading finds them afresh.
         /// </summary>
         [NotMapped]
         public ParentReadings ParentReadings { get; set; } = ParentReadings.Of();

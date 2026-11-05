@@ -10,7 +10,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
     /// relations of a work item, so that an install listing only fields makes no request it never made.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: enable with the list-level question the connectors ask.")]
     public class ParentSourceSelectorOwnParentTest
     {
         private static readonly ParentSourceEntry OwnParent = ParentSourceEntry.TrackerParent;
