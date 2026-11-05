@@ -42,27 +42,20 @@ namespace Lighthouse.Backend.Tests.Models
         [Test]
         [Category("slice-01")]
         [Category("edge")]
-        public void One_candidate_is_not_a_question_for_the_pick()
+        public void No_candidate_is_not_a_question_for_the_pick()
         {
-            var lone = ParentResolution.From([Undated(AnIncident)]).Place(Holding((AFeature, November2)), ParentNarrowing.Narrow);
             var none = ParentResolution.From(NoCandidates).Place(Holding((AFeature, November2)), ParentNarrowing.Narrow);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(lone.Outcome, Is.EqualTo(ParentPlacementOutcome.NotAsked),
-                    "A lone link is stored as it is, Feature or not, so rules written against that value keep matching.");
                 Assert.That(none.Outcome, Is.EqualTo(ParentPlacementOutcome.NotAsked),
                     "No link names nothing to choose from.");
-
-                foreach (var notAsked in new[] { lone, none })
-                {
-                    Assert.That(notAsked.DecidedBy, Is.EqualTo(ParentPlacementRule.None),
-                        "No rule settled a question that was never asked.");
-                    Assert.That(notAsked.Key, Is.Empty,
-                        "The pick gives no key when it was not asked; the lone link is stored by the caller as it is.");
-                    Assert.That(notAsked.SetAside, Is.Empty,
-                        "Nothing is set aside when there was nothing to choose between.");
-                }
+                Assert.That(none.DecidedBy, Is.EqualTo(ParentPlacementRule.None),
+                    "No rule settled a question that was never asked.");
+                Assert.That(none.Key, Is.Empty,
+                    "The pick gives no key when it was not asked.");
+                Assert.That(none.SetAside, Is.Empty,
+                    "Nothing is set aside when there was nothing to choose between.");
             }
         }
 

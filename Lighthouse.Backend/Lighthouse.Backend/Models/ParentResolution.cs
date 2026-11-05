@@ -1,9 +1,10 @@
 namespace Lighthouse.Backend.Models
 {
     /// <summary>
-    /// What reading an item's links said about its parent: nothing, one issue, or several. Several is not
-    /// guessed at here, because a wrongly guessed parent looks exactly like correct data. Place decides
-    /// under which of them the item hangs, or says why it hangs under none.
+    /// What reading an item's links said about its parent: nothing, one issue, or several. No candidate is
+    /// taken on trust here, because a wrongly guessed parent looks exactly like correct data. Place judges
+    /// one candidate like several: it decides under which of them the item hangs, or says why it hangs
+    /// under none. Only links naming nobody leave it nothing to judge.
     /// </summary>
     public readonly record struct ParentResolution
     {
@@ -41,15 +42,15 @@ namespace Lighthouse.Backend.Models
         public string Key => IsResolved ? CandidatesWithTheirLinkDates[0].Key : string.Empty;
 
         /// <summary>
-        /// Where an item whose links name several issues hangs. One link or none is not a question: the
-        /// caller stores it as it is. A Team's items hang under Features, so every candidate Lighthouse does
-        /// not hold as a Feature is set aside first. Among what is left, the link made first wins,
-        /// then the Feature created first, then the lowest key, so the same links always give the same
-        /// answer and only an empty narrowing leaves the item unplaced.
+        /// Where an item whose links name one issue or several hangs. Links naming nobody are not a question.
+        /// A Team's items hang under Features, so every candidate Lighthouse does not hold as a Feature is
+        /// set aside first. Among what is left, the link made first wins, then the Feature created first,
+        /// then the lowest key, so the same links always give the same answer and only an empty narrowing
+        /// leaves the item unplaced.
         /// </summary>
         public ParentPlacement Place(StoredFeatures storedFeatures, ParentNarrowing narrowing)
         {
-            if (!IsAmbiguous)
+            if (CandidatesWithTheirLinkDates.Count == 0)
             {
                 return ParentPlacement.NotAsked;
             }
@@ -70,7 +71,7 @@ namespace Lighthouse.Backend.Models
 
             var winner = ranked[0];
             var (rule, decidedOn) = ranked.Count == 1
-                ? (ParentPlacementRule.OnlyFeatureAmongLinks, null)
+                ? (TheRuleForTheOneLeft(narrowing), null)
                 : WhatSetsTheWinnerApart(winner, ranked[1], storedFeatures);
 
             return new ParentPlacement
@@ -82,6 +83,12 @@ namespace Lighthouse.Backend.Models
                 SetAside = [.. CandidatesWithTheirLinkDates.Where(candidate => candidate != winner)],
             };
         }
+
+        /// <summary>
+        /// Without narrowing nobody checked that the candidate is a Feature, so the rule must not say it is.
+        /// </summary>
+        private static ParentPlacementRule TheRuleForTheOneLeft(ParentNarrowing narrowing)
+            => narrowing == ParentNarrowing.Narrow ? ParentPlacementRule.OnlyFeatureAmongLinks : ParentPlacementRule.OnlyCandidate;
 
         /// <summary>
         /// The rule named is the first one on which the winner beats the runner-up, so the line never

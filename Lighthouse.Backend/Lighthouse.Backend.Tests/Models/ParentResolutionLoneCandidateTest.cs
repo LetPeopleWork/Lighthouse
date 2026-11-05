@@ -6,12 +6,9 @@ namespace Lighthouse.Backend.Tests.Models
     /// <summary>
     /// A link entry's only candidate is judged like several are: a Team's items hang under Features, so a lone
     /// candidate that is no stored Feature hangs nowhere and lets the next source be read. Only a link naming
-    /// nobody is not a question. When this is built, the lone-link half of
-    /// <c>One_candidate_is_not_a_question_for_the_pick</c> in <c>ParentResolutionPlacementTest</c> is replaced
-    /// by these rows and its wording about "stored as it is" goes.
+    /// nobody is not a question.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: enable with the slice that lets a lone link candidate be judged.")]
     public class ParentResolutionLoneCandidateTest
     {
         private static readonly DateTime November2 = new(2026, 11, 2, 9, 0, 0, DateTimeKind.Utc);

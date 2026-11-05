@@ -52,6 +52,7 @@ namespace Lighthouse.Backend.Models
         OldestLink,
         EarliestCreated,
         LowestKey,
+        OnlyCandidate,
     }
 
     public enum ParentNotPlacedReason
