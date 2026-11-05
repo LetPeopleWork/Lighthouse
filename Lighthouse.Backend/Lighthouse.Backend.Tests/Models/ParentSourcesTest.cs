@@ -115,6 +115,11 @@ namespace Lighthouse.Backend.Tests.Models
         [TestCase("""[{"Kind":0,"AdditionalFieldDefinitionId":3}]""", Description = "The own parent carrying a field id")]
         [TestCase("""[{"Kind":1,"AdditionalFieldDefinitionId":null}]""", Description = "A field naming no field")]
         [TestCase("""[{"Kind":7,"AdditionalFieldDefinitionId":null}]""", Description = "A kind this version does not know")]
+        [TestCase("""[{}]""", Description = "An entry with neither member")]
+        [TestCase("""[{"Kind":0}]""", Description = "An entry without its field id, not even a null one")]
+        [TestCase("""[{"AdditionalFieldDefinitionId":null}]""", Description = "An entry without its kind")]
+        [TestCase("""[null]""", Description = "A null where an entry belongs")]
+        [TestCase("", Description = "Blank text: only the column may read that as no list")]
         public void Stored_text_the_rules_refuse_fails_loudly_instead_of_being_repaired(string storedText)
         {
             var thrown = Assert.Catch(() => ParentSources.FromStoredText(storedText));

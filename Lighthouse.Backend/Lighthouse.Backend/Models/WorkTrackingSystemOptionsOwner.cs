@@ -164,19 +164,30 @@ namespace Lighthouse.Backend.Models
 
         public void FollowParentOverrideDefault() => ParentOverride = StoredSetting.FollowingTheDefault;
 
-        // SCAFFOLD: Story 6501. The three members below throw until the owner holds a list.
-        public void OwnParentSources(ParentSources list)
-            => throw UnbuiltOnThisOwner(nameof(OwnParentSources));
+        /// <summary>This owner's own list. Null while it follows, which is not the same as an empty list: a list always names at least one place.</summary>
+        public ParentSources? ParentSources { get; private set; }
 
+        protected virtual ParentSources? ParentSourcesConnectionDefault => null;
+
+        /// <summary>The list becomes this owner's own, and the old column keeps what a build one release back can read of it.</summary>
+        public void OwnParentSources(ParentSources list)
+        {
+            ParentOverride = StoredSetting.Owning(list.ToTheLegacyField());
+            ParentSources = list;
+        }
+
+        /// <summary>The owner gives up its own list. The old column stays as it was, because following writes nothing of its own.</summary>
         public void FollowParentSourcesDefault()
-            => throw UnbuiltOnThisOwner(nameof(FollowParentSourcesDefault));
+        {
+            storedParentOverrideSource = SettingSource.ConnectionDefault;
+            ParentSources = null;
+        }
 
         /// <summary>The owner's own list while it owns one, else the connection default's, else the tracker's own parent alone.</summary>
         public ParentSources TheEffectiveParentSources()
-            => throw UnbuiltOnThisOwner(nameof(TheEffectiveParentSources));
-
-        private NotImplementedException UnbuiltOnThisOwner(string member)
-            => new($"SCAFFOLD: Story 6501, {member} on {GetType().Name} is not built yet.");
+            => (FollowsParentOverrideDefault ? null : ParentSources)
+                ?? ParentSourcesConnectionDefault
+                ?? ParentSources.OnlyTheTrackersOwnParent;
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own parent, whatever the default says.</param>
         public void OwnParentOverride(int? additionalFieldDefinitionId) => ParentOverride = StoredSetting.Owning(additionalFieldDefinitionId);

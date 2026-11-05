@@ -22,7 +22,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// and leaves the old ones holding what an older build reads.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: enable with the migration that adds the parent source columns.")]
     public class ParentSourcesUpgradeMigrationTests
     {
         private const string PreviousMigrationIdSqlite = "20261023085259_AddForecastInputFingerprintAndRefreshLogSkipped";

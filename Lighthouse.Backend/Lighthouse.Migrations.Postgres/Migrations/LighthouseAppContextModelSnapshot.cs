@@ -18,7 +18,7 @@ namespace Lighthouse.Migrations.Postgres.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1130,6 +1130,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.Property<int?>("OwningTeamId")
                         .HasColumnType("integer");
 
+                    b.Property<string>("ParentSources")
+                        .HasColumnType("text");
+
                     b.Property<int?>("PercentileHistoryInDays")
                         .HasColumnType("integer");
 
@@ -1519,6 +1522,9 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("UseNonNumericEstimation");
 
+                    b.Property<string>("ParentSources")
+                        .HasColumnType("text");
+
                     b.Property<DateTime?>("ProcessBehaviourChartBaselineEndDate")
                         .HasColumnType("timestamp with time zone");
 
@@ -1836,6 +1842,12 @@ namespace Lighthouse.Migrations.Postgres.Migrations
 
                     b.Property<int?>("ParentOverrideForTeams")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ParentSourcesForPortfolios")
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParentSourcesForTeams")
+                        .HasColumnType("text");
 
                     b.Property<int?>("SizeEstimateFieldForPortfolios")
                         .HasColumnType("integer");

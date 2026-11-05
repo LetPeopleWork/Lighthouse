@@ -673,10 +673,46 @@ namespace Lighthouse.Backend.Data
                 .HasConversion(cycleTimeDefinitionsConverter)
                 .Metadata.SetValueComparer(cycleTimeDefinitionsComparer);
 
+            ConfigureParentSources(modelBuilder);
             ConfigureRefinementSettings(modelBuilder);
             ConfigureSizingLog(modelBuilder);
             ConfigureReports(modelBuilder);
             ConfigureRefreshFindings(modelBuilder);
+        }
+
+        // NULL means the owner follows, so it must stay NULL: read as an empty list it would turn "follow the
+        // default" into "own, nothing". Bad text is deliberately not caught, because a repaired list would
+        // quietly change where parents come from. The list is immutable, so a snapshot is the value itself.
+        private static void ConfigureParentSources(ModelBuilder modelBuilder)
+        {
+            var converter = new ValueConverter<ParentSources?, string?>(
+                list => list!.ToStoredText(),
+                text => string.IsNullOrWhiteSpace(text) ? null : ParentSources.FromStoredText(text));
+
+            var comparer = new ValueComparer<ParentSources?>(
+                (left, right) => (left == null ? null : left.ToStoredText()) == (right == null ? null : right.ToStoredText()),
+                list => list == null ? 0 : list.ToStoredText().GetHashCode(),
+                list => list);
+
+            modelBuilder.Entity<Team>()
+                .Property(team => team.ParentSources)
+                .HasConversion(converter)
+                .Metadata.SetValueComparer(comparer);
+
+            modelBuilder.Entity<Portfolio>()
+                .Property(portfolio => portfolio.ParentSources)
+                .HasConversion(converter)
+                .Metadata.SetValueComparer(comparer);
+
+            modelBuilder.Entity<WorkTrackingSystemConnection>()
+                .Property(connection => connection.ParentSourcesForTeams)
+                .HasConversion(converter)
+                .Metadata.SetValueComparer(comparer);
+
+            modelBuilder.Entity<WorkTrackingSystemConnection>()
+                .Property(connection => connection.ParentSourcesForPortfolios)
+                .HasConversion(converter)
+                .Metadata.SetValueComparer(comparer);
         }
 
         // A row written before findings were recorded holds no value at all, and reads back as having none.

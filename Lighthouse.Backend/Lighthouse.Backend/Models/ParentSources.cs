@@ -20,10 +20,17 @@ namespace Lighthouse.Backend.Models
     {
         public const int Maximum = 5;
 
+        // The entry's constructor parameters count as required here, so a stored entry that lost a member is
+        // refused. Left to the default options it would silently read as the tracker's own parent.
+        private static readonly JsonSerializerOptions StoredTextReading = new() { RespectRequiredConstructorParameters = true };
+
         private ParentSources(List<ParentSourceEntry> entries)
         {
             Entries = entries.AsReadOnly();
         }
+
+        /// <summary>The list that reads exactly what the tracker itself calls the parent.</summary>
+        public static ParentSources OnlyTheTrackersOwnParent { get; } = new([ParentSourceEntry.TrackerParent]);
 
         public IReadOnlyList<ParentSourceEntry> Entries { get; }
 
@@ -43,7 +50,7 @@ namespace Lighthouse.Backend.Models
         /// <summary>Reads stored text back. Text the factory refuses throws instead of being repaired.</summary>
         public static ParentSources FromStoredText(string storedText)
         {
-            var entries = JsonSerializer.Deserialize<List<ParentSourceEntry>>(storedText, (JsonSerializerOptions?)null);
+            var entries = JsonSerializer.Deserialize<List<ParentSourceEntry>>(storedText, StoredTextReading);
             var outcome = Of(entries ?? []);
 
             return outcome.List ?? throw new FormatException(

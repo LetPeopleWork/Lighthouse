@@ -106,6 +106,8 @@ namespace Lighthouse.Backend.Models
 
         protected override int? ParentOverrideConnectionDefault => WorkTrackingSystemConnection?.ParentOverrideForPortfolios;
 
+        protected override ParentSources? ParentSourcesConnectionDefault => WorkTrackingSystemConnection?.ParentSourcesForPortfolios;
+
         protected override EstimationBundle EstimationConnectionDefault => WorkTrackingSystemConnection?.EstimationForPortfolios ?? EstimationBundle.None;
 
         public override bool FollowsConnectionDefault(ConnectionDefaultSetting setting) => setting switch

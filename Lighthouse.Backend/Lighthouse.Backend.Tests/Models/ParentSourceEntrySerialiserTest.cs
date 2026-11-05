@@ -16,7 +16,6 @@ namespace Lighthouse.Backend.Tests.Models
             """[{"Kind":1,"AdditionalFieldDefinitionId":12},{"Kind":0,"AdditionalFieldDefinitionId":null}]""";
 
         [Test]
-        [Ignore("Story 6501: enable with the column that stores this text.")]
         public void Entries_are_written_and_read_back_with_the_default_options_exactly_as_the_upgrade_writes_them()
         {
             var entries = new List<ParentSourceEntry> { ParentSourceEntry.Field(12), ParentSourceEntry.TrackerParent };

@@ -66,6 +66,10 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             new("WorkTrackingSystemConnections", "UseNonNumericEstimationForPortfolios", "boolean", "AddEstimationDefaults"),
             new("WorkTrackingSystemConnections", "EstimationCategoryValuesForPortfolios", "TEXT", "AddEstimationDefaults", "text[]"),
             new("Portfolios", "ForecastInputFingerprint", "TEXT", "AddForecastInputFingerprintAndRefreshLogSkipped"),
+            new("Teams", "ParentSources", "TEXT", "AddParentSources"),
+            new("Portfolios", "ParentSources", "TEXT", "AddParentSources"),
+            new("WorkTrackingSystemConnections", "ParentSourcesForTeams", "TEXT", "AddParentSources"),
+            new("WorkTrackingSystemConnections", "ParentSourcesForPortfolios", "TEXT", "AddParentSources"),
         ];
 
         /// <summary>Call right after rolling back, before seeding through the EF model.</summary>

@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.13");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.14");
 
             modelBuilder.Entity("DeliveryFeature", b =>
                 {
@@ -1076,6 +1076,9 @@ namespace Lighthouse.Backend.Migrations
                     b.Property<int?>("OwningTeamId")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("ParentSources")
+                        .HasColumnType("TEXT");
+
                     b.Property<int?>("PercentileHistoryInDays")
                         .HasColumnType("INTEGER");
 
@@ -1453,6 +1456,9 @@ namespace Lighthouse.Backend.Migrations
                         .HasColumnType("INTEGER")
                         .HasColumnName("UseNonNumericEstimation");
 
+                    b.Property<string>("ParentSources")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("ProcessBehaviourChartBaselineEndDate")
                         .HasColumnType("TEXT");
 
@@ -1758,6 +1764,12 @@ namespace Lighthouse.Backend.Migrations
 
                     b.Property<int?>("ParentOverrideForTeams")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("ParentSourcesForPortfolios")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ParentSourcesForTeams")
+                        .HasColumnType("TEXT");
 
                     b.Property<int?>("SizeEstimateFieldForPortfolios")
                         .HasColumnType("INTEGER");

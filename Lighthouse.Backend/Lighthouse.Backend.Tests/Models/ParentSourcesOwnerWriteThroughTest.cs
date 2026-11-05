@@ -33,7 +33,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [TestCaseSource(nameof(ListsAndTheOldColumnTheyWrite))]
-        [Ignore("Story 6501: enable with the owner's and the connection's list.")]
         public void An_owner_given_a_list_and_a_connection_default_write_the_old_column_through(ParentSources list, int? theOldColumn)
         {
             var team = new Team();
@@ -50,7 +49,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        [Ignore("Story 6501: enable with the owner's and the connection's list.")]
         public void An_owner_that_follows_the_default_leaves_its_own_old_column_as_it_was()
         {
             var team = new Team();
@@ -60,6 +58,35 @@ namespace Lighthouse.Backend.Tests.Models
 
             Assert.That(team.OwnParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(A),
                 "Following writes nothing of its own, so what the owner held before is still there if it chooses again.");
+        }
+
+        [Test]
+        public void An_owner_reads_its_own_list_a_follower_the_default_of_its_kind_and_without_a_default_the_own_parent_alone()
+        {
+            var ownList = ListOf(OwnParent, ParentSourceEntry.Field(A));
+            var theDefaultForTeams = ListOf(ParentSourceEntry.Field(A), OwnParent);
+            var theDefaultForPortfolios = ListOf(ParentSourceEntry.Field(B), OwnParent);
+            var connection = new WorkTrackingSystemConnection();
+            connection.SetParentSourcesDefaultForTeams(theDefaultForTeams);
+            connection.SetParentSourcesDefaultForPortfolios(theDefaultForPortfolios);
+
+            var owning = new Team { WorkTrackingSystemConnection = connection };
+            owning.OwnParentSources(ownList);
+            var gaveItsListUp = new Team { WorkTrackingSystemConnection = connection };
+            gaveItsListUp.OwnParentSources(ownList);
+            gaveItsListUp.FollowParentSourcesDefault();
+            var followingPortfolio = new Portfolio { WorkTrackingSystemConnection = connection };
+            var withoutADefault = new Team { WorkTrackingSystemConnection = new WorkTrackingSystemConnection() };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(owning.TheEffectiveParentSources(), Is.SameAs(ownList));
+                Assert.That(gaveItsListUp.TheEffectiveParentSources(), Is.SameAs(theDefaultForTeams));
+                Assert.That(gaveItsListUp.ParentSources, Is.Null, "A follower holds no list of its own.");
+                Assert.That(followingPortfolio.TheEffectiveParentSources(), Is.SameAs(theDefaultForPortfolios));
+                Assert.That(withoutADefault.TheEffectiveParentSources().Entries, Is.EqualTo(new[] { OwnParent }).AsCollection);
+                Assert.That(connection.ParentOverrideForPortfolios, Is.EqualTo(B), "The Portfolios' old column is written through like the Teams'.");
+            }
         }
 
         public sealed record Rollback(string Name, ParentSourceEntry[] List, string WhatAHolds, string WhatBHolds, int? TheOldColumn, string TheListReads)

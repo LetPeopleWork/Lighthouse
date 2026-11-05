@@ -27,15 +27,19 @@ namespace Lighthouse.Backend.Models
         /// <summary>The Parent Override Field every Portfolio on this connection reads while it follows the default.</summary>
         public int? ParentOverrideForPortfolios { get; set; }
 
-        // SCAFFOLD: Story 6501. Throw until the connection holds its two default lists.
+        /// <summary>The parent sources every Team on this connection reads while it follows the default. Null means no default is set.</summary>
+        public ParentSources? ParentSourcesForTeams { get; private set; }
+
+        /// <summary>The parent sources every Portfolio on this connection reads while it follows the default. Null means no default is set.</summary>
+        public ParentSources? ParentSourcesForPortfolios { get; private set; }
+
+        /// <param name="list">Null removes the default.</param>
         public void SetParentSourcesDefaultForTeams(ParentSources? list)
-            => throw UnbuiltOnThisConnection(nameof(SetParentSourcesDefaultForTeams));
+            => (ParentSourcesForTeams, ParentOverrideForTeams) = (list, list?.ToTheLegacyField());
 
+        /// <param name="list">Null removes the default.</param>
         public void SetParentSourcesDefaultForPortfolios(ParentSources? list)
-            => throw UnbuiltOnThisConnection(nameof(SetParentSourcesDefaultForPortfolios));
-
-        private NotImplementedException UnbuiltOnThisConnection(string member)
-            => new($"SCAFFOLD: Story 6501, {member} on {GetType().Name} is not built yet.");
+            => (ParentSourcesForPortfolios, ParentOverrideForPortfolios) = (list, list?.ToTheLegacyField());
 
         /// <summary>The Dependency Field every Portfolio on this connection reads while it follows the default.</summary>
         public int? DependencyFieldForPortfolios { get; set; }
