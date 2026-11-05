@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Lighthouse.Backend.Models
 {
     public enum ParentSourcesViolation
@@ -14,36 +16,70 @@ namespace Lighthouse.Backend.Models
     /// <summary>
     /// The ordered list of places a Team or a Portfolio reads its parent from: one to five entries, none twice.
     /// </summary>
-    // SCAFFOLD: Story 6501. Every member below throws until the value object is built.
     public sealed class ParentSources
     {
         public const int Maximum = 5;
 
-        public IReadOnlyList<ParentSourceEntry> Entries
-            => throw UnbuiltOnThisList(nameof(Entries));
+        private ParentSources(List<ParentSourceEntry> entries)
+        {
+            Entries = entries.AsReadOnly();
+        }
+
+        public IReadOnlyList<ParentSourceEntry> Entries { get; }
 
         public static ParentSourcesOutcome Of(IEnumerable<ParentSourceEntry> entries)
-            => throw Unbuilt(nameof(Of));
+        {
+            var candidates = entries.ToList();
+            var violations = ViolationsOf(candidates).ToList();
+
+            return violations.Count == 0
+                ? new ParentSourcesOutcome(new ParentSources(candidates), [])
+                : new ParentSourcesOutcome(null, violations);
+        }
 
         /// <summary>The text the list is stored as, and rendered with, byte for byte.</summary>
-        public string ToStoredText()
-            => throw UnbuiltOnThisList(nameof(ToStoredText));
+        public string ToStoredText() => JsonSerializer.Serialize(Entries, (JsonSerializerOptions?)null);
 
         /// <summary>Reads stored text back. Text the factory refuses throws instead of being repaired.</summary>
         public static ParentSources FromStoredText(string storedText)
-            => throw Unbuilt(nameof(FromStoredText));
+        {
+            var entries = JsonSerializer.Deserialize<List<ParentSourceEntry>>(storedText, (JsonSerializerOptions?)null);
+            var outcome = Of(entries ?? []);
+
+            return outcome.List ?? throw new FormatException(
+                $"The stored parent sources '{storedText}' cannot be kept: {string.Join(", ", outcome.Violations)}.");
+        }
 
         /// <summary>
         /// What a build one release back can read of this list: the id of its first Additional Field entry, or
         /// nothing when it holds none.
         /// </summary>
         public int? ToTheLegacyField()
-            => throw UnbuiltOnThisList(nameof(ToTheLegacyField));
+            => Entries.FirstOrDefault(entry => entry.Kind == ParentSourceKind.AdditionalField)?.AdditionalFieldDefinitionId;
 
-        private NotImplementedException UnbuiltOnThisList(string member)
-            => Unbuilt($"{member} on {GetType().Name}");
+        private static IEnumerable<ParentSourcesViolation> ViolationsOf(List<ParentSourceEntry> entries)
+        {
+            if (entries.Count == 0)
+            {
+                yield return ParentSourcesViolation.Empty;
+            }
 
-        private static NotImplementedException Unbuilt(string member)
-            => new($"SCAFFOLD: Story 6501, ParentSources.{member} is not built yet.");
+            if (entries.Count > Maximum)
+            {
+                yield return ParentSourcesViolation.TooMany;
+            }
+
+            if (entries.Distinct().Count() < entries.Count)
+            {
+                yield return ParentSourcesViolation.Duplicate;
+            }
+
+            // An entry itself cannot lack its id, so the only form left is a null where an entry belongs: stored
+            // text can hold one, and an entry that names nothing must not reach a reader.
+            if (entries.Exists(entry => entry is null))
+            {
+                yield return ParentSourcesViolation.FieldWithoutAnId;
+            }
+        }
     }
 }

@@ -8,7 +8,6 @@ namespace Lighthouse.Backend.Tests.Models
     /// host: what a list may hold, what it is stored as, and what a build one release back would make of it.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: enable one case at a time as ParentSources is built.")]
     public class ParentSourcesTest
     {
         private const string TheOwnParentAfterField12 =

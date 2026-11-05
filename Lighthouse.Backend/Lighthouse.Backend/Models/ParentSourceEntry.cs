@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Lighthouse.Backend.Models
 {
     /// <summary>
@@ -10,15 +12,39 @@ namespace Lighthouse.Backend.Models
         AdditionalField = 1,
     }
 
-    // SCAFFOLD: Story 6501. A plain value so the acceptance tests can build lists. The real entry validates in
-    // its constructor and throws for a TrackerParent with a field id, an AdditionalField without one and an
-    // unknown kind, so tests build entries only through TrackerParent and Field, and build a refused list from
-    // stored text. This scaffold does not validate yet.
-    public sealed record ParentSourceEntry(ParentSourceKind Kind, int? AdditionalFieldDefinitionId)
+    /// <summary>
+    /// One place to read a parent from. The tracker's own parent carries no field id and an Additional Field
+    /// always does; no other entry can be built, by code or by the serialiser.
+    /// </summary>
+    public sealed record ParentSourceEntry
     {
         public static ParentSourceEntry TrackerParent { get; } = new(ParentSourceKind.TrackerParent, null);
 
+        public ParentSourceKind Kind { get; }
+
+        public int? AdditionalFieldDefinitionId { get; }
+
+        [JsonConstructor]
+        private ParentSourceEntry(ParentSourceKind kind, int? additionalFieldDefinitionId)
+        {
+            if (!CanBeKept(kind, additionalFieldDefinitionId))
+            {
+                throw new ArgumentException(
+                    $"A parent source of kind {kind} cannot have the field id '{additionalFieldDefinitionId}'.");
+            }
+
+            Kind = kind;
+            AdditionalFieldDefinitionId = additionalFieldDefinitionId;
+        }
+
         public static ParentSourceEntry Field(int additionalFieldDefinitionId)
             => new(ParentSourceKind.AdditionalField, additionalFieldDefinitionId);
+
+        private static bool CanBeKept(ParentSourceKind kind, int? additionalFieldDefinitionId) => kind switch
+        {
+            ParentSourceKind.TrackerParent => additionalFieldDefinitionId is null,
+            ParentSourceKind.AdditionalField => additionalFieldDefinitionId is not null,
+            _ => false,
+        };
     }
 }
