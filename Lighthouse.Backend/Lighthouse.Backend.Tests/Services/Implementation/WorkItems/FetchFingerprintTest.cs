@@ -270,7 +270,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.DoingStates), p => p.DoingStates = ["Active"]);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.DoneStates), p => p.DoneStates = ["Done"]);
             yield return Case(nameof(WorkTrackingSystemOptionsOwner.StateMappings), p => p.StateMappings[0].States.Add("Testing"));
-            yield return Case(nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId), p => p.OwnParentOverride(2));
+            yield return Case(nameof(WorkTrackingSystemOptionsOwner.ParentSources), p => p.OwnParentSources(ParentSources.Of([ParentSourceEntry.TrackerParent, ParentSourceEntry.Field(1)]).List!));
             yield return Case(nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId), p => p.OwnFeatureOwnerField(null));
             yield return Case(nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId), p => p.OwnSizeEstimateField(3));
             yield return Case(nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId), p => p.OwnDependencyField(2));

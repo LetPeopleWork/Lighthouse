@@ -24,6 +24,7 @@ namespace Lighthouse.Backend.Tests.Models
         public enum TheSave
         {
             ChangesTheDefault,
+            ChangesTheDefaultBehindItsFirstField,
             ChangesAFieldDefinition,
             ChangesTheEstimation,
             ChangesNothingFetched,
@@ -31,10 +32,12 @@ namespace Lighthouse.Backend.Tests.Models
 
         // The Estimation is read when a page loads, not asked of the tracker, so changing it moves nobody's fetch.
         [TestCase(ItsParentOverride.Own, TheSave.ChangesTheDefault, false)]
+        [TestCase(ItsParentOverride.Own, TheSave.ChangesTheDefaultBehindItsFirstField, false)]
         [TestCase(ItsParentOverride.Own, TheSave.ChangesAFieldDefinition, true)]
         [TestCase(ItsParentOverride.Own, TheSave.ChangesTheEstimation, false)]
         [TestCase(ItsParentOverride.Own, TheSave.ChangesNothingFetched, false)]
         [TestCase(ItsParentOverride.FollowsTheDefault, TheSave.ChangesTheDefault, true)]
+        [TestCase(ItsParentOverride.FollowsTheDefault, TheSave.ChangesTheDefaultBehindItsFirstField, true)]
         [TestCase(ItsParentOverride.FollowsTheDefault, TheSave.ChangesAFieldDefinition, true)]
         [TestCase(ItsParentOverride.FollowsTheDefault, TheSave.ChangesTheEstimation, false)]
         [TestCase(ItsParentOverride.FollowsTheDefault, TheSave.ChangesNothingFetched, false)]
@@ -94,6 +97,9 @@ namespace Lighthouse.Backend.Tests.Models
             {
                 case TheSave.ChangesTheDefault:
                     connection.ParentOverrideForTeams = ParentLink;
+                    break;
+                case TheSave.ChangesTheDefaultBehindItsFirstField:
+                    connection.SetParentSourcesDefaultForTeams(ParentSources.Of([ParentSourceEntry.Field(CausedBy), ParentSourceEntry.Field(ParentLink)]).List);
                     break;
                 case TheSave.ChangesAFieldDefinition:
                     connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = StoryPoints, DisplayName = "Story Points", Reference = "customfield_10016" });

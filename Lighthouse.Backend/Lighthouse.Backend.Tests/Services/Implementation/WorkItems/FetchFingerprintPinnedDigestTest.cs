@@ -16,14 +16,15 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     /// The Jira digests were re-pinned on purpose when the Jira reading-version marker was added to the
     /// connection's part of the fingerprint: every Jira Team and Portfolio takes one full refresh after that
     /// upgrade. The Team and the Portfolio here sit on a Jira connection, so their digests moved; the digest of
-    /// a Portfolio read without its connection did not.
+    /// a Portfolio read without its connection did not. They moved again when the marker was raised for the
+    /// parent source lists, the Team's also because its override now renders as a list.
     /// </summary>
     [TestFixture]
     public class FetchFingerprintPinnedDigestTest
     {
-        private const string TheTeamsStoredFingerprint = "178f7c190469f76ef4423c1e680ea2d6";
+        private const string TheTeamsStoredFingerprint = "6c660006c9c7ecb47a35927d21d86472";
 
-        private const string ThePortfoliosStoredFingerprint = "6d06bf5c2f9c46b0e80f5a077e4e1898";
+        private const string ThePortfoliosStoredFingerprint = "65376f596816368febe2c7e2e04181c2";
 
         private const string ThePortfolioWithoutItsConnectionsStoredFingerprint = "9a5ae7627477a3dbe4f80c4204789044";
 

@@ -11,11 +11,9 @@ namespace Lighthouse.Backend.Tests.Models
     /// Each is something a customer sees the effect of: a parent that goes missing after the wrap, and Teams
     /// that are re-read when they should not be.
     ///
-    /// What is missing until the slice builds it: the copy constructor carrying the record's readings, and the
-    /// owner's list with the effective-list rule and the fingerprint rendering it.
+    /// What is missing until the slice builds it: the copy constructor carrying the record's readings.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: needs the record carrying its readings across the wrap, and the owner's list in the fingerprint.")]
     public class ParentSourcesOnTheRecordAndOwnerTest
     {
         private static readonly ParentSourceEntry OwnParent = ParentSourceEntry.TrackerParent;
@@ -26,6 +24,7 @@ namespace Lighthouse.Backend.Tests.Models
         /// knows where to look. A record wrapped without them would be placed as if nothing had been read.
         /// </summary>
         [Test]
+        [Ignore("Story 6501: needs the record carrying its readings across the wrap.")]
         public void The_readings_survive_being_wrapped_as_a_Work_Item_and_as_a_Feature()
         {
             var readings = ParentReadings.Of(new ParentReadingAt(

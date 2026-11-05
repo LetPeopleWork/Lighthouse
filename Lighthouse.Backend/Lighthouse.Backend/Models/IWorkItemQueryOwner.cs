@@ -24,6 +24,8 @@
 
         int? ParentOverrideAdditionalFieldDefinitionId { get; }
 
+        ParentSources TheEffectiveParentSources();
+
         StateCategories MapStateToStateCategory(string state);
 
         StateCategoryLists CategoryLists();

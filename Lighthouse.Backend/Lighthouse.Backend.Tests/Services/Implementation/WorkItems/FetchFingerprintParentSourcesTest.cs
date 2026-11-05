@@ -12,7 +12,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     /// renders in a new form, which re-reads that owner once.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: enable with the fingerprint's ordered rendering.")]
     public class FetchFingerprintParentSourcesTest
     {
         private static readonly ParentSourceEntry OwnParent = ParentSourceEntry.TrackerParent;

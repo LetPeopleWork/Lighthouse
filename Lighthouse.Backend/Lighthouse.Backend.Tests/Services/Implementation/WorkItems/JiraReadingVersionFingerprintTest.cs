@@ -1,18 +1,20 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 {
     /// <summary>
-    /// Items a German-token Team stored before the upgrade carry German states, and a cheap refresh skips an
-    /// item whose change stamp did not move. A reading-version marker in the Jira fingerprint gives every
-    /// Jira owner exactly one full refresh after the upgrade, and leaves every other tracker's fingerprint
-    /// alone so nobody else pays for it.
+    /// Items stored before the upgrade took their parent from the single override field, and a cheap refresh
+    /// skips an item whose change stamp did not move. Whether a field names a link type is known only when
+    /// reading, so the reading-version marker in the Jira fingerprint gives every Jira owner exactly one full
+    /// refresh after the upgrade, and leaves every other tracker's fingerprint alone so nobody else pays for it.
+    /// Outside Jira only an owner with an override moves, because its list renders in the new form.
     ///
     /// The digests pinned for Jira owners in <c>FetchFingerprintPinnedDigestTest</c> and
     /// <c>FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest</c> are left as they are here on purpose:
-    /// adding the marker changes them, and they are re-pinned in the same change that adds it. The same
+    /// raising the marker changes them, and they are re-pinned in the same change that raises it. The same
     /// change pins the Jira digest that results from the marker to an exact value here, so a later change of
     /// the marker is a visible decision. The digests below for every other tracker must not move at all.
     /// </summary>
@@ -27,13 +29,17 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             [WorkTrackingSystems.ServiceNow] = ("120a72199f268e6cc33a517ef1836092", "22ad2181303e509bf52ed10e725637c5"),
         };
 
-        private const string AJiraTeamsFingerprintBeforeTheUpgrade = "ded783898abaa53fb1df75c6ab05ff64";
+        private const string AJiraTeamsFingerprintBeforeTheUpgrade = "550c254f514ed280b0950bf6930cfc58";
 
-        private const string AJiraPortfoliosFingerprintBeforeTheUpgrade = "091b24376c85e4ad5afed8a066ab11dd";
+        private const string AJiraPortfoliosFingerprintBeforeTheUpgrade = "63438e52e318e6c8a26f9946f1d2975e";
 
-        private const string AJiraTeamsFingerprintWithTheReadingVersion = "550c254f514ed280b0950bf6930cfc58";
+        private const string AJiraTeamsFingerprintWithTheReadingVersion = "5ab2695899eb0536e5436eb47909a917";
 
-        private const string AJiraPortfoliosFingerprintWithTheReadingVersion = "63438e52e318e6c8a26f9946f1d2975e";
+        private const string AJiraPortfoliosFingerprintWithTheReadingVersion = "233d628bc02f4adb175670b8e692187e";
+
+        private const string AnAzureDevOpsOverrideTeamsFingerprintBeforeTheUpgrade = "6445ac5918a5698bfc5f6d428447731b";
+
+        private const string AnAzureDevOpsOverrideTeamsFingerprintWithItsList = "10393ddb4676e24fd620d42a9059a6e6";
 
         public static IEnumerable<WorkTrackingSystems> EveryTrackerButJira
             => Enum.GetValues<WorkTrackingSystems>().Where(tracker => tracker != WorkTrackingSystems.Jira);
@@ -60,6 +66,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         public void A_Jira_Portfolio_carries_exactly_the_fingerprint_the_reading_version_gives_it()
         {
             Assert.That(FetchFingerprint.For(APortfolioOn(WorkTrackingSystems.Jira)), Is.EqualTo(AJiraPortfoliosFingerprintWithTheReadingVersion));
+        }
+
+        [Test]
+        public void An_Azure_DevOps_Team_with_an_override_no_longer_matches_what_it_stored_so_it_is_refreshed_in_full_once()
+        {
+            var fingerprint = FetchFingerprint.For(ATeamOn(WorkTrackingSystems.AzureDevOps).OwningParentOverride(11));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(fingerprint, Is.Not.EqualTo(AnAzureDevOpsOverrideTeamsFingerprintBeforeTheUpgrade));
+                Assert.That(fingerprint, Is.EqualTo(AnAzureDevOpsOverrideTeamsFingerprintWithItsList));
+            }
         }
 
         [Test]

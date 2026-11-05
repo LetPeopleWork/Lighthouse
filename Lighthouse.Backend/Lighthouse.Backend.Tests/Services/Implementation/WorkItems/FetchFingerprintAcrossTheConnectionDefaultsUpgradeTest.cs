@@ -15,18 +15,19 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
     ///
     /// The digests were re-pinned on purpose when the Jira reading-version marker was added to the
     /// connection's part of the fingerprint: these owners sit on a Jira connection, so each one takes one full
-    /// refresh after that upgrade and keeps its new digest from then on.
+    /// refresh after that upgrade and keeps its new digest from then on. They moved again when the marker was
+    /// raised for the parent source lists, the owners with an override also because it now renders as a list.
     /// </summary>
     [TestFixture]
     public class FetchFingerprintAcrossTheConnectionDefaultsUpgradeTest
     {
-        private const string TheOwningTeamsStoredFingerprint = "154b09f400b4278eb953f8f7eb0d272c";
+        private const string TheOwningTeamsStoredFingerprint = "a18990758e926cc976767d729507fccd";
 
-        private const string TheTeamNamingNothingsStoredFingerprint = "274b9fd5da57e1dd4b78eb37fe38c4ae";
+        private const string TheTeamNamingNothingsStoredFingerprint = "2b95d6f98815a921b513ad34f88a8f6f";
 
-        private const string TheOwningPortfoliosStoredFingerprint = "5675e74a9054426808923484dd1acd35";
+        private const string TheOwningPortfoliosStoredFingerprint = "343da9c185a22ce1a47c0a9aa8df648f";
 
-        private const string ThePortfolioNamingNothingsStoredFingerprint = "e9416bc3bf27ec045dd03282526f553c";
+        private const string ThePortfolioNamingNothingsStoredFingerprint = "8f6a27eeb243f69e2af91847f9ba6d33";
 
         [Test]
         public void A_Team_that_names_its_own_Parent_Override_Field_keeps_its_fingerprint()

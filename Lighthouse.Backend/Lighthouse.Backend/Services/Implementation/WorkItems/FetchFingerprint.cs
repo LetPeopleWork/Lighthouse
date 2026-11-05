@@ -47,7 +47,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             // How the answer is read into the stored record.
             nameof(WorkTrackingSystemOptionsOwner.StateMappings),
-            nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId),
+            nameof(WorkTrackingSystemOptionsOwner.ParentSources),
             nameof(Portfolio.FeatureOwnerAdditionalFieldDefinitionId),
             nameof(Portfolio.SizeEstimateAdditionalFieldDefinitionId),
             nameof(Portfolio.DependencyOverrideAdditionalFieldDefinitionId),
@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 Unordered(queryOwner.DoingStates, BetweenItems),
                 Unordered(queryOwner.DoneStates, BetweenItems),
                 Render(queryOwner.StateMappings),
-                Render(queryOwner.ParentOverrideAdditionalFieldDefinitionId),
+                RenderParentSources(queryOwner.TheEffectiveParentSources()),
                 Render(portfolio?.FeatureOwnerAdditionalFieldDefinitionId),
                 Render(portfolio?.SizeEstimateAdditionalFieldDefinitionId),
                 Render(portfolio?.DependencyOverrideAdditionalFieldDefinitionId),
@@ -100,9 +100,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             return Digest(string.Join(BetweenProperties, whatIsAskedForAndHowTheAnswerIsRead));
         }
 
-        // SCAFFOLD: Story 6501. How an effective parent source list renders into the fingerprint.
+        /// <summary>
+        /// A list keeps its order here, unlike the collections above, because the same sources in another order
+        /// name another parent.
+        /// </summary>
+        /// <remarks>
+        /// The tracker's own parent alone keeps the text of "no override": that list holds no link entry, so its
+        /// meaning cannot have moved and its owners are not re-read. Every other list starts with a letter, so it
+        /// can never equal the digits or the dash an old fingerprint rendered.
+        /// </remarks>
         public static string RenderParentSources(ParentSources parentSources)
-            => throw new NotImplementedException("SCAFFOLD: Story 6501, FetchFingerprint.RenderParentSources is not built yet.");
+            => parentSources.Entries is [{ Kind: ParentSourceKind.TrackerParent }]
+                ? Absent
+                : string.Join(BetweenParentSources, parentSources.Entries.Select(Render));
 
         /// <summary>
         /// The connection's share of <see cref="For"/>: what changes for every Team and Portfolio on
@@ -126,11 +136,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 connection?.WorkTrackingSystem.ToString() ?? Absent);
 
         /// <summary>
-        /// Jira owners stored their statuses and work item types under the account's display language. Moving
-        /// to the original names must re-read every item once, and an unchanged item is otherwise skipped, so
-        /// the marker changes every Jira fingerprint one time. Raise it only to force such a re-read again.
+        /// Whether a parent source of a Jira owner is a field or a link type is known only when reading, so the
+        /// move to ordered sources cannot tell which owners it changes and must re-read every item once. An
+        /// unchanged item is otherwise skipped, so the marker changes every Jira fingerprint one time. Raise it
+        /// only to force such a re-read again.
         /// </summary>
-        private const string JiraReadingVersion = "original-names-1";
+        private const string JiraReadingVersion = "parent-sources-2";
 
         private const string Absent = "-";
 
@@ -142,9 +153,14 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         private const char BetweenNestedItems = '\u001C';
 
+        private const char BetweenParentSources = ',';
+
         private static string Render(int value) => value.ToString(CultureInfo.InvariantCulture);
 
         private static string Render(int? value) => value?.ToString(CultureInfo.InvariantCulture) ?? Absent;
+
+        private static string Render(ParentSourceEntry entry)
+            => entry.AdditionalFieldDefinitionId is { } field ? $"F:{Render(field)}" : "P";
 
         /// <summary>
         /// Order-insensitive over the mappings AND over each mapping's raw states: neither carries meaning,
