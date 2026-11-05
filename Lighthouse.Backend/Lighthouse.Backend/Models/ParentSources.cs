@@ -64,6 +64,12 @@ namespace Lighthouse.Backend.Models
         public int? ToTheLegacyField()
             => Entries.FirstOrDefault(entry => entry.Kind == ParentSourceKind.AdditionalField)?.AdditionalFieldDefinitionId;
 
+        /// <summary>What a single old field means as a list: that field then the tracker's own parent, or the own parent alone.</summary>
+        public static ParentSources FromTheLegacyField(int? additionalFieldDefinitionId)
+            => additionalFieldDefinitionId is { } field
+                ? new([ParentSourceEntry.Field(field), ParentSourceEntry.TrackerParent])
+                : OnlyTheTrackersOwnParent;
+
         private static IEnumerable<ParentSourcesViolation> ViolationsOf(List<ParentSourceEntry> entries)
         {
             if (entries.Count == 0)

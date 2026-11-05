@@ -22,10 +22,22 @@ namespace Lighthouse.Backend.Models
         public List<WriteBackMappingDefinition> WriteBackMappingDefinitions { get; } = [];
 
         /// <summary>The Parent Override Field every Team on this connection reads while it follows the default.</summary>
-        public int? ParentOverrideForTeams { get; set; }
+        public int? ParentOverrideForTeams
+        {
+            get => parentOverrideForTeams;
+            set => (ParentSourcesForTeams, parentOverrideForTeams) = (DefaultListInStepWith(value, ParentSourcesForTeams), value);
+        }
 
         /// <summary>The Parent Override Field every Portfolio on this connection reads while it follows the default.</summary>
-        public int? ParentOverrideForPortfolios { get; set; }
+        public int? ParentOverrideForPortfolios
+        {
+            get => parentOverrideForPortfolios;
+            set => (ParentSourcesForPortfolios, parentOverrideForPortfolios) = (DefaultListInStepWith(value, ParentSourcesForPortfolios), value);
+        }
+
+        private int? parentOverrideForTeams;
+
+        private int? parentOverrideForPortfolios;
 
         /// <summary>The parent sources every Team on this connection reads while it follows the default. Null means no default is set.</summary>
         public ParentSources? ParentSourcesForTeams { get; private set; }
@@ -35,11 +47,23 @@ namespace Lighthouse.Backend.Models
 
         /// <param name="list">Null removes the default.</param>
         public void SetParentSourcesDefaultForTeams(ParentSources? list)
-            => (ParentSourcesForTeams, ParentOverrideForTeams) = (list, list?.ToTheLegacyField());
+            => (ParentSourcesForTeams, parentOverrideForTeams) = (list, list?.ToTheLegacyField());
 
         /// <param name="list">Null removes the default.</param>
         public void SetParentSourcesDefaultForPortfolios(ParentSources? list)
-            => (ParentSourcesForPortfolios, ParentOverrideForPortfolios) = (list, list?.ToTheLegacyField());
+            => (ParentSourcesForPortfolios, parentOverrideForPortfolios) = (list, list?.ToTheLegacyField());
+
+        // A field the list already answers with is an echo from a client that cannot see the list. An empty
+        // field that is no echo clears the default, which is not the same as a default of the own parent alone.
+        private static ParentSources? DefaultListInStepWith(int? field, ParentSources? list)
+        {
+            if (list?.ToTheLegacyField() == field)
+            {
+                return list;
+            }
+
+            return field is null ? null : ParentSources.FromTheLegacyField(field);
+        }
 
         /// <summary>The Dependency Field every Portfolio on this connection reads while it follows the default.</summary>
         public int? DependencyFieldForPortfolios { get; set; }

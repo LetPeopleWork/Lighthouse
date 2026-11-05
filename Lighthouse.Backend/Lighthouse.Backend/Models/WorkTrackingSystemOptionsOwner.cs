@@ -162,7 +162,7 @@ namespace Lighthouse.Backend.Models
         [NotMapped]
         public string? ParentOverrideDefaultName => WorkTrackingSystemConnection?.DisplayNameOfField(ParentOverrideConnectionDefault);
 
-        public void FollowParentOverrideDefault() => ParentOverride = StoredSetting.FollowingTheDefault;
+        public void FollowParentOverrideDefault() => HoldParentOverride(StoredSetting.FollowingTheDefault);
 
         /// <summary>This owner's own list. Null while it follows, which is not the same as an empty list: a list always names at least one place.</summary>
         public ParentSources? ParentSources { get; private set; }
@@ -190,14 +190,14 @@ namespace Lighthouse.Backend.Models
                 ?? ParentSources.OnlyTheTrackersOwnParent;
 
         /// <param name="additionalFieldDefinitionId">Null is a deliberate None: the tracker's own parent, whatever the default says.</param>
-        public void OwnParentOverride(int? additionalFieldDefinitionId) => ParentOverride = StoredSetting.Owning(additionalFieldDefinitionId);
+        public void OwnParentOverride(int? additionalFieldDefinitionId) => HoldParentOverride(StoredSetting.Owning(additionalFieldDefinitionId));
 
         /// <summary>The field this owner would hold as its own once the sent setting is taken; null when it would follow, or choose None.</summary>
         public int? ParentOverrideOwnedOnceTaken(SettingSource? sentSource, int? sentField)
             => ParentOverride.OwnedOnceTaking(sentSource, sentField, ParentOverrideConnectionDefault);
 
         public void TakeParentOverrideAsSent(SettingSource? sentSource, int? sentField)
-            => ParentOverride = ParentOverride.Taking(sentSource, sentField, ParentOverrideConnectionDefault);
+            => HoldParentOverride(ParentOverride.Taking(sentSource, sentField, ParentOverrideConnectionDefault));
 
         /// <summary>Whether this owner reads the given connection default; false for every default its kind is not offered.</summary>
         public virtual bool FollowsConnectionDefault(ConnectionDefaultSetting setting) => false;
@@ -207,6 +207,26 @@ namespace Lighthouse.Backend.Models
         {
             get => new(storedParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId);
             set => (storedParentOverrideSource, OwnParentOverrideAdditionalFieldDefinitionId) = (value.Source, value.OwnValue);
+        }
+
+        // A field the list already answers with is an echo from a client that cannot see the list, so a richer
+        // list survives it. The old field and the list are set side by side here, never through each other.
+        private void HoldParentOverride(StoredSetting setting)
+        {
+            ParentOverride = setting;
+            ParentSources = ParentSourcesInStepWith(setting);
+        }
+
+        private ParentSources? ParentSourcesInStepWith(StoredSetting setting)
+        {
+            if (setting.FollowsTheDefault)
+            {
+                return null;
+            }
+
+            return ParentSources is { } held && held.ToTheLegacyField() == setting.OwnValue
+                ? held
+                : ParentSources.FromTheLegacyField(setting.OwnValue);
         }
 
         /// <summary>The category of a raw tracker state, read through the owner's normaliser, so a list that still holds a group's name answers for the group's states too.</summary>
