@@ -12,6 +12,25 @@
 > open is listed under "Resolved and still open". Nothing is committed, nothing touched on ADO, no shared file
 > edited (ADR-270, ARCHITECTURE.md and jobs.yaml changes are *proposed* below).
 
+## AFK hold (2026-11-06, night; nothing pushed)
+
+All 21 steps, the slice refactors and reviews, the final refactor and review, and mutation are done. The maintainer stopped the run here for the night. On the next word: rebase if `origin/main` moved, push, `/clean-ci`, then the maintainer reviews by hand. The demo Jira instance with 2 parent sources waits for the maintainer's word; work items on the demo Jira may be changed for it.
+
+Gates, as the crafter reported them on the last commit: backend 12,796 passed, 2 skipped, 0 failed; frontend 9,493 passed; builds clean. Live Jira 117 of 117 and live Azure DevOps 100 of 100 ran before the last connector-neutral edits. Mutation: backend 96.32 % (489 tested), frontend 92.67 % (464 tested); see `mutation/results.md`. 183 backend mutants did not compile and were never tested; counted as survivors the backend reads 70.09 %. E2E was not run for this feature yet.
+
+For the maintainer:
+
+1. A lone link to a Feature stored later is repaired only by a full refresh, and nothing schedules one on Jira or Azure DevOps. Accept and say so in the docs and release note, or re-place Team records after a Portfolio refresh stores a new Feature.
+2. `ParentSourceMatchedNothing` says "link type" on Azure DevOps, which calls it a relation type.
+3. A refresh whose query returns nothing reports no parent findings.
+4. Backend refusal and log labels say Parent sources too; revert if only the screens were meant.
+5. The connection bridge stayed: the old number and fields added in the same save still use it.
+6. Clearing a default means leaving only the own Parent row; there is no None.
+7. By hand: keyboard focus after Remove can still drop, and keyboard behaviour was not tried in a browser.
+8. Mutation survivors worth a look: `JiraWorkTrackingConnector.cs:2031`, `ModifyConnectionSettings.tsx:206`.
+
+Owed at finalize: docs still say Parent Override Field, and the tips link to `#parent-override-field`, so renaming those headings breaks them; the release note on items that move and on Azure DevOps reading relations on every full fetch.
+
 ## Slice 01 double review (2026-11-06, sonnet, read only; fixes wait for the maintainer)
 
 No blocker, no high. Fixes are owed before slice 02 starts.
@@ -37,6 +56,61 @@ Maintainer answers (2026-11-06, after the review):
 - A Portfolio's cost line reads: `Not in the list: Parent (Jira's own). Features whose only parent is Jira's own parent get no parent.`
 
 Not covered: the bodies of `ParentSourcesRefreshScenarios`, `ParentSourcesSettingsApiIntegrationTest` and the new `WorkItemServiceTest` tests; clone and unsaved-owner paths; the DD-7 loading and failure looks.
+
+## Slice 02 review (2026-11-06, haiku, read only)
+
+Needs revision, no blocker. One revision pass done, test commits only: 5cd99bf82, aee6c4a7c, e7a15170e, 0ecc739ec.
+
+| # | Severity | Finding | State |
+|---|---|---|---|
+| 1 | Medium | Findings ride on records, so a refresh whose query returns nothing reports none | Open, for the hold; known since slice 01 |
+| 2 | Medium | The dependency scenario could not fail if the relations guard went | Fixed: a Portfolio scenario, seen to fail with the guard removed |
+| 3 | Medium | A stale tab sending None without a list could lose the list | Not a defect: the concurrency token answers 409; pinned. A save with no token skips the check |
+| 4 | Low | Connection defaults stay two entries; `ParentSourcesSetting.tsx` rebuilds one from the old int | Slice 03, noted on 03-02 |
+| 5 | Medium | An unsaved owner might show Set here while the server follows the default | Not a defect: only the clone page renders it, and it carries the source; server side pinned |
+| 6 | Low | `useModifySettings.ts`: an update with no settings loaded is dropped | Left: the form sits behind the loader |
+| 7 | Low | "was read instead" suggests a parent was found | Left: the maintainer's wording |
+| 8 | Low | One unreadable stored list fails every load of that owner | Left: deliberate; whether overview pages survive is unchecked |
+| 9 | Low | Scenario named After the upgrade seeds no legacy owner | Fixed: renamed |
+| 10 | Low | Unsaved-Team test asserted only the heading | Fixed |
+| 11 | Low | `itsParent` is plain "parent" | Rejected: parent is not a configurable term |
+| 12 | Low | `relations.ParentReferences.Add` throws on a repeated id | Left: older code, repeats unchecked |
+
+Also for the hold: `ParentSourceMatchedNothing` says "link type" on Azure DevOps, which calls it a relation type.
+
+## Slice 03 review (2026-11-06, haiku, read only)
+
+Needs revision, no blocker. Spot-checked by the orchestrator before acting.
+
+| # | Severity | Finding | State |
+|---|---|---|---|
+| 1 | High | The page pruned a removed field from a default's list, so the save was not refused and followers moved silently | Revision: lists go to the server as they stand and the refusal shows |
+| 2 | Medium | The same prune dropped an entry for a missing definition | Revision: closes with 1 |
+| 3 | Medium | Event absent from `usagedata.md` | Rejected: that page lists friendly names; the row is there |
+| 4 | Medium | The event fires from three places | Rejected: one event for all three is the spec |
+| 5 | Medium | No scenario sends an int-only change on a list default | Revision |
+| 6 | Medium | The first scenario cannot see a Portfolio queued by a Teams change | Revision |
+| 7 | Low | The in-use scenario covers one position and a loose message | Revision |
+| 9-12 | Low | Old int on a default: null beside `[own]` keeps it, null beside an echo clears it, stale int with no default sets one, a changed int drops later entries | Left: the agreed API rule; for the hold |
+| 13 | Low | Unset to `[own]` logs as a change | Left: log only, no update queued |
+| 14 | Low | A list naming a field added in the same save reads "does not have" | Left: the page cannot send it |
+
+## Final review (2026-11-06, sonnet, read only)
+
+Needs revision, no blocker, no high. The upgrade, refresh, effective-list, authorisation and copy checks held.
+
+| # | Severity | Finding | State |
+|---|---|---|---|
+| 1 | Medium | The connection page's tip ended "With None, ..." though the list has no None | Revision |
+| 2 | Medium | A lone link to a Feature stored later is repaired only by a full refresh, and nothing schedules one on Jira or Azure DevOps | Maintainer's call, at the hold |
+| 3 | Low | `FollowParentSourcesDefault` had test callers only and a false comment | Revision |
+| 4 | Low | An owner with source Own and no list reads the default; only a rollback can leave that state | Left: the rollback limit below covers it |
+| 5 | Low | Down then Up does not restore a list: it is rebuilt from the old columns | Left: rollback limit below |
+| 6 | Low | A rule's failure message named the Azure DevOps connector | Revision |
+| 7 | Low | The relation-type log line said it was read as if nothing were named | Revision |
+| 8 | Low | The old int's setter and EF's load order were unverified | Revision: pinned by a reload test |
+
+Rollback limits, in addition to the DD-1 text: running `Down` then `Up` rebuilds each list from the old columns, so `[A,B,own]` becomes `[A,own]`, `[own,A]` becomes `[A,own]` and `[A,B]` gains the own Parent. An older build's edit of a follower leaves source Own with no list, and that owner reads the connection default after rolling forward.
 
 ## Wave: DISCUSS / [REF] Prior-Wave Reading Confirmation
 
