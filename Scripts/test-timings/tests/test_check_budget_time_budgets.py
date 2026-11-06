@@ -562,6 +562,23 @@ class TheWorkflowStepsKeepTheSwitchOutOfTheUnitTests(unittest.TestCase):
             if step.lstrip().startswith("- name:")
         ]
 
+    @staticmethod
+    def env_entries(step):
+        """The lines under the step's own `env:` key, found by indentation."""
+        lines = step.splitlines()
+        key_indent = len(lines[0]) - len(lines[0].lstrip()) + 2
+        entries = []
+        inside = False
+        for line in lines[1:]:
+            indent = len(line) - len(line.lstrip())
+            if not line.strip():
+                continue
+            if indent == key_indent:
+                inside = line.strip() == "env:"
+            elif inside and indent > key_indent:
+                entries.append(line.strip())
+        return entries
+
     def test_the_switch_is_in_the_environment_of_the_budget_step_and_not_of_the_unit_test_step(self):
         for stack, path in self.WORKFLOWS.items():
             with self.subTest(stack=stack):
@@ -573,7 +590,7 @@ class TheWorkflowStepsKeepTheSwitchOutOfTheUnitTests(unittest.TestCase):
                 self.assertEqual(len(unit), 1)
                 self.assertNotIn("check_budget.py", unit[0])
                 self.assertNotIn(SWITCH, unit[0])
-                self.assertIn(f"{SWITCH}: ${{{{ vars.{SWITCH} }}}}", budget[0])
+                self.assertIn(f"{SWITCH}: ${{{{ vars.{SWITCH} }}}}", self.env_entries(budget[0]))
                 self.assertNotIn("--warn-only", unit[0])
                 self.assertNotIn("--warn-only", budget[0])
                 self.assertIsNone(re.search(r"(?<![A-Z_])BUDGET_WARN_ONLY", budget[0]))

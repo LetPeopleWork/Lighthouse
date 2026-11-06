@@ -184,7 +184,8 @@ jobs:
         python3 --version
         python3 -m unittest discover -s Scripts/test-timings/tests
 
-    # A test over its time budget fails the build. The limits were measured on plain runs.
+    # A test class over its time budget fails the build. The limits were measured on plain runs.
+    # The step is skipped when the tests failed, so a failed run gets no budget verdict.
     # To report it as a warning instead, set the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY
     # to true; empty, unset or false enforces. The script rejects any other value.
     - name: Check test-time budget
