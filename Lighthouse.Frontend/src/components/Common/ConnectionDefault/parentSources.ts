@@ -1,6 +1,9 @@
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
-import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type {
+	ParentSourcesDefaultName,
+	WorkTrackingSystemType,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 
 export type ParentSourcesAction =
 	| { type: "add"; entry: ParentSourceEntry }
@@ -9,6 +12,8 @@ export type ParentSourcesAction =
 	| { type: "moveDown"; index: number };
 
 export const MaximumParentSources = 5;
+
+const SeveralEntries = 2;
 
 export const OnlyTheTrackersOwnParent: readonly ParentSourceEntry[] = [
 	{ kind: "TrackerParent" },
@@ -34,6 +39,19 @@ export const listsTheSameSources = (
 ): boolean =>
 	first.length === second.length &&
 	first.every((entry, position) => isSameSource(entry, second[position]));
+
+/** Whether a saved list gives several sources that the list before it did not, which is what counts as using the feature. */
+export const nowListsSeveralSources = (
+	list: readonly ParentSourceEntry[],
+	before: readonly ParentSourceEntry[],
+): boolean =>
+	list.length >= SeveralEntries && !listsTheSameSources(list, before);
+
+/** Whose list a parent default holds. */
+export const ownerOfParentSourcesDefault = (
+	name: ParentSourcesDefaultName,
+): "Team" | "Portfolio" =>
+	name === "parentOverrideForTeams" ? "Team" : "Portfolio";
 
 const holdsPosition = (
 	list: readonly ParentSourceEntry[],

@@ -51,6 +51,7 @@ import {
 	directionTipTermsFrom,
 } from "../ConnectionDefault/fieldDirectionTips";
 import ParentSourcesList from "../ConnectionDefault/ParentSourcesList";
+import { ownerOfParentSourcesDefault } from "../ConnectionDefault/parentSources";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
@@ -234,7 +235,7 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 			return (
 				<ParentSourcesList
 					key={name}
-					owner={name === "parentOverrideForTeams" ? "Team" : "Portfolio"}
+					owner={ownerOfParentSourcesDefault(name)}
 					value={parentSourcesOfDefault(name, defaults)}
 					tracker={tracker}
 					additionalFieldDefinitions={savedFields}

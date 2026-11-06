@@ -13,6 +13,7 @@ import ParentSourcesList from "../../../components/Common/ConnectionDefault/Pare
 import {
 	nameOfParentSource,
 	OnlyTheTrackersOwnParent,
+	ownerOfParentSourcesDefault,
 } from "../../../components/Common/ConnectionDefault/parentSources";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
@@ -97,7 +98,7 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 
 	return (
 		<ParentSourcesList
-			owner={theDefault === "parentOverrideForTeams" ? "Team" : "Portfolio"}
+			owner={ownerOfParentSourcesDefault(theDefault)}
 			value={
 				follows
 					? followedList

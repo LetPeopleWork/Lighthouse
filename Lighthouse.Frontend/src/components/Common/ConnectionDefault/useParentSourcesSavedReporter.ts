@@ -3,9 +3,7 @@ import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
-import { listsTheSameSources } from "./parentSources";
-
-const SeveralEntries = 2;
+import { nowListsSeveralSources } from "./parentSources";
 
 // A follower's settings echo the default's list and the server ignores it, so a follower holds no list of its own.
 const ownListOf = (settings: IBaseSettings): readonly ParentSourceEntry[] =>
@@ -34,10 +32,7 @@ export const useParentSourcesSavedReporter = () => {
 	const settingsSaved = useCallback(
 		(settings: IBaseSettings) => {
 			const list = ownListOf(settings);
-			if (
-				list.length >= SeveralEntries &&
-				!listsTheSameSources(list, lastSavedList.current)
-			) {
+			if (nowListsSeveralSources(list, lastSavedList.current)) {
 				reportUsage({
 					name: UsageDataEventName.ParentSourcesSavedWithSeveralEntries,
 				});
