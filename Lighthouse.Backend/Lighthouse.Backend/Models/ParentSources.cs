@@ -44,6 +44,10 @@ namespace Lighthouse.Backend.Models
                 : new ParentSourcesOutcome(null, violations);
         }
 
+        /// <summary>The ids of the Additional Fields the list names, in order; the tracker's own parent has none.</summary>
+        public IReadOnlyList<int> AdditionalFieldIds()
+            => [.. Entries.Select(entry => entry.AdditionalFieldDefinitionId).OfType<int>()];
+
         /// <summary>The text the list is stored as, and rendered with, byte for byte.</summary>
         public string ToStoredText() => JsonSerializer.Serialize(Entries, (JsonSerializerOptions?)null);
 

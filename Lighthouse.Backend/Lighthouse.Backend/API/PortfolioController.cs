@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/portfolios/{portfolioId:int}")]
     [ApiController]
     // S107 (too many constructor parameters): two of them are single seams. Building an ordering comparer
-    // anywhere else is how two screens end up sorting differently, and the Parent Override refusals must
+    // anywhere else is how two screens end up sorting differently, and the Parent sources refusals must
     // read the same way for every Team and Portfolio save, so callers are handed each one rather than
     // allowed to construct their own.
 #pragma warning disable S107

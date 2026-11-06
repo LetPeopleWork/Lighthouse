@@ -1,7 +1,6 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.WorkItems;
-using System.Text.Json;
 
 namespace Lighthouse.Backend.API.Helpers
 {
@@ -47,13 +46,11 @@ namespace Lighthouse.Backend.API.Helpers
 
             return settings.ParentOverrideFieldWasSent()
                 && settings.ParentOverrideAdditionalFieldDefinitionId != read.ToTheLegacyField()
-                && TextOf(settings.ParentSources) == TextOf(ParentSourceEntryDto.ListOf(read));
+                && ParentSourceEntryDto.TextOf(settings.ParentSources) == ParentSourceEntryDto.TextOf(ParentSourceEntryDto.ListOf(read));
         }
 
         private static bool TheSaveChoosesToOwn(WorkTrackingSystemOptionsOwner owner, SettingSource? sentSource, List<ParentSourceEntryDto?> sent)
-            => IncomingSetting.SourceChosen(sentSource, TextOf(sent), sentIsSet: true, TextOf(ParentSourceEntryDto.ListOf(owner.TheEffectiveParentSources()))) == SettingSource.Own;
-
-        private static string TextOf(List<ParentSourceEntryDto?>? list) => JsonSerializer.Serialize(list);
+            => IncomingSetting.SourceChosen(sentSource, ParentSourceEntryDto.TextOf(sent), sentIsSet: true, ParentSourceEntryDto.TextOf(ParentSourceEntryDto.ListOf(owner.TheEffectiveParentSources()))) == SettingSource.Own;
 
         private static void TakeParentSourcesAsSent(WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase settings)
         {

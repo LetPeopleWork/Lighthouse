@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
@@ -14,6 +15,9 @@ namespace Lighthouse.Backend.API.DTO
 
         public static List<ParentSourceEntryDto?> ListOf(ParentSources list)
             => [.. list.Entries.Select(entry => new ParentSourceEntryDto { Kind = entry.Kind, AdditionalFieldDefinitionId = entry.AdditionalFieldDefinitionId })];
+
+        /// <summary>The list as text, so two lists can be compared by what they say.</summary>
+        public static string TextOf(List<ParentSourceEntryDto?>? list) => JsonSerializer.Serialize(list);
 
         /// <summary>The entry this names; null when it is neither the tracker's own parent nor a field, so the list can refuse it.</summary>
         public ParentSourceEntry? ToEntry() => (Kind, AdditionalFieldDefinitionId) switch

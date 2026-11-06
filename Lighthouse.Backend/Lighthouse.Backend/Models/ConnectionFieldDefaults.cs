@@ -29,8 +29,7 @@ namespace Lighthouse.Backend.Models
 
         private static IReadOnlyList<int> AtMostOne(int? field) => field is { } id ? [id] : [];
 
-        private static IReadOnlyList<int> FieldsListedIn(ParentSources? list)
-            => [.. list?.Entries.Select(entry => entry.AdditionalFieldDefinitionId).OfType<int>() ?? []];
+        private static IReadOnlyList<int> FieldsListedIn(ParentSources? list) => list?.AdditionalFieldIds() ?? [];
 
         /// <summary>Every default a connection holds as one of its fields, in the order they are checked, logged and named.</summary>
         public static readonly IReadOnlyList<ConnectionFieldDefault> All =

@@ -110,7 +110,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             if (ParentSourcesChoiceFor(setting, held) is { } choice)
             {
-                return [.. choice.Outcome?.List?.Entries.Select(entry => entry.AdditionalFieldDefinitionId).OfType<int>() ?? []];
+                return choice.Outcome?.List?.AdditionalFieldIds() ?? [];
             }
 
             return FieldOf(setting) is { } field ? [field] : [];
@@ -135,9 +135,7 @@ namespace Lighthouse.Backend.API.DTO
         private bool TheOldFieldIsTheEdit(ConnectionDefaultSetting setting, List<ParentSourceEntryDto?>? sentList, ParentSources? held)
             => sent.TryGetValue(setting, out var oldField)
                 && oldField != held?.ToTheLegacyField()
-                && TextOf(sentList) == TextOf(held is null ? null : ParentSourceEntryDto.ListOf(held));
-
-        private static string TextOf(List<ParentSourceEntryDto?>? list) => JsonSerializer.Serialize(list);
+                && ParentSourceEntryDto.TextOf(sentList) == ParentSourceEntryDto.TextOf(held is null ? null : ParentSourceEntryDto.ListOf(held));
 
         /// <summary>The Estimation bundle the save sends for a default; None when it clears it, null when it sends none.</summary>
         public EstimationBundle? BundleOf(ConnectionDefaultSetting setting)

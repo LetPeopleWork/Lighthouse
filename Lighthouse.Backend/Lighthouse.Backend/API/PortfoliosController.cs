@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.API
     [Route("api/v1/[controller]")]
     [Route("api/latest/[controller]")]
     [ApiController]
-    // S107 (too many constructor parameters): the Feature ordering seam and the Parent Override refusals each
+    // S107 (too many constructor parameters): the Feature ordering seam and the Parent sources refusals each
     // take one place - see PortfolioController.
 #pragma warning disable S107
     public class PortfoliosController(
