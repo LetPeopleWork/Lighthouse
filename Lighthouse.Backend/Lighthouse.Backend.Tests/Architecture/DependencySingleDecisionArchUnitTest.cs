@@ -2,9 +2,15 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Parents;
+using Lighthouse.Backend.Services.Implementation.Repositories;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Csv;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira;
+using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Linear;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -114,6 +120,40 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Models/Dependencies/",
             "Services/Implementation/Dependencies/",
             "Services/Interfaces/Dependencies/",
+        ];
+
+        private const string TheConnectors = ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern;
+
+        private static readonly string[] TheTypesThatMaySetAParent =
+        [
+            // The one writer: it applies what the ordered list led to.
+            typeof(ParentSourceSelector).FullName!,
+
+            // Linear ignores the list. The parent is the project or initiative it built, not a choice among sources.
+            typeof(LinearWorkTrackingConnector).FullName!,
+
+            // A CSV has one place a parent can come from, its Parent Reference Id column.
+            typeof(CsvWorkTrackingConnector).FullName!,
+
+            // Copies the value into a record it rebuilds, which decides nothing.
+            typeof(PortfolioMetricsService).FullName!,
+
+            // Carries a stored value over when a record is copied or updated.
+            typeof(WorkItemBase).FullName!,
+
+            // Azure DevOps does not read the ordered list yet. Once it does it goes through the one writer and leaves this list.
+            typeof(AzureDevOpsWorkTrackingConnector).FullName!,
+        ];
+
+        // The generic repository is named whole: the reading splits IRepository<Feature> into its two halves,
+        // and Feature alone is what every connector returns. No connector holds a repository of any kind.
+        private static readonly Type[] TheWaysToTheStoredFeatures =
+        [
+            typeof(StoredFeatures),
+            typeof(IFeatureRepository),
+            typeof(FeatureRepository),
+            typeof(IFeatureListReader),
+            typeof(IRepository<>),
         ];
 
         [Test]
@@ -535,7 +575,96 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         private static bool ReachesAConnector(Mono.Cecil.TypeReference type)
-            => IlDependencies.ResidesInNamespaceMatching(type, ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern);
+            => IlDependencies.ResidesInNamespaceMatching(type, TheConnectors);
+
+        /// <summary>
+        /// A tracker that reads the owner's list and then decides for itself would honour the list until the
+        /// day the shared rule changes, and nobody would see the two part ways. Linear, CSV and ServiceNow do
+        /// not read the list, so this asks nothing of them.
+        /// </summary>
+        [Test]
+        public void EveryTrackerThatReadsParents_AsksTheSelector()
+        {
+            using var module = IlDependencies.ReadModule(typeof(ParentSourceSelector).Assembly);
+
+            var readers = IlDependencies
+                .DependentsIn(module, TheConnectors, type => Names(typeof(ParentSources), type))
+                .Select(dependent => dependent.TypeName)
+                .ToList();
+
+            var askers = IlDependencies
+                .DependentsIn(module, TheConnectors, type => Names(typeof(ParentSourceSelector), type))
+                .Select(dependent => dependent.TypeName);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(readers, Has.Member(typeof(JiraWorkTrackingConnector).FullName),
+                    "Jira reads the list, so a rule that does not find it there is looking for the wrong thing and would pass whatever a tracker did.");
+                Assert.That(readers.Except(askers), Is.Empty,
+                    "A tracker that reads the parent sources hands what it read to ParentSourceSelector, which alone " +
+                    "knows what the order means. Deciding here is a second rule that drifts from the first.");
+            }
+        }
+
+        /// <summary>
+        /// Read from the compiled setter calls, because an object initialiser and a delegate both reach the
+        /// setter without looking like an assignment. The list is exact rather than a ceiling, so a type that
+        /// stops writing has to leave it and cannot quietly start again later.
+        /// </summary>
+        [Test]
+        public void NoOneButTheOneHelperAssignsAParent()
+        {
+            using var module = IlDependencies.ReadModule(typeof(ParentSourceSelector).Assembly);
+
+            var writers = module.Types
+                .SelectMany(TypeAndItsNestedTypes)
+                .Where(type => type.Methods.Any(method => method.HasBody && method.Body.Instructions.Any(SetsAParent)))
+                .Select(type => IlDependencies.DeclaringTypeOf(type.FullName.Replace('/', '+')))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            Assert.That(writers, Is.EquivalentTo(TheTypesThatMaySetAParent),
+                "ParentSourceSelector.HangUnder applies the choice the list led to. Anything else that writes a " +
+                "parent overrules that choice on the records it touches, and the result depends on which ran last. " +
+                "Return a ParentChoice and hand it to HangUnder. If an entry here no longer writes one, remove it.");
+        }
+
+        private static bool SetsAParent(Mono.Cecil.Cil.Instruction instruction)
+            => instruction.Operand is Mono.Cecil.MethodReference call
+                && call.Name == $"set_{nameof(WorkItemBase.ParentReferenceId)}"
+                && Names(typeof(WorkItemBase), call.DeclaringType);
+
+        private static IEnumerable<Mono.Cecil.TypeDefinition> TypeAndItsNestedTypes(Mono.Cecil.TypeDefinition type)
+            => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
+
+        /// <summary>
+        /// A connector reports what the tracker says; whether a link names a Feature on file is the second
+        /// pass's question, in the work item service. A connector holding the stored Features would answer it
+        /// from whatever was stored when that read ran, ahead of the refresh that may be adding them.
+        /// </summary>
+        [Test]
+        public void ConnectorsNeverUseStoredFeatures()
+        {
+            using var module = IlDependencies.ReadModule(typeof(ParentSourceSelector).Assembly);
+
+            var offenders = IlDependencies
+                .DependentsIn(module, TheConnectors, ReachesTheStoredFeatures)
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(IlDependencies.TypesIn(module, TheConnectors), Has.Member(typeof(JiraWorkTrackingConnector).FullName),
+                    "The connectors moved, so this rule is reading an empty namespace and would pass whatever they did.");
+                Assert.That(offenders, Is.Empty,
+                    "Connectors decide from what they read. What is stored belongs to the second pass, which runs " +
+                    "once the refresh knows its Features. Found: " + string.Join(", ", offenders.Select(offender => $"{offender.TypeName} -> {string.Join(", ", offender.Targets)}")));
+            }
+        }
+
+        private static bool ReachesTheStoredFeatures(Mono.Cecil.TypeReference type)
+            => TheWaysToTheStoredFeatures.Any(way => Names(way, type));
+
+        private static bool Names(Type expected, Mono.Cecil.TypeReference type) => type.FullName == expected.FullName;
 
         /// <summary>
         /// Reading what a Feature waits on is free; letting it change a date is not. One file asks the

@@ -126,7 +126,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         }
 
         [Test]
-        [Ignore("Story 6501: reads the live test project and is not to be run until the connector reads an ordered list. LGHTHSDMO-1726 shows that a link entry is read and that the tracker's own parent is read only when listed; which of two filled sources wins needs an item carrying two different parents, which the project does not hold, so one would have to be seeded.")]
         public async Task GetWorkItemsForTeam_UseOrderedParentSources_ReadsTheLinkAndTheOwnParentOnlyWhenListed()
         {
             var subject = CreateSubject();
@@ -151,7 +150,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(withTheLinkListed.ParentReferenceId, Is.EqualTo("LGHTHSDMO-1724"),
                     "The link entry comes first and names a parent.");
                 Assert.That(withOnlyTheOwnParentListed.ParentReferenceId, Is.Empty,
-                    "With the link left out of the list it is not read. Its label says the item has no own Jira parent; check that when this is first run.");
+                    "With the link left out of the list it is not read, and this item has no own Jira parent.");
             }
         }
 

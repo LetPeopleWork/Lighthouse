@@ -123,6 +123,27 @@ assert "actions-only: shared=false"        "$(classify_shared "$diff_actions_onl
 assert "frontend manifest: backend=false"  "$(classify_backend $'Lighthouse.Frontend/package.json')" "false"
 assert "docs readme: backend=false"        "$(classify_backend $'docs/readme.md')"       "false"
 
+# Scenario 18: the parent-source code decides what the Jira connector reads, so it runs the live Jira suite
+for parent_source_path in \
+  Lighthouse.Backend/Lighthouse.Backend/Models/ParentSources.cs \
+  Lighthouse.Backend/Lighthouse.Backend/Models/ParentSourceEntry.cs \
+  Lighthouse.Backend/Lighthouse.Backend/Models/ParentReadings.cs \
+  Lighthouse.Backend/Lighthouse.Backend/Models/ParentChoice.cs \
+  Lighthouse.Backend/Lighthouse.Backend/Models/ParentResolution.cs \
+  Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Parents/ParentSourceSelector.cs \
+  Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/FetchFingerprint.cs
+do
+  assert "parent sources: jira=true for $parent_source_path"    "$(classify_jira "$parent_source_path")"   "true"
+  assert "parent sources: ado=false for $parent_source_path"    "$(classify_ado "$parent_source_path")"    "false"
+  assert "parent sources: shared=false for $parent_source_path" "$(classify_shared "$parent_source_path")" "false"
+done
+
+# Scenario 19: files that change often stay out, because every live run spends Jira quota
+assert "work item base: jira=false"      "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Models/WorkItemBase.cs')" "false"
+assert "options owner: jira=false"       "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Models/WorkTrackingSystemOptionsOwner.cs')" "false"
+assert "other work item service: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/WorkItems/WorkItemService.cs')" "false"
+assert "parent source tests: jira=false" "$(classify_jira $'Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Parents/ParentSourceSelectorTest.cs')" "false"
+
 echo
 echo "passed: $pass"
 echo "failed: $fail"

@@ -212,5 +212,27 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
                 Assert.That(TheStoredParentOfTheWorkItem("OPS-1"), Is.EqualTo(TheHousekeepingEpic), "A Team with no override read Jira's own parent before and still does.");
             }
         }
+
+        /// <summary>
+        /// Given the instance is Jira Data Center and a Team lists "Is caused by" then the own parent, as the upgrade
+        /// leaves an override, and PAY-313 has no link, no Jira parent and PAY-7 in the Epic Link field, when the Team
+        /// refreshes, then PAY-313 hangs under PAY-7: the empty entry falls through to the own parent, and on Data
+        /// Center that is the field the instance keeps its parents in.
+        /// </summary>
+        [Test]
+        public async Task After_the_upgrade_an_empty_override_on_Data_Center_falls_through_to_the_instances_parent_field()
+        {
+            TheInstanceIsJiraDataCenter();
+            TheTeamListsTheParentSources(TheTeamsCausedByLink(), ParentSourceEntry.TrackerParent);
+            ThePortfolioHoldsTheFeature(TheFeatureTheLinkNames);
+            await ThePortfolioRefreshes();
+            TheTeamHoldsTheWorkItem("PAY-313");
+            TheIssueHoldsInTheField("PAY-313", "Epic Link", TheFeatureTheLinkNames);
+
+            await TheTeamRefreshes();
+
+            Assert.That(TheStoredParentOfTheWorkItem("PAY-313"), Is.EqualTo(TheFeatureTheLinkNames),
+                "Data Center names no own parent on the issue, so reading only that would leave this item with none.");
+        }
     }
 }
