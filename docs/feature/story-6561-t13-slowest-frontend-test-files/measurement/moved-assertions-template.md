@@ -28,16 +28,24 @@ the removed-`expect(` rows below.
 |---|---|---|
 | Tests in the touched files (sum) | | |
 | `expect(` calls in the touched files (sum, `baseline/<file>.expects.txt`) | | |
-| Summed per-test seconds, valid pairs of 5 alternating pairs, at least 3 valid (load average sampled at the start and end of each run, user+sys CPU seconds recorded per pair) | | |
+| Summed per-test seconds, valid pairs of 5 alternating pairs, at least 3 valid (a pair is valid when all four 1-minute load-average samples, at the start and end of both its runs, are at or under half the cores; the seconds are the sum of `assertionResults[].duration` (milliseconds, divided by 1000) over the file's suite in `Lighthouse.Frontend/test-results.json`; user+sys CPU seconds recorded per pair) | | |
+| Cut = 1 - after/before of those seconds, per file, against the required cut (no margin) and the design target (with margin) | | |
 | Line / branch coverage of the touched directory | | |
 | Entries in `slowTests.ts` | | |
 
 ## Moved assertions
 
-Every `expect(` removed or shrunk in a touched file has a row. "Assertion text" is the removed `expect(...)` line verbatim; the
-script counts every `expect(` in the cell and compares it per file with the removed lines of the diff. A moved test that keeps
-its title and assertions still gets a row (its file changed). The first cell is the **full id**, `file :: test`, as in the
-baseline list; for a helper file, `file :: <anything>`.
+Every `expect(` removed or shrunk in a touched file has a row, and every row is backed by a removal. "Assertion text" is
+one removed line, copied verbatim from the diff (surrounding whitespace is ignored; no backticks, no second line in the
+cell). `check-behaviour-free.sh` fails when, for any file, the `expect(` occurrences in its rows differ from the ones on its
+removed lines, in either direction; when a row's text is not one of that file's removed lines; and when a removed line is
+cited by more rows than it was removed. A moved test that keeps its title and assertions still gets a row (its file
+changed). The first cell is the **full id**, `file :: test`, as in the baseline list; for a helper file,
+`file :: <anything>`.
+
+A row whose old id is **still in the after-run** fails `run-touched-files.sh`, unless it is an accepted note: the last cell
+("New test (name)") starts with `kept:` and gives the reason, for a test that keeps its name while some of its assertions
+moved. The marker exempts the row from the "id still present" check only; its removed line still has to match.
 
 | Old id (file :: test) | Assertion text | New location (file) | New test (name) |
 |---|---|---|---|

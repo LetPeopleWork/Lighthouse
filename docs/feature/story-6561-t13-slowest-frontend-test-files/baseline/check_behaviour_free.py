@@ -5,8 +5,15 @@ usage (from the repository root):
   python3 -I check_behaviour_free.py --before <sha> --moved <slice-X-moved-assertions.md> [--allow-extraction]
 
 One counter everywhere: occurrences of the regular expression \\bexpect\\( . A removed line counts every occurrence
-on it. A row of the moved-assertions file counts every occurrence in its "Assertion text" cell. Per file, removed
-occurrences must not exceed the occurrences the rows of that file account for.
+on it. A row of the moved-assertions file counts every occurrence in its "Assertion text" cell. Per file, the removed
+occurrences and the occurrences the rows account for must be equal: a missing row hides a removal, and a surplus row
+can stand in for one.
+
+Each row's assertion text, stripped of surrounding whitespace, must be one of the removed lines of its file, and a
+removed line can be cited by as many rows as it was removed. A row that fails this is a phantom.
+
+The counter does not see `expect.soft(`, `expect.poll(` or `assert.`; none of them occurs in the three
+ModifyTeamSettings files today. Add them to EXPECT before a file that uses them is edited.
 
 Every git diff is taken with --no-renames, so a file moved to a new path is a deletion plus an addition and every
 `expect(` in the old file needs a row. New test files that are not tracked yet are read as all-added lines.
@@ -14,6 +21,7 @@ Every git diff is taken with --no-renames, so a file moved to a new path is a de
 
 import argparse
 import re
+from collections import Counter
 import subprocess
 import sys
 
@@ -51,8 +59,9 @@ def normalise(path):
 
 
 def read_rows(moved_path):
-    """Returns (rows_expects_by_file, rows_not_total, accepted_hits)."""
+    """Returns (rows_expects_by_file, rows_not_total, accepted_hits, row_texts_by_file)."""
     rows = {}
+    texts = {}
     rows_not = 0
     accepted = set()
     section = ""
@@ -69,13 +78,14 @@ def read_rows(moved_path):
             if not section.startswith("moved assertions") or not line.lstrip().startswith("|"):
                 continue
             cells = line.strip().strip("|").split("|")
-            if len(cells) < 4 or " :: " not in cells[0]:
+            if len(cells) < 4 or " :: " not in cells[0] or cells[0].strip().startswith("Old id"):
                 continue
             assertion = "|".join(cells[1:-2])
             file = normalise(cells[0].split(" :: ")[0])
             rows[file] = rows.get(file, 0) + len(EXPECT.findall(assertion))
+            texts.setdefault(file, []).append(assertion.strip())
             rows_not += len(NOT.findall(assertion))
-    return rows, rows_not, accepted
+    return rows, rows_not, accepted, texts
 
 
 def deleted_files_diff(before):
@@ -120,7 +130,7 @@ def main():
         with open(file, encoding="utf-8") as handle:
             added.extend((file, line.rstrip("\n")) for line in handle)
 
-    rows, rows_not, accepted = read_rows(args.moved)
+    rows, rows_not, accepted, texts = read_rows(args.moved)
 
     print(f"untracked test files read as added: {len(untracked)}")
     hits = [(f, t) for f, t in added if WEAKER.search(t) and t.strip() not in accepted]
@@ -160,8 +170,23 @@ def main():
             verdict = f"MISSING {gone - rowed} row(s)"
             failures.append(f"{file}: removed expect( without a row")
         elif rowed > gone:
-            verdict = f"note: {rowed - gone} more occurrence(s) in rows than removed"
+            verdict = f"SURPLUS {rowed - gone} occurrence(s) in rows that no removed line accounts for"
+            failures.append(f"{file}: rows account for more expect( than were removed")
         print(f"  removed {gone:3d}  rows {rowed:3d}  {file}  {verdict}")
+
+    print("every row's assertion text against the removed lines of its file:")
+    for file in sorted(texts):
+        available = Counter(t.strip() for t in removed.get(file, []))
+        ever_removed = set(available)
+        for text in texts[file]:
+            if available[text] > 0:
+                available[text] -= 1
+            elif text in ever_removed:
+                print(f"  {file}: cited by more rows than it was removed: {text}")
+                failures.append(f"{file}: a removed line is cited by more rows than removals")
+            else:
+                print(f"  {file}: not a removed line of this file: {text}")
+                failures.append(f"{file}: row whose assertion text is not a removed line")
 
     production = [f for f in git("diff", "--no-renames", "--name-only", args.before, "--", SRC).splitlines()
                   if f and not re.search(r"\.test\.tsx?$", f) and f"{SRC}/tests/" not in f]

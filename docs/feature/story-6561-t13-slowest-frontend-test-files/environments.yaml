@@ -13,18 +13,20 @@ platform_coverage:
 
 local_measurement:
   workers: "LIGHTHOUSE_TEST_WORKERS=2, on named files only"
-  load_limit: "half the cores, sampled at the start and at the end of each run; a pair counts only if both samples are at or under it"
-  decision_metric: "summed per-test seconds of the touched files, alternating before and after (user+sys CPU seconds recorded as a cross-check)"
+  load_limit: "half the cores; the sample is the 1-minute load average at the start and at the end of both runs of a pair; a pair is valid only if all four samples are at or under it"
+  decision_metric: "summed per-test seconds of the touched files (assertionResults[].duration in milliseconds, per suite, from Lighthouse.Frontend/test-results.json), alternating before and after (user+sys CPU seconds recorded as a cross-check)"
+  cut: "1 - after/before; the required cut (no margin) stops a file, the design target (with margin) is reported beside it, and a file between the two passes as 'passing, no margin'"
   pairs: "5 alternating pairs, at least 3 valid; fewer is recorded as 'unmeasured, machine loaded' and takes the stop, with no retake loop"
   full_suite_and_stryker: "never while another session is mutating"
 
 ci_notes:
   bimodal_runner: "the same tests take about 610-830 s on a fast runner and 1,070-1,160 s on a slow one (ratio 1.62)"
-  budget_derivation: "B = ceil(2.1 x L) on at least 5 complete plain main runs after the push, one of them a slow-runner run, else L is scaled by 1.62"
+  run_classes: "a run of 950 s or more is slow, anything under 950 s is fast; a slow run among the five is optional"
+  budget_derivation: "B = ceil(2.1 x L) on at least 5 complete plain main runs after the push; if none is slow, L is multiplied by 1.62; if B is not below the budget in force, no commit is made and the value stays"
   first_push: "judged against the 56 s per-file budget still in force; the Story stays open until the budget commit lands"
 
 rollback:
-  order: "the budget commit first, then the rewrite commits (one per file); the refactor(reports) commit, if the maintainer says yes, is its own unit and is reverted separately, after any rewrite that depends on it"
+  order: "the budget commit first, then the rewrite commits (one per file), then the harness commit last, because readiness and refinementNeed both depend on it; the refactor(reports) commit, if the maintainer says yes, is its own unit and is reverted separately, after any rewrite that depends on it"
 
 mutation:
   status: "N/A while no production file changes: Stryker mutates production code and this Story edits test files only"

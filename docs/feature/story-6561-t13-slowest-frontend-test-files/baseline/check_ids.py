@@ -11,6 +11,8 @@ usage (from the repository root):
         - a touched file is missing from the report (an after-run that left out a new file),
         - a test in the report did not pass (skipped, todo, failed),
         - a baseline id is missing from the report and has no row in the "Moved assertions" table of the moved file,
+        - a row names an id that is still in the report, unless the row's last cell starts with `kept:` (a test that
+          keeps its name while some of its assertions moved),
         - an id in the report is not in the baseline and is not listed under "Added ids" of the moved file.
 
 This pins test NAMES, not assertions. An assertion lost inside a test that survives under the same name is not seen
@@ -58,21 +60,24 @@ def touched_files(before):
 
 
 def rows_and_added(moved_path):
-    old_ids, added = set(), set()
+    old_ids, added, kept = set(), set(), set()
     section = ""
     with open(moved_path, encoding="utf-8") as handle:
         for line in handle:
             if line.startswith("## "):
                 section = line[3:].strip().lower()
             elif section.startswith("moved assertions") and line.lstrip().startswith("|"):
-                first = line.strip().strip("|").split("|")[0].strip().strip("`")
+                cells = line.strip().strip("|").split("|")
+                first = cells[0].strip().strip("`")
                 if " :: " in first and not first.startswith("Old id"):
                     old_ids.add(first)
+                    if cells[-1].strip().startswith("kept:"):
+                        kept.add(first)
             elif section.startswith("added ids"):
                 text = line.strip().lstrip("-").strip().strip("`")
                 if " :: " in text:
                     added.add(text)
-    return old_ids, added
+    return old_ids, added, kept
 
 
 def main():
@@ -124,7 +129,7 @@ def main():
     for line in not_passed:
         failures.append(f"did not pass ({line})")
 
-    moved_old, moved_added = rows_and_added(args.moved)
+    moved_old, moved_added, moved_kept = rows_and_added(args.moved)
     missing = sorted(before_ids - after_ids)
     new = sorted(after_ids - before_ids)
     for identifier in missing:
@@ -133,8 +138,10 @@ def main():
     for identifier in new:
         if identifier not in moved_added:
             failures.append(f"new id not listed under 'Added ids': {identifier}")
-    for identifier in sorted(moved_old - set(missing)):
-        print(f"note: a row names an id that is still present: {identifier}")
+    for identifier in sorted(moved_old - before_ids):
+        failures.append(f"a row names an id that is not in the baseline: {identifier}")
+    for identifier in sorted((moved_old & before_ids) - set(missing) - moved_kept):
+        failures.append(f"a row names an id that is still present and is not marked kept: {identifier}")
 
     print(f"baseline ids {len(before_ids)}, after-run ids {len(after_ids)}, missing {len(missing)}, new {len(new)}, "
           f"files that must be in the run {len(must_run)}")

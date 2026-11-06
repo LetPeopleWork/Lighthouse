@@ -6,7 +6,8 @@ Epic #6506 · ADO #6561 · `@infrastructure` · job_id: infrastructure-only · *
 
 The seven slowest frontend test files run faster, so the per-file budget can fall from 56 s to about 37 s. 37 s needs all
 seven to reach their line; if one stays where it is, the budget follows it (45 s for `ReportsPage.combinedPdf`, 46 s for
-`BaseMetricsView.loading`; the likely outcome is 45 to 46 s).
+`BaseMetricsView.loading`, 47 s for `OverviewDashboard`; the likely outcome is 45 to 47 s). This run does slice A alone, the
+three `ModifyTeamSettings` files.
 
 ## Why
 
@@ -54,4 +55,4 @@ gate for `@infrastructure` Stories (D-6264-5), so this Story stands under that w
   80 %, on a production file the refactor commit touched; with no production file changed, mutation testing is N/A and
   recorded as an exception.
 - [ ] The frontend per-file budget is lowered in the same Story, as its last commit, derived on at least 5 plain `main` runs
-  after the rewrites, one of them on a slow runner (else L scaled by 1.62).
+  after the rewrites. A slow-runner run among them is optional, because scaling L by 1.62 covers its absence.

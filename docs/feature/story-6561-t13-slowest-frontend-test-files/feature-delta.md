@@ -38,12 +38,16 @@ reading `Scripts/test-timings/test-time-budget.json`) and the Vitest run:
    rate, floor 80 %, on any production file the one allowed refactor commit touches; with no production file changed,
    mutation testing is N/A and recorded as a maintainer-visible exception (DEVOPS table).
 3. The frontend **per-file budget** (`budget_seconds` of `frontend`, 56 s today) is lowered in the same Story, as its last
-   commit, derived on at least 5 complete plain `main` runs after the rewrites, one of them a slow-runner run (or L
-   scaled by 1.62).
+   commit, derived on at least 5 complete plain `main` runs after the rewrites. A slow-runner run among them is optional:
+   when none is slow, L is multiplied by 1.62. If the derived B is not below the 56 s in force, no commit is made.
 
 **Plain run:** a complete `ci.yml` run on `main` whose frontend test step ran without coverage, which is every run since
 T7's commit `638a9bae9` (2026-11-04); see "The earliest runs are plain" in
 [T4's workspace](../story-6462-t4-test-budgets-fail-the-build/feature-delta.md).
+
+**Slow and fast runs:** the same tests take about 610-830 s of Vitest `Duration` on a fast runner and about 1,070-1,160 s on
+a slow one. One boundary: a run of **950 s or more is slow, anything under 950 s is fast**. A slow-runner run among the five
+is optional, because the 1.62 scaling covers its absence (see "Budget step").
 
 **Dependencies (as the brief):** hard, T4 #6462, pushed 2026-11-06, which made the per-file budget fail the build and set
 it at 56 s; soft, T12 #6539, which touches some of the same files for order and load.
@@ -76,10 +80,12 @@ The next file is `ReportsTab.createWizard.test.tsx` at 17.5 s.
 - [ ] Each call site proven by a deliberate break
 - [ ] The FE7 guards hold: the per-test time guard (2 s, empty `slowTests.ts`) names no test of the seven files, and Biome
       `noSkippedTests` and `noFocusedTests` are clean
-- [ ] Ratchet: the budget falls in this Story, as its last commit, derived on at least 5 complete `main` runs after the
-      push, one of them on a slow runner (else L x 1.62); the Story stays open until that commit lands
+- [ ] Ratchet: the budget falls in this Story, as its last commit, derived on at least 5 complete plain `main` runs after
+      the push (a slow-runner run among them is optional; else L x 1.62); the Story stays open until that commit lands.
+      Status: open. Slice A alone is this run and nothing is pushed, so the budget stays 56 s.
 - [ ] Mutation last, on frozen code: Stryker kill rate, floor 80 %, on a production file the refactor commit touched; N/A
-      with the reason when none
+      with the reason when none. Status: N/A for slice A, because no production file changes; an exception to the
+      per-feature strategy that the maintainer sees at the hold.
 - [ ] `pnpm build` and `pnpm test` clean before review
 
 ## Wave: DESIGN / [REF] Context-map placement and cross-cutting
@@ -145,9 +151,13 @@ names L. **Making the seven files faster than that buys nothing**: the budget st
 The brief's table gives each file's max and median over 7 runs. T4 recorded that the frontend runner is bimodal
 (whole-run totals 649-793 s and 995-1054 s, a 1.62 ratio) and that the 26.5 s maximum is a **slow-runner reading**; the
 largest file in fast-runner runs was 16.7 s. So the maxima below are slow-runner readings, and the medians mix both modes.
-The required cut is a ratio, the same in both modes:
+The required cut is a ratio, the same in both modes. **Cut = 1 - after/before**, on a file's summed per-test seconds (20 s
+down to 13 s is a cut of 35 %); every later use of "cut" means this. Each file has two figures. The **required cut** (to
+17.5 s, no margin) stops the file when the projected cut is less than it. The **design target** (to 16.5 s, with 1 s margin)
+is what the rewrite aims at and is reported beside it. A file between the two passes and is recorded as passing with no
+margin:
 
-| File | Max (s) | Cut to reach 17.5 | Cut with 1 s margin (16.5) | Local summed s (FE7, quiet-ish) |
+| File | Max (s) | Required cut, to 17.5 s (stops the file) | Design target, to 16.5 s (reported) | Local summed s (FE7, quiet-ish) |
 |---|---|---|---|---|
 | `ModifyTeamSettings.refinementNeed` | 26.5 | 34 % | 38 % | 14.8 (47 tests) |
 | `ModifyTeamSettings.readiness` | 22.9 | 24 % | 28 % | about 14 (24 tests) |
@@ -178,7 +188,7 @@ budget would be 46 s, not 37 (Q3).
 37 s is the outcome **only if all seven reach their cut**. Without the `useReportsPdfExport` extraction (the default,
 Q7), `ReportsPage.combinedPdf`'s cut rests on the cheaper `rowOf`, one dialog test and one merge, and probably misses
 17 %: **45 s** is the likely outcome. `BaseMetricsView.loading` needs 19 % and the design's own estimate there is about
-15 % (11 % by test count: 15 of 133), so it probably misses too, which gives **46 s**. Plan on 45 to 46 s and treat 37 s
+15 % (11 % by test count: 15 of 133), so it probably misses too, which gives **46 s**. `OverviewDashboard` may miss as well (47 s, D-6561-18). Plan on 45 to 47 s and treat 37 s
 as the prize. A production fallback (the Overview extraction, Q6, or any other) stays the maintainer's call and is not
 taken by default.
 
@@ -213,9 +223,10 @@ timing decides each before any edit.
   the form was opened" stays.
 - **Production change needed:** none. The sections are exported with plain props. A test-only stateful host (a `useState`
   wrapper that hands the section back what it changed, as the form does) is the one new piece (D-6561-6).
-- **Risk to the target.** The cut is 34-38 %, the largest of the seven. Moving 23 of the 31 form tests to a unit render at
-  perhaps a third of the cost is the estimate that reaches it, and it is a hypothesis: the spike in A-1 times one band test
-  both ways before anything moves. If it does not reach, flag it (D-6561-10); do not split the file (D-6561-3).
+- **Risk to the target.** The cut is 34-38 %, the largest of the seven. Moving 23 of the 31 form tests to a unit render
+  reaches 34 % only if one test costs at least 1.85 times as much in the form as in the section (2.05 times for 38 %; the
+  formula is in "Slices"), and that is a hypothesis: the A-1 gate times one band test both ways before anything moves. If it
+  does not reach, flag it (D-6561-10); do not split the file (D-6561-3).
 
 ### ModifyTeamSettings.readiness.test.tsx (561 lines, 24 tests counting `it.each` rows: 16 `it` and 8 rows)
 
@@ -371,8 +382,8 @@ timing decides each before any edit.
 
 | # | Decision | Options | Chosen (recommended) | Why / trade-off |
 |---|---|---|---|---|
-| D-6561-1 | What "done" means per file | (a) the brief's line exactly: max over >= 5 plain `main` runs under 17.5 s. (b) the line with 1 s margin (16.5 s). (c) as fast as possible | (b) as the design target, (a) as the AC | The budget floor is `ReportsTab.createWizard` at 17.5 s, so past that nothing is gained; a file at 17.4 s would set the floor with no margin and any slow runner would redden the new budget. The table in "The target" gives the cut each file needs |
-| D-6561-2 | How the maxima are read | (a) as plain numbers. (b) as slow-runner readings | (b) | T4 measured the runner as bimodal (1.62) and the 26.5 s as the slow reading. The budget step therefore needs at least one slow-runner run among its >= 5, or it scales the maximum by 1.62 (D-6561-13) |
+| D-6561-1 | What "done" means per file | (a) the brief's line exactly: max over >= 5 plain `main` runs under 17.5 s. (b) the line with 1 s margin (16.5 s). (c) as fast as possible | (b) as the design target, reported beside (a); (a) as the AC and the figure that stops a file | The no-margin cut (a) stops a file; a file between (a) and (b) passes and is recorded as passing with no margin. The budget floor is `ReportsTab.createWizard` at 17.5 s, so past that nothing is gained; a file at 17.4 s would set the floor with no margin and any slow runner would redden the new budget. The table in "The target" gives the cut each file needs |
+| D-6561-2 | How the maxima are read | (a) as plain numbers. (b) as slow-runner readings | (b) | T4 measured the runner as bimodal (1.62) and the 26.5 s as the slow reading. A slow-runner run among the budget step's >= 5 is optional: when none is slow (Duration under 950 s), L is multiplied by 1.62 (D-6561-13) |
 | D-6561-3 | The lever | (a) render the smallest unit that owns the behaviour (section, dialog, hook), keep one wiring per flow. (b) fake timers only. (c) configuration. (d) split a slow file into two to halve each file's sum. (e) mount fewer widgets in the metrics tests | (a), with FE7's extraction where a rule is still in a component | (b) is what slice 4 did and "did not shorten". (c) FE7 measured nine candidates and none passed the A/B rule. (d) moves seconds between files and keeps the wall time and the worker occupancy, so the Story would meet the letter of the AC and not its title; it stays an open fallback for the maintainer (Q4), not a default. (e) changes what the 133 loading tests pin, so it is not behaviour-free (FE7's finding) |
 | D-6561-4 | Production code | (a) none anywhere. (b) one pure extraction in `useReportsPdfExport` (`failedAmong`, `leaveOutPlanOf`) into `printFailures.ts`, only on the maintainer's yes | **(a) by default; (b) only if the maintainer says yes (Q7)** | Revised by D-6561-17: the AFK pass took (b) as recommended, but a production change should not rest on an unanswered veto point. The rule "what a failed export may leave out" is private inside a hook and today only provable by drawing reports; moving two pure functions into `src/pages/Reports/` is a `refactor(reports)` commit with no test change and identical behaviour, then tested in milliseconds and covered by one Stryker run (D-6561-15). Without it, three tests keep drawing real reports and `combinedPdf`'s plan is the skip path in "Slice B". |
 | D-6561-5 | Moves and ids | (a) keep every surviving id. (b) allow a test to move to a new file when the unit it renders changes | (b), with rows | A test that now renders a section or dialog belongs beside it. FE7's contract already allows a moved id with a row; the pure move is its own commit before any edit |
@@ -381,18 +392,18 @@ timing decides each before any edit.
 | D-6561-8 | `BaseMetricsView.loading` | (a) leave and record. (b) merge the read-only per-owner x category families and move the query-options rule to a hook test, measured first | (b), with a stop rule | FE7 dropped the file on an extraction-only ceiling; a merge and a hook test were not weighed. If C-1's spike projects a cut under 19 %, the file is left alone, the reason is recorded, and the budget floor follows it (Q3) |
 | D-6561-9 | `OverviewDashboard` | (a) leave. (b) a second test file with `DataOverviewTable` stubbed for the tests that read no row. (c) extract the header-action rules into a pure function | (b) first; (c) only if the spike shows (b) saves under 20 % | (b) changes no production code and keeps wiring proved by the real-table tests that stay; (c) is the textbook "rule on a function" but edits an RBAC-gated page of 725 lines. (b)'s risk is a stub hiding a table error in the moved tests; the remaining real-table tests render the same table |
 | D-6561-10 | Stop rule per slice | (a) finish every slice. (b) at the step that puts a file's moves in, compare the projected cut with the file's required cut; below it, stop that file, record the number and flag | (b), steps named per slice in "Stop rule" (A-2/A-3/A-4, B-3/B-4, C-2/C-3) and measured as D-6561-20 says | FE7's slice 11 was dropped at its profile, which was right; but six of eight rewrite slices missed their estimate and ran on. A stop that records "target not met, because ..." is allowed by the AC and cheaper than a rewrite that does not reach. The earlier wording ("after step 2") named a step that, in two slices, has none of the file's moves in |
-| D-6561-11 | How a slice measures | (a) FE7's: summed per-test seconds of the touched files, alternating before and after, 5 pairs, on a shared machine. (b) the same, plus the load average sampled at the start and end of each run, plus user+sys CPU seconds of the run, a pair valid only when both samples are at or under half the cores | (b), with the minimum of D-6561-20 | FE7's figures were "indicative" because load swung; CPU seconds react less to a shared machine. Every slice also saves the before id list from a results file, the coverage of the touched directory, and the CI/local ratio of the file (from T4's seven CSVs) so its local target in seconds is stated before the first edit. The decision metric is summed per-test seconds; CPU seconds are a cross-check |
+| D-6561-11 | How a slice measures | (a) FE7's: summed per-test seconds of the touched files, alternating before and after, 5 pairs, on a shared machine. (b) the same, plus the load average sampled at the start and end of each run, plus user+sys CPU seconds of the run, a pair valid only when all four samples (the 1-minute load average at the start and at the end of both its runs) are at or under half the cores | (b), with the minimum of D-6561-20 | FE7's figures were "indicative" because load swung; CPU seconds react less to a shared machine. Every slice also saves the before id list from a results file, the coverage of the touched directory, and the CI/local ratio of the file (from T4's seven CSVs) so its local target in seconds is stated before the first edit. The decision metric is summed per-test seconds; CPU seconds are a cross-check |
 | D-6561-12 | Slices and order | one slice per file / by what files share / one slice | By what they share, in the order A ModifyTeamSettings x3, B ReportsPage x2, C OverviewDashboard and `BaseMetricsView.loading` | A holds the two largest maxima and one new harness; B carries the shared kit and, only on the maintainer's yes, the one production extraction; C has the lowest confidence and goes last, with its own stop rule. Each slice is at most one day and ends with its own before and after |
-| D-6561-13 | The budget step | (a) a roadmap step. (b) a follow-up commit after the push, once >= 5 `main` runs are in, with the slow-runner rule | (b) | It needs five CI runs after a push, so it cannot be a step of this run (the maintainer pushes nothing in AFK). Rule: B = ceil(2.1 x L) per ADR-237 and T4's recipe; the >= 5 runs are plain, complete (a run that stopped at its first failure is excluded, as T4 did), and include at least one slow-runner run, else L is scaled by 1.62. Provisional value 37 (L = 17.6 or 17.5, both give 37; see "Expected budget outcome"). The first push is judged against the 56 s in force, and the Story stays open until this commit lands |
+| D-6561-13 | The budget step | (a) a roadmap step. (b) a follow-up commit after the push, once >= 5 `main` runs are in, with the slow-runner rule | (b) | It needs five CI runs after a push, so it cannot be a step of this run (the maintainer pushes nothing in AFK). Rule: B = ceil(2.1 x L) per ADR-237 and T4's recipe; the >= 5 runs are plain, complete (a run that stopped at its first failure is excluded, as T4 did), and a slow-runner run (Duration of 950 s or more) among them is optional: when none is slow, L is multiplied by 1.62. If the derived B is not below the budget in force, no commit is made, the value stays and the derivation is recorded. Provisional value 37 if all seven reach their cut (L = 17.6 or 17.5, both give 37; with slice A alone L = 22.0 and B = 47; see "Expected budget outcome"). The first push is judged against the 56 s in force, and the Story stays open until this commit lands |
 | D-6561-14 | T12 #6539 | (a) ignore. (b) re-read each file at slice start; on a conflict with trunk stop and report | (b) | T12 touches some of these files for order and load. Nothing of T12 exists in the repository yet, so which files is unknown (Q2). Never rebase autonomously |
 | D-6561-15 | Mutation | (a) Stryker over all touched areas. (b) N/A for tests; Stryker once, last, over `printFailures.ts` only if the maintainer says yes to D-6561-4's extraction | (b) | Stryker mutates production code and no production file changes otherwise. If the extraction happens: at least 80 % on the new file, on direct tests, after the code is frozen. Without the extraction no production file changes and mutation testing is N/A: a maintainer-visible exception to the per-feature strategy (DEVOPS table) |
 | D-6561-16 | Rigor profile (proposal) | `standard` for all three slices; `thorough` for none | `standard` | Mechanical rewrites under a settled contract; the guard and configuration (the thorough cases in FE7) are not touched. DELIVER asks anyway, and passes `model` explicitly on every dispatch |
 | D-6561-17 | Q7 default, and the scope text | (a) keep the AFK default (take the extraction). (b) default to skip until the maintainer answers | (b) | Revised after the review gate. Q7 is a veto point on a production change and has no answer. Made consistent here: D-6561-4, Q7, the pre-requisites, the change table, the wiring count, the conditional `printFailures` tests, slice B. The brief's IN list allows one named `refactor(reports)` commit if the maintainer says yes, so the documents agree. Without it, `combinedPdf`'s cut rests on the cheaper `rowOf`, one dialog test and one merge, which probably misses 17 % (D-6561-18) |
-| D-6561-18 | The expected budget outcome | (a) 37 s as the expectation. (b) a band, with each case named | (b) | 37 s only if all seven reach their cut. 45 s if `combinedPdf` stays at 21.0 (the likely case without the extraction), 46 s if `BaseMetricsView.loading` stays at 21.7 (the design's own estimate there is about 15 %, 11 % by test count, against 19 % needed, so it probably does), 47 s if Overview stays at 22.0. Plan on 45 to 46 s. Overview's saving restated: 28 of 51 tests leave the real table, so it reaches 20 % only if the tables are at least 36 % of a mount. A production fallback (Overview extraction, Q6) stays the maintainer's call and is not taken by default |
-| D-6561-19 | The guarantee, made mechanical | (a) a script that prints counts for a person to read. (b) scripts that fail | (b) | `check-behaviour-free.sh` exits 1 on a removed `expect(` with no row, compared per file against the moved-assertions file, with one counter (`\bexpect\(`) for removed lines and rows, `--no-renames` on every diff, untracked new test files read as added, removed `.not.` compared with added, a longer weaker-matcher list (partial, and said so). `run-touched-files.sh` runs every baseline, changed and new test file and diffs the union of ids, refusing a stale report. The report is not controllable by `--outputFile` here, so it is deleted before the run and checked after. The baseline was not stale (regenerated, byte-identical). The id diff pins names, not assertions; the removed-`expect(` rows catch assertion loss inside a surviving test. Biome's `noSkippedTests` does not flag `skipIf`/`runIf`/`todo` (tested) |
-| D-6561-20 | Stop-check step and measurement | (a) "step 2" of a slice, any number of pairs. (b) the step that puts the file's moves in, 5 alternating pairs, at least 3 valid | (b) | Amends D-6561-10 and D-6561-11. A pair is valid when both load samples (start and end of the run) are at or under half the cores. Below 3 valid pairs of 5 the slice records "unmeasured, machine loaded" and takes the stop; there is no retake loop, because a loop on a shared machine can run all day and the maintainer can order a quiet-machine run |
+| D-6561-18 | The expected budget outcome | (a) 37 s as the expectation. (b) a band, with each case named | (b) | 37 s only if all seven reach their cut. 45 s if `combinedPdf` stays at 21.0 (the likely case without the extraction), 46 s if `BaseMetricsView.loading` stays at 21.7 (the design's own estimate there is about 15 %, 11 % by test count, against 19 % needed, so it probably does), 47 s if Overview stays at 22.0. Plan on 45 to 47 s. Overview's saving restated: 28 of 51 tests leave the real table, so it reaches 20 % only if the tables are at least 36 % of a mount. A production fallback (Overview extraction, Q6) stays the maintainer's call and is not taken by default |
+| D-6561-19 | The guarantee, made mechanical | (a) a script that prints counts for a person to read. (b) scripts that fail | (b) | `check-behaviour-free.sh` exits 1 on a removed `expect(` with no row, compared per file against the moved-assertions file, with one counter (`\bexpect\(`) for removed lines and rows, `--no-renames` on every diff, untracked new test files read as added, removed `.not.` compared with added, a longer weaker-matcher list (partial, and said so). Since the second revision pass the rows must also equal the removals per file in both directions, each row's text must be a removed line of its file, and `check_ids.py` fails on a row whose old id is still present unless the row is marked `kept:`. `run-touched-files.sh` runs every baseline, changed and new test file and diffs the union of ids, refusing a stale report. The report is not controllable by `--outputFile` here, so it is deleted before the run and checked after. The baseline was not stale (regenerated, byte-identical). The id diff pins names, not assertions; the removed-`expect(` rows catch assertion loss inside a surviving test. Biome's `noSkippedTests` does not flag `skipIf`/`runIf`/`todo` (tested) |
+| D-6561-20 | Stop-check step and measurement | (a) "step 2" of a slice, any number of pairs. (b) the step that puts the file's moves in, 5 alternating pairs, at least 3 valid | (b) | Amends D-6561-10 and D-6561-11. A pair is valid when all four samples (the 1-minute load average at the start and at the end of both its runs) are at or under half the cores. The summed per-test seconds are `assertionResults[].duration` (milliseconds) of the file's suite in `Lighthouse.Frontend/test-results.json`. Below 3 valid pairs of 5 the slice records "unmeasured, machine loaded" and takes the stop; there is no retake loop, because a loop on a shared machine can run all day and the maintainer can order a quiet-machine run |
 | D-6561-21 | Seams, backstops and breaks | (a) trust the removal. (b) name each seam, backstop and break | (b) | Mapping warnings: one form test names every kind at once (or the three tests stay if the form lists only the first reason); sentence text lives in `stateMappingValidation.rawLists.test.ts`, rendering in the `blocked autosave feedback` block. Loading seam: the kept row is the team's Flow Metrics; it stands alone only if it renders every caller of `metricsQueryOptions`, else one row per category. Deliberate breaks added: `refinementSettingsBlockers` and `teamAutoSaveBlockers` returning `[]`, per section kind; `metricsQueryOptions` bypassed in a widget the kept row covers. Backstop rule: a wiring test is not removed until its backstop is green; the list is finished at A-1, B-1 and C-1. The two harness-log tests of `renderRefinementSection` are named for what a test author reads (the value now; every change in order) |
-| D-6561-22 | DEVOPS conditions | (a) as written in AFK. (b) rollback order, first-push judgement, mutation exception, bimodal CI | (b) | Rollback: budget commit first, then the rewrites, the refactor commit (if taken) separately. The first push is judged against 56 s and the Story stays open until the budget commit lands. Budget needs a slow-runner run or L scaled by 1.62 (CI is bimodal). With no production file changed, mutation is N/A: a maintainer-visible exception to the per-feature strategy. `/continuous-improvement before` does not apply (feature Epics only; #6506 is an improvement Epic) |
+| D-6561-22 | DEVOPS conditions | (a) as written in AFK. (b) rollback order, first-push judgement, mutation exception, bimodal CI | (b) | Rollback: budget commit first, then the rewrite commits, then the harness commit last, because `readiness` and `refinementNeed` both depend on it; the refactor commit (if taken) separately. The first push is judged against 56 s and the Story stays open until the budget commit lands. A slow-runner run among the five is optional; without one L is multiplied by 1.62 (CI is bimodal). With no production file changed, mutation is N/A: a maintainer-visible exception to the per-feature strategy. `/continuous-improvement before` does not apply (feature Epics only; #6506 is an improvement Epic) |
 
 ## Wave: DESIGN / [REF] Slices (carpaccio, at most one day each)
 
@@ -413,17 +424,41 @@ Shares: `renderGravitysSettingsForm`, `replaceTheNumberIn`, the form, the fixtur
 
 | Step | What | Measures |
 |---|---|---|
-| A-1 | Declare and measure. Profile one band test and one readiness test; time `renderGravitysSettingsForm` alone and `render(<RefinementSettingsSection ...>)` alone (the spike); count the form tests per section; check that every mapping-warning sentence and each of the seven invalid scenarios is pinned by a function test (the pairs below), and **fix the "up to 5" loop rows of `ModifyTeamSettings.test` to the number that check allows**, editing the change table in the same commit | Local summed seconds of the three files, CI/local ratio, local target, go or no-go for A-2 |
+| A-1 | Declare and measure. Profile one band test and one readiness test; run the A-1 gate (below: one band test, form against section); count the form tests per section; check that every mapping-warning sentence and each of the seven invalid scenarios is pinned by a function test (the pairs below, by the criterion under them), and **fix the "up to 5" loop rows of `ModifyTeamSettings.test` to the number that check allows**, editing the change table in the same commit | Local summed seconds of the three files, CI/local ratio, local target, go or no-go for A-2 |
 | A-2 | The harness (own commit, test-only) and `readiness`: display and validation tests to the section render, wiring tests stay | `readiness` against 24 % (stop check, below) and moved-assertions rows |
 | A-3 | `refinementNeed` the same way for band, cadence and stage rules, one "saves nothing while invalid" wiring per section kind | `refinementNeed` against 34 % (stop check) and rows |
-| A-4 | `ModifyTeamSettings.test.tsx`: keep the Doing mapping-name wiring, replace the other three by one form test that names every warning kind at once (seam below), shrink the invalid-scenario loop to what the function tests do not cover | `ModifyTeamSettings.test` against 1 % (stop check) and rows |
+| A-4 | `ModifyTeamSettings.test.tsx`: keep the Doing mapping-name wiring, replace the other three by one form test that names every warning kind at once (seam below), shrink the invalid-scenario loop to what the function tests do not cover | `ModifyTeamSettings.test`: stop check at 1 % (rows match the change table, seconds not higher than before) and rows |
 | A-5 | Close: after seconds, id union diff, `check-behaviour-free.sh`, coverage of the directory (FE7 left it at 96.26 / 86.23), the deliberate breaks, `pnpm build` and `pnpm test` | Per-file cut against the table |
 
-**Stop rule.** The step that has a file's moves in is the stop check for that file: A-2 for `readiness`, A-3 for
-`refinementNeed`, A-4 for `ModifyTeamSettings.test`. It uses the measurement of D-6561-20 (summed per-test seconds of that
-file, 5 alternating pairs, at least 3 valid). If the cut is under the file's required cut, or fewer than 3 pairs are
-valid ("unmeasured, machine loaded"), the slice stops for that file and records it. If A-1's spike shows the section
-render is not at least about 2x cheaper than the form, stop at A-1.
+**Stop rule.** Cut = 1 - after/before, as defined in "The target, as arithmetic". The step that has a file's moves in is
+the stop check for that file: A-2 for `readiness`, A-3 for `refinementNeed`, A-4 for `ModifyTeamSettings.test`. It uses the
+measurement of D-6561-20 (summed per-test seconds of that file, 5 alternating pairs, at least 3 valid). **A file stops when
+its projected cut is less than its required cut**, the no-margin figure of the table in "The target" (24 % for `readiness`,
+34 % for `refinementNeed`). The margin figures (28 %, 38 %) are the design target and are reported beside it; a file between
+the two passes and is recorded as passing with no margin. Fewer than 3 valid pairs is "unmeasured, machine loaded" and also
+stops the file.
+
+`ModifyTeamSettings.test` has a required cut of 1 %, which five pairs cannot resolve. Its stop check is instead: the rows
+removed match the change table, and the summed seconds are not higher than before. Anything finer is recorded as not
+resolvable.
+
+**What a stop does.** A stopped file keeps the moves already committed, since they are behaviour-free and not slower. It gets
+no further work in this run and is recorded (the number, and "target not met, because ..."), and the budget floor follows it
+(Q3). The harness commit stays. The other files of the slice carry on.
+
+**A-1 gate (one measure).** The per-test seconds of one band test of `refinementNeed`, including its typing, in the form
+against the same test in the section render, 5 alternating pairs under D-6561-20 (at least 3 valid). The ratio r is the
+form's seconds over the section's. The gate tests cost only: that the host shows what the form shows is proved at A-2, by the
+helper's own tests and the deliberate break, not here. What r has to be follows from the arithmetic. Assume the 31 form tests
+carry the file's time at the same cost c each, 23 of them move to the section at c/r, and 8 stay on the form at c:
+
+    after/before = (8 + 23/r) / 31, so the cut = 1 - (8 + 23/r) / 31
+
+A cut of 34 % (the required cut) needs 23/r = 0.66 x 31 - 8 = 12.46, so r = 1.85. A cut of 38 % (the design target) needs
+23/r = 0.62 x 31 - 8 = 11.22, so r = 2.05. **Stop at A-1 when the measured r is below 1.85**: nothing moves, and the run goes
+to the hold. At 1.85 or more the slice goes on, and an r between 1.85 and 2.05 may end as "passing, no margin" at A-3. For
+`readiness` (18 of 24 move, 6 stay) the same arithmetic, after/before = (6 + 18/r) / 24, needs r = 1.47 for 24 % and 1.60 for
+28 %, so the figure for `refinementNeed` is the stricter one and the gate rests on it.
 
 **Backstops known today (titles of existing tests):**
 
@@ -433,7 +468,15 @@ render is not at least about 2x cheaper than the form, stop at A-1.
 | `holds back autosave while a mapping's name hides one of its states in Done, and saves once it is renamed` | `names the Done list when the shadowing sits there` (same file) |
 | `holds back autosave while a mapping is named after a state another mapping groups, and saves once it is renamed` | `refuses a mapping that groups another mapping's name, with the sentence the server sends` (same file) |
 | Kept: `holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed` | `refuses a name that sits beside one of its mapping's states, with the sentence the server sends` and `holds back the autosave for that name with the same sentence` (same file) |
-| Rows of the loop `does not auto-save when X is invalid` that go | the `it.each` at the top of `teamAutoSaveBlockers.test.ts`, one row per field (titles copied at A-1), and the rows of the loop that stay |
+| Rows of the loop `does not auto-save when X is invalid` that go | the `it.each` at the top of `teamAutoSaveBlockers.test.ts`, one row per field (titles copied at A-1, matched by the criterion below), and the rows of the loop that stay |
+
+**When "a function test already pins it" is true (the criterion for the A-1 rows).** A loop row of `does not auto-save when
+X is invalid`, or a mapping-warning sentence, goes only when a row of the `it.each` in `teamAutoSaveBlockers.test.ts` (or the
+test in `stateMappingValidation.rawLists.test.ts` named in the table) builds the same invalid input and asserts the same text.
+That means (a) it sets the same field to the same invalid value as the loop row's `scenario` entry (an empty list and
+`undefined` are not the same value), and (b) it asserts that the blockers name that field or, for a warning, the same sentence
+the form shows. Compare field, value and sentence row by row, and write the two titles beside the loop row in the table. A
+row with no such pair stays, or its function row is written first and is green before the loop row goes (the backstop rule).
 
 **The mapping-warning seam.** Where each lives: the sentence of every warning kind is built by
 `stateMappingValidation` and pinned there, at function level, in `stateMappingValidation.rawLists.test.ts`; the form shows
@@ -442,8 +485,10 @@ it through the blocked-save message (`teamAutoSaveBlockers`), and the form test 
 form's feeding of the To Do, Done and other-mapping cases unproved, so A-4 adds **one** form test, "says what holds back the
 save for a mapping of every kind of mistake at once", that renders one form with a mapping of each of the four kinds and
 asserts the rendered sentence of each kind. If A-1 shows the form lists only the first reason, a one-render test cannot
-show all four; then the three tests stay (one rendered sentence per warning kind) and this file's cut comes from the loop
-rows alone.
+show all four; then the three tests stay (one rendered sentence per warning kind), this file's cut comes from the loop
+rows alone, and the change table ("Changes by design") and the list of tests that stay on the form are edited in the same
+commit to say so. Reading the form today, it lists every reason (`formInvalidReasons.map`), so the one-render test is
+expected to work.
 
 ### Slice B: ReportsPage x2 (`removal`, `combinedPdf`)
 
@@ -500,7 +545,7 @@ this Story previews or validates by side effect).
 | Need | Existing thing | Decision / contract shape / assertion mechanism |
 |---|---|---|
 | Rules as functions | `refinementBand`, `RefinementCadenceSettings` exports, `readinessErrors`, `discussionRules`, `refinementSettingsBlockers`, `stateMappingValidation`, `pickLimit`, `pickedReports`, `dateWindow`, `categoryMetadata`, `teamAutoSaveBlockers` | REUSE as destinations of moved assertions. **Pure function.** Assertion: the function's own tests |
-| Render a section with state | `RefinementBandSettings`, `RefinementCadenceSettings`, `StageRulesSettings`, `ReadinessSettings` (props: value and `onChange`); the last blocks of `refinementNeed` already render two of them | EXTEND with one test helper, `renderRefinementSection` (CREATE NEW, no existing alternative: grep found no host that keeps the value in state). **Bounded change**: universe = the new helper `src/tests/renderRefinementSection.tsx`, its own test file, and every importer, named: `ModifyTeamSettings.refinementNeed.test.tsx`, `ModifyTeamSettings.readiness.test.tsx` and the section test files slice A creates (`RefinementBandSettings.test.tsx`, `StageRulesSettings.test.tsx`, `ReadinessSettings.test.tsx`, and a `.tsx` beside `RefinementCadenceSettings.test.ts` if the moved cadence tests need a render; names confirmed at A-2), and nothing else; assertion: the surviving form wiring tests still go through the real form |
+| Render a section with state | `RefinementBandSettings`, `RefinementCadenceSettings`, `StageRulesSettings`, `ReadinessSettings` (props: value and `onChange`); the last blocks of `refinementNeed` already render two of them | EXTEND with one test helper, `renderRefinementSection` (CREATE NEW; the search is recorded under the table). The name stays because all five units it renders are parts of the Refinement section: `ReadinessSettings` is rendered by `RefinementSettingsSection` and its value is `refinement.readiness`. **Bounded change**: universe = the new helper `src/tests/renderRefinementSection.tsx`, its own test file, and every importer, named: `ModifyTeamSettings.refinementNeed.test.tsx`, `ModifyTeamSettings.readiness.test.tsx` and the section test files slice A creates (`RefinementBandSettings.test.tsx`, `StageRulesSettings.test.tsx`, `ReadinessSettings.test.tsx`, and a `.tsx` beside `RefinementCadenceSettings.test.ts` if the moved cadence tests need a render; names confirmed at A-2), and nothing else; assertion: the surviving form wiring tests still go through the real form |
 | Query client and providers for tests | `renderWithQueryClient`, `createMockApiServiceContext` | REUSE unchanged. **Pure function** |
 | Reports page test kit | `BulkReportsTestKit` (`renderTheReportsPage`, `rowOf`, `selectTheRowOf`), `ReportsTestKit`, `ReportPrintTestKit` | EXTEND `rowOf` only (D-6561-7). **Bounded change**: universe = one exported helper and its six importing test files (`removal`, `combinedPdf`, `reading`, `ReportsPage.test`, `ReportsPage.usageData.test`, `BulkReportWizard.test`); assertion: those six files pass unmodified with the same sorted id list |
 | Dialog and hook units | `RemoveSelectedDialog` (props: `reports`, `onCancel`, `onDone`), `NoPdfDialog`, `useSelectionRemoval`, `useBulkReportRemoval`, `useReportsPdfExport` | REUSE by rendering them alone (`renderHook` for the hooks). No change to them. **Bounded change** as hooks keep their effects |
@@ -510,24 +555,44 @@ this Story previews or validates by side effect).
 | Budget derivation | `Scripts/test-timings/check_budget.py`, `test-time-budget.json`, T4's recipe in `docs/ci-learnings.md` | REUSE unchanged; the budget step edits one number. **Bounded change**: universe = `budget_seconds` of `frontend`; assertion: the script on the saved CSVs |
 | Time budget guard and allow-list | `src/tests/timeBudget/`, `slowTests.ts` (empty list, per-test limit 2 s) | REUSE. Per-test entries are not expected to appear; if a rewritten wiring test exceeds 2 s it is a defect of the rewrite, not an entry |
 
+**Search record (2026-11-06, `Lighthouse.Frontend/src`, second revision pass).**
+
+- A stateful host. `grep -rln 'useState' src/tests` found nothing: no shared helper keeps a controlled value in state.
+  `grep -rln 'useState' --include='*.test.tsx' src` found hosts private to 10 test files, each written for its own component
+  (`DataGridBase`, `WipSettingDialog`, `DashboardHeader`, `WidgetShell`, the Portfolio and Team detail pages, the two
+  forecasters, and `PortfolioSettingsInState` in `DependenciesComponent.directionTip.test.tsx`, which holds a Portfolio's
+  settings and applies every change, as the edit page does). None is exported and none renders a Refinement unit. So the
+  helper is new, and `PortfolioSettingsInState` is its nearest model.
+- Existing section test files. `find src -name 'RefinementBandSettings*' -o -name 'StageRulesSettings*' -o -name
+  'ReadinessSettings*' -o -name 'RefinementSettingsSection*' -o -name 'RefinementCadenceSettings*'` found the five components
+  and one test file, `RefinementCadenceSettings.test.ts`, which holds function tests and no JSX. There is no test file for the
+  band, the stage rules, the readiness or the section, so the moved tests create `RefinementBandSettings.test.tsx`,
+  `StageRulesSettings.test.tsx` and `ReadinessSettings.test.tsx`. The moved cadence tests extend what
+  `RefinementCadenceSettings.test.ts` covers in a `.tsx` file beside it: a `.ts` file cannot hold JSX, and renaming it would
+  move its ids, which no baseline list pins.
+
 ## Wave: DESIGN / [REF] Budget step (follow-up commit, after a push)
 
 Not a step of this run, because it needs at least 5 `main` runs after a push and the maintainer pushes nothing in AFK. The
 **first push is judged against the 56 s budget still in force**, and the Story **stays open until this commit lands**.
 
-1. The maintainer (or the next session) pushes the slices; the orchestrator waits for >= 5 complete `ci.yml` runs on `main`
-   (the `test-timings-frontend` artifacts; a run that stopped at its first failure is partial and excluded).
-2. For each, record the Vitest `Duration`, read as the runner speed: the memory note `reference_ci_vitest_duration_is_bimodal`
-   puts the groups at about 610-830 s and 1,070-1,160 s. Never average across the groups; keep the maximum per file.
+1. The maintainer (or the next session) pushes the slices; the orchestrator waits for >= 5 complete plain `ci.yml` runs on
+   `main` ("plain" and "complete" as defined in "Acceptance criteria and dependencies"; the `test-timings-frontend`
+   artifacts; a run that stopped at its first failure is partial and excluded).
+2. For each, record the Vitest `Duration` and class the run by one boundary: **950 s or more is slow, anything under 950 s
+   is fast** (fast runs have taken about 610-830 s, slow runs about 1,070-1,160 s). Never average across the classes; keep
+   the maximum per file.
 3. L is the largest per-file test time over those runs among files not on the allow-list. Rule as T4 applied it:
    B = ceil(2.1 x L). **Name L in the derivation**: today it is `ModifyTeamSettings.test` at 17.6 if that file is only
-   trimmed, or `ReportsTab.createWizard` at 17.5; both give 37. If none of the runs is in the slow group, scale L by 1.62
-   (T4's measured ratio) or wait for one: a budget derived on fast-runner runs alone fails on the first slow runner.
-4. Edit `budget_seconds` of `frontend` in `Scripts/test-timings/test-time-budget.json`, replay `check_budget.py --stack
+   trimmed, or `ReportsTab.createWizard` at 17.5; both give 37; with slice A alone it is `OverviewDashboard` at 22.0, which gives 47. **If none of the runs
+   is slow, multiply L by 1.62** (T4's measured ratio): a budget derived on fast-runner runs alone fails on the first slow
+   runner. A slow run among the five is optional, because this scaling covers its absence; there is no waiting for one.
+4. If the derived B is not below the budget in force, make no commit: keep the current value and record the derivation
+   (runs, files, L, B) in this file. Otherwise edit `budget_seconds` of `frontend` in `Scripts/test-timings/test-time-budget.json`, replay `check_budget.py --stack
    frontend` on the saved CSVs, and write the derivation (runs, files, L, B) in this file and in the `docs/ci-learnings.md`
    test-time-budget bullet if its figures name the old value. Commit as `ci(test-infra): ...`; the budget only tightens.
 5. If a file of the seven is still over the line, the derivation names it and B follows it (Q3, "Expected budget outcome":
-   45 to 46 s is the likely result); do not raise any ceiling.
+   45 to 47 s is the likely result); do not raise any ceiling.
 
 ## Wave: DESIGN / [REF] Risks and open questions
 
@@ -535,9 +600,9 @@ Not a step of this run, because it needs at least 5 `main` runs after a push and
 |---|---|---|---|
 | Q1 | FE5 #6393 (the `BaseMetricsView` split) was open on 2026-11-04. If it landed, the metrics tests can mount one widget and C changes | Check the ADO state at pick-up; as written, `BaseMetricsView.tsx` stays untouched | Only if it landed during this work |
 | Q2 | T12 #6539 touches some of these files for order and load; it has no workspace in the repository yet | Re-read each file at slice start; a conflict with trunk stops the slice (no autonomous rebase) | Which files T12 touches, and which Story goes first |
-| Q3 | If `BaseMetricsView.loading` (or any file) cannot reach the line, the budget stops at 2.1 x that file. At 21.7 s that is 46 s, not 37; at `combinedPdf`'s 21.0 s it is 45 s | The AC allows "or the reason is recorded"; record it | **Yes**: the maintainer should know the headline 37 s depends on all seven, and on the metrics file and `combinedPdf` in particular; the likely outcome is 45 to 46 s |
+| Q3 | If `BaseMetricsView.loading` (or any file) cannot reach the line, the budget stops at 2.1 x that file. At 21.7 s that is 46 s, not 37; at `combinedPdf`'s 21.0 s it is 45 s; at Overview's 22.0 s it is 47 s | The AC allows "or the reason is recorded"; record it | **Yes**: the maintainer should know the headline 37 s depends on all seven, and on the metrics file and `combinedPdf` in particular; the likely outcome is 45 to 47 s |
 | Q4 | Splitting a slow file in two would meet the per-file letter of the AC without running anything faster | Rejected as a default (D-6561-3d) | Only as a deliberate fallback, if a file misses and the maintainer wants the budget anyway |
-| Q5 | The 5-run read may contain no slow-runner run, giving an optimistic L and a budget that fails on the first slow runner | Require a slow-runner run or scale by 1.62 (D-6561-13) | No |
+| Q5 | The 5-run read may contain no slow-runner run, giving an optimistic L and a budget that fails on the first slow runner | Multiply L by 1.62 when none of the runs is slow (Duration of 950 s or more); a slow run is optional (D-6561-13) | No |
 | Q6 | Overview fallback extraction (D-6561-9c) is a production change in an RBAC-gated page | Not taken by default; asked about only if the stub spike saves under 20 %, and then it is the maintainer's call | **Yes, if it comes to that** |
 | Q7 | The `useReportsPdfExport` extraction (D-6561-4) is a production change | **Skipped until the maintainer says yes** (D-6561-17): slice B runs its default path and the `printFailures` tests are not written | **Veto point, now an opt-in**: a yes adds the extraction to B-4 as its own commit first |
 | Q8 | The machine is shared by parallel sessions (FE7 saw load 10-14 on 4 cores); local alternating pairs can be noise | Record load and CPU seconds per pair; discard loaded pairs (D-6561-11) | No |
@@ -561,7 +626,7 @@ tests drive: a component's props and callbacks (driving), a hook's arguments and
    |       bandErrors, readinessErrors, stateMappingValidation, ... (unchanged)
    |       failedAmong, leaveOutPlanOf  (NEW, moved out of useReportsPdfExport; production, only on the maintainer's yes, Q7)
    '-- drives ApiServiceContext fakes (driven side, unchanged)       BulkReportsTestKit.rowOf (MODIFIED, cheap query)
- Scripts/test-timings/test-time-budget.json   frontend budget_seconds 56 -> 37 only if all seven reach their cut; 45-46 likely (follow-up, after 5 main runs)
+ Scripts/test-timings/test-time-budget.json   frontend budget_seconds 56 -> 37 only if all seven reach their cut; 45-47 likely (follow-up, after 5 main runs)
 ```
 
 New: one test helper, (only on a yes to Q7) one production module (`printFailures.ts`) and one test file for it, a handful of new unit-level
@@ -569,7 +634,7 @@ test files and one split test file (`OverviewDashboard.gating.test.tsx`). Modifi
 `useReportsPdfExport.ts` (imports the extracted functions, only on a yes to Q7), the budget number. Unchanged: all production behaviour, pixels,
 E2E, `setupTests.ts`, the reporter and allow-list, every external call (this work adds none).
 
-**Expected budget outcome.** 37 s only if all seven files reach their cut. Without the extraction `combinedPdf` probably misses (45 s) and `BaseMetricsView.loading` probably misses (46 s), so plan on 45 to 46 s ("The target, as arithmetic"). Production fallbacks stay the maintainer's call.
+**Expected budget outcome.** 37 s only if all seven files reach their cut. Without the extraction `combinedPdf` probably misses (45 s) and `BaseMetricsView.loading` probably misses (46 s), and `OverviewDashboard` may miss (47 s), so plan on 45 to 47 s ("The target, as arithmetic"). Production fallbacks stay the maintainer's call.
 
 **Design patterns weighed.**
 
@@ -603,9 +668,9 @@ after the review gate.
 |---|---|
 | Environment | Local Vitest and the existing "Verify Frontend" job. |
 | CI/CD | Unchanged. The per-test guard and the per-file budget from T4 judge the rewritten files on the first push. The **first push is judged against the 56 s budget still in force**, so a green push proves only that no file got slower than that; the **Story stays open until the budget commit lands**. CI is bimodal (about 610-830 s and 1,070-1,160 s for the same tests), so one run says little. |
-| Rollback | Revert the budget commit first, then the rewrite commits (each file's rewrite is its own commit and reverts alone). The `refactor(reports)` commit, if taken, is its own unit and is reverted separately, after any rewrite commit that depends on it (the direct tests of its functions go first). |
-| Local measurement | `LIGHTHOUSE_TEST_WORKERS=2` on named files, never the full suite while another session is mutating. The load average is sampled at the start and at the end of each run; a run counts only if both samples are at or under half the cores. Decision metric: summed per-test seconds of the touched files, alternating before and after, 5 pairs, **at least 3 valid pairs**; with fewer the slice records "unmeasured, machine loaded" and takes the stop, with no retake loop. User+sys CPU seconds are recorded beside it as a cross-check. |
-| Monitoring | `test-timings-frontend` artifacts, read by hand for the budget step after at least 5 `main` runs, one of them a slow-runner run (else L scaled by 1.62). No dashboard, no alert. |
+| Rollback | Revert the budget commit first, then the rewrite commits (each file's rewrite is its own commit and reverts alone), then the harness commit last, because `readiness` and `refinementNeed` both depend on it. The `refactor(reports)` commit, if taken, is its own unit and is reverted separately, after any rewrite commit that depends on it (the direct tests of its functions go first). |
+| Local measurement | `LIGHTHOUSE_TEST_WORKERS=2` on named files, never the full suite while another session is mutating. The load average is sampled at the start and at the end of each run; a pair counts only if all four samples (the 1-minute load average at the start and end of both its runs) are at or under half the cores. Decision metric: summed per-test seconds of the touched files, alternating before and after, 5 pairs, **at least 3 valid pairs**; with fewer the slice records "unmeasured, machine loaded" and takes the stop, with no retake loop. User+sys CPU seconds are recorded beside it as a cross-check. |
+| Monitoring | `test-timings-frontend` artifacts, read by hand for the budget step after at least 5 plain `main` runs (a slow-runner run among them, 950 s or more, is optional; else L multiplied by 1.62). No dashboard, no alert. |
 | Mutation | N/A when no production file changes (the default), because Stryker mutates production code and this Story edits test files only. That departs from the project's per-feature strategy, so it is a **maintainer-visible exception**, stated again when the rigor profile is agreed. If the maintainer says yes to Q7, Stryker runs once, last, on `printFailures.ts`, kill rate floor 80 %, after the other session's run has finished. |
 | Usage-data event | N/A, because no user of the product reaches test files, so no event could show use. |
 | Terminology and release notes | N/A, because no screen or word a user sees changes: the rewritten tests keep asserting the seeded default terms, and release notes are written at `/release`, with nothing to say for a test-only Story. |
@@ -621,7 +686,7 @@ after the review gate.
   resolved in favour of DESIGN and recorded: (1) the DISCUSS checklist says "the budget falls in this Story" while D-6561-13
   makes it a follow-up commit after five `main` runs; read as "in this Story, as its last commit", so the checklist item stays
   open until that commit. (2) DESIGN's counts differ from a run (next table); they are corrections of figures, not of
-  decisions, and the run's numbers win. (3) The revision pass after the review gate is D-6561-17 to D-6561-22.
+  decisions, and the run's numbers win. (3) The revision pass after the review gate is D-6561-17 to D-6561-22; the second revision pass changes D-6561-1, -2, -11, -13, -18, -20 and -22 in their rows (the figure that stops a file, an optional slow run, pair validity, rollback order) and decides nothing new.
 - UI sketches: N/A, because nothing a user sees changes. No nWave scenario tag in any test; an untagged test is correct.
 - Mechanism: Vitest and React Testing Library, run per named file with `LIGHTHOUSE_TEST_WORKERS=2` from `Lighthouse.Frontend`.
   The full suite and Stryker are not run in this wave (another session is mutating on the machine).
@@ -645,6 +710,10 @@ so "unmodified" is pinned for them by an id list too, not by a sentence.
 | total | 329 | 524 | | |
 
 DESIGN's headings and tables now carry these run figures (24, 35 and 18), as the run's numbers win.
+
+**Slice A's before-commit is `d148c2d14`.** `git diff --stat d45a63265 d148c2d14 -- Lighthouse.Frontend` prints nothing, so no
+test file or production file under `Lighthouse.Frontend` changed between the commit the baseline was run on and the
+before-commit (only documents did). The lists in `baseline/` therefore describe slice A's before state.
 
 **Was the baseline stale? No** (checked in the revision pass, 2026-11-06). The saved lists were made from
 `Lighthouse.Frontend/test-results.json`, which the project's reporter writes on every run and which a run that dies early
@@ -783,9 +852,9 @@ the two new form tests marked.
 **Slice A**
 - `renderRefinementSection.test.tsx` (the helper's own tests, so a wrong host cannot hide a wrong section):
   "the section shows the value the Team was stored with until the admin edits it", "a change the admin makes shows in the
-  section as its new value", "a second edit builds on the first edit's result, as in the form", "a test can read the value the
-  admin has now" and "a test can read every change the admin made, in the order they were made" (the last two are the harness-log
-  tests, named for what a test author relies on, not for how the host records it).
+  section as its new value", "a second edit builds on the first edit's result, as in the form" and "a test can read the value the
+  admin has now" (the last is named for what a test author relies on, not for how the host records it). A fifth test, for
+  `changes()`, is written only if a moved test needs that function.
 - The moved Refinement tests land in `RefinementBandSettings.test.tsx`, `RefinementCadenceSettings.test.tsx` (existing last
   block of `refinementNeed` may stay or move), `StageRulesSettings.test.tsx`, `ReadinessSettings.test.tsx` (names chosen at A-2
   after the existing files are checked, so no duplicate file is made).
@@ -820,20 +889,23 @@ the two new form tests marked.
 
 ## Wave: DISTILL / [REF] Shared helper contracts (written by DELIVER in the step that first needs them)
 
-**`renderRefinementSection` (slice A, step A-2, in `src/tests/`, test-only).** Renders one controlled Refinement section
+**`renderRefinementSection` (slice A, step A-2, in `src/tests/`, test-only).** Renders one controlled unit of the Refinement section, the section itself or one of its parts
 (`ReadinessSettings`, `RefinementBandSettings`, `RefinementCadenceSettings`, `StageRulesSettings`, `RefinementSettingsSection`)
 inside the providers the form's tests give it (the Team's terminology, the seeded default words unless the test passes its own)
 and a host that keeps the value in `useState`.
 - Input: the initial value and a function from `(value, onChange)` to the section element.
-- Returns the `user` from `userEvent.setup()`, `latest()` (the value the host holds), `changes()` (every value the section
-  handed to `onChange`, in order, as copies), and the usual RTL queries are used from `screen`.
-- `onChange` takes the complete next value, as `updateSettings` does in the form, and updates the state synchronously; no
+- Returns the `user` from `userEvent.setup()` and `latest()` (the value the host holds); the usual RTL queries are used from
+  `screen`. There is no `changes()`: no moved test reads the sequence of changes, only the value the host holds now. A-2 adds
+  it, with its own helper test in the same commit, only if a moved test turns out to need it.
+- `onChange` of `ReadinessSettings`, `RefinementBandSettings`, `RefinementCadenceSettings` and `StageRulesSettings` takes the
+  complete next value and the host replaces its value with it; `RefinementSettingsSection` hands only the part that changed,
+  and the host spreads it over its value, as `changeRefinement` does in the form. The state updates synchronously; no
   query client, no fake clock, no debounce, no service. It never calls anything on its own, so a section that needs a service
   is a wiring test and stays on the form.
 - It does not hide an error: a throwing section fails the test; no `try`, no `act` advance of timers.
 - One plain comment on why the value lives in state (a controlled section shows nothing new unless handed its change back).
 - Universe of the helper: `src/tests/renderRefinementSection.tsx` (new), its own test file `renderRefinementSection.test.tsx` (new), the importers `ModifyTeamSettings.refinementNeed.test.tsx` and `ModifyTeamSettings.readiness.test.tsx`, and the section test files slice A creates (`RefinementBandSettings.test.tsx`, `StageRulesSettings.test.tsx`, `ReadinessSettings.test.tsx`, a `.tsx` beside `RefinementCadenceSettings.test.ts` if needed; names confirmed at A-2). Nothing else imports it.
-- Proved by its own five tests (above) before any Refinement test moves; the surviving wiring tests prove the form hands the
+- Proved by its own four tests (above) before any Refinement test moves; the surviving wiring tests prove the form hands the
   same value to the section.
 
 **Cheaper `rowOf` (slice B, step B-2, in `BulkReportsTestKit.tsx`, only if B-1 shows a saving).**
@@ -859,9 +931,13 @@ offered" (nothing failed, or leaving the failed out would leave nothing) or the 
    repository root at every slice close and before review. It reads the diff of test files and `src/tests` since
    `<before-commit>`, taken with `--no-renames` (a moved file is a deletion and an addition, so its `expect(` lines need
    rows) and reads untracked new test files as all-added lines. It **exits 1** when:
-   - an `expect(` was removed and the moved-assertions file has no row for it. The counter is one regular expression,
-     `\bexpect\(`, applied to removed lines and to the "Assertion text" cell of every row; per file, removed occurrences must
-     not exceed the occurrences the file's rows account for;
+   - an `expect(` was removed and the moved-assertions file has no row for it, or the rows of a file account for more
+     `expect(` than were removed. The counter is one regular expression, `\bexpect\(`, applied to removed lines and to the
+     "Assertion text" cell of every row; per file the two totals must be equal. The counter does not see `expect.soft(`,
+     `expect.poll(` or `assert.`; none of them occurs in the three slice A files today (searched, no hits), and a file that
+     uses one needs the counter extended before it is edited;
+   - a row's assertion text, stripped of surrounding whitespace, is not one of the removed lines of its file, or a removed
+     line is cited by more rows than it was removed (the phantom row that would otherwise hide an unrecorded removal);
    - more `.not.` assertions were removed than added, beyond those the rows quote;
    - an added line matches the weaker-matcher list: `.skip`, `.only`, `.todo`, `skipIf`, `runIf`, `it.fails`, `xit`,
      `xdescribe`, `toMatchObject`, `objectContaining`, `toBeGreaterThan`, `toBeLessThan`, `toContain(`, `toMatch(`,
@@ -880,7 +956,9 @@ offered" (nothing failed, or leaving the failed out would leave nothing) or the 
 4. **Id union diff:** `baseline/run-touched-files.sh <before> <moved-assertions-file>` runs every baseline file, every changed
    test file and every new test file, deletes the old report first, refuses a stale report or a count that differs from the
    run's, and fails on a missing id without a row, a new id not under "Added ids", a touched file that was not in the run,
-   or a test that did not pass. It pins names, not assertions (see "The guarantee").
+   a test that did not pass, a row naming an id that is not in the baseline, or a row naming an id that is still in the
+   after-run unless its last cell starts with `kept:` (an accepted note, defined in the template). It pins names, not
+   assertions (see "The guarantee").
 5. **Deliberate break** for each new call site and each surviving wiring test: break the production seam it claims to prove,
    see the named test fail, restore, record both in the slice file. The list:
    - drop the value handed from the form to the section; pass the stub the wrong prop;
@@ -894,6 +972,27 @@ offered" (nothing failed, or leaving the failed out would leave nothing) or the 
      test that fails. If none fails, that is a finding: the seam is untested today and a seam row must cover it before the
      family rows go;
    - change `retry: false` or `gcTime: 0` in `metricsQueryOptions` and see the hook tests fail.
+
+   **Slice A rows, one per new call site and per named surviving seam.** Paths are under
+   `Lighthouse.Frontend/src/components/Common/Team/` unless given. Each break is made one at a time, run at DELIVER (not
+   now), the named test is seen to fail, the break is restored, and both are recorded in the slice file. A row where no test
+   fails is a finding: the seam is untested today, and a test is added before the rewrite commit.
+
+   | Site or seam | Production seam to break | Test expected to fail |
+   |---|---|---|
+   | `renderRefinementSection` host (new call site of every moved test) | none in production: make the host keep its first value and ignore `onChange` | the helper's own `a change the admin makes shows in the section as its new value` and `a second edit builds on the first edit's result, as in the form` |
+   | A-4 form test `says what holds back the save for a mapping of every kind of mistake at once` | `teamAutoSaveBlockers.ts`: delete `...mappingAutoSaveBlockers(s.stateMappings, s, stored)` | that test, and the kept `holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed` |
+   | the same, the form listing every reason | `ModifyTeamSettings.tsx`: render `formInvalidReasons.slice(0, 1).map(...)` instead of `formInvalidReasons.map(...)` | that test only (it names four kinds in one render); the kept Doing test still passes |
+   | the same, each kind fed through the form | `src/utils/stateMappingValidation.ts`, `stateNameClashErrors`: remove the `listClashError` call for To Do, then for Done, then `groupedElsewhereError`, one at a time | that test each time, and the function test for that kind (`names the To Do list when the shadowing sits there`, `names the Done list when the shadowing sits there`, `refuses a mapping that groups another mapping's name, with the sentence the server sends`) |
+   | readiness toggle wiring: the kept `switches a rule back on at the threshold it had before` | `ReadinessSettings.tsx`: `toggleRule` stops calling `setRememberedThresholds(rememberOnSwitchOff(...))` | that form test, and the moved `switches a rule back on at the threshold it was changed to before it was switched off` and `switches a rule that was refused when switched off back on at its last allowed threshold` in `ReadinessSettings.test.tsx` |
+   | readiness handed from the form to the section: the kept `saves a changed number of Yes votes with the rest of readiness as it was` | `RefinementSettingsSection.tsx`: `onChange={(readiness) => onChange({ readiness })}` becomes `onChange={() => onChange({})}` | that test and the kept toggle test; the tests of `ReadinessSettings.test.tsx` stay green, because they own only the section |
+   | band, stage rules and cadence handed up, one each | `RefinementSettingsSection.tsx`: `onChange({ band })`, then `onChange({ stageRules })`, then `onChange({ cadence })` becomes `onChange({})` | `saves a changed high end with the low end as it was`; `saves a changed Ready rule and leaves the Being refined rule as it was`; `saves Thursdays every week` |
+   | the form keeps what a section did not change | `ModifyTeamSettings.tsx`, `changeRefinement`: replace its body with `updateSettings("refinement", { states: [], ...change })` | `keeps the chosen refinement states when readiness changes` (it asserts the whole saved refinement value) |
+   | refinement picker: the kept `the refinement picker offers a mapping's name, not its states` | `ModifyTeamSettings.tsx`: hand `stateMappings={[]}` to `RefinementSettingsSection` | that test |
+   | section marks and sentences moved to `ReadinessSettings.test.tsx`, `RefinementBandSettings.test.tsx`, `RefinementCadenceSettings` and `StageRulesSettings.test.tsx` | `ReadinessSettings.tsx`: `error={errors.minYes !== null}` becomes `error={false}`; `RefinementBandSettings.tsx`: `error={errors[end] !== null \|\| inverted}` becomes `error={false}`; `RefinementCadenceSettings.tsx`: `MOST_WEEKS_APART` 52 becomes 520; `StageRulesSettings.tsx`: `onChange({ ...stageRules, [stage]: rule })` loses its spread | `marks Yes votes needed as refused and leaves Voters needed unmarked`; `marks only the low end when it is out of range above the high end, since that is not an inverted band`; `saves nothing for more than 52 weeks between Refinements, and says why`; `saves a changed Ready rule and leaves the Being refined rule as it was` |
+   | `ModifyTeamSettings.test` survivor "held back": the kept Doing wiring | `src/hooks/useModifySettings.ts`: `formValid` becomes `settings !== null`, ignoring `formInvalidReasons` | that test, and the kept rows of `does not auto-save when X is invalid` |
+   | the same survivor, "released on rename" | `src/hooks/useModifySettings.ts`: delete `dispatchSave(settingsToSave)` inside the debounce timer | the "saves once it is renamed" half of that test |
+   | `ModifyTeamSettings.test` survivor "auto-save after the debounce" | the same deletion | `auto-saves a valid change after the debounce window` |
 6. **Coverage** (opt-in for exactly this reason): per slice, `--coverage` over the named files of the touched directory only,
    line and branch not lower than the slice's first-step reading (FE7 left `src/components/Common/Team` at 96.26 / 86.23).
 
@@ -907,14 +1006,43 @@ exits 1 with all three printed. Item 4: renaming one test and adding a new untra
 "Added ids" it ended `OK`; a second untracked file left out of the same report was named as "not in the after-run"; a
 report started before the run and a count that differs from the run's were refused with exit 2.
 
+**Proof for the second revision pass (2026-11-06, planted changes, all undone with `git checkout --`).** Test file:
+`ModifyTeamSettings.readiness.test.tsx`; two real lines were deleted in turn (`expect(screen.getByText("Send to discussion
+when")).toBeVisible();` and `expect(screen.getByText("or more No votes")).toBeVisible();`) and a moved-assertions file was
+written for each case. The old script is the version at `d148c2d14`. For `check_ids.py` a report was built from the baseline
+id lists (every test passed), so no suite was run.
+
+| Case | `check_behaviour_free.py` | Old script |
+|---|---|---|
+| nothing changed, no rows | exit 0 | exit 0 |
+| two removals, one real row, one phantom row (text of a line that was never there), one removal unrecorded | exit 1, "not a removed line of this file" | exit 0 (counts equal, hidden) |
+| one removal, its row | exit 0 | exit 0 |
+| one removal, its row cited twice | exit 1, "SURPLUS 1 occurrence(s)" and "cited by more rows than it was removed" | exit 0 |
+| one removal, a row naming another line | exit 1, "not a removed line of this file" | exit 0 |
+| two removals, both rows | exit 0 | exit 0 |
+| two removals, one row | exit 1, "MISSING 1 row(s)" | exit 1 |
+| one removal, row text with spaces around it | exit 0 | exit 0 |
+
+| Case | `check_ids.py` |
+|---|---|
+| nothing changed, no rows | exit 0 |
+| a row names an id that is still present | exit 1, "still present and is not marked kept" |
+| the same row with `kept:` in its last cell | exit 0 |
+| a row names an id that is not in the baseline | exit 1, "not in the baseline" |
+
+The first run of these cases found a defect (the table's header row was read as a row); it was fixed and all cases were
+rerun with the results above. `git status` afterwards showed only the intended edits.
+
 ## Wave: DISTILL / [REF] Stop rule
 
 Inherited from D-6561-10 and made checkable by D-6561-20. **The stop check for a file is the step that puts its moves in,
-measured by one method:** summed per-test seconds of that file, 5 alternating before and after pairs on
-`LIGHTHOUSE_TEST_WORKERS=2`, load average sampled at the start and at the end of each run, a pair valid only if both samples
-are at or under half the cores, user+sys CPU seconds recorded beside it. The slice file states the projected cut (after over
-before) next to the required cut of DESIGN's table (34 %, 24 %, 20 %, 19 %, 17 %, 13 %, 1 % for the seven; 38 to 6 % with
-margin).
+measured by one method:** summed per-test seconds of that file (`assertionResults[].duration` of its suite in
+`Lighthouse.Frontend/test-results.json`), 5 alternating before and after pairs on `LIGHTHOUSE_TEST_WORKERS=2`, a pair valid
+only if all four samples (the 1-minute load average at the start and end of both its runs) are at or under half the cores,
+user+sys CPU seconds recorded beside it. Cut = 1 - after/before. The slice file states the projected cut next to two figures
+of DESIGN's table: the **required cut**, which stops the file when the projection is less than it (34 %, 24 %, 20 %, 19 %,
+17 %, 13 %, 1 % for the seven), and the **design target** with margin, which is reported (38 %, 28 %, 25 %, 24 %, 21 %, 18 %,
+6 %). A file between the two passes and is recorded as passing with no margin.
 
 | Slice | File | Stop-check step |
 |---|---|---|
@@ -922,11 +1050,16 @@ margin).
 | B | `removal` / `combinedPdf` | B-3 / B-4 |
 | C | `OverviewDashboard` / `BaseMetricsView.loading` | C-2 / C-3 |
 
-- **Below the required cut:** stop that file, record the number and the reason ("target not met, because ...", which the AC
-  allows), flag that the budget floor follows that file (Q3), and do not split the file (Q4 stays a maintainer decision).
+- **Projected cut below the required cut:** stop that file, record the number and the reason ("target not met, because ...",
+  which the AC allows), flag that the budget floor follows that file (Q3), and do not split the file (Q4 stays a maintainer
+  decision). A stopped file keeps the moves already committed, which are behaviour-free and not slower, gets no further work
+  in this run and is recorded; the harness commit stays and the other files of the slice carry on.
 - **Fewer than 3 valid pairs of 5:** the slice records "unmeasured, machine loaded" for that file and takes the stop, the same
   as a miss. There is no retake loop: the maintainer decides whether to measure again on a quiet machine.
-- **Other stops:** A-1's spike shows the section render under about 2x cheaper than the form (stop slice A at A-1); B-1 shows
+- **`ModifyTeamSettings.test` (required cut 1 %):** five pairs cannot resolve 1 %, so its check is that the rows removed
+  match the change table and the summed seconds are not higher than before; anything finer is recorded as not resolvable.
+- **Other stops:** A-1's gate measures the ratio r of one band test, form against section; below 1.85, the figure the
+  arithmetic needs for the required cut of `refinementNeed` (see "Slices"), nothing moves and the run goes to the hold. B-1 shows
   the export tests spend their time drawing reports (skip B-2 for `combinedPdf`; if the cut is then under 17 %, record it);
   C-1's Overview spike saves under 20 % (ask the maintainer about the extraction, Q6, never default to it). A conflict with
   trunk (T12 #6539) stops the slice and reports; nothing is rebased.
@@ -952,15 +1085,24 @@ layer. Self-completeness audit: C2 and C5 to C7 N/A (no state machine, mode flag
 - **At every slice start:** re-read the slice's files against trunk for T12 #6539 (Q2); agree the rigor profile (proposed
   `standard`, D-6561-16) and pass `model` on every dispatch, stating again that mutation testing is N/A while no production
   file changes; record the load average at the start and end of every run, run the alternating pairs with
-  `LIGHTHOUSE_TEST_WORKERS=2` on named files, count a pair only when both samples are at or under half the cores, record
+  `LIGHTHOUSE_TEST_WORKERS=2` on named files, count a pair only when all four of its samples (1-minute load average, start
+  and end of both runs) are at or under half the cores, record
   "unmeasured, machine loaded" below 3 valid pairs of 5, and never run the full suite or Stryker while another session is
   mutating. `/continuous-improvement before` does not apply (it is for feature Epics; #6506 is an improvement Epic).
-- **After the slices:** the budget step (DESIGN, "Budget step"), once at least 5 complete `main` runs exist, one of them on a
-  slow runner. The first push is judged against 56 s and the Story stays open until that commit lands.
+- **After the slices:** the budget step (DESIGN, "Budget step"), once at least 5 complete plain `main` runs exist (a slow-runner
+  run among them, 950 s or more, is optional). The first push is judged against 56 s and the Story stays open until that commit lands.
 
 ## Wave: DESIGN / [REF] Scope of this run (maintainer, 2026-11-06)
 
 After seeing the expected budget band, the maintainer asked for **slice A alone**, to reassess on 2026-11-07. Slices B and
 C are not dropped; they do not run now. The extraction question (Q7) and the Overview fallback (Q6) wait with them, so no
-production code changes in this run. No budget change follows from slice A alone: the frontend budget stays 56 s until the
-worst file left allows less, and `ModifyTeamSettings.refinementNeed` is only the worst file of seven.
+production code changes in this run.
+
+- **Budget.** Slice A alone, if all three files reach their cuts, leaves `OverviewDashboard` as the worst file: L = 22.0, so
+  B = ceil(2.1 x 22.0) = 47. The budget stays 56 s until the budget step, which needs at least 5 complete plain `main` runs
+  after a push (see "Budget step"), and nothing is pushed in this run. If a file of slice A stops, the budget follows that
+  file (Q3).
+- **Mutation testing is N/A for slice A**, because no production file changes. This is an exception to the project's
+  per-feature mutation strategy, and the maintainer sees it at the hold.
+- **Before-commit.** `d148c2d14` is slice A's before-commit; the check that no test file changed since the baseline is
+  recorded under "Baseline".
