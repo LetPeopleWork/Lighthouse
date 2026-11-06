@@ -1,0 +1,17 @@
+target_environments:
+  - name: clean
+    description: "GitHub Actions verify jobs and a local checkout; the check reads a timing CSV and the budget file"
+    platform: [linux]
+    preconditions: ["Python 3.12 or newer"]
+
+coexistence_matrix:
+  - tool: vitest time-budget reporter
+    must_not_break: true
+  - tool: trx_to_csv and vitest_to_csv converters
+    must_not_break: true
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "An unset or false LIGHTHOUSE_BUDGET_WARN_ONLY enforces; true warns; any other value gives no verdict"

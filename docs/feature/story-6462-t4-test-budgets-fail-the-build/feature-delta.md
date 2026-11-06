@@ -396,3 +396,21 @@ Rigor profile proposal: `standard` (pass `model` on every dispatch); mutation N/
 | Q6 | `slowTests.ts`: `ThirdPartyPackagesSection.paging` fits the plain 6 s CI limit (1.91 s) and may be retirable; only a local plain `pnpm test` (limit 2.31 s) decides. | Untouched. | DELIVER may check |
 | Q7 | The variable `LIGHTHOUSE_BUDGET_WARN_ONLY` is unset today. Setting it to `true` silences both stacks (no per-stack switch). | Accepted. | none |
 | Q8 | The sample is 7 and 8 runs, one fast and one slow mode in the frontend, only one in the backend. A new runner population (hosted-image update) means re-deriving. | Recipe in `ci-learnings.md`. | none |
+
+## Wave: DEVOPS / [REF] Platform readiness
+
+Existing platform throughout; nothing new is deployed. Written 2026-11-06 under `/afk`.
+
+| Topic | Answer |
+|---|---|
+| Environment matrix | GitHub Actions, the existing `ci_frontend.yml` and `ci_backend.yml` jobs on `main`; locally, Python 3.12 or newer for `Scripts/test-timings`. See `environments.yaml`. |
+| CI/CD outline | Unchanged stages. Only the "Check test-time budget" step changes on each stack. No new job, trigger or workflow. |
+| Deployment and rollback | No product deployment. Rollback: set the repository variable `LIGHTHOUSE_BUDGET_WARN_ONLY` to `true`, which turns both budgets back into warnings without a commit. It is the maintainer's emergency switch and is unset today. |
+| Monitoring contract | The one KPI, "CI fails on the commit that adds an over-budget unit", is read from the step's annotations and exit code. AC2 is read by hand from 5 `main` runs after the push. No dashboard, no alert. |
+| Observability stack | GitHub annotations and the `test-timings-*` artifacts, as today. |
+| Branching | Trunk-based, push to `main`; this run pushes nothing. |
+| Mutation testing | Project strategy stays per-feature. Stryker covers C# and TypeScript only and this change touches neither (D-6462-13), so N/A here; `Scripts/test-timings/tests` carries the proof, including a planted slow unit per stack. |
+| Coexistence | The per-test Vitest guard, `summarise.*`, the timing converters and the Sonar steps keep working unchanged. |
+| Pre-requisites | The new limits are in place before enforcement starts (step 2-1 before 2-2). |
+| Usage-data event | N/A, because this is CI tooling: no user of the product ever reaches it, so no event could show it is used. |
+| RBAC, Clients, Website, UI sketch | N/A, because no route, DTO, page or marketing claim changes. |
