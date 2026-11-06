@@ -106,14 +106,14 @@ export const ParentSourcesListOfDefault = {
 	parentOverrideForPortfolios: "parentSourcesForPortfolios",
 } as const;
 
-export type ParentOverrideDefaultName = keyof typeof ParentSourcesListOfDefault;
+export type ParentSourcesDefaultName = keyof typeof ParentSourcesListOfDefault;
 
 export type ParentSourcesListName =
-	(typeof ParentSourcesListOfDefault)[ParentOverrideDefaultName];
+	(typeof ParentSourcesListOfDefault)[ParentSourcesDefaultName];
 
-export const isParentOverrideDefaultName = (
+export const isParentSourcesDefaultName = (
 	name: string,
-): name is ParentOverrideDefaultName =>
+): name is ParentSourcesDefaultName =>
 	Object.keys(ParentSourcesListOfDefault).includes(name);
 
 /**

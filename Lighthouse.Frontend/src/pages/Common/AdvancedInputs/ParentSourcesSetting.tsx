@@ -10,19 +10,20 @@ import {
 	parentSourcesTip,
 } from "../../../components/Common/ConnectionDefault/fieldDirectionTips";
 import ParentSourcesList from "../../../components/Common/ConnectionDefault/ParentSourcesList";
-import { nameOfParentSource } from "../../../components/Common/ConnectionDefault/parentSources";
+import {
+	nameOfParentSource,
+	OnlyTheTrackersOwnParent,
+} from "../../../components/Common/ConnectionDefault/parentSources";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import {
 	type IWorkTrackingSystemConnection,
-	type ParentOverrideDefaultName,
+	type ParentSourcesDefaultName,
 	ParentSourcesListOfDefault,
 	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../services/TerminologyContext";
-
-export type ParentOverrideDefault = ParentOverrideDefaultName;
 
 interface ParentSourcesSettingProps {
 	settings: IBaseSettings | null;
@@ -33,19 +34,15 @@ interface ParentSourcesSettingProps {
 	additionalFieldDefinitions: IAdditionalFieldDefinition[];
 	connection: IWorkTrackingSystemConnection | null | undefined;
 	tracker: WorkTrackingSystemType;
-	theDefault: ParentOverrideDefault;
+	theDefault: ParentSourcesDefaultName;
 }
-
-const OnlyTheTrackersOwnParent: readonly ParentSourceEntry[] = [
-	{ kind: "TrackerParent" },
-];
 
 // The settings carry the default of their stored connection. Once another one is chosen, its default is read off
 // that connection.
 const defaultListOf = (
 	settings: IBaseSettings | null,
 	connection: IWorkTrackingSystemConnection | null | undefined,
-	theDefault: ParentOverrideDefault,
+	theDefault: ParentSourcesDefaultName,
 ): readonly ParentSourceEntry[] | null | undefined => {
 	if (
 		!connection ||

@@ -8,11 +8,12 @@ import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
-import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type {
+	IWorkTrackingSystemConnection,
+	ParentSourcesDefaultName,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../services/TerminologyContext";
-import ParentSourcesSetting, {
-	type ParentOverrideDefault,
-} from "./ParentSourcesSetting";
+import ParentSourcesSetting from "./ParentSourcesSetting";
 
 interface AdvancedInputsComponentProps {
 	settings: IBaseSettings | null;
@@ -22,7 +23,7 @@ interface AdvancedInputsComponentProps {
 	) => void;
 	additionalFieldDefinitions?: IAdditionalFieldDefinition[];
 	connection?: IWorkTrackingSystemConnection | null;
-	parentOverrideDefault: ParentOverrideDefault;
+	parentOverrideDefault: ParentSourcesDefaultName;
 }
 
 const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({

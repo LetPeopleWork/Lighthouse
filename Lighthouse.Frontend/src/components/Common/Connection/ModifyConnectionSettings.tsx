@@ -31,8 +31,8 @@ import {
 	type IEstimationDefault,
 	type IWorkTrackingSystemConnection,
 	isEstimationDefaultName,
-	isParentOverrideDefaultName,
-	type ParentOverrideDefaultName,
+	isParentSourcesDefaultName,
+	type ParentSourcesDefaultName,
 	ParentSourcesListOfDefault,
 	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -144,7 +144,7 @@ const defaultsWithoutTheOldParentNumbers = (
 ): IConnectionDefaults =>
 	Object.fromEntries(
 		Object.entries(defaults).filter(
-			([name]) => !isParentOverrideDefaultName(name),
+			([name]) => !isParentSourcesDefaultName(name),
 		),
 	);
 
@@ -160,7 +160,7 @@ interface ConnectionDefaultsSectionProps {
 		bundle: IEstimationDefault | null,
 	) => void;
 	onParentSourcesChange: (
-		name: ParentOverrideDefaultName,
+		name: ParentSourcesDefaultName,
 		list: readonly ParentSourceEntry[],
 	) => void;
 	/** Only a saved field can be named by a default, so a field added in this edit is not offered yet. */
@@ -230,7 +230,7 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 				/>
 			);
 		}
-		if (isParentOverrideDefaultName(name) && tracker) {
+		if (isParentSourcesDefaultName(name) && tracker) {
 			return (
 				<ParentSourcesList
 					key={name}
@@ -753,7 +753,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	};
 
 	const handleParentSourcesChange = (
-		name: ParentOverrideDefaultName,
+		name: ParentSourcesDefaultName,
 		list: readonly ParentSourceEntry[],
 	) => {
 		clearValidationFeedback();

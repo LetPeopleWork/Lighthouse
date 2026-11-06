@@ -10,6 +10,10 @@ export type ParentSourcesAction =
 
 export const MaximumParentSources = 5;
 
+export const OnlyTheTrackersOwnParent: readonly ParentSourceEntry[] = [
+	{ kind: "TrackerParent" },
+];
+
 const isSameSource = (
 	first: ParentSourceEntry,
 	second: ParentSourceEntry,

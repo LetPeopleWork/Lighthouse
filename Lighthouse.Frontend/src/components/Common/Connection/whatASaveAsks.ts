@@ -8,10 +8,13 @@ import {
 	type IEstimationDefault,
 	type IFollowerGroup,
 	isEstimationDefaultName,
-	isParentOverrideDefaultName,
+	isParentSourcesDefaultName,
 	ParentSourcesListOfDefault,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { listsTheSameSources } from "../ConnectionDefault/parentSources";
+import {
+	listsTheSameSources,
+	OnlyTheTrackersOwnParent,
+} from "../ConnectionDefault/parentSources";
 import type { WhatChanges, WhyUpdate } from "./UpdateQuestion";
 
 // Stored values and rules are keyed by a field's id, so a field that comes back under a new id is a
@@ -104,10 +107,6 @@ const followersOfDefault = (
 		.filter((group) => group.follows.includes(name))
 		.reduce((sum, group) => sum + group.count, 0);
 
-const OnlyTheTrackersOwnParent: readonly ParentSourceEntry[] = [
-	{ kind: "TrackerParent" },
-];
-
 // A default nobody has set reads as the tracker's own parent alone, which is also what saving that list says.
 export const parentSourcesOfDefault = (
 	name: keyof typeof ParentSourcesListOfDefault,
@@ -120,7 +119,7 @@ const defaultChanged = (
 	loaded: IConnectionDefaults,
 	current: IConnectionDefaults,
 ): boolean =>
-	isParentOverrideDefaultName(name)
+	isParentSourcesDefaultName(name)
 		? !listsTheSameSources(
 				parentSourcesOfDefault(name, loaded),
 				parentSourcesOfDefault(name, current),
