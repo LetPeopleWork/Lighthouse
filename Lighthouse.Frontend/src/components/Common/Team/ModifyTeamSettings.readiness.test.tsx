@@ -497,36 +497,32 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 		const noRule = await screen.findByRole("checkbox", { name: NO_RULE });
 		await userEvent.click(noRule);
-		await waitFor(() =>
-			expect(theReadinessLastSaved()?.discussWhen).toEqual({
-				no: null,
-				yesIf: 2,
-			}),
-		);
+		await pastTheAutosaveDelay();
+		expect(theReadinessLastSaved()?.discussWhen).toEqual({
+			no: null,
+			yesIf: 2,
+		});
 		await userEvent.click(noRule);
-		await waitFor(() =>
-			expect(theReadinessLastSaved()?.discussWhen).toEqual({
-				no: 4,
-				yesIf: 2,
-			}),
-		);
+		await pastTheAutosaveDelay();
+		expect(theReadinessLastSaved()?.discussWhen).toEqual({
+			no: 4,
+			yesIf: 2,
+		});
 
 		await replaceTheNumberIn(NO_THRESHOLD, "0");
 		await userEvent.click(noRule);
-		await waitFor(() =>
-			expect(theReadinessLastSaved()?.discussWhen).toEqual({
-				no: null,
-				yesIf: 2,
-			}),
-		);
+		await pastTheAutosaveDelay();
+		expect(theReadinessLastSaved()?.discussWhen).toEqual({
+			no: null,
+			yesIf: 2,
+		});
 		await userEvent.click(noRule);
 
-		await waitFor(() =>
-			expect(theReadinessLastSaved()?.discussWhen).toEqual({
-				no: 4,
-				yesIf: 2,
-			}),
-		);
+		await pastTheAutosaveDelay();
+		expect(theReadinessLastSaved()?.discussWhen).toEqual({
+			no: 4,
+			yesIf: 2,
+		});
 	});
 
 	it("switches on a No rule stored as off at its default threshold", async () => {
