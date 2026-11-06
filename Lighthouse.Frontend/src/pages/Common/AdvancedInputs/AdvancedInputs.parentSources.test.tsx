@@ -5,6 +5,7 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { parentSourcesAreOffered } from "../../../components/Common/ConnectionDefault/parentSources";
 import { useModifySettings } from "../../../hooks/useModifySettings";
@@ -225,6 +226,38 @@ describe("a Team's Advanced Configuration", () => {
 			"parentSources",
 			IsCausedByThenOwnParent,
 		);
+	});
+
+	it("keeps the way back for a follower of an unset default that picks Set here", () => {
+		const ThePageHoldingItsEdits = () => {
+			const [settings, setSettings] = useState(aFollower(null));
+			return (
+				<AdvancedInputsComponent
+					settings={settings}
+					onSettingsChange={(key, value) =>
+						setSettings((current) => ({ ...current, [key]: value }))
+					}
+					parentOverrideDefault="parentOverrideForTeams"
+					additionalFieldDefinitions={TheFields}
+				/>
+			);
+		};
+		render(<ThePageHoldingItsEdits />);
+		fireEvent.click(screen.getByLabelText("toggle"));
+		const theDefault = {
+			name: "Connection default: Parent (Jira's own)",
+		};
+
+		fireEvent.click(screen.getByRole("radio", { name: "Set here" }));
+
+		expect(screen.getByRole("radio", { name: "Set here" })).toBeChecked();
+		expect(screen.getAllByRole("listitem")).toHaveLength(1);
+		expect(screen.getByRole("radio", theDefault)).not.toBeChecked();
+
+		fireEvent.click(screen.getByRole("radio", theDefault));
+
+		expect(screen.getByRole("radio", theDefault)).toBeChecked();
+		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
 	});
 
 	it("once another Jira connection is chosen, follows that connection's default", () => {

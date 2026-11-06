@@ -1,5 +1,6 @@
 import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import type React from "react";
+import { useState } from "react";
 import {
 	followsTheConnection,
 	trackerHoldingTheDefault,
@@ -70,6 +71,9 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 	theDefault,
 }) => {
 	const { getTerm } = useTerminology();
+	// An unset default is not offered to an owner with its own list, so leaving it would otherwise take away the
+	// way back until the page is loaded again.
+	const [leftTheDefault, setLeftTheDefault] = useState(false);
 	const defaultList = defaultListOf(settings, connection, theDefault);
 	const followedList = defaultList ?? OnlyTheTrackersOwnParent;
 	const follows = followsTheConnection(
@@ -80,6 +84,7 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 	);
 	const offersTheDefault =
 		follows ||
+		leftTheDefault ||
 		(!!defaultList &&
 			!!trackerHoldingTheDefault(settings, connection, theDefault));
 
@@ -94,6 +99,7 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 			onSettingsChange("parentOverrideSource", "ConnectionDefault");
 			return;
 		}
+		setLeftTheDefault(true);
 		onSettingsChange("parentOverrideSource", "Own");
 		onSettingsChange("parentSources", followedList);
 	};
