@@ -102,7 +102,7 @@ describe("a Team's Advanced Configuration", () => {
 		);
 
 		expect(
-			screen.getByText(/Connection default.*Parent \(Jira's own\)/),
+			screen.getByText(/^Connection default: Parent \(Jira's own\)$/),
 		).toBeInTheDocument();
 		expect(screen.getAllByText("Parent sources")).toHaveLength(1);
 	});
