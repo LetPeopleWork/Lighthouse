@@ -414,3 +414,118 @@ Existing platform throughout; nothing new is deployed. Written 2026-11-06 under 
 | Pre-requisites | The new limits are in place before enforcement starts (step 2-1 before 2-2). |
 | Usage-data event | N/A, because this is CI tooling: no user of the product ever reaches it, so no event could show it is used. |
 | RBAC, Clients, Website, UI sketch | N/A, because no route, DTO, page or marketing claim changes. |
+
+## Wave: DISTILL / [REF] Reconciliation and conventions
+
+Reconciliation passed: 0 contradictions between DISCUSS (Epic level), DESIGN and DEVOPS. Two stale figures inside DESIGN,
+both settled by D-6462-15 and not contradictions of another wave: the "Component decomposition" table and D-6462-7 still say
+the backend list has 43 entries; the "Before and after" table, the slice table and D-6462-15 say 23. The tests pin 23.
+Maintainer AFK: every choice below is the recommended option.
+
+Project conventions override the skill defaults: Python `unittest` in `Scripts/test-timings/tests/`; no Gherkin, no
+scenario tags in code, no PBT library (value sweeps use `subTest`, as the existing tests do); the driving port is the CLI
+`check_budget.py`, run as a subprocess by the existing `CheckWorkspace`. Tier B, Pillar 3 and state-delta port: N/A,
+because this is a stateless pure-core CLI script with no domain state. Policy file: N/A, because no driven port exists
+(the only inputs are files in a temp folder and one environment variable).
+
+## Wave: DISTILL / [REF] Scenario list
+
+File: `Scripts/test-timings/tests/test_check_budget_time_budgets.py` (32 tests). "Active" = runs and passes today as a
+guard on behaviour that must not change; "pending" = skipped until DELIVER builds it. Classification kept here, not in code.
+
+| # | Class: test | Kind | State |
+|---|---|---|---|
+| 1 | Switch from environment: unset, empty, `false` enforce (pure) | happy | pending |
+| 2 | Switch from environment: `true` warns (pure) | happy | pending |
+| 3 | Switch from environment: the flag warns whatever the variable says (pure) | happy | pending |
+| 4 | Switch from environment: `TRUE`, `True`, `1`, `yes`, `on`, ` true`, `false `, `maybe` give no verdict and name the variable (pure) | error | pending |
+| 5 | Switch on both stacks (CLI): a breach fails with variable unset, empty or `false` | error | active |
+| 6 | Switch on both stacks (CLI): `true` turns a breach into a warning and passes | happy | pending |
+| 7 | Switch on both stacks (CLI): `TRUE`, `1`, `yes` exit 2 naming the variable | error | pending |
+| 8 | Switch (CLI): an invalid value exits 2 even when nothing is over budget | error | pending |
+| 9 | Switch (CLI): a stale entry still fails under `true` | error | active |
+| 10 | Switch (CLI): breach softened, stale entry in the same run still fails (warning plus error, exit 1) | error | pending |
+| 11 | Switch (CLI): missing timing file and malformed allow-list still exit 2 under `true` | error | active |
+| 12 | Not needed (CLI): ceiling equal to the budget fails, both stacks | error | pending |
+| 13 | Not needed (CLI): ceiling below the budget (45, 59.9) fails, both stacks | error | pending |
+| 14 | Not needed (CLI): ceiling just above the budget (60.1) passes, both stacks | boundary | active |
+| 15 | Not needed (CLI): frontend file at 13.9 s with budget 56 fails | error | pending |
+| 16 | Not needed (CLI): frontend file at exactly 14.0 s passes | boundary | active |
+| 17 | Not needed (CLI): backend class that ran 0 s, 0.0008 s or 1 s passes (no runtime check on the backend) | boundary | active |
+| 18 | Not needed (CLI): still fails under `true`, both stacks | error | pending |
+| 19 | Not needed (CLI): still fails with `--warn-only` | error | pending |
+| 20 | Unneeded entries (pure): ceiling 33 or 34 at budget 34 named, ceiling 35 not, both stacks | error | pending |
+| 21 | Unneeded entries (pure): frontend 13.9 s named, 14.0 s and 40 s not | error | pending |
+| 22 | Unneeded entries (pure): nothing named when every entry is needed | happy | pending |
+| 23 | Unneeded entries (pure): backend class never named for running little | boundary | pending |
+| 24 | Unneeded entries (pure): entry missing from the run is left to the stale check | boundary | pending |
+| 25 | Shipped file: every ceiling above its stack's budget | error guard | active |
+| 26 | Shipped file: every backend entry still names a class in the test source | error guard | active |
+| 27 | Shipped file: no backend entry that `unneeded_entries` would name | error guard | pending |
+| 28 | Shipped file: frontend budget 56 s, nothing allow-listed | happy | pending |
+| 29 | Shipped file: backend budget 34 s and exactly the 23 measured ceilings (16 tightened, 3 unchanged, 4 new; tighten-only) | happy | pending |
+| 30 | Planted unit against shipped file: frontend file of 57 s fails | error | pending |
+| 31 | Planted unit against shipped file: backend class of 35 s fails | error | active |
+| 32 | Planted unit against shipped file: backend class of 35 s only warns under `true`, exit 0 | happy | pending |
+
+Error, boundary and guard scenarios: 24 of 32 (75 percent). Existing tests: 85 across the four files, none edited
+(`test_check_budget.py` is untouched; the new file subclasses its helpers and scrubs the ambient switch variable).
+
+Pinned contract for DELIVER, from the design: the switch variable is `LIGHTHOUSE_BUDGET_WARN_ONLY`, values are matched
+exactly (case-sensitive, no trimming); `--warn-only` wins over the variable; an invalid value is an `::error::` line
+naming the variable, exit 2; an entry that is not needed is an `::error::` line naming the unit, the allow-list file and
+the words "not needed", exit 1, also under warn-only (like a stale entry); `warn_only_requested(environment, flag)`
+returns a bool or raises `CannotJudge`; `unneeded_entries(stack, rows, budget_seconds, ceilings)` returns the unit names,
+frontend only judges files that are in the run, backend never judges runtime.
+
+## Wave: DISTILL / [REF] Test placement
+
+`Scripts/test-timings/tests/`, beside the existing `test_check_budget.py`, which CI already runs with
+`python3 -m unittest discover -s Scripts/test-timings/tests` before each budget step. The design said "extend the existing
+classes"; a sibling file was taken instead so the existing 85 tests stay byte-identical and DELIVER can see the new set
+at a glance. Same helper vocabulary (`CheckWorkspace`, `assert_fails_naming`, `assert_warns_and_passes`,
+`assert_refuses_to_judge`).
+
+## Wave: DISTILL / [REF] Driving adapter coverage
+
+Entry point: `python3 Scripts/test-timings/check_budget.py --stack ... --csv ...`. Every CLI scenario (5 to 19, 30 to
+32) runs it as a subprocess and checks exit code and `::error::` / `::warning::` annotations, with the switch variable
+set, empty or removed explicitly in the child environment. The two workflow steps are covered by the same CLI call; the
+YAML itself is not unit-tested (a command line with `env:` and no `--warn-only`), proof is the replay in step 2-1.
+
+## Wave: DISTILL / [REF] Scaffolds
+
+`Scripts/test-timings/check_budget.py` gains two stubs and one constant, not called by anything, so current behaviour is
+unchanged: `WARN_ONLY_VARIABLE`, `warn_only_requested(environment, flag)` and `unneeded_entries(stack, rows,
+budget_seconds, ceilings)`, each raising `AssertionError("... is not built yet")`. DELIVER replaces the bodies and wires
+them into `main` / `_check`.
+
+## Wave: DISTILL / [REF] RED classification
+
+Run with every skip removed (throw-away runner in the session scratchpad that replaces `unittest.skip`): 32 tests, 23
+formerly skipped fail, 0 errors (no import error, no setup error), the 9 active ones pass.
+
+| Group | Tests | Why it fails | Class |
+|---|---|---|---|
+| Pure switch and unneeded-entry functions | 1-4, 20-24, 27 | the stub's `AssertionError` | MISSING_FUNCTIONALITY |
+| CLI with the variable | 6, 7, 8, 10 | script ignores the variable: exit 1 where 0 or 2 is expected, or no matching annotation | MISSING_FUNCTIONALITY |
+| CLI not needed | 12, 13, 15, 18, 19 | run passes quietly (exit 0) where exit 1 and a "not needed" line are expected | MISSING_FUNCTIONALITY |
+| Shipped file numbers | 28, 29 | file still says 63 with nine entries and 34 with 61 entries | MISSING_FUNCTIONALITY |
+| Planted unit | 30, 32 | 57 s is under today's 63 s; the variable is ignored | MISSING_FUNCTIONALITY |
+
+No test fails on wrong shape: assertions use only exit codes, annotation text, return values and the shipped file's
+numbers, never internals. Suite as committed: 117 run, 23 skipped, 94 pass (85 existing, 9 new active).
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- DELIVER order from the design: 1-1 unskips 1-4 and 6-8, 10 (switch); 1-2 unskips 12-13, 15, 18-24, 27 (not needed);
+  2-1 unskips 28-30 and 32 together with the new JSON; 2-2 changes the two workflow steps (no unit test; the replay and
+  tests 6 and 7 are the proof).
+- Test 27 holds the new JSON to the not-needed rule through `unneeded_entries("backend", [], ...)`: only ceilings are
+  judged, so an empty row list is enough.
+- Test 29's table is the 23 entries of D-6462-15, names without the `Lighthouse.Backend.Tests.` prefix the file carries.
+  All 19 entries that exist today are checked to be at or below their present ceiling; the 4 new ones are the classes
+  already over 34 s.
+- DEVOPS: the variable `LIGHTHOUSE_BUDGET_WARN_ONLY` stays unset; Python 3.12 or newer, as the script already requires.
+- Not covered by a repository test, by design: replay of the new JSON against the 7 frontend and 8 backend CSVs of the
+  measurement (data lives in the session scratchpad, not the repository); AC2, five green `main` runs after the push.

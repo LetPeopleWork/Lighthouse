@@ -132,6 +132,22 @@ def stale_entries(allowlisted: list[str], still_present: set[str]) -> list[str]:
     return [unit for unit in allowlisted if unit not in still_present]
 
 
+WARN_ONLY_VARIABLE = "LIGHTHOUSE_BUDGET_WARN_ONLY"
+
+
+def warn_only_requested(environment: dict[str, str], flag: bool) -> bool:
+    raise AssertionError("warn_only_requested is not built yet")
+
+
+def unneeded_entries(
+    stack: str,
+    rows: list[dict[str, str]],
+    budget_seconds: Decimal,
+    ceilings: dict[str, Decimal],
+) -> list[str]:
+    raise AssertionError("unneeded_entries is not built yet")
+
+
 def _is_build_or_mutation_output(folder: str) -> bool:
     return folder in SKIPPED_SOURCE_FOLDERS or folder.startswith(".stryker-tmp")
 
