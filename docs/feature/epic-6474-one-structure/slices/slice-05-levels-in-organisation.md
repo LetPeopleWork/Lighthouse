@@ -1,5 +1,7 @@
 # Slice 05 — Levels shown in Organisation
 
+> **Amended 2026-11-06.** Item types moved to the connection's mapping. The last section of `../design/upstream-changes.md` wins over this file; apply it at DISTILL.
+
 Epic #6474 · **visible** · `job_id: job-config-admin-describe-our-levels-once` · ≤ 1 day ·
 depends on: 02, **#6473's Organisation shell with Terminology in it** (M5: waits for it; invisible slices go first)
 

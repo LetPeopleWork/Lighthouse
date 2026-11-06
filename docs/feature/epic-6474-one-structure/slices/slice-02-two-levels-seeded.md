@@ -1,5 +1,7 @@
 # Slice 02 — Two levels seeded from today's Terminology and types
 
+> **Amended 2026-11-06.** Item types moved to the connection's mapping. The last section of `../design/upstream-changes.md` wins over this file; apply it at DISTILL.
+
 Epic #6474 · invisible · `job_id: infrastructure-only` · ≤ 1 day · depends on: 01
 
 `infrastructure_rationale`: names and item types need one source before any screen shows a level (D6, D12).

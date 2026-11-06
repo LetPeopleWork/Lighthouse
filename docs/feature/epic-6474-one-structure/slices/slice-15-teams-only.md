@@ -1,5 +1,7 @@
 # Slice 15 — An install can run with Teams only
 
+> **Amended 2026-11-06.** Item types moved to the connection's mapping. The last section of `../design/upstream-changes.md` wins over this file; apply it at DISTILL.
+
 Epic #6474 · **visible** · `job_id: job-config-admin-describe-our-levels-once` · ≤ 1 day · depends on: 05, 06
 (11 for the first-run choice) · maintainer decision M13 (prototyped, approved 2026-11-02)
 

@@ -27,21 +27,25 @@ type, and a flag on every Team left with no types.
    discriminators know which subclass a level uses.
 2. **Levels are stored in two new tables**: `OrganisationStructures` (one row: id, concurrency token, the upgrade
    notice's dismissal time) and `Levels` (stable id, structure id, ordinal, the stored kind it maps to (`Team` or
-   `Portfolio`, the same values the five discriminators hold), four names, item types, `IsSwitchedOff`). The flag is
-   stored as *off* so that its CLR default is the column default (EF sentinel rule).
+   `Portfolio`, the same values the five discriminators hold), four names, `IsSwitchedOff`). The flag is
+   stored as *off* so that its CLR default is the column default (EF sentinel rule). Item types live in two further
+   new tables (ADR-274, revised 2026-11-06): `ConnectionMappings` (one row per connection: connection id, concurrency
+   token) and `ConnectionLevelMappings` (connection id, level id, item types), with the list stored as units store
+   theirs. The second table is where parent sources and shared defaults can later be keyed by level.
 3. **A unit's subset gets a new column** (`ItemTypeSubset`, authoritative) on both tables, plus `NeedsItemTypes`
    (MD7, set by any save that leaves a Jira, Azure DevOps or CSV unit with no types, and at upgrade for every such
    unit, MA8). Every save also writes the effective list to the old `WorkItemTypes` column (dual write, MA9), except
    for a flagged unit, which keeps its last list there; so the previous release, after a rollback, reads what each
-   unit reads now. At each start the migrator re-derives a subset whose `WorkItemTypes` was changed by the previous
-   release. Lost types are recorded in `UnitTypeLossNotices` (stored kind, number, lost type), which replaces the
+   unit reads now. At each start the migrator gives a connection without a mapping one, and re-derives a subset whose
+   `WorkItemTypes` was changed by the previous release, by ADR-274 rule 13. Lost types are recorded in `UnitTypeLossNotices` (stored kind, number, lost type), which replaces the
    old column as the recovery record (departure from ADR-274 rule 11, accepted by the maintainer).
 4. **Schema by EF migration, data by a startup migrator.** `Create-Migration.ps1` generates the additive schema for
    both providers. The data step is `OrganisationStructureMigrator`, an `ISeeder` registered after
    `TerminologySeeder`. It runs only when no structure row exists, reads every Team, Portfolio and the eight
    Terminology rows, asks a **pure planner** (`OrganisationStructureMigrationPlan.From(...)`, return-only) for the
    levels, subsets, flags and notices, applies the plan in one transaction, and then **checks its own result**
-   (every type on one level; every subset ⊆ its level; unit counts unchanged; no unit gained a type). A failed check
+   (every type on one level per connection; every subset within its connection's list for its level; unit counts
+   unchanged; no unit gained a type). A failed check
    rolls back and stops the start with a structured fatal message, as the key-ring check does today. A second
    instance racing on PostgreSQL loses on the structure row's fixed key and re-reads.
 5. **Case is folded in C#, with `StringComparer.OrdinalIgnoreCase`**, never in SQL: PostgreSQL compares text by case

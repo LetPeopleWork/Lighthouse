@@ -1,5 +1,7 @@
 # Slice 08 — Decide once what counts as a Work Item for the whole organisation
 
+> **Amended 2026-11-06.** Item types moved to the connection's mapping. The last section of `../design/upstream-changes.md` wins over this file; apply it at DISTILL.
+
 Epic #6474 · **visible** · `job_id: job-config-admin-say-item-types-once` (proposed) · ≤ 1 day · depends on: 04, 05
 
 ## Elevator Pitch

@@ -1,5 +1,7 @@
 # Slice 14 — The CLI and MCP read the levels, and handle the refused unknown type
 
+> **Amended 2026-11-06.** Item types moved to the connection's mapping. The last section of `../design/upstream-changes.md` wins over this file; apply it at DISTILL.
+
 Epic #6474 · **visible** (API clients) · `job_id: job-config-admin-describe-our-levels-once` · ≤ 1 day ·
 depends on: 04 (the 400), 05 (`GET /levels`), 06 (where names are written) · repo: Lighthouse-Clients
 (DESIGN/DELIVER; not reachable from this workspace)

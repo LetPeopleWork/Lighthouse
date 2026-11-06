@@ -11,6 +11,8 @@ skeleton**: brownfield.
 D-numbers. Everything else in this file is a proposal until the maintainer walk-through.
 **Terminology**: default terms (Team, Portfolio, Work Item, Feature). Tracker type names (Story, Bug, Epic,
 Change, User Story) are literal tracker values. Personas below are fictional; customers stay anonymous.
+**Amended 2026-11-06**: item types moved from the level to the connection's mapping. The vision revision at the end
+of this file (VR1–VR19) wins over everything above it where they disagree, including MD and MA decisions.
 
 ---
 
@@ -530,7 +532,7 @@ DESIGN 2026-11-02, domain part (Hera, PROPOSE mode). The solution architect's ap
 components, controllers, EF mapping, ADR-275/276. This part decides the model only: Level and Unit, aggregates and
 invariants, leaf-only and Feature-level-only data, ids, domain events, data ownership and the migration's domain
 rules. New ADRs: `design/adr-273-unit-identity-and-the-organisation-structure.md`,
-`design/adr-274-item-types-belong-to-the-level.md` (proposed; promoted to `docs/product/architecture/` with the
+`design/adr-274-a-connection-maps-its-item-types-onto-the-levels.md` (proposed; promoted to `docs/product/architecture/` with the
 slice that makes them true, after the #6473 DESIGN has merged).
 
 Evidence read in code (2026-11-02): `WorkTrackingSystemOptionsOwner`, `Team`, `Portfolio`, the five kind
@@ -553,6 +555,9 @@ Two findings that shape the model:
 ---
 
 ## Wave: DESIGN / [REF] Domain Model — Aggregates
+
+**Amended by the vision revision (end of file)**: wherever this section puts item types on a level, read the connection's
+mapping for that level (VR1–VR19).
 
 Organisation set-up gets two aggregates; three small extensions live in the contexts that own their data. Vernon
 rules are cited as R1 (true invariants only), R2 (small), R3 (reference by id), R4 (eventual outside the boundary).
@@ -694,6 +699,9 @@ Domain rules carried by I1:
 
 ## Wave: DESIGN / [REF] Domain Model — Domain events
 
+**Amended by the vision revision (end of file)**: wherever this section puts item types on a level, read the connection's
+mapping for that level (VR1–VR19).
+
 All after commit, in-process (ADR-027), each in the context that publishes it. "Events across contexts, pipelines
 inside one" (ADR-270 Decision 3): the pruning of unit subsets inside `RemoveItemType` is a pipeline step, not an
 event.
@@ -724,6 +732,9 @@ hidden, not gone; switching off is no way around the limit and no rule changes).
 ---
 
 ## Wave: DESIGN / [REF] Domain Model — Migration domain rules (ADR-274)
+
+**Amended by the vision revision (end of file)**: wherever this section puts item types on a level, read the connection's
+mapping for that level (VR1–VR19).
 
 Rules the migration (slices 02 and 04) must satisfy, each with a test the slice 01 harness or a migration test
 pins. "Migrate as is" (D10) governs every case not listed. Revised with the maintainer's answers (MD4, MD6).
@@ -902,7 +913,7 @@ The DISCUSS list ("Proposed SSOT and ADR updates") stands, with these domain cha
 - **MD4.** At migration every unit takes its **level's spelling** of each type. A respelled unit refetches in full
   once (new fingerprint), with identical results expected. Named exception (i) to OUT-1.
 - **MD5.** Units on a switched-off level still count towards the free-tier limits.
-- **MD6 (new rule).** An item type lives on **exactly one level** across the structure, ignoring case. A type ticked
+- **MD6 (new rule; narrowed to one connection by VR3).** An item type lives on **exactly one level** across the structure, ignoring case. A type ticked
   on both levels today goes to the **Feature level**; the Teams that read it **lose it** from their subsets on
   upgrade, and their throughput and forecasts may change. Named exception (ii) to OUT-1. The upgrade lists the
   affected Teams (notice on the levels screen and the release note), and slice 01's harness reports them separately
@@ -963,6 +974,9 @@ Verified in code (2026-11-02):
 ---
 
 ## Wave: DESIGN / [REF] Application — DDD list (design decisions)
+
+**Amended by the vision revision (end of file)**: wherever this section puts item types on a level, read the connection's
+mapping for that level (VR1–VR19).
 
 **Amended**: by AM1–AM14 (review) and then by MA1–MA10 (maintainer, end of file), which win where they disagree.
 A-D1 is replaced by MA1, A-D14's split by MA6, A-D18's "message bytes kept" by MA5.
@@ -1799,3 +1813,87 @@ unit count minus the three exception groups; Organization shows two levels; one 
 - **OI-5.** Whether the Standalone updater can downgrade over the user data directory the same way Docker and Helm can; check at the first release.
 - **OI-6.** `LevelItemTypesChanged` dropped from the event candidates; confirm no KPI needs it.
 - **OI-6 note.** Only the *usage-data* candidate is dropped; the *domain* event `LevelItemTypesChanged` stays as DESIGN decided.
+
+## Wave: DESIGN / [REF] Vision revision (maintainer, 2026-11-06)
+
+The maintainer shared a vision across #6473, #6474, #6455, #6475 and #6349, walked through it in a session, and chose
+to revise this design now, before DISTILL. Later feedback on the sketches is expected to change design detail, not this
+structure. Sketches: https://claude.ai/artifact/L4BsQRqLCJVee6UY1pnyja (boards 2, 3, 7, 9 and 10 touch this Epic).
+
+**The change in one line.** The structure knows no tracker. A connection maps its types onto the levels, and a unit picks
+a connection and narrows. #6474 stays at two fixed levels; only where the types are stored and edited moves.
+
+- **VR1. A level holds no item types.** `Level.ItemTypes` goes. Replaces D8's "item types come from the structure".
+- **VR2. `ConnectionMapping`, one aggregate per connection, owned by Organisation set-up** (ADR-274). D12 stands: a unit
+  narrows and never adds, now from its connection's list for its level.
+- **VR3. A type is on one level per connection, ignoring case.** Narrows MD6 from "across the structure".
+- **VR4. M1 stands; the 400 names the type, the level and the connection.** Codes `team-item-type-not-on-level` and
+  `portfolio-item-type-not-on-level` stay.
+- **VR5. M2 stands; "N units could read it" counts the units on that connection and level.** Closes the gap the earlier
+  ADR-274 accepted.
+- **VR6. M4 stands, in a new place: Organization → Connection mapping,** a new tab with one tab per connection, named
+  after the connection (two Jira connections are two tabs). System Admin only. The level dialog has no types.
+- **VR7. The migration runs per connection** (ADR-274 rule 10). Domain rule 7 ("two-tracker installs") falls away; the
+  other migration rules hold within one connection. M6 dedupes within one connection.
+- **VR8. A new connection starts from today's create defaults, or from "Copy mapping from…".**
+- **VR9. A unit may change its connection** (ADR-274 rule 9): keep what the new connection maps to that level, name what
+  is dropped, ask for a pick if nothing is left. This stays allowed because people keep a second connection with write
+  rights and swap to it for write-backs.
+- **VR10. Commands and events.** `AddItemType(connectionId, levelId, type)` and `RemoveItemType(connectionId, levelId,
+  type)` move to `ConnectionMapping`. `LevelItemTypesChanged` becomes `ConnectionItemTypesChanged(ConnectionId, LevelId,
+  Added[], Removed[], UnitsNarrowed: UnitId[])`; Work Items reacts as before. New `CopyMapping(fromConnectionId,
+  toConnectionId)`. Deleting a connection stays refused while units use it, and its mapping goes with it.
+- **VR11. Persistence.** A-D3's `Levels` loses item types; `ConnectionMappings` and `ConnectionLevelMappings` are new
+  (ADR-275 decision 2). The planner's self-check becomes "one level per type per connection, subset within its
+  connection's list for its level".
+- **VR12. API and frontend.** `GET /levels` drops item types. New read `GET /api/latest/connections/{id}/mapping` for any
+  signed-in user, as `GET /levels` is, because unit forms need it even for the first unit on a connection. Writes are
+  System Admin only and take over A-D10's item-type routes under `/connections/{id}/mapping/levels/{levelId}/item-types`:
+  `POST` (add), `GET …/{type}/usage`, `DELETE …/{type}` with the units the admin confirmed, and the same 409 when the
+  ticking set changed. New `POST /connections/{id}/mapping/copy`.
+  A-D9's `Level.Resolve(types)` becomes `ConnectionMapping.Resolve(levelId, types)`. A-D19 gains a `ConnectionMappingTab`
+  and a keyed query `["connection-mapping", connectionId]`, so a late answer for another connection never lands.
+- **VR13. Not moved in this Epic.** Parent sources, dependency fields and the connection's estimation defaults stay as
+  they are. The `ConnectionLevelMappings` row is where #6455 and #6349 will key them by level. A unit's To Do, Doing and
+  Done states stay its own (D13); a default per connection and level comes later.
+- **VR14. Words.** Users see "Where the work is done" and "Groups the level below", never leaf. Docs say **work level**
+  and **levels above**. Code keeps `leaf`. Slice 05's mark "generates throughput" becomes "Where the work is done".
+- **VR15. A connection without a mapping, and rollback** (ADR-274 rules 8 and 13). No row means an empty list. At each
+  start a connection without a mapping gets one from its units' types, and a subset the previous release changed is
+  derived again against the unit's current connection. A type not mapped is dropped and recorded, never added to the
+  mapping; an empty result sets the needs-item-types mark.
+- **VR16. "Teams only"** (ADR-274 rules 8 and 14). The tab shows the off level's row greyed and its types can be
+  removed, so Epic can move to the Team level. A new connection gets no Feature-level defaults while the level is off.
+- **VR17. "Copy mapping from…" is a remove plus an add under rule 7** (ADR-274 rule 8): one confirmation, same
+  transaction, needs-item-types mark, one event per level.
+- **VR18. Moving a type between levels loses the ticks.** Accepted: it is rare, and M2 says an added type is ticked for
+  no unit. The removal confirmation says so.
+- **VR19. Rows of the DDD list this changes.** A-D6: subset ∩ the connection's types for the level, from the mapping
+  reader. A-D7: `ILevelTypeUsageQuery` becomes `IConnectionTypeUsageQuery`; new `IConnectionMappingReader` and
+  `IConnectionMappingStore`; add, remove and copy move from `LevelAdministration` to `ConnectionMappingAdministration`.
+  A-D10: the routes in VR12. A-D13: the event in VR10. A-D15: also set by a connection change or a copy that leaves no
+  types. Migration domain rules: per connection (VR7).
+
+### Effect on the slices
+
+Numbering and the count (16) stay. The detail per slice is in `design/upstream-changes.md`.
+
+| Slice | Effect |
+|---|---|
+| 01 | Fixtures change: two-tracker expected results; a same-named type on two connections loses nothing |
+| 02 | Seeds the mappings per connection; levels carry names only |
+| 04 | Subset rule and the 400 go by connection and level |
+| 05, 05b | Levels table drops the types column; the notice names the connection |
+| 08 | **Biggest change**: moves to the Connection mapping tab, gains "Copy mapping from…" |
+| 09 | Types list follows the chosen connection; gains the change-connection rule |
+| 14 | `levels` returns no types; clients gain the mapping read |
+| 03, 06, 07, 10–13, 15 | No change, beyond the renamed event where they mention it |
+
+**Sizing.** Slices 08 and 09 may now exceed a day. Either flag them as MA6 did for 12 and 13, or split "Copy mapping
+from…" and the change-connection rule into their own slices. To decide at DISTILL's sketch walk-through.
+
+**DEVOPS.** No new workflow. The usage events (`LevelRenamed`, `LevelSwitchedOff`) stand. The two-tracker upgrade fixture
+stays and its expected result changes. **KPI OUT-1**: exception (ii) narrows to losses on a Team's own connection.
+**Rollback.** MA9 stands; the new tables are additive.
+**ADR-270 and ADR-271** carry this now (revised 2026-11-06), so the proposed edits above that put types on the level are
+superseded where they disagree.

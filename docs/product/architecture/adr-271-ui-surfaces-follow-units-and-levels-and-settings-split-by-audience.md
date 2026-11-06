@@ -1,7 +1,8 @@
 # ADR-271: UI surfaces follow units and levels; settings split by audience
 
 **Status**: Accepted as a direction (2026-11-01, maintainer). No Story implements it on its own; features move the UI
-one step towards it as they touch a surface (see "How we get there").
+one step towards it as they touch a surface (see "How we get there"). Revised 2026-11-06 (maintainer): mapping and
+its defaults are per connection and level (Decisions 2, 3, 4 and 7, step U3).
 **Date**: 2026-11-01
 **Builds on**: [ADR-270](adr-270-bounded-contexts-context-map-and-module-layout.md) (bounded contexts, context map,
 the language distinctions of its Decision 4 and the three setting buckets).
@@ -52,7 +53,7 @@ levels exist (Epic 6455); until then a change to one page keeps the two pages pa
 
 | Surface | Holds | Context | Today |
 |---|---|---|---|
-| **Organisation** | Terminology; levels and their names; calendar (blackout periods); Feature ordering policy; refresh cadence; the organisation's defaults for bucket 2 (types, state mapping, blocked rules, staleness, SLE, default Feature size, Parent Override Field) | Organisation set-up | System Settings → Configuration, connection defaults, per-unit settings |
+| **Organisation** | Terminology; levels and their names; calendar (blackout periods); Feature ordering policy; refresh cadence; the connection mapping: per connection and level, its item types, parent sources, dependencies and shared defaults | Organisation set-up | System Settings → Configuration, connection defaults, per-unit settings |
 | **Access** | System Admins, roles, members per unit, IdP group mappings, API keys | Access | System Settings → System Admins, API Keys; unit settings |
 | **System** | Connections (credentials, health), database and backups, encryption, demo data, log level, usage data, system info, licence | Tracker integration (connections), Licensing, platform lane | System Settings tabs |
 
@@ -60,15 +61,19 @@ A unit's own Settings tab holds only its overrides and its local-only settings (
 
 ## Decision 3: one "follows the default / set here" control for every bucket-2 setting
 
-Every setting with an organisation default and a local override uses the same control everywhere: it shows the
-inherited value and where it comes from, and lets the unit take it over or hand it back. Bucket-3 settings (local
+Every setting with a default and a local override uses the same control everywhere: the default sits on a connection
+and level, and the control shows the inherited value and where it comes from, and lets the unit take it over or hand it back. Bucket-3 settings (local
 only) get a read-only comparison across units where seeing them side by side helps; they are not turned into
 organisation settings.
 
-## Decision 4: a connection is credentials and health
+## Decision 4: a connection page is credentials and health; its mapping is shown under Organisation
 
-The connection page holds how to reach a tracker and whether that still works. Mapping (types, states, fields onto
-Lighthouse's concepts) moves to Organisation, with per-unit overrides on the unit. Translation stays invisible.
+The connection page in System holds how to reach a tracker and whether that still works. A connection also owns a
+mapping: per level, its types, parent sources, dependencies and shared defaults. That mapping is shown under
+Organisation, one tab per connection, named after the connection, because the person who decides how the organisation
+is set up is often not the person who holds the credentials. Two connections to the same tracker are two tabs. Each
+kind of tracker brings its own panel, which appears only if such a connection exists. A unit narrows the types and may
+override a default on its own Settings tab. Translation stays invisible.
 
 ## Decision 5: a person lands on their level
 
@@ -89,7 +94,9 @@ Once Organisation exists as one surface, first-run set-up becomes a short interv
 instead of a sequence of technical forms: which tracker, which levels exist and what they are called, what a Team
 works on and what that rolls up into, which states mean "started" and "done", what counts as blocked. The answers
 fill the Organisation surface's defaults, after which a unit is created mostly by picking from them. Every answer
-stays editable later in the same place, so onboarding writes nothing that cannot be found again. It reuses
+stays editable later in the same place, so onboarding writes nothing that cannot be found again. Set-up has two ways
+in and one screen: the structure first and then the mapping, or a connection first, whose hierarchy proposes levels
+and a mapping. It reuses
 `OnboardingStepper` and the `CreateWizards` shell rather than a new frame. Target only; it depends on Decision 2 and
 on levels from Epic 6455.
 
@@ -107,7 +114,7 @@ Steps that are worth doing as their own Story, in a sensible order:
 |---|---|---|
 | U1 | Split System Settings into Organisation, Access and System | nothing; planned inside Epic 6455 |
 | U2 | One "follows the default / set here" control, used by every bucket-2 setting | nothing; easier after U1 |
-| U3 | Mapping moves from the connection to Organisation, with per-unit overrides | U1, U2; the org-or-per-tracker default question in ADR-270 |
+| U3 | Mapping moves from the connection page to Organisation → Connection mapping, one tab per connection, with per-unit overrides | U1, U2 |
 | U4 | One unit page and per-level navigation; Overview lists units by level and lands on the person's level | Epic 6455 |
 | U5 | Onboarding as an interview that fills Organisation | U1–U3; U4 for levels |
 | U6 | Deliveries across units; Signals on the Overview | Promise lifecycle; first Signals feature |
