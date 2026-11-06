@@ -30,6 +30,8 @@ import {
 } from "./parentSources";
 
 export interface ParentSourcesListProps {
+	/** Whose list it is, which decides what its items are called and what they hang under. */
+	owner: "Team" | "Portfolio";
 	value: readonly ParentSourceEntry[];
 	tracker: WorkTrackingSystemType;
 	additionalFieldDefinitions: readonly IAdditionalFieldDefinition[];
@@ -169,8 +171,25 @@ const ParentSourcesRows: React.FC<Readonly<ParentSourcesRowsProps>> = ({
 	);
 };
 
+const wordsFor = (
+	owner: ParentSourcesListProps["owner"],
+	getTerm: (key: string) => string,
+) =>
+	owner === "Portfolio"
+		? {
+				item: getTerm(TERMINOLOGY_KEYS.FEATURE),
+				items: getTerm(TERMINOLOGY_KEYS.FEATURES),
+				itsParent: "parent",
+			}
+		: {
+				item: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
+				items: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
+				itsParent: getTerm(TERMINOLOGY_KEYS.FEATURE),
+			};
+
 /** The ordered list of parent sources: a controlled value, handed on whole after every edit. */
 const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
+	owner,
 	value,
 	tracker,
 	additionalFieldDefinitions,
@@ -180,9 +199,7 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 	info,
 }) => {
 	const { getTerm } = useTerminology();
-	const workItem = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
-	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const feature = getTerm(TERMINOLOGY_KEYS.FEATURE);
+	const { item, items, itsParent } = wordsFor(owner, getTerm);
 
 	const nameOf = (entry: ParentSourceEntry) =>
 		nameOfParentSource(entry, tracker, additionalFieldDefinitions);
@@ -211,7 +228,7 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 			</Box>
 			<Typography variant="body2" color="text.secondary">
 				The first source that has a value gives the parent; the rest are ignored
-				for that {workItem}.
+				for that {item}.
 			</Typography>
 			{sourceChoice}
 			{!followed && (
@@ -225,8 +242,8 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 			)}
 			{!listsOwnParent && (
 				<Typography variant="body2" color="warning.main">
-					Not in the list: {ownParentName}. {workItems} whose only parent is{" "}
-					{theTrackersOwn(tracker)} parent get no {feature}.
+					Not in the list: {ownParentName}. {items} whose only parent is{" "}
+					{theTrackersOwn(tracker)} parent get no {itsParent}.
 				</Typography>
 			)}
 		</Box>

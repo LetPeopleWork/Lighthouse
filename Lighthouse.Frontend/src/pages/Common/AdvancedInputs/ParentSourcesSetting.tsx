@@ -100,6 +100,7 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 
 	return (
 		<ParentSourcesList
+			owner={theDefault === "parentOverrideForTeams" ? "Team" : "Portfolio"}
 			value={
 				follows
 					? followedList

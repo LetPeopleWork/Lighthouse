@@ -189,6 +189,27 @@ describe("a Team's Advanced Configuration", () => {
 		).toBeInTheDocument();
 	});
 
+	it("tells a Portfolio that follows a default without the own Parent what that costs its Features", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={aFollower([
+					{ kind: "AdditionalField", additionalFieldDefinitionId: 1 },
+				])}
+				onSettingsChange={vi.fn()}
+				parentOverrideDefault="parentOverrideForPortfolios"
+				additionalFieldDefinitions={TheFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(
+			screen.getByText(
+				"Not in the list: Parent (Jira's own). Features whose only parent is Jira's own parent get no parent.",
+			),
+		).toBeInTheDocument();
+		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+	});
+
 	it("starts a follower that picks Set here from the list it was following", () => {
 		const onSettingsChange = openTheSettingsPageOf(
 			aFollower(IsCausedByThenOwnParent),

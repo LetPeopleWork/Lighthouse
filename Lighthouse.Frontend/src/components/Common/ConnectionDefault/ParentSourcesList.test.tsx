@@ -16,10 +16,14 @@ const TheFields: IAdditionalFieldDefinition[] = [
 	{ id: 13, displayName: "Sponsor", reference: "customfield_10015" },
 ];
 
-const aListOf = (value: ParentSourceEntry[]) => {
+const aListOf = (
+	value: ParentSourceEntry[],
+	owner: "Team" | "Portfolio" = "Team",
+) => {
 	const onChange = vi.fn();
 	render(
 		<ParentSourcesList
+			owner={owner}
 			value={value}
 			tracker="Jira"
 			additionalFieldDefinitions={TheFields}
@@ -93,10 +97,43 @@ describe("the Parent sources list of a Team", () => {
 	});
 });
 
+describe("the words of the Parent sources list", () => {
+	it("speaks of Work Items and their Feature on a Team", () => {
+		aListOf([field(11)], "Team");
+
+		expect(
+			screen.getByText(
+				"The first source that has a value gives the parent; the rest are ignored for that Work Item.",
+			),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"Not in the list: Parent (Jira's own). Work Items whose only parent is Jira's own parent get no Feature.",
+			),
+		).toBeInTheDocument();
+	});
+
+	it("speaks of Features and their parent on a Portfolio", () => {
+		aListOf([field(11)], "Portfolio");
+
+		expect(
+			screen.getByText(
+				"The first source that has a value gives the parent; the rest are ignored for that Feature.",
+			),
+		).toBeInTheDocument();
+		expect(
+			screen.getByText(
+				"Not in the list: Parent (Jira's own). Features whose only parent is Jira's own parent get no parent.",
+			),
+		).toBeInTheDocument();
+	});
+});
+
 describe("the Parent sources list on a settings page", () => {
 	const aFollowedList = (value: ParentSourceEntry[]) => {
 		render(
 			<ParentSourcesList
+				owner="Team"
 				value={value}
 				tracker="Jira"
 				additionalFieldDefinitions={TheFields}
