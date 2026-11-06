@@ -116,6 +116,21 @@ describe("the sentence a refresh finding reads as", () => {
 	});
 });
 
+describe("the sentence a parent source that matched nothing reads as", () => {
+	it("names the entry and says the next source was read", () => {
+		expect(
+			sentenceFor({
+				kind: "ParentSourceMatchedNothing",
+				setting: "ParentOverrideField",
+				named: "Epic Name",
+				seen: [],
+			}),
+		).toBe(
+			'Parent source "Epic Name" matched no field and no link type. The next source in the list was read instead.',
+		);
+	});
+});
+
 describe("the date a refresh finding is shown as of", () => {
 	it.each([
 		["01", "Jan"],

@@ -32,6 +32,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
 
         private const string ProgramRef = "Program Ref";
 
+        private const int TheIdOfAFieldNoLongerDefined = 9901;
+
+        private static ShownFinding AFindingNaming(string entry) => new("ParentSourceMatchedNothing", "ParentOverrideField", entry);
+
         /// <summary>
         /// Given Payments lists "Is caused by", "Program Ref" and the tracker's own parent in that order, and the
         /// instance holds: PAY-142 linked to Feature PAY-7; PAY-143 with only Program Ref PAY-12; PAY-171 linked
@@ -155,7 +159,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         /// next entry is still read, so PAY-143 shows under the parent Program Ref names.
         /// </summary>
         [Test]
-        [Ignore("Story 6501: the refresh does not yet name an entry that matches nothing in what it warned.")]
         public async Task An_entry_that_matches_nothing_is_named_in_what_the_refresh_reports_and_the_next_is_still_read()
         {
             var nothing = TheTeamsEntryThatMatchesNothing("Nothing Here");
@@ -172,6 +175,104 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
                     "The administrator has to be told which entry reads nothing, or they cannot tell a typo from a quiet instance.");
                 Assert.That(TheStoredParentOfTheWorkItem("PAY-143"), Is.EqualTo(TheFeatureProgramRefNames));
             }
+        }
+
+        /// <summary>
+        /// Given Payments lists two entries that match nothing, the second shown under a name of its own, and holds
+        /// two Work Items, when Payments refreshes, then Refresh History carries one finding per entry, in the
+        /// list's order and in the name the settings show, and the log says each once: the finding is about the
+        /// list, so how many records were read does not multiply it.
+        /// </summary>
+        [Test]
+        public async Task Two_failing_entries_of_one_list_are_both_reported_once_however_many_records_were_read()
+        {
+            var nothing = TheTeamsEntryThatMatchesNothing("Nothing Here");
+            var epicName = TheTeamsEntryThatMatchesNothing("customfield_404", shownAs: "Epic Name");
+            TheTeamListsTheParentSources(nothing, epicName, ParentSourceEntry.TrackerParent);
+            TheTeamHoldsTheWorkItem("PAY-143");
+            TheTeamHoldsTheWorkItem("PAY-144");
+
+            await TheTeamRefreshes();
+
+            var figures = await WhatRefreshHistoryShowsForTheTeam();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(figures.Findings, Is.EqualTo(new[] { AFindingNaming("Nothing Here"), AFindingNaming("Epic Name") }));
+                Assert.That(WhatTheLastRefreshWarned(), Has.Exactly(1).Contain("Nothing Here"));
+                Assert.That(WhatTheLastRefreshWarned(), Has.Exactly(1).Contain("Epic Name"));
+            }
+        }
+
+        /// <summary>
+        /// Given Payments lists "Program Ref", which the instance defines, and PAY-143 holds nothing in it, when
+        /// Payments refreshes, then nothing is reported: an empty field on one record is the ordinary case.
+        /// </summary>
+        [Test]
+        public async Task An_entry_that_is_merely_empty_on_a_record_raises_no_finding()
+        {
+            TheTeamListsTheParentSources(TheTeamsCustomField(ProgramRef), ParentSourceEntry.TrackerParent);
+            TheTeamHoldsTheWorkItem("PAY-143");
+
+            await TheTeamRefreshes();
+
+            var figures = await WhatRefreshHistoryShowsForTheTeam();
+            Assert.That(figures.Findings, Is.Empty);
+        }
+
+        /// <summary>
+        /// Given Payments lists a field whose definition has gone from the connection, ahead of "Program Ref", when
+        /// Payments refreshes, then the entry is reported in the words the settings show for it and the next entry
+        /// is still read.
+        /// </summary>
+        [Test]
+        public async Task An_entry_whose_field_definition_is_gone_is_reported_in_the_words_the_settings_use()
+        {
+            TheTeamListsTheParentSources(ParentSourceEntry.Field(TheIdOfAFieldNoLongerDefined), TheTeamsCustomField(ProgramRef));
+            TheTeamHoldsTheWorkItem("PAY-143");
+            TheIssueHoldsInTheField("PAY-143", ProgramRef, TheFeatureProgramRefNames);
+
+            await TheTeamRefreshes();
+
+            var figures = await WhatRefreshHistoryShowsForTheTeam();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(figures.Findings, Is.EqualTo(new[] { AFindingNaming($"Unknown field (id {TheIdOfAFieldNoLongerDefined})") }));
+                Assert.That(TheStoredParentOfTheWorkItem("PAY-143"), Is.EqualTo(TheFeatureProgramRefNames));
+            }
+        }
+
+        /// <summary>
+        /// Given a Portfolio lists an entry that matches nothing, when the Portfolio refreshes, then Refresh History
+        /// names that entry as it does for a Team.
+        /// </summary>
+        [Test]
+        public async Task A_Portfolio_reports_an_entry_that_matches_nothing()
+        {
+            ThePortfolioListsTheParentSources(ThePortfoliosEntryThatMatchesNothing("Nothing Here"), ParentSourceEntry.TrackerParent);
+            ThePortfolioHoldsTheFeature(TheFeatureTheLinkNames);
+
+            await ThePortfolioRefreshes();
+
+            var figures = await WhatRefreshHistoryShowsForThePortfolio();
+            Assert.That(figures.Findings, Is.EqualTo(new[] { AFindingNaming("Nothing Here") }));
+        }
+
+        /// <summary>
+        /// Given Payments lists the Caused-by link and Jira refuses its link type list, when Payments refreshes,
+        /// then no finding says the entry matched no link type: nobody could tell, and the administrator would go
+        /// looking for a mistake in a list that is right.
+        /// </summary>
+        [Test]
+        public async Task A_refused_link_type_list_does_not_claim_that_an_entry_matched_nothing()
+        {
+            TheTeamListsTheParentSources(TheTeamsCausedByLink(), ParentSourceEntry.TrackerParent);
+            TheInstanceRefusesItsLinkTypeList();
+            TheTeamHoldsTheWorkItem("PAY-143");
+
+            await TheTeamRefreshes();
+
+            var figures = await WhatRefreshHistoryShowsForTheTeam();
+            Assert.That(figures.Findings, Is.Empty);
         }
 
         /// <summary>

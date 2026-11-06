@@ -102,8 +102,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             yield return new TestCaseData(ProgramRef, string.Empty).SetName("A field the issue does not carry reads as no value");
             yield return new TestCaseData(ProgramRef, Value(ProgramRefField, string.Empty)).SetName("A field left empty reads as no value");
             yield return new TestCaseData(ProgramRef, $", \"{ProgramRefField}\": null").SetName("A field Jira writes as null reads as no value");
-            yield return new TestCaseData(NothingTheInstanceKnows, string.Empty).SetName("A field the instance does not define reads as no value");
-            yield return new TestCaseData(ParentSourceEntry.Field(99), string.Empty).SetName("An entry naming a field that is gone reads as no value");
         }
 
         [TestCaseSource(nameof(FieldsThatFoundNothing))]
@@ -112,6 +110,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             var readings = await TheReadingsATeamGets([entry], furtherFields);
 
             Assert.That(readings.Positions[0].Reading, Is.EqualTo(ParentReading.NoValue));
+        }
+
+        private static IEnumerable<TestCaseData> EntriesThatMatchNothing()
+        {
+            yield return new TestCaseData(NothingTheInstanceKnows).SetName("A field the instance does not define cannot be read");
+            yield return new TestCaseData(ParentSourceEntry.Field(99)).SetName("An entry naming a field that is gone cannot be read");
+        }
+
+        [TestCaseSource(nameof(EntriesThatMatchNothing))]
+        public async Task An_entry_that_matches_nothing_reads_differently_from_an_empty_field(ParentSourceEntry entry)
+        {
+            var readings = await TheReadingsATeamGets([entry], string.Empty);
+
+            Assert.That(readings.Positions[0].Reading, Is.EqualTo(ParentReading.CannotBeRead));
         }
 
         private static IEnumerable<TestCaseData> WhatATeamsOwnParentReads()

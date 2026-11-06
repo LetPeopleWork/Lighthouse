@@ -1009,8 +1009,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// Every record read through a misconfigured setting shows the same misconfiguration, so it is
-        /// reported once per kind and setting for the whole refresh, never once per record. Only a whole-query refresh
-        /// judges: a cheap one reads the few records that moved, which says nothing about the setting, and
+        /// reported once per kind, setting and name for the whole refresh, never once per record. The name
+        /// counts because one setting can list several entries, and each that fails is its own thing to fix.
+        /// Only a whole-query refresh judges: a cheap one reads the few records that moved, which says nothing about the setting, and
         /// reporting nothing from it leaves the last whole-query refresh's word standing.
         /// </summary>
         private List<RefreshFinding> ReportWhatTheSettingsLeftUnread(
@@ -1024,7 +1025,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             var findings = records
                 .SelectMany(record => record.RefreshFindings)
                 .Where(finding => theSettingIsRead(finding.Setting))
-                .DistinctBy(finding => (finding.Kind, finding.Setting))
+                .DistinctBy(finding => (finding.Kind, finding.Setting, finding.Named))
                 .ToList();
 
             foreach (var finding in findings)
@@ -1065,6 +1066,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                     setting,
                     finding.Named,
                     string.Join(", ", finding.Seen));
+                return;
+            }
+
+            if (finding.Kind == RefreshFindingKind.ParentSourceMatchedNothing)
+            {
+                logger.LogWarning(
+                    "{Owner}: parent source '{Named}' matched no field and no link type. The next source in the list was read instead.",
+                    owner,
+                    finding.Named);
                 return;
             }
 

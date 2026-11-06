@@ -54,12 +54,19 @@ const hasNoDirection = (settingName: string, finding: RefreshFinding) =>
 const namedWithoutItsEnd = (settingName: string, finding: RefreshFinding) =>
 	`The ${settingName} names "${finding.named}" without its end. Name one end: "${finding.named}-Forward" or "${finding.named}-Reverse".`;
 
+const parentSourceMatchedNothing = (
+	_settingName: string,
+	finding: RefreshFinding,
+) =>
+	`Parent source "${finding.named}" matched no field and no link type. The next source in the list was read instead.`;
+
 const SENTENCES: Readonly<Record<string, FindingSentence>> = {
 	NamedLinkPointsBothWays: pointsBothWays,
 	NamedLinkMatchedNothing: matchedNothing,
 	RelationTypeCannotBeReadHere: cannotBeReadHere,
 	RelationTypeHasNoDirection: hasNoDirection,
 	RelationTypeNamedWithoutItsEnd: namedWithoutItsEnd,
+	ParentSourceMatchedNothing: parentSourceMatchedNothing,
 };
 
 // Rows outlive the build that wrote them, so a kind or setting this browser does not know reads as

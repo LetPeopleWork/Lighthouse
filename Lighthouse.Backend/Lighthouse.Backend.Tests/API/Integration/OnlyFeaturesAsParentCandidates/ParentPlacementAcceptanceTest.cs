@@ -129,6 +129,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         private bool theInstanceIsJiraDataCenter;
 
+        private bool theInstanceRefusesItsLinkTypeList;
+
         [OneTimeSetUp]
         public void StartTheLighthouseEveryScenarioRunsOn()
         {
@@ -183,6 +185,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             customFieldsTheTrackerDefines.Clear();
             nextFieldOfAParentSourceList = TheFirstFieldOfAParentSourceList;
             theInstanceIsJiraDataCenter = false;
+            theInstanceRefusesItsLinkTypeList = false;
             requestsTheTrackerAnswered.Clear();
             warningsOfTheLastRefresh = [];
 
@@ -238,7 +241,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         /// <summary>The two figures one refresh recorded, as Refresh History hands them to the screen.</summary>
-        protected sealed record RefreshFigures(int? Placed, int NotPlaced, string Mode);
+        protected sealed record RefreshFigures(int? Placed, int NotPlaced, string Mode, IReadOnlyList<ShownFinding> Findings);
+
+        protected sealed record ShownFinding(string Kind, string Setting, string Named);
 
         protected static DateTime On(int year, int month, int day) => new(year, month, day, 9, 30, 0, DateTimeKind.Utc);
 
@@ -270,6 +275,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         /// <summary>An entry naming something the instance has neither as a field nor as a link type.</summary>
         protected ParentSourceEntry TheTeamsEntryThatMatchesNothing(string reference) => AnEntryNaming(theTeam, reference, isACustomField: false);
+
+        /// <summary>The same, for a field the connection shows under a name of its own.</summary>
+        protected ParentSourceEntry TheTeamsEntryThatMatchesNothing(string reference, string shownAs)
+            => AnEntryNaming(theTeam, reference, isACustomField: false, shownAs);
+
+        protected ParentSourceEntry ThePortfoliosEntryThatMatchesNothing(string reference) => AnEntryNaming(thePortfolio, reference, isACustomField: false);
+
+        /// <summary>Jira answers its issue link type list with a refusal, so whether a name is a link type cannot be told.</summary>
+        protected void TheInstanceRefusesItsLinkTypeList() => theInstanceRefusesItsLinkTypeList = true;
 
         /// <summary>The instance is Jira Data Center, which keeps a Team's parent in the Epic Link field as well.</summary>
         protected void TheInstanceIsJiraDataCenter()
@@ -320,13 +334,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         private static ParentSources AValidList(ParentSourceEntry[] sources)
             => ParentSources.Of(sources).List ?? throw new AssertionException("The scenario describes a list the rules refuse.");
 
-        private ParentSourceEntry AnEntryNaming(IWorkItemQueryOwner owner, string reference, bool isACustomField)
+        private ParentSourceEntry AnEntryNaming(IWorkItemQueryOwner owner, string reference, bool isACustomField, string? shownAs = null)
         {
             var id = nextFieldOfAParentSourceList++;
             owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
             {
                 Id = id,
-                DisplayName = reference,
+                DisplayName = shownAs ?? reference,
                 Reference = reference,
             });
 
@@ -575,7 +589,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             return new RefreshFigures(
                 newest.TryGetProperty("recordsPlacedFromLinksNamingMoreThanOneParent", out var placed) ? placed.GetInt32() : null,
                 newest.GetProperty("recordsWhoseLinksNamedMoreThanOneParent").GetInt32(),
-                newest.GetProperty("mode").ToString());
+                newest.GetProperty("mode").ToString(),
+                TheFindingsOf(newest));
+        }
+
+        private static List<ShownFinding> TheFindingsOf(JsonElement row)
+        {
+            if (!row.TryGetProperty("latestFullRunFindings", out var findings) || findings.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            return
+            [
+                .. findings.EnumerateArray().Select(finding => new ShownFinding(
+                    finding.GetProperty("kind").ToString(),
+                    finding.GetProperty("setting").ToString(),
+                    finding.GetProperty("named").ToString())),
+            ];
         }
 
         private static bool IsARowFor(JsonElement row, RefreshType type, int entityId)
@@ -680,6 +711,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             lock (requestsTheTrackerAnswered)
             {
                 requestsTheTrackerAnswered.Add(path);
+            }
+
+            if (theInstanceRefusesItsLinkTypeList && path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal))
+            {
+                return new HttpResponseMessage(HttpStatusCode.Forbidden);
             }
 
             var body = path switch

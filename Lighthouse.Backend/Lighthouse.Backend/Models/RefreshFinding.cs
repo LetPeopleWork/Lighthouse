@@ -22,6 +22,7 @@ namespace Lighthouse.Backend.Models
         RelationTypeHasNoDirection,
         RelationTypeNamedWithoutItsEnd,
         RelationTypeCannotBeReadHere,
+        ParentSourceMatchedNothing,
     }
 
     [JsonConverter(typeof(JsonStringEnumConverter<RefreshFindingSetting>))]

@@ -3,7 +3,8 @@ export type RefreshFindingKind =
 	| "NamedLinkPointsBothWays"
 	| "RelationTypeHasNoDirection"
 	| "RelationTypeNamedWithoutItsEnd"
-	| "RelationTypeCannotBeReadHere";
+	| "RelationTypeCannotBeReadHere"
+	| "ParentSourceMatchedNothing";
 
 export type RefreshFindingSetting =
 	| "ParentOverrideField"

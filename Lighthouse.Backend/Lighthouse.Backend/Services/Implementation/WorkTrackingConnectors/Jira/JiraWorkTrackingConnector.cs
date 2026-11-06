@@ -322,7 +322,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             // (SetStoredFieldKeys) — so PopulateAdditionalFieldValues picks it up with the resolved Reference.
             EnsurePredefinedAdditionalFieldsRegistered(team.WorkTrackingSystemConnection);
 
-            var customFieldReferences = await GetCustomFieldReferences(team.WorkTrackingSystemConnection);
+            var resolution = await ResolveTheAdditionalFieldReferences(team.WorkTrackingSystemConnection, LinkTypesMayAnswer.WhatAnAdministratorTyped);
 
             var ownParentFieldName = TheFieldBehindTheListedOwnParent(team, JiraFieldNames.EpicLinkFieldName);
 
@@ -330,9 +330,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             foreach (var issue in issues)
             {
-                var workItem = CreateWorkItemFromJiraIssue(issue, team, customFieldReferences, ownParentFieldName, ParentNarrowing.Narrow);
+                var workItem = CreateWorkItemFromJiraIssue(issue, team, resolution.References, ownParentFieldName, ParentNarrowing.Narrow);
 
-                workItems.Add(new WorkItem(workItem, team));
+                workItems.Add(new WorkItem(workItem, team)
+                {
+                    RefreshFindings = WhatReadingTheParentSourcesFound(team, workItem.ParentReadings, resolution.LinkTypes),
+                });
             }
 
             return workItems;
@@ -1373,7 +1376,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
-                    RefreshFindings = dependencyFieldFindings,
+                    RefreshFindings = [.. dependencyFieldFindings, .. WhatReadingTheParentSourcesFound(portfolio, workItem.ParentReadings, resolution.LinkTypes)],
                 };
 
                 features.Add(feature);
@@ -1949,11 +1952,46 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         }
 
         /// <summary>
+        /// An entry matching nothing on the instance reads like an empty field, which is ordinary, so it would
+        /// go unnoticed unless it is said. Without an answer from the link type list a name no field carries may
+        /// still be a link type, and saying it matched nothing would send somebody after a mistake that is not
+        /// there.
+        /// </summary>
+        private static List<RefreshFinding> WhatReadingTheParentSourcesFound(
+            IWorkItemQueryOwner workItemQueryOwner, ParentReadings readings, IssueLinkTypeListing linkTypes)
+        {
+            if (WhatTheLinkTypeListAnswered(linkTypes) is not null)
+            {
+                return [];
+            }
+
+            return
+            [
+                .. readings.Positions
+                    .Where(position => position.Reading.Kind == ParentReadingKind.CannotBeRead)
+                    .Select(position => new RefreshFinding(
+                        RefreshFindingKind.ParentSourceMatchedNothing,
+                        RefreshFindingSetting.ParentOverrideField,
+                        TheNameTheSettingsShowFor(workItemQueryOwner, position.Source),
+                        [])),
+            ];
+        }
+
+        private static string TheNameTheSettingsShowFor(IWorkItemQueryOwner workItemQueryOwner, ParentSourceEntry entry)
+            => TheDefinitionNamed(workItemQueryOwner, entry.AdditionalFieldDefinitionId)?.DisplayName
+                ?? $"Unknown field (id {entry.AdditionalFieldDefinitionId})";
+
+        /// <summary>
         /// Links read as links even when none of them matched, because the field showing a link entry's key
         /// is found by that kind, and a record that lost its last link must stop showing the old key.
         /// </summary>
         private static ParentReading WhatTheAdditionalFieldReads(Issue issue, ResolvedReference reference)
         {
+            if (reference.ResolvedToNothing)
+            {
+                return ParentReading.CannotBeRead;
+            }
+
             if (reference.NamesALinkType)
             {
                 return ParentReading.LinkCandidates(issue.Fields.ResolveParentFromLinks(reference.LinkTypeName, reference.Direction, issue.StandingLinks));
@@ -2006,9 +2044,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 workItem.AdditionalFieldValues[fieldDef.Id] = value;
             }
         }
-
-        private async Task<Dictionary<string, ResolvedReference>> GetCustomFieldReferences(WorkTrackingSystemConnection connection)
-            => (await ResolveTheAdditionalFieldReferences(connection, LinkTypesMayAnswer.WhatAnAdministratorTyped)).References;
 
         /// <summary>
         /// Reading work items only needs what each reference resolved to. Validating a connection also has to
