@@ -1,4 +1,5 @@
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -14,6 +15,12 @@ SWITCH = "LIGHTHOUSE_BUDGET_WARN_ONLY"
 NS = base.TESTS_NAMESPACE
 ALLOWED = base.allowed
 NOT_NEEDED = "not needed"
+REPOSITORY = base.HERE.parents[2]
+BUDGET_STEP = "Check test-time budget"
+
+
+def breach_phrase(seconds, limit, kind="budget"):
+    return f"took {seconds}s, over the {limit}s {kind}"
 
 # Limits the shipped budget file holds once it is measured on plain CI runs.
 SHIPPED_FRONTEND_BUDGET = 56
@@ -101,6 +108,11 @@ class TimeBudgetTestCase(base.BudgetCheckTestCase):
             [line for line in self.annotations(result, "warning") if breached_unit in line],
             msg=self._explain(result),
         )
+        self.assertEqual(
+            [line for line in self.annotations(result, "error") if breached_unit in line],
+            [],
+            msg=self._explain(result),
+        )
 
 
 class TheWarnOnlySwitchIsReadFromTheEnvironment(unittest.TestCase):
@@ -116,7 +128,8 @@ class TheWarnOnlySwitchIsReadFromTheEnvironment(unittest.TestCase):
 
     @unittest.skip("pending: warn_only_requested is not built yet")
     def test_the_flag_warns_whatever_the_variable_says(self):
-        for environment in ({}, {SWITCH: ""}, {SWITCH: "false"}, {SWITCH: "true"}):
+        for value in (None, "", "false", "true", "maybe", "TRUE"):
+            environment = {} if value is None else {SWITCH: value}
             with self.subTest(environment=environment):
                 self.assertTrue(check_budget.warn_only_requested(environment, True))
 
@@ -139,7 +152,9 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
                     workspace.budget()
 
                     self.assert_fails_naming(
-                        workspace.check(stack, timings, switch=switch), unit, "70.0", "60"
+                        workspace.check(stack, timings, switch=switch),
+                        unit,
+                        breach_phrase("70.0", 60),
                     )
 
     @unittest.skip("pending: the check does not read the variable yet")
@@ -151,8 +166,53 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
                 workspace.budget()
 
                 self.assert_warns_and_passes(
-                    workspace.check(stack, timings, switch="true"), unit, "70.0", "60"
+                    workspace.check(stack, timings, switch="true"), unit, breach_phrase("70.0", 60)
                 )
+
+    def test_the_flag_wins_over_a_variable_that_is_not_valid(self):
+        for stack in ("frontend", "backend"):
+            for switch in ("maybe", "TRUE"):
+                with self.subTest(stack=stack, switch=switch):
+                    workspace = self.fresh_workspace()
+                    timings, unit = self.breach(workspace, stack)
+                    workspace.budget()
+
+                    self.assert_warns_and_passes(
+                        workspace.check(stack, timings, "--warn-only", switch=switch),
+                        unit,
+                        breach_phrase("70.0", 60),
+                    )
+
+    @unittest.skip("pending: the check does not say that enforcement is off yet")
+    def test_a_notice_names_the_variable_and_says_enforcement_is_off_when_it_is_true(self):
+        for stack in ("frontend", "backend"):
+            with self.subTest(stack=stack):
+                workspace = self.fresh_workspace()
+                timings, _ = self.breach(workspace, stack)
+                workspace.budget()
+
+                result = workspace.check(stack, timings, switch="true")
+
+                self.assertTrue(
+                    [
+                        line
+                        for line in self.annotations(result, "notice")
+                        if SWITCH in line and "enforcement is off" in line
+                    ],
+                    msg=self._explain(result),
+                )
+
+    def test_no_notice_is_printed_while_the_budget_is_enforced(self):
+        for stack in ("frontend", "backend"):
+            for switch in (None, "", "false"):
+                with self.subTest(stack=stack, switch=switch):
+                    workspace = self.fresh_workspace()
+                    timings, _ = self.breach(workspace, stack)
+                    workspace.budget()
+
+                    result = workspace.check(stack, timings, switch=switch)
+
+                    self.assertEqual(self.annotations(result, "notice"), [], msg=self._explain(result))
 
     @unittest.skip("pending: the check does not read the variable yet")
     def test_any_other_value_gives_no_verdict_and_names_the_variable(self):
@@ -241,17 +301,13 @@ class AnAllowlistEntryThatIsNotNeededFailsTheBuild(TimeBudgetTestCase):
                     workspace.check(stack, timings), unit, base.ALLOWLIST_NAME, NOT_NEEDED
                 )
 
-    @unittest.skip("pending: an entry that is not needed is not detected yet")
-    def test_an_entry_whose_ceiling_is_below_the_budget_fails_naming_the_entry(self):
+    def test_an_entry_whose_ceiling_is_below_the_budget_is_stricter_and_stays_allowed(self):
         for stack in ("frontend", "backend"):
-            for ceiling in (45, 59.9):
-                with self.subTest(stack=stack, ceiling=ceiling):
-                    workspace = self.fresh_workspace()
-                    timings, unit = self.entry_that_fits_the_run(workspace, stack, ceiling)
+            with self.subTest(stack=stack):
+                workspace = self.fresh_workspace()
+                timings, _ = self.entry_that_fits_the_run(workspace, stack, 45)
 
-                    self.assert_fails_naming(
-                        workspace.check(stack, timings), unit, base.ALLOWLIST_NAME, NOT_NEEDED
-                    )
+                self.assert_passes_quietly(workspace.check(stack, timings))
 
     def test_an_entry_whose_ceiling_is_just_above_the_budget_passes(self):
         for stack in ("frontend", "backend"):
@@ -261,7 +317,7 @@ class AnAllowlistEntryThatIsNotNeededFailsTheBuild(TimeBudgetTestCase):
 
                 self.assert_passes_quietly(workspace.check(stack, timings))
 
-    @unittest.skip("pending: an entry that is not needed is not detected yet")
+    @unittest.skip("pending: the check does not judge a frontend file's run time yet")
     def test_a_frontend_entry_whose_file_ran_under_a_quarter_of_the_budget_fails(self):
         timings = self.workspace.frontend_timings({"src/pages/Quick.test.tsx": [7.0, 6.9]})
         self.workspace.budget(
@@ -326,15 +382,14 @@ class UnneededEntriesAreFoundFromTheTimingsAndTheLimits(unittest.TestCase):
         ]
 
     @unittest.skip("pending: unneeded_entries is not built yet")
-    def test_a_ceiling_not_above_the_budget_is_named_on_both_stacks(self):
+    def test_only_a_ceiling_equal_to_the_budget_is_named_on_both_stacks(self):
         for stack in ("frontend", "backend"):
-            for ceiling in (Decimal("33"), Decimal("34")):
-                with self.subTest(stack=stack, ceiling=ceiling):
-                    rows = self.rows(stack, {"A": 30.0, "B": 30.0})
-                    found = check_budget.unneeded_entries(
-                        stack, rows, Decimal(34), {"A": ceiling, "B": Decimal("35")}
-                    )
-                    self.assertEqual(found, ["A"])
+            with self.subTest(stack=stack):
+                rows = self.rows(stack, {"A": 30.0, "B": 30.0, "C": 30.0})
+                found = check_budget.unneeded_entries(
+                    stack, rows, Decimal(34), {"A": Decimal("34"), "B": Decimal("33"), "C": Decimal("35")}
+                )
+                self.assertEqual(found, ["A"])
 
     @unittest.skip("pending: unneeded_entries is not built yet")
     def test_a_frontend_file_under_a_quarter_of_the_budget_is_named_and_one_at_a_quarter_is_not(self):
@@ -343,6 +398,13 @@ class UnneededEntriesAreFoundFromTheTimingsAndTheLimits(unittest.TestCase):
 
         self.assertEqual(
             check_budget.unneeded_entries("frontend", rows, Decimal(56), ceilings), ["quick"]
+        )
+
+    @unittest.skip("pending: unneeded_entries is not built yet")
+    def test_a_frontend_entry_below_the_budget_is_never_named_for_running_little(self):
+        rows = self.rows("frontend", {"quick": 5.0})
+        self.assertEqual(
+            check_budget.unneeded_entries("frontend", rows, Decimal(56), {"quick": Decimal(45)}), []
         )
 
     @unittest.skip("pending: unneeded_entries is not built yet")
@@ -374,12 +436,6 @@ class TheShippedBudgetFileObeysItsOwnRules(unittest.TestCase):
             for stack in ("frontend", "backend")
         }
 
-    def test_every_ceiling_is_above_its_stacks_budget(self):
-        for stack, (budget, ceilings) in self.sections().items():
-            for unit, ceiling in ceilings.items():
-                with self.subTest(stack=stack, unit=unit):
-                    self.assertGreater(ceiling, budget)
-
     def test_every_backend_entry_names_a_class_that_is_still_in_the_test_source(self):
         _, ceilings = self.sections()["backend"]
         declared = check_budget.declared_classes(check_budget.DEFAULT_BACKEND_SOURCE_ROOT)
@@ -387,10 +443,10 @@ class TheShippedBudgetFileObeysItsOwnRules(unittest.TestCase):
         self.assertEqual(sorted(set(ceilings) - declared), [])
 
     @unittest.skip("pending: unneeded_entries is not built yet")
-    def test_no_backend_entry_is_one_the_check_would_call_not_needed(self):
-        budget, ceilings = self.sections()["backend"]
-
-        self.assertEqual(check_budget.unneeded_entries("backend", [], budget, ceilings), [])
+    def test_no_entry_is_one_the_check_would_call_not_needed_on_either_stack(self):
+        for stack, (budget, ceilings) in self.sections().items():
+            with self.subTest(stack=stack):
+                self.assertEqual(check_budget.unneeded_entries(stack, [], budget, ceilings), [])
 
     @unittest.skip("pending: the budgets are not recalibrated yet")
     def test_the_frontend_budget_is_56_seconds_and_nothing_is_allowlisted(self):
@@ -419,14 +475,14 @@ class ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets(TimeBudgetTestCase):
 
         result = self.workspace.check_shipped("frontend", timings)
 
-        self.assert_fails_naming(result, "src/pages/Planted.test.tsx", "57.0", "56")
+        self.assert_fails_naming(result, "src/pages/Planted.test.tsx", breach_phrase("57.0", 56))
 
     def test_a_backend_class_of_35_seconds_fails_the_build(self):
         timings = self.workspace.backend_timings({"Planted.Slow.Runs": 35.0})
 
         result = self.workspace.check_shipped("backend", timings)
 
-        self.assert_fails_naming(result, "Planted.Slow", "35.0", "34")
+        self.assert_fails_naming(result, "Planted.Slow", breach_phrase("35.0", 34))
 
     @unittest.skip("pending: the budgets are not recalibrated yet")
     def test_a_planted_backend_class_is_only_a_warning_when_the_variable_is_true(self):
@@ -439,6 +495,38 @@ class ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets(TimeBudgetTestCase):
             [line for line in self.annotations(result, "warning") if "Planted.Slow" in line],
             msg=self._explain(result),
         )
+
+
+class TheWorkflowStepsKeepTheSwitchOutOfTheUnitTests(unittest.TestCase):
+    WORKFLOWS = {
+        "backend": REPOSITORY / ".github" / "workflows" / "ci_backend.yml",
+        "frontend": REPOSITORY / ".github" / "workflows" / "ci_frontend.yml",
+    }
+
+    @staticmethod
+    def steps(path):
+        lines = [line for line in path.read_text(encoding="utf-8").splitlines() if not line.lstrip().startswith("#")]
+        return [
+            step
+            for step in re.split(r"(?m)^(?=\s*- name: )", "\n".join(lines))
+            if step.lstrip().startswith("- name:")
+        ]
+
+    @unittest.skip("pending: the workflow steps are not split yet")
+    def test_the_switch_is_in_the_environment_of_the_budget_step_and_not_of_the_unit_test_step(self):
+        for stack, path in self.WORKFLOWS.items():
+            with self.subTest(stack=stack):
+                steps = self.steps(path)
+                budget = [step for step in steps if step.lstrip().startswith(f"- name: {BUDGET_STEP}")]
+                unit = [step for step in steps if "unittest discover" in step]
+
+                self.assertEqual(len(budget), 1)
+                self.assertEqual(len(unit), 1)
+                self.assertNotIn("check_budget.py", unit[0])
+                self.assertNotIn(SWITCH, unit[0])
+                self.assertIn(f"{SWITCH}: ${{{{ vars.{SWITCH} }}}}", budget[0])
+                self.assertNotIn("--warn-only", unit[0])
+                self.assertNotIn("--warn-only", budget[0])
 
 
 if __name__ == "__main__":

@@ -14,4 +14,5 @@ platform_coverage:
   CI: [GitHub Actions ubuntu-latest]
 
 deployment_assumptions:
-  - "An unset or false LIGHTHOUSE_BUDGET_WARN_ONLY enforces; true warns; any other value gives no verdict"
+  - "An unset, empty or false LIGHTHOUSE_BUDGET_WARN_ONLY enforces; exactly lowercase true turns over-budget verdicts into warnings and prints a notice; any other value fails the step with exit 2"
+  - "The switch does not soften stale or not-needed entries (exit 1) or cannot-judge (exit 2); the unit-test step of each workflow has no switch in its env"
