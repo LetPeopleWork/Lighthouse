@@ -383,7 +383,7 @@ def _check(arguments: argparse.Namespace) -> int:
     still_present = _still_present(stack, rows, arguments.source_root, ceilings)
     stale = stale_entries(list(ceilings), still_present)
     kind = "warning" if warn_only else "error"
-    if warn_only and not arguments.warn_only:
+    if os.environ.get(WARN_ONLY_VARIABLE) == "true":
         print(f"::notice::{WARN_ONLY_VARIABLE} is true, so budget enforcement is off")
     for finding in findings:
         print(breach_annotation(finding, allowlist_name, kind))

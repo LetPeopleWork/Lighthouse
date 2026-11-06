@@ -208,6 +208,50 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
 
                     self.assertEqual(self.annotations(result, "notice"), [], msg=self._explain(result))
 
+    def test_the_notice_shows_when_the_variable_is_true_even_if_the_flag_is_given(self):
+        for stack in ("frontend", "backend"):
+            with self.subTest(stack=stack):
+                workspace = self.fresh_workspace()
+                timings, _ = self.breach(workspace, stack)
+                workspace.budget()
+
+                result = workspace.check(stack, timings, "--warn-only", switch="true")
+
+                self.assertEqual(result.returncode, 0, msg=self._explain(result))
+                notices = self.annotations(result, "notice")
+                self.assertEqual(len(notices), 1, msg=self._explain(result))
+                self.assertIn(SWITCH, notices[0])
+                self.assertIn("enforcement is off", notices[0])
+
+    def test_the_flag_alone_prints_no_notice(self):
+        for stack in ("frontend", "backend"):
+            for switch in (None, "", "false"):
+                with self.subTest(stack=stack, switch=switch):
+                    workspace = self.fresh_workspace()
+                    timings, _ = self.breach(workspace, stack)
+                    workspace.budget()
+
+                    result = workspace.check(stack, timings, "--warn-only", switch=switch)
+
+                    self.assertEqual(result.returncode, 0, msg=self._explain(result))
+                    self.assertEqual(self.annotations(result, "notice"), [], msg=self._explain(result))
+
+    def test_a_hostile_variable_value_gives_one_error_and_no_forged_command(self):
+        for stack in ("frontend", "backend"):
+            with self.subTest(stack=stack):
+                workspace = self.fresh_workspace()
+                timings, _ = self.breach(workspace, stack)
+                workspace.budget()
+
+                result = workspace.check(stack, timings, switch="true\n::set-env name=X::y")
+
+                self.assertEqual(result.returncode, 2, msg=self._explain(result))
+                self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+                self.assertFalse(
+                    [line for line in result.stdout.splitlines() if line.startswith("::set-env")],
+                    msg=self._explain(result),
+                )
+
     def test_any_other_value_gives_no_verdict_and_names_the_variable(self):
         for stack in ("frontend", "backend"):
             for switch in ("TRUE", "1", "yes"):
@@ -350,6 +394,36 @@ class AnAllowlistEntryThatIsNotNeededFailsTheBuild(TimeBudgetTestCase):
                     unit,
                     base.ALLOWLIST_NAME,
                     NOT_NEEDED,
+                )
+
+    def test_a_breach_is_a_warning_and_an_unneeded_entry_an_error_in_one_run_when_the_variable_is_true(self):
+        for stack in ("frontend", "backend"):
+            with self.subTest(stack=stack):
+                workspace = self.fresh_workspace()
+                if stack == "frontend":
+                    timings = workspace.frontend_timings(
+                        {"src/pages/Heavy.test.tsx": [30.0], "src/pages/Overview.test.tsx": [70.0]}
+                    )
+                    entry, slow = "src/pages/Heavy.test.tsx", "src/pages/Overview.test.tsx"
+                    workspace.budget(frontend_entries=[ALLOWED(entry, 60)])
+                else:
+                    workspace.declare_test_class("DataProtectionKeyRingTest")
+                    entry, slow = f"{NS}.DataProtectionKeyRingTest", f"{NS}.CacheTest"
+                    timings = workspace.backend_timings(
+                        {f"{entry}.Shares": 30.0, f"{slow}.Concurrent": 70.0}
+                    )
+                    workspace.budget(backend_entries=[ALLOWED(entry, 60)])
+
+                result = workspace.check(stack, timings, switch="true")
+
+                self.assertEqual(result.returncode, 1, msg=self._explain(result))
+                self.assertTrue(
+                    [line for line in self.annotations(result, "warning") if slow in line],
+                    msg=self._explain(result),
+                )
+                self.assertTrue(
+                    [line for line in self.annotations(result, "error") if entry in line],
+                    msg=self._explain(result),
                 )
 
     def test_an_entry_that_is_not_needed_still_fails_when_the_flag_is_given(self):
