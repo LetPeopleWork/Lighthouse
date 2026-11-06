@@ -12,6 +12,32 @@
 > open is listed under "Resolved and still open". Nothing is committed, nothing touched on ADO, no shared file
 > edited (ADR-270, ARCHITECTURE.md and jobs.yaml changes are *proposed* below).
 
+## Slice 01 double review (2026-11-06, sonnet, read only; fixes wait for the maintainer)
+
+No blocker, no high. Fixes are owed before slice 02 starts.
+
+| # | Severity | Finding | State |
+|---|---|---|---|
+| 1 | Medium | `ParentSourcesList.tsx:214,228`: a Portfolio's list says "Work Item" where its items are Features | Confirmed; wording is the maintainer's |
+| 2 | Medium | An API client can store a list on Azure DevOps, which reads only the first field until 02-01; no page can send it | Interim, closes in slice 02 if it ships |
+| 3 | Low | The sentence "The next source in the list was read instead" is untrue when the unmatched entry is the last one (Refresh History and `WorkItemService.cs:1070`) | Wording is the maintainer's |
+| 4 | Low | Disabled Remove button: the reason reaches mouse users only; a move can drop keyboard focus | Open |
+| 5 | Low | `ModifyConnectionSettings.parentSources.test.tsx:53,55` comments name the story and a wave; stale Ignore text in the two skipped scenario classes | Fix when those steps activate them |
+| 6 | Low | Azure DevOps findings say "One of the Parent sources" while it still has one field | Follows from the rename; closes in slice 02 |
+| 7 | Low | `AdvancedInputs.parentSources.test.tsx`: `/Connection default.*Parent \(Jira's own\)/` also matches a longer default | Open |
+| 8 | Low | `usagedata.md` wording against the code's "differs from the one last saved" | Check |
+
+Maintainer answers (2026-11-06, after the review):
+
+- Finding 1: a Portfolio's list says Feature for its items.
+- Finding 3: the sentence drops "The next source in the list was read instead." when the unmatched entry is the last one.
+- A lone link to a Feature not stored yet: check whether a later full refresh repairs it, and fix it if not.
+- A follower of an unset default who picks Set here keeps the radio until the page is reloaded.
+- The follower sketch is approved: while following, rows and picker are hidden, the line names the default, and the cost line shows when the default leaves out the own Parent.
+- A Portfolio's cost line reads: `Not in the list: Parent (Jira's own). Features whose only parent is Jira's own parent get no parent.`
+
+Not covered: the bodies of `ParentSourcesRefreshScenarios`, `ParentSourcesSettingsApiIntegrationTest` and the new `WorkItemServiceTest` tests; clone and unsaved-owner paths; the DD-7 loading and failure looks.
+
 ## Wave: DISCUSS / [REF] Prior-Wave Reading Confirmation
 
 - ⊘ DISCOVER: none for this Story. Evidence: the maintainer's sentence, plus the shipped Parent Override Field and its
@@ -1948,3 +1974,26 @@ Open lows for DELIVER, to pick up when each file is touched:
 - Remove the hedge "check that when this is first run" from the live case in `JiraWorkTrackingConnectorTest.cs`, once it has run.
 - The Linear host check in `AdvancedInputs.parentSources.test.tsx` overlaps the `parentSourcesAreOffered` table; keep it as the one wiring check or drop it.
 - The `jira_connector` path filter does not cover `Models/ParentSource*`, `ParentSourceSelector` or `FetchFingerprint`, so a later change only there skips the live Jira case. Slice 01 touches the connector, so it runs then.
+
+## Maintainer decisions (DELIVER entry, 2026-11-05)
+
+| Topic | Decision |
+|---|---|
+| Rigor profile | Slice 01 `thorough`, slice 02 `standard`, slice 03 `standard`. |
+| nWave version | The story finishes on 3.22.2; the 4.x upgrade follows it. |
+| AFK run | Refactor and review per slice, mutation once in the final gates, nothing pushed before the hold. |
+
+## Maintainer decisions (DELIVER, copy, 2026-11-06)
+
+| Topic | Decision |
+|---|---|
+| Remaining "Parent Override Field" copy | Renamed to "Parent sources" wherever a user reads it. The wire name of the setting stays. |
+| Refresh History, a Jira entry matching nothing | `Parent source "Epic Name" matched no field and no link type. The next source in the list was read instead.` |
+| The tracker's own Parent in the list | Confirmed as designed: it shows as a regular row, pre-filled, and can be moved or removed like any other. It is not a hidden fallback. |
+
+## AFK decisions (DELIVER, 2026-11-06; the maintainer reviews them at the hold)
+
+| Topic | Decision |
+|---|---|
+| DD-6, the old int on PUT | Amended. DD-6 said the old int counts only when `parentSources` is absent. Today's page and scripts echo the whole GET, so that rule would answer 200 and silently drop an edit of the old field. Now: when the list sent equals what the owner already reads, and the old field was sent and differs from the list's projection, the old field is the edit and becomes `[X, own Parent]`. In every other case a sent list wins. A client that sends the list must leave the old int out or keep it in step. |
+| A list entry whose field is gone | Named `Unknown field (id N)` in Refresh History, the same words as the settings control. |
