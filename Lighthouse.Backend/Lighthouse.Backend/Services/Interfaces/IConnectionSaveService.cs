@@ -43,15 +43,15 @@ namespace Lighthouse.Backend.Services.Interfaces
             => [.. StoredFieldsBeforeSave.Where(field => Removes(field.Key)).Select(field => new RemovedAdditionalField(field.Key, field.Value))];
     }
 
-    /// <summary>A connection default as it stands: the field it names, and for Estimation the whole bundle.</summary>
-    public sealed record NamedField(int? FieldId, string? FieldName, EstimationBundle? Bundle = null)
+    /// <summary>A connection default as it stands: the field it names, for Estimation the whole bundle, and for parent sources the whole list as text.</summary>
+    public sealed record NamedField(int? FieldId, string? FieldName, EstimationBundle? Bundle = null, string? SourcesText = null)
     {
         public static readonly NamedField Nothing = new(null, null);
 
         // A rename keeps the field, so it is not a change of the default; for Estimation the unit, the
         // non-numeric switch and the categories are part of the default too.
         public bool IsTheSameDefaultAs(NamedField other)
-            => FieldId == other.FieldId && Equals(Bundle, other.Bundle);
+            => FieldId == other.FieldId && Equals(Bundle, other.Bundle) && SourcesText == other.SourcesText;
 
         /// <summary>How the log names the default, or null when it names no field.</summary>
         public string? Description => Bundle is null || FieldName is null ? FieldName : DescribeTheEstimation(FieldName, Bundle);

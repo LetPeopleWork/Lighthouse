@@ -87,8 +87,8 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             }
 
             var terms = OwnerTerms.From(terminologyService.GetAll());
-            var defaults = ConnectionFieldDefaults.All.Select(fieldDefault => new DefaultNamingAField(
-                $"{OwnerTerms.PossessiveOfPlural(terms.PluralFor(fieldDefault.HeldFor))} {fieldDefault.NameIn(terms)}", fieldDefault.FieldOn(connection)));
+            var defaults = ConnectionFieldDefaults.All.SelectMany(fieldDefault => fieldDefault.FieldsOn(connection).Select(field => new DefaultNamingAField(
+                $"{OwnerTerms.PossessiveOfPlural(terms.PluralFor(fieldDefault.HeldFor))} {fieldDefault.NameIn(terms)}", field)));
             return AdditionalFieldInUse.AmongTheRemoved(
                 removed, defaults, [.. WhatEachTeamOwnsOn(connection.Id), .. WhatEachPortfolioOwnsOn(connection.Id)]);
         }
@@ -221,8 +221,21 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
         private static NamedField HeldOn(WorkTrackingSystemConnection connection, ConnectionFieldDefault fieldDefault)
         {
-            var fieldId = fieldDefault.FieldOn(connection);
-            return new(fieldId, connection.DisplayNameOfField(fieldId), fieldDefault.BundleOn?.Invoke(connection));
+            int? fieldId = fieldDefault.FieldsOn(connection) is [var first, ..] ? first : null;
+            return fieldDefault.ParentSourcesOn?.Invoke(connection) is { } list
+                ? new(fieldId, DescribeTheSources(connection, list), null, list.ToStoredText())
+                : new(fieldId, connection.DisplayNameOfField(fieldId), fieldDefault.BundleOn?.Invoke(connection));
+        }
+
+        // A single field followed by the own Parent is what a single old default means as a list, so it is
+        // named by that field alone, the way the log has always named it.
+        private static string DescribeTheSources(WorkTrackingSystemConnection connection, ParentSources list)
+        {
+            var entries = list.Entries.Count == 2 && list.Entries[1] == ParentSourceEntry.TrackerParent ? list.Entries.Take(1) : list.Entries;
+
+            return string.Join(", ", entries.Select(entry => entry.AdditionalFieldDefinitionId is { } field
+                ? connection.DisplayNameOfField(field) ?? AdditionalFieldDefinition.NameOfAnUnknownField(field)
+                : "own Parent"));
         }
 
         private static OwnerWords WordsFor(DefaultHeldFor heldFor) => heldFor == DefaultHeldFor.Teams ? TeamWords : PortfolioWords;

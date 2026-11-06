@@ -21,14 +21,14 @@ namespace Lighthouse.Backend.Models
 
         public List<WriteBackMappingDefinition> WriteBackMappingDefinitions { get; } = [];
 
-        /// <summary>The Parent Override Field every Team on this connection reads while it follows the default.</summary>
+        /// <summary>Deprecated: the first field of <see cref="ParentSourcesForTeams"/>, kept for a build one release back.</summary>
         public int? ParentOverrideForTeams
         {
             get => parentOverrideForTeams;
             set => (ParentSourcesForTeams, parentOverrideForTeams) = (DefaultListInStepWith(value, ParentSourcesForTeams), value);
         }
 
-        /// <summary>The Parent Override Field every Portfolio on this connection reads while it follows the default.</summary>
+        /// <summary>Deprecated: the first field of <see cref="ParentSourcesForPortfolios"/>, kept for a build one release back.</summary>
         public int? ParentOverrideForPortfolios
         {
             get => parentOverrideForPortfolios;

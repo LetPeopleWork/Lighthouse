@@ -4,9 +4,12 @@ using System.Text.Json.Serialization;
 
 namespace Lighthouse.Backend.API.DTO
 {
+    /// <summary>What a save means for a default that holds a list of parent sources; Outcome is null when it clears the default.</summary>
+    public sealed record ParentSourcesChoice(ParentSourcesOutcome? Outcome);
+
     /// <summary>
     /// The settings a connection holds for every Team or Portfolio on it that follows them: an Additional Field id each,
-    /// and an Estimation bundle per grain.
+    /// the parent sources as an ordered list, and an Estimation bundle per grain.
     /// </summary>
     public class ConnectionDefaultsDto
     {
@@ -18,7 +21,12 @@ namespace Lighthouse.Backend.API.DTO
         {
             foreach (var fieldDefault in ConnectionFieldDefaults.All)
             {
-                sent[fieldDefault.Setting] = fieldDefault.FieldOn(connection);
+                sent[fieldDefault.Setting] = fieldDefault.FieldsOn(connection) is [var first, ..] ? first : null;
+
+                if (fieldDefault.ParentSourcesOn is { } parentSourcesOn)
+                {
+                    lists[fieldDefault.Setting] = parentSourcesOn(connection) is { } list ? ParentSourceEntryDto.ListOf(list) : null;
+                }
             }
 
             estimations[ConnectionDefaultSetting.EstimationForTeams] = EstimationDefaultDto.From(connection.EstimationForTeams);
@@ -33,16 +41,33 @@ namespace Lighthouse.Backend.API.DTO
         // The whole Estimation bundle sent for each grain, beside its field in the map above.
         private readonly Dictionary<ConnectionDefaultSetting, EstimationDefaultDto?> estimations = [];
 
+        // The list of parent sources sent for each grain, beside its old single field in the map above.
+        private readonly Dictionary<ConnectionDefaultSetting, List<ParentSourceEntryDto?>?> lists = [];
+
+        /// <summary>Deprecated: the first field of <see cref="ParentSourcesForTeams"/>, for clients that only know one field.</summary>
         public int? ParentOverrideForTeams
         {
             get => FieldOf(ConnectionDefaultSetting.ParentOverrideForTeams);
             set => sent[ConnectionDefaultSetting.ParentOverrideForTeams] = value;
         }
 
+        /// <summary>Deprecated: the first field of <see cref="ParentSourcesForPortfolios"/>, for clients that only know one field.</summary>
         public int? ParentOverrideForPortfolios
         {
             get => FieldOf(ConnectionDefaultSetting.ParentOverrideForPortfolios);
             set => sent[ConnectionDefaultSetting.ParentOverrideForPortfolios] = value;
+        }
+
+        public List<ParentSourceEntryDto?>? ParentSourcesForTeams
+        {
+            get => lists.GetValueOrDefault(ConnectionDefaultSetting.ParentOverrideForTeams);
+            set => lists[ConnectionDefaultSetting.ParentOverrideForTeams] = value;
+        }
+
+        public List<ParentSourceEntryDto?>? ParentSourcesForPortfolios
+        {
+            get => lists.GetValueOrDefault(ConnectionDefaultSetting.ParentOverrideForPortfolios);
+            set => lists[ConnectionDefaultSetting.ParentOverrideForPortfolios] = value;
         }
 
         public int? DependencyFieldForPortfolios
@@ -75,10 +100,44 @@ namespace Lighthouse.Backend.API.DTO
             set => SendEstimation(ConnectionDefaultSetting.EstimationForPortfolios, value);
         }
 
-        public bool Sends(ConnectionDefaultSetting setting) => sent.ContainsKey(setting);
+        public bool Sends(ConnectionDefaultSetting setting) => sent.ContainsKey(setting) || lists.ContainsKey(setting);
 
         /// <summary>The field the save names for a default; null when it clears the default or does not send it.</summary>
         public int? FieldOf(ConnectionDefaultSetting setting) => sent.GetValueOrDefault(setting);
+
+        /// <summary>Every field the save names for a default: the whole list when it means one, else the single field.</summary>
+        public IReadOnlyList<int> FieldsOf(ConnectionDefaultSetting setting, ParentSources? held)
+        {
+            if (ParentSourcesChoiceFor(setting, held) is { } choice)
+            {
+                return [.. choice.Outcome?.List?.Entries.Select(entry => entry.AdditionalFieldDefinitionId).OfType<int>() ?? []];
+            }
+
+            return FieldOf(setting) is { } field ? [field] : [];
+        }
+
+        /// <summary>
+        /// What the save means by a default that holds a list; null when it sends no list or when the old single
+        /// field is the edit. A client that knows only the old field sends back the list it read together with the
+        /// field it changed, so a list equal to the one held, beside a field that differs from the list's first, is
+        /// that echo.
+        /// </summary>
+        public ParentSourcesChoice? ParentSourcesChoiceFor(ConnectionDefaultSetting setting, ParentSources? held)
+        {
+            if (!lists.TryGetValue(setting, out var sentList) || TheOldFieldIsTheEdit(setting, sentList, held))
+            {
+                return null;
+            }
+
+            return new(sentList is null ? null : ParentSources.Of(sentList.Select(entry => entry?.ToEntry()!)));
+        }
+
+        private bool TheOldFieldIsTheEdit(ConnectionDefaultSetting setting, List<ParentSourceEntryDto?>? sentList, ParentSources? held)
+            => sent.TryGetValue(setting, out var oldField)
+                && oldField != held?.ToTheLegacyField()
+                && TextOf(sentList) == TextOf(held is null ? null : ParentSourceEntryDto.ListOf(held));
+
+        private static string TextOf(List<ParentSourceEntryDto?>? list) => JsonSerializer.Serialize(list);
 
         /// <summary>The Estimation bundle the save sends for a default; None when it clears it, null when it sends none.</summary>
         public EstimationBundle? BundleOf(ConnectionDefaultSetting setting)
@@ -99,6 +158,7 @@ namespace Lighthouse.Backend.API.DTO
             => NotHeldByThisBuild?.Where(named => named.Value.ValueKind != JsonValueKind.Null).Select(named => named.Key) ?? [];
 
         public IEnumerable<ConnectionDefaultSetting> Named()
-            => ConnectionFieldDefaults.All.Select(fieldDefault => fieldDefault.Setting).Where(setting => FieldOf(setting).HasValue);
+            => ConnectionFieldDefaults.All.Select(fieldDefault => fieldDefault.Setting)
+                .Where(setting => FieldOf(setting).HasValue || lists.GetValueOrDefault(setting) is not null);
     }
 }

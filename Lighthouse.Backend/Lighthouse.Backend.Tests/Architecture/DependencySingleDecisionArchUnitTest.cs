@@ -148,9 +148,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             typeof(WorkTrackingSystemOptionsOwner).FullName!,
             typeof(Team).FullName!,
             typeof(Portfolio).FullName!,
-
-            // The registry rows of the two connection defaults still name the old single field. They move to the list with the defaults.
-            typeof(ConnectionFieldDefaults).FullName!,
         ];
 
         private static readonly (Type DeclaredOn, string Member)[] TheOldParentMembers =

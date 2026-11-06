@@ -468,6 +468,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected async Task<int?> TheOldNumberTheConnectionStillCarriesForTeams(string connection)
             => DefaultsOf(await TheConnectionAsThePageReadsIt(connection))["parentOverrideForTeams"]?.GetValue<int>();
 
+        protected async Task<int?> TheOldNumberTheConnectionStillCarriesForPortfolios(string connection)
+            => DefaultsOf(await TheConnectionAsThePageReadsIt(connection))["parentOverrideForPortfolios"]?.GetValue<int>();
+
         protected Task<int> TheNumberOfTheField(string connection, string fieldName) => TheFieldId(connection, fieldName);
 
         private static JsonArray TheListOf(JsonObject connectionRead, string[] sources)

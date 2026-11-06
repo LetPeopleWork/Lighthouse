@@ -5,22 +5,19 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
 {
     /// <summary>
-    /// The parent sources a connection holds as the default for its Teams. They run through the running
-    /// application on the harness of the neighbouring connection-defaults scenarios, where a System Admin saves a
-    /// connection and the Teams that follow it update. The harness has gained the helpers that save a default as a
-    /// list and read one back by name; the neighbours that arrange the old single-field default move to the list
-    /// in the same step as the code they exercise.
+    /// The parent sources a connection holds as the default for its Teams and for its Portfolios. They run
+    /// through the running application on the harness of the neighbouring connection-defaults scenarios, where a
+    /// System Admin saves a connection and the Teams that follow it update. The harness saves a default as a list
+    /// and reads one back by name; the neighbours that arrange the old single-field default move to the list in
+    /// the same step as the code they exercise.
     ///
-    /// The scenarios are written against the planned shape of the connection's defaults and the owner's settings
-    /// (<c>parentSourcesForTeams</c> and <c>parentSources</c>, in the same words the browser sends). What is
-    /// missing until the slice builds it: those two members, the follower queueing that reads the list, and the
-    /// harness's stand-in tracker, which still hangs an item under the first field it is handed, so "reads the new
-    /// order" is shown by which field the tracker was asked to read first. An old single default shown as the field
-    /// then the tracker's own parent is pinned by the migration class. The rule that a field in use cannot be
-    /// removed from its connection is the field-in-use scenario in this class.
+    /// The scenarios speak the words the browser sends: <c>parentSourcesForTeams</c>, <c>parentSourcesForPortfolios</c>
+    /// and, on an owner, <c>parentSources</c>. The harness's stand-in tracker hangs an item under the first field it
+    /// is handed, so "reads the new order" is shown by which field the tracker was asked to read first. An old
+    /// single default shown as the field then the tracker's own parent is pinned by the migration class. The rule
+    /// that a field in use cannot be removed from its connection is the field-in-use scenario in this class.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: needs the connection's parentSourcesForTeams default, the owner's parentSources and the list-aware follower queueing.")]
     public class ConnectionParentSourcesScenarios : ConnectionDefaultsAcceptanceTest
     {
         private const string Chargebacks = "Chargebacks";
@@ -144,6 +141,29 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
                 Assert.That(afterTheScript, Is.EqualTo(new[] { ParentLink, CausedBy }).AsCollection, "A save that never mentions the list must not clear it.");
                 Assert.That(afterClearing, Is.Empty);
                 Assert.That(numberAfterClearing, Is.Null);
+            }
+        }
+
+        /// <summary>
+        /// Given a connection, when a System Admin saves the Portfolios default as a list, then it reads back in
+        /// the same order with the old number as its first field, and the Teams default stays as it was.
+        /// </summary>
+        [Test]
+        public async Task The_Portfolios_default_saves_and_reads_back_as_a_list_and_leaves_the_Teams_default_alone()
+        {
+            await GivenTheTeamsListIs(CausedBy);
+
+            await GivenThePortfoliosListIs(ParentLink, CausedBy, TheTrackersOwnParentSource);
+            var portfolios = await TheSourcesOfThePortfoliosDefaultOn(JiraDcPayments);
+            var teams = await TheSourcesOfTheTeamsDefaultOn(JiraDcPayments);
+            var oldNumber = await TheOldNumberTheConnectionStillCarriesForPortfolios(JiraDcPayments);
+            var firstField = await TheNumberOfTheField(JiraDcPayments, ParentLink);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(portfolios, Is.EqualTo(new[] { ParentLink, CausedBy, TheTrackersOwnParentSource }).AsCollection);
+                Assert.That(oldNumber, Is.EqualTo(firstField));
+                Assert.That(teams, Is.EqualTo(new[] { CausedBy }).AsCollection);
             }
         }
     }

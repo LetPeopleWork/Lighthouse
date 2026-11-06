@@ -7,15 +7,17 @@ namespace Lighthouse.Backend.Models
         Portfolios,
     }
 
-    /// <summary>A connection default that names one of the connection's Additional Fields, and what that field is called.</summary>
+    /// <summary>A connection default that names Additional Fields of the connection, and what that default is called.</summary>
     public sealed record ConnectionFieldDefault(
         ConnectionDefaultSetting Setting,
         DefaultHeldFor HeldFor,
         Func<OwnerTerms, string> NameIn,
-        Func<WorkTrackingSystemConnection, int?> FieldOn,
+        Func<WorkTrackingSystemConnection, IReadOnlyList<int>> FieldsOn,
         Action<WorkTrackingSystemConnection, int?> PointAt,
         Action<WorkTrackingSystemConnection, EstimationBundle>? HoldBundle = null,
-        Func<WorkTrackingSystemConnection, EstimationBundle>? BundleOn = null)
+        Func<WorkTrackingSystemConnection, EstimationBundle>? BundleOn = null,
+        Action<WorkTrackingSystemConnection, ParentSources?>? HoldParentSources = null,
+        Func<WorkTrackingSystemConnection, ParentSources?>? ParentSourcesOn = null)
     {
         /// <summary>The name in the words Lighthouse seeds, for the log an operator reads.</summary>
         public string FieldName => NameIn(OwnerTerms.Seeded);
@@ -25,26 +27,35 @@ namespace Lighthouse.Backend.Models
     {
         public static string FeatureOwnerFieldIn(OwnerTerms terms) => $"{terms.Feature} Owner Field";
 
+        private static IReadOnlyList<int> AtMostOne(int? field) => field is { } id ? [id] : [];
+
+        private static IReadOnlyList<int> FieldsListedIn(ParentSources? list)
+            => [.. list?.Entries.Select(entry => entry.AdditionalFieldDefinitionId).OfType<int>() ?? []];
+
         /// <summary>Every default a connection holds as one of its fields, in the order they are checked, logged and named.</summary>
         public static readonly IReadOnlyList<ConnectionFieldDefault> All =
         [
             new(ConnectionDefaultSetting.ParentOverrideForTeams, DefaultHeldFor.Teams, _ => "Parent sources",
-                connection => connection.ParentOverrideForTeams, (connection, field) => connection.ParentOverrideForTeams = field),
+                connection => FieldsListedIn(connection.ParentSourcesForTeams), (connection, field) => connection.ParentOverrideForTeams = field,
+                HoldParentSources: (connection, list) => connection.SetParentSourcesDefaultForTeams(list),
+                ParentSourcesOn: connection => connection.ParentSourcesForTeams),
             new(ConnectionDefaultSetting.ParentOverrideForPortfolios, DefaultHeldFor.Portfolios, _ => "Parent sources",
-                connection => connection.ParentOverrideForPortfolios, (connection, field) => connection.ParentOverrideForPortfolios = field),
+                connection => FieldsListedIn(connection.ParentSourcesForPortfolios), (connection, field) => connection.ParentOverrideForPortfolios = field,
+                HoldParentSources: (connection, list) => connection.SetParentSourcesDefaultForPortfolios(list),
+                ParentSourcesOn: connection => connection.ParentSourcesForPortfolios),
             new(ConnectionDefaultSetting.DependencyFieldForPortfolios, DefaultHeldFor.Portfolios, _ => "Dependency Field",
-                connection => connection.DependencyFieldForPortfolios, (connection, field) => connection.DependencyFieldForPortfolios = field),
+                connection => AtMostOne(connection.DependencyFieldForPortfolios), (connection, field) => connection.DependencyFieldForPortfolios = field),
             new(ConnectionDefaultSetting.SizeEstimateFieldForPortfolios, DefaultHeldFor.Portfolios, _ => "Size Estimate Field",
-                connection => connection.SizeEstimateFieldForPortfolios, (connection, field) => connection.SizeEstimateFieldForPortfolios = field),
+                connection => AtMostOne(connection.SizeEstimateFieldForPortfolios), (connection, field) => connection.SizeEstimateFieldForPortfolios = field),
             new(ConnectionDefaultSetting.FeatureOwnerFieldForPortfolios, DefaultHeldFor.Portfolios, FeatureOwnerFieldIn,
-                connection => connection.FeatureOwnerFieldForPortfolios, (connection, field) => connection.FeatureOwnerFieldForPortfolios = field),
+                connection => AtMostOne(connection.FeatureOwnerFieldForPortfolios), (connection, field) => connection.FeatureOwnerFieldForPortfolios = field),
             new(ConnectionDefaultSetting.EstimationForTeams, DefaultHeldFor.Teams, _ => "Estimation",
-                connection => connection.EstimationForTeams.AdditionalFieldDefinitionId,
+                connection => AtMostOne(connection.EstimationForTeams.AdditionalFieldDefinitionId),
                 (connection, field) => connection.EstimationForTeams = connection.EstimationForTeams.PointingAt(field),
                 (connection, bundle) => connection.EstimationForTeams = bundle,
                 connection => connection.EstimationForTeams),
             new(ConnectionDefaultSetting.EstimationForPortfolios, DefaultHeldFor.Portfolios, _ => "Estimation",
-                connection => connection.EstimationForPortfolios.AdditionalFieldDefinitionId,
+                connection => AtMostOne(connection.EstimationForPortfolios.AdditionalFieldDefinitionId),
                 (connection, field) => connection.EstimationForPortfolios = connection.EstimationForPortfolios.PointingAt(field),
                 (connection, bundle) => connection.EstimationForPortfolios = bundle,
                 connection => connection.EstimationForPortfolios),

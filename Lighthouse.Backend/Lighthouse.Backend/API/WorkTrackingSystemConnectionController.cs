@@ -120,6 +120,11 @@ namespace Lighthouse.Backend.API
 
             if (updatedConnection.Defaults is { } defaults)
             {
+                if (DefaultListThatCannotBeKept(save, defaults) is { } cannotBeKept)
+                {
+                    return RefusedAsParentSourcesThatCannotBeKept(cannotBeKept.Row, cannotBeKept.Violations);
+                }
+
                 if (DefaultNamingNoFieldOfTheConnection(save, defaults, newFields) is { } namingNoField)
                 {
                     return RefusedAsNamingNoFieldOfTheConnection(namingNoField);
@@ -217,14 +222,38 @@ namespace Lighthouse.Backend.API
         // that the save refuses the removal and says the default still uses that field.
         private static ConnectionDefaultSetting? DefaultNamingNoFieldOfTheConnection(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
             => ConnectionFieldDefaults.All
-                .Where(fieldDefault => !NamesAFieldOfTheConnection(save, defaults.FieldOf(fieldDefault.Setting), newFields))
+                .Where(fieldDefault => !NamesOnlyFieldsOfTheConnection(save, defaults, fieldDefault, newFields))
                 .Select(fieldDefault => (ConnectionDefaultSetting?)fieldDefault.Setting)
+                .FirstOrDefault();
+
+        // A list names only fields that are stored: one added in this same save has no id yet, and is picked
+        // for the list on the next save.
+        private static bool NamesOnlyFieldsOfTheConnection(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, ConnectionFieldDefault fieldDefault, NewAdditionalFieldTargets newFields)
+            => HeldListOf(save, fieldDefault) is var held && defaults.ParentSourcesChoiceFor(fieldDefault.Setting, held) is not null
+                ? defaults.FieldsOf(fieldDefault.Setting, held).All(field => save.Connection.HoldsStoredField(field) || save.Removes(field))
+                : NamesAFieldOfTheConnection(save, defaults.FieldOf(fieldDefault.Setting), newFields);
+
+        private static ParentSources? HeldListOf(ConnectionSaveHandle save, ConnectionFieldDefault fieldDefault)
+            => fieldDefault.ParentSourcesOn?.Invoke(save.Connection);
+
+        private static (ConnectionFieldDefault Row, IReadOnlyList<ParentSourcesViolation> Violations)? DefaultListThatCannotBeKept(ConnectionSaveHandle save, ConnectionDefaultsDto defaults)
+            => ConnectionFieldDefaults.All
+                .Select(fieldDefault => (Row: fieldDefault, Choice: defaults.ParentSourcesChoiceFor(fieldDefault.Setting, HeldListOf(save, fieldDefault))))
+                .Where(each => each.Choice?.Outcome is { List: null })
+                .Select(each => ((ConnectionFieldDefault, IReadOnlyList<ParentSourcesViolation>)?)(each.Row, each.Choice!.Outcome!.Violations))
                 .FirstOrDefault();
 
         private static void ApplyDefaults(ConnectionSaveHandle save, ConnectionDefaultsDto defaults, NewAdditionalFieldTargets newFields)
         {
             foreach (var fieldDefault in ConnectionFieldDefaults.All.Where(fieldDefault => defaults.Sends(fieldDefault.Setting)))
             {
+                if (fieldDefault.HoldParentSources is { } holdParentSources
+                    && defaults.ParentSourcesChoiceFor(fieldDefault.Setting, HeldListOf(save, fieldDefault)) is { } choice)
+                {
+                    holdParentSources(save.Connection, choice.Outcome?.List);
+                    continue;
+                }
+
                 var named = defaults.FieldOf(fieldDefault.Setting);
                 var addedInThisSave = newFields.FieldNamedBy(named);
                 if (defaults.BundleOf(fieldDefault.Setting) is { } bundle)
@@ -259,6 +288,35 @@ namespace Lighthouse.Backend.API
                 "connection-default-not-supported",
                 title: "This connection cannot hold these defaults.",
                 detail: $"Not supported for this connection by this version of Lighthouse: {string.Join(", ", unsupported)}.");
+
+        private ObjectResult RefusedAsParentSourcesThatCannotBeKept(ConnectionFieldDefault row, IReadOnlyList<ParentSourcesViolation> violations)
+        {
+            var owners = row.HeldFor == DefaultHeldFor.Teams ? "Teams" : "Portfolios";
+            var why = WhyTheListCannotBeKept(violations);
+
+            return this.RefusedWithCode(
+                StatusCodes.Status400BadRequest,
+                "connection-parent-sources-refused",
+                title: $"The {owners}' default names parent sources that cannot be kept.",
+                detail: $"{why}. Nothing was saved.");
+        }
+
+        private static string WhyTheListCannotBeKept(IReadOnlyList<ParentSourcesViolation> violations)
+        {
+            if (violations.Contains(ParentSourcesViolation.FieldWithoutAnId))
+            {
+                return "A source is the own Parent or one Additional Field";
+            }
+
+            if (violations.Contains(ParentSourcesViolation.Empty))
+            {
+                return "A list needs at least one source";
+            }
+
+            return violations.Contains(ParentSourcesViolation.TooMany)
+                ? $"A list holds at most {ParentSources.Maximum} sources"
+                : "A source is listed twice";
+        }
 
         private ObjectResult RefusedAsNamingNoFieldOfTheConnection(ConnectionDefaultSetting namingNoField)
             => this.RefusedWithCode(

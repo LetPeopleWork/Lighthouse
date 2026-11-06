@@ -239,7 +239,7 @@ namespace Lighthouse.Backend.Tests.Models
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(kind.Held(connection)?.Entries, Is.EqualTo(TheFieldThenTheOwnParent(C)).AsCollection);
-                Assert.That(TheRegistryRow(kind.Setting).FieldOn(connection), Is.EqualTo(C));
+                Assert.That(TheRegistryRow(kind.Setting).FieldsOn(connection), Is.EqualTo(new[] { C }).AsCollection);
             }
         }
 
@@ -254,7 +254,7 @@ namespace Lighthouse.Backend.Tests.Models
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(kind.Held(connection), Is.Null, "A connection that names no default holds no list, as the upgrade leaves it.");
-                Assert.That(TheRegistryRow(kind.Setting).FieldOn(connection), Is.Null);
+                Assert.That(TheRegistryRow(kind.Setting).FieldsOn(connection), Is.Empty);
             }
         }
 
