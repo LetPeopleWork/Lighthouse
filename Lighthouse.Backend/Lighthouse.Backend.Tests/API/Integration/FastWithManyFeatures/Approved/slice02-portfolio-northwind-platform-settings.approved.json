@@ -60,6 +60,12 @@
   "serviceLevelExpectationRange": 0,
   "workTrackingSystemConnectionId": 1,
   "systemWIPLimit": 0,
+  "parentSources": [
+    {
+      "kind": "TrackerParent"
+    }
+  ],
+  "parentSourcesDefault": null,
   "parentOverrideAdditionalFieldDefinitionId": null,
   "parentOverrideSource": "ConnectionDefault",
   "parentOverrideDefaultName": null,

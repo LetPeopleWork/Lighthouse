@@ -37,7 +37,16 @@ namespace Lighthouse.Backend.API.Helpers
                     detail: $"The {unknown.Setting} source must be one of: {string.Join(", ", Enum.GetNames<SettingSource>())}. {NothingWasSaved}");
             }
 
-            if (owner is not null && sourced.Find(each => NamesAFieldItsConnectionLacks(owner, setting, each.FieldOwnedOnceTaken())) is { } lacking)
+            if (owner?.ParentSourcesOwnedOnceTaken(setting) is { List: null } refused)
+            {
+                return controller.RefusedWithCode(
+                    StatusCodes.Status400BadRequest,
+                    $"{kind.Code}-parent-sources-refused",
+                    title: $"The {NounFor(kind)} names parent sources that cannot be kept.",
+                    detail: $"{WhyTheListCannotBeKept(refused.Violations, owner, setting)}. {NothingWasSaved}");
+            }
+
+            if (owner is not null && sourced.Find(each => each.FieldsOwnedOnceTaken().Any(field => NamesAFieldItsConnectionLacks(owner, setting, field))) is { } lacking)
             {
                 return controller.RefusedWithCode(
                     StatusCodes.Status400BadRequest,
@@ -49,7 +58,7 @@ namespace Lighthouse.Backend.API.Helpers
             return null;
         }
 
-        private sealed record SourcedSetting(string Setting, SettingSource? Source, Func<int?> FieldOwnedOnceTaken);
+        private sealed record SourcedSetting(string Setting, SettingSource? Source, Func<IEnumerable<int?>> FieldsOwnedOnceTaken);
 
         // What each owner would hold is worked out only once every sent source is known, since reading a
         // setting under a source this version does not know has no answer.
@@ -57,24 +66,57 @@ namespace Lighthouse.Backend.API.Helpers
         {
             var sourced = new List<SourcedSetting>
             {
-                new("Parent Override Field", setting.ParentOverrideSource,
-                    () => owner?.ParentOverrideOwnedOnceTaken(setting.ParentOverrideSource, setting.ParentOverrideAdditionalFieldDefinitionId)),
+                new("Parent Override Field", setting.ParentOverrideSource, () => ParentFieldsOwnedOnceTaken(owner, setting)),
                 new("Estimation Field", setting.EstimationSource,
-                    () => owner?.EstimationOwnedOnceTaken(setting.EstimationSource, setting.EstimationAsSent())),
+                    () => [owner?.EstimationOwnedOnceTaken(setting.EstimationSource, setting.EstimationAsSent())]),
             };
 
             if (setting is PortfolioSettingDto portfolioSetting)
             {
                 var portfolio = owner as Portfolio;
                 sourced.Add(new("Dependency Field", portfolioSetting.DependencyFieldSource,
-                    () => portfolio?.DependencyFieldOwnedOnceTaken(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId)));
+                    () => [portfolio?.DependencyFieldOwnedOnceTaken(portfolioSetting.DependencyFieldSource, portfolioSetting.DependencyOverrideAdditionalFieldDefinitionId)]));
                 sourced.Add(new("Size Estimate Field", portfolioSetting.SizeEstimateSource,
-                    () => portfolio?.SizeEstimateFieldOwnedOnceTaken(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId)));
+                    () => [portfolio?.SizeEstimateFieldOwnedOnceTaken(portfolioSetting.SizeEstimateSource, portfolioSetting.SizeEstimateAdditionalFieldDefinitionId)]));
                 sourced.Add(new(ConnectionFieldDefaults.FeatureOwnerFieldIn(terms), portfolioSetting.FeatureOwnerSource,
-                    () => portfolio?.FeatureOwnerFieldOwnedOnceTaken(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId)));
+                    () => [portfolio?.FeatureOwnerFieldOwnedOnceTaken(portfolioSetting.FeatureOwnerSource, portfolioSetting.FeatureOwnerAdditionalFieldDefinitionId)]));
             }
 
             return sourced;
+        }
+
+        private static IEnumerable<int?> ParentFieldsOwnedOnceTaken(WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
+            => owner?.ParentSourcesOwnedOnceTaken(setting)?.List is { } list
+                ? list.Entries.Select(entry => entry.AdditionalFieldDefinitionId)
+                : [owner?.ParentOverrideOwnedOnceTaken(setting.ParentOverrideSource, owner.ParentOverrideFieldAsSent(setting))];
+
+        private string WhyTheListCannotBeKept(IReadOnlyList<ParentSourcesViolation> violations, WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase setting)
+        {
+            if (violations.Contains(ParentSourcesViolation.FieldWithoutAnId))
+            {
+                return "A source is the own Parent or one Additional Field";
+            }
+
+            if (violations.Contains(ParentSourcesViolation.Empty))
+            {
+                return "A list needs at least one source";
+            }
+
+            if (violations.Contains(ParentSourcesViolation.TooMany))
+            {
+                return $"A list holds at most {ParentSources.Maximum} sources";
+            }
+
+            return $"{NameOfTheRepeatedEntry(owner, setting)} is already in the list";
+        }
+
+        private string NameOfTheRepeatedEntry(WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase setting)
+        {
+            var repeated = setting.ParentSources?.GroupBy(entry => entry).First(group => group.Count() > 1).Key;
+
+            return repeated?.AdditionalFieldDefinitionId is { } field
+                ? TheConnectionTheSaveLeavesItOn(owner, setting)?.DisplayNameOfField(field) ?? $"Field {field}"
+                : "Parent";
         }
 
         private string NounFor(SettingsOwnerKind kind) => kind.NounIn(TheTermsThisInstanceUses());

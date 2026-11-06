@@ -25,6 +25,7 @@ namespace Lighthouse.Backend.Tests.API.DTO
             [nameof(SettingsOwnerDtoBase.DataRetrievalSchema)] = "derived from the work tracking system of the connection",
             [nameof(TeamSettingDto.Refinement)] = "kept only for states that are in the To Do or Doing lists, so an arbitrary value cannot round-trip",
             [nameof(PortfolioSettingDto.InvolvedTeams)] = "derived from the Features of the Portfolio, never stored from the payload",
+            [nameof(SettingsOwnerDtoBase.ParentOverrideAdditionalFieldDefinitionId)] = "read back as the first field of ParentSources, and a save that sends the list ignores it",
         };
 
         [Test]
@@ -130,6 +131,15 @@ namespace Lighthouse.Backend.Tests.API.DTO
             if (type == typeof(List<CycleTimeDefinitionDto>))
             {
                 return new List<CycleTimeDefinitionDto> { new() { Id = 1, Name = "Lead", StartState = "Review", EndState = "Testing" } };
+            }
+
+            if (type == typeof(List<ParentSourceEntryDto?>))
+            {
+                return new List<ParentSourceEntryDto?>
+                {
+                    new() { Kind = ParentSourceKind.TrackerParent },
+                    new() { Kind = ParentSourceKind.AdditionalField, AdditionalFieldDefinitionId = 10 + ordinal },
+                };
             }
 
             if (type == typeof(EntityReferenceDto))

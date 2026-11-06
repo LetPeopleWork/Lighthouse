@@ -17,13 +17,13 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
 {
     /// <summary>
-    /// The one thin pass through the running application for the parent sources a Team keeps: a Team admin
-    /// saves an ordered list and reads it back in the same order, and a list that cannot be kept is refused with
-    /// a plain message and leaves the saved list as it was. The rules themselves are pinned without a host in
+    /// The one thin pass through the running application for the parent sources a Team or a Portfolio keeps: an
+    /// admin saves an ordered list and reads it back in the same order, a list that cannot be kept is refused with
+    /// a plain message and leaves the saved list as it was, and a client that only knows the old single field
+    /// cannot overwrite a list it never saw. The rules themselves are pinned without a host in
     /// <c>ParentSourcesTest</c>; the host is built once for the fixture.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: enable when the Team settings carry the parent source list.")]
     public class ParentSourcesSettingsApiIntegrationTest
     {
         // The text the browser sends for a saved list, kinds as words, an own-parent entry carrying no field.
@@ -39,8 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         private static readonly string[] FieldThenOwnParentKinds = ["AdditionalField", "TrackerParent"];
 
         private static readonly string[] OwnParentThenFieldKinds = ["TrackerParent", "AdditionalField"];
-
-        private static readonly string[] TheListATeamStartsWithKinds = ["TrackerParent"];
 
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;
@@ -147,6 +145,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
                 Assert.That(afterSaving.Select(entry => (string?)entry!["kind"]), Is.EqualTo(FieldThenOwnParentKinds).AsCollection,
                     "The order is what decides which parent wins, so it must come back as it was saved.");
                 Assert.That((int?)afterSaving[0]!["additionalFieldDefinitionId"], Is.EqualTo(TheFieldTheListsNameInTheirText));
+                Assert.That(afterSaving.ToJsonString(), Is.EqualTo(FieldThenOwnParent),
+                    "Kinds travel as words and an own-parent entry carries no field, in the very text the browser sends.");
                 Assert.That(reordered.StatusCode, Is.EqualTo(HttpStatusCode.OK));
                 Assert.That(afterReordering.Select(entry => (string?)entry!["kind"]), Is.EqualTo(OwnParentThenFieldKinds).AsCollection);
             }
@@ -157,17 +157,72 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         [TestCase(0, "A list needs at least one source", Description = "No source at all")]
         public async Task A_list_that_cannot_be_kept_is_refused_with_a_plain_message_and_nothing_is_saved(int howMany, string message)
         {
+            GivenTheTeamKeeps(ParentSourceEntry.Field(fieldIds[1]), ParentSourceEntry.TrackerParent);
             client.AsTeamAdmin(teamId);
-            var theListTheTeamStartedWith = await PutTheTeamListing(OwnParentAlone);
-            Assert.That(theListTheTeamStartedWith.StatusCode, Is.EqualTo(HttpStatusCode.OK));
-            var sixDifferentFields = string.Join(",", fieldIds.Select(id => $$"""{"kind":"AdditionalField","additionalFieldDefinitionId":{{id}}}"""));
-            var theSameFieldTwice = $$"""{"kind":"AdditionalField","additionalFieldDefinitionId":{{fieldIds[0]}}}""";
-            var list = howMany switch
+
+            var response = await PutTheTeamListing(AListOf(howMany));
+            var body = await response.Content.ReadAsStringAsync();
+            var afterwards = await TheSavedList();
+
+            using (Assert.EnterMultipleScope())
             {
-                6 => $"[{sixDifferentFields}]",
-                2 => $"[{theSameFieldTwice},{theSameFieldTwice}]",
-                _ => "[]",
-            };
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(body, Does.Contain(message));
+                Assert.That(afterwards.ToJsonString(), Is.EqualTo(FieldThenOwnParent),
+                    "A refused save must leave the list the Team had.");
+            }
+        }
+
+        [TestCase(6, "A list holds at most 5 sources", Description = "A sixth source")]
+        [TestCase(2, "Caused by is already in the list", Description = "The same source twice")]
+        [TestCase(0, "A list needs at least one source", Description = "No source at all")]
+        public async Task A_Portfolios_list_that_cannot_be_kept_is_refused_with_a_plain_message_and_nothing_is_saved(int howMany, string message)
+        {
+            var portfolioId = GivenAPortfolioThatKeeps(ParentSourceEntry.Field(fieldIds[1]), ParentSourceEntry.TrackerParent);
+            client.AsPortfolioAdmin(portfolioId);
+
+            var response = await PutThePortfolioListing(portfolioId, AListOf(howMany));
+            var body = await response.Content.ReadAsStringAsync();
+            var afterwards = await SettingsAt($"/api/latest/portfolios/{portfolioId}/settings");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(body, Does.Contain(message));
+                Assert.That(afterwards["parentSources"]?.ToJsonString(), Is.EqualTo(FieldThenOwnParent),
+                    "A refused save must leave the list the Portfolio had.");
+            }
+        }
+
+        [Test]
+        public async Task An_entry_naming_a_field_the_connection_lacks_is_refused_and_nothing_is_saved()
+        {
+            GivenTheTeamKeeps(ParentSourceEntry.Field(fieldIds[1]), ParentSourceEntry.TrackerParent);
+            client.AsTeamAdmin(teamId);
+            var aFieldNoConnectionHolds = fieldIds.Max() + 1;
+
+            var response = await PutTheTeamListing(
+                $$"""[{"kind":"AdditionalField","additionalFieldDefinitionId":{{fieldIds[0]}}},{"kind":"AdditionalField","additionalFieldDefinitionId":{{aFieldNoConnectionHolds}}}]""");
+            var body = await response.Content.ReadAsStringAsync();
+            var afterwards = await TheSavedList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(body, Does.Contain("is not an Additional Field of this"));
+                Assert.That(afterwards.ToJsonString(), Is.EqualTo(FieldThenOwnParent),
+                    "Every entry is judged, not only the first, so a later one can refuse the save too.");
+            }
+        }
+
+        [TestCase("""[{"kind":"AdditionalField"}]""", Description = "A field entry that names no field")]
+        [TestCase("""[{"kind":"TrackerParent","additionalFieldDefinitionId":2}]""", Description = "An own-parent entry that names a field")]
+        [TestCase("""[{"additionalFieldDefinitionId":2}]""", Description = "An entry of no kind")]
+        [TestCase("""[null]""", Description = "No entry where one belongs")]
+        public async Task An_entry_that_is_neither_the_own_parent_nor_a_field_is_refused_and_nothing_is_saved(string list)
+        {
+            GivenTheTeamKeeps(ParentSourceEntry.Field(fieldIds[1]), ParentSourceEntry.TrackerParent);
+            client.AsTeamAdmin(teamId);
 
             var response = await PutTheTeamListing(list);
             var body = await response.Content.ReadAsStringAsync();
@@ -176,29 +231,220 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-                Assert.That(body, Does.Contain(message));
-                Assert.That(afterwards.Select(entry => (string?)entry!["kind"]), Is.EqualTo(TheListATeamStartsWithKinds).AsCollection,
-                    "A refused save must leave the list the Team had.");
+                Assert.That(body, Does.Contain("A source is the own Parent or one Additional Field"));
+                Assert.That(afterwards.ToJsonString(), Is.EqualTo(FieldThenOwnParent));
             }
         }
 
-        private async Task<HttpResponseMessage> PutTheTeamListing(string parentSourcesAsTheBrowserSendsThem)
+        [TestCase("""[{"kind":"TrackerParent"},{"kind":"TrackerParent"}]""", "Parent is already in the list", Description = "The own parent twice")]
+        [TestCase("""[{"kind":"AdditionalField","additionalFieldDefinitionId":99},{"kind":"AdditionalField","additionalFieldDefinitionId":99}]""",
+            "Field 99 is already in the list", Description = "A field the connection does not hold has no name to quote")]
+        public async Task A_repeated_entry_that_is_not_a_named_field_is_still_refused_by_what_can_be_said_of_it(string list, string message)
+        {
+            client.AsTeamAdmin(teamId);
+
+            var response = await PutTheTeamListing(list);
+            var body = await response.Content.ReadAsStringAsync();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+                Assert.That(body, Does.Contain(message));
+            }
+        }
+
+        [Test]
+        public async Task An_old_clients_echo_leaves_a_richer_list_alone_and_a_changed_old_field_becomes_that_field_then_the_own_parent()
+        {
+            GivenTheTeamKeeps(ParentSourceEntry.TrackerParent, ParentSourceEntry.Field(fieldIds[0]), ParentSourceEntry.Field(fieldIds[1]));
+            client.AsTeamAdmin(teamId);
+            var theRicherList = (await TheSavedList()).ToJsonString();
+
+            var echoed = await PutWhatAnOldClientReadBack();
+            var afterTheEcho = await TheSavedList();
+
+            var changed = await PutWhatAnOldClientReadBack(fieldIds[2]);
+            var afterTheChange = await TheSavedList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(echoed.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(afterTheEcho.ToJsonString(), Is.EqualTo(theRicherList),
+                    "The old client sent back the field it read, which is no reason to throw away what it cannot see.");
+                Assert.That(changed.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(afterTheChange.ToJsonString(), Is.EqualTo(
+                    $$"""[{"kind":"AdditionalField","additionalFieldDefinitionId":{{fieldIds[2]}}},{"kind":"TrackerParent"}]"""));
+            }
+        }
+
+        [Test]
+        public async Task A_client_that_sends_back_the_list_and_changes_only_the_old_field_gets_that_field_then_the_own_parent()
+        {
+            GivenTheTeamKeeps(ParentSourceEntry.TrackerParent, ParentSourceEntry.Field(fieldIds[0]), ParentSourceEntry.Field(fieldIds[1]));
+            client.AsTeamAdmin(teamId);
+            var payload = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+            payload["parentOverrideAdditionalFieldDefinitionId"] = fieldIds[2];
+
+            var response = await Put($"/api/latest/teams/{teamId}", payload);
+            var afterwards = await TheSavedList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(afterwards.ToJsonString(), Is.EqualTo(
+                    $$"""[{"kind":"AdditionalField","additionalFieldDefinitionId":{{fieldIds[2]}}},{"kind":"TrackerParent"}]"""));
+            }
+        }
+
+        [Test]
+        public async Task A_client_that_sends_only_the_list_keeps_it_when_it_equals_what_the_owner_reads()
+        {
+            GivenTheTeamKeeps(ParentSourceEntry.TrackerParent, ParentSourceEntry.Field(fieldIds[0]), ParentSourceEntry.Field(fieldIds[1]));
+            client.AsTeamAdmin(teamId);
+            var payload = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+            var theList = payload["parentSources"]!.ToJsonString();
+            payload.Remove("parentOverrideAdditionalFieldDefinitionId");
+
+            var response = await Put($"/api/latest/teams/{teamId}", payload);
+            var afterwards = await TheSavedList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(afterwards.ToJsonString(), Is.EqualTo(theList),
+                    "An old field that was never sent is no choice of None.");
+            }
+        }
+
+        [Test]
+        public async Task A_follower_reads_the_list_it_follows_and_a_list_sent_while_following_is_ignored()
+        {
+            GivenTheConnectionDefaultForTeamsIs(ParentSourceEntry.Field(TheFieldTheListsNameInTheirText), ParentSourceEntry.TrackerParent);
+            client.AsTeamAdmin(teamId);
+
+            var whatTheFollowerReads = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+
+            var sentWhileFollowing = await PutTheTeamListing(OwnParentAlone, source: "ConnectionDefault");
+            var afterwards = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whatTheFollowerReads["parentSources"]?.ToJsonString(), Is.EqualTo(FieldThenOwnParent));
+                Assert.That(whatTheFollowerReads["parentSourcesDefault"]?.ToJsonString(), Is.EqualTo(FieldThenOwnParent));
+                Assert.That((int?)whatTheFollowerReads["parentOverrideAdditionalFieldDefinitionId"], Is.EqualTo(TheFieldTheListsNameInTheirText),
+                    "A client that only knows the old field reads the first field of the list.");
+                Assert.That(sentWhileFollowing.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That((string?)afterwards["parentOverrideSource"], Is.EqualTo("ConnectionDefault"));
+                Assert.That(afterwards["parentSources"]?.ToJsonString(), Is.EqualTo(FieldThenOwnParent),
+                    "A page echoes the list it shows even while following, and that must not turn into an own list.");
+            }
+        }
+
+        private string AListOf(int howMany)
+        {
+            var sixDifferentFields = string.Join(",", fieldIds.Select(id => $$"""{"kind":"AdditionalField","additionalFieldDefinitionId":{{id}}}"""));
+            var theSameFieldTwice = $$"""{"kind":"AdditionalField","additionalFieldDefinitionId":{{fieldIds[0]}}}""";
+
+            return howMany switch
+            {
+                6 => $"[{sixDifferentFields}]",
+                2 => $"[{theSameFieldTwice},{theSameFieldTwice}]",
+                _ => "[]",
+            };
+        }
+
+        private async Task<HttpResponseMessage> PutTheTeamListing(string parentSourcesAsTheBrowserSendsThem, string source = "Own")
         {
             var payload = BuildTeamSettingJson();
+            payload["ParentOverrideSource"] = source;
+            payload["ParentSources"] = JsonNode.Parse(parentSourcesAsTheBrowserSendsThem);
+
+            return await Put($"/api/latest/teams/{teamId}", payload);
+        }
+
+        private async Task<HttpResponseMessage> PutThePortfolioListing(int portfolioId, string parentSourcesAsTheBrowserSendsThem)
+        {
+            var payload = BuildPortfolioSettingJson(portfolioId);
             payload["ParentOverrideSource"] = "Own";
             payload["ParentSources"] = JsonNode.Parse(parentSourcesAsTheBrowserSendsThem);
 
+            return await Put($"/api/latest/portfolios/{portfolioId}", payload);
+        }
+
+        // An old client knows nothing of the list, so what it read comes back without it.
+        private async Task<HttpResponseMessage> PutWhatAnOldClientReadBack(int? theFieldItChanged = null)
+        {
+            var payload = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+            payload.Remove("parentSources");
+            payload.Remove("parentSourcesDefault");
+            if (theFieldItChanged is { } field)
+            {
+                payload["parentOverrideAdditionalFieldDefinitionId"] = field;
+            }
+
+            return await Put($"/api/latest/teams/{teamId}", payload);
+        }
+
+        private async Task<HttpResponseMessage> Put(string route, JsonObject payload)
+        {
             var content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json");
-            return await client.PutAsync($"/api/latest/teams/{teamId}", content);
+            return await client.PutAsync(route, content);
         }
 
         private async Task<JsonArray> TheSavedList()
         {
-            var response = await client.GetAsync($"/api/latest/teams/{teamId}/settings");
+            var settings = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+            return settings["parentSources"]?.AsArray() ?? throw new AssertionException("The Team's settings carry no parentSources.");
+        }
+
+        private async Task<JsonObject> SettingsAt(string route)
+        {
+            var response = await client.GetAsync(route);
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
 
-            var settings = JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
-            return settings["parentSources"]?.AsArray() ?? throw new AssertionException("The Team's settings carry no parentSources.");
+            return JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
+        }
+
+        private void GivenTheTeamKeeps(params ParentSourceEntry[] entries)
+        {
+            using var scope = factory.Services.CreateScope();
+            var teamRepository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+
+            var team = teamRepository.GetById(teamId)!;
+            team.OwnParentSources(ParentSources.Of(entries).List!);
+            teamRepository.Update(team);
+            teamRepository.Save().GetAwaiter().GetResult();
+        }
+
+        private void GivenTheConnectionDefaultForTeamsIs(params ParentSourceEntry[] entries)
+        {
+            using var scope = factory.Services.CreateScope();
+            var connectionRepository = scope.ServiceProvider.GetRequiredService<IRepository<WorkTrackingSystemConnection>>();
+
+            var connection = connectionRepository.GetById(connectionId)!;
+            connection.SetParentSourcesDefaultForTeams(ParentSources.Of(entries).List);
+            connectionRepository.Update(connection);
+            connectionRepository.Save().GetAwaiter().GetResult();
+        }
+
+        private int GivenAPortfolioThatKeeps(params ParentSourceEntry[] entries)
+        {
+            using var scope = factory.Services.CreateScope();
+            var sp = scope.ServiceProvider;
+
+            var portfolio = new Portfolio
+            {
+                Name = $"Portfolio {Guid.NewGuid():N}",
+                WorkTrackingSystemConnection = sp.GetRequiredService<IRepository<WorkTrackingSystemConnection>>().GetById(connectionId)!,
+            };
+            portfolio.OwnParentSources(ParentSources.Of(entries).List!);
+
+            var portfolioRepository = sp.GetRequiredService<IRepository<Portfolio>>();
+            portfolioRepository.Add(portfolio);
+            portfolioRepository.Save().GetAwaiter().GetResult();
+
+            ownersSeeded.Add((portfolio.Id, OwnerType.Portfolio));
+            return portfolio.Id;
         }
 
         private void SeedATeamOnAJiraConnectionWithSixFields()
@@ -245,6 +491,25 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
                 UseFixedDatesForThroughput = false,
                 FeatureWIP = 1,
                 AutomaticallyAdjustFeatureWIP = false,
+                DoneItemsCutoffDays = 365,
+                StateMappings = [],
+            };
+
+            return JsonNode.Parse(JsonSerializer.Serialize(dto))!.AsObject();
+        }
+
+        private JsonObject BuildPortfolioSettingJson(int portfolioId)
+        {
+            var dto = new PortfolioSettingDto
+            {
+                Id = portfolioId,
+                Name = $"Portfolio {portfolioId}",
+                DataRetrievalValue = "project = TEST",
+                WorkTrackingSystemConnectionId = connectionId,
+                WorkItemTypes = ["Epic"],
+                ToDoStates = ["New"],
+                DoingStates = ["Active"],
+                DoneStates = ["Done"],
                 DoneItemsCutoffDays = 365,
                 StateMappings = [],
             };

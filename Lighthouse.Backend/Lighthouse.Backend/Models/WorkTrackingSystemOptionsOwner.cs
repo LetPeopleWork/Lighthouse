@@ -169,6 +169,9 @@ namespace Lighthouse.Backend.Models
 
         protected virtual ParentSources? ParentSourcesConnectionDefault => null;
 
+        /// <summary>The list the connection's default names, shown whichever source the owner chose.</summary>
+        public ParentSources? TheParentSourcesDefault() => ParentSourcesConnectionDefault;
+
         /// <summary>The list becomes this owner's own, and the old column keeps what a build one release back can read of it.</summary>
         public void OwnParentSources(ParentSources list)
         {

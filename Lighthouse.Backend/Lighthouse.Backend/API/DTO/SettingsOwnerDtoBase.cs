@@ -5,6 +5,8 @@ namespace Lighthouse.Backend.API.DTO
 {
     public abstract class SettingsOwnerDtoBase
     {
+        private bool parentOverrideFieldWasSent;
+
         protected SettingsOwnerDtoBase()
         {
         }
@@ -27,7 +29,12 @@ namespace Lighthouse.Backend.API.DTO
             SystemWIPLimit = workTrackingSystemOptionsOwner.SystemWIPLimit;
             BlockedRuleSetJson = workTrackingSystemOptionsOwner.BlockedRuleSetJson;
             WaitStates = workTrackingSystemOptionsOwner.WaitStates;
-            ParentOverrideAdditionalFieldDefinitionId = workTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId;
+            var effectiveParentSources = workTrackingSystemOptionsOwner.TheEffectiveParentSources();
+            ParentSources = ParentSourceEntryDto.ListOf(effectiveParentSources);
+            ParentSourcesDefault = workTrackingSystemOptionsOwner.TheParentSourcesDefault() is { } parentSourcesDefault
+                ? ParentSourceEntryDto.ListOf(parentSourcesDefault)
+                : null;
+            ParentOverrideAdditionalFieldDefinitionId = effectiveParentSources.ToTheLegacyField();
             ParentOverrideSource = workTrackingSystemOptionsOwner.ParentOverrideSource;
             ParentOverrideDefaultName = workTrackingSystemOptionsOwner.ParentOverrideDefaultName;
             WorkTrackingSystem = workTrackingSystemOptionsOwner.WorkTrackingSystemConnection?.WorkTrackingSystem;
@@ -86,7 +93,24 @@ namespace Lighthouse.Backend.API.DTO
         [JsonRequired]
         public int SystemWIPLimit { get; set; }
 
-        public int? ParentOverrideAdditionalFieldDefinitionId { get; set; }
+        /// <summary>The list this owner reads its parent from, whether its own or the one it follows; null on a save means none was sent.</summary>
+        public List<ParentSourceEntryDto?>? ParentSources { get; set; }
+
+        public List<ParentSourceEntryDto?>? ParentSourcesDefault { get; private set; }
+
+        /// <summary>Deprecated: the first field of <see cref="ParentSources"/>, for clients that only know one field.</summary>
+        public int? ParentOverrideAdditionalFieldDefinitionId
+        {
+            get;
+            set
+            {
+                field = value;
+                parentOverrideFieldWasSent = true;
+            }
+        }
+
+        /// <summary>Whether this save names the old field at all, since an explicit null is a choice of None and an absent one is not.</summary>
+        public bool ParentOverrideFieldWasSent() => parentOverrideFieldWasSent;
 
         [JsonConverter(typeof(JsonStringEnumConverter<SettingSource>))]
         public SettingSource? ParentOverrideSource { get; set; }
