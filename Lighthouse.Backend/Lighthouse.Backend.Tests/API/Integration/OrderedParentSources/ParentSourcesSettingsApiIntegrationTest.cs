@@ -373,6 +373,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
             }
         }
 
+        [Test]
+        public async Task A_new_Team_that_sends_no_source_follows_the_connections_list()
+        {
+            GivenTheConnectionDefaultForTeamsIs(ParentSourceEntry.Field(TheFieldTheListsNameInTheirText), ParentSourceEntry.TrackerParent);
+            client.AsSystemAdmin();
+            var payload = BuildTeamSettingJson();
+            payload["Id"] = 0;
+
+            var response = await Put("/api/latest/teams", payload, HttpMethod.Post);
+            var created = JsonNode.Parse(await response.Content.ReadAsStringAsync())!.AsObject();
+            ownersSeeded.Add(((int)created["id"]!, OwnerType.Team));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That((string?)created["parentOverrideSource"], Is.EqualTo("ConnectionDefault"));
+                Assert.That(created["parentSources"]?.ToJsonString(), Is.EqualTo(FieldThenOwnParent));
+            }
+        }
+
         private string AListOf(int howMany)
         {
             var sixDifferentFields = string.Join(",", fieldIds.Select(id => $$"""{"kind":"AdditionalField","additionalFieldDefinitionId":{{id}}}"""));
@@ -418,10 +438,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
             return await Put($"/api/latest/teams/{teamId}", payload);
         }
 
-        private async Task<HttpResponseMessage> Put(string route, JsonObject payload)
+        private async Task<HttpResponseMessage> Put(string route, JsonObject payload, HttpMethod? method = null)
         {
             var content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json");
-            return await client.PutAsync(route, content);
+            return method == HttpMethod.Post ? await client.PostAsync(route, content) : await client.PutAsync(route, content);
         }
 
         private async Task<JsonArray> TheSavedList()
