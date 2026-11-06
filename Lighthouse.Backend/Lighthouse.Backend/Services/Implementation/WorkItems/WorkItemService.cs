@@ -1125,10 +1125,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         // The settings are named after the screen's labels, so spacing the words is the label. The one exception is
-        // the parent field, whose screen label is now "Parent sources" while the wire name stays as it was.
+        // the parent field, whose screen label is now "Parent sources list" while the wire name stays as it was.
         private static string TheNameAnAdministratorKnows(RefreshFindingSetting setting)
             => setting == RefreshFindingSetting.ParentOverrideField
-                ? "Parent sources"
+                ? "Parent sources list"
                 : string.Concat(setting.ToString().Select((letter, at) => at > 0 && char.IsUpper(letter) ? $" {letter}" : $"{letter}"));
 
         /// <summary>The scan for the portfolio: the same Feature query, asking only for identity plus the remote change stamp.</summary>

@@ -1969,7 +1969,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
 
             Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
-                $"Portfolio {portfolio.Name}: its Parent sources names 'Contoso.DependsOn', which the refresh could not read as configured. "
+                $"Portfolio {portfolio.Name}: its Parent sources list names 'Contoso.DependsOn', which the refresh could not read as configured. "
                 + "What it saw: 'depends on', 'is depended on by'"));
         }
 
@@ -1992,7 +1992,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
 
             Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
-                $"Portfolio {portfolio.Name}: its Parent sources names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
+                $"Portfolio {portfolio.Name}: its Parent sources list names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
                 + "which only the Dependency Field reads, so it was read as if nothing were named."));
         }
 
@@ -2040,7 +2040,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Assert.That(outcome.Findings, Is.EqualTo(new[] { finding }),
                     "Refresh History reads a Team's findings off what its refresh returns, once per kind and setting.");
                 Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
-                    $"Team {team.Name}: its Parent sources names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
+                    $"Team {team.Name}: its Parent sources list names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
                     + "which only the Dependency Field reads, so it was read as if nothing were named."));
             }
         }
