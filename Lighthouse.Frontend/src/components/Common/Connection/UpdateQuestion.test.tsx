@@ -169,7 +169,7 @@ describe("UpdateQuestion", () => {
 				says: `2 Portfolios follow the Parent sources and Dependency Field defaults. ${UntilWhatTheyReadUpdated}`,
 			},
 			{
-				case: "the Teams' and the Portfolios' Parent Override defaults",
+				case: "the Teams' and the Portfolios' Parent sources defaults",
 				terms: TheDefaultWords,
 				why: theDefaultsChanged(1, 2, ["Parent sources"], ["parents"]),
 				title: "Update 1 Team and 2 Portfolios?",

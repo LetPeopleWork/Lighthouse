@@ -1,3 +1,4 @@
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import {
 	type ConnectionDefaultName,
@@ -7,7 +8,10 @@ import {
 	type IEstimationDefault,
 	type IFollowerGroup,
 	isEstimationDefaultName,
+	isParentOverrideDefaultName,
+	ParentSourcesListOfDefault,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { listsTheSameSources } from "../ConnectionDefault/parentSources";
 import type { WhatChanges, WhyUpdate } from "./UpdateQuestion";
 
 // Stored values and rules are keyed by a field's id, so a field that comes back under a new id is a
@@ -100,6 +104,29 @@ const followersOfDefault = (
 		.filter((group) => group.follows.includes(name))
 		.reduce((sum, group) => sum + group.count, 0);
 
+const OnlyTheTrackersOwnParent: readonly ParentSourceEntry[] = [
+	{ kind: "TrackerParent" },
+];
+
+// A default nobody has set reads as the tracker's own parent alone, which is also what saving that list says.
+export const parentSourcesOfDefault = (
+	name: keyof typeof ParentSourcesListOfDefault,
+	defaults: IConnectionDefaults,
+): readonly ParentSourceEntry[] =>
+	defaults[ParentSourcesListOfDefault[name]] ?? OnlyTheTrackersOwnParent;
+
+const defaultChanged = (
+	name: ConnectionDefaultName,
+	loaded: IConnectionDefaults,
+	current: IConnectionDefaults,
+): boolean =>
+	isParentOverrideDefaultName(name)
+		? !listsTheSameSources(
+				parentSourcesOfDefault(name, loaded),
+				parentSourcesOfDefault(name, current),
+			)
+		: (loaded[name] ?? null) !== (current[name] ?? null);
+
 export const changedDefaultsToUpdateFollowersOf = (
 	loaded: IConnectionDefaults,
 	current: IConnectionDefaults,
@@ -109,7 +136,7 @@ export const changedDefaultsToUpdateFollowersOf = (
 		(name) =>
 			WhereEachDefaultSits[name].readWhen === "updating" &&
 			followersOfDefault(usage, name) > 0 &&
-			(loaded[name] ?? null) !== (current[name] ?? null),
+			defaultChanged(name, loaded, current),
 	);
 
 // The Additional Field a default points at, which for an Estimation default sits inside its bundle.

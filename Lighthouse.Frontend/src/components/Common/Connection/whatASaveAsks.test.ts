@@ -111,10 +111,46 @@ describe("fieldOfDefault", () => {
 describe("changedDefaultsToUpdateFollowersOf", () => {
 	const followedByTwo = (name: ConnectionDefaultName) =>
 		withFollowers({ [name]: 2 });
+	const sourcesOf = (...fieldIds: number[]) =>
+		fieldIds.map((additionalFieldDefinitionId) => ({
+			kind: "AdditionalField" as const,
+			additionalFieldDefinitionId,
+		}));
 
 	it.each([
-		"parentOverrideForTeams",
-		"parentOverrideForPortfolios",
+		["parentOverrideForTeams", "parentSourcesForTeams"],
+		["parentOverrideForPortfolios", "parentSourcesForPortfolios"],
+	] as const)("lists a changed %s list that has followers", (name, list) => {
+		expect(
+			changedDefaultsToUpdateFollowersOf(
+				{ [list]: sourcesOf(11, 12) },
+				{ [list]: sourcesOf(12, 11) },
+				followedByTwo(name),
+			),
+		).toEqual([name]);
+	});
+
+	it("leaves out a list that holds the same sources in the same order", () => {
+		expect(
+			changedDefaultsToUpdateFollowersOf(
+				{ parentSourcesForTeams: sourcesOf(11, 12) },
+				{ parentSourcesForTeams: sourcesOf(11, 12) },
+				followedByTwo("parentOverrideForTeams"),
+			),
+		).toEqual([]);
+	});
+
+	it("reads an unset list as the tracker's own parent alone", () => {
+		expect(
+			changedDefaultsToUpdateFollowersOf(
+				{},
+				{ parentSourcesForTeams: [{ kind: "TrackerParent" }] },
+				followedByTwo("parentOverrideForTeams"),
+			),
+		).toEqual([]);
+	});
+
+	it.each([
 		"dependencyFieldForPortfolios",
 		"sizeEstimateFieldForPortfolios",
 		"featureOwnerFieldForPortfolios",
@@ -144,8 +180,8 @@ describe("changedDefaultsToUpdateFollowersOf", () => {
 	it("leaves out a changed default nobody follows, though others have followers", () => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(
-				{ parentOverrideForTeams: 11 },
-				{ parentOverrideForTeams: 12 },
+				{ parentSourcesForTeams: sourcesOf(11) },
+				{ parentSourcesForTeams: sourcesOf(12) },
 				followedByTwo("parentOverrideForPortfolios"),
 			),
 		).toEqual([]);
@@ -154,8 +190,8 @@ describe("changedDefaultsToUpdateFollowersOf", () => {
 	it("leaves out a default with a follower count of zero", () => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(
-				{ parentOverrideForTeams: 11 },
-				{ parentOverrideForTeams: 12 },
+				{ parentSourcesForTeams: sourcesOf(11) },
+				{ parentSourcesForTeams: sourcesOf(12) },
 				withFollowers({ parentOverrideForTeams: 0 }),
 			),
 		).toEqual([]);
@@ -164,16 +200,16 @@ describe("changedDefaultsToUpdateFollowersOf", () => {
 	it("leaves out a followed default that did not change", () => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(
-				{ parentOverrideForTeams: 11 },
-				{ parentOverrideForTeams: 11 },
+				{ parentSourcesForTeams: sourcesOf(11) },
+				{ parentSourcesForTeams: sourcesOf(11) },
 				followedByTwo("parentOverrideForTeams"),
 			),
 		).toEqual([]);
 	});
 
 	it.each([
-		["unset becoming null", {}, { parentOverrideForTeams: null }],
-		["null becoming unset", { parentOverrideForTeams: null }, {}],
+		["unset becoming null", {}, { parentSourcesForTeams: null }],
+		["null becoming unset", { parentSourcesForTeams: null }, {}],
 	])("counts %s as no change", (_, loaded, current) => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(
@@ -187,8 +223,8 @@ describe("changedDefaultsToUpdateFollowersOf", () => {
 	it("counts a default cleared as a change", () => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(
-				{ parentOverrideForTeams: 11 },
-				{ parentOverrideForTeams: null },
+				{ parentSourcesForTeams: sourcesOf(11) },
+				{ parentSourcesForTeams: null },
 				followedByTwo("parentOverrideForTeams"),
 			),
 		).toEqual(["parentOverrideForTeams"]);
@@ -198,7 +234,10 @@ describe("changedDefaultsToUpdateFollowersOf", () => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(
 				{},
-				{ dependencyFieldForPortfolios: 12, parentOverrideForTeams: 12 },
+				{
+					dependencyFieldForPortfolios: 12,
+					parentSourcesForTeams: sourcesOf(12),
+				},
 				withFollowers({
 					dependencyFieldForPortfolios: 1,
 					parentOverrideForTeams: 1,
@@ -210,8 +249,8 @@ describe("changedDefaultsToUpdateFollowersOf", () => {
 	it("reads the followers from the groups when the server sends them", () => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(
-				{ parentOverrideForPortfolios: 11 },
-				{ parentOverrideForPortfolios: 12 },
+				{ parentSourcesForPortfolios: sourcesOf(11) },
+				{ parentSourcesForPortfolios: sourcesOf(12) },
 				withFollowers(undefined, {
 					followerGroups: [
 						{ follows: ["parentOverrideForPortfolios"], count: 3 },

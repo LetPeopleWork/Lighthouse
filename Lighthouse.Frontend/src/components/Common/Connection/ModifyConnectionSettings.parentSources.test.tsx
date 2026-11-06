@@ -50,10 +50,8 @@ const aJiraConnectionWhoseTeamsDefaultListsTwoSources = () =>
 		supportedDefaults: EveryDefault,
 	});
 
-// Skipped until Story 6501 builds the parent sources list on the connection page.
 describe("the connection's defaults for its Teams", () => {
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("show the Parent sources as the same ordered list, and save the new order when one is moved up", async () => {
+	it("show the Parent sources as the same ordered list, and save the new order when one is moved up", async () => {
 		const connection = aJiraConnectionWhoseTeamsDefaultListsTwoSources();
 		const saveConnectionSettings = vi.fn().mockResolvedValue(undefined);
 		const user = userEvent.setup();
@@ -64,7 +62,9 @@ describe("the connection's defaults for its Teams", () => {
 					getSupportedSystems={vi.fn().mockResolvedValue([connection])}
 					getConnectionSettings={vi.fn().mockResolvedValue(connection)}
 					saveConnectionSettings={saveConnectionSettings}
-					validateConnectionSettings={vi.fn().mockResolvedValue(true)}
+					validateConnectionSettings={vi
+						.fn()
+						.mockResolvedValue({ isValid: true })}
 				/>
 			</MemoryRouter>,
 			{},
@@ -91,6 +91,7 @@ describe("the connection's defaults for its Teams", () => {
 					],
 				}),
 			}),
+			undefined,
 		);
 	});
 });

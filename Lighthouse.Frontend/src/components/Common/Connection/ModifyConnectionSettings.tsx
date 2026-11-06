@@ -17,6 +17,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
@@ -30,6 +31,9 @@ import {
 	type IEstimationDefault,
 	type IWorkTrackingSystemConnection,
 	isEstimationDefaultName,
+	isParentOverrideDefaultName,
+	type ParentOverrideDefaultName,
+	ParentSourcesListOfDefault,
 	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
@@ -46,6 +50,7 @@ import {
 	directionTip,
 	directionTipTermsFrom,
 } from "../ConnectionDefault/fieldDirectionTips";
+import ParentSourcesList from "../ConnectionDefault/ParentSourcesList";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
@@ -65,6 +70,7 @@ import {
 	type DefaultsGroup,
 	fieldOfDefault,
 	fieldsChangedSince,
+	parentSourcesOfDefault,
 	WhereEachDefaultSits,
 	whyUpdate,
 } from "./whatASaveAsks";
@@ -131,6 +137,17 @@ function resolveValidationErrorMessage(
 	};
 }
 
+// The parent defaults travel as lists. The old number a read carries would be read as an edit of the
+// default if it were sent back beside a list that has changed.
+const defaultsWithoutTheOldParentNumbers = (
+	defaults: IConnectionDefaults,
+): IConnectionDefaults =>
+	Object.fromEntries(
+		Object.entries(defaults).filter(
+			([name]) => !isParentOverrideDefaultName(name),
+		),
+	);
+
 const NOBODY: IConnectionUsage = { teams: 0, portfolios: 0 };
 
 interface ConnectionDefaultsSectionProps {
@@ -142,6 +159,12 @@ interface ConnectionDefaultsSectionProps {
 		name: EstimationDefaultName,
 		bundle: IEstimationDefault | null,
 	) => void;
+	onParentSourcesChange: (
+		name: ParentOverrideDefaultName,
+		list: readonly ParentSourceEntry[],
+	) => void;
+	/** Only a saved field can be named by a default, so a field added in this edit is not offered yet. */
+	savedFieldIds: ReadonlySet<number>;
 	tracker: WorkTrackingSystemType | undefined;
 }
 
@@ -151,6 +174,8 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 	additionalFields,
 	onChange,
 	onEstimationChange,
+	onParentSourcesChange,
+	savedFieldIds,
 	tracker,
 }) => {
 	const { getTerm } = useTerminology();
@@ -176,6 +201,10 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 		return chosen === "" ? null : chosen;
 	};
 
+	const savedFields = additionalFields.filter((field) =>
+		savedFieldIds.has(field.id),
+	);
+
 	const groups: { group: DefaultsGroup; heading: string }[] = [
 		{ group: "teams", heading: teamsTerm },
 		{ group: "portfolios", heading: portfoliosTerm },
@@ -188,6 +217,43 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 			),
 		}))
 		.filter(({ rows }) => rows.length > 0);
+
+	const rowOf = (name: ConnectionDefaultName) => {
+		if (isEstimationDefaultName(name)) {
+			return (
+				<EstimationDefaultEditor
+					key={name}
+					bundle={defaults[name]}
+					chosenField={chosenFieldIdOf(name)}
+					additionalFields={additionalFields}
+					onChange={(bundle) => onEstimationChange(name, bundle)}
+				/>
+			);
+		}
+		if (isParentOverrideDefaultName(name) && tracker) {
+			return (
+				<ParentSourcesList
+					key={name}
+					owner={name === "parentOverrideForTeams" ? "Team" : "Portfolio"}
+					value={parentSourcesOfDefault(name, defaults)}
+					tracker={tracker}
+					additionalFieldDefinitions={savedFields}
+					onChange={(list) => onParentSourcesChange(name, list)}
+					info={directionTip(name, tracker, tipTerms)}
+				/>
+			);
+		}
+		return (
+			<FormSelectField<number>
+				key={name}
+				label={WhereEachDefaultSits[name].label(featureTerm)}
+				value={chosenFieldOf(name)}
+				options={fieldOptions}
+				onChange={(fieldId) => onChange(name, fieldId)}
+				info={directionTip(name, tracker, tipTerms)}
+			/>
+		);
+	};
 
 	return (
 		<Box component="section" aria-label={title}>
@@ -208,26 +274,7 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 						>
 							{heading}
 						</Typography>
-						{rows.map((name) =>
-							isEstimationDefaultName(name) ? (
-								<EstimationDefaultEditor
-									key={name}
-									bundle={defaults[name]}
-									chosenField={chosenFieldIdOf(name)}
-									additionalFields={additionalFields}
-									onChange={(bundle) => onEstimationChange(name, bundle)}
-								/>
-							) : (
-								<FormSelectField<number>
-									key={name}
-									label={WhereEachDefaultSits[name].label(featureTerm)}
-									value={chosenFieldOf(name)}
-									options={fieldOptions}
-									onChange={(fieldId) => onChange(name, fieldId)}
-									info={directionTip(name, tracker, tipTerms)}
-								/>
-							),
-						)}
+						{rows.map(rowOf)}
 					</Box>
 				))}
 			</InputGroup>
@@ -591,7 +638,7 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
 				additionalFieldDefinitions: additionalFields,
 				writeBackMappingDefinitions: writeBackMappings,
-				defaults,
+				defaults: defaults && defaultsWithoutTheOldParentNumbers(defaults),
 			};
 
 			try {
@@ -703,6 +750,17 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	) => {
 		clearValidationFeedback();
 		setDefaults((previous) => ({ ...previous, [name]: value }));
+	};
+
+	const handleParentSourcesChange = (
+		name: ParentOverrideDefaultName,
+		list: readonly ParentSourceEntry[],
+	) => {
+		clearValidationFeedback();
+		setDefaults((previous) => ({
+			...previous,
+			[ParentSourcesListOfDefault[name]]: list,
+		}));
 	};
 
 	const handleAdditionalFieldsChange = (
@@ -902,6 +960,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 								additionalFields={additionalFields}
 								onChange={handleDefaultChange}
 								onEstimationChange={handleDefaultChange}
+								onParentSourcesChange={handleParentSourcesChange}
+								savedFieldIds={new Set(loadedFields.map((field) => field.id))}
 								tracker={selectedWorkTrackingSystem?.workTrackingSystem}
 							/>
 						</Grid>

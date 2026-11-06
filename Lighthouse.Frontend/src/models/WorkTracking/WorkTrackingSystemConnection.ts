@@ -1,3 +1,4 @@
+import type { ParentSourceEntry } from "../Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "./AdditionalFieldDefinition";
 import type { IWorkTrackingSystemOption } from "./WorkTrackingSystemOption";
 import type { IWriteBackMappingDefinition } from "./WriteBackMappingDefinition";
@@ -97,12 +98,32 @@ export interface IEstimationDefault {
 }
 
 /**
- * The Additional Field each default points at, by id, and the whole bundle for an Estimation default; null
- * or absent means no default is set.
+ * The parent default of Teams and of Portfolios is read and written as an ordered list under these names.
+ * The default's old name still carries the first field as a number on a read, and a save leaves it out.
+ */
+export const ParentSourcesListOfDefault = {
+	parentOverrideForTeams: "parentSourcesForTeams",
+	parentOverrideForPortfolios: "parentSourcesForPortfolios",
+} as const;
+
+export type ParentOverrideDefaultName = keyof typeof ParentSourcesListOfDefault;
+
+export type ParentSourcesListName =
+	(typeof ParentSourcesListOfDefault)[ParentOverrideDefaultName];
+
+export const isParentOverrideDefaultName = (
+	name: string,
+): name is ParentOverrideDefaultName =>
+	Object.keys(ParentSourcesListOfDefault).includes(name);
+
+/**
+ * The Additional Field each default points at, by id, the whole bundle for an Estimation default, and the
+ * ordered list for a parent default; null or absent means no default is set.
  */
 export type IConnectionDefaults = Partial<
 	Record<FieldDefaultName, number | null> &
-		Record<EstimationDefaultName, IEstimationDefault | null>
+		Record<EstimationDefaultName, IEstimationDefault | null> &
+		Record<ParentSourcesListName, readonly ParentSourceEntry[] | null>
 >;
 
 export interface IWorkTrackingSystemConnection {

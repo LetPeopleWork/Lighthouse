@@ -14,15 +14,15 @@ import { nameOfParentSource } from "../../../components/Common/ConnectionDefault
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
-import type {
-	IWorkTrackingSystemConnection,
-	WorkTrackingSystemType,
+import {
+	type IWorkTrackingSystemConnection,
+	type ParentOverrideDefaultName,
+	ParentSourcesListOfDefault,
+	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../services/TerminologyContext";
 
-export type ParentOverrideDefault =
-	| "parentOverrideForTeams"
-	| "parentOverrideForPortfolios";
+export type ParentOverrideDefault = ParentOverrideDefaultName;
 
 interface ParentSourcesSettingProps {
 	settings: IBaseSettings | null;
@@ -41,7 +41,7 @@ const OnlyTheTrackersOwnParent: readonly ParentSourceEntry[] = [
 ];
 
 // The settings carry the default of their stored connection. Once another one is chosen, its default is read off
-// that connection, whose default is still a single field.
+// that connection.
 const defaultListOf = (
 	settings: IBaseSettings | null,
 	connection: IWorkTrackingSystemConnection | null | undefined,
@@ -53,13 +53,7 @@ const defaultListOf = (
 	) {
 		return settings?.parentSourcesDefault;
 	}
-	const field = connection.defaults?.[theDefault];
-	return typeof field === "number"
-		? [
-				{ kind: "AdditionalField", additionalFieldDefinitionId: field },
-				...OnlyTheTrackersOwnParent,
-			]
-		: null;
+	return connection.defaults?.[ParentSourcesListOfDefault[theDefault]] ?? null;
 };
 
 const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({

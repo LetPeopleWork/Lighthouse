@@ -110,7 +110,7 @@ const whenPriyaOpensTheTipOf = (field: string, group: string) =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(field, theGroup(group)));
 
 describe("Story 6352: the connection's defaults say which way round they read", () => {
-	it("on a Jira connection, only the Parent Override and Dependency rows carry an About button", async () => {
+	it("on a Jira connection, only the Parent sources and Dependency rows carry an About button", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expect(theAboutButtonsIn(theGroup("Teams"))).toEqual([
@@ -140,7 +140,7 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		}
 	});
 
-	it("on a Jira connection, the Teams' Parent Override tip gives Jira's example", async () => {
+	it("on a Jira connection, the Teams' Parent sources tip gives Jira's example", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expect(
@@ -172,7 +172,7 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		expect(tip).not.toHaveTextContent(/Feature/);
 	});
 
-	it("the Teams' Parent Override tip leads to the Team docs", async () => {
+	it("the Teams' Parent sources tip leads to the Team docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expectLearnMoreToOpen(
@@ -181,7 +181,7 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		);
 	});
 
-	it("the Portfolios' Parent Override tip leads to the Portfolio docs", async () => {
+	it("the Portfolios' Parent sources tip leads to the Portfolio docs", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 
 		expectLearnMoreToOpen(

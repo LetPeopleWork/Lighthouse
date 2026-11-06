@@ -291,7 +291,12 @@ describe("a Team's Advanced Configuration", () => {
 			<AdvancedInputsComponent
 				settings={aFollower([{ kind: "TrackerParent" }])}
 				onSettingsChange={vi.fn()}
-				connection={aConnection("Jira", { parentOverrideForTeams: 2 })}
+				connection={aConnection("Jira", {
+					parentSourcesForTeams: [
+						{ kind: "AdditionalField", additionalFieldDefinitionId: 2 },
+						{ kind: "TrackerParent" },
+					],
+				})}
 				parentOverrideDefault="parentOverrideForTeams"
 				additionalFieldDefinitions={TheFields}
 			/>,

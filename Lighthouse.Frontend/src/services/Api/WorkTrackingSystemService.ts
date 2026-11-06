@@ -45,10 +45,20 @@ const EstimationDefaultSchema = z
 	.nullable()
 	.optional();
 
+const ParentSourcesDefaultSchema = z
+	.array(
+		z.object({
+			kind: z.enum(["TrackerParent", "AdditionalField"]),
+			additionalFieldDefinitionId: z.number().nullish(),
+		}),
+	)
+	.nullable()
+	.optional();
+
 const ConnectionDefaultsSchema = z.object({
 	defaults: z
-		.object(
-			Object.fromEntries(
+		.object({
+			...(Object.fromEntries(
 				ConnectionDefaultNames.map((name) => [
 					name,
 					isEstimationDefaultName(name)
@@ -56,8 +66,10 @@ const ConnectionDefaultsSchema = z.object({
 						: FieldDefaultSchema,
 				]),
 			) as Record<FieldDefaultName, typeof FieldDefaultSchema> &
-				Record<EstimationDefaultName, typeof EstimationDefaultSchema>,
-		)
+				Record<EstimationDefaultName, typeof EstimationDefaultSchema>),
+			parentSourcesForTeams: ParentSourcesDefaultSchema,
+			parentSourcesForPortfolios: ParentSourcesDefaultSchema,
+		})
 		.nullable()
 		.optional(),
 	supportedDefaults: z.array(z.string()).nullable().optional(),

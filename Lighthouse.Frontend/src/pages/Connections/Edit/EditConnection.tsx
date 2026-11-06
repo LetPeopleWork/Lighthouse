@@ -5,12 +5,17 @@ import { useCallback, useContext } from "react";
 import { Link as RouterLink, useNavigate, useParams } from "react-router";
 import CreateConnectionWizard from "../../../components/Common/Connection/CreateConnectionWizard";
 import ModifyConnectionSettings from "../../../components/Common/Connection/ModifyConnectionSettings";
+import { listsTheSameSources } from "../../../components/Common/ConnectionDefault/parentSources";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { UsageDataUpdates } from "../../../models/UsageData/UsageData";
-import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import {
+	type IConnectionDefaults,
+	type IWorkTrackingSystemConnection,
+	ParentSourcesListOfDefault,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
@@ -20,6 +25,21 @@ import {
 	useUsageDataReporter,
 } from "../../../services/UsageData/usageDataReporter";
 import { reportFailedNavigation } from "../../../utils/navigation";
+
+const SeveralEntries = 2;
+
+// Counts a default of several parent sources that this save has just changed, however many defaults it is.
+const savedADefaultWithSeveralParentSources = (
+	loaded: IConnectionDefaults | undefined,
+	saved: IConnectionDefaults | undefined,
+): boolean =>
+	Object.values(ParentSourcesListOfDefault).some((name) => {
+		const list = saved?.[name] ?? [];
+		return (
+			list.length >= SeveralEntries &&
+			!listsTheSameSources(list, loaded?.[name] ?? [])
+		);
+	});
 
 const EditConnectionPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
@@ -108,6 +128,16 @@ const EditConnectionPage: React.FC = () => {
 				updates: choice.startUpdates
 					? UsageDataUpdates.Now
 					: UsageDataUpdates.Later,
+			});
+		}
+		if (
+			savedADefaultWithSeveralParentSources(
+				connectionQuery.data?.defaults,
+				connection.defaults,
+			)
+		) {
+			reportUsage({
+				name: UsageDataEventName.ParentSourcesSavedWithSeveralEntries,
 			});
 		}
 		reportFailedNavigation(navigate("/"));

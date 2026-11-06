@@ -163,6 +163,12 @@ const TheFields = [
 	{ id: 13, displayName: StoryPoints, reference: "customfield_10016" },
 ];
 
+const sourcesOf = (...fieldIds: number[]) =>
+	fieldIds.map((additionalFieldDefinitionId) => ({
+		kind: "AdditionalField" as const,
+		additionalFieldDefinitionId,
+	}));
+
 const StoryPointsInPoints: IEstimationDefault = {
 	additionalFieldDefinitionId: 13,
 	unit: "Points",
@@ -333,8 +339,9 @@ const whenPriyaPicks = async (
 	);
 };
 
+// Adding a field to the Teams' list changes the default whatever it held before.
 const whenPriyaSetsTheTeamsParentOverrideDefault = (field: string) =>
-	whenPriyaPicks("Teams", "Parent sources", field);
+	whenPriyaPicks("Teams", "Add a source", field);
 
 /** Priya follows a link from one connection's page to another's, as the Overview's connection list offers. */
 const whenPriyaOpensTheConnection = (id: number) => {
@@ -388,9 +395,12 @@ describe("defaults set once on the connection", () => {
 
 			const section = theSection();
 			expect(within(section).getByText(TheIntro)).toBeInTheDocument();
-			expectTheRows(theGroup("Teams"), ["Parent sources", "Estimation Field"]);
+			expectTheRows(theGroup("Teams"), ["Add a source", "Estimation Field"]);
+			expect(
+				within(theGroup("Teams")).getByText("Parent sources"),
+			).toBeInTheDocument();
 			expectTheRows(theGroup("Portfolios"), [
-				"Parent sources",
+				"Add a source",
 				"Dependency Field",
 				"Size Estimate Field",
 				"Feature Owner Field",
@@ -448,33 +458,38 @@ describe("defaults set once on the connection", () => {
 				}),
 			});
 
-			expectTheRows(theGroup("Teams"), ["Parent sources", "Estimation Field"]);
+			expectTheRows(theGroup("Teams"), ["Add a source", "Estimation Field"]);
 			expect(
 				within(theSection()).queryByRole("group", { name: "Portfolios" }),
 			).not.toBeInTheDocument();
 		});
 
 		it.each([
-			["no field", {}],
-			["a field the connection does not list", { parentOverrideForTeams: 99 }],
-		])("a default naming %s reads as None", async (_, defaults) => {
-			await givenPriyaOpensJiraDcPayments({
-				connection: jiraDcPayments({ defaults }),
-			});
+			["no list", {}, "Parent (Jira's own)"],
+			[
+				"a field the connection does not list",
+				{
+					parentSourcesForTeams: [
+						{ kind: "AdditionalField", additionalFieldDefinitionId: 99 },
+					],
+				},
+				"Unknown field (id 99)",
+			],
+		] as const)(
+			"a default with %s lists just that source",
+			async (_, defaults, source) => {
+				await givenPriyaOpensJiraDcPayments({
+					connection: jiraDcPayments({
+						defaults: defaults as unknown as IConnectionDefaults,
+					}),
+				});
 
-			fireEvent.mouseDown(
-				within(theGroup("Teams")).getByRole("combobox", {
-					name: "Parent sources",
-				}),
-			);
-
-			expect(
-				within(await screen.findByRole("listbox")).getByRole("option", {
-					name: "None",
-					selected: true,
-				}),
-			).toBeInTheDocument();
-		});
+				expect(within(theGroup("Teams")).getAllByRole("listitem")).toHaveLength(
+					1,
+				);
+				expect(within(theGroup("Teams")).getByText(source)).toBeInTheDocument();
+			},
+		);
 
 		it("Try again loads the connection that could not be loaded, with its section", async () => {
 			await givenPriyaOpensJiraDcPayments({
@@ -516,9 +531,7 @@ describe("defaults set once on the connection", () => {
 			expect(
 				screen.queryByRole("region", { name: TheSection }),
 			).not.toBeInTheDocument();
-			expect(
-				screen.queryByRole("combobox", { name: "Parent sources" }),
-			).not.toBeInTheDocument();
+			expect(screen.queryByText("Parent sources")).not.toBeInTheDocument();
 
 			answer([jiraDcPayments()]);
 
@@ -533,12 +546,12 @@ describe("defaults set once on the connection", () => {
 				connections: IWorkTrackingSystemConnection[],
 			) => void = () => {};
 			const payments = jiraDcPayments({
-				defaults: { parentOverrideForTeams: 11 },
+				defaults: { parentSourcesForTeams: sourcesOf(11) },
 			});
 			const treasury = jiraDcPayments({
 				id: 8,
 				name: JiraDcTreasury,
-				defaults: { parentOverrideForTeams: 12 },
+				defaults: { parentSourcesForTeams: sourcesOf(12) },
 			});
 			await givenPriyaOpensJiraDcPayments({
 				answers: [
@@ -555,10 +568,8 @@ describe("defaults set once on the connection", () => {
 
 			await waitFor(() =>
 				expect(
-					within(theGroup("Teams")).getByRole("combobox", {
-						name: "Parent sources",
-					}),
-				).toHaveTextContent(ParentLink),
+					within(theGroup("Teams")).getByText(ParentLink),
+				).toBeInTheDocument(),
 			);
 			expect(screen.getByDisplayValue(JiraDcTreasury)).toBeInTheDocument();
 			expect(
@@ -578,9 +589,7 @@ describe("defaults set once on the connection", () => {
 			expect(
 				screen.queryByRole("region", { name: TheSection }),
 			).not.toBeInTheDocument();
-			expect(
-				screen.queryByRole("combobox", { name: "Parent sources" }),
-			).not.toBeInTheDocument();
+			expect(screen.queryByText("Parent sources")).not.toBeInTheDocument();
 		});
 	});
 
@@ -588,7 +597,10 @@ describe("defaults set once on the connection", () => {
 		it("a save that changes neither a default nor a field sends the defaults as they were and asks nothing", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
-					defaults: { parentOverrideForTeams: 11 },
+					defaults: {
+						parentOverrideForTeams: 11,
+						parentSourcesForTeams: sourcesOf(11),
+					},
 				}),
 			});
 
@@ -596,8 +608,8 @@ describe("defaults set once on the connection", () => {
 
 			await theSaveIsSent(server);
 			expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-			expect(theSave(server).defaults).toMatchObject({
-				parentOverrideForTeams: 11,
+			expect(theSave(server).defaults).toEqual({
+				parentSourcesForTeams: sourcesOf(11),
 			});
 		});
 
@@ -605,7 +617,7 @@ describe("defaults set once on the connection", () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
 					defaults: {
-						parentOverrideForTeams: 11,
+						parentSourcesForTeams: sourcesOf(11),
 						estimationForTeams: StoryPointsInPoints,
 					},
 				}),
@@ -623,7 +635,7 @@ describe("defaults set once on the connection", () => {
 
 			await theSaveIsSent(server);
 			expect(theSave(server).defaults).toEqual({
-				parentOverrideForTeams: null,
+				parentSourcesForTeams: null,
 				estimationForTeams: StoryPointsInPoints,
 			});
 		});
@@ -631,7 +643,9 @@ describe("defaults set once on the connection", () => {
 		it("renaming the connection sends the Portfolios' default it was loaded with", async () => {
 			const asTheServerSendsIt = JSON.parse(
 				JSON.stringify(
-					jiraDcPayments({ defaults: { parentOverrideForPortfolios: 12 } }),
+					jiraDcPayments({
+						defaults: { parentSourcesForPortfolios: sourcesOf(12) },
+					}),
 				),
 			);
 			const realService = new WorkTrackingSystemService();
@@ -659,7 +673,7 @@ describe("defaults set once on the connection", () => {
 			await waitFor(() => expect(put).toHaveBeenCalledTimes(1));
 			const [, body] = put.mock.calls[0];
 			expect((body as { defaults?: unknown }).defaults).toEqual({
-				parentOverrideForPortfolios: 12,
+				parentSourcesForPortfolios: sourcesOf(12),
 			});
 		});
 	});
@@ -668,7 +682,7 @@ describe("defaults set once on the connection", () => {
 		it("asks whether to update the 3 Teams that follow it, and Save and update says so", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
-					defaults: { parentOverrideForTeams: 11 },
+					defaults: { parentSourcesForTeams: sourcesOf(11) },
 				}),
 			});
 
@@ -685,8 +699,8 @@ describe("defaults set once on the connection", () => {
 
 			await whenSheAnswers(TheUpdateQuestion, "Save and update");
 			await theSaveIsSent(server);
-			expect(theSave(server).defaults).toMatchObject({
-				parentOverrideForTeams: 12,
+			expect(theSave(server).defaults).toEqual({
+				parentSourcesForTeams: sourcesOf(11, 12),
 			});
 			expect(theSave(server).choice).toEqual({
 				startUpdates: true,
@@ -804,11 +818,7 @@ describe("defaults set once on the connection", () => {
 				expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
 			);
 			expect(server.updateWorkTrackingSystemConnection).not.toHaveBeenCalled();
-			expect(
-				within(theGroup("Teams")).getByRole("combobox", {
-					name: "Parent sources",
-				}),
-			).toHaveTextContent(CausedBy);
+			expect(within(theGroup("Teams")).getByText(CausedBy)).toBeInTheDocument();
 		});
 
 		// A changed Additional Field updates everyone on the connection, which already covers whoever
@@ -816,7 +826,7 @@ describe("defaults set once on the connection", () => {
 		it("an Additional Field and a followed default changed in one save ask only the Additional Fields question", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
-					defaults: { parentOverrideForTeams: 11 },
+					defaults: { parentSourcesForTeams: sourcesOf(11) },
 				}),
 			});
 
@@ -855,6 +865,45 @@ describe("defaults set once on the connection", () => {
 			await theSaveIsSent(server);
 			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
 			expect(theFieldsChangedEventsSent()).toEqual([]);
+		});
+	});
+
+	describe("the usage event for a default of several parent sources", () => {
+		const theParentSourcesEventsSent = () =>
+			reportUsage.mock.calls
+				.map(([use]) => use as { name: string })
+				.filter((use) => use.name === "ParentSourcesSavedWithSeveralEntries");
+
+		it("a changed default of two entries sends the event once, after the server accepts", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					defaults: { parentSourcesForTeams: sourcesOf(11) },
+				}),
+			});
+
+			await whenPriyaSetsTheTeamsParentOverrideDefault(ParentLink);
+			whenPriyaPressesSave();
+			await whenSheAnswers(TheUpdateQuestion, "Save only");
+
+			await theSaveIsSent(server);
+			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+			expect(theParentSourcesEventsSent()).toEqual([
+				{ name: "ParentSourcesSavedWithSeveralEntries" },
+			]);
+		});
+
+		it("a default of two entries that is saved as it was sends nothing", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					defaults: { parentSourcesForTeams: sourcesOf(11, 12) },
+				}),
+			});
+
+			whenPriyaPressesSave();
+
+			await theSaveIsSent(server);
+			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+			expect(theParentSourcesEventsSent()).toEqual([]);
 		});
 	});
 
@@ -917,7 +966,7 @@ describe("defaults set once on the connection", () => {
 			await whenSheAnswers(TheUpdateQuestion, "Save only");
 			await theSaveIsSent(server);
 			expect(theSave(server).defaults).toMatchObject({
-				parentOverrideForTeams: 12,
+				parentSourcesForTeams: [{ kind: "TrackerParent" }, ...sourcesOf(12)],
 				estimationForTeams: {
 					additionalFieldDefinitionId: 13,
 					unit: "Points",
