@@ -321,13 +321,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         /// <summary>The Team reads whatever its connection's default lists.</summary>
-        protected void TheTeamFollowsTheConnectionsList() => theTeam.FollowParentSourcesDefault();
+        protected void TheTeamFollowsTheConnectionsList() => theTeam.FollowParentOverrideDefault();
 
         /// <summary>The default every Team on the Team's connection follows while it has no list of its own.</summary>
         protected void TheConnectionsListForTeamsIs(params ParentSourceEntry[] sources)
             => theTeam.WorkTrackingSystemConnection.SetParentSourcesDefaultForTeams(AValidList(sources));
 
-        protected void TheOtherTeamFollowsTheConnectionsList() => theOtherTeam.FollowParentSourcesDefault();
+        protected void TheOtherTeamFollowsTheConnectionsList() => theOtherTeam.FollowParentOverrideDefault();
 
         /// <summary>The Team as the database holds it, for what a scenario reads off the owner itself.</summary>
         protected Team TheStoredTeam()

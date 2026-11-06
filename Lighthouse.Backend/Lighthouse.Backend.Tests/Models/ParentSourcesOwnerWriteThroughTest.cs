@@ -49,18 +49,6 @@ namespace Lighthouse.Backend.Tests.Models
         }
 
         [Test]
-        public void An_owner_that_follows_the_default_leaves_its_own_old_column_as_it_was()
-        {
-            var team = new Team();
-            team.OwnParentOverride(A);
-
-            team.FollowParentSourcesDefault();
-
-            Assert.That(team.OwnParentOverrideAdditionalFieldDefinitionId, Is.EqualTo(A),
-                "Following writes nothing of its own, so what the owner held before is still there if it chooses again.");
-        }
-
-        [Test]
         public void An_owner_reads_its_own_list_a_follower_the_default_of_its_kind_and_without_a_default_the_own_parent_alone()
         {
             var ownList = ListOf(OwnParent, ParentSourceEntry.Field(A));
@@ -74,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Models
             owning.OwnParentSources(ownList);
             var gaveItsListUp = new Team { WorkTrackingSystemConnection = connection };
             gaveItsListUp.OwnParentSources(ownList);
-            gaveItsListUp.FollowParentSourcesDefault();
+            gaveItsListUp.FollowParentOverrideDefault();
             var followingPortfolio = new Portfolio { WorkTrackingSystemConnection = connection };
             var withoutADefault = new Team { WorkTrackingSystemConnection = new WorkTrackingSystemConnection() };
 

@@ -649,14 +649,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
         public async Task Commit_RemovingAFieldATeamListedBeforeItWentBackToTheDefault_IsSaved()
         {
             var team = new Team { Id = 8, Name = "Zulu", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentSources(AListWithCausedByAt(0));
-            team.FollowParentSourcesDefault();
+            team.FollowParentOverrideDefault();
             var subject = CreateSubjectWithOwnersOfTheCausedByField([team], []);
             var handle = await OpenTheOwnedConnection(subject);
             handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
 
             var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
 
-            Assert.That(outcome.Refused, Is.False, "The old column keeps the field after the Team stops owning a list, and nothing reads it there.");
+            Assert.That(outcome.Refused, Is.False, "A Team back on the default holds no list of its own, so it no longer uses the field.");
             connectionRepositoryMock.Verify(x => x.Save(), Times.Once);
         }
 

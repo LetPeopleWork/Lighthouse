@@ -179,13 +179,6 @@ namespace Lighthouse.Backend.Models
             ParentSources = list;
         }
 
-        /// <summary>The owner gives up its own list. The old column stays as it was, because following writes nothing of its own.</summary>
-        public void FollowParentSourcesDefault()
-        {
-            storedParentOverrideSource = SettingSource.ConnectionDefault;
-            ParentSources = null;
-        }
-
         /// <summary>The owner's own list while it owns one, else the connection default's, else the tracker's own parent alone.</summary>
         public ParentSources TheEffectiveParentSources()
             => (FollowsParentOverrideDefault ? null : ParentSources)

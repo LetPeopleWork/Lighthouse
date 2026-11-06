@@ -64,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Models
             var ownParentThenCausedBy = ParentSources.Of([OwnParent, ParentSourceEntry.Field(11)]).List!;
             connection.SetParentSourcesDefaultForTeams(causedByThenOwnParent);
             owner.OwnParentSources(causedByThenOwnParent);
-            follower.FollowParentSourcesDefault();
+            follower.FollowParentOverrideDefault();
             twin.OwnParentSources(causedByThenOwnParent);
             var ownerBefore = FetchFingerprint.For(owner);
             var followerBefore = FetchFingerprint.For(follower);

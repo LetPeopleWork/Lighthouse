@@ -139,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
 
             var afterTheSameEntries = TheListIsModifiedOnceSetBy(context, team, () => team.OwnParentSources(ParentSources.Of(FieldThenOwnParent.Entries).List!));
             var afterAnotherOrder = TheListIsModifiedOnceSetBy(context, team, () => team.OwnParentSources(OwnParentThenField));
-            var afterFollowing = TheListIsModifiedOnceSetBy(context, team, team.FollowParentSourcesDefault);
+            var afterFollowing = TheListIsModifiedOnceSetBy(context, team, team.FollowParentOverrideDefault);
 
             using (Assert.EnterMultipleScope())
             {
