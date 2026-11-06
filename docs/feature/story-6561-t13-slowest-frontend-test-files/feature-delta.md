@@ -447,8 +447,8 @@ no further work in this run and is recorded (the number, and "target not met, be
 (Q3). The harness commit stays. The other files of the slice carry on.
 
 **A-1 gate (one measure).** The per-test seconds of one band test of `refinementNeed`, including its typing, in the form
-against the same test in the section render, 5 alternating pairs under D-6561-20 (at least 3 valid). The ratio r is the
-form's seconds over the section's. The gate tests cost only: that the host shows what the form shows is proved at A-2, by the
+against the same test in the section render, 5 alternating pairs under D-6561-20 (at least 3 valid). The ratio r is the median, over the valid pairs, of the
+form's seconds over the section's. The section side is a throwaway spike file with a minimal `useState` host, deleted before A-1 commits, because the harness only arrives at A-2. The gate tests cost only: that the host shows what the form shows is proved at A-2, by the
 helper's own tests and the deliberate break, not here. What r has to be follows from the arithmetic. Assume the 31 form tests
 carry the file's time at the same cost c each, 23 of them move to the section at c/r, and 8 stay on the form at c:
 

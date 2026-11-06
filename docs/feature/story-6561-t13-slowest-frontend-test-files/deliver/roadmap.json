@@ -1,0 +1,170 @@
+{
+  "roadmap": {
+    "project_id": "story-6561-t13-slowest-frontend-test-files",
+    "created_at": "2026-11-06",
+    "total_steps": 5,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "The three slowest ModifyTeamSettings test files (refinementNeed, readiness, ModifyTeamSettings.test) run faster by rendering the smallest unit that owns each behaviour, with every existing behaviour still pinned and no production file changed.",
+    "notes": "Slice A only. Slices B and C are deferred and have no steps here; there is no budget step and no production file in any step. The budget stays 56 s: lowering it needs at least 5 complete plain main runs after a push and nothing is pushed in this run. Mutation testing is N/A because no production file changes; the maintainer sees this exception at the hold. Before-commit is d148c2d14. Measurement rule for every step: run named files only, with LIGHTHOUSE_TEST_WORKERS=2 from Lighthouse.Frontend; no full pnpm test and no Stryker while another session is mutating. A timing pair is valid only when all four 1-minute load-average samples (start and end of both its runs) are at or under half the cores; 5 alternating pairs, at least 3 valid; fewer than 3 valid is recorded as unmeasured, machine loaded, and stops the file (no retake loop). Summed per-test seconds are assertionResults[].duration of the file in Lighthouse.Frontend/test-results.json, with the report deleted before each run. Backstop rule: a wiring test is not removed until the test that replaces it exists and is green, in an earlier commit. A stopped file keeps its committed moves, gets no further work, is recorded with its number and the reason target not met, and the other files carry on. Test comments follow the project rule: plain-language why only, no internal references, no scenario tags. Nothing is pushed."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice A: ModifyTeamSettings x3",
+      "description": "Declare and measure, then move display and validation tests of readiness and refinementNeed to section renders behind one shared harness, trim ModifyTeamSettings.test, and close with the proofs. Directory: Lighthouse.Frontend/src/components/Common/Team.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Declare, measure and decide whether anything moves",
+          "description": "Save the before figures for the three files, profile one band test and one readiness test, run the gate that compares one refinementNeed band test in the whole form against the same test in the section render, count the form tests per section, list the backstops, and fix the up-to-5 loop-row figure of ModifyTeamSettings.test. No test or production code moves in this step. The section render of the gate is a throwaway spike file, never committed.",
+          "criteria": [
+            "Before figures are saved for the three files: summed per-test seconds, id lists from a results file, coverage of the Team directory (reference 96.26 line / 86.23 branch), and the CI-over-local ratio per file from the saved timing CSVs of earlier plain runs, with a local target in seconds stated per file",
+            "The gate runs one band test of refinementNeed, typing included, in the form against the section render, the section side being an uncommitted throwaway spike test file with a minimal useState host, deleted before this step commits: 5 alternating pairs, ratio r is the median over valid pairs of form seconds over section seconds, with load average sampled at the start and end of each run",
+            "The step stops when r is below 1.85 or when fewer than 3 of the 5 pairs are valid (recorded as unmeasured, machine loaded): nothing moves, the run goes to the hold, and steps 01-02 to 01-05 are not started",
+            "At r of 1.85 or more the run goes on; r between 1.85 and 2.05 may end as passing with no margin at 01-03",
+            "Each loop row of the does-not-auto-save-when-X-is-invalid test is compared with the rows of the teamAutoSaveBlockers function test by field, value and sentence, with both titles written beside the row; only rows with a matching pair may go",
+            "Every mapping-warning sentence and each of the seven invalid scenarios is checked as pinned by a function test; any unpinned one gets a named backstop test to write first, and the backstop list is finished in this step",
+            "The form is confirmed to list every reason for a blocked save, so the one-render mapping test is possible; if it lists only the first, the three mapping wiring tests stay and the change table says so",
+            "The up-to-5 figure in the change table and the list of tests that stay on ModifyTeamSettings.test are edited in the feature file in this step's commit to the number the check allows",
+            "Form tests per section are counted and the 23 of 47 (refinementNeed) and 18 of 24 (readiness) move counts are confirmed or corrected in the change table with the reason",
+            "No production file is changed, and no test file under Lighthouse.Frontend is changed in this step's commits other than a named backstop test, if the check above requires one; the throwaway spike file is gone and git status shows it"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+          "scenario_name": "No new scenario: the gate and the counts are read from existing tests; the stop is recorded in the measurement file",
+          "files_to_modify": [
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/feature-delta.md",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-measurement.md",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-moved-assertions.md"
+          ],
+          "dependencies": [],
+          "estimated_size": "M",
+          "implementation_notes": "Named files only, LIGHTHOUSE_TEST_WORKERS=2. Delete Lighthouse.Frontend/test-results.json before every run and pass the run start time to the helper scripts in the baseline folder, which refuse a stale report. If a backstop test has to be written, it is its own commit before any wiring test is removed. Commit the measurement and the edited change table as docs(test-infra), and the backstop tests (if any) as test(team-settings)."
+        },
+        {
+          "id": "01-02",
+          "name": "Harness commit, then readiness display and validation move to the section render",
+          "description": "First commit: add the renderRefinementSection helper in src/tests with its own tests, test-only, before any move. Then move the readiness display, refusal, aria-invalid, min/step and remembered-threshold tests (18 of 24) to a section render, keeping the 6 wiring tests on the whole form. This step is the stop check for readiness.",
+          "criteria": [
+            "The harness is its own commit, made before any test moves: a helper that renders one controlled unit of the Refinement section inside the form's providers and a host that keeps the value in state, returning the user and a latest() reader of the value the host holds now",
+            "The helper's own four tests are green before any Refinement test moves: the section shows the stored value until the admin edits; a change the admin makes shows as its new value; a second edit builds on the first edit's result; a test can read the value the admin has now",
+            "The helper has no query client, no fake clock, no debounce and no service, never hides an error, and carries one plain comment on why the value lives in state; changes() is added, with its own test in the same commit, only if a moved test needs it",
+            "Display and validation tests of readiness move to a section test file (name chosen after checking existing files so no duplicate is made) with titles unchanged; 18 of 24 move; the 6 wiring tests stay on the whole form unmodified, among them the single toggle-memory test that proves the toggle reaches the saved value",
+            "Every removed expect( has a row in the moved-assertions file and check-behaviour-free.sh exits 0; the id union diff from run-touched-files.sh ends OK",
+            "The deliberate breaks for this step are made one at a time, the named test is seen to fail, the break is restored, and both are recorded: the host that ignores onChange; the readiness toggle that stops remembering thresholds; the readiness handoff from section to form; the error mark on Yes votes needed",
+            "A break where no test fails is a finding and a test is added before the move commit",
+            "Stop check: readiness summed seconds are measured over 5 alternating pairs, at least 3 valid; the file stops when the projected cut is below 24 percent or fewer than 3 pairs are valid; the design target of 28 percent is reported beside it; between the two the file passes and is recorded as passing with no margin",
+            "A stop keeps the harness commit and the moves already committed and does not block 01-03 or 01-04",
+            "No production file changes and no scenario tag or internal reference appears in any comment"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/renderRefinementSection.test.tsx",
+          "scenario_name": "the section shows the value the Team was stored with until the admin edits it; a change the admin makes shows in the section as its new value; a second edit builds on the first edit's result, as in the form; a test can read the value the admin has now",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/renderRefinementSection.tsx",
+            "Lighthouse.Frontend/src/tests/renderRefinementSection.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/ReadinessSettings.test.tsx",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-moved-assertions.md",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-measurement.md"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "L",
+          "implementation_notes": "Order inside the step: (1) harness plus its tests as a test-only commit; (2) any pure file move as its own commit with no edit; (3) the readiness rewrite commit, with moved-assertions rows. The new file name ReadinessSettings.test.tsx is provisional: check the directory first. Only the section test files that receive moved tests import the helper. The files outside the seven that share helpers (refinement, queryCommit and the others in the baseline outside-seven folder) must keep their id lists unmodified. Measurement: named files only, LIGHTHOUSE_TEST_WORKERS=2, no full pnpm test, no Stryker. Commits: test(team-settings) for the harness and for the rewrite, separate."
+        },
+        {
+          "id": "01-03",
+          "name": "refinementNeed stage, cadence and band tests move to section renders",
+          "description": "Move stage rule display, cadence display and refusal, and band display, marks, explanations and the two it.each families (23 of 47) to section renders using the harness, keeping one saves-nothing-while-invalid wiring test per section kind and the other wiring tests on the whole form. This step is the stop check for refinementNeed.",
+          "criteria": [
+            "The 23 tests of the change table move to section render files (RefinementBandSettings, RefinementCadenceSettings, StageRulesSettings; names confirmed against existing files) with titles unchanged, or the count recorded by 01-01 applies",
+            "The 7 wiring tests stay on the whole form unmodified, with one saves-nothing-while-invalid test per section kind (stage rule, cadence, band, plus readiness from 01-02); the refinement picker test and the 16 tests that already render one unit or call a function stay as they are",
+            "Every removed expect( has a row and check-behaviour-free.sh exits 0; the id union diff ends OK and shows no id gone without a row",
+            "The deliberate breaks are made one at a time and recorded: refinementSettingsBlockers returning an empty list; teamAutoSaveBlockers returning an empty list (the named saves-nothing tests, one per section kind, fail); each of the band, stage rules and cadence handoffs from section to form replaced by onChange of an empty object; the form losing the unchanged part of the refinement value; the error mark on the band, the cadence limit of 52 weeks and the stage-rule spread broken in the section files; the picker given no mappings",
+            "A break where no test fails is a finding and a test is added before the rewrite commit",
+            "Stop check: refinementNeed summed seconds are measured over 5 alternating pairs, at least 3 valid; the file stops when the projected cut is below 34 percent or fewer than 3 pairs are valid; the design target of 38 percent is reported beside it; between the two the file passes and is recorded as passing with no margin",
+            "A stop keeps the committed moves, the harness stays, no further work is done on the file, and the number and the words target not met, because are recorded",
+            "No production file changes and no scenario tag or internal reference appears in any comment"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+          "scenario_name": "Moved tests keep their titles; no new scenario except any backstop named at the measuring step",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/RefinementBandSettings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/RefinementCadenceSettings.test.tsx",
+            "Lighthouse.Frontend/src/components/Common/Team/StageRulesSettings.test.tsx",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-moved-assertions.md",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-measurement.md"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "estimated_size": "L",
+          "implementation_notes": "Check which section test files already exist before creating one, so no duplicate is made; a cadence file may need a tsx beside the existing ts. Pure file moves are their own commit with no edit. Backstops from 01-01 are green in an earlier commit than any removal. Measure named files only with LIGHTHOUSE_TEST_WORKERS=2. Commit: test(team-settings)."
+        },
+        {
+          "id": "01-04",
+          "name": "ModifyTeamSettings.test keeps one mapping wiring and one all-kinds test",
+          "description": "Keep the Doing mapping-name wiring test, replace the other three mapping-name wiring tests with one form test that names every warning kind at once, and shrink the invalid-scenario loop to the rows the function tests do not cover, by the number fixed at 01-01. This step is the stop check for ModifyTeamSettings.test.",
+          "criteria": [
+            "One form test, says what holds back the save for a mapping of every kind of mistake at once, renders one form with a mapping of each of the four kinds and asserts the rendered sentence of each; it is written and green before the three wiring tests are removed, in an earlier commit",
+            "If 01-01 found that the form lists only the first reason, the three wiring tests stay and only the loop rows are trimmed",
+            "The kept Doing wiring test stays unmodified; only loop rows with a matching function-test pair (written beside them at 01-01) go, and the rows the function tests do not cover stay",
+            "Every removed expect( has a row and check-behaviour-free.sh exits 0; the id union diff ends OK and the one added id is listed",
+            "The deliberate breaks are made one at a time and recorded: teamAutoSaveBlockers without the mapping blockers; the form rendering only the first reason; the To Do clash, the Done clash and the grouped-elsewhere clash each removed (the new form test and the matching function test fail each time); the form-valid flag ignoring the reasons; the debounced save not dispatched on rename; the debounced auto-save deletion",
+            "A break where no test fails is a finding and a test is added first",
+            "Stop check at 1 percent, which five pairs cannot resolve: the rows removed match the change table and the summed seconds, measured by the same 5 alternating pairs as the other files, are not higher than before; anything finer is recorded as not resolvable",
+            "No production file changes and no scenario tag or internal reference appears in any comment"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+          "scenario_name": "says what holds back the save for a mapping of every kind of mistake at once",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-moved-assertions.md",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-measurement.md"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "Independent of the harness, so a stop of readiness or refinementNeed does not block it, but it still needs 01-01's go. Add the form test and any backstop first (commit one), remove the superseded tests second (commit two, with rows). Commit: test(team-settings)."
+        },
+        {
+          "id": "01-05",
+          "name": "Close slice A: after figures and every proof",
+          "description": "Save the after figures, run the id union diff and the behaviour-free script over the whole slice, measure coverage of the Team directory, confirm every deliberate break is recorded, run the build, and run the full test suite only if the machine is free.",
+          "criteria": [
+            "After summed seconds and the per-file cut are recorded for each of the three files against the table: required cut 34 percent refinementNeed, 24 percent readiness, 1 percent ModifyTeamSettings.test, each stopped file named with its number and the reason target not met, because",
+            "run-touched-files.sh against the before-commit d148c2d14 ends OK over every baseline, changed and new test file, and no outside-seven file id list changed",
+            "check-behaviour-free.sh against d148c2d14 exits 0 with no production, end-to-end or screenshot file in the diff, and no skip, only, todo, skipIf, runIf, looser matcher or longer timeout added",
+            "Coverage of the Team directory over the named files, line and branch, is not lower than the 01-01 reading",
+            "Every deliberate break of the slice is recorded with the test that failed and the restore",
+            "pnpm build in Lighthouse.Frontend is clean with zero errors and zero warnings, and git status is checked afterwards for rewritten files",
+            "pnpm test for the whole frontend runs only if the machine is free (no other session mutating); otherwise it is recorded as owed in the feature file, naming why",
+            "No Stryker run; mutation testing is recorded as N/A because no production file changed",
+            "The budget stays 56 s and the feature file records that slices B and C and the budget step are deferred",
+            "Nothing is committed beyond the slice's own commits and nothing is pushed"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/Team/ModifyTeamSettings.test.tsx",
+          "scenario_name": "No new scenario: closing proofs over the existing and moved tests",
+          "files_to_modify": [
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/feature-delta.md",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-measurement.md",
+            "docs/feature/story-6561-t13-slowest-frontend-test-files/measurement/slice-A-moved-assertions.md"
+          ],
+          "dependencies": [
+            "01-02",
+            "01-03",
+            "01-04"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "If an earlier step stopped at 01-01 this step is not started. Coverage is opt-in and run only for this check, over the named files of the Team directory. Measurement: named files only, LIGHTHOUSE_TEST_WORKERS=2. Commit: docs(test-infra)."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}
