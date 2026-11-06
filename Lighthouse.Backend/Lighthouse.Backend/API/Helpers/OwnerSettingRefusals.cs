@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.API.Helpers
                     StatusCodes.Status400BadRequest,
                     $"{kind.Code}-setting-source-unknown",
                     title: $"The {NounFor(kind)} names a source this version of Lighthouse does not know.",
-                    detail: $"The {unknown.Setting} source must be one of: {string.Join(", ", Enum.GetNames<SettingSource>())}. {NothingWasSaved}");
+                    detail: $"{unknown.ItsSource} must be one of: {string.Join(", ", Enum.GetNames<SettingSource>())}. {NothingWasSaved}");
             }
 
             if (owner?.ParentSourcesOwnedOnceTaken(setting) is { List: null } refused)
@@ -52,13 +52,18 @@ namespace Lighthouse.Backend.API.Helpers
                     StatusCodes.Status400BadRequest,
                     $"{kind.Code}-field-not-on-connection",
                     title: $"The {NounFor(kind)} names a field its connection does not have.",
-                    detail: $"The {lacking.Setting} is not an Additional Field of this {NounFor(kind)}'s connection. {NothingWasSaved}");
+                    detail: $"{lacking.ItsField} is not an Additional Field of this {NounFor(kind)}'s connection. {NothingWasSaved}");
             }
 
             return null;
         }
 
-        private sealed record SourcedSetting(string Setting, SettingSource? Source, Func<IEnumerable<int?>> FieldsOwnedOnceTaken);
+        private sealed record SourcedSetting(string Setting, SettingSource? Source, Func<IEnumerable<int?>> FieldsOwnedOnceTaken)
+        {
+            public string ItsSource { get; init; } = $"The {Setting} source";
+
+            public string ItsField { get; init; } = $"The {Setting}";
+        }
 
         // What each owner would hold is worked out only once every sent source is known, since reading a
         // setting under a source this version does not know has no answer.
@@ -66,7 +71,11 @@ namespace Lighthouse.Backend.API.Helpers
         {
             var sourced = new List<SourcedSetting>
             {
-                new("Parent Override Field", setting.ParentOverrideSource, () => ParentFieldsOwnedOnceTaken(owner, setting)),
+                new("Parent sources", setting.ParentOverrideSource, () => ParentFieldsOwnedOnceTaken(owner, setting))
+                {
+                    ItsSource = "The source of the Parent sources",
+                    ItsField = "One of the Parent sources",
+                },
                 new("Estimation Field", setting.EstimationSource,
                     () => [owner?.EstimationOwnedOnceTaken(setting.EstimationSource, setting.EstimationAsSent())]),
             };
@@ -115,7 +124,7 @@ namespace Lighthouse.Backend.API.Helpers
             var repeated = setting.ParentSources?.GroupBy(entry => entry).First(group => group.Count() > 1).Key;
 
             return repeated?.AdditionalFieldDefinitionId is { } field
-                ? TheConnectionTheSaveLeavesItOn(owner, setting)?.DisplayNameOfField(field) ?? $"Field {field}"
+                ? TheConnectionTheSaveLeavesItOn(owner, setting)?.DisplayNameOfField(field) ?? $"Unknown field (id {field})"
                 : "Parent";
         }
 

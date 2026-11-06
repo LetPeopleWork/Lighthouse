@@ -238,7 +238,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
 
         [TestCase("""[{"kind":"TrackerParent"},{"kind":"TrackerParent"}]""", "Parent is already in the list", Description = "The own parent twice")]
         [TestCase("""[{"kind":"AdditionalField","additionalFieldDefinitionId":99},{"kind":"AdditionalField","additionalFieldDefinitionId":99}]""",
-            "Field 99 is already in the list", Description = "A field the connection does not hold has no name to quote")]
+            "Unknown field (id 99) is already in the list", Description = "A field the connection does not hold has no name to quote")]
         public async Task A_repeated_entry_that_is_not_a_named_field_is_still_refused_by_what_can_be_said_of_it(string list, string message)
         {
             client.AsTeamAdmin(teamId);

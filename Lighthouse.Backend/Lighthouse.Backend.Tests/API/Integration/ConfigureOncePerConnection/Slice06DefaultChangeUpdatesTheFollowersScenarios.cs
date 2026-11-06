@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     {
         private const string TheApprovedLogEntry =
             "Connection \"Jira DC – Payments\" changed the Teams' Parent Override Field default from \"Caused by\" to \"Parent Link\"; "
-            + "3 Teams follow it: Fraud Signals, Ops Tooling, Mobile Wallet; 3 updates queued.";
+            + "3 Teams follow it: Fraud Signals, Ops Tooling, Mobile Wallet; 3 updates queued; parent sources moved 3 Teams.";
 
         private static readonly string[] EachFollowerDownloadsEverything = ["Fraud Signals Full", "Ops Tooling Full", "Mobile Wallet Full"];
 

@@ -572,7 +572,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-setting-source-unknown"));
                 Assert.That(problem?.Title, Is.EqualTo("The Portfolio names a source this version of Lighthouse does not know."));
-                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("The source of the Parent sources must be one of: ConnectionDefault, Own. Nothing was saved."));
             }
 
             portfolioRepoMock.Verify(x => x.Save(), Times.Never);
@@ -592,7 +592,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That((result.Result as ObjectResult)?.StatusCode, Is.EqualTo(400));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("portfolio-field-not-on-connection"));
                 Assert.That(problem?.Title, Is.EqualTo("The Portfolio names a field its connection does not have."));
-                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Portfolio's connection. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("One of the Parent sources is not an Additional Field of this Portfolio's connection. Nothing was saved."));
             }
 
             portfolioRepoMock.Verify(x => x.Save(), Times.Never);
@@ -639,7 +639,7 @@ namespace Lighthouse.Backend.Tests.API
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(problem?.Title, Is.EqualTo("The Program names a field its connection does not have."));
-                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Program's connection. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("One of the Parent sources is not an Additional Field of this Program's connection. Nothing was saved."));
             }
         }
 

@@ -5,6 +5,13 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// <summary>The owner's mutators in a shape an object initializer can end with.</summary>
     public static class OwnerSettings
     {
+        public static TOwner OwningParentSources<TOwner>(this TOwner owner, ParentSources list)
+            where TOwner : WorkTrackingSystemOptionsOwner
+        {
+            owner.OwnParentSources(list);
+            return owner;
+        }
+
         public static TOwner OwningParentOverride<TOwner>(this TOwner owner, int? additionalFieldDefinitionId)
             where TOwner : WorkTrackingSystemOptionsOwner
         {

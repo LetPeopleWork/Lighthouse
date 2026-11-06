@@ -25,22 +25,26 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
         private static readonly ConnectionSaveOutcome Saved = new([]);
 
-        private static readonly UpdatesQueued NoUpdatesQueued = new(0, 0);
-
         public Task<ConnectionSaveHandle?> Open(int connectionId, CancellationToken cancellationToken)
         {
             var connection = connectionRepository.GetById(connectionId);
-            var handle = connection is null
-                ? null
-                : new ConnectionSaveHandle(connection)
-                {
-                    DefaultsBeforeSave = ConnectionFieldDefaults.All.ToDictionary(
-                        fieldDefault => fieldDefault.Setting, fieldDefault => HeldOn(connection, fieldDefault)),
-                    StoredFieldsBeforeSave = connection.AdditionalFieldDefinitions.ToDictionary(field => field.Id, field => field.DisplayName),
-                    TeamFetchesBeforeSave = WhatEachTeamFetchesOn(connectionId),
-                    PortfolioFetchesBeforeSave = WhatEachPortfolioFetchesOn(connectionId),
-                };
-            return Task.FromResult(handle);
+            return Task.FromResult(connection is null ? null : HandleFor(connection));
+        }
+
+        private ConnectionSaveHandle HandleFor(WorkTrackingSystemConnection connection)
+        {
+            var teams = TeamsAsStoredOn(connection.Id);
+            var portfolios = PortfoliosAsStoredOn(connection.Id);
+            return new ConnectionSaveHandle(connection)
+            {
+                DefaultsBeforeSave = ConnectionFieldDefaults.All.ToDictionary(
+                    fieldDefault => fieldDefault.Setting, fieldDefault => HeldOn(connection, fieldDefault)),
+                StoredFieldsBeforeSave = connection.AdditionalFieldDefinitions.ToDictionary(field => field.Id, field => field.DisplayName),
+                TeamFetchesBeforeSave = WhatEachFetches(teams),
+                PortfolioFetchesBeforeSave = WhatEachFetches(portfolios),
+                TeamParentSourcesBeforeSave = WhatEachReadsItsParentFrom(teams),
+                PortfolioParentSourcesBeforeSave = WhatEachReadsItsParentFrom(portfolios),
+            };
         }
 
         public async Task<ConnectionSaveOutcome> Commit(ConnectionSaveHandle handle, Guid? concurrencyToken, bool startUpdates, CancellationToken cancellationToken)
@@ -64,7 +68,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             var updatesQueued = await StartUpdatesForTheOwnersWhoseFetchMoved(handle, startUpdates, cancellationToken);
             foreach (var fieldDefault in ConnectionFieldDefaults.All)
             {
-                LogTheChangedDefault(handle, ChangeOf(handle, fieldDefault), updatesQueued.For(fieldDefault.HeldFor));
+                LogTheChangedDefault(handle, ChangeOf(handle, fieldDefault), updatesQueued.For(fieldDefault.HeldFor), WhatTheListMoved(fieldDefault, updatesQueued.ParentSourcesMoved));
             }
 
             return Saved;
@@ -72,7 +76,9 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
         // Read from the database rather than from what this request has loaded, so a Team or Portfolio saved
         // with the field after this save was opened still blocks its removal. A setting that follows a default
-        // holds no value of its own, so only the owners that chose the field themselves are found here.
+        // holds no value of its own, so only the owners that chose the field themselves are found here. A list
+        // is stored as text and the old column holds only its first field, so neither can be filtered on: every
+        // owner of the connection is read, and the removed fields are matched against them in memory.
         private List<AdditionalFieldInUse> FieldsStillInUseAmong(List<RemovedAdditionalField> removed, WorkTrackingSystemConnection connection)
         {
             if (removed.Count == 0)
@@ -80,35 +86,27 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 return [];
             }
 
-            var removedIds = removed.Select(field => (int?)field.Id).ToList();
             var terms = OwnerTerms.From(terminologyService.GetAll());
             var defaults = ConnectionFieldDefaults.All.Select(fieldDefault => new DefaultNamingAField(
                 $"{OwnerTerms.PossessiveOfPlural(terms.PluralFor(fieldDefault.HeldFor))} {fieldDefault.NameIn(terms)}", fieldDefault.FieldOn(connection)));
             return AdditionalFieldInUse.AmongTheRemoved(
-                removed, defaults, [.. TeamsOwningAnyOf(removedIds, connection.Id), .. PortfoliosOwningAnyOf(removedIds, connection.Id)]);
+                removed, defaults, [.. WhatEachTeamOwnsOn(connection.Id), .. WhatEachPortfolioOwnsOn(connection.Id)]);
         }
 
-        private List<OwnerNamingFields> TeamsOwningAnyOf(List<int?> fieldIds, int connectionId)
-            => [.. teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId
-                    && (fieldIds.Contains(team.OwnParentOverrideAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(team.OwnEstimationAdditionalFieldDefinitionId)))
+        private List<OwnerNamingFields> WhatEachTeamOwnsOn(int connectionId)
+            => [.. teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId)
                 .OrderBy(team => team.Id)
-                .Select(team => new { team.Name, team.OwnParentOverrideAdditionalFieldDefinitionId, team.OwnEstimationAdditionalFieldDefinitionId })
+                .Select(team => new { team.Name, team.ParentSources, team.OwnEstimationAdditionalFieldDefinitionId })
                 .AsEnumerable()
-                .Select(team => new OwnerNamingFields(team.Name, [team.OwnParentOverrideAdditionalFieldDefinitionId, team.OwnEstimationAdditionalFieldDefinitionId]))];
+                .Select(team => new OwnerNamingFields(team.Name, [.. FieldsListedIn(team.ParentSources), team.OwnEstimationAdditionalFieldDefinitionId]))];
 
-        private List<OwnerNamingFields> PortfoliosOwningAnyOf(List<int?> fieldIds, int connectionId)
-            => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId
-                    && (fieldIds.Contains(portfolio.OwnParentOverrideAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.OwnSizeEstimateAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId)
-                        || fieldIds.Contains(portfolio.OwnEstimationAdditionalFieldDefinitionId)))
+        private List<OwnerNamingFields> WhatEachPortfolioOwnsOn(int connectionId)
+            => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId)
                 .OrderBy(portfolio => portfolio.Id)
                 .Select(portfolio => new
                 {
                     portfolio.Name,
-                    portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
+                    portfolio.ParentSources,
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
                     portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId,
@@ -116,12 +114,15 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 })
                 .AsEnumerable()
                 .Select(portfolio => new OwnerNamingFields(portfolio.Name, [
-                    portfolio.OwnParentOverrideAdditionalFieldDefinitionId,
+                    .. FieldsListedIn(portfolio.ParentSources),
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
                     portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.OwnEstimationAdditionalFieldDefinitionId,
                 ]))];
+
+        private static IEnumerable<int?> FieldsListedIn(ParentSources? list)
+            => list?.Entries.Select(entry => entry.AdditionalFieldDefinitionId) ?? [];
 
         private async Task PointTheDefaultsAtTheFieldsAddedInThisSave(ConnectionSaveHandle handle)
         {
@@ -165,32 +166,32 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
         private async Task<UpdatesQueued> StartUpdatesForTheOwnersWhoseFetchMoved(ConnectionSaveHandle handle, bool startUpdates, CancellationToken cancellationToken)
         {
-            if (!startUpdates)
-            {
-                return NoUpdatesQueued;
-            }
+            var parentSourcesMoved = ParentSourcesMoved.NotKnown;
 
             try
             {
-                var fetchShapeChange = FetchShapeChangeForTheOwnersWhoseFetchMoved(handle);
+                var moved = OwnersTheSaveMoved(handle);
+                parentSourcesMoved = moved.ParentSources;
+
+                var fetchShapeChange = startUpdates ? FetchShapeChangeFor(handle, moved) : null;
                 if (fetchShapeChange == null)
                 {
-                    return NoUpdatesQueued;
+                    return new(0, 0, parentSourcesMoved);
                 }
 
                 await domainEventDispatcher.PublishAsync(fetchShapeChange, cancellationToken);
-                return new(fetchShapeChange.TeamIds.Count, fetchShapeChange.PortfolioIds.Count);
+                return new(fetchShapeChange.TeamIds.Count, fetchShapeChange.PortfolioIds.Count, parentSourcesMoved);
             }
 #pragma warning disable CA1031 // The save is already stored: failing the request would tell the admin it was not and invite a second save that changes nothing, and every Team and Portfolio whose fetch moved still downloads everything at its next scheduled update.
             catch (Exception exception)
 #pragma warning restore CA1031
             {
-                logger.LogError(exception, "Connection {ConnectionId} was saved, but its Teams and Portfolios could not be told to update now; they will pick up the change at their next scheduled update", handle.ConnectionId);
-                return NoUpdatesQueued;
+                logger.LogError(exception, "Connection {ConnectionId} was saved, but its Teams and Portfolios could not be checked or told to update now; they will pick up the change at their next scheduled update", handle.ConnectionId);
+                return new(0, 0, parentSourcesMoved);
             }
         }
 
-        private void LogTheChangedDefault(ConnectionSaveHandle handle, ChangedConnectionDefault changed, int updatesQueued)
+        private void LogTheChangedDefault(ConnectionSaveHandle handle, ChangedConnectionDefault changed, int updatesQueued, string parentSourcesMoved)
         {
             var connection = handle.Connection;
             if (changed.After.IsTheSameDefaultAs(changed.Before))
@@ -201,13 +202,14 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             try
             {
                 logger.LogInformation(
-                    "Connection {ConnectionName} changed the {Default:l} default from {PreviousField} to {NewField}; {Followers:l}; {Queued:l}.",
+                    "Connection {ConnectionName} changed the {Default:l} default from {PreviousField} to {NewField}; {Followers:l}; {Queued:l}{ParentSourcesMoved:l}.",
                     connection.Name,
                     changed.Name,
                     changed.Before.Description ?? NoField,
                     changed.After.Description ?? NoField,
                     WhoFollows(changed.FollowersOf(connection), changed.Owners),
-                    HowManyQueued(updatesQueued));
+                    HowManyQueued(updatesQueued),
+                    parentSourcesMoved);
             }
 #pragma warning disable CA1031 // The save is already stored: failing the request over its log entry would tell the admin it was not.
             catch (Exception exception)
@@ -263,35 +265,62 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             _ => $"{updatesQueued} updates queued",
         };
 
-        // Kept synchronous so the architecture test sees this service build the event: in a Release build an
-        // async method's body moves into a struct that the test cannot attribute to its owner.
-        private ConnectionFetchShapeChanged? FetchShapeChangeForTheOwnersWhoseFetchMoved(ConnectionSaveHandle handle)
+        // Only the parent default can move a list on a connection save, because an owner's own list is saved with
+        // the owner, so the other defaults' entries say nothing about it.
+        private static string WhatTheListMoved(ConnectionFieldDefault fieldDefault, ParentSourcesMoved moved)
         {
-            var teamIds = OwnersWhoseFetchMoved.Between(handle.TeamFetchesBeforeSave, WhatEachTeamFetchesOn(handle.ConnectionId));
-            var portfolioIds = OwnersWhoseFetchMoved.Between(handle.PortfolioFetchesBeforeSave, WhatEachPortfolioFetchesOn(handle.ConnectionId));
-
-            if (teamIds.Count == 0 && portfolioIds.Count == 0)
+            if (fieldDefault.Setting is not (ConnectionDefaultSetting.ParentOverrideForTeams or ConnectionDefaultSetting.ParentOverrideForPortfolios))
             {
-                return null;
+                return string.Empty;
             }
 
-            return new ConnectionFetchShapeChanged(handle.ConnectionId, teamIds, portfolioIds);
+            var owners = WordsFor(fieldDefault.HeldFor);
+            return moved.For(fieldDefault.HeldFor) switch
+            {
+                null => $"; parent sources moved an unknown number of {owners.Many}",
+                0 => $"; parent sources moved no {owners.One}",
+                1 => $"; parent sources moved 1 {owners.One}",
+                var count => $"; parent sources moved {count} {owners.Many}",
+            };
+        }
+
+        // Kept synchronous so the architecture test sees this service build the event: in a Release build an
+        // async method's body moves into a struct that the test cannot attribute to its owner.
+        private static ConnectionFetchShapeChanged? FetchShapeChangeFor(ConnectionSaveHandle handle, OwnersMoved moved)
+            => moved.TeamFetches.Count == 0 && moved.PortfolioFetches.Count == 0
+                ? null
+                : new ConnectionFetchShapeChanged(handle.ConnectionId, moved.TeamFetches, moved.PortfolioFetches);
+
+        private OwnersMoved OwnersTheSaveMoved(ConnectionSaveHandle handle)
+        {
+            var teams = TeamsAsStoredOn(handle.ConnectionId);
+            var portfolios = PortfoliosAsStoredOn(handle.ConnectionId);
+            return new(
+                OwnersWhoseFetchMoved.Between(handle.TeamFetchesBeforeSave, WhatEachFetches(teams)),
+                OwnersWhoseFetchMoved.Between(handle.PortfolioFetchesBeforeSave, WhatEachFetches(portfolios)),
+                new ParentSourcesMoved(
+                    OwnersWhoseFetchMoved.Between(handle.TeamParentSourcesBeforeSave, WhatEachReadsItsParentFrom(teams)).Count,
+                    OwnersWhoseFetchMoved.Between(handle.PortfolioParentSourcesBeforeSave, WhatEachReadsItsParentFrom(portfolios)).Count));
         }
 
         // Read untracked, with the connection as it is stored: before the save, the edit this request is making
         // must not show yet, and after it, what counts is what the database now holds.
-        private Dictionary<int, string> WhatEachTeamFetchesOn(int connectionId)
-            => teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId)
+        private List<Team> TeamsAsStoredOn(int connectionId)
+            => [.. teamRepository.GetAllByPredicate(team => team.WorkTrackingSystemConnectionId == connectionId)
                 .AsNoTracking()
-                .Include(team => team.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
-                .AsEnumerable()
-                .ToDictionary(team => team.Id, team => FetchFingerprint.For(team));
+                .Include(team => team.WorkTrackingSystemConnection.AdditionalFieldDefinitions)];
 
-        private Dictionary<int, string> WhatEachPortfolioFetchesOn(int connectionId)
-            => portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId)
+        private List<Portfolio> PortfoliosAsStoredOn(int connectionId)
+            => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId)
                 .AsNoTracking()
-                .Include(portfolio => portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions)
-                .AsEnumerable()
-                .ToDictionary(portfolio => portfolio.Id, portfolio => FetchFingerprint.For(portfolio));
+                .Include(portfolio => portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions)];
+
+        private static Dictionary<int, string> WhatEachFetches<TOwner>(List<TOwner> owners)
+            where TOwner : WorkTrackingSystemOptionsOwner
+            => owners.ToDictionary(owner => owner.Id, owner => FetchFingerprint.For(owner));
+
+        private static Dictionary<int, string> WhatEachReadsItsParentFrom<TOwner>(List<TOwner> owners)
+            where TOwner : WorkTrackingSystemOptionsOwner
+            => owners.ToDictionary(owner => owner.Id, owner => FetchFingerprint.RenderParentSources(owner.TheEffectiveParentSources()));
     }
 }

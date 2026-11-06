@@ -145,6 +145,31 @@ namespace Lighthouse.Backend.Tests.Architecture
             typeof(AzureDevOpsWorkTrackingConnector).FullName!,
         ];
 
+        private static readonly string[] TheTypesThatMayReadTheOldParentMembers =
+        [
+            // They answer the old members for the list, and keep the two in step.
+            typeof(WorkTrackingSystemOptionsOwner).FullName!,
+            typeof(Team).FullName!,
+            typeof(Portfolio).FullName!,
+
+            // The registry rows of the two connection defaults still name the old single field. They move to the list with the defaults.
+            typeof(ConnectionFieldDefaults).FullName!,
+
+            // Azure DevOps does not read the ordered list yet. Once it does it leaves this list.
+            typeof(AzureDevOpsWorkTrackingConnector).FullName!,
+        ];
+
+        private static readonly (Type DeclaredOn, string Member)[] TheOldParentMembers =
+        [
+            (typeof(WorkTrackingSystemOptionsOwner), nameof(WorkTrackingSystemOptionsOwner.OwnParentOverrideAdditionalFieldDefinitionId)),
+            (typeof(WorkTrackingSystemConnection), nameof(WorkTrackingSystemConnection.ParentOverrideForTeams)),
+            (typeof(WorkTrackingSystemConnection), nameof(WorkTrackingSystemConnection.ParentOverrideForPortfolios)),
+
+            // The effective value is the road from a connector to those columns, on the owner and on the interface it reads the owner through.
+            (typeof(WorkTrackingSystemOptionsOwner), nameof(WorkTrackingSystemOptionsOwner.ParentOverrideAdditionalFieldDefinitionId)),
+            (typeof(IWorkItemQueryOwner), nameof(IWorkItemQueryOwner.ParentOverrideAdditionalFieldDefinitionId)),
+        ];
+
         // The generic repository is named whole: the reading splits IRepository<Feature> into its two halves,
         // and Feature alone is what every connector returns. No connector holds a repository of any kind.
         private static readonly Type[] TheWaysToTheStoredFeatures =
@@ -628,6 +653,33 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "parent overrules that choice on the records it touches, and the result depends on which ran last. " +
                 "Return a ParentChoice and hand it to HangUnder. If an entry here no longer writes one, remove it.");
         }
+
+        /// <summary>
+        /// The old columns hold at most the first field of a list, so anything deciding from them is right
+        /// only until someone lists a second field, and then quietly wrong. Read from the compiled code, where
+        /// a query's reference to the getter counts as a read as well: that is how a database filter reads one.
+        /// </summary>
+        [Test]
+        public void NobodyReadsTheLegacyParentColumns()
+        {
+            using var module = IlDependencies.ReadModule(typeof(ParentSourceSelector).Assembly);
+
+            var readers = module.Types
+                .SelectMany(TypeAndItsNestedTypes)
+                .Where(type => type.Methods.Any(method => method.HasBody && method.Body.Instructions.Any(ReadsAnOldParentMember)))
+                .Select(type => IlDependencies.DeclaringTypeOf(type.FullName.Replace('/', '+')))
+                .Distinct(StringComparer.Ordinal)
+                .ToList();
+
+            Assert.That(readers, Is.EquivalentTo(TheTypesThatMayReadTheOldParentMembers),
+                "Read the owner's TheEffectiveParentSources() or its ParentSources. The old members survive for a " +
+                "build one release back and for the Azure DevOps connector, and hold only the first field of a list. " +
+                "If an entry here no longer reads one, remove it.");
+        }
+
+        private static bool ReadsAnOldParentMember(Mono.Cecil.Cil.Instruction instruction)
+            => instruction.Operand is Mono.Cecil.MethodReference call
+                && Array.Exists(TheOldParentMembers, old => call.Name == $"get_{old.Member}" && Names(old.DeclaredOn, call.DeclaringType));
 
         private static bool SetsAParent(Mono.Cecil.Cil.Instruction instruction)
             => instruction.Operand is Mono.Cecil.MethodReference call

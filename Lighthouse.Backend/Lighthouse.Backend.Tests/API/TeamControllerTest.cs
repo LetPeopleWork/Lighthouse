@@ -1079,7 +1079,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(refusal?.StatusCode, Is.EqualTo(400));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("team-setting-source-unknown"));
                 Assert.That(problem?.Title, Is.EqualTo("The Team names a source this version of Lighthouse does not know."));
-                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field source must be one of: ConnectionDefault, Own. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("The source of the Parent sources must be one of: ConnectionDefault, Own. Nothing was saved."));
             }
 
             teamRepositoryMock.Verify(x => x.Save(), Times.Never);
@@ -1104,7 +1104,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(refusal?.StatusCode, Is.EqualTo(400));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("team-field-not-on-connection"));
                 Assert.That(problem?.Title, Is.EqualTo("The Team names a field its connection does not have."));
-                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Team's connection. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("One of the Parent sources is not an Additional Field of this Team's connection. Nothing was saved."));
             }
 
             teamRepositoryMock.Verify(x => x.Save(), Times.Never);
@@ -1127,7 +1127,7 @@ namespace Lighthouse.Backend.Tests.API
             {
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("team-field-not-on-connection"));
                 Assert.That(problem?.Title, Is.EqualTo("The Squad names a field its connection does not have."));
-                Assert.That(problem?.Detail, Is.EqualTo("The Parent Override Field is not an Additional Field of this Squad's connection. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("One of the Parent sources is not an Additional Field of this Squad's connection. Nothing was saved."));
             }
         }
 

@@ -33,8 +33,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         private static readonly string[] EachDefaultWithTheUpdatesQueuedForItsOwnGrain =
         [
-            "Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued.",
-            "Connection Connection changed the Portfolios' Parent Override Field default from none to Caused by; 1 Portfolio follows it: Card Issuing; 1 update queued.",
+            "Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued; parent sources moved 2 Teams.",
+            "Connection Connection changed the Portfolios' Parent Override Field default from none to Caused by; 1 Portfolio follows it: Card Issuing; 1 update queued; parent sources moved 1 Portfolio.",
         ];
 
         private static readonly string[] PortfoliosOwningCausedByInCreationOrder = ["Parent Override", "Dependency", "Size", "Feature Owner", "Estimation"];
@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(written, Has.Count.EqualTo(1));
-                Assert.That(written, Has.Some.EqualTo("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; no update queued."));
+                Assert.That(written, Has.Some.EqualTo("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
             }
         }
 
@@ -262,7 +262,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; no Team follows it; no update queued."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; no Team follows it; no update queued; parent sources moved no Team."));
         }
 
         [Test]
@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; no update queued."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; no update queued; parent sources moved 1 Team."));
         }
 
         [Test]
@@ -290,7 +290,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from Caused by to none; 2 Teams follow it: Alpha, Bravo; no update queued."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from Caused by to none; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
         }
 
         [Test]
@@ -346,7 +346,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(handle.Connection.ParentOverrideForTeams, Is.EqualTo(StoredEpicLinkId));
-                Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Epic Link; 2 Teams follow it: Alpha, Bravo; no update queued."));
+                Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Epic Link; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
             }
 
             connectionRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
@@ -505,7 +505,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued; parent sources moved 2 Teams."));
         }
 
         [Test]
@@ -521,7 +521,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; 1 update queued."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; 1 update queued; parent sources moved 1 Team."));
         }
 
         [Test]
@@ -593,6 +593,121 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             }
 
             connectionRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [TestCase(1, TestName = "Commit_RemovingTheSecondFieldOfATeamsList_IsRefusedNamingTheTeam")]
+        [TestCase(2, TestName = "Commit_RemovingTheThirdFieldOfATeamsList_IsRefusedNamingTheTeam")]
+        [TestCase(0, TestName = "Commit_RemovingTheFirstFieldOfATeamsList_IsRefusedNamingTheTeam")]
+        public async Task Commit_RemovingAFieldATeamLists_IsRefusedNamingTheTeam(int position)
+        {
+            var teams = new List<Team>
+            {
+                new Team { Id = 8, Name = "Zulu", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentSources(AListWithCausedByAt(position)),
+                new Team { Id = 3, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId }.OwningParentSources(AListWithCausedByAt(position)),
+            };
+            var subject = CreateSubjectWithOwnersOfTheCausedByField(teams, []);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Refused, Is.True);
+                Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo("\"Caused by\" cannot be removed. Zulu uses it as its own. Nothing was saved."));
+            }
+
+            connectionRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [TestCase(1, TestName = "Commit_RemovingTheSecondFieldOfAPortfoliosList_IsRefusedNamingThePortfolio")]
+        [TestCase(2, TestName = "Commit_RemovingTheThirdFieldOfAPortfoliosList_IsRefusedNamingThePortfolio")]
+        [TestCase(0, TestName = "Commit_RemovingTheFirstFieldOfAPortfoliosList_IsRefusedNamingThePortfolio")]
+        public async Task Commit_RemovingAFieldAPortfolioLists_IsRefusedNamingThePortfolio(int position)
+        {
+            var portfolios = new List<Portfolio>
+            {
+                new Portfolio { Id = 11, Name = "Card Issuing", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentSources(AListWithCausedByAt(position)),
+                new Portfolio { Id = 9, Name = "Elsewhere", WorkTrackingSystemConnectionId = OtherConnectionId }.OwningParentSources(AListWithCausedByAt(position)),
+            };
+            var subject = CreateSubjectWithOwnersOfTheCausedByField([], portfolios);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.Refused, Is.True);
+                Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo("\"Caused by\" cannot be removed. Card Issuing uses it as its own. Nothing was saved."));
+            }
+
+            connectionRepositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task Commit_RemovingAFieldATeamListedBeforeItWentBackToTheDefault_IsSaved()
+        {
+            var team = new Team { Id = 8, Name = "Zulu", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentSources(AListWithCausedByAt(0));
+            team.FollowParentSourcesDefault();
+            var subject = CreateSubjectWithOwnersOfTheCausedByField([team], []);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.AdditionalFieldDefinitions.RemoveAll(field => field.Id == CausedById);
+
+            var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(outcome.Refused, Is.False, "The old column keeps the field after the Team stops owning a list, and nothing reads it there.");
+            connectionRepositoryMock.Verify(x => x.Save(), Times.Once);
+        }
+
+        [Test]
+        public async Task Commit_TheParentDefaultChangedButTheListsCouldNotBeReadBack_LogsThatTheCountIsNotKnown()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            List<Team> teams = [new() { Id = 2, Name = "Alpha", WorkTrackingSystemConnectionId = OwnedConnectionId }];
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log, teams);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+            teamRepositoryMock.SetupSequence(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Team, bool>>>()))
+                .Throws(new InvalidOperationException("the database went away"))
+                .Returns(teams.AsQueryable());
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Some.EndsWith("; no update queued; parent sources moved an unknown number of Teams."));
+        }
+
+        [Test]
+        public async Task Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            domainEventDispatcherMock.Setup(x => x.PublishAsync(It.IsAny<ConnectionFetchShapeChanged>(), It.IsAny<CancellationToken>()))
+                .ThrowsAsync(new InvalidOperationException("the queue went away"));
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Some.EndsWith("; no update queued; parent sources moved 2 Teams."));
+        }
+
+        [Test]
+        public async Task Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log,
+            [
+                new() { Id = 2, Name = "Alpha", WorkTrackingSystemConnectionId = OwnedConnectionId },
+                new Team { Id = 5, Name = "Bravo", WorkTrackingSystemConnectionId = OwnedConnectionId }.OwningParentSources(AListWithCausedByAt(1)),
+            ]);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.ParentOverrideForTeams = CausedById;
+            AddAField(handle);
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; 2 updates queued; parent sources moved 1 Team."));
         }
 
         [Test]
@@ -707,6 +822,13 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
 
             Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Estimation default from none to Caused by, Points; 3 Teams follow it: Alpha, Bravo, Chose None; no update queued."));
+        }
+
+        private static ParentSources AListWithCausedByAt(int position)
+        {
+            List<ParentSourceEntry> entries = [ParentSourceEntry.Field(ParentLinkId), ParentSourceEntry.TrackerParent];
+            entries.Insert(position, ParentSourceEntry.Field(CausedById));
+            return ParentSources.Of(entries).List!;
         }
 
         private void GivenThisInstanceCalls(string team, string teams, string portfolio, string portfolios, string feature = "Feature")

@@ -19,6 +19,12 @@ namespace Lighthouse.Backend.Services.Interfaces
 
         public IReadOnlyDictionary<int, string> PortfolioFetchesBeforeSave { get; init; } = new Dictionary<int, string>();
 
+        // Where each Team and each Portfolio read its parent from when the save was opened, by id. A fetch can move
+        // for other reasons, so only this says how many owners the parent sources moved.
+        public IReadOnlyDictionary<int, string> TeamParentSourcesBeforeSave { get; init; } = new Dictionary<int, string>();
+
+        public IReadOnlyDictionary<int, string> PortfolioParentSourcesBeforeSave { get; init; } = new Dictionary<int, string>();
+
         // Kept by name as well as id, because the save may rename or remove the field a default named.
         public IReadOnlyDictionary<ConnectionDefaultSetting, NamedField> DefaultsBeforeSave { get; init; } = new Dictionary<ConnectionDefaultSetting, NamedField>();
 
