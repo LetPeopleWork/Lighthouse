@@ -116,24 +116,20 @@ class TimeBudgetTestCase(base.BudgetCheckTestCase):
 
 
 class TheWarnOnlySwitchIsReadFromTheEnvironment(unittest.TestCase):
-    @unittest.skip("pending: warn_only_requested is not built yet")
     def test_an_unset_empty_or_false_variable_enforces(self):
         for environment in ({}, {SWITCH: ""}, {SWITCH: "false"}):
             with self.subTest(environment=environment):
                 self.assertFalse(check_budget.warn_only_requested(environment, False))
 
-    @unittest.skip("pending: warn_only_requested is not built yet")
     def test_the_variable_set_to_true_warns(self):
         self.assertTrue(check_budget.warn_only_requested({SWITCH: "true"}, False))
 
-    @unittest.skip("pending: warn_only_requested is not built yet")
     def test_the_flag_warns_whatever_the_variable_says(self):
         for value in (None, "", "false", "true", "maybe", "TRUE"):
             environment = {} if value is None else {SWITCH: value}
             with self.subTest(environment=environment):
                 self.assertTrue(check_budget.warn_only_requested(environment, True))
 
-    @unittest.skip("pending: warn_only_requested is not built yet")
     def test_any_other_value_gives_no_verdict_and_names_the_variable(self):
         for value in ("TRUE", "True", "1", "yes", "on", " true", "false ", "maybe"):
             with self.subTest(value=value):
@@ -157,7 +153,6 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
                         breach_phrase("70.0", 60),
                     )
 
-    @unittest.skip("pending: the check does not read the variable yet")
     def test_a_breach_is_a_warning_and_the_build_passes_when_the_variable_is_true(self):
         for stack in ("frontend", "backend"):
             with self.subTest(stack=stack):
@@ -183,7 +178,6 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
                         breach_phrase("70.0", 60),
                     )
 
-    @unittest.skip("pending: the check does not say that enforcement is off yet")
     def test_a_notice_names_the_variable_and_says_enforcement_is_off_when_it_is_true(self):
         for stack in ("frontend", "backend"):
             with self.subTest(stack=stack):
@@ -214,7 +208,6 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
 
                     self.assertEqual(self.annotations(result, "notice"), [], msg=self._explain(result))
 
-    @unittest.skip("pending: the check does not read the variable yet")
     def test_any_other_value_gives_no_verdict_and_names_the_variable(self):
         for stack in ("frontend", "backend"):
             for switch in ("TRUE", "1", "yes"):
@@ -227,7 +220,6 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
                         workspace.check(stack, timings, switch=switch), SWITCH
                     )
 
-    @unittest.skip("pending: the check does not read the variable yet")
     def test_an_invalid_value_gives_no_verdict_even_when_nothing_is_over_the_budget(self):
         timings = self.workspace.backend_timings({f"{NS}.CacheTest.Reads": 1.0})
         self.workspace.budget()
@@ -246,7 +238,6 @@ class TheSwitchDecidesWhatABreachDoesOnBothStacks(TimeBudgetTestCase):
             base.ALLOWLIST_NAME,
         )
 
-    @unittest.skip("pending: the check does not read the variable yet")
     def test_a_breach_is_softened_but_a_stale_entry_in_the_same_run_still_fails(self):
         self.workspace.declare_test_class("CacheTest")
         timings = self.workspace.backend_timings({f"{NS}.CacheTest.Concurrent": 70.0})

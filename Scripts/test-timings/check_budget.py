@@ -26,6 +26,7 @@ require_python(sys.version_info)
 import argparse
 import csv
 import json
+import os
 import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -136,7 +137,17 @@ WARN_ONLY_VARIABLE = "LIGHTHOUSE_BUDGET_WARN_ONLY"
 
 
 def warn_only_requested(environment: dict[str, str], flag: bool) -> bool:
-    raise AssertionError("warn_only_requested is not built yet")
+    if flag:
+        return True
+    value = environment.get(WARN_ONLY_VARIABLE, "")
+    if value in ("", "false"):
+        return False
+    if value == "true":
+        return True
+    raise CannotJudge(
+        f"{WARN_ONLY_VARIABLE} is set to {escaped(repr(value))}, "
+        "but only true or false (or leaving it unset) are understood"
+    )
 
 
 def unneeded_entries(
@@ -337,6 +348,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _check(arguments: argparse.Namespace) -> int:
     stack, allowlist_name = arguments.stack, arguments.allowlist.name
+    warn_only = warn_only_requested(os.environ, arguments.warn_only)
     rows = load_timings(stack, arguments.csv)
     budget_seconds, ceilings = load_allowlist(stack, arguments.allowlist)
     if stack == "backend" and not arguments.source_root.is_dir():
@@ -347,12 +359,14 @@ def _check(arguments: argparse.Namespace) -> int:
     findings = judge(stack, rows, budget_seconds, ceilings)
     still_present = _still_present(stack, rows, arguments.source_root, ceilings)
     stale = stale_entries(list(ceilings), still_present)
-    kind = "warning" if arguments.warn_only else "error"
+    kind = "warning" if warn_only else "error"
+    if warn_only and not arguments.warn_only:
+        print(f"::notice::{WARN_ONLY_VARIABLE} is true, so budget enforcement is off")
     for finding in findings:
         print(breach_annotation(finding, allowlist_name, kind))
     for unit in stale:
         print(stale_annotation(stack, unit, allowlist_name))
-    breached = bool(findings) and not arguments.warn_only
+    breached = bool(findings) and not warn_only
     return 1 if breached or stale else 0
 
 
