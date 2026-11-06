@@ -127,12 +127,6 @@ describe("nameOfParentSource", () => {
 		["Jira", ownParent, "Parent (Jira's own)"],
 		["Jira", field(12), "Program Ref"],
 		["Jira", field(99), "Unknown field (id 99)"],
-	])("on %s a row reads %j as %s", (tracker, entry, expected) => {
-		expect(nameOfParentSource(entry, tracker, TheFields)).toBe(expected);
-	});
-
-	// Azure DevOps does not read the list yet, so no row can show there.
-	it.skip.each<[WorkTrackingSystemType, ParentSourceEntry, string]>([
 		["AzureDevOps", ownParent, "Parent (Azure DevOps' own)"],
 	])("on %s a row reads %j as %s", (tracker, entry, expected) => {
 		expect(nameOfParentSource(entry, tracker, TheFields)).toBe(expected);
@@ -142,18 +136,11 @@ describe("nameOfParentSource", () => {
 describe("parentSourcesAreOffered", () => {
 	it.each<[WorkTrackingSystemType, boolean]>([
 		["Jira", true],
+		["AzureDevOps", true],
 		["Linear", false],
 		["Csv", false],
 		["ServiceNow", false],
 	])("on %s the Parent sources are offered: %s", (tracker, offered) => {
 		expect(parentSourcesAreOffered(tracker)).toBe(offered);
 	});
-
-	// Offering the list on Azure DevOps before it reads the list would promise an order nothing honours.
-	it.skip.each<[WorkTrackingSystemType, boolean]>([["AzureDevOps", true]])(
-		"on %s the Parent sources are offered: %s",
-		(tracker, offered) => {
-			expect(parentSourcesAreOffered(tracker)).toBe(offered);
-		},
-	);
 });

@@ -23,7 +23,7 @@ import ModifyConnectionSettings from "./ModifyConnectionSettings";
 
 /**
  * Priya, System Admin, sets the defaults every Team and Portfolio on "Jira DC – Payments" follows. Beside the
- * Parent Override Field and the Dependency Field rows sits the same info button the Team and Portfolio settings
+ * Parent sources and the Dependency Field rows sits the same info button the Team and Portfolio settings
  * show, with the tracker's own example and a "Learn More" to the docs; the other default rows carry none.
  */
 
@@ -34,7 +34,7 @@ vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 }));
 
 const JiraDcPayments = "Jira DC – Payments";
-const PARENT_OVERRIDE = "Parent Override Field";
+const PARENT_OVERRIDE = "Parent sources";
 const DEPENDENCY = "Dependency Field";
 const IS_CAUSED_BY = /is caused by/;
 const IS_BLOCKED_BY = /is blocked by/;

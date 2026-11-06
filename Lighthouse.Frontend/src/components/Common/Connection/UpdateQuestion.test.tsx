@@ -58,7 +58,7 @@ const askBecause = (why: WhyUpdate) => {
 const theDefaultsChanged = (
 	teams: number,
 	portfolios: number,
-	defaults = ["Parent Override Field"],
+	defaults = ["Parent sources"],
 	changes: WhatChanges[] = ["parents"],
 ): WhyUpdate => ({ because: "defaults", teams, portfolios, defaults, changes });
 
@@ -74,28 +74,28 @@ describe("UpdateQuestion", () => {
 				terms: TheDefaultWords,
 				why: theDefaultsChanged(1, 0),
 				title: "Update 1 Team and 0 Portfolios?",
-				says: `1 Team follows the Parent Override Field default. ${UntilUpdated}`,
+				says: `1 Team follows the Parent sources default. ${UntilUpdated}`,
 			},
 			{
 				case: "one Portfolio",
 				terms: TheDefaultWords,
 				why: theDefaultsChanged(0, 1),
 				title: "Update 0 Teams and 1 Portfolio?",
-				says: `1 Portfolio follows the Parent Override Field default. ${UntilUpdated}`,
+				says: `1 Portfolio follows the Parent sources default. ${UntilUpdated}`,
 			},
 			{
 				case: "three Portfolios",
 				terms: TheDefaultWords,
 				why: theDefaultsChanged(0, 3),
 				title: "Update 0 Teams and 3 Portfolios?",
-				says: `3 Portfolios follow the Parent Override Field default. ${UntilUpdated}`,
+				says: `3 Portfolios follow the Parent sources default. ${UntilUpdated}`,
 			},
 			{
 				case: "Teams and Portfolios",
 				terms: TheDefaultWords,
 				why: theDefaultsChanged(3, 2),
 				title: "Update 3 Teams and 2 Portfolios?",
-				says: `3 Teams and 2 Portfolios follow the Parent Override Field default. ${UntilUpdated}`,
+				says: `3 Teams and 2 Portfolios follow the Parent sources default. ${UntilUpdated}`,
 			},
 			{
 				case: "the Dependency Field default",
@@ -162,25 +162,25 @@ describe("UpdateQuestion", () => {
 				why: theDefaultsChanged(
 					0,
 					2,
-					["Parent Override Field", "Dependency Field"],
+					["Parent sources", "Dependency Field"],
 					["parents", "dependencies"],
 				),
 				title: "Update 0 Teams and 2 Portfolios?",
-				says: `2 Portfolios follow the Parent Override Field and Dependency Field defaults. ${UntilWhatTheyReadUpdated}`,
+				says: `2 Portfolios follow the Parent sources and Dependency Field defaults. ${UntilWhatTheyReadUpdated}`,
 			},
 			{
 				case: "the Teams' and the Portfolios' Parent Override defaults",
 				terms: TheDefaultWords,
-				why: theDefaultsChanged(1, 2, ["Parent Override Field"], ["parents"]),
+				why: theDefaultsChanged(1, 2, ["Parent sources"], ["parents"]),
 				title: "Update 1 Team and 2 Portfolios?",
-				says: `1 Team and 2 Portfolios follow the Parent Override Field default. ${UntilUpdated}`,
+				says: `1 Team and 2 Portfolios follow the Parent sources default. ${UntilUpdated}`,
 			},
 			{
 				case: "renamed Teams and Portfolios",
 				terms: SquadsAndPrograms,
 				why: theDefaultsChanged(1, 2),
 				title: "Update 1 Squad and 2 Programs?",
-				says: `1 Squad and 2 Programs follow the Parent Override Field default. ${UntilUpdated}`,
+				says: `1 Squad and 2 Programs follow the Parent sources default. ${UntilUpdated}`,
 			},
 			{
 				case: "the Feature Owner Field default, with Features renamed to a plural without an s",

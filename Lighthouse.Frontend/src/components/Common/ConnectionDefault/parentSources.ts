@@ -115,9 +115,15 @@ const definitionOf = (
 		(candidate) => candidate.id === entry.additionalFieldDefinitionId,
 	);
 
-/** Whose parent the tracker's own entry reads, in words: "Jira's own". */
+/** The tracker as a person writes it: "Azure DevOps", not the type's "AzureDevOps". */
+export const nameOfTracker = (tracker: WorkTrackingSystemType): string =>
+	tracker === "AzureDevOps" ? "Azure DevOps" : tracker;
+
+/** Whose parent the tracker's own entry reads, in words: "Jira's own", "Azure DevOps' own". */
 export const theTrackersOwn = (tracker: WorkTrackingSystemType): string =>
-	`${tracker}'s own`;
+	tracker === "AzureDevOps"
+		? `${nameOfTracker(tracker)}' own`
+		: `${tracker}'s own`;
 
 /** How a row reads: the field's name, "Parent (Jira's own)", or "Unknown field (id 12)". */
 export const nameOfParentSource = (
@@ -145,4 +151,4 @@ export const namesAnUnknownField = (
 /** Only the trackers that read the list show it; the others keep the parents they build themselves. */
 export const parentSourcesAreOffered = (
 	tracker: WorkTrackingSystemType,
-): boolean => tracker === "Jira";
+): boolean => tracker === "Jira" || tracker === "AzureDevOps";

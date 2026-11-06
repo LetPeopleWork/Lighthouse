@@ -1000,9 +1000,9 @@ describe("auto-save names the parent sources one way only", () => {
 		}
 	});
 
-	it("on Azure DevOps, two saves in a row carry the old field and leave out the list the page does not edit", async () => {
+	it("on a tracker that does not read the list, two saves in a row carry the old field and leave out the list the page does not edit", async () => {
 		const saveSettings = vi.fn().mockResolvedValue(undefined);
-		const args = anOwnerOn("AzureDevOps", saveSettings);
+		const args = anOwnerOn("Linear", saveSettings);
 		const { result } = renderHook(() => useModifySettings(args));
 		await waitFor(() => expect(result.current.settings).not.toBeNull());
 

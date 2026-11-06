@@ -500,7 +500,7 @@ namespace Lighthouse.Backend.Tests.API
                 Assert.That(refusal?.StatusCode, Is.EqualTo(409));
                 Assert.That(problem?.Extensions["code"], Is.EqualTo("additional-field-in-use"));
                 Assert.That(problem?.Title, Is.EqualTo("An Additional Field this save removes is still in use."));
-                Assert.That(problem?.Detail, Is.EqualTo("\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default. Nothing was saved."));
+                Assert.That(problem?.Detail, Is.EqualTo("\"Caused by\" cannot be removed. It is the Teams' Parent sources default. Nothing was saved."));
             }
 
             repositoryMock.Verify(x => x.Save(), Times.Never);

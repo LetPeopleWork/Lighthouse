@@ -80,12 +80,14 @@ describe("Story 6352: Parent sources says which way round it reads", () => {
 		expect(tip).not.toHaveTextContent(/None/);
 	});
 
-	it("the select an Azure DevOps Team still has keeps saying what None does", async () => {
+	it("on an Azure DevOps Team, the tip says which row is Azure DevOps' own parent", async () => {
 		await givenSamOpensTheSettingsOf("Team", "AzureDevOps");
 
-		expect(await whenSamOpensTheTip()).toHaveTextContent(
-			"With None, the parent the tracker itself records is used.",
+		const tip = await whenSamOpensTheTip();
+		expect(tip).toHaveTextContent(
+			"Parent (Azure DevOps' own) is the parent Azure DevOps itself records.",
 		);
+		expect(tip).not.toHaveTextContent(/None/);
 	});
 
 	it("the select on a Jira connection, which has a None until it holds a list, keeps saying what None does", () => {

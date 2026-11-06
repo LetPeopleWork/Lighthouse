@@ -30,7 +30,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             var refreshed = await TheTeamIsRefreshed();
 
             Assert.That(TheParentOf(refreshed, TheChild), Is.EqualTo(TheParent),
-                "An administrator who named a link type in Parent Override Field expects the issue on the other end of that link to become the parent. Until this reads, the feature does nothing at all.");
+                "An administrator who named a link type in Parent sources expects the issue on the other end of that link to become the parent. Until this reads, the feature does nothing at all.");
         }
 
         /// <summary>

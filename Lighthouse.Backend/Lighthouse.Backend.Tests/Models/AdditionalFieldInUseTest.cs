@@ -7,7 +7,7 @@ namespace Lighthouse.Backend.Tests.Models
     {
         private const int CausedBy = 5;
         private const int ParentLink = 6;
-        private const string TeamsParentOverride = "Teams' Parent Override Field";
+        private const string TeamsParentOverride = "Teams' Parent sources";
         private const string PortfoliosDependency = "Portfolios' Dependency Field";
 
         private static readonly RemovedAdditionalField RemovedCausedBy = new(CausedBy, "Caused by");
@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Models
                 [Owner("Ledger", CausedBy)]);
 
             Assert.That(AdditionalFieldInUse.Refusal(inUse), Is.EqualTo(
-                "\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default, and Ledger uses it as its own. Nothing was saved."));
+                "\"Caused by\" cannot be removed. It is the Teams' Parent sources default, and Ledger uses it as its own. Nothing was saved."));
         }
 
         [Test]
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Models
                 [Owner("Ledger", ParentLink)]);
 
             Assert.That(AdditionalFieldInUse.Refusal(inUse), Is.EqualTo(
-                "\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default. Nothing was saved."));
+                "\"Caused by\" cannot be removed. It is the Teams' Parent sources default. Nothing was saved."));
         }
 
         [Test]
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Models
                 [Owner("Ledger", CausedBy), Owner("Card Issuing", CausedBy)]);
 
             Assert.That(AdditionalFieldInUse.Refusal(inUse), Is.EqualTo(
-                "\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default and the Portfolios' Dependency Field default, and Ledger and Card Issuing use it as their own. Nothing was saved."));
+                "\"Caused by\" cannot be removed. It is the Teams' Parent sources default and the Portfolios' Dependency Field default, and Ledger and Card Issuing use it as their own. Nothing was saved."));
         }
 
         [Test]
@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Models
                 [Owner("Merchant Onboarding", ParentLink)]);
 
             Assert.That(AdditionalFieldInUse.Refusal(inUse), Is.EqualTo(
-                "\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default. \"Parent Link\" cannot be removed. Merchant Onboarding uses it as its own. Nothing was saved."));
+                "\"Caused by\" cannot be removed. It is the Teams' Parent sources default. \"Parent Link\" cannot be removed. Merchant Onboarding uses it as its own. Nothing was saved."));
         }
 
         private static OwnerNamingFields Owner(string name, params int?[] ownFieldIds) => new(name, ownFieldIds);

@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Assert.That(whatJiraReportsForItself, Is.Not.EqualTo(TheIssueEveryChildPointsAt),
                     "The two have to disagree for the override to be observable at all.");
                 Assert.That(theParentOfEachChild[TheChildWhoseLinkCarriesAnInwardIssue], Is.EqualTo(TheIssueEveryChildPointsAt),
-                    "Naming a link type in Parent Override Field declares it authoritative, so the parent Jira "
+                    "Naming a link type in Parent sources declares it authoritative, so the parent Jira "
                     + "reports for itself is not consulted while it is set.");
             }
         }

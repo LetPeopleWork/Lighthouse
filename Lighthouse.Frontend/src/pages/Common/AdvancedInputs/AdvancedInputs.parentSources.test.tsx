@@ -114,13 +114,38 @@ describe("a Team's Advanced Configuration", () => {
 		expect(screen.queryAllByText("Parent Override Field")).toHaveLength(0);
 	});
 
-	it("keeps the single select on Azure DevOps, now called Parent sources", () => {
+	it("shows the Parent sources list on Azure DevOps, naming Azure DevOps' own parent as such", () => {
 		openTheSettingsPageOf(aTeamOn("AzureDevOps"));
 
+		expect(screen.getAllByText("Parent sources")).toHaveLength(1);
+		expect(screen.getAllByRole("listitem")).toHaveLength(2);
+		expect(screen.getByText("Parent (Azure DevOps' own)")).toBeInTheDocument();
 		expect(
-			screen.getByRole("combobox", { name: "Parent sources" }),
+			screen.queryByRole("combobox", { name: "Parent sources" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("tells a Portfolio on Azure DevOps what leaving out Azure DevOps' own parent costs its Features", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={Object.assign(
+					aFollower([
+						{ kind: "AdditionalField", additionalFieldDefinitionId: 1 },
+					]),
+					{ workTrackingSystem: "AzureDevOps" },
+				)}
+				onSettingsChange={vi.fn()}
+				parentOverrideDefault="parentOverrideForPortfolios"
+				additionalFieldDefinitions={TheFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(
+			screen.getByText(
+				"Not in the list: Parent (Azure DevOps' own). Features whose only parent is Azure DevOps' own parent get no parent.",
+			),
 		).toBeInTheDocument();
-		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
 	});
 
 	it("reads the tracker off the connection for a Team not saved yet", () => {

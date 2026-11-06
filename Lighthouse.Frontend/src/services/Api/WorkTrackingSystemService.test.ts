@@ -846,7 +846,7 @@ describe("WorkTrackingSystemService", () => {
 	describe("a save the server refuses", () => {
 		it("carries the refusal's reason and its sentence to the page", async () => {
 			const detail =
-				'"Caused by" cannot be removed. It is the Teams\' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.';
+				'"Caused by" cannot be removed. It is the Teams\' Parent sources default, and Ledger uses it as its own. Nothing was saved.';
 			mockedAxios.isAxiosError.mockReturnValue(true);
 			mockedAxios.put.mockRejectedValue({
 				isAxiosError: true,

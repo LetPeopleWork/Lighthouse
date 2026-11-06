@@ -89,7 +89,7 @@ const TheIntro =
 
 const TheUpdateQuestion = "Update 3 Teams and 0 Portfolios?";
 const TheUpdateQuestionSays =
-	"3 Teams follow the Parent Override Field default. Their parents change only once they have been updated. Save only: they change at their next scheduled update.";
+	"3 Teams follow the Parent sources default. Their parents change only once they have been updated. Save only: they change at their next scheduled update.";
 const TheFieldsQuestion = "Update 4 Teams and 2 Portfolios?";
 const TheFieldsQuestionSays =
 	"You changed the Additional Fields. Their values only fill in once each Team and Portfolio on this connection has been updated. Save only: they fill in with the next scheduled update instead.";
@@ -334,7 +334,7 @@ const whenPriyaPicks = async (
 };
 
 const whenPriyaSetsTheTeamsParentOverrideDefault = (field: string) =>
-	whenPriyaPicks("Teams", "Parent Override Field", field);
+	whenPriyaPicks("Teams", "Parent sources", field);
 
 /** Priya follows a link from one connection's page to another's, as the Overview's connection list offers. */
 const whenPriyaOpensTheConnection = (id: number) => {
@@ -388,12 +388,9 @@ describe("defaults set once on the connection", () => {
 
 			const section = theSection();
 			expect(within(section).getByText(TheIntro)).toBeInTheDocument();
-			expectTheRows(theGroup("Teams"), [
-				"Parent Override Field",
-				"Estimation Field",
-			]);
+			expectTheRows(theGroup("Teams"), ["Parent sources", "Estimation Field"]);
 			expectTheRows(theGroup("Portfolios"), [
-				"Parent Override Field",
+				"Parent sources",
 				"Dependency Field",
 				"Size Estimate Field",
 				"Feature Owner Field",
@@ -451,10 +448,7 @@ describe("defaults set once on the connection", () => {
 				}),
 			});
 
-			expectTheRows(theGroup("Teams"), [
-				"Parent Override Field",
-				"Estimation Field",
-			]);
+			expectTheRows(theGroup("Teams"), ["Parent sources", "Estimation Field"]);
 			expect(
 				within(theSection()).queryByRole("group", { name: "Portfolios" }),
 			).not.toBeInTheDocument();
@@ -470,7 +464,7 @@ describe("defaults set once on the connection", () => {
 
 			fireEvent.mouseDown(
 				within(theGroup("Teams")).getByRole("combobox", {
-					name: "Parent Override Field",
+					name: "Parent sources",
 				}),
 			);
 
@@ -523,7 +517,7 @@ describe("defaults set once on the connection", () => {
 				screen.queryByRole("region", { name: TheSection }),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByRole("combobox", { name: "Parent Override Field" }),
+				screen.queryByRole("combobox", { name: "Parent sources" }),
 			).not.toBeInTheDocument();
 
 			answer([jiraDcPayments()]);
@@ -562,7 +556,7 @@ describe("defaults set once on the connection", () => {
 			await waitFor(() =>
 				expect(
 					within(theGroup("Teams")).getByRole("combobox", {
-						name: "Parent Override Field",
+						name: "Parent sources",
 					}),
 				).toHaveTextContent(ParentLink),
 			);
@@ -585,7 +579,7 @@ describe("defaults set once on the connection", () => {
 				screen.queryByRole("region", { name: TheSection }),
 			).not.toBeInTheDocument();
 			expect(
-				screen.queryByRole("combobox", { name: "Parent Override Field" }),
+				screen.queryByRole("combobox", { name: "Parent sources" }),
 			).not.toBeInTheDocument();
 		});
 	});
@@ -812,7 +806,7 @@ describe("defaults set once on the connection", () => {
 			expect(server.updateWorkTrackingSystemConnection).not.toHaveBeenCalled();
 			expect(
 				within(theGroup("Teams")).getByRole("combobox", {
-					name: "Parent Override Field",
+					name: "Parent sources",
 				}),
 			).toHaveTextContent(CausedBy);
 		});

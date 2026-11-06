@@ -1289,8 +1289,14 @@ describe("ModifyProjectSettings", () => {
 				...createMockProjectSettings(),
 				workTrackingSystem: "AzureDevOps",
 				parentOverrideSource: "ConnectionDefault",
-				parentOverrideDefaultName: "Parent Link",
-				parentOverrideAdditionalFieldDefinitionId: 21,
+				parentSources: [
+					{ kind: "AdditionalField", additionalFieldDefinitionId: 21 },
+					{ kind: "TrackerParent" },
+				],
+				parentSourcesDefault: [
+					{ kind: "AdditionalField", additionalFieldDefinitionId: 21 },
+					{ kind: "TrackerParent" },
+				],
 			});
 
 			renderWithProvider(
@@ -1311,93 +1317,33 @@ describe("ModifyProjectSettings", () => {
 				.getByText("Advanced Configuration")
 				.closest(".MuiCard-root") as HTMLElement;
 			fireEvent.click(within(advanced).getByLabelText("toggle"));
-			return screen.getByRole("combobox", { name: "Parent sources" });
 		};
 
-		it("shows the followed field as the selected first entry", async () => {
-			const dropdown = await givenThePortfolioFollowsTheDefault();
+		it("shows the followed list in words, with Azure DevOps' own parent named as such", async () => {
+			await givenThePortfolioFollowsTheDefault();
 
-			expect(dropdown).toHaveTextContent("Connection default (Parent Link)");
 			expect(
-				screen.getByText("Set on the Azure DevOps connection."),
-			).toBeInTheDocument();
-			fireEvent.mouseDown(dropdown);
-			expect(
-				within(screen.getByRole("listbox"))
-					.getAllByRole("option")
-					.map((entry) => entry.textContent),
-			).toEqual([
-				"Connection default (Parent Link)",
-				"None",
-				"Parent Link",
-				"Caused by",
-			]);
-		});
-
-		it("picking another entry makes the value the Portfolio's own", async () => {
-			const dropdown = await givenThePortfolioFollowsTheDefault();
-
-			fireEvent.mouseDown(dropdown);
-			fireEvent.click(
-				within(screen.getByRole("listbox")).getByRole("option", {
-					name: "Caused by",
+				screen.getByRole("radio", {
+					name: "Connection default: Parent Link, then Parent (Azure DevOps' own)",
 				}),
-			);
-
-			await waitFor(() =>
-				expect(mockSaveProjectSettings).toHaveBeenCalledWith(
-					expect.objectContaining({
-						parentOverrideSource: "Own",
-						parentOverrideAdditionalFieldDefinitionId: 22,
-					}),
-				),
-			);
-		});
-
-		it("switching the connection shows the default of the connection now chosen", async () => {
-			const dropdown = await givenThePortfolioFollowsTheDefault({
-				additionalFieldDefinitions: [
-					{ id: 31, displayName: "Epic Link", reference: "System.Parent" },
-				],
-				defaults: {
-					parentOverrideForTeams: null,
-					parentOverrideForPortfolios: 31,
-				},
-			});
-
-			fireEvent.click(screen.getByText("Change Work Tracking System"));
-
-			await waitFor(() =>
-				expect(dropdown).toHaveTextContent(
-					/^Connection default \(Epic Link\)$/,
-				),
-			);
+			).toBeChecked();
 			expect(
-				screen.getByText(/^Set on the Azure DevOps connection\.$/),
-			).toBeInTheDocument();
+				screen.queryByRole("combobox", { name: "Parent sources" }),
+			).toBeNull();
 		});
 
-		it("switching to a connection whose default names nothing shows None", async () => {
-			const dropdown = await givenThePortfolioFollowsTheDefault({
-				defaults: { parentOverrideForTeams: 31 },
-			});
-
-			fireEvent.click(screen.getByText("Change Work Tracking System"));
-
-			await waitFor(() =>
-				expect(dropdown).toHaveTextContent(/^Connection default \(None\)$/),
-			);
-		});
-
-		it("switching to a connection whose tracker reads no parent sources shows neither the select nor its default", async () => {
-			const dropdown = await givenThePortfolioFollowsTheDefault({
+		it("switching to a connection whose tracker reads no parent sources shows no Parent sources", async () => {
+			await givenThePortfolioFollowsTheDefault({
 				workTrackingSystem: "Linear",
 			});
+			expect(screen.getByText("Parent sources")).toBeInTheDocument();
 
 			fireEvent.click(screen.getByText("Change Work Tracking System"));
 
-			await waitFor(() => expect(dropdown).not.toBeInTheDocument());
-			expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
+			await waitFor(() =>
+				expect(screen.queryByText("Parent sources")).not.toBeInTheDocument(),
+			);
+			expect(screen.queryByRole("radio")).not.toBeInTheDocument();
 		});
 	});
 

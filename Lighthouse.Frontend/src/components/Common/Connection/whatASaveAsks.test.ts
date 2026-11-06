@@ -381,8 +381,8 @@ describe("whyUpdate", () => {
 
 	describe("when a default read while updating changed", () => {
 		it.each([
-			["parentOverrideForTeams", "Parent Override Field", "parents", 3, 0],
-			["parentOverrideForPortfolios", "Parent Override Field", "parents", 0, 2],
+			["parentOverrideForTeams", "Parent sources", "parents", 3, 0],
+			["parentOverrideForPortfolios", "Parent sources", "parents", 0, 2],
 			[
 				"dependencyFieldForPortfolios",
 				"Dependency Field",
@@ -465,7 +465,7 @@ describe("whyUpdate", () => {
 				because: "defaults",
 				teams: 3,
 				portfolios: 2,
-				defaults: ["Parent Override Field"],
+				defaults: ["Parent sources"],
 				changes: ["parents"],
 			});
 		});
@@ -495,7 +495,7 @@ describe("whyUpdate", () => {
 			[
 				"parentOverrideForPortfolios",
 				"dependencyFieldForPortfolios",
-				["Parent Override Field", "Dependency Field"],
+				["Parent sources", "Dependency Field"],
 				["parents", "dependencies"],
 			],
 			[
@@ -560,7 +560,7 @@ describe("whyUpdate", () => {
 				because: "defaults",
 				teams: 0,
 				portfolios: 3,
-				defaults: ["Parent Override Field"],
+				defaults: ["Parent sources"],
 				changes: ["parents"],
 			});
 		});
@@ -607,7 +607,7 @@ describe("whyUpdate", () => {
 				because: "defaults",
 				teams: 3,
 				portfolios: 2,
-				defaults: ["Parent Override Field", "Dependency Field"],
+				defaults: ["Parent sources", "Dependency Field"],
 				changes: ["parents", "dependencies"],
 			});
 		});
@@ -629,7 +629,7 @@ describe("whyUpdate", () => {
 				teams: 1,
 				portfolios: 4,
 				defaults: [
-					"Parent Override Field",
+					"Parent sources",
 					"Dependency Field",
 					"Size Estimate Field",
 					"Feature Owner Field",
@@ -715,7 +715,7 @@ describe("whyUpdate", () => {
 			because: "defaults",
 			teams: 3,
 			portfolios: 0,
-			defaults: ["Parent Override Field"],
+			defaults: ["Parent sources"],
 			changes: ["parents"],
 		});
 	});

@@ -1,11 +1,7 @@
 import { TextField } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
-import ConnectionDefaultFieldSelect from "../../../components/Common/ConnectionDefault/ConnectionDefaultFieldSelect";
-import {
-	followOrOwn,
-	trackerOf,
-} from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
+import { trackerOf } from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
 import { parentSourcesAreOffered } from "../../../components/Common/ConnectionDefault/parentSources";
 import InputGroup from "../../../components/Common/InputGroup/InputGroup";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
@@ -55,25 +51,6 @@ const AdvancedInputsComponent: React.FC<AdvancedInputsComponentProps> = ({
 						connection={connection}
 						tracker={tracker}
 						theDefault={parentOverrideDefault}
-					/>
-				</Grid>
-			)}
-			{tracker === "AzureDevOps" && (
-				<Grid size={{ xs: 12 }}>
-					<ConnectionDefaultFieldSelect
-						label="Parent sources"
-						settings={settings}
-						connection={connection}
-						theDefault={parentOverrideDefault}
-						defaultNameTheSettingsCarry={settings?.parentOverrideDefaultName}
-						source={settings?.parentOverrideSource}
-						ownField={settings?.parentOverrideAdditionalFieldDefinitionId}
-						additionalFieldDefinitions={additionalFieldDefinitions}
-						{...followOrOwn<IBaseSettings>(
-							onSettingsChange,
-							"parentOverrideSource",
-							"parentOverrideAdditionalFieldDefinitionId",
-						)}
 					/>
 				</Grid>
 			)}

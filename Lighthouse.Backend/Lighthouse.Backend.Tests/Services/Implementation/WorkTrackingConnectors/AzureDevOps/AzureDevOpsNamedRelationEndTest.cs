@@ -360,7 +360,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(feature.RefreshFindings.Select(finding => (finding.Kind, finding.Setting, finding.Named)), Is.EqualTo(new[]
             {
                 (RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, DependsOn),
-            }), "A base name whose two ends are listed is still a relation type, which a Parent Override Field cannot read.");
+            }), "A base name whose two ends are listed is still a relation type, which a Parent sources cannot read.");
         }
 
         [Test]

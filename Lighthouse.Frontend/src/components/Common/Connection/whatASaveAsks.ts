@@ -47,7 +47,7 @@ export const WhereEachDefaultSits: Record<
 		group: "teams",
 		readWhen: "updating",
 		changes: "parents",
-		label: () => "Parent Override Field",
+		label: () => "Parent sources",
 	},
 	estimationForTeams: {
 		group: "teams",
@@ -58,7 +58,7 @@ export const WhereEachDefaultSits: Record<
 		group: "portfolios",
 		readWhen: "updating",
 		changes: "parents",
-		label: () => "Parent Override Field",
+		label: () => "Parent sources",
 	},
 	dependencyFieldForPortfolios: {
 		group: "portfolios",

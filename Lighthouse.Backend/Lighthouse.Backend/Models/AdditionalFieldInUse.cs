@@ -2,7 +2,7 @@ namespace Lighthouse.Backend.Models
 {
     public sealed record RemovedAdditionalField(int Id, string DisplayName);
 
-    /// <param name="Name">How the admin knows the default, for example "Teams' Parent Override Field".</param>
+    /// <param name="Name">How the admin knows the default, for example "Teams' Parent sources".</param>
     public sealed record DefaultNamingAField(string Name, int? FieldId);
 
     /// <param name="OwnFieldIds">The fields the Team or Portfolio chose itself, one per setting; a setting that follows a default is not among them.</param>

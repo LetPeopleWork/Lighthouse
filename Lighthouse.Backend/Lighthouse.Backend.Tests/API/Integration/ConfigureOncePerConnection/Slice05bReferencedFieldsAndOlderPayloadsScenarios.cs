@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     public class Slice05bReferencedFieldsAndOlderPayloadsScenarios : ConnectionDefaultsAcceptanceTest
     {
         private const string TheApprovedRefusal =
-            "\"Caused by\" cannot be removed. It is the Teams' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.";
+            "\"Caused by\" cannot be removed. It is the Teams' Parent sources default, and Ledger uses it as its own. Nothing was saved.";
 
         [Test]
         [Category("ac-4.8")]
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         // Merchant Onboarding holds a field of its own for every setting, each a field nothing else uses.
-        [TestCase(ParentLink, TestName = "A field only a Portfolio's Parent Override Field uses cannot be removed")]
+        [TestCase(ParentLink, TestName = "A field only a Portfolio's Parent sources uses cannot be removed")]
         [TestCase(BlockedByKeys, TestName = "A field only a Portfolio's Dependency Field uses cannot be removed")]
         [TestCase(TShirtSize, TestName = "A field only a Portfolio's Size Estimate Field uses cannot be removed")]
         [TestCase(ProductOwner, TestName = "A field only a Portfolio's Feature Owner Field uses cannot be removed")]
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             using (Assert.EnterMultipleScope())
             {
                 ThenTheSaveIsRefusedWith(HttpStatusCode.Conflict);
-                Assert.That(TheRefusal().Message, Does.Contain("It is the Teams' Parent Override Field default"));
+                Assert.That(TheRefusal().Message, Does.Contain("It is the Teams' Parent sources default"));
                 Assert.That(await TheFieldsOfTheConnection(JiraDcPayments), Does.Contain(ParentLink));
             }
         }

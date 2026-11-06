@@ -33,8 +33,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         private static readonly string[] EachDefaultWithTheUpdatesQueuedForItsOwnGrain =
         [
-            "Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued; parent sources moved 2 Teams.",
-            "Connection Connection changed the Portfolios' Parent Override Field default from none to Caused by; 1 Portfolio follows it: Card Issuing; 1 update queued; parent sources moved 1 Portfolio.",
+            "Connection Connection changed the Teams' Parent sources default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued; parent sources moved 2 Teams.",
+            "Connection Connection changed the Portfolios' Parent sources default from none to Caused by; 1 Portfolio follows it: Card Issuing; 1 update queued; parent sources moved 1 Portfolio.",
         ];
 
         private static readonly string[] PortfoliosOwningCausedByInCreationOrder = ["Parent Override", "Dependency", "Size", "Feature Owner", "Estimation"];
@@ -233,7 +233,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(written, Has.Count.EqualTo(1));
-                Assert.That(written, Has.Some.EqualTo("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
+                Assert.That(written, Has.Some.EqualTo("Connection Connection changed the Teams' Parent sources default from none to Caused by; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
             }
         }
 
@@ -262,7 +262,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; no Team follows it; no update queued; parent sources moved no Team."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent sources default from none to Caused by; no Team follows it; no update queued; parent sources moved no Team."));
         }
 
         [Test]
@@ -276,7 +276,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; no update queued; parent sources moved 1 Team."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent sources default from none to Caused by; 1 Team follows it: Alpha; no update queued; parent sources moved 1 Team."));
         }
 
         [Test]
@@ -290,7 +290,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from Caused by to none; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent sources default from Caused by to none; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
         }
 
         [Test]
@@ -346,7 +346,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(handle.Connection.ParentOverrideForTeams, Is.EqualTo(StoredEpicLinkId));
-                Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Epic Link; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
+                Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent sources default from none to Epic Link; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
             }
 
             connectionRepositoryMock.Verify(x => x.Save(), Times.Exactly(2));
@@ -376,7 +376,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new field Epic Link, but the Teams' default Parent Override Field could not be set to it and is now none"));
+                Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new field Epic Link, but the Teams' default Parent sources could not be set to it and is now none"));
                 Assert.That(thrown?.InnerException, Is.SameAs(failure));
                 Assert.That(log.Everything, Is.Empty);
             }
@@ -397,7 +397,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new field Epic Link, but the Portfolios' default Parent Override Field could not be set to it and is now none"));
+                Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new field Epic Link, but the Portfolios' default Parent sources could not be set to it and is now none"));
                 Assert.That(thrown?.InnerException, Is.SameAs(failure));
             }
         }
@@ -414,7 +414,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             var thrown = await Assert.ThrowsAsync<InvalidOperationException>(() => subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None));
 
-            Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new fields Epic Link and Initiative Link, but the Teams' default Parent Override Field could not be set to Epic Link and the Portfolios' default Parent Override Field could not be set to Initiative Link; each is now none"));
+            Assert.That(thrown?.Message, Is.EqualTo("Connection Connection was saved with its new fields Epic Link and Initiative Link, but the Teams' default Parent sources could not be set to Epic Link and the Portfolios' default Parent sources could not be set to Initiative Link; each is now none"));
         }
 
         private static AdditionalFieldDefinition ANewField(ConnectionSaveHandle handle, string displayName)
@@ -505,7 +505,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued; parent sources moved 2 Teams."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent sources default from none to Caused by; 2 Teams follow it: Alpha, Bravo; 2 updates queued; parent sources moved 2 Teams."));
         }
 
         [Test]
@@ -521,7 +521,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; 1 update queued; parent sources moved 1 Team."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent sources default from none to Caused by; 1 Team follows it: Alpha; 1 update queued; parent sources moved 1 Team."));
         }
 
         [Test]
@@ -707,7 +707,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
             await subject.Commit(handle, concurrencyToken: null, startUpdates: true, CancellationToken.None);
 
-            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent Override Field default from none to Caused by; 1 Team follows it: Alpha; 2 updates queued; parent sources moved 1 Team."));
+            Assert.That(log.Written(LogLevel.Information), Has.Count.EqualTo(1).And.Contains("Connection Connection changed the Teams' Parent sources default from none to Caused by; 1 Team follows it: Alpha; 2 updates queued; parent sources moved 1 Team."));
         }
 
         [Test]
@@ -723,9 +723,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(outcome.Refused, Is.True);
-                Assert.That(outcome.FieldsInUse.Single().Defaults.Single(), Is.EqualTo("Portfolios' Parent Override Field"));
+                Assert.That(outcome.FieldsInUse.Single().Defaults.Single(), Is.EqualTo("Portfolios' Parent sources"));
                 Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo(
-                    "\"Caused by\" cannot be removed. It is the Portfolios' Parent Override Field default. Nothing was saved."));
+                    "\"Caused by\" cannot be removed. It is the Portfolios' Parent sources default. Nothing was saved."));
             }
         }
 
@@ -743,7 +743,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
             var outcome = await subject.Commit(handle, null, startUpdates: false, CancellationToken.None);
 
             Assert.That(AdditionalFieldInUse.Refusal(outcome.FieldsInUse), Is.EqualTo(
-                "\"Caused by\" cannot be removed. It is the Squads' Parent Override Field default and the Staff's Parent Override Field default. Nothing was saved."));
+                "\"Caused by\" cannot be removed. It is the Squads' Parent sources default and the Staff's Parent sources default. Nothing was saved."));
         }
 
         [Test]

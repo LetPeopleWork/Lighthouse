@@ -403,7 +403,7 @@ const thenTheQuestionWaitsOnTheSave = async (answer: string) => {
 };
 
 const CausedByIsStillInUse =
-	'"Caused by" cannot be removed. It is the Teams\' Parent Override Field default, and Ledger uses it as its own. Nothing was saved.';
+	'"Caused by" cannot be removed. It is the Teams\' Parent sources default, and Ledger uses it as its own. Nothing was saved.';
 
 // What the server answers when the save removes a field a default or a Team still uses.
 const theFieldIsStillInUse = () =>

@@ -32,7 +32,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 Assert.That(ran, Is.EqualTo(CardIssuingDownloadsEverything), "Merchant Onboarding owns its value and no Team reads this default.");
                 Assert.That(await WhereTheItemOfHangs(CardIssuing), Is.EqualTo(WhatCausedByHolds));
                 Assert.That(await HowManyFollow(ConnectionDefault.PortfoliosParentOverrideField), Is.EqualTo(1));
-                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Some.Contains("Portfolios' Parent Override Field default").And.Some.Contains("1 Portfolio follows it: Card Issuing"));
+                Assert.That(TheLogEntriesAboutChangedDefaults(), Has.Some.Contains("Portfolios' Parent sources default").And.Some.Contains("1 Portfolio follows it: Card Issuing"));
             }
         }
 

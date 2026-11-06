@@ -4,7 +4,7 @@ import type {
 	WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { FieldInfo } from "../FormSelectField/FormSelectField";
-import { nameOfParentSource } from "./parentSources";
+import { nameOfParentSource, nameOfTracker } from "./parentSources";
 
 /** The settings whose field is read off one end of a link, so the tip has to say which end. */
 type DirectionTipField = Extract<
@@ -127,5 +127,5 @@ export const parentSourcesTip = (
 		directions[setting],
 		tracker,
 		terms,
-		`${nameOfParentSource({ kind: "TrackerParent" }, tracker, [])} is the parent ${tracker} itself records.`,
+		`${nameOfParentSource({ kind: "TrackerParent" }, tracker, [])} is the parent ${nameOfTracker(tracker)} itself records.`,
 	);

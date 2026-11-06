@@ -28,9 +28,9 @@ namespace Lighthouse.Backend.Models
         /// <summary>Every default a connection holds as one of its fields, in the order they are checked, logged and named.</summary>
         public static readonly IReadOnlyList<ConnectionFieldDefault> All =
         [
-            new(ConnectionDefaultSetting.ParentOverrideForTeams, DefaultHeldFor.Teams, _ => "Parent Override Field",
+            new(ConnectionDefaultSetting.ParentOverrideForTeams, DefaultHeldFor.Teams, _ => "Parent sources",
                 connection => connection.ParentOverrideForTeams, (connection, field) => connection.ParentOverrideForTeams = field),
-            new(ConnectionDefaultSetting.ParentOverrideForPortfolios, DefaultHeldFor.Portfolios, _ => "Parent Override Field",
+            new(ConnectionDefaultSetting.ParentOverrideForPortfolios, DefaultHeldFor.Portfolios, _ => "Parent sources",
                 connection => connection.ParentOverrideForPortfolios, (connection, field) => connection.ParentOverrideForPortfolios = field),
             new(ConnectionDefaultSetting.DependencyFieldForPortfolios, DefaultHeldFor.Portfolios, _ => "Dependency Field",
                 connection => connection.DependencyFieldForPortfolios, (connection, field) => connection.DependencyFieldForPortfolios = field),

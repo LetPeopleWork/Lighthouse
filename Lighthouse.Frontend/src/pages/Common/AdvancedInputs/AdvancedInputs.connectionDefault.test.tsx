@@ -1,158 +1,75 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import AdvancedInputsComponent from "./AdvancedInputs";
 
 /**
- * A Team on an Azure DevOps connection whose single Parent sources select follows the connection's default.
- * Its settings page shows which field that is, as the first entry of the dropdown, "Connection default
- * (Caused by)", with "Set on the Azure DevOps connection." beneath it, and "Connection default (None)" while
- * the default names nothing. A Team admin who cannot read the connection still sees the name, because it
- * travels on the Team's own settings. Picking any other entry, None included, makes the value the Team's own.
+ * A Team on an Azure DevOps connection that follows the connection's Parent sources reads the default in words,
+ * with Azure DevOps' own parent named as such, and has no list of its own to edit until it picks Set here.
  */
 
-const CausedBy = "Caused by";
-
 const TheFields: IAdditionalFieldDefinition[] = [
-	{ id: 11, displayName: CausedBy, reference: "customfield_10500" },
-	{ id: 12, displayName: "Parent Link", reference: "customfield_10014" },
+	{ id: 11, displayName: "Caused by", reference: "Custom.CausedBy" },
+	{ id: 12, displayName: "Parent Link", reference: "Custom.ParentLink" },
 ];
 
-type Source = "ConnectionDefault" | "Own";
+const CausedByThenOwnParent: ParentSourceEntry[] = [
+	{ kind: "AdditionalField", additionalFieldDefinitionId: 11 },
+	{ kind: "TrackerParent" },
+];
 
-const aTeam = ({
-	source,
-	own = null,
-	tracker = "AzureDevOps",
-	defaultName = CausedBy,
-}: {
-	source: Source;
-	own?: number | null;
-	tracker?: string;
-	defaultName?: string | null;
-}) =>
+const aTeamFollowing = (parentSourcesDefault: ParentSourceEntry[]) =>
 	Object.assign(createMockTeamSettings(), {
-		parentOverrideAdditionalFieldDefinitionId:
-			source === "Own" || defaultName === null ? own : 11,
-		parentOverrideSource: source,
-		parentOverrideDefaultName: defaultName,
-		workTrackingSystem: tracker,
+		parentOverrideSource: "ConnectionDefault",
+		parentSources: parentSourcesDefault,
+		parentSourcesDefault,
+		workTrackingSystem: "AzureDevOps",
 	}) as IBaseSettings;
 
-const givenTheTeamsSettingsPage = (
-	settings: IBaseSettings,
-	fields: IAdditionalFieldDefinition[] = TheFields,
-) => {
+const givenTheTeamsSettingsPage = (settings: IBaseSettings) => {
 	const onSettingsChange = vi.fn();
 	render(
 		<AdvancedInputsComponent
 			settings={settings}
 			onSettingsChange={onSettingsChange}
 			parentOverrideDefault="parentOverrideForTeams"
-			additionalFieldDefinitions={fields}
+			additionalFieldDefinitions={TheFields}
 		/>,
 	);
 	fireEvent.click(screen.getByLabelText("toggle"));
 	return onSettingsChange;
 };
 
-const theDropdown = () =>
-	screen.getByRole("combobox", { name: "Parent sources" });
-
-const theEntries = () => {
-	fireEvent.mouseDown(theDropdown());
-	return within(screen.getByRole("listbox"))
-		.getAllByRole("option")
-		.map((entry) => entry.textContent);
-};
-
-const whenTheAdminPicks = (entry: string) => {
-	fireEvent.mouseDown(theDropdown());
-	fireEvent.click(
-		within(screen.getByRole("listbox")).getByRole("option", { name: entry }),
-	);
-};
-
 describe("a Team that follows the connection's Parent sources", () => {
-	it("shows the followed field as the first entry, with where it is set", () => {
-		givenTheTeamsSettingsPage(aTeam({ source: "ConnectionDefault" }));
+	it("on Azure DevOps shows the followed list in words, with nothing to edit", () => {
+		givenTheTeamsSettingsPage(aTeamFollowing(CausedByThenOwnParent));
 
-		expect(theDropdown()).toHaveTextContent("Connection default (Caused by)");
 		expect(
-			screen.getByText("Set on the Azure DevOps connection."),
-		).toBeInTheDocument();
-		expect(theEntries()).toEqual([
-			"Connection default (Caused by)",
-			"None",
-			CausedBy,
-			"Parent Link",
-		]);
+			screen.getByRole("radio", {
+				name: "Connection default: Caused by, then Parent (Azure DevOps' own)",
+			}),
+		).toBeChecked();
+		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+		expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 	});
 
-	it("once another connection is chosen, shows the Teams' default of that connection", () => {
-		render(
-			<AdvancedInputsComponent
-				settings={aTeam({ source: "ConnectionDefault", tracker: "Jira" })}
-				onSettingsChange={vi.fn()}
-				additionalFieldDefinitions={TheFields}
-				connection={{
-					id: 2,
-					name: "Payments Azure DevOps",
-					workTrackingSystem: "AzureDevOps",
-					options: [],
-					authenticationMethodKey: "ado.pat",
-					additionalFieldDefinitions: TheFields,
-					writeBackMappingDefinitions: [],
-					workTrackingSystemGetDataRetrievalDisplayName: () => "WIQL Query",
-					defaults: {
-						parentOverrideForTeams: 12,
-						parentOverrideForPortfolios: 11,
-					},
-				}}
-				parentOverrideDefault="parentOverrideForTeams"
-			/>,
-		);
-		fireEvent.click(screen.getByLabelText("toggle"));
-
-		expect(theDropdown()).toHaveTextContent(
-			/^Connection default \(Parent Link\)$/,
-		);
-		expect(
-			screen.getByText(/^Set on the Azure DevOps connection\.$/),
-		).toBeInTheDocument();
-	});
-
-	it("following a default that names nothing reads Connection default (None), with where it is set", () => {
-		givenTheTeamsSettingsPage(
-			aTeam({ source: "ConnectionDefault", defaultName: null }),
-		);
-
-		expect(theDropdown()).toHaveTextContent("Connection default (None)");
-		expect(
-			screen.getByText("Set on the Azure DevOps connection."),
-		).toBeInTheDocument();
-		expect(theEntries()).toEqual([
-			"Connection default (None)",
-			"None",
-			CausedBy,
-			"Parent Link",
-		]);
-	});
-
-	it("a Team that chose None can go back to following a default that names nothing", () => {
+	it("on Azure DevOps starts from the followed list once Set here is picked", () => {
 		const onSettingsChange = givenTheTeamsSettingsPage(
-			aTeam({ source: "Own", defaultName: null }),
+			aTeamFollowing(CausedByThenOwnParent),
 		);
 
-		expect(theDropdown()).toHaveTextContent("None");
-		expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
-		whenTheAdminPicks("Connection default (None)");
+		fireEvent.click(screen.getByRole("radio", { name: "Set here" }));
 
 		expect(onSettingsChange).toHaveBeenCalledWith(
 			"parentOverrideSource",
-			"ConnectionDefault",
+			"Own",
+		);
+		expect(onSettingsChange).toHaveBeenCalledWith(
+			"parentSources",
+			CausedByThenOwnParent,
 		);
 	});
 
@@ -169,59 +86,5 @@ describe("a Team that follows the connection's Parent sources", () => {
 
 		expect(screen.queryByText("Parent sources")).not.toBeInTheDocument();
 		expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
-	});
-
-	it("shows the followed field to a Team admin who cannot read the connection's fields", () => {
-		givenTheTeamsSettingsPage(aTeam({ source: "ConnectionDefault" }), []);
-
-		expect(theDropdown()).toHaveTextContent("Connection default (Caused by)");
-	});
-
-	it("choosing None makes None the Team's own choice", () => {
-		const onSettingsChange = givenTheTeamsSettingsPage(
-			aTeam({ source: "ConnectionDefault" }),
-		);
-
-		whenTheAdminPicks("None");
-
-		expect(onSettingsChange).toHaveBeenCalledWith(
-			"parentOverrideSource",
-			"Own",
-		);
-		expect(onSettingsChange).toHaveBeenCalledWith(
-			"parentOverrideAdditionalFieldDefinitionId",
-			null,
-		);
-	});
-
-	it("choosing a field makes it the Team's own", () => {
-		const onSettingsChange = givenTheTeamsSettingsPage(
-			aTeam({ source: "ConnectionDefault" }),
-		);
-
-		whenTheAdminPicks("Parent Link");
-
-		expect(onSettingsChange).toHaveBeenCalledWith(
-			"parentOverrideSource",
-			"Own",
-		);
-		expect(onSettingsChange).toHaveBeenCalledWith(
-			"parentOverrideAdditionalFieldDefinitionId",
-			12,
-		);
-	});
-
-	it("a Team that chose None can go back to following the connection", () => {
-		const onSettingsChange = givenTheTeamsSettingsPage(
-			aTeam({ source: "Own" }),
-		);
-
-		expect(theDropdown()).toHaveTextContent("None");
-		whenTheAdminPicks("Connection default (Caused by)");
-
-		expect(onSettingsChange).toHaveBeenCalledWith(
-			"parentOverrideSource",
-			"ConnectionDefault",
-		);
 	});
 });

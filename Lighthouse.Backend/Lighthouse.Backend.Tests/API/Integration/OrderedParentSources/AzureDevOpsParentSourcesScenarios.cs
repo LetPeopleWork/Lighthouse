@@ -129,7 +129,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         /// entry still gives the parent.
         /// </summary>
         [Test]
-        [Ignore("Waits for the Refresh History step that names a relation type entry and lets the other entries still give parents.")]
         public async Task A_relation_type_in_the_list_is_named_in_Refresh_History_and_the_other_entries_still_give_parents()
         {
             var contoso = TheOrganisationAt(ContosoOrganisation);

@@ -62,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// <summary>The phrase a Work Item reads its Feature through, and a Feature the level above it.</summary>
         protected const string TheUpwardPhrase = "is caused by";
 
-        protected const string NoValueShown = "<the Parent Override Field shows nothing>";
+        protected const string NoValueShown = "<the Parent sources shows nothing>";
 
         protected static readonly JiraLinkType CausedBy = new("Causes", TheUpwardPhrase, "causes");
 
