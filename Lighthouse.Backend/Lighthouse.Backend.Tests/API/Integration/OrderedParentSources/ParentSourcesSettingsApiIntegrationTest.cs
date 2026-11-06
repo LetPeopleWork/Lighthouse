@@ -340,6 +340,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
             }
         }
 
+        [Test]
+        public async Task An_old_client_that_read_the_owner_before_its_list_changed_is_refused_and_one_that_read_it_afterwards_may_choose_None()
+        {
+            client.AsTeamAdmin(teamId);
+            var readByTheStaleClient = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+            var savedByAnotherAdmin = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+            savedByAnotherAdmin["parentOverrideSource"] = "Own";
+            savedByAnotherAdmin["parentSources"] = JsonNode.Parse(FieldThenOwnParent);
+            Assert.That((await Put($"/api/latest/teams/{teamId}", savedByAnotherAdmin)).StatusCode, Is.EqualTo(HttpStatusCode.OK));
+
+            readByTheStaleClient.Remove("parentSources");
+            readByTheStaleClient["parentOverrideSource"] = "Own";
+            readByTheStaleClient["parentOverrideAdditionalFieldDefinitionId"] = null;
+            var refused = await Put($"/api/latest/teams/{teamId}", readByTheStaleClient);
+            var afterTheRefusal = await TheSavedList();
+
+            var readAfterwards = await SettingsAt($"/api/latest/teams/{teamId}/settings");
+            readAfterwards.Remove("parentSources");
+            readAfterwards["parentOverrideSource"] = "Own";
+            readAfterwards["parentOverrideAdditionalFieldDefinitionId"] = null;
+            var chosen = await Put($"/api/latest/teams/{teamId}", readAfterwards);
+            var afterTheChoice = await TheSavedList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.Conflict));
+                Assert.That(afterTheRefusal.ToJsonString(), Is.EqualTo(FieldThenOwnParent),
+                    "An old client that never saw the list must not wipe it by sending None.");
+                Assert.That(chosen.StatusCode, Is.EqualTo(HttpStatusCode.OK));
+                Assert.That(afterTheChoice.ToJsonString(), Is.EqualTo(OwnParentAlone));
+            }
+        }
+
         private string AListOf(int howMany)
         {
             var sixDifferentFields = string.Join(",", fieldIds.Select(id => $$"""{"kind":"AdditionalField","additionalFieldDefinitionId":{{id}}}"""));
