@@ -554,12 +554,65 @@ whether the SAFe Feature level is shown); they stay open for "Levels above" (#64
 Customer B is neither confirmed nor refuted, and the set-up counts ("N items have no {level}") and the guided
 set-up (#6475) matter more than assumed, since they are what shows a messy structure for what it is.
 
-**Future direction: connection-level mapping moves to the level** (maintainer, 2026-11-02, not scheduled). The
+**Superseded by D22–D25 below.** **Future direction: connection-level mapping moves to the level** (maintainer,
+2026-11-02, not scheduled). The
 settings that sit on the connection today and describe how the hierarchy is wired (Parent Override Field,
 dependency fields and similar) belong with the level's configuration, next to its item types. Open: installs with
 two connections, where a level would need one value per tracker or a per-connection override on the level (the
 same question as ADR-270's "organisation default or per-tracker default"). To be placed when a level Epic or #6349
 next touches these settings.
+
+### The vision (maintainer, 2026-11-06)
+
+Shared across #6473, #6474, #6455, #6475 and #6349 and walked through in a session. It is the direction, not what ships
+first. Sketches: https://claude.ai/artifact/L4BsQRqLCJVee6UY1pnyja
+
+**D22. Three layers** (2026-11-06). The **structure** is set up once per instance, knows no tracker and can exist before
+any connection: levels, their names, and which one is where the work is done. A **connection** maps its types onto the
+levels. A **unit** is an instance of a level: it picks a connection (picked for you when there is only one) and narrows.
+Replaces D8's "item types come from the structure". ADR-274 is revised accordingly.
+
+**D23. The mapping is per connection, not per kind of tracker.** Shown under Organization, one tab per connection, named
+after the connection (`letpeoplework.atlassian.net`), so two Jira connections are two tabs. Each kind of tracker brings
+its own panel, which only loads if such a connection exists. Credentials and health stay in System.
+
+**D24. A type sits on one level per connection.** Jira's Epic and Azure DevOps' Epic may sit on different levels. A type
+on no level is ignored. Narrows MD6 of #6474.
+
+**D25. Parent sources, dependencies and shared defaults are keyed by connection and level.** Adding a level adds a row per
+connection, with its own parent setting. Replaces the 2026-11-02 "future direction" note above and answers ADR-270's
+"org default or per-tracker default". The ordered parent source list from Story #6501 is the value; it needs that key.
+
+**D26. A chain may cross connections.** A Team on one connection may point at a Portfolio on another through a custom
+field. This was the original use case (two Azure DevOps instances after a merger). It keeps working for forecasting and
+is not validated. Known risk, not new: the roll-up matches on the key alone (H2), so equal keys on two instances collide.
+
+**D27. One type with two meanings inside one connection** is not supported. Later, only on demand. A second connection
+to the same tracker covers it.
+
+**D28. Linear's mapping is read-only; CSV's is entered by hand.**
+
+**D29. A unit may change its connection.** Keep what the new connection maps to that level, name what is dropped, and
+require a pick if nothing is left. "Copy mapping from…" makes a swap to a write-back connection lose nothing.
+
+**D30. A unit's To Do, Doing and Done states stay its own for now; a default per connection and level comes later.** This
+softens D13 without contradicting its reason, since a unit can still differ.
+
+**D31. #6349 returns to its original idea: set shared settings once on the connection,** keyed by connection and level,
+including Closed Items Cutoff. Organization-wide defaults only if someone asks. When it comes, think holistically:
+creating a Team and changing a default must be as easy as possible. Work before it keeps that in mind.
+
+**D32. Chain check (Epic #6560, Options).** On a connection, give a key such as `PROJ-1337` and see the full chain up, or the
+children down, with the settings on screen, during set-up and after. It uses the same parent logic as the refresh. It
+reports no parent, a parent whose type is not mapped, a skipped level, and a parent on another connection (not
+followed). Useful with today's two levels, so it does not wait for #6455.
+
+**D33. Words.** Users see "Where the work is done" and "Groups the level below". Docs say **work level** and **levels
+above**. "Leaf" stays a code word.
+
+**D34. Set-up has two ways in, one screen.** Structure first, then mapping; or connect first, and the tracker's hierarchy
+proposes levels and a mapping. Templates (Teams only, today's two levels, SAFe, Flight Levels) prefill the structure.
+Refines D14 and the #6475 input above: set-up's types come from the mapping step.
 
 ### Proposed, not locked
 

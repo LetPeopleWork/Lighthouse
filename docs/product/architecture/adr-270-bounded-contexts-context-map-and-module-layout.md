@@ -284,7 +284,9 @@ feature work, not packaging, unless a packaging Story needs one to remove a ratc
 
 - **Leaf versus non-leaf level, not Team versus Portfolio.** What is special is tied to whether a level is the leaf
   or not, never to a numbered level. Feature WIP only matters at the leaf, where throughput is generated. Refinement
-  exists only at the leaf today; if it comes to non-leaf levels it must work for any number of them.
+  exists only at the leaf today; if it comes to non-leaf levels it must work for any number of them. Leaf is a code
+  word: docs say **work level** and **levels above**, and users see "Where the work is done" and "Groups the level
+  below" (2026-11-06).
 - **The leaf unit is the unit that generates throughput.** Today it is the Team. Its role is fixed; its name is open
   (the maintainer: "unsure yet how best to solve this"), and so is how to model it generically. Everything above it
   is a generic unit on a level; the old Portfolio becomes one of those.
@@ -299,7 +301,8 @@ feature work, not packaging, unless a packaging Story needs one to remove a ratc
 - **Mapping is not Translation.** Mapping (which tracker types, states and fields count as Work Item, Feature, In
   Progress, Done, blocked) needs the user and describes how the organisation works: Organisation set-up. Translation
   (turning each tracker record into a Work Item or Feature during a fetch) is plumbing that just works once the
-  mapping is known: Tracker integration.
+  mapping is known: Tracker integration. The mapping is keyed by **connection and level**, because the structure knows
+  no tracker and two connections may use one word for different levels (2026-11-06, ADR-274).
 - **Not allowed is not "not relevant".** "A C-level person should not see all the Team-level things" hides two needs:
   a permission (Access) and which level a person looks at by default (a read-model and navigation concern). Keep them
   apart.
@@ -310,8 +313,9 @@ feature work, not packaging, unless a packaging Story needs one to remove a ratc
   | Bucket | Settings | Note |
   |---|---|---|
   | **Org-wide, fixed** (one per installation) | Terminology; hierarchy levels and their names; blackout periods; Feature ordering policy; refresh cadence | Calendar, cadence and priority rules for the whole organisation |
-  | **Org default, local override** | Work Item types; Feature types; state mapping; blocked rules; staleness threshold; SLE; default Feature size; Parent Override Field | The dominant pattern. Lighthouse already has it at the connection (a Team follows the connection's default or owns its value, ADR-241); the target moves the default up to the organisation. Open: with two trackers, type and state names differ, so a per-connection layer may still be needed |
-  | **Local only** | Feature WIP; throughput window | Forecasting's view of the leaf unit as a capacity. Interesting to *see* across units; set locally |
+  | **Connection mapping, unit narrows** | Work Item types; Feature types | Keyed by connection and level. A type sits on one level per connection; a unit unticks, never adds (ADR-274) |
+  | **Connection default, local override** | Parent sources; dependency field; estimation; Closed Items Cutoff; blocked rules; staleness threshold; SLE; default Feature size | The dominant pattern, keyed by connection and level. Lighthouse already has it at the connection (a Team follows the connection's default or owns its value, ADR-241). Revised 2026-11-06: anything the units on a connection and level share can default there. The earlier target, an organisation-wide default, comes only if someone asks for it |
+  | **Local only** | Feature WIP; throughput window; a unit's To Do, Doing and Done states (a connection default may come later) | Forecasting's view of the leaf unit as a capacity. Interesting to *see* across units; set locally |
 
 ## Decision 5: glossary per context
 
@@ -324,11 +328,14 @@ class, table or wire field. The glossary lists only terms that matter or drift.
 | Term | Meaning | Code name today | Drift |
 |---|---|---|---|
 | Level | A tier of the organisation's structure, pairing an owning unit with a unit of work; the leaf is level 1 | none | Target only |
+| Work level | The level where the work is done: the leaf, in docs and conversation | leaf | Target word; users read "Where the work is done" |
+| Levels above | Every level above the work level. Each groups the level below | non-leaf | Target word; users read "Groups the level below" |
 | Unit | A group of people or a board that owns work on a level | `Team`, `Portfolio` | Target word; today two unrelated types |
 | Team (leaf unit) | The unit that generates throughput; the only one with forecasting inputs | `Team` | Name open; the role is fixed |
 | Portfolio | Today's unit above the Team. Users model with it a product with release tracking, an ART or a value stream | `Portfolio` | **Overloaded** (three meanings). Becomes a unit on a non-leaf level |
 | Project | No meaning of its own: an old name for Portfolio | `GetFeaturesForProject`, `UpdateForecastForProject`, `ModifyProjectSettings`, the `/projects` suggestion routes, the wire field `Feature.projects`, the variable `project` in `PortfolioUpdater` | **Drift**: rename to Portfolio (the connector port rename is planned with the connector-capability Story) |
 | Mapping | Which tracker types, states and fields count as Work Item, Feature, In Progress, Done, blocked | Team, Portfolio and connection settings | Today split over three places |
+| Connection mapping | The mapping of one connection: per level, its item types and later its parent sources, dependencies and shared defaults | none | Target only; first step in Epic 6474 (ADR-274) |
 | State mapping | A named group of a unit's tracker states, shown as one state on the settings page and in the charts. It never decides a category: the To Do, Doing and Done lists hold the tracker's states, and the group is derived from them on read | `StateMapping`, `DisplayStatesFor`, the `*DisplayStates` wire fields | Shares a word with Mapping above but is only a display grouping (ADR-277) |
 | Terminology | The organisation's words for Lighthouse's concepts, one set per installation | `Terminology`, `TerminologySeeder` | Has one key pair per concept and no notion of a level |
 | Owner | Overloaded in code: the Teams and Portfolios that use a connection ("N owners follow this default"), the Team or Portfolio a report belongs to (`ReportOwner`), a Portfolio's owning Team (`OwningTeamId`), and in the target the owning unit of a level | see meaning | **Drift.** "Users of a connection" is not ownership; the owner of a connection's credential is a different, still unnamed role |
@@ -539,10 +546,10 @@ These were not decided on the board; the packaging Story of the named context de
 - Where the **update queue** lives: its mechanics look like platform-lane infrastructure, while scheduling a refresh is
   Work Items' and a forecast round is Forecasting's.
 - **Mapping and the ACL.** The cycle is broken in Decision 2 (set-up is a customer of the ACL's query port; the
-  mapping travels as data with each fetch). Left open: the exact shape of the mapping handed over.
+  mapping travels as data with each fetch). Decided: it is keyed by connection and level. Left open: the exact shape
+  handed over.
 - **Refinement above the leaf feeding Forecasting** reverses today's edge (Refinement reads Forecasting's manual
   forecast). Above the leaf it will need to come as an event or a separate contract.
-- **Org default or per-tracker default** for bucket 2 settings.
 - **The leaf unit's name** and how to model it generically.
 - **The leaf item's name.** With one item model, "Work Item" means an item on any level, so the item at the leaf
   needs a name of its own. A naming decision for Epic 6455.

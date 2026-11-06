@@ -165,3 +165,90 @@ So DQ6 option (a) alone would have made a Jira or Azure DevOps Team read every t
   404 with code `level-switched-off`, a Portfolio create answers 409; Team payloads leave out Portfolio and Feature
   references; Feature-level units are not refreshed or forecast; a Team refresh triggers no Portfolio forecast. On
   switch-on, each Portfolio is refreshed once. Hidden Portfolios still count towards the free tier (MD5).
+
+---
+
+# Upstream changes from the maintainer's vision (2026-11-06)
+
+From VR1–VR19 in `feature-delta.md` and the revised ADR-274. **These win over the two sections above where they
+disagree.** Not applied to DISCUSS sections or slice files; DISTILL takes them from here. Wherever a section above says
+"the level's types" or "the level's spelling", read "the types the connection maps to that level" and "the mapping's
+spelling".
+
+## OUT-1 (Outcome KPIs)
+
+Group (ii) becomes "Teams that lost a type to the Feature level **on their own connection**".
+
+## Slice 01: pin today's numbers
+
+- Fixture adds: a Jira Team reading Epic and an Azure DevOps Portfolio reading Epic. The Team loses nothing.
+- The "lost a type" fixture must have the Team and the Portfolio on the same connection.
+
+## Slice 02: two levels seeded
+
+- Title and pitch: levels are seeded from Terminology; mappings are seeded per connection from the units' types.
+- ACs become: "For each connection, its Feature level lists every type of its Portfolios once, ignoring case; its Team
+  level lists every type of its Teams once, ignoring case, except those on its Feature level."
+- "No type is on both levels" becomes "No type is on both levels of one connection".
+- New AC: "A connection with no units on a level gets today's create defaults for it."
+- New AC: "At each start, a connection without a mapping gets one from its units' types; a subset the previous release
+  changed is derived again, a type not mapped is dropped and recorded, and an empty result marks the unit."
+- New UAT: "Given a Jira Team reads Story and Epic and an Azure DevOps Portfolio reads Epic, when the install is upgraded,
+  then the Jira Team still ticks Story and Epic, and Epic is on the Feature level of the Azure DevOps connection only."
+
+## Slice 04: a unit reads its subset
+
+- The invariant becomes "subset within the types its connection maps to its level".
+- The 400 reads: "Spike is not on the Team level of letpeoplework.atlassian.net".
+- The UAT "A type the level does not list" follows that wording.
+
+## Slice 05: levels shown in Organization
+
+- The table has no item types column and the two rows show names only. The sketch changes (board 2).
+- The leaf is marked "Where the work is done" and the other level "Groups the level below", not "generates throughput".
+
+## Slice 05b: upgrade notice
+
+- Lines name the connection: "{Team} no longer reads Epic: on {connection}, Epic is now a {feature} type".
+
+## Slice 08: add and remove a connection's types (biggest change)
+
+- Title: "Decide once what counts as a Work Item on a connection".
+- Lives in Organization → Connection mapping, one tab per connection, named after the connection, one row per level.
+  Not in the level dialog. Sketch on board 3; DISTILL's walk-through takes it from there.
+- Every "level 1" scenario gains its connection. "12 Teams could read Task" counts the Teams on that connection.
+- Refusal: a type on the other level of this connection is refused, naming that level.
+- New: "Copy mapping from…" on a connection: one confirmation naming the units that lose a type, then as a removal.
+- Removal confirmation adds: "To move this type to another level, Teams must tick it again there."
+- A tab for a connector without types (Linear) says so. Tracker-specific panels (proposal from the tracker, parent
+  sources, read-only Linear levels) are not part of this Epic.
+- Loading and failure looks: a lone spinner in the tab while it loads; on failure, the could-not-load message and
+  nothing that looks like an empty mapping.
+
+## Slice 09: a unit narrows its connection's types
+
+- The checkboxes list what the chosen connection maps to the unit's level, and change with the connection field. With
+  only one connection it is picked for you and the field goes. Sketch on board 9.
+- Load from board wording: "Sub-task is not mapped on this connection. A System Admin can add it in Organization."
+- New: changing the connection (board 10). Three cases: same mapping, nothing changes; some types dropped, named; nothing
+  left, a pick is required before saving.
+- New UAT: "Given Team 'Apollo' ticks Story and Bug on Jira, and Azure DevOps maps Bug and User Story to the Team level,
+  when its connection changes to Azure DevOps, then it keeps Bug and is told Story is dropped."
+- New failure look: while the connection's list cannot load, the selection is kept read-only, as in the earlier sketch.
+
+## Slice 15: Teams only
+
+- The Connection mapping tab shows the off level's row greyed; its types can be removed. A new connection gets no
+  Feature-level defaults while the level is off.
+- New UAT: "Given the Feature level is off and Epic sits on it, when Priya removes Epic there and adds it to the Team
+  level, then a Team can tick Epic."
+
+## Slice 14: clients read the levels
+
+- `levels list` returns names, not types. New `connections mapping <id>` command and MCP tool for "which types count as
+  Work Items here?". The breaking-change note says how to see a connection's types.
+
+## Release note (at /release)
+
+"A tracker type now belongs to one level on each connection. Where a type counted for both Teams and Portfolios on the
+same connection, it now counts as a {feature} type only; the Teams that lost it are listed under Organization."

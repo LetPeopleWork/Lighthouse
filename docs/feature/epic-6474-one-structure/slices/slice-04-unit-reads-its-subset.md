@@ -1,5 +1,7 @@
 # Slice 04 — A unit reads its level's types, narrowed to its subset
 
+> **Amended 2026-11-06.** Item types moved to the connection's mapping. The last section of `../design/upstream-changes.md` wins over this file; apply it at DISTILL.
+
 Epic #6474 · invisible on screen, **breaking for API clients** (M1) · `job_id: infrastructure-only` · ≤ 1 day · depends on: 03
 
 `infrastructure_rationale`: D8/D12 make item types the level's; a unit only narrows them. This slice switches

@@ -1,5 +1,7 @@
 # Slice 09 — A unit narrows its level's types
 
+> **Amended 2026-11-06.** Item types moved to the connection's mapping. The last section of `../design/upstream-changes.md` wins over this file; apply it at DISTILL.
+
 Epic #6474 · **visible** · `job_id: job-config-admin-say-item-types-once` (proposed) · ≤ 1 day · depends on: 08
 
 ## Elevator Pitch

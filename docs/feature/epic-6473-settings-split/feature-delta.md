@@ -8,6 +8,11 @@ with a local override). Runs in parallel with #6474 "One structure" DISCUSS.
 Status: DISCUSS drafted 2026-11-02; maintainer answered Q1–Q6 the same day (see Locked decisions). Q7 and Q8 are new,
 raised by the connections decision. The sketches still go through DISTILL's walk-through. Nothing mirrored to ADO.
 
+**2026-11-06, maintainer's vision.** ADR-271 Decision 4 is revised: a connection owns its mapping, shown under
+Organization with one tab per connection; credentials and health stay on the connection page in System. No slice of
+this Epic changes: M4 stands, and "Mapping, connection defaults, per-unit settings: OUT" stands. #6474 slice 08 adds
+the Connection mapping tab, so the Organization area should leave room for a further tab.
+
 ---
 
 ## Wave: DISCUSS / [REF] Locked decisions

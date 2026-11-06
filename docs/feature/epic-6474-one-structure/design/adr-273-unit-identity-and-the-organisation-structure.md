@@ -17,8 +17,8 @@ table that points at one of them already stores a kind next to the number: `Owne
 `UpdateType` (queue keys). Migrations are expand-only.
 
 Some rules span levels: there are exactly two levels for now, one of them the leaf; only the level above the leaf
-(the Feature level) can be switched off, and only while exactly two levels exist (M13); each item type belongs to
-exactly one level (MD6, ADR-274).
+(the Feature level) can be switched off, and only while exactly two levels exist (M13). Item types are not one of
+these rules any more: each connection's mapping guards them (ADR-274).
 
 ## Decision
 
@@ -29,8 +29,8 @@ exactly one level (MD6, ADR-274).
    `Portfolio` the Feature level, in all five enums. A level above the Feature level (#6455) gets its own key there.
 3. **Levels have a stable `LevelId`, distinct from their ordinal.** Adding a level above changes no existing id.
    Code says "leaf" and "Feature level" (the leaf's direct parent), never "level 2".
-4. **`OrganisationStructure` is one aggregate per installation**, holding the `Level` entities (names, item types,
-   on/off). It guards the cross-level rules above, including "each item type on exactly one level". `Unit` is its own aggregate and refers to its level by
+4. **`OrganisationStructure` is one aggregate per installation**, holding the `Level` entities (names, on/off). It guards the cross-level rules above. Item types are not here: each
+   connection maps them onto the levels (ADR-274). `Unit` is its own aggregate and refers to its level by
    `LevelId`; a unit's level never changes.
 5. **What only one level needs lives in an extension keyed by `UnitId`, owned by the context whose data it is**:
    `LeafCapacity` (Forecasting: Feature WIP, auto-adjust, throughput window, forecast filter rules),
@@ -40,7 +40,7 @@ exactly one level (MD6, ADR-274).
    object present only on the Feature level.
 6. **Domain events** published by Organisation set-up: `UnitCreated(UnitId, LevelId)`,
    `UnitDeleted(UnitId, LevelId, UnitsThatReferencedIt)` (replaces `TeamDeleted` and Portfolio deletion's inline
-   clean-up), `LevelRenamed`, `LevelItemTypesChanged`, `LevelSwitchedOff`, `LevelSwitchedOn`. The refresh events
+   clean-up), `LevelRenamed`, `ConnectionItemTypesChanged`, `LevelSwitchedOff`, `LevelSwitchedOn`. The refresh events
    (`TeamDataRefreshed`, `PortfolioFeaturesRefreshed`, `PortfolioForecastsUpdated`) keep their names in this Epic.
 7. `UnitId` and `LevelId` join the shared kernel's cross-context identifiers (ADR-270 Decision 7).
 
