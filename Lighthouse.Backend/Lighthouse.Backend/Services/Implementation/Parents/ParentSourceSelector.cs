@@ -1,16 +1,15 @@
-using Lighthouse.Backend.Extensions;
 using Lighthouse.Backend.Models;
 
 namespace Lighthouse.Backend.Services.Implementation.Parents
 {
     /// <summary>
-    /// Decides where one record's parent was read from.
+    /// Decides which of the sources a Team or a Portfolio lists gave one record its parent.
     ///
-    /// A Team or a Portfolio that names something in Parent Override Field is declaring it authoritative,
-    /// so whatever it yields replaces the parent the tracker reports for itself. That parent is what
-    /// remains only when it yields nothing, as when a record's links cannot be narrowed down to one. What
-    /// was named is either a field of the tracker's or one of its link types, and those are read in
-    /// entirely different places - which is the whole of what this decides.
+    /// The list is read in order and the first position that yields a parent wins, whether it names a field
+    /// of the tracker's, one of its link types, or the parent the tracker reports for itself. A tracker only
+    /// reads what each position holds; the order, what counts as yielding and the handing over to the next
+    /// position exist here once, so that no two trackers can come to mean different things by them. What is
+    /// decided is returned, and <c>HangUnder</c> is the one place that applies it to a record.
     ///
     /// This lives apart from any one tracker because the rule belongs to the Team and the Portfolio rather
     /// than to the tracker, and apart from the sibling that decides the same thing for dependencies
@@ -28,44 +27,12 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
         private delegate (string Key, bool NeedsStoredFeatures) LinkJudgement(ParentResolution links);
 
         /// <summary>
-        /// Whether this Team or Portfolio still reads the parent the tracker reports for itself. Asked by
-        /// anything that has to behave differently once the override is set - what to fetch as well as
-        /// what to read it from - so that those answers cannot drift apart from what is actually read.
-        /// </summary>
-        public static bool ReadsTheTrackersOwnParent(IWorkItemQueryOwner owner)
-            => !owner.ParentOverrideAdditionalFieldDefinitionId.HasValue;
-
-        /// <summary>
         /// Whether a list asks for the parent the tracker reports for itself to be read at all, wherever in
-        /// the list it stands.
+        /// the list it stands. Asked by anything that has to behave differently without it - what to fetch as
+        /// well as what to read it from - so that those answers cannot drift apart from what is actually read.
         /// </summary>
         public static bool ReadsTheTrackersOwnParent(ParentSources list)
             => list.Entries.Contains(ParentSourceEntry.TrackerParent);
-
-        /// <summary>
-        /// What one record hangs under, or nothing when the override yielded nothing - in which case the
-        /// caller is left holding whatever the tracker reported for itself, exactly as before.
-        ///
-        /// The caller supplies what the tracker's links said; whether that is used is decided here.
-        /// </summary>
-        public static string TheParentOf(
-            IWorkItemQueryOwner owner, WorkItemBase workItem, ParentSource source, ParentResolution fromTheMatchingLinks)
-        {
-            if (ReadsTheTrackersOwnParent(owner))
-            {
-                return string.Empty;
-            }
-
-            if (source == ParentSource.ALinkTypeTheOverrideNames)
-            {
-                // Several issues answering the same link type name none of them here. The choice among them
-                // is made by the refresh, which knows which of them this instance holds as Features and when
-                // each was created.
-                return fromTheMatchingLinks.Key;
-            }
-
-            return workItem.GetAdditionalFieldValue(owner.ParentOverrideAdditionalFieldDefinitionId) ?? string.Empty;
-        }
 
         /// <summary>
         /// The final answer, for whoever holds the stored Features: the first position that yields a parent
@@ -135,38 +102,5 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
                 }
             }
         }
-
-        /// <summary>
-        /// Hangs a record under the key its links resolved to, and shows that key in the Additional Field that
-        /// named the link type. A link type carries no value of its own to show there, so the key goes in its
-        /// place, and somebody who has just pointed that box at a link type can see what it found on the
-        /// records themselves. A record whose links produced nothing keeps the parent the tracker reported and
-        /// shows nothing, because a key that was not acted on would send them looking for a parent that was
-        /// never stored. The two writes always travel together, so the stored parent and what the field shows
-        /// cannot disagree.
-        /// </summary>
-        public static void HangUnder(IWorkItemQueryOwner owner, WorkItemBase record, string key)
-        {
-            if (!string.IsNullOrEmpty(key))
-            {
-                record.ParentReferenceId = key;
-            }
-
-            if (owner.ParentOverrideAdditionalFieldDefinitionId is { } theFieldThatNamedIt)
-            {
-                record.AdditionalFieldValues[theFieldThatNamedIt] = key;
-            }
-        }
-    }
-
-    /// <summary>
-    /// The two things an administrator can leave in Parent Override Field. The box takes a name and says
-    /// nothing about which of the two it turned out to be, so whoever resolved it against the tracker has
-    /// to say, rather than every reader guessing from the shape of what came back.
-    /// </summary>
-    public enum ParentSource
-    {
-        AFieldTheOverrideNames,
-        ALinkTypeTheOverrideNames,
     }
 }

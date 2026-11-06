@@ -101,14 +101,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         /// <summary>
         /// An item the links said nothing about must stay unparented rather than pick up the parent the
-        /// tracker hangs on its own field. That field is the very thing the override was set to stop reading,
-        /// and a parent taken from it would look exactly like one the links produced.
+        /// tracker hangs on its own field, while the Team does not list its own parent. A parent taken from
+        /// that field would look exactly like one the links produced.
         /// </summary>
         [Test]
-        public async Task An_item_with_no_matching_link_does_not_fall_back_to_the_field_the_override_replaced()
+        public async Task An_item_with_no_matching_link_does_not_fall_back_to_the_field_of_an_own_parent_that_is_not_listed()
         {
             TheInstanceDefinesTheCustomField(TheFieldDataCenterHangsParentsOn);
             TheParentOverrideNames(ALinkTypeTheInstanceDefines.Name);
+            TheOwnParentIsNotListedBehindIt();
             TheIssueNamesAParentInTheDataCenterFieldAndHasNoMatchingLink(TheChildWithNothingMatching, TheParentDataCenterWouldHaveNamed);
 
             var refreshed = await TheTeamIsRefreshed();
@@ -296,16 +297,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         }
 
         /// <summary>
-        /// The Portfolio's copy of the guard that stops a refresh falling back to the field the tracker
-        /// hangs parents on. The guard is written out once per grain, so the Team's copy being pinned says
-        /// nothing about this one - and a Feature filed under the wrong level above it reads exactly like a
-        /// Feature filed correctly.
+        /// The same for a Portfolio, which keeps its parents in a field of its own, so the Team's case being
+        /// pinned says nothing about this one - and a Feature filed under the wrong level above it reads
+        /// exactly like a Feature filed correctly.
         /// </summary>
         [Test]
-        public async Task A_Feature_with_no_matching_link_does_not_fall_back_to_the_field_the_override_replaced()
+        public async Task A_Feature_with_no_matching_link_does_not_fall_back_to_the_field_of_an_own_parent_that_is_not_listed()
         {
             TheInstanceDefinesTheCustomField(TheFieldDataCenterHangsFeatureParentsOn);
             TheParentOverrideNames(ALinkTypeAPortfolioNames.Name);
+            TheOwnParentIsNotListedBehindIt();
             TheIssueNamesAParentInTheDataCenterFieldAndHasNoMatchingLink(TheFeatureWithNothingMatching, TheLevelAboveDataCenterWouldHaveNamed);
 
             var refreshed = await ThePortfolioIsRefreshed();

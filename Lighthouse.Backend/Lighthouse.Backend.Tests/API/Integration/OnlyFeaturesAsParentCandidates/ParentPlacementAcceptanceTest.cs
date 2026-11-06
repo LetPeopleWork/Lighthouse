@@ -692,8 +692,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                 _ when path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal)
                     => JiraWireFormat.TheLinkTypeListDefining([JiraWireFormat.ALinkTypeDefinition(0, CausedBy)]),
                 _ when path.EndsWith("/changelog", StringComparison.Ordinal) => TheFullHistoryAt(path),
-                _ when path.Contains(JiraWireFormat.SearchEndpoint, StringComparison.Ordinal)
-                    => JiraWireFormat.OnePageOf(TheIssuesAskedForBy(JiraConnectorTestSetup.JqlOf(request)).Select(issue => issue.OnTheWire(CustomFieldIdOf))),
+                _ when path.Contains(JiraWireFormat.SearchEndpoint, StringComparison.Ordinal) => ThePageAnswering(JiraConnectorTestSetup.JqlOf(request)),
                 _ => "{}",
             };
 
@@ -701,6 +700,16 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             {
                 Content = new StringContent(body, Encoding.UTF8, "application/json"),
             };
+        }
+
+        /// <summary>Data Center pages by offset, so its answer says how many there are where Cloud's says it is the last.</summary>
+        private string ThePageAnswering(string jql)
+        {
+            var asked = TheIssuesAskedForBy(jql).ConvertAll(issue => issue.OnTheWire(CustomFieldIdOf));
+
+            return theInstanceIsJiraDataCenter
+                ? "{\"issues\":[" + string.Join(",", asked) + "],\"maxResults\":" + (asked.Count + 1) + ",\"total\":" + asked.Count + "}"
+                : JiraWireFormat.OnePageOf(asked);
         }
 
         private List<AnIssueOnTheTracker> TheIssuesAskedForBy(string jql)

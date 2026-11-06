@@ -129,6 +129,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 
         private string? whatTheParentOverrideNames;
 
+        private bool theOwnParentIsLeftOutOfTheList;
+
         private bool theCredentialIsStillAccepted = true;
 
         /// <summary>
@@ -157,6 +159,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
             whatStorageHoldsForTheFeatures.Clear();
             whatTheRefreshWroteToTheLog = new Mock<ILogger<JiraWorkTrackingConnector>>();
             whatTheParentOverrideNames = null;
+            theOwnParentIsLeftOutOfTheList = false;
             theCredentialIsStillAccepted = true;
             theTeamEveryRefreshFetches = null;
             theTeamDeliveringTheWork = null;
@@ -175,6 +178,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
         /// referenced the same way, which is how that box is filled in.
         /// </summary>
         private void TheParentOverrideNames(string reference) => whatTheParentOverrideNames = reference;
+
+        /// <summary>What is named is all the owner lists, so the tracker's own parent is not read behind it.</summary>
+        private void TheOwnParentIsNotListedBehindIt() => theOwnParentIsLeftOutOfTheList = true;
 
         private void TheInstanceDefinesTheCustomField(string name) => customFieldsTheInstanceDefines.Add(name);
 
@@ -534,7 +540,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 Reference = whatTheParentOverrideNames,
             });
 
-            ((WorkTrackingSystemOptionsOwner)owner).OwnParentOverride(TheAdditionalFieldTheOverridePointsAt);
+            var described = (WorkTrackingSystemOptionsOwner)owner;
+            described.OwnParentOverride(TheAdditionalFieldTheOverridePointsAt);
+
+            if (theOwnParentIsLeftOutOfTheList)
+            {
+                described.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(TheAdditionalFieldTheOverridePointsAt)]).List!);
+            }
         }
 
         private static string TheParentOf<TRecord>(List<TRecord> refreshed, string key)

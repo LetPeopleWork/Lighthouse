@@ -18,7 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
     /// harness to serve that deployment's search path.
     /// </summary>
     [TestFixture]
-    [Ignore("Story 6501: needs the owner's parent source list, the record's readings and the connector reading every position.")]
     public class ParentSourcesRefreshScenarios : ParentPlacementAcceptanceTest
     {
         private const string TheHousekeepingEpic = "PAY-1";
@@ -156,6 +155,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         /// next entry is still read, so PAY-143 shows under the parent Program Ref names.
         /// </summary>
         [Test]
+        [Ignore("Story 6501: the refresh does not yet name an entry that matches nothing in what it warned.")]
         public async Task An_entry_that_matches_nothing_is_named_in_what_the_refresh_reports_and_the_next_is_still_read()
         {
             var nothing = TheTeamsEntryThatMatchesNothing("Nothing Here");
