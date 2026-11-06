@@ -663,8 +663,8 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .ToList();
 
             Assert.That(readers, Is.EquivalentTo(TheTypesThatMayReadTheOldParentMembers),
-                "Read the owner's TheEffectiveParentSources() or its ParentSources. The old members survive for a " +
-                "build one release back and for the Azure DevOps connector, and hold only the first field of a list. " +
+                "Read the owner's TheEffectiveParentSources() or its ParentSources. The old members answer from the " +
+                "columns kept for a build one release back, which hold only the first field of a list. " +
                 "If an entry here no longer reads one, remove it.");
         }
 
