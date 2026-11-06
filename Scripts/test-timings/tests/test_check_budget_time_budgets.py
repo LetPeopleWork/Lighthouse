@@ -562,7 +562,6 @@ class TheWorkflowStepsKeepTheSwitchOutOfTheUnitTests(unittest.TestCase):
             if step.lstrip().startswith("- name:")
         ]
 
-    @unittest.skip("pending: the workflow steps are not split yet")
     def test_the_switch_is_in_the_environment_of_the_budget_step_and_not_of_the_unit_test_step(self):
         for stack, path in self.WORKFLOWS.items():
             with self.subTest(stack=stack):
@@ -577,6 +576,8 @@ class TheWorkflowStepsKeepTheSwitchOutOfTheUnitTests(unittest.TestCase):
                 self.assertIn(f"{SWITCH}: ${{{{ vars.{SWITCH} }}}}", budget[0])
                 self.assertNotIn("--warn-only", unit[0])
                 self.assertNotIn("--warn-only", budget[0])
+                self.assertIsNone(re.search(r"(?<![A-Z_])BUDGET_WARN_ONLY", budget[0]))
+                self.assertNotIn("case ", budget[0])
 
 
 if __name__ == "__main__":
