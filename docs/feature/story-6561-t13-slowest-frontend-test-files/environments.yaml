@@ -15,7 +15,7 @@ local_measurement:
   workers: "LIGHTHOUSE_TEST_WORKERS=2, on named files only"
   load_limit: "half the cores; the sample is the 1-minute load average at the start and at the end of both runs of a pair; a pair is valid only if all four samples are at or under it"
   decision_metric: "summed per-test seconds of the touched files (assertionResults[].duration in milliseconds, per suite, from Lighthouse.Frontend/test-results.json), alternating before and after (user+sys CPU seconds recorded as a cross-check)"
-  cut: "1 - after/before; the required cut (no margin) stops a file, the design target (with margin) is reported beside it, and a file between the two passes as 'passing, no margin'"
+  cut: "1 - after/before; the required cut (no margin) stops a file, except ModifyTeamSettings.test, whose 1 % five pairs cannot resolve (see Stop rule in feature-delta.md); the design target (with margin) is reported beside it, and a file between the two passes as 'passing, no margin'"
   pairs: "5 alternating pairs, at least 3 valid; fewer is recorded as 'unmeasured, machine loaded' and takes the stop, with no retake loop"
   full_suite_and_stryker: "never while another session is mutating"
 
