@@ -594,6 +594,26 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected void TheTeamListsTheParentSources(string adoTeam, params ParentSourceEntry[] sources)
             => adoTeams[adoTeam].OwnParentSources(ParentSources.Of(sources).List ?? throw new AssertionException("The scenario describes a list the rules refuse."));
 
+        /// <summary>A field of the tracker, as an entry the Portfolio can list among its parent sources.</summary>
+        protected ParentSourceEntry ThePortfoliosSource(string adoPortfolio, string reference)
+        {
+            var connection = adoPortfolios[adoPortfolio].WorkTrackingSystemConnection;
+            var fieldId = TheParentOverrideFieldId + 1000 + (100 * connection.Id) + connection.AdditionalFieldDefinitions.Count;
+
+            connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
+            {
+                Id = fieldId,
+                DisplayName = reference,
+                Reference = reference,
+            });
+
+            return ParentSourceEntry.Field(fieldId);
+        }
+
+        /// <summary>The Portfolio owns this ordered list as its parent sources.</summary>
+        protected void ThePortfolioListsTheParentSources(string adoPortfolio, params ParentSourceEntry[] sources)
+            => adoPortfolios[adoPortfolio].OwnParentSources(ParentSources.Of(sources).List ?? throw new AssertionException("The scenario describes a list the rules refuse."));
+
         /// <summary>The Team names <paramref name="reference"/> as its only parent source.</summary>
         protected void TheTeamNamesAsItsParentOverrideField(string adoTeam, string reference)
         {

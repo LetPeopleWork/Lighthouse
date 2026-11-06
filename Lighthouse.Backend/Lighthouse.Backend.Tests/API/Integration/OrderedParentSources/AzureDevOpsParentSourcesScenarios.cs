@@ -183,32 +183,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         }
 
         /// <summary>
-        /// Given a Portfolio whose Features wait on the work item at the other end of their Predecessor relation,
-        /// when a Team on the same organisation lists "Custom.EpicLink" only and refreshes, then the Portfolio's
-        /// Features still wait on exactly what they waited on before.
+        /// Given a Portfolio whose own parent sources list holds only "Custom.EpicLink", and a Feature that waits
+        /// on the work item at the other end of its Predecessor relation, when the Portfolio refreshes, then the
+        /// Feature waits on that work item: the relations are read for the dependencies although no parent source
+        /// asks for them.
         /// </summary>
         [Test]
-        public async Task A_Team_that_reads_only_fields_leaves_the_dependencies_the_Portfolio_shows_as_they_were()
+        public async Task A_Portfolio_that_lists_only_fields_still_reads_its_dependencies_from_the_relations()
         {
             var contoso = TheOrganisationAt(ContosoOrganisation);
             contoso.FieldsItDefines.Add(EpicLink);
             contoso.Holds(4711, 4702);
             contoso.Relates(4711, Predecessor, 4702);
             AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
-            await RefreshesNow(RetailRollout);
-            var before = await WhatTheFeatureWaitsOn("4711");
+            ThePortfolioListsTheParentSources(RetailRollout, ThePortfoliosSource(RetailRollout, EpicLink));
 
-            AnAzureDevOpsTeam(PaymentsMobile, ContosoOrganisation);
-            TheTeamListsTheParentSources(PaymentsMobile, TheTeamsSource(PaymentsMobile, EpicLink));
-            await TheTeamRefreshes(PaymentsMobile);
             await RefreshesNow(RetailRollout);
-            var after = await WhatTheFeatureWaitsOn("4711");
 
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(before, Is.EqualTo(TheFeatureWaitsOnTheTargetOfItsPredecessor).AsCollection);
-                Assert.That(after, Is.EqualTo(before).AsCollection);
-            }
+            Assert.That(await WhatTheFeatureWaitsOn("4711"), Is.EqualTo(TheFeatureWaitsOnTheTargetOfItsPredecessor).AsCollection);
         }
     }
 }
