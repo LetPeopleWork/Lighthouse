@@ -1,0 +1,44 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6048-slice-04.config.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "off",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "dist",
+    "coverage",
+    "playwright-report",
+    "reports"
+  ],
+  "mutate": [
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/deliveryTimelineModel.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryGanttChart.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryTimelineTab.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineLegend.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/timelineMarkers.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/ganttShapes.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/timeline/TimelineBarContent.tsx"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "stryker-6048-slice-04-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6048-slice-04"
+}
