@@ -417,9 +417,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected Task WhenTheAdminSetsTheTeamsListTo(bool startUpdates, params string[] sources)
             => SaveTheConnection(read => DefaultsOf(read)[ParentSourcesForTeamsMember] = TheListOf(read, sources), startUpdates);
 
-        /// <summary>The save leaves the list out of the defaults it sends back, as a script that has never heard of it would.</summary>
+        /// <summary>
+        /// The save leaves the list out of the defaults it sends back but still echoes the old number it read, as a
+        /// script does that copies the connection back without knowing the list.
+        /// </summary>
         protected Task WhenAScriptSavesTheConnectionLeavingTheTeamsListOut()
             => SaveTheConnection(read => DefaultsOf(read).Remove(ParentSourcesForTeamsMember), startUpdates: false);
+
+        /// <summary>
+        /// An old page or script that knows only the single field: it sends no list and puts the field it chose in
+        /// the old number.
+        /// </summary>
+        protected Task WhenAnOldClientSetsTheTeamsDefaultTo(string fieldName, bool startUpdates)
+            => SaveTheConnection(read =>
+            {
+                var defaults = DefaultsOf(read);
+                defaults.Remove(ParentSourcesForTeamsMember);
+                defaults["parentOverrideForTeams"] = TheFieldIdIn(read, fieldName);
+            }, startUpdates);
+
+        /// <summary>An old page or script that has never heard of the Teams' default: it sends neither the list nor the old number.</summary>
+        protected Task WhenAnOldClientSendsNothingOfTheTeamsDefault(bool startUpdates)
+            => SaveTheConnection(read =>
+            {
+                var defaults = DefaultsOf(read);
+                defaults.Remove(ParentSourcesForTeamsMember);
+                defaults.Remove("parentOverrideForTeams");
+            }, startUpdates);
 
         /// <summary>The save sends the list as an explicit null: the admin cleared it.</summary>
         protected Task WhenTheAdminClearsTheTeamsList()

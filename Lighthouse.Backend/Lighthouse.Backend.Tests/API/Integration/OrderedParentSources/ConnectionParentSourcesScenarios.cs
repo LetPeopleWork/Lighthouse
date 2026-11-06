@@ -44,7 +44,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
 
             using (Assert.EnterMultipleScope())
             {
+                Assert.That(await TheSourcesTheSettingsOfShow(CardIssuing), Is.EqualTo(new[] { ParentLink }).AsCollection, "Card Issuing follows the Portfolios' default.");
                 Assert.That(listed, Is.EquivalentTo(TheThreeFollowers), "Ledger owns its list, so nothing about the default reaches it.");
+                Assert.That(listed, Does.Not.Contain(CardIssuing), "A Portfolio follows the Portfolios' default, which this save did not change.");
                 Assert.That(ran, Is.EquivalentTo(TheThreeFollowers.Select(follower => $"{follower} Full")));
                 Assert.That(await TheSourcesTheSettingsOfShow(FraudSignals), Is.EqualTo(new[] { ParentLink, CausedBy, TheTrackersOwnParentSource }).AsCollection);
                 Assert.That(WhatTheTrackerWasAskedToReadFor(FraudSignals, OwnerSetting.ParentOverrideField), Is.EqualTo(ParentLink));
@@ -76,34 +78,98 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         }
 
         /// <summary>
-        /// Given Ledger owns "Parent Link" then "Caused by", when a System Admin removes "Caused by" from the
-        /// connection, then the save is refused naming Ledger, whichever place in its list the field holds, and
-        /// nothing is removed; and once Ledger no longer lists it but the Teams default does, the save is refused
-        /// naming the default.
+        /// Given Ledger owns a list holding "Caused by" first, or second, or the Teams default does, when a System
+        /// Admin removes "Caused by" from the connection, then each save is refused with the field's name and who
+        /// still uses it, and nothing is removed.
         /// </summary>
         [Test]
         public async Task A_field_cannot_be_removed_from_its_connection_while_any_list_holds_it_in_any_place()
         {
-            await GivenTheTeamOwnsTheList(Ledger, ParentLink, CausedBy);
+            await GivenTheTeamOwnsTheList(Ledger, CausedBy, ParentLink);
+            var ownerFirst = await TheRefusalOfRemovingCausedBy();
 
-            await WhenTheAdminRemovesTheField(CausedBy);
-            var ownersRefusal = TheRefusal();
-            var statusForTheOwner = SaveAnswer;
+            await GivenTheTeamOwnsTheList(Ledger, ParentLink, CausedBy);
+            var ownerSecond = await TheRefusalOfRemovingCausedBy();
 
             await GivenTheTeamOwnsTheList(Ledger, ParentLink);
+            await GivenTheTeamsListIs(CausedBy, ParentLink);
+            var defaultFirst = await TheRefusalOfRemovingCausedBy();
+
             await GivenTheTeamsListIs(ParentLink, CausedBy);
-            await WhenTheAdminRemovesTheField(CausedBy);
-            var defaultsRefusal = TheRefusal();
+            var defaultSecond = await TheRefusalOfRemovingCausedBy();
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(statusForTheOwner, Is.EqualTo(HttpStatusCode.Conflict));
-                Assert.That(ownersRefusal.Code, Is.EqualTo("additional-field-in-use"));
-                Assert.That(ownersRefusal.Message, Does.Contain("Ledger uses it as its own"));
-                ThenTheSaveIsRefusedWith(HttpStatusCode.Conflict);
-                Assert.That(defaultsRefusal.Message, Does.Contain("Teams").And.Contain("default"));
+                foreach (var (place, refusal) in new[] { ("owner, first", ownerFirst), ("owner, second", ownerSecond), ("default, first", defaultFirst), ("default, second", defaultSecond) })
+                {
+                    Assert.That(refusal.Status, Is.EqualTo(HttpStatusCode.Conflict), place);
+                    Assert.That(refusal.Code, Is.EqualTo("additional-field-in-use"), place);
+                    Assert.That(refusal.Message, Does.StartWith("\"Caused by\" cannot be removed."), place);
+                }
+
+                Assert.That(ownerFirst.Message, Does.Contain("Ledger uses it as its own"));
+                Assert.That(ownerSecond.Message, Does.Contain("Ledger uses it as its own"));
+                Assert.That(defaultFirst.Message, Does.Contain("It is the Teams' Parent sources default"));
+                Assert.That(defaultSecond.Message, Does.Contain("It is the Teams' Parent sources default"));
                 Assert.That(await TheFieldsOfTheConnection(JiraDcPayments), Does.Contain(CausedBy), "Nothing was saved.");
             }
+        }
+
+        /// <summary>
+        /// Given the Teams default holds "Caused by", "Parent Link" and the tracker's own parent and Ledger owns a list,
+        /// when an old page or script that knows only the single field saves "Release Train" as it, with no list, then
+        /// the default becomes "Release Train" then the tracker's own parent, the three followers update, and Ledger's
+        /// list is untouched and Ledger is not updated.
+        /// </summary>
+        [Test]
+        public async Task An_old_client_that_sets_only_the_single_field_replaces_the_list_with_that_field_and_the_tracker_s_own_parent()
+        {
+            await GivenTheTeamsListIs(CausedBy, ParentLink, TheTrackersOwnParentSource);
+            await GivenTheTeamOwnsTheList(Ledger, ParentLink, CausedBy);
+            await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
+
+            await WhenAnOldClientSetsTheTeamsDefaultTo(ReleaseTrain, startUpdates: true);
+            ThenTheSaveIsAccepted();
+            var listed = await WhatTheTaskManagerListsSoonAfterTheSave(expected: 3);
+            await WhatRanSinceTheSave(TheThreeFollowers);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await TheSourcesOfTheTeamsDefaultOn(JiraDcPayments), Is.EqualTo(new[] { ReleaseTrain, TheTrackersOwnParentSource }).AsCollection);
+                Assert.That(listed, Is.EquivalentTo(TheThreeFollowers), "Ledger owns its list, so nothing about the default reaches it.");
+                Assert.That(await TheSourcesTheSettingsOfShow(FraudSignals), Is.EqualTo(new[] { ReleaseTrain, TheTrackersOwnParentSource }).AsCollection);
+                Assert.That(await TheSourcesTheSettingsOfShow(Ledger), Is.EqualTo(new[] { ParentLink, CausedBy }).AsCollection);
+            }
+        }
+
+        /// <summary>
+        /// Given the Teams default holds "Caused by", "Parent Link" and the tracker's own parent, when an old page or
+        /// script that has never heard of the default saves the connection with neither the list nor the old number,
+        /// then the default is as it was and no Team or Portfolio is updated.
+        /// </summary>
+        [Test]
+        public async Task An_old_client_that_sends_neither_the_list_nor_the_single_field_changes_nothing()
+        {
+            await GivenTheTeamsListIs(CausedBy, ParentLink, TheTrackersOwnParentSource);
+            await GivenEveryTeamAndPortfolioHasBeenUpdatedOnce();
+
+            await WhenAnOldClientSendsNothingOfTheTeamsDefault(startUpdates: true);
+            ThenTheSaveIsAccepted();
+            var ran = await WhatRanSinceTheSave();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await TheSourcesOfTheTeamsDefaultOn(JiraDcPayments), Is.EqualTo(new[] { CausedBy, ParentLink, TheTrackersOwnParentSource }).AsCollection);
+                Assert.That(ran, Is.Empty);
+            }
+        }
+
+        private async Task<(HttpStatusCode Status, string? Code, string? Message)> TheRefusalOfRemovingCausedBy()
+        {
+            await WhenTheAdminRemovesTheField(CausedBy);
+            var (code, message) = TheRefusal();
+
+            return (SaveAnswer, code, message);
         }
 
         /// <summary>
