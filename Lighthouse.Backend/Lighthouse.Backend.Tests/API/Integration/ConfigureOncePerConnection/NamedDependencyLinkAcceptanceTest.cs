@@ -578,7 +578,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected ParentSourceEntry TheTeamsSource(string adoTeam, string reference)
         {
             var connection = adoTeams[adoTeam].WorkTrackingSystemConnection;
-            var fieldId = TheParentOverrideFieldId + 1000 + connection.AdditionalFieldDefinitions.Count;
+            var fieldId = TheParentOverrideFieldId + 1000 + (100 * connection.Id) + connection.AdditionalFieldDefinitions.Count;
 
             connection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition
             {
@@ -1167,6 +1167,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             public void Fills(int id, string field, string value) => workItems[id].FieldValues[field] = value;
 
+            /// <summary>The organisation stamps <paramref name="id"/> as changed, so the next refresh downloads it again.</summary>
+            public void Changes(int id) => workItems[id].ChangedAt = workItems[id].ChangedAt.AddHours(1);
+
             /// <summary>
             /// What an Azure DevOps Services organisation answered for its relation types, recorded from a real
             /// one. Read from the source tree, so adding to the recording needs no change to the project file.
@@ -1240,6 +1243,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
                 public Dictionary<string, string> FieldValues { get; } = [];
 
+                public DateTime ChangedAt { get; set; } = WhenEverythingWasCreated;
+
                 public AdoWorkItem Payload()
                 {
                     var fields = new Dictionary<string, object>
@@ -1249,7 +1254,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                         [AzureDevOpsFieldNames.Title] = $"Item {id}",
                         [AzureDevOpsFieldNames.WorkItemType] = AdoFeatureType,
                         [AzureDevOpsFieldNames.CreatedDate] = WhenEverythingWasCreated,
-                        [AzureDevOpsFieldNames.ChangedDate] = WhenEverythingWasCreated,
+                        [AzureDevOpsFieldNames.ChangedDate] = ChangedAt,
                         [AzureDevOpsFieldNames.StackRank] = $"{id}",
                     };
 

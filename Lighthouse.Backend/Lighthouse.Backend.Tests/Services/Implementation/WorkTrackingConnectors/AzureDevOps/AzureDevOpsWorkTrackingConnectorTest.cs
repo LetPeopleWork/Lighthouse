@@ -67,7 +67,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     Reference = parentFieldReference
                 });
 
-                team.OwnParentOverride(1);
+                team.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(1)]).List!);
             }
 
             var workItems = await subject.GetWorkItemsForTeam(team, CancellationToken.None);
@@ -97,7 +97,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                     Reference = parentFieldReference
                 });
 
-                portfolio.OwnParentOverride(1);
+                portfolio.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(1)]).List!);
             }
 
             var workItems = await subject.GetFeaturesForProject(portfolio, CancellationToken.None);

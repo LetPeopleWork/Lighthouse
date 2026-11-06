@@ -450,13 +450,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         [Category("edge")]
         [Category("active-guard")]
         [Category("contract-shape:bounded-change")]
-        public async Task A_Teams_Parent_Override_Field_naming_nothing_the_organisation_defines_reads_no_parent()
+        public async Task A_Teams_parent_source_naming_nothing_the_organisation_defines_reads_no_parent()
         {
             var contoso = TheOrganisationAt(ContosoOrganisation);
             contoso.Holds(Item4711, Item4702);
             contoso.Relates(Item4711, Hierarchy, Item4702);
             AnAzureDevOpsTeam(StoreOperations, ContosoOrganisation);
-            TheTeamNamesAsItsParentOverrideField(StoreOperations, "Custom.NoSuchParent");
+            TheTeamListsTheParentSources(StoreOperations, TheTeamsSource(StoreOperations, "Custom.NoSuchParent"));
 
             await TheTeamRefreshes(StoreOperations);
             var parent = await TheParentTheTeamShowsFor(StoreOperations, Item4711);

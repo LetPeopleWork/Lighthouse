@@ -140,9 +140,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             // Carries a stored value over when a record is copied or updated.
             typeof(WorkItemBase).FullName!,
-
-            // Azure DevOps does not read the ordered list yet. Once it does it goes through the one writer and leaves this list.
-            typeof(AzureDevOpsWorkTrackingConnector).FullName!,
         ];
 
         private static readonly string[] TheTypesThatMayReadTheOldParentMembers =
@@ -154,9 +151,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             // The registry rows of the two connection defaults still name the old single field. They move to the list with the defaults.
             typeof(ConnectionFieldDefaults).FullName!,
-
-            // Azure DevOps does not read the ordered list yet. Once it does it leaves this list.
-            typeof(AzureDevOpsWorkTrackingConnector).FullName!,
         ];
 
         private static readonly (Type DeclaredOn, string Member)[] TheOldParentMembers =

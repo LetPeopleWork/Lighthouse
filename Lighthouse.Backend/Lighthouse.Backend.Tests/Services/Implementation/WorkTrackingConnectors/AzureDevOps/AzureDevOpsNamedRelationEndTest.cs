@@ -311,7 +311,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         {
             var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
             var portfolio = APortfolioWhoseDependencyFieldNames(DependsOn);
-            portfolio.OwnParentOverride(TheRealFieldId);
+            portfolio.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(TheRealFieldId)]).List!);
 
             await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
 

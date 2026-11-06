@@ -3,6 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.WriteBack;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
+using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Validation;
 using Microsoft.TeamFoundation.WorkItemTracking.WebApi;
@@ -136,7 +137,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<IEnumerable<LighthouseWorkItem>> TheTeamsWorkItemsFrom(
             Team team, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, additionalFieldResolution, DependenciesFromRelations.NotRead(), cancellationToken);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, team, DependenciesFromRelations.NotRead(), cancellationToken);
             var workItems = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, team, additionalFieldResolution.Fields, cancellationToken);
             var settingFindings = WhatReadingTheSettingsEveryOwnerHasFound(team, additionalFieldResolution);
 
@@ -144,8 +145,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             foreach (var workItem in workItems)
             {
-                var parentReference = GetParentReference(team, workItem, relations.ParentReferences);
-                workItem.ParentReferenceId = parentReference;
+                HangUnderItsParent(team, workItem, additionalFieldResolution, relations.ParentReferences);
                 workItem.RefreshFindings = settingFindings;
             }
 
@@ -692,7 +692,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             Portfolio portfolio, IEnumerable<AdoWorkItem> adoWorkItems, AdditionalFieldResolution additionalFieldResolution, CancellationToken cancellationToken)
         {
             var dependencies = DependenciesFromRelations.For(portfolio, additionalFieldResolution);
-            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, additionalFieldResolution, dependencies, cancellationToken);
+            var relationsTask = GetRelationsOfWorkItems(adoWorkItems, portfolio, dependencies, cancellationToken);
 
             var workItemBase = await ConvertAdoWorkItemToLighthouseWorkItemBase(adoWorkItems, portfolio, additionalFieldResolution.Fields, cancellationToken);
             var relations = await relationsTask;
@@ -702,7 +702,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             foreach (var workItem in workItemBase)
             {
-                var parentReference = GetParentReference(portfolio, workItem, relations.ParentReferences);
+                HangUnderItsParent(portfolio, workItem, additionalFieldResolution, relations.ParentReferences);
                 var estimatedSize = GetEstimatedSize(portfolio, workItem);
                 var owningTeam = GetOwningTeam(portfolio, workItem);
 
@@ -710,7 +710,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 {
                     EstimatedSize = estimatedSize,
                     OwningTeam = owningTeam,
-                    ParentReferenceId = parentReference,
                     RefreshFindings = settingFindings,
                 };
 
@@ -795,9 +794,47 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private static List<RefreshFinding> WhatReadingTheSettingsEveryOwnerHasFound(WorkTrackingSystemOptionsOwner owner, AdditionalFieldResolution resolution)
             =>
             [
-                .. ARelationTypeNamedIn(owner, resolution, owner.ParentOverrideAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField),
+                .. WhatReadingTheParentSourcesFound(owner, resolution),
                 .. ARelationTypeNamedIn(owner, resolution, owner.EstimationAdditionalFieldDefinitionId, RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.EstimationField),
             ];
+
+        /// <summary>
+        /// Each entry that is neither a field nor the tracker's own parent says so once: a relation type is
+        /// read as nothing, and a name the organisation matches to neither a field nor a relation type is
+        /// read as an empty field. Both look like an ordinary item without a parent, so nothing else would show it.
+        /// When the relation types could not be listed, a name no field carries may still be one, so saying it
+        /// matched nothing would be untrue and nothing is said.
+        /// </summary>
+        private static IEnumerable<RefreshFinding> WhatReadingTheParentSourcesFound(WorkTrackingSystemOptionsOwner owner, AdditionalFieldResolution resolution)
+        {
+            var entries = owner.TheEffectiveParentSources().Entries;
+
+            for (var position = 0; position < entries.Count; position++)
+            {
+                var definitionId = entries[position].AdditionalFieldDefinitionId;
+                var hadANextSource = position < entries.Count - 1;
+
+                if (entries[position].Kind != ParentSourceKind.AdditionalField)
+                {
+                    continue;
+                }
+
+                if (resolution.NamesARelationType(definitionId))
+                {
+                    yield return new RefreshFinding(
+                        RefreshFindingKind.RelationTypeCannotBeReadHere, RefreshFindingSetting.ParentOverrideField, TheReferenceNamedBy(owner, definitionId), [], hadANextSource);
+                }
+                else if (!resolution.ReadsAField(definitionId) && !resolution.CouldNotTellWhatItNames(definitionId))
+                {
+                    yield return new RefreshFinding(
+                        RefreshFindingKind.ParentSourceMatchedNothing, RefreshFindingSetting.ParentOverrideField, TheNameTheSettingsShowFor(owner, definitionId), [], hadANextSource);
+                }
+            }
+        }
+
+        private static string TheNameTheSettingsShowFor(WorkTrackingSystemOptionsOwner owner, int? definitionId)
+            => owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Find(definition => definition.Id == definitionId)?.DisplayName
+                ?? AdditionalFieldDefinition.NameOfAnUnknownField(definitionId);
 
         private static IEnumerable<RefreshFinding> ARelationTypeNamedIn(
             WorkTrackingSystemOptionsOwner owner, AdditionalFieldResolution resolution, int? definitionId, RefreshFindingKind kind, RefreshFindingSetting setting)
@@ -971,16 +1008,17 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         // The settings whose findings are judged above, and the only ones whose reference decides what is read.
         private static HashSet<int> TheDefinitionsItsSettingsName(WorkTrackingSystemOptionsOwner owner)
         {
+            int?[] parentSources = [.. owner.TheEffectiveParentSources().Entries.Select(entry => entry.AdditionalFieldDefinitionId)];
             int?[] named = owner is Portfolio portfolio
                 ?
                 [
-                    owner.ParentOverrideAdditionalFieldDefinitionId,
+                    .. parentSources,
                     owner.EstimationAdditionalFieldDefinitionId,
                     portfolio.DependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.SizeEstimateAdditionalFieldDefinitionId,
                     portfolio.FeatureOwnerAdditionalFieldDefinitionId,
                 ]
-                : [owner.ParentOverrideAdditionalFieldDefinitionId, owner.EstimationAdditionalFieldDefinitionId];
+                : [.. parentSources, owner.EstimationAdditionalFieldDefinitionId];
 
             return [.. named.OfType<int>()];
         }
@@ -1403,23 +1441,15 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         private async Task<RelationsOfWorkItems> GetRelationsOfWorkItems(
             IEnumerable<AdoWorkItem> adoWorkItems,
             WorkTrackingSystemOptionsOwner workTrackingSystemOptionOwner,
-            AdditionalFieldResolution additionalFieldResolution,
             DependenciesFromRelations dependencies,
             CancellationToken cancellationToken)
         {
             // The relations carry two different things at once: the link to the parent, and the links to
-            // whatever this item is waiting on. So naming a field to read the parent from is no longer
-            // reason enough on its own to skip reading them - skipping it while the dependencies still
-            // live there leaves every dependency unread, for good, and an empty list of dependencies is a
-            // believable answer, so nothing about it looks wrong. A Parent Override Field naming a relation
-            // type reads no parent at all, so the native parent link still has to be read - and so it does
-            // when the relation types could not be listed, since the reference may well be one.
-            var parentOverride = workTrackingSystemOptionOwner.ParentOverrideAdditionalFieldDefinitionId;
-            var theParentComesFromAField = parentOverride.HasValue
-                && !additionalFieldResolution.NamesARelationType(parentOverride)
-                && !additionalFieldResolution.CouldNotTellWhatItNames(parentOverride);
-
-            if (theParentComesFromAField && !dependencies.AreRead)
+            // whatever this item is waiting on. The parent link is only read when the list names the
+            // tracker's own parent, but skipping them while the dependencies still live there would leave
+            // every dependency unread, for good, and an empty list of dependencies is a believable answer,
+            // so nothing about it would look wrong.
+            if (!ParentSourceSelector.ReadsTheTrackersOwnParent(workTrackingSystemOptionOwner.TheEffectiveParentSources()) && !dependencies.AreRead)
             {
                 return RelationsOfWorkItems.None();
             }
@@ -1532,17 +1562,38 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
             return 0;
         }
 
-        private static string GetParentReference(IWorkItemQueryOwner owner, WorkItemBase workItem, Dictionary<string, string> parentReferences)
+        private static void HangUnderItsParent(
+            IWorkItemQueryOwner owner, WorkItemBase workItem, AdditionalFieldResolution resolution, Dictionary<string, string> parentReferences)
         {
-            var parentReference =
-                workItem.GetAdditionalFieldValue(owner.ParentOverrideAdditionalFieldDefinitionId);
+            workItem.ParentReadings = WhatEachParentSourceReads(owner, workItem, resolution, parentReferences);
 
-            if (!string.IsNullOrEmpty(parentReference))
+            ParentSourceSelector.HangUnder(
+                workItem, workItem.ParentReadings, ParentSourceSelector.ChooseProvisionally(workItem.ParentReadings, ParentNarrowing.DoNotNarrow));
+        }
+
+        private static ParentReadings WhatEachParentSourceReads(
+            IWorkItemQueryOwner owner, WorkItemBase workItem, AdditionalFieldResolution resolution, Dictionary<string, string> parentReferences)
+        {
+            ParentReading WhatItReads(ParentSourceEntry entry)
             {
-                return parentReference;
+                if (entry.Kind == ParentSourceKind.TrackerParent)
+                {
+                    return parentReferences.TryGetValue(workItem.ReferenceId, out var reference) && !string.IsNullOrEmpty(reference)
+                        ? ParentReading.TrackersOwn(reference)
+                        : ParentReading.NoValue;
+                }
+
+                if (resolution.NamesARelationType(entry.AdditionalFieldDefinitionId))
+                {
+                    return ParentReading.CannotBeRead;
+                }
+
+                var value = workItem.GetAdditionalFieldValue(entry.AdditionalFieldDefinitionId);
+
+                return string.IsNullOrEmpty(value) ? ParentReading.NoValue : ParentReading.FieldValue(value);
             }
 
-            return parentReferences.TryGetValue(workItem.ReferenceId, out var reference) ? reference : string.Empty;
+            return ParentReadings.Of([.. owner.TheEffectiveParentSources().Entries.Select(entry => new ParentReadingAt(entry, WhatItReads(entry)))]);
         }
 
         private static string ExtractFieldValue(AdoWorkItem adoWorkItem, string fieldName)
@@ -1802,6 +1853,9 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             public WhyNothingIsRead? WhyNothingIsReadFor(int? definitionId)
                 => definitionId.HasValue && ReadsNothing.TryGetValue(definitionId.Value, out var why) ? why : null;
+
+            public bool ReadsAField(int? definitionId)
+                => definitionId.HasValue && Fields.TryGetValue(definitionId.Value, out var field) && !string.IsNullOrEmpty(field);
 
             public bool NamesARelationType(int? definitionId) => definitionId.HasValue && RelationTypes.ContainsKey(definitionId.Value);
 
