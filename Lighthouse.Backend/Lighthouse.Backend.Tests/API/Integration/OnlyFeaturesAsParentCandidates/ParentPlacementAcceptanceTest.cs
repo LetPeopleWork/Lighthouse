@@ -497,7 +497,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             return feature is null ? $"<{key} was never stored>" : feature.ParentReferenceId ?? string.Empty;
         }
 
-        /// <summary>What the Additional Field named in Parent Override Field shows on the Work Item.</summary>
+        /// <summary>What the Additional Field named as a parent source shows on the Work Item.</summary>
         protected string WhatTheParentOverrideFieldShowsOnTheWorkItem(string key)
             => ShownIn(TheStoredWorkItem(key), TheTeamsOverrideField);
 

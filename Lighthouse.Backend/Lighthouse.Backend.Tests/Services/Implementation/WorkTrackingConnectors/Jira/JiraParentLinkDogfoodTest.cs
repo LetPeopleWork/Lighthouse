@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// they all point at deliberately left out of the query, and it staying out is asserted.
     ///
     /// The other thing worth a network call is that one of these items already has a parent of Jira's
-    /// own. A link type named in Parent Override Field has to beat it, not merely fill a gap, and only a
+    /// own. A link type named in the Parent sources has to beat it, not merely fill a gap, and only a
     /// real instance can offer a real populated parent field to beat.
     /// </summary>
     [TestFixture]

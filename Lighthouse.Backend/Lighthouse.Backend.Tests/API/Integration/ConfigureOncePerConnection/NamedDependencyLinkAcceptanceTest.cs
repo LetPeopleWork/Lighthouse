@@ -594,7 +594,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected void TheTeamListsTheParentSources(string adoTeam, params ParentSourceEntry[] sources)
             => adoTeams[adoTeam].OwnParentSources(ParentSources.Of(sources).List ?? throw new AssertionException("The scenario describes a list the rules refuse."));
 
-        /// <summary>The Team names <paramref name="reference"/> as its Parent Override Field.</summary>
+        /// <summary>The Team names <paramref name="reference"/> as its only parent source.</summary>
         protected void TheTeamNamesAsItsParentOverrideField(string adoTeam, string reference)
         {
             var team = adoTeams[adoTeam];

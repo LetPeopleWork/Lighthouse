@@ -1,7 +1,7 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
     /// <summary>
-    /// The Portfolios get a Parent Override Field default of their own, separate from the Teams' one. Card
+    /// The Portfolios get a Parent sources default of their own, separate from the Teams' one. Card
     /// Issuing names nothing and follows it; Merchant Onboarding names "Parent Link" itself and is left alone.
     /// </summary>
     [TestFixture]

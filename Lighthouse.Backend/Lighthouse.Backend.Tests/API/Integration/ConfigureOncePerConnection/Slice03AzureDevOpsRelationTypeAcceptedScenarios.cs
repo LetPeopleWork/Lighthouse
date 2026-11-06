@@ -442,7 +442,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             Assert.That(await TheParentTheTeamShowsFor(StoreOperations, Item4711), Is.EqualTo($"{Item4702}"), TheNativeParentStands);
         }
 
-        // A Parent Override Field the listing shows to name neither a field nor a relation type is a missing
+        // A parent source the listing shows to name neither a field nor a relation type is a missing
         // field: it is warned about, and it reads no parent, as it always has.
         [Test]
         [Category("us-03")]

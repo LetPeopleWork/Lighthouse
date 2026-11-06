@@ -1,7 +1,7 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
     /// <summary>
-    /// Priya changes the Teams' Parent Override Field default from "Caused by" to "Parent Link" and chooses Save
+    /// Priya changes the Teams' Parent sources default from "Caused by" to "Parent Link" and chooses Save
     /// and update. The three Teams that follow it start updating at once, each downloading everything, because
     /// what they ask the tracker for has changed; Ledger, which owns its value, does not. Save only queues
     /// nothing, and the followers pick the change up at their next scheduled update. Either way one log entry

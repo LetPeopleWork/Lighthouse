@@ -6,7 +6,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     /// <summary>
     /// Acceptance scenarios - Slice 02: taking an item's parent from the link type the override names.
     /// Driving port: a Team refresh, which is what actually writes the parent every forecast is drawn
-    /// from. Nothing here is guessed - an administrator names a link type in Parent Override Field exactly
+    /// from. Nothing here is guessed - an administrator names a link type in the Parent sources exactly
     /// as they would name a field, and only a reference that resolved as a link type reads links at all.
     ///
     /// The one thing inferred is which end of the link the parent sits on. Jira writes a link once and
