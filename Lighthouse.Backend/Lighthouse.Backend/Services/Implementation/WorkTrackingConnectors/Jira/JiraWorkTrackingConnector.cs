@@ -1965,15 +1965,19 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                 return [];
             }
 
+            var lastPosition = readings.Positions.Count - 1;
+
             return
             [
                 .. readings.Positions
-                    .Where(position => position.Reading.Kind == ParentReadingKind.CannotBeRead)
-                    .Select(position => new RefreshFinding(
+                    .Select((position, index) => (position.Source, position.Reading.Kind, HadANextSource: index < lastPosition))
+                    .Where(entry => entry.Kind == ParentReadingKind.CannotBeRead)
+                    .Select(entry => new RefreshFinding(
                         RefreshFindingKind.ParentSourceMatchedNothing,
                         RefreshFindingSetting.ParentOverrideField,
-                        TheNameTheSettingsShowFor(workItemQueryOwner, position.Source),
-                        [])),
+                        TheNameTheSettingsShowFor(workItemQueryOwner, entry.Source),
+                        [],
+                        entry.HadANextSource)),
             ];
         }
 

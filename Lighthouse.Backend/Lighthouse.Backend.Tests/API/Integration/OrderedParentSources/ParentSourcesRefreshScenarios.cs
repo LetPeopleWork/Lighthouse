@@ -34,7 +34,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
 
         private const int TheIdOfAFieldNoLongerDefined = 9901;
 
-        private static ShownFinding AFindingNaming(string entry) => new("ParentSourceMatchedNothing", "ParentOverrideField", entry);
+        private const string TheNextSourceSentence = "The next source in the list was read instead.";
+
+        private static ShownFinding AFindingNaming(string entry) => new("ParentSourceMatchedNothing", "ParentOverrideField", entry, HadANextSource: true);
+
+        private static ShownFinding AFindingNamingTheLastEntry(string entry) => new("ParentSourceMatchedNothing", "ParentOverrideField", entry, HadANextSource: false);
 
         /// <summary>
         /// Given Payments lists "Is caused by", "Program Ref" and the tracker's own parent in that order, and the
@@ -200,6 +204,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
                 Assert.That(figures.Findings, Is.EqualTo(new[] { AFindingNaming("Nothing Here"), AFindingNaming("Epic Name") }));
                 Assert.That(WhatTheLastRefreshWarned(), Has.Exactly(1).Contain("Nothing Here"));
                 Assert.That(WhatTheLastRefreshWarned(), Has.Exactly(1).Contain("Epic Name"));
+            }
+        }
+
+        /// <summary>
+        /// Given Payments lists an entry that matches nothing, then "Program Ref", then another entry that matches
+        /// nothing, when Payments refreshes, then each finding says whether a source came after it, and the log
+        /// says the next source was read only for the entry that had one: after the last there is nothing to read.
+        /// </summary>
+        [Test]
+        public async Task Only_an_entry_with_a_source_after_it_claims_the_next_source_was_read()
+        {
+            var nothing = TheTeamsEntryThatMatchesNothing("Nothing Here");
+            var programRef = TheTeamsCustomField(ProgramRef);
+            var epicName = TheTeamsEntryThatMatchesNothing("customfield_404", shownAs: "Epic Name");
+            TheTeamListsTheParentSources(nothing, programRef, epicName);
+            TheTeamHoldsTheWorkItem("PAY-143");
+
+            await TheTeamRefreshes();
+
+            var figures = await WhatRefreshHistoryShowsForTheTeam();
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(figures.Findings, Is.EqualTo(new[] { AFindingNaming("Nothing Here"), AFindingNamingTheLastEntry("Epic Name") }));
+                Assert.That(WhatTheLastRefreshWarned().Where(line => line.Contains("Nothing Here", StringComparison.Ordinal)), Has.Exactly(1).Contain(TheNextSourceSentence));
+                Assert.That(WhatTheLastRefreshWarned(), Has.Exactly(1).Contain("Epic Name"));
+                Assert.That(WhatTheLastRefreshWarned().Where(line => line.Contains("Epic Name", StringComparison.Ordinal)), Has.None.Contain(TheNextSourceSentence));
             }
         }
 

@@ -20,6 +20,9 @@ export interface RefreshFinding {
 	setting: RefreshFindingSetting;
 	named: string;
 	seen: string[];
+	// Whether a parent source had another source after it in the run that raised the finding. Optional because
+	// a finding stored before this was recorded has none, and then nothing is claimed about what came next.
+	hadANextSource?: boolean;
 }
 
 export interface RefreshLog {

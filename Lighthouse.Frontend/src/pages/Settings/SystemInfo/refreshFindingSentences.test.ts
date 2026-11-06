@@ -124,10 +124,34 @@ describe("the sentence a parent source that matched nothing reads as", () => {
 				setting: "ParentOverrideField",
 				named: "Epic Name",
 				seen: [],
+				hadANextSource: true,
 			}),
 		).toBe(
 			'Parent source "Epic Name" matched no field and no link type. The next source in the list was read instead.',
 		);
+	});
+
+	it("names the last entry of the list without claiming a next source was read", () => {
+		expect(
+			sentenceFor({
+				kind: "ParentSourceMatchedNothing",
+				setting: "ParentOverrideField",
+				named: "Epic Name",
+				seen: [],
+				hadANextSource: false,
+			}),
+		).toBe('Parent source "Epic Name" matched no field and no link type.');
+	});
+
+	it("claims no next source for a finding stored before it said what came after it", () => {
+		expect(
+			sentenceFor({
+				kind: "ParentSourceMatchedNothing",
+				setting: "ParentOverrideField",
+				named: "Epic Name",
+				seen: [],
+			}),
+		).toBe('Parent source "Epic Name" matched no field and no link type.');
 	});
 });
 

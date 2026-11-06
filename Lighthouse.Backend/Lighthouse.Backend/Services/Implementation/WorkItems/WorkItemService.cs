@@ -1066,10 +1066,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
             if (finding.Kind == RefreshFindingKind.ParentSourceMatchedNothing)
             {
-                logger.LogWarning(
-                    "{Owner}: parent source '{Named}' matched no field and no link type. The next source in the list was read instead.",
-                    owner,
-                    finding.Named);
+                WarnAboutAParentSourceThatMatchedNothing(owner, finding);
                 return;
             }
 
@@ -1111,6 +1108,20 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 setting,
                 finding.Named,
                 string.Join(", ", finding.Seen.Select(seen => $"'{seen}'")));
+        }
+
+        private void WarnAboutAParentSourceThatMatchedNothing(string owner, RefreshFinding finding)
+        {
+            if (finding.HadANextSource)
+            {
+                logger.LogWarning(
+                    "{Owner}: parent source '{Named}' matched no field and no link type. The next source in the list was read instead.",
+                    owner,
+                    finding.Named);
+                return;
+            }
+
+            logger.LogWarning("{Owner}: parent source '{Named}' matched no field and no link type.", owner, finding.Named);
         }
 
         // The settings are named after the screen's labels, so spacing the words is the label.

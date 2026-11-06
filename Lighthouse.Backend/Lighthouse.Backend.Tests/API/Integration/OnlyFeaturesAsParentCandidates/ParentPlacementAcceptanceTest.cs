@@ -243,7 +243,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         /// <summary>The two figures one refresh recorded, as Refresh History hands them to the screen.</summary>
         protected sealed record RefreshFigures(int? Placed, int NotPlaced, string Mode, IReadOnlyList<ShownFinding> Findings);
 
-        protected sealed record ShownFinding(string Kind, string Setting, string Named);
+        protected sealed record ShownFinding(string Kind, string Setting, string Named, bool HadANextSource = false);
 
         protected static DateTime On(int year, int month, int day) => new(year, month, day, 9, 30, 0, DateTimeKind.Utc);
 
@@ -605,7 +605,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                 .. findings.EnumerateArray().Select(finding => new ShownFinding(
                     finding.GetProperty("kind").ToString(),
                     finding.GetProperty("setting").ToString(),
-                    finding.GetProperty("named").ToString())),
+                    finding.GetProperty("named").ToString(),
+                    finding.TryGetProperty("hadANextSource", out var hadANextSource) && hadANextSource.GetBoolean())),
             ];
         }
 

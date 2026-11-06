@@ -150,6 +150,49 @@ namespace Lighthouse.Backend.Tests
             }
         }
 
+        [Test]
+        public async Task A_parent_source_finding_keeps_whether_a_source_came_after_it()
+        {
+            using (var context = CreateContext())
+            {
+                var row = APortfolioRefresh();
+                row.Findings = [new RefreshFinding(RefreshFindingKind.ParentSourceMatchedNothing, RefreshFindingSetting.ParentOverrideField, "Epic Name", [], HadANextSource: true)];
+                context.RefreshLogs.Add(row);
+                await context.SaveChangesAsync();
+            }
+
+            using (var context = CreateContext())
+            {
+                var saved = await context.RefreshLogs.AsNoTracking().SingleAsync();
+
+                Assert.That(saved.Findings?.Single().HadANextSource, Is.True);
+            }
+        }
+
+        [Test]
+        public async Task A_parent_source_finding_stored_before_it_said_what_came_after_it_claims_no_next_source()
+        {
+            using (var context = CreateContext())
+            {
+                context.RefreshLogs.Add(APortfolioRefresh());
+                await context.SaveChangesAsync();
+                await context.Database.ExecuteSqlRawAsync(
+                    """UPDATE "RefreshLogs" SET "Findings" = {0}""",
+                    """[{"kind":"ParentSourceMatchedNothing","setting":"ParentOverrideField","named":"Epic Name","seen":[]}]""");
+            }
+
+            using (var context = CreateContext())
+            {
+                var saved = await context.RefreshLogs.AsNoTracking().SingleAsync();
+
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(saved.Findings?.Single().Named, Is.EqualTo("Epic Name"));
+                    Assert.That(saved.Findings?.Single().HadANextSource, Is.False);
+                }
+            }
+        }
+
         // Only an unknown finding inside the list is tolerated. A value that is not a list at all was never
         // written by any release, so reading it as "no findings" would hide a damaged row.
         [Test]

@@ -59,8 +59,12 @@ const namedWithoutItsEnd = (settingSubject: string, finding: RefreshFinding) =>
 const parentSourceMatchedNothing = (
 	_settingSubject: string,
 	finding: RefreshFinding,
-) =>
-	`Parent source "${finding.named}" matched no field and no link type. The next source in the list was read instead.`;
+) => {
+	const statement = `Parent source "${finding.named}" matched no field and no link type.`;
+	return finding.hadANextSource
+		? `${statement} The next source in the list was read instead.`
+		: statement;
+};
 
 const SENTENCES: Readonly<Record<string, FindingSentence>> = {
 	NamedLinkPointsBothWays: pointsBothWays,
