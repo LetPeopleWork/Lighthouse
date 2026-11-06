@@ -204,7 +204,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
             using (Assert.EnterMultipleScope())
             {
-                // The synthetic "Flagged" label is gone (ADR-071 slice-05) — only the real Jira labels remain.
+                // A flagged issue gets no synthetic "Flagged" label: only the real Jira labels remain.
                 Assert.That(workItem.Tags, Has.Count.EqualTo(2));
                 Assert.That(workItem.Tags, Contains.Item("TagTest"));
                 Assert.That(workItem.Tags, Contains.Item("ExistingLabel"));
@@ -214,9 +214,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         [Test]
         public async Task GetWorkItemsForTeam_ItemIsFlagged_CapturesFlagAsPredefinedAdditionalFieldValue()
         {
-            // ADR-071 slice-05: the Jira flag flows ONLY through the predefined additional field. The flagged
-            // custom-field value lands in AdditionalFieldValues keyed by the auto-registered predefined field's
-            // Id — NOT as a synthetic "Flagged" tag. Blocked evaluation stays Lighthouse-side (L1, IBlockedItemService).
+            // The Jira flag flows ONLY through the predefined additional field. The flagged custom-field value
+            // lands in AdditionalFieldValues keyed by the auto-registered predefined field's Id, NOT as a synthetic
+            // "Flagged" tag. Whether that blocks the item is judged in Lighthouse, by IBlockedItemService.
             var subject = CreateSubject();
             var team = CreateTeam($"project = PROJ AND key = PROJ-23");
 

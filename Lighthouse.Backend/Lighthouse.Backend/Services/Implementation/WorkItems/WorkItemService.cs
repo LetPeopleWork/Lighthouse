@@ -1125,7 +1125,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
         }
 
         // The settings are named after the screen's labels, so spacing the words is the label. The one exception is
-        // the parent field, whose screen label is now "Parent sources list" while the wire name stays as it was.
+        // the parent field, whose wire name is older than its screen label.
         private static string TheNameAnAdministratorKnows(RefreshFindingSetting setting)
             => setting == RefreshFindingSetting.ParentOverrideField
                 ? "Parent sources list"

@@ -4,7 +4,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
 {
     /// <summary>
-    /// Acceptance scenarios - Slice 02: taking an item's parent from the link type the override names.
+    /// Acceptance scenarios: taking an item's parent from the link type the Parent sources name.
     /// Driving port: a Team refresh, which is what actually writes the parent every forecast is drawn
     /// from. Nothing here is guessed - an administrator names a link type in the Parent sources exactly
     /// as they would name a field, and only a reference that resolved as a link type reads links at all.

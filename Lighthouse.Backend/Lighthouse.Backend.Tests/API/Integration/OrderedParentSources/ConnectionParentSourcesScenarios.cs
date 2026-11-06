@@ -8,8 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
     /// The parent sources a connection holds as the default for its Teams and for its Portfolios. They run
     /// through the running application on the harness of the neighbouring connection-defaults scenarios, where a
     /// System Admin saves a connection and the Teams that follow it update. The harness saves a default as a list
-    /// and reads one back by name; the neighbours that arrange the old single-field default move to the list in
-    /// the same step as the code they exercise.
+    /// and reads one back by name.
     ///
     /// The scenarios speak the words the browser sends: <c>parentSourcesForTeams</c>, <c>parentSourcesForPortfolios</c>
     /// and, on an owner, <c>parentSources</c>. The harness's stand-in tracker hangs an item under the first field it
