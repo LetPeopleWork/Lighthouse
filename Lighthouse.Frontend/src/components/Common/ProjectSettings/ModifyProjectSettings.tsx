@@ -28,6 +28,7 @@ import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfig
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
 import { parentSourcesAreOffered } from "../ConnectionDefault/parentSources";
+import { useParentSourcesSavedReporter } from "../ConnectionDefault/useParentSourcesSavedReporter";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import CycleTimesEditor from "../StateMappings/CycleTimesEditor";
@@ -76,6 +77,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 	const { portfolioService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const portfolioIdRef = useRef(0);
+	const { settingsLoaded, settingsSaved } = useParentSourcesSavedReporter();
 
 	const loadTeams = useCallback(async () => {
 		setTeams(await getAllTeams());
@@ -113,8 +115,12 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 		doneHandlers,
 	} = useModifySettings<IPortfolioSettings>({
 		getWorkTrackingSystems,
-		getSettings: getProjectSettings,
-		saveSettings: saveProjectSettings,
+		getSettings: async () => settingsLoaded(await getProjectSettings()),
+		saveSettings: async (settings) => {
+			const saved = await saveProjectSettings(settings);
+			settingsSaved(settings);
+			return saved;
+		},
 		validateSettings: validateProjectSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultPortfolioSchema,

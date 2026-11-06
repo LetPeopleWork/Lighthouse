@@ -29,6 +29,14 @@ const isListed = (
 	entry: ParentSourceEntry,
 ): boolean => list.some((listed) => isSameSource(listed, entry));
 
+/** Whether two lists name the same sources in the same order, which is the order they are read in. */
+export const listsTheSameSources = (
+	first: readonly ParentSourceEntry[],
+	second: readonly ParentSourceEntry[],
+): boolean =>
+	first.length === second.length &&
+	first.every((entry, position) => isSameSource(entry, second[position]));
+
 const holdsPosition = (
 	list: readonly ParentSourceEntry[],
 	index: number,

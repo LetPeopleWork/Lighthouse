@@ -81,5 +81,12 @@ namespace Lighthouse.Backend.Models.UsageData
         /// not whether a file was saved. Exporting exactly one picked report counts as <see cref="ReportPdfExportStarted"/>.
         /// </summary>
         ReportCombinedPdfExportStarted = 24,
+
+        /// <summary>
+        /// Somebody saved parent sources of their own with two or more entries and the server accepted it. Saving an
+        /// unchanged list, a list of one entry or following the default does not count. It carries nothing: not which
+        /// fields, not how many, not whose.
+        /// </summary>
+        ParentSourcesSavedWithSeveralEntries = 25,
     }
 }

@@ -28,6 +28,7 @@ import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfig
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
 import { parentSourcesAreOffered } from "../ConnectionDefault/parentSources";
+import { useParentSourcesSavedReporter } from "../ConnectionDefault/useParentSourcesSavedReporter";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import CycleTimesEditor from "../StateMappings/CycleTimesEditor";
@@ -64,6 +65,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 	const { teamService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
 	const teamIdRef = useRef(0);
+	const { settingsLoaded, settingsSaved } = useParentSourcesSavedReporter();
 
 	const refreshDependentData = useCallback(async () => {
 		if (teamIdRef.current > 0) {
@@ -94,8 +96,12 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		doneHandlers,
 	} = useModifySettings<ITeamSettings>({
 		getWorkTrackingSystems,
-		getSettings: getTeamSettings,
-		saveSettings: saveTeamSettings,
+		getSettings: async () => settingsLoaded(await getTeamSettings()),
+		saveSettings: async (settings) => {
+			const saved = await saveTeamSettings(settings);
+			settingsSaved(settings);
+			return saved;
+		},
 		validateSettings: validateTeamSettings,
 		modifyDefaultSettings,
 		getSchemaForSystem: getDefaultTeamSchema,
