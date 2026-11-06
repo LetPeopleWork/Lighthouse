@@ -29,23 +29,6 @@ export abstract class BaseEditPage<T> extends BaseSettingsPage<T> {
 			.click();
 	}
 
-	async getSelectedParentOverride(): Promise<string> {
-		const combobox = this.parentOverrideCombobox;
-		return (await combobox.textContent()) ?? "";
-	}
-
-	async selectParentOverride(additionalField: string): Promise<void> {
-		await this.parentOverrideCombobox.click();
-		await this.page.getByRole("option", { name: additionalField }).click();
-	}
-
-	async getPotentialParentOverrides(): Promise<string[]> {
-		await this.parentOverrideCombobox.click();
-		const options = await this.page.getByRole("option").allInnerTexts();
-		await this.page.keyboard.press("Escape");
-		return options;
-	}
-
 	async setEstimationField(estimationField: string): Promise<void> {
 		await this.page.getByRole("heading", { name: "Estimation" }).click();
 
@@ -62,10 +45,6 @@ export abstract class BaseEditPage<T> extends BaseSettingsPage<T> {
 			.locator("div")
 			.filter({ hasText: /.*Estimation Field$/ })
 			.getByRole("combobox");
-	}
-
-	get parentOverrideCombobox(): Locator {
-		return this.page.getByRole("combobox", { name: "Parent Override Field" });
 	}
 
 	get saveButton(): Locator {
