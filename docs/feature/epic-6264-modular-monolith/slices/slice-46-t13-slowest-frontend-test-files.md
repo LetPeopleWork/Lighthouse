@@ -4,7 +4,9 @@ Epic #6506 · ADO #6561 · `@infrastructure` · job_id: infrastructure-only · *
 
 ## Goal
 
-The seven slowest frontend test files run faster, so the per-file budget can fall from 56 s to about 37 s.
+The seven slowest frontend test files run faster, so the per-file budget can fall from 56 s to about 37 s. 37 s needs all
+seven to reach their line; if one stays where it is, the budget follows it (45 s for `ReportsPage.combinedPdf`, 46 s for
+`BaseMetricsView.loading`; the likely outcome is 45 to 46 s).
 
 ## Why
 
@@ -29,19 +31,27 @@ The next file is `ReportsTab.createWizard.test.tsx` at 17.5 s, so 2.1 x 17.5 giv
 - Measure what each file spends its time on before changing it.
 - Rewrite the seven files under FE7 #6457's contract: logic asserted directly, one test per wiring, every removed
   assertion accounted for, coverage not lower, each call site proven by a deliberate break.
-- Lower the frontend budget once CI shows the new times.
+- Lower the frontend per-file budget once CI shows the new times.
+- If the maintainer says yes, one named `refactor(reports)` commit: move `failedAmong` and `leaveOutPlanOf` out of
+  `useReportsPdfExport.ts` into `printFailures.ts`, behaviour identical, no test change in that commit. Without the yes, no
+  production file changes.
 
 ## OUT
 
-- Other test files, production behaviour and pixels.
+- Other test files, production behaviour and pixels, and any production code beyond the one refactor commit above.
 - Backend, container and live-connector classes (T5, T10).
 
 ## Dependencies
 
-Hard: T4 #6462 (pushed 2026-11-06). Soft: T12 #6539, which touches some of the same files for order and load.
+Hard: T4 #6462 (pushed 2026-11-06), which made the per-file budget (`budget_seconds` of `frontend`, 56 s) fail the build.
+Soft: T12 #6539, which touches some of the same files for order and load. The Epic knowingly waives the slice-composition
+gate for `@infrastructure` Stories (D-6264-5), so this Story stands under that waiver.
 
 ## Acceptance criteria
 
 - [ ] Each file's largest time on plain CI runs is under 17.5 s, or the reason it is not is recorded.
-- [ ] Coverage and the Stryker kill rate of the touched area do not drop; production code and pixels are unchanged.
-- [ ] The frontend budget is lowered in the same Story, derived on at least 5 `main` runs after the rewrites.
+- [ ] Coverage of the touched area does not drop; production behaviour and pixels are unchanged. Stryker kill rate, floor
+  80 %, on a production file the refactor commit touched; with no production file changed, mutation testing is N/A and
+  recorded as an exception.
+- [ ] The frontend per-file budget is lowered in the same Story, as its last commit, derived on at least 5 plain `main` runs
+  after the rewrites, one of them on a slow runner (else L scaled by 1.62).

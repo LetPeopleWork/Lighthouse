@@ -1,0 +1,8 @@
+src/pages/Reports/ReportsPage.reading.test.tsx :: A row's PDF icon on the Reports page starts the export of that row's report and holds every other row's PDF icon back while it is prepared
+src/pages/Reports/ReportsPage.reading.test.tsx :: The Owner column of the Reports page filters by the Type of a report, which a report of a Type this version cannot show does not have
+src/pages/Reports/ReportsPage.reading.test.tsx :: The Owner column of the Reports page filters whatever the case and the spaces around what was typed
+src/pages/Reports/ReportsPage.reading.test.tsx :: The Owner column of the Reports page has an Owner header, and sorts the rows by owner name when it is chosen
+src/pages/Reports/ReportsPage.reading.test.tsx :: The Owner column of the Reports page shows a Team's icon on a Team's row and a Portfolio's icon on a Portfolio's row
+src/pages/Reports/ReportsPage.reading.test.tsx :: The order the Reports page lists its reports in lists Portfolios first and then Teams, each alphabetically by name, whatever order the server sent
+src/pages/Reports/ReportsPage.reading.test.tsx :: While the Reports page reads its list keeps the list on screen, dimmed, while it is read again
+src/pages/Reports/ReportsPage.reading.test.tsx :: While the Reports page reads its list says it is busy while the list is on its way, and no longer once it is shown

@@ -1,0 +1,12 @@
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings adds nothing when a state that is not suggested is typed
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings hides a chosen state once it stops being a Doing state and leaves dropping it to the server
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings keeps a chosen mapping as a refinement state while its name is retyped
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings keeps the other chosen states when one chip is removed
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings offers only the Team's To Do and Doing states as suggestions
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings saves no refinement states once the last chip is removed
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings saves the added states as the Team's refinement states
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings says the Team's own word for Refinement as the section's title and in the state input
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows no chip and no flag for a chosen state that is no longer To Do or Doing
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows no loading indicator in the state input
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows no note about Doing states
+src/components/Common/Team/ModifyTeamSettings.refinement.test.tsx :: The Refinement section of a Team's settings shows the states already chosen as chips
