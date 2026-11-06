@@ -306,6 +306,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         protected void ThePortfolioListsTheParentSources(params ParentSourceEntry[] sources)
             => TheOwnerListsTheParentSources<Portfolio>(thePortfolio, sources);
 
+        /// <summary>
+        /// The Team's query is reworded to mean the same thing. Nothing on the tracker moved, but what the Team
+        /// asks for did, so its next refresh downloads the whole query.
+        /// </summary>
+        protected void TheTeamsQueryIsReworded()
+        {
+            using var scope = theRunningLighthouse.Services.CreateScope();
+            var repository = scope.ServiceProvider.GetRequiredService<IRepository<Team>>();
+            var stored = repository.GetById(theTeam.Id)!;
+            stored.DataRetrievalValue = $"({TheTeamsProject})";
+            repository.Update(stored);
+            repository.Save().GetAwaiter().GetResult();
+        }
+
         /// <summary>The Team reads whatever its connection's default lists.</summary>
         protected void TheTeamFollowsTheConnectionsList() => theTeam.FollowParentSourcesDefault();
 

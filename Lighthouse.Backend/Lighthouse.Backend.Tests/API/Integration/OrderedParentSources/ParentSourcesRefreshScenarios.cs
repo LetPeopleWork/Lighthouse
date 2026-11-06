@@ -234,6 +234,46 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         }
 
         /// <summary>
+        /// Given Payments lists "Is caused by" then the own parent, and PAY-500's only link names PAY-95, a Feature
+        /// Lighthouse does not store yet, so PAY-500 hangs under its Jira parent, when PAY-95 is stored and a cheap
+        /// refresh runs, then PAY-500 did not move, so it is not read again and stays. When a whole-query refresh
+        /// runs later, PAY-500 is read again and hangs under PAY-95, whose link entry now shows it.
+        /// </summary>
+        [Test]
+        public async Task A_lone_link_to_a_Feature_stored_later_is_repaired_by_the_next_full_refresh()
+        {
+            const string theWorkItem = "PAY-500";
+            const string theFeatureStoredLater = "PAY-95";
+            var link = TheTeamsCausedByLink();
+            TheTeamListsTheParentSources(link, ParentSourceEntry.TrackerParent);
+            TheTeamHoldsTheWorkItem(theWorkItem);
+            TheIssueIsCausedBy(theWorkItem, theFeatureStoredLater);
+            TheTrackersOwnParentOf(theWorkItem, TheHousekeepingEpic);
+            await TheTeamIsInSteadyUse();
+            var beforeTheFeatureIsStored = TheStoredParentOfTheWorkItem(theWorkItem);
+
+            ThePortfolioHoldsTheFeature(theFeatureStoredLater);
+            await ThePortfolioRefreshes();
+            await TheTeamRefreshes();
+            var cheapRefresh = await WhatRefreshHistoryShowsForTheTeam();
+            var afterTheCheapRefresh = TheStoredParentOfTheWorkItem(theWorkItem);
+
+            TheTeamsQueryIsReworded();
+            await TheTeamRefreshes();
+            var fullRefresh = await WhatRefreshHistoryShowsForTheTeam();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(beforeTheFeatureIsStored, Is.EqualTo(TheHousekeepingEpic), "A link to something not stored as a Feature yields nothing, so the next source is read.");
+                Assert.That(cheapRefresh.Mode, Is.EqualTo("Delta"), "positive control: this refresh has to be the cheap one.");
+                Assert.That(afterTheCheapRefresh, Is.EqualTo(TheHousekeepingEpic), "A cheap refresh does not read a record that did not move.");
+                Assert.That(fullRefresh.Mode, Is.EqualTo("Full"), "positive control: this refresh has to download the whole query.");
+                Assert.That(TheStoredParentOfTheWorkItem(theWorkItem), Is.EqualTo(theFeatureStoredLater), "Read again with the Feature stored, the link yields it and wins over the source below it.");
+                Assert.That(WhatTheLinkEntryShowsOnTheWorkItem(theWorkItem, link), Is.EqualTo(theFeatureStoredLater));
+            }
+        }
+
+        /// <summary>
         /// Given Payments lists "Program Ref", which the instance defines, and PAY-143 holds nothing in it, when
         /// Payments refreshes, then nothing is reported: an empty field on one record is the ordinary case.
         /// </summary>
