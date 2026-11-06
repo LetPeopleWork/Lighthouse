@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.API.DTO
         {
             foreach (var fieldDefault in ConnectionFieldDefaults.All)
             {
-                sent[fieldDefault.Setting] = fieldDefault.FieldsOn(connection) is [var first, ..] ? first : null;
+                sent[fieldDefault.Setting] = fieldDefault.FirstFieldOn(connection);
 
                 if (fieldDefault.ParentSourcesOn is { } parentSourcesOn)
                 {
@@ -118,24 +118,18 @@ namespace Lighthouse.Backend.API.DTO
 
         /// <summary>
         /// What the save means by a default that holds a list; null when it sends no list or when the old single
-        /// field is the edit. A client that knows only the old field sends back the list it read together with the
-        /// field it changed, so a list equal to the one held, beside a field that differs from the list's first, is
-        /// that echo.
+        /// field is the edit.
         /// </summary>
         public ParentSourcesChoice? ParentSourcesChoiceFor(ConnectionDefaultSetting setting, ParentSources? held)
         {
-            if (!lists.TryGetValue(setting, out var sentList) || TheOldFieldIsTheEdit(setting, sentList, held))
+            if (!lists.TryGetValue(setting, out var sentList)
+                || (sent.TryGetValue(setting, out var oldField) && ParentSourceEntryDto.TheOldFieldIsTheEdit(oldField, sentList, held)))
             {
                 return null;
             }
 
-            return new(sentList is null ? null : ParentSources.Of(sentList.Select(entry => entry?.ToEntry()!)));
+            return new(sentList is null ? null : ParentSourceEntryDto.OutcomeOf(sentList));
         }
-
-        private bool TheOldFieldIsTheEdit(ConnectionDefaultSetting setting, List<ParentSourceEntryDto?>? sentList, ParentSources? held)
-            => sent.TryGetValue(setting, out var oldField)
-                && oldField != held?.ToTheLegacyField()
-                && ParentSourceEntryDto.TextOf(sentList) == ParentSourceEntryDto.TextOf(held is null ? null : ParentSourceEntryDto.ListOf(held));
 
         /// <summary>The Estimation bundle the save sends for a default; None when it clears it, null when it sends none.</summary>
         public EstimationBundle? BundleOf(ConnectionDefaultSetting setting)

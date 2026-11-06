@@ -827,14 +827,10 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
                 else if (!resolution.ReadsAField(definitionId) && !resolution.CouldNotTellWhatItNames(definitionId))
                 {
                     yield return new RefreshFinding(
-                        RefreshFindingKind.ParentSourceMatchedNothing, RefreshFindingSetting.ParentOverrideField, TheNameTheSettingsShowFor(owner, definitionId), [], hadANextSource);
+                        RefreshFindingKind.ParentSourceMatchedNothing, RefreshFindingSetting.ParentOverrideField, AdditionalFieldDefinition.NameShownIn(owner.WorkTrackingSystemConnection, definitionId), [], hadANextSource);
                 }
             }
         }
-
-        private static string TheNameTheSettingsShowFor(WorkTrackingSystemOptionsOwner owner, int? definitionId)
-            => owner.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Find(definition => definition.Id == definitionId)?.DisplayName
-                ?? AdditionalFieldDefinition.NameOfAnUnknownField(definitionId);
 
         private static IEnumerable<RefreshFinding> ARelationTypeNamedIn(
             WorkTrackingSystemOptionsOwner owner, AdditionalFieldResolution resolution, int? definitionId, RefreshFindingKind kind, RefreshFindingSetting setting)
@@ -1008,7 +1004,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
         // The settings whose findings are judged above, and the only ones whose reference decides what is read.
         private static HashSet<int> TheDefinitionsItsSettingsName(WorkTrackingSystemOptionsOwner owner)
         {
-            int?[] parentSources = [.. owner.TheEffectiveParentSources().Entries.Select(entry => entry.AdditionalFieldDefinitionId)];
+            int?[] parentSources = [.. owner.TheEffectiveParentSources().AdditionalFieldIds()];
             int?[] named = owner is Portfolio portfolio
                 ?
                 [

@@ -98,7 +98,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 .OrderBy(team => team.Id)
                 .Select(team => new { team.Name, team.ParentSources, team.OwnEstimationAdditionalFieldDefinitionId })
                 .AsEnumerable()
-                .Select(team => new OwnerNamingFields(team.Name, [.. FieldsListedIn(team.ParentSources), team.OwnEstimationAdditionalFieldDefinitionId]))];
+                .Select(team => new OwnerNamingFields(team.Name, [.. team.ParentSources?.AdditionalFieldIds() ?? [], team.OwnEstimationAdditionalFieldDefinitionId]))];
 
         private List<OwnerNamingFields> WhatEachPortfolioOwnsOn(int connectionId)
             => [.. portfolioRepository.GetAllByPredicate(portfolio => portfolio.WorkTrackingSystemConnectionId == connectionId)
@@ -114,15 +114,12 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
                 })
                 .AsEnumerable()
                 .Select(portfolio => new OwnerNamingFields(portfolio.Name, [
-                    .. FieldsListedIn(portfolio.ParentSources),
+                    .. portfolio.ParentSources?.AdditionalFieldIds() ?? [],
                     portfolio.OwnDependencyOverrideAdditionalFieldDefinitionId,
                     portfolio.OwnSizeEstimateAdditionalFieldDefinitionId,
                     portfolio.OwnFeatureOwnerAdditionalFieldDefinitionId,
                     portfolio.OwnEstimationAdditionalFieldDefinitionId,
                 ]))];
-
-        private static IEnumerable<int?> FieldsListedIn(ParentSources? list)
-            => list?.Entries.Select(entry => entry.AdditionalFieldDefinitionId) ?? [];
 
         private async Task PointTheDefaultsAtTheFieldsAddedInThisSave(ConnectionSaveHandle handle)
         {
@@ -221,7 +218,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
 
         private static NamedField HeldOn(WorkTrackingSystemConnection connection, ConnectionFieldDefault fieldDefault)
         {
-            int? fieldId = fieldDefault.FieldsOn(connection) is [var first, ..] ? first : null;
+            var fieldId = fieldDefault.FirstFieldOn(connection);
             return fieldDefault.ParentSourcesOn?.Invoke(connection) is { } list
                 ? new(fieldId, DescribeTheSources(connection, list), null, list.ToStoredText())
                 : new(fieldId, connection.DisplayNameOfField(fieldId), fieldDefault.BundleOn?.Invoke(connection));
@@ -234,7 +231,7 @@ namespace Lighthouse.Backend.Services.Implementation.Connections
             var entries = list.Entries.Count == 2 && list.Entries[1] == ParentSourceEntry.TrackerParent ? list.Entries.Take(1) : list.Entries;
 
             return string.Join(", ", entries.Select(entry => entry.AdditionalFieldDefinitionId is { } field
-                ? connection.DisplayNameOfField(field) ?? AdditionalFieldDefinition.NameOfAnUnknownField(field)
+                ? AdditionalFieldDefinition.NameShownIn(connection, field)
                 : "own Parent"));
         }
 

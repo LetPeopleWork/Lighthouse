@@ -21,6 +21,9 @@ namespace Lighthouse.Backend.Models
     {
         /// <summary>The name in the words Lighthouse seeds, for the log an operator reads.</summary>
         public string FieldName => NameIn(OwnerTerms.Seeded);
+
+        /// <summary>The field this default answers with where only one can be named.</summary>
+        public int? FirstFieldOn(WorkTrackingSystemConnection connection) => FieldsOn(connection) is [var first, ..] ? first : null;
     }
 
     public static class ConnectionFieldDefaults

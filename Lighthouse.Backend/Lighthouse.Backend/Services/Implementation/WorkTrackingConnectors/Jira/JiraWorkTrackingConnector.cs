@@ -1975,15 +1975,11 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
                     .Select(entry => new RefreshFinding(
                         RefreshFindingKind.ParentSourceMatchedNothing,
                         RefreshFindingSetting.ParentOverrideField,
-                        TheNameTheSettingsShowFor(workItemQueryOwner, entry.Source),
+                        AdditionalFieldDefinition.NameShownIn(workItemQueryOwner.WorkTrackingSystemConnection, entry.Source.AdditionalFieldDefinitionId),
                         [],
                         entry.HadANextSource)),
             ];
         }
-
-        private static string TheNameTheSettingsShowFor(IWorkItemQueryOwner workItemQueryOwner, ParentSourceEntry entry)
-            => TheDefinitionNamed(workItemQueryOwner, entry.AdditionalFieldDefinitionId)?.DisplayName
-                ?? AdditionalFieldDefinition.NameOfAnUnknownField(entry.AdditionalFieldDefinitionId);
 
         /// <summary>
         /// Links read as links even when none of them matched, because the field showing a link entry's key

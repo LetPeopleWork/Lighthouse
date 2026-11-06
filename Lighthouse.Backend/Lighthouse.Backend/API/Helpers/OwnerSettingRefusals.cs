@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.API.Helpers
 
         private static IEnumerable<int?> ParentFieldsOwnedOnceTaken(WorkTrackingSystemOptionsOwner? owner, SettingsOwnerDtoBase setting)
             => owner?.ParentSourcesOwnedOnceTaken(setting)?.List is { } list
-                ? list.Entries.Select(entry => entry.AdditionalFieldDefinitionId)
+                ? [.. list.AdditionalFieldIds()]
                 : [owner?.ParentOverrideOwnedOnceTaken(setting.ParentOverrideSource, owner.ParentOverrideFieldAsSent(setting))];
 
         private string WhyTheListCannotBeKept(IReadOnlyList<ParentSourcesViolation> violations, WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase setting)
@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.API.Helpers
             var repeated = setting.ParentSources?.GroupBy(entry => entry).First(group => group.Count() > 1).Key;
 
             return repeated?.AdditionalFieldDefinitionId is { } field
-                ? TheConnectionTheSaveLeavesItOn(owner, setting)?.DisplayNameOfField(field) ?? AdditionalFieldDefinition.NameOfAnUnknownField(field)
+                ? AdditionalFieldDefinition.NameShownIn(TheConnectionTheSaveLeavesItOn(owner, setting), field)
                 : "Parent";
         }
 

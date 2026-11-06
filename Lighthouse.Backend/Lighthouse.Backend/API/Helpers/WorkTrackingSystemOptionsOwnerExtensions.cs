@@ -31,26 +31,19 @@ namespace Lighthouse.Backend.API.Helpers
         /// </summary>
         public static ParentSourcesOutcome? ParentSourcesOwnedOnceTaken(this WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase settings)
             => settings.ParentSources is { } sent && !TheOldFieldIsTheEdit(owner, settings) && TheSaveChoosesToOwn(owner, settings.ParentOverrideSource, sent)
-                ? ParentSources.Of(sent.Select(entry => entry?.ToEntry()!))
+                ? ParentSourceEntryDto.OutcomeOf(sent)
                 : null;
 
         /// <summary>The old single field this save means; a save that sends a list of its own has already said everything.</summary>
         public static int? ParentOverrideFieldAsSent(this WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase settings)
             => settings.ParentSources is null || TheOldFieldIsTheEdit(owner, settings) ? settings.ParentOverrideAdditionalFieldDefinitionId : null;
 
-        // A client that knows only the old field may still send back everything it read, the list included.
-        // The list is then an echo, and the old field it changed is what the save is about.
         private static bool TheOldFieldIsTheEdit(WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase settings)
-        {
-            var read = owner.TheEffectiveParentSources();
-
-            return settings.ParentOverrideFieldWasSent()
-                && settings.ParentOverrideAdditionalFieldDefinitionId != read.ToTheLegacyField()
-                && ParentSourceEntryDto.TextOf(settings.ParentSources) == ParentSourceEntryDto.TextOf(ParentSourceEntryDto.ListOf(read));
-        }
+            => settings.ParentOverrideFieldWasSent()
+                && ParentSourceEntryDto.TheOldFieldIsTheEdit(settings.ParentOverrideAdditionalFieldDefinitionId, settings.ParentSources, owner.TheEffectiveParentSources());
 
         private static bool TheSaveChoosesToOwn(WorkTrackingSystemOptionsOwner owner, SettingSource? sentSource, List<ParentSourceEntryDto?> sent)
-            => IncomingSetting.SourceChosen(sentSource, ParentSourceEntryDto.TextOf(sent), sentIsSet: true, ParentSourceEntryDto.TextOf(ParentSourceEntryDto.ListOf(owner.TheEffectiveParentSources()))) == SettingSource.Own;
+            => IncomingSetting.SourceChosen(sentSource, ParentSourceEntryDto.TextOf(sent), sentIsSet: true, ParentSourceEntryDto.TextOf(owner.TheEffectiveParentSources())) == SettingSource.Own;
 
         private static void TakeParentSourcesAsSent(WorkTrackingSystemOptionsOwner owner, SettingsOwnerDtoBase settings)
         {
