@@ -88,10 +88,7 @@ describe("defaultsKeepingOnlyFields", () => {
 		).toEqual({ estimationForTeams: unitOnly });
 	});
 
-	it.each([
-		"parentSourcesForTeams",
-		"parentSourcesForPortfolios",
-	] as const)(
+	it.each(["parentSourcesForTeams", "parentSourcesForPortfolios"] as const)(
 		"leaves %s as it stands when a field it lists is gone, so the server can refuse the save",
 		(name) => {
 			const list = [

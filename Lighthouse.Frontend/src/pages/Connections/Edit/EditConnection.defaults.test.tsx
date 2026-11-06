@@ -669,7 +669,9 @@ describe("defaults set once on the connection", () => {
 			expect(
 				within(theGroup("Teams")).getByText("Unknown field (id 11)"),
 			).toBeInTheDocument();
-			expect(within(theGroup("Teams")).getByText(ParentLink)).toBeInTheDocument();
+			expect(
+				within(theGroup("Teams")).getByText(ParentLink),
+			).toBeInTheDocument();
 
 			whenPriyaPressesSave();
 			await whenSheAnswers(TheFieldsQuestion, "Save only");
