@@ -49,6 +49,7 @@ import { useTerminology } from "../../../services/TerminologyContext";
 import {
 	directionTip,
 	directionTipTermsFrom,
+	parentSourcesTip,
 } from "../ConnectionDefault/fieldDirectionTips";
 import ParentSourcesList from "../ConnectionDefault/ParentSourcesList";
 import { ownerOfParentSourcesDefault } from "../ConnectionDefault/parentSources";
@@ -240,7 +241,7 @@ const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
 					tracker={tracker}
 					additionalFieldDefinitions={savedFields}
 					onChange={(list) => onParentSourcesChange(name, list)}
-					info={directionTip(name, tracker, tipTerms)}
+					info={parentSourcesTip(name, tracker, tipTerms)}
 				/>
 			);
 		}

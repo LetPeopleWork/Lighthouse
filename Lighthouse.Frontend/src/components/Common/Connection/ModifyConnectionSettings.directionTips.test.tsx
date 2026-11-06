@@ -148,6 +148,19 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 		).toHaveTextContent(IS_CAUSED_BY);
 	});
 
+	it.each(["Teams", "Portfolios"])(
+		"on a Jira connection, the %s' Parent sources tip says which row is Jira's own parent, because the list has no None",
+		async (group) => {
+			await givenPriyaOpensAConnectionOn("Jira");
+
+			const tip = await whenPriyaOpensTheTipOf(PARENT_OVERRIDE, group);
+			expect(tip).toHaveTextContent(
+				"Parent (Jira's own) is the parent Jira itself records.",
+			);
+			expect(tip).not.toHaveTextContent(/None/);
+		},
+	);
+
 	it("on a Jira connection, the Dependency tip asks for is blocked by", async () => {
 		await givenPriyaOpensAConnectionOn("Jira");
 

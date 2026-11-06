@@ -1,7 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
-import { directionTip } from "../../../components/Common/ConnectionDefault/fieldDirectionTips";
+import { parentSourcesTip } from "../../../components/Common/ConnectionDefault/fieldDirectionTips";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import {
 	type IWorkTrackingSystemConnection,
@@ -59,11 +59,11 @@ const givenSamOpensTheSettingsOf = async (
 	fireEvent.click(screen.getByLabelText("toggle"));
 };
 
-const theTipOn = (tracker: WorkTrackingSystemType | undefined) =>
-	directionTip("parentOverrideForTeams", tracker, {
+const theTipOn = (tracker: WorkTrackingSystemType) =>
+	parentSourcesTip("parentOverrideForTeams", tracker, {
 		feature: "Feature",
 		workItem: "Work Item",
-	})?.text;
+	}).text;
 
 const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(PARENT_OVERRIDE));
@@ -90,9 +90,9 @@ describe("Story 6352: Parent sources says which way round it reads", () => {
 		expect(tip).not.toHaveTextContent(/None/);
 	});
 
-	it("the select on a Jira connection, which has a None until it holds a list, keeps saying what None does", () => {
-		expect(theTipOn("Jira")).toContain(
-			"With None, the parent the tracker itself records is used.",
+	it("on Jira, the tip reads which end the field reads, the example, then which row is Jira's own parent", () => {
+		expect(theTipOn("Jira")).toBe(
+			'Read on each Work Item, this names the link or field that points to its parent. In Jira, pick the link phrase read towards the parent, such as "is caused by". Parent (Jira\'s own) is the parent Jira itself records.',
 		);
 	});
 
@@ -128,7 +128,7 @@ describe("Story 6352: Parent sources says which way round it reads", () => {
 		expect(tip).not.toHaveTextContent(IS_CAUSED_BY);
 	});
 
-	it.each(["Linear", "Csv", "ServiceNow", undefined] as const)(
+	it.each(["Linear", "Csv", "ServiceNow"] as const)(
 		"on a %s Team the tip stays tracker-neutral, without an example",
 		(tracker) => {
 			const tip = theTipOn(tracker);
@@ -139,9 +139,9 @@ describe("Story 6352: Parent sources says which way round it reads", () => {
 		},
 	);
 
-	it("without an example, the tip reads as two sentences: which end the field reads, then what None does", () => {
+	it("without an example, the tip reads as two sentences: which end the field reads, then which row is the tracker's own parent", () => {
 		expect(theTipOn("Linear")).toBe(
-			"Read on each Work Item, this names the link or field that points to its parent. With None, the parent the tracker itself records is used.",
+			"Read on each Work Item, this names the link or field that points to its parent. Parent (Linear's own) is the parent Linear itself records.",
 		);
 	});
 

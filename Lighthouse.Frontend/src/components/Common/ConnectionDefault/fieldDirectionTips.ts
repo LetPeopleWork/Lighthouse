@@ -42,7 +42,7 @@ type TrackerExamples = Partial<Record<WorkTrackingSystemType, string>>;
 interface FieldDirection {
 	whichEnd: (terms: DirectionTipTerms) => string;
 	examples: TrackerExamples;
-	none: string;
+	none?: string;
 	learnMoreUrl: string;
 }
 
@@ -51,22 +51,17 @@ const parentOverrideExamples: TrackerExamples = {
 	AzureDevOps: "In Azure DevOps, pick a field holding the parent's id.",
 };
 
-const parentOverrideNone =
-	"With None, the parent the tracker itself records is used.";
-
 const directions: Record<DirectionTipField, FieldDirection> = {
 	parentOverrideForTeams: {
 		whichEnd: ({ workItem }) =>
 			`Read on each ${workItem}, this names the link or field that points to its parent.`,
 		examples: parentOverrideExamples,
-		none: parentOverrideNone,
 		learnMoreUrl: `${DOCS}/teams/edit.html#parent-override-field`,
 	},
 	parentOverrideForPortfolios: {
 		whichEnd: ({ feature }) =>
 			`Read on each ${feature}, this names the link or field that points to its parent.`,
 		examples: parentOverrideExamples,
-		none: parentOverrideNone,
 		learnMoreUrl: `${DOCS}/portfolios/edit.html#parent-override-field`,
 	},
 	dependencyFieldForPortfolios: {
@@ -90,7 +85,7 @@ const tipOf = (
 	direction: FieldDirection,
 	tracker: WorkTrackingSystemType | undefined,
 	terms: DirectionTipTerms,
-	lastSentence: string,
+	lastSentence: string | undefined,
 ): DirectionTip => {
 	const example = tracker ? direction.examples[tracker] : undefined;
 	return {
