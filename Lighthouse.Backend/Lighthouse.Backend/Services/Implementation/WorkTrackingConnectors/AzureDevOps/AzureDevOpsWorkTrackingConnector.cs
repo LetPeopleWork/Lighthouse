@@ -811,13 +811,13 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Azur
 
             for (var position = 0; position < entries.Count; position++)
             {
-                var definitionId = entries[position].AdditionalFieldDefinitionId;
-                var hadANextSource = position < entries.Count - 1;
-
                 if (entries[position].Kind != ParentSourceKind.AdditionalField)
                 {
                     continue;
                 }
+
+                var definitionId = entries[position].AdditionalFieldDefinitionId;
+                var hadANextSource = position < entries.Count - 1;
 
                 if (resolution.NamesARelationType(definitionId))
                 {
