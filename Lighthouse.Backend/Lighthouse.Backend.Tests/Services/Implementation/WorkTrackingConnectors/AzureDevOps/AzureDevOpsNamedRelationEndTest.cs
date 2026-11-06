@@ -397,12 +397,82 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             }
         }
 
+        [Test]
+        public async Task GetFeaturesForProject_WhenParentSourcesMatchNothing_SaysSoForEachAndWhetherASourceCameAfterIt()
+        {
+            var organisation = new Organisation();
+            var portfolio = APortfolioListing(
+                (10, "Stale", NotAnythingAtAll), (TheRealFieldId, "Size", ARealField), (11, "Also stale", AlsoNotAnything));
+
+            var feature = (await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None)).Single(f => f.ReferenceId == $"{TheFeature}");
+
+            Assert.That(feature.RefreshFindings.Select(finding => (finding.Kind, finding.Setting, finding.Named, finding.HadANextSource)), Is.EqualTo(new[]
+            {
+                (RefreshFindingKind.ParentSourceMatchedNothing, RefreshFindingSetting.ParentOverrideField, "Stale", true),
+                (RefreshFindingKind.ParentSourceMatchedNothing, RefreshFindingSetting.ParentOverrideField, "Also stale", false),
+            }));
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenTheRelationTypesCouldNotBeListed_DoesNotClaimAParentSourceMatchedNothing()
+        {
+            var organisation = new Organisation(listingFailure: new VssServiceException(ARefusal));
+            var portfolio = APortfolioListing((10, "Stale", NotAnythingAtAll));
+
+            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+
+            Assert.That(features.SelectMany(feature => feature.RefreshFindings), Is.Empty,
+                "A name no field carries may still be a relation type nobody could list.");
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_TheOwnParentReadsAsTheTrackersOnlyWhereTheItemHasOne()
+        {
+            var relations = new Dictionary<int, List<WorkItemRelation>> { [TheFeature] = [AParentRelation(TheItemItWaitsOn)] };
+            var organisation = new Organisation(relations: relations);
+
+            var features = await organisation.Connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+
+            var theFeature = features.Single(feature => feature.ReferenceId == $"{TheFeature}");
+            var theOther = features.Single(feature => feature.ReferenceId == $"{TheOtherFeature}");
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(theFeature.ParentReferenceId, Is.EqualTo($"{TheItemItWaitsOn}"));
+                Assert.That(theFeature.ParentReadings.Positions.Single().Reading, Is.EqualTo(ParentReading.TrackersOwn($"{TheItemItWaitsOn}")));
+                Assert.That(theOther.ParentReferenceId, Is.Empty);
+                Assert.That(theOther.ParentReadings.Positions.Single().Reading, Is.EqualTo(ParentReading.NoValue));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_ARelationTypeCannotBeReadWhereAnEmptyFieldReadsNoValue()
+        {
+            var organisation = new Organisation();
+            var portfolio = APortfolioListing((10, "Depends", DependsOnForward), (TheRealFieldId, "Size", ARealField));
+
+            var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
+
+            var theReadings = features.Single(feature => feature.ReferenceId == $"{TheFeature}").ParentReadings.Positions.Select(position => position.Reading);
+            Assert.That(theReadings, Is.EqualTo(new[] { ParentReading.CannotBeRead, ParentReading.NoValue }));
+        }
+
         private static Portfolio APortfolioWhoseDependencyFieldNames(string reference)
         {
             var portfolio = APortfolio();
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(
                 new AdditionalFieldDefinition { Id = TheDependencyFieldId, DisplayName = "Depends On", Reference = reference });
             portfolio.OwnDependencyField(TheDependencyFieldId);
+
+            return portfolio;
+        }
+
+        private static Portfolio APortfolioListing(params (int Id, string Name, string Reference)[] sources)
+        {
+            var portfolio = APortfolio();
+            portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.AddRange(sources
+                .Where(source => source.Id != TheRealFieldId)
+                .Select(source => new AdditionalFieldDefinition { Id = source.Id, DisplayName = source.Name, Reference = source.Reference }));
+            portfolio.OwnParentSources(ParentSources.Of(sources.Select(source => ParentSourceEntry.Field(source.Id))).List!);
 
             return portfolio;
         }
@@ -467,6 +537,14 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 Name = referenceName,
                 Attributes = new Dictionary<string, object> { [attribute.Key] = attribute.Value },
             };
+
+        private static WorkItemRelation AParentRelation(int pointingAt)
+        {
+            var relation = ARelation(HierarchyReverse, pointingAt);
+            relation.Attributes["name"] = "Parent";
+
+            return relation;
+        }
 
         private static WorkItemRelation ARelation(string? rel, int pointingAt)
             => new()

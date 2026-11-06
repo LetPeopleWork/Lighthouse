@@ -1,4 +1,5 @@
 ﻿using Lighthouse.Backend.Models;
+using System.Globalization;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Factories;
@@ -1994,6 +1995,30 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
                 $"Portfolio {portfolio.Name}: its Parent sources list names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
                 + "which only the Dependency Field reads, so it was skipped."));
+        }
+
+        [TestCase(true, "Portfolio {0}: parent source 'Stale' matched no field and no link type. The next source in the list was read instead.")]
+        [TestCase(false, "Portfolio {0}: parent source 'Stale' matched no field and no link type.")]
+        public async Task UpdateFeaturesForPortfolio_AParentSourceThatMatchedNothing_WarnsOnceAndSaysWhetherTheNextSourceWasRead(bool hadANextSource, string warning)
+        {
+            var portfolio = CreatePortfolio();
+
+            workTrackingConnectorMock
+                .Setup(connector => connector.GetFeaturesForProject(portfolio, It.IsAny<CancellationToken>()))
+                .ReturnsAsync([new Feature
+                {
+                    ReferenceId = "FTR-1",
+                    LastChangedRemote = TheFirstReadingDay,
+                    RefreshFindings = [new RefreshFinding(RefreshFindingKind.ParentSourceMatchedNothing, RefreshFindingSetting.ParentOverrideField, "Stale", [], hadANextSource)],
+                }]);
+
+            NothingAboveTheFeaturesIsDownloaded();
+
+            await CreateSubject().UpdateFeaturesForPortfolio(portfolio);
+
+            Assert.That(
+                whatTheServiceWrote.Warnings.Where(written => written.StartsWith($"Portfolio {portfolio.Name}:", StringComparison.Ordinal)),
+                Is.EqualTo(new[] { string.Format(CultureInfo.InvariantCulture, warning, portfolio.Name) }));
         }
 
         [TestCase(RefreshFindingKind.RelationTypeCannotBeReadHere)]

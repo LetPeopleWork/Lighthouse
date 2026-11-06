@@ -48,6 +48,22 @@ namespace Lighthouse.Backend.Tests.Models
             }
         }
 
+        // A build one release back knows only the old columns, so it can move an owner to the default and leave
+        // the list behind. Nothing in this build can write that row, hence the reflection.
+        [Test]
+        public void A_list_left_behind_on_a_follower_is_not_read()
+        {
+            var theDefault = ListOf(ParentSourceEntry.Field(A), OwnParent);
+            var connection = new WorkTrackingSystemConnection();
+            connection.SetParentSourcesDefaultForTeams(theDefault);
+            var team = new Team { WorkTrackingSystemConnection = connection };
+            team.FollowParentOverrideDefault();
+            typeof(WorkTrackingSystemOptionsOwner).GetProperty(nameof(team.ParentSources))!
+                .SetValue(team, ListOf(ParentSourceEntry.Field(B), OwnParent));
+
+            Assert.That(team.TheEffectiveParentSources(), Is.SameAs(theDefault));
+        }
+
         [Test]
         public void An_owner_reads_its_own_list_a_follower_the_default_of_its_kind_and_without_a_default_the_own_parent_alone()
         {

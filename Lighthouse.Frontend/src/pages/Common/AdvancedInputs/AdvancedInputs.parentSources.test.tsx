@@ -164,6 +164,22 @@ describe("a Team's Advanced Configuration", () => {
 		expect(screen.getByText("Parent (Jira's own)")).toBeInTheDocument();
 	});
 
+	it("shows the tracker's own parent alone while the settings are still on their way", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={null}
+				onSettingsChange={vi.fn()}
+				connection={aConnection("Jira", {})}
+				parentOverrideDefault="parentOverrideForTeams"
+				additionalFieldDefinitions={TheFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(screen.getAllByRole("listitem")).toHaveLength(1);
+		expect(screen.getByText("Parent (Jira's own)")).toBeInTheDocument();
+	});
+
 	it("offers no Connection default while the connection holds no list and the Team does not follow it", () => {
 		openTheSettingsPageOf(aTeamOn("Jira"));
 

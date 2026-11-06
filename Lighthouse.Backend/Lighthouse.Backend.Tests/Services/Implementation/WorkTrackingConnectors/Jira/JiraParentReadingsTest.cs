@@ -187,6 +187,34 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             Assert.That(readings.Positions, Is.EqualTo(new[] { new ParentReadingAt(OwnParent, ParentReading.TrackersOwn("PAY-1")) }));
         }
 
+        [Test]
+        public async Task The_first_position_with_a_value_hangs_the_Work_Item_under_its_parent()
+        {
+            var workItem = await TheWorkItemOf(ATeamListing(ProgramRef, OwnParent), Value(ProgramRefField, "PAY-12") + Parent("PAY-1"));
+
+            Assert.That(workItem.ParentReferenceId, Is.EqualTo("PAY-12"));
+        }
+
+        [Test]
+        public async Task An_entry_that_matches_nothing_is_reported_and_says_a_source_came_after_it()
+        {
+            var workItem = await TheWorkItemOf(ATeamListing(NothingTheInstanceKnows, OwnParent), Parent("PAY-1"));
+
+            Assert.That(
+                workItem.RefreshFindings.Select(finding => (finding.Kind, finding.Named, finding.HadANextSource)),
+                Is.EqualTo(new[] { (RefreshFindingKind.ParentSourceMatchedNothing, "Long gone", true) }));
+        }
+
+        [Test]
+        public async Task An_entry_that_matches_nothing_at_the_end_of_the_list_says_no_source_came_after_it()
+        {
+            var workItem = await TheWorkItemOf(ATeamListing(OwnParent, NothingTheInstanceKnows), Parent("PAY-1"));
+
+            Assert.That(
+                workItem.RefreshFindings.Select(finding => (finding.Kind, finding.Named, finding.HadANextSource)),
+                Is.EqualTo(new[] { (RefreshFindingKind.ParentSourceMatchedNothing, "Long gone", false) }));
+        }
+
         private static async Task<ParentReadings> TheReadingsATeamGets(ParentSourceEntry[] entries, string furtherFields, params string[] links)
         {
             var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
@@ -198,11 +226,25 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
 
         private static async Task<ParentReadings> TheReadingsOf(Team team, string furtherFields, params string[] links)
         {
+            return (await TheWorkItemOf(team, furtherFields, links)).ParentReadings;
+        }
+
+        private static async Task<WorkItem> TheWorkItemOf(Team team, string furtherFields, params string[] links)
+        {
             var connector = JiraConnectorTestSetup.AConnectorOver(AJiraServing(JiraWireFormat.AnIssueCarrying(Item, "Story", furtherFields, links)));
 
             var workItems = await connector.GetWorkItemsForTeam(team, CancellationToken.None);
 
-            return workItems.Single().ParentReadings;
+            return workItems.Single();
+        }
+
+        private static Team ATeamListing(params ParentSourceEntry[] entries)
+        {
+            var team = JiraConnectorTestSetup.ATeamOnJiraCloud();
+            DefineTheAdditionalFields(team.WorkTrackingSystemConnection);
+            team.OwnParentSources(ParentSources.Of(entries).List!);
+
+            return team;
         }
 
         private static async Task<ParentReadings> TheReadingsAPortfolioGets(ParentSourceEntry[] entries, string furtherFields, params string[] links)

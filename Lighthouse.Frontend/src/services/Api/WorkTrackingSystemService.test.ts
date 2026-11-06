@@ -754,6 +754,23 @@ describe("WorkTrackingSystemService", () => {
 			expect(connection.supportedDefaults).toEqual(["parentOverrideForTeams"]);
 		});
 
+		it("keeps a default's list of parent sources, the tracker's own parent included", async () => {
+			const theList = [
+				{ kind: "TrackerParent" },
+				{ kind: "AdditionalField", additionalFieldDefinitionId: 11 },
+			];
+			mockedAxios.get.mockResolvedValueOnce({
+				data: [
+					{ ...nordwindJiraDc, defaults: { parentSourcesForTeams: theList } },
+				],
+			});
+
+			const [connection] =
+				await workTrackingSystemService.getConfiguredWorkTrackingSystems();
+
+			expect(connection.defaults?.parentSourcesForTeams).toEqual(theList);
+		});
+
 		it("keeps every default the connection names, for Teams and Portfolios alike", async () => {
 			mockedAxios.get.mockResolvedValueOnce({
 				data: [

@@ -197,6 +197,26 @@ describe("changedDefaultsToUpdateFollowersOf", () => {
 		).toEqual([]);
 	});
 
+	it("leaves out a followed single field that stayed as it was", () => {
+		expect(
+			changedDefaultsToUpdateFollowersOf(
+				{ dependencyFieldForPortfolios: 5 },
+				{ dependencyFieldForPortfolios: 5 },
+				followedByTwo("dependencyFieldForPortfolios"),
+			),
+		).toEqual([]);
+	});
+
+	it("lists a followed single field that moved", () => {
+		expect(
+			changedDefaultsToUpdateFollowersOf(
+				{ dependencyFieldForPortfolios: 5 },
+				{ dependencyFieldForPortfolios: 7 },
+				followedByTwo("dependencyFieldForPortfolios"),
+			),
+		).toEqual(["dependencyFieldForPortfolios"]);
+	});
+
 	it("leaves out a followed default that did not change", () => {
 		expect(
 			changedDefaultsToUpdateFollowersOf(

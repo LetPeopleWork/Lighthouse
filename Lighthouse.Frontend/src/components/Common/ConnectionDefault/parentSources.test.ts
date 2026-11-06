@@ -4,7 +4,11 @@ import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/Ad
 import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	entriesStillToAdd,
+	listsTheSameSources,
 	nameOfParentSource,
+	namesAnUnknownField,
+	nowListsSeveralSources,
+	ownerOfParentSourcesDefault,
 	type ParentSourcesAction,
 	parentSourcesAreOffered,
 	reduceParentSources,
@@ -130,6 +134,58 @@ describe("nameOfParentSource", () => {
 		["AzureDevOps", ownParent, "Parent (Azure DevOps' own)"],
 	])("on %s a row reads %j as %s", (tracker, entry, expected) => {
 		expect(nameOfParentSource(entry, tracker, TheFields)).toBe(expected);
+	});
+});
+
+describe("namesAnUnknownField", () => {
+	it("is true only for a field the definitions no longer hold", () => {
+		expect(namesAnUnknownField(field(99), TheFields)).toBe(true);
+		expect(namesAnUnknownField(field(11), TheFields)).toBe(false);
+		expect(namesAnUnknownField(ownParent, TheFields)).toBe(false);
+	});
+});
+
+describe("listsTheSameSources", () => {
+	it("is true for the same sources in the same order", () => {
+		expect(
+			listsTheSameSources([field(11), ownParent], [field(11), ownParent]),
+		).toBe(true);
+	});
+
+	it("is false when one of the sources differs", () => {
+		expect(
+			listsTheSameSources([field(11), field(12)], [field(11), field(13)]),
+		).toBe(false);
+	});
+
+	it("is false for the same sources in another order", () => {
+		expect(
+			listsTheSameSources([field(11), field(12)], [field(12), field(11)]),
+		).toBe(false);
+	});
+});
+
+describe("nowListsSeveralSources", () => {
+	it("counts several sources that differ from the list before", () => {
+		expect(nowListsSeveralSources([field(11), field(12)], [field(11)])).toBe(
+			true,
+		);
+	});
+
+	it("does not count a list of one, or several it already had", () => {
+		expect(nowListsSeveralSources([field(11)], [])).toBe(false);
+		expect(
+			nowListsSeveralSources([field(11), field(12)], [field(11), field(12)]),
+		).toBe(false);
+	});
+});
+
+describe("ownerOfParentSourcesDefault", () => {
+	it("names whose list each default holds", () => {
+		expect(ownerOfParentSourcesDefault("parentOverrideForTeams")).toBe("Team");
+		expect(ownerOfParentSourcesDefault("parentOverrideForPortfolios")).toBe(
+			"Portfolio",
+		);
 	});
 });
 

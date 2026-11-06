@@ -169,6 +169,35 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
             Assert.That(lines, Is.EqualTo(TheLineForTheLowestKey), "Nothing dated decided, so the line shows no date.");
         }
 
+        [Test]
+        public void The_owner_of_a_line_is_named_by_its_kind()
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ParentPlacementReport.Team("Payments"), Is.EqualTo(TheOwner));
+                Assert.That(ParentPlacementReport.Portfolio("Payments"), Is.EqualTo("Portfolio \"Payments\""));
+                Assert.That(ParentPlacementReport.ParentsOfThePortfoliosFeatures("Payments"), Is.EqualTo("the parents of Portfolio \"Payments\"'s Features"));
+            }
+        }
+
+        [Test]
+        public void WhereTheParentsCameFrom_CountsTheRecordsEachPositionDecided()
+        {
+            ParentChoice[] choices =
+            [
+                new(TheFeature, 0, false),
+                new(TheOtherFeature, 0, false),
+                new(TheFeature, 1, false),
+                ParentChoice.NoParent,
+            ];
+
+            var line = ParentPlacementReport.WhereTheParentsCameFrom(TheOwner, "F:12, P, F:13", 3, choices, 2);
+
+            Assert.That(line, Is.EqualTo(
+                "Parent sources for Team \"Payments\": F:12, P, F:13; 4 records resolved by position 1: 2, 2: 1, 3: 0, none: 1; "
+                + "2 fell through to stored-Feature placement"));
+        }
+
         private static RecordPlacement Placed(string referenceId, ParentCandidate[] candidates, params (string Key, DateTime? Created)[] storedFeatures)
         {
             var links = ParentResolution.From(candidates);

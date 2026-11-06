@@ -31,6 +31,8 @@ namespace Lighthouse.Backend.Tests.API
 
         private const int StoredIdOfTheNewField = 50;
 
+        private const int ACausedByField = 5;
+
         private static readonly int?[] TheNewFieldStoredBeforeTheDefaultNamesIt = [null, StoredIdOfTheNewField];
 
         [SetUp]
@@ -603,6 +605,93 @@ namespace Lighthouse.Backend.Tests.API
             public override ValidationProblemDetails CreateValidationProblemDetails(
                 HttpContext httpContext, ModelStateDictionary modelStateDictionary, int? statusCode = null, string? title = null, string? type = null, string? detail = null, string? instance = null)
                 => new(modelStateDictionary) { Status = statusCode, Title = title };
+        }
+
+        private static IEnumerable<TestCaseData> ParentSourcesDefaultsThatCannotBeKept()
+        {
+            var ownParent = new ParentSourceEntryDto { Kind = ParentSourceKind.TrackerParent };
+            ParentSourceEntryDto Field(int id) => new() { Kind = ParentSourceKind.AdditionalField, AdditionalFieldDefinitionId = id };
+
+            yield return new TestCaseData(new List<ParentSourceEntryDto?>(), "A list needs at least one source.").SetName("A Parent sources default with no entries");
+            yield return new TestCaseData(new List<ParentSourceEntryDto?> { new() { Kind = ParentSourceKind.AdditionalField } }, "A source is the own Parent or one Additional Field.").SetName("A Parent sources default naming no field");
+            yield return new TestCaseData(new List<ParentSourceEntryDto?> { ownParent, Field(1), Field(2), Field(3), Field(4), Field(5) }, "A list holds at most 5 sources.").SetName("A Parent sources default of six entries");
+            yield return new TestCaseData(new List<ParentSourceEntryDto?> { ownParent, ownParent }, "A source is listed twice.").SetName("A Parent sources default repeating an entry");
+        }
+
+        [TestCaseSource(nameof(ParentSourcesDefaultsThatCannotBeKept))]
+        public async Task UpdateWorkTrackingSystemConnection_AParentSourcesDefaultThatCannotBeKept_IsRefusedAndNothingIsStored(List<ParentSourceEntryDto?> list, string why)
+        {
+            var (subject, existingConnection, save) = AJiraConnectionSaving(new ConnectionDefaultsDto { ParentSourcesForTeams = list });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, save);
+
+            var refusal = result.Result as ObjectResult;
+            var problem = refusal?.Value as ProblemDetails;
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(refusal?.StatusCode, Is.EqualTo(400));
+                Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-parent-sources-refused"));
+                Assert.That(problem?.Title, Is.EqualTo("The Teams' default names parent sources that cannot be kept."));
+                Assert.That(problem?.Detail, Is.EqualTo($"{why} Nothing was saved."));
+                Assert.That(existingConnection.ParentSourcesForTeams, Is.Null);
+            }
+
+            repositoryMock.Verify(x => x.Save(), Times.Never);
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_ThePortfoliosParentSourcesDefaultThatCannotBeKept_IsRefusedInTheirName()
+        {
+            var (subject, _, save) = AJiraConnectionSaving(new ConnectionDefaultsDto { ParentSourcesForPortfolios = [] });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, save);
+
+            var problem = (result.Result as ObjectResult)?.Value as ProblemDetails;
+            Assert.That(problem?.Title, Is.EqualTo("The Portfolios' default names parent sources that cannot be kept."));
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_AParentSourcesDefaultWithOneFieldOfNoConnection_IsRefused()
+        {
+            var (subject, _, save) = AJiraConnectionSaving(new ConnectionDefaultsDto
+            {
+                ParentSourcesForTeams = ParentSourceEntryDto.ListOf(ParentSources.Of([ParentSourceEntry.Field(ACausedByField), ParentSourceEntry.Field(9999)]).List!),
+            });
+
+            var result = await subject.UpdateWorkTrackingSystemConnectionAsync(12, save);
+
+            var problem = (result.Result as ObjectResult)?.Value as ProblemDetails;
+            Assert.That(problem?.Extensions["code"], Is.EqualTo("connection-default-field-unknown"));
+        }
+
+        [Test]
+        public async Task UpdateWorkTrackingSystemConnection_AParentSourcesDefaultOfItsOwnFields_IsHeldWithTheOldFieldInStep()
+        {
+            var list = ParentSources.Of([ParentSourceEntry.Field(ACausedByField), ParentSourceEntry.TrackerParent]).List!;
+            var (subject, existingConnection, save) = AJiraConnectionSaving(new ConnectionDefaultsDto { ParentSourcesForTeams = ParentSourceEntryDto.ListOf(list) });
+
+            await subject.UpdateWorkTrackingSystemConnectionAsync(12, save);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(existingConnection.ParentSourcesForTeams?.ToStoredText(), Is.EqualTo(list.ToStoredText()));
+                Assert.That(existingConnection.ParentOverrideForTeams, Is.EqualTo(ACausedByField));
+            }
+        }
+
+        private (WorkTrackingSystemConnectionController Subject, WorkTrackingSystemConnection Connection, WorkTrackingSystemConnectionDto Save) AJiraConnectionSaving(ConnectionDefaultsDto defaults)
+        {
+            var existingConnection = new WorkTrackingSystemConnection { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira };
+            existingConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = ACausedByField, DisplayName = "Caused by", Reference = "customfield_10500" });
+            repositoryMock.Setup(x => x.GetById(12)).Returns(existingConnection);
+            licenseServiceMock.Setup(x => x.CanUsePremiumFeatures()).Returns(true);
+            var subject = CreateSubject();
+            subject.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+            subject.ProblemDetailsFactory = new PlainProblemDetailsFactory();
+            var save = new WorkTrackingSystemConnectionDto { Id = 12, Name = "Jira DC", WorkTrackingSystem = WorkTrackingSystems.Jira, Defaults = defaults };
+            save.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinitionDto { Id = ACausedByField, DisplayName = "Caused by", Reference = "customfield_10500" });
+
+            return (subject, existingConnection, save);
         }
 
         private WorkTrackingSystemConnectionController CreateSubject()

@@ -17,6 +17,8 @@ namespace Lighthouse.Backend.Tests.Models
 
         private static readonly ParentSourceEntry OwnParent = ParentSourceEntry.TrackerParent;
 
+        private static readonly int[] SixIdsOneRepeated = [1, 2, 3, 4, 5, 5];
+
         private static ParentSourceEntry Field(int id) => ParentSourceEntry.Field(id);
 
         private static IEnumerable<TestCaseData> ListsThatCanBeKept()
@@ -25,6 +27,33 @@ namespace Lighthouse.Backend.Tests.Models
             yield return new TestCaseData((object)new[] { Field(11) }).SetName("One entry: only a field");
             yield return new TestCaseData((object)new[] { Field(12), Field(11), OwnParent }).SetName("The order given is the order kept");
             yield return new TestCaseData((object)new[] { OwnParent, Field(11), Field(12), Field(13), Field(14) }).SetName("Five entries, the most a list holds");
+        }
+
+        [Test]
+        public void Stored_text_holding_no_list_at_all_is_refused_as_an_empty_list()
+        {
+            Assert.That(() => ParentSources.FromStoredText("null"), Throws.TypeOf<FormatException>());
+        }
+
+        [Test]
+        public void A_refused_stored_list_quotes_the_text_and_every_reason()
+        {
+            var sixEntriesOneRepeated = string.Concat(
+                "[",
+                string.Join(",", SixIdsOneRepeated.Select(id => $$"""{"Kind":1,"AdditionalFieldDefinitionId":{{id}}}""")),
+                "]");
+
+            Assert.That(
+                () => ParentSources.FromStoredText(sixEntriesOneRepeated),
+                Throws.TypeOf<FormatException>().With.Message.EqualTo($"The stored parent sources '{sixEntriesOneRepeated}' cannot be kept: TooMany, Duplicate."));
+        }
+
+        [Test]
+        public void An_entry_that_cannot_exist_names_its_kind_and_field()
+        {
+            Assert.That(
+                () => ParentSources.FromStoredText("""[{"Kind":0,"AdditionalFieldDefinitionId":3}]"""),
+                Throws.InstanceOf<ArgumentException>().With.Message.EqualTo("A parent source of kind TrackerParent cannot have the field id '3'."));
         }
 
         [TestCaseSource(nameof(ListsThatCanBeKept))]

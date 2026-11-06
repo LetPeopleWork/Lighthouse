@@ -126,6 +126,21 @@ describe("the Parent sources list of a Team", () => {
 			expect(screen.getByLabelText("Move Is caused by down")).toHaveFocus();
 		});
 
+		it("stays on the up button of a row that can go on moving up", () => {
+			aListThatTakesItsEdits();
+
+			press("Move Sponsor up");
+
+			expect(theRows()[1]).toContain("Sponsor");
+			expect(screen.getByLabelText("Move Sponsor up")).toHaveFocus();
+		});
+
+		it("takes no focus until a row has moved", () => {
+			aListThatTakesItsEdits();
+
+			expect(document.body).toHaveFocus();
+		});
+
 		it("goes to the row's other button when the row reaches the end of the list", () => {
 			aListThatTakesItsEdits();
 
@@ -160,6 +175,37 @@ describe("the Parent sources list of a Team", () => {
 			}),
 		);
 		expect(onChange).toHaveBeenCalledWith([field(11), ownParent, field(13)]);
+	});
+
+	it("numbers the rows in the order they are read", () => {
+		aListOf([field(11), field(12)]);
+
+		expect(theRows()[0]).toMatch(/^1Is caused by/);
+		expect(theRows()[1]).toMatch(/^2Program Ref/);
+	});
+
+	it("takes a source out with its Remove button", () => {
+		const onChange = aListOf([field(11), field(12)]);
+
+		fireEvent.click(screen.getByLabelText("Remove Is caused by"));
+
+		expect(onChange).toHaveBeenCalledWith([field(12)]);
+	});
+
+	it("says what the picker adds while there is still room", () => {
+		aListOf([field(11)]);
+
+		expect(
+			screen.getByText(
+				"Adds Parent (Jira's own) or an Additional Field not yet in the list.",
+			),
+		).toBeInTheDocument();
+	});
+
+	it("warns of nothing when the tracker's own parent is listed, wherever it stands", () => {
+		aListOf([field(11), ownParent]);
+
+		expect(screen.queryByText(/Not in the list/)).not.toBeInTheDocument();
 	});
 
 	it("at five says why nothing more can be added, names a field it cannot find, and says what leaving out the tracker's own parent costs", () => {

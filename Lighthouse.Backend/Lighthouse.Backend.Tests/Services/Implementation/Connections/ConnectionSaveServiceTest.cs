@@ -23,6 +23,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
 
         private const int ParentLinkId = 41;
 
+        private const int TheListedField = 42;
+
         private static readonly int[] TeamsOnTheOwnedConnection = [2];
 
         private static readonly int[] PortfoliosOnTheOwnedConnection = [7];
@@ -235,6 +237,46 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Connections
                 Assert.That(written, Has.Count.EqualTo(1));
                 Assert.That(written, Has.Some.EqualTo("Connection Connection changed the Teams' Parent sources default from none to Caused by; 2 Teams follow it: Alpha, Bravo; no update queued; parent sources moved 2 Teams."));
             }
+        }
+
+        [Test]
+        public async Task Commit_AParentSourcesDefaultOfSeveralSources_IsLoggedAsTheListItIs()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.SetParentSourcesDefaultForTeams(ParentSources.Of(
+                [ParentSourceEntry.Field(CausedById), ParentSourceEntry.TrackerParent, ParentSourceEntry.Field(TheListedField)]).List);
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information).Single(), Does.Contain($"from none to Caused by, own Parent, Unknown field (id {TheListedField});"));
+        }
+
+        [Test]
+        public async Task Commit_AParentSourcesDefaultOfAFieldThenTheOwnParent_IsLoggedByThatFieldAlone()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.SetParentSourcesDefaultForTeams(ParentSources.FromTheLegacyField(CausedById));
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information).Single(), Does.Contain("from none to Caused by;"));
+        }
+
+        [Test]
+        public async Task Commit_AParentSourcesDefaultOfTheOwnParentThenAField_NamesBoth()
+        {
+            var log = new RecordingLogger<ConnectionSaveService>();
+            var subject = CreateSubjectForAConnectionWithNamedTeams(log);
+            var handle = await OpenTheOwnedConnection(subject);
+            handle.Connection.SetParentSourcesDefaultForTeams(ParentSources.Of([ParentSourceEntry.TrackerParent, ParentSourceEntry.Field(CausedById)]).List);
+
+            await subject.Commit(handle, concurrencyToken: null, startUpdates: false, CancellationToken.None);
+
+            Assert.That(log.Written(LogLevel.Information).Single(), Does.Contain("from none to own Parent, Caused by;"));
         }
 
         [Test]
