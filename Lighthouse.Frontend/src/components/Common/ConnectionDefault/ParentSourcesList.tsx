@@ -10,6 +10,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import { useEffect, useRef } from "react";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -59,6 +60,14 @@ interface ParentSourceRowProps {
 	onEdit: (action: ParentSourcesAction) => void;
 }
 
+// A refused Remove stays focusable, so a keyboard or a screen reader can reach why it is refused. It only looks
+// the way a disabled button does.
+const LooksDisabled = {
+	color: "action.disabled",
+	cursor: "default",
+	"&:hover": { backgroundColor: "transparent" },
+};
+
 const ParentSourceRow: React.FC<Readonly<ParentSourceRowProps>> = ({
 	position,
 	name,
@@ -69,7 +78,30 @@ const ParentSourceRow: React.FC<Readonly<ParentSourceRowProps>> = ({
 	const moveUp: ParentSourcesAction = { type: "moveUp", index: position };
 	const moveDown: ParentSourcesAction = { type: "moveDown", index: position };
 	const remove: ParentSourcesAction = { type: "remove", index: position };
+	const cannotMoveUp = isRefused(moveUp);
+	const cannotMoveDown = isRefused(moveDown);
 	const cannotBeRemoved = isRefused(remove);
+
+	const moveUpButton = useRef<HTMLButtonElement>(null);
+	const moveDownButton = useRef<HTMLButtonElement>(null);
+	const positionBeforeTheMove = useRef<number | null>(null);
+
+	const move = (action: ParentSourcesAction) => {
+		positionBeforeTheMove.current = position;
+		onEdit(action);
+	};
+
+	// The browser drops focus when the pressed button turns disabled at the end of the list, or when its row is
+	// moved in the page. Focus goes back to that button, or to the row's other one once it can go no further.
+	useEffect(() => {
+		const before = positionBeforeTheMove.current;
+		if (before === null || before === position) {
+			return;
+		}
+		positionBeforeTheMove.current = null;
+		const staysOnUp = position < before ? !cannotMoveUp : cannotMoveDown;
+		(staysOnUp ? moveUpButton : moveDownButton).current?.focus();
+	}, [position, cannotMoveUp, cannotMoveDown]);
 
 	return (
 		<ListItem disableGutters sx={{ gap: 1 }}>
@@ -82,17 +114,19 @@ const ParentSourceRow: React.FC<Readonly<ParentSourceRowProps>> = ({
 			</Typography>
 			<IconButton
 				size="small"
+				ref={moveUpButton}
 				aria-label={`Move ${name} up`}
-				disabled={isRefused(moveUp)}
-				onClick={() => onEdit(moveUp)}
+				disabled={cannotMoveUp}
+				onClick={() => move(moveUp)}
 			>
 				<ArrowUpwardIcon fontSize="small" />
 			</IconButton>
 			<IconButton
 				size="small"
+				ref={moveDownButton}
 				aria-label={`Move ${name} down`}
-				disabled={isRefused(moveDown)}
-				onClick={() => onEdit(moveDown)}
+				disabled={cannotMoveDown}
+				onClick={() => move(moveDown)}
 			>
 				<ArrowDownwardIcon fontSize="small" />
 			</IconButton>
@@ -100,17 +134,16 @@ const ParentSourceRow: React.FC<Readonly<ParentSourceRowProps>> = ({
 				title={cannotBeRemoved ? "A list needs at least one source" : ""}
 				describeChild
 			>
-				{/* A disabled button is not an event target, so the tooltip hangs on a wrapper instead. */}
-				<span>
-					<IconButton
-						size="small"
-						aria-label={`Remove ${name}`}
-						disabled={cannotBeRemoved}
-						onClick={() => onEdit(remove)}
-					>
-						<CloseIcon fontSize="small" />
-					</IconButton>
-				</span>
+				<IconButton
+					size="small"
+					aria-label={`Remove ${name}`}
+					aria-disabled={cannotBeRemoved}
+					disableRipple={cannotBeRemoved}
+					sx={cannotBeRemoved ? LooksDisabled : undefined}
+					onClick={cannotBeRemoved ? undefined : () => onEdit(remove)}
+				>
+					<CloseIcon fontSize="small" />
+				</IconButton>
 			</Tooltip>
 		</ListItem>
 	);

@@ -1,4 +1,6 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
@@ -51,15 +53,96 @@ describe("the Parent sources list of a Team", () => {
 	});
 
 	it("will not let the only source be removed, and says why on its tooltip", async () => {
-		aListOf([field(11)]);
+		const onChange = aListOf([field(11)]);
 
 		const remove = screen.getByLabelText("Remove Is caused by");
-		expect(remove).toBeDisabled();
+		expect(remove).toHaveAttribute("aria-disabled", "true");
 
-		fireEvent.mouseOver(remove.parentElement ?? remove);
+		fireEvent.click(remove);
+		expect(onChange).not.toHaveBeenCalled();
+
+		fireEvent.mouseOver(remove);
 		expect(
 			await screen.findByText("A list needs at least one source"),
 		).toBeInTheDocument();
+	});
+
+	it("lets a keyboard and a screen reader reach why the only source cannot be removed", async () => {
+		aListOf([field(11)]);
+		const remove = screen.getByRole("button", {
+			name: "Remove Is caused by",
+		});
+
+		expect(remove).toHaveAccessibleDescription(
+			"A list needs at least one source",
+		);
+
+		await userEvent.tab();
+
+		expect(remove).toHaveFocus();
+	});
+
+	it("describes no reason on a source that can be removed", () => {
+		aListOf([field(11), field(12)]);
+
+		expect(
+			screen.getByRole("button", { name: "Remove Is caused by" }),
+		).toHaveAccessibleDescription("");
+	});
+
+	describe("keeps keyboard focus through a move", () => {
+		const aListThatTakesItsEdits = () => {
+			const TheList = () => {
+				const [list, setList] = useState<readonly ParentSourceEntry[]>([
+					field(11),
+					field(12),
+					field(13),
+				]);
+				return (
+					<ParentSourcesList
+						owner="Team"
+						value={list}
+						tracker="Jira"
+						additionalFieldDefinitions={TheFields}
+						onChange={setList}
+					/>
+				);
+			};
+			render(<TheList />);
+		};
+
+		const press = (label: string) => {
+			const button = screen.getByLabelText(label);
+			button.focus();
+			fireEvent.click(button);
+		};
+
+		it("stays on the moved row's button while the row can go on moving", () => {
+			aListThatTakesItsEdits();
+
+			press("Move Is caused by down");
+
+			expect(theRows()[1]).toContain("Is caused by");
+			expect(screen.getByLabelText("Move Is caused by down")).toHaveFocus();
+		});
+
+		it("goes to the row's other button when the row reaches the end of the list", () => {
+			aListThatTakesItsEdits();
+
+			press("Move Program Ref down");
+
+			expect(theRows()[2]).toContain("Program Ref");
+			expect(screen.getByLabelText("Move Program Ref up")).toHaveFocus();
+		});
+
+		it("goes to the row's other button when the row reaches the top of the list", () => {
+			aListThatTakesItsEdits();
+
+			press("Move Program Ref up");
+
+			expect(theRows()[0]).toContain("Program Ref");
+			expect(screen.getByLabelText("Move Program Ref down")).toHaveFocus();
+		});
 	});
 
 	it("offers only what is not listed yet, stops at five with its reason, and names a field it cannot find", () => {
