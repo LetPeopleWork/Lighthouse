@@ -5,22 +5,24 @@ import type {
 import { isValidDate } from "../../../utils/date/isValidDate";
 
 // Named as each setting's own label reads, which for the owner field carries this instance's word for a Feature.
-const SETTING_NAMES: Readonly<Record<string, (featureTerm: string) => string>> =
-	{
-		ParentOverrideField: () => "Parent Override Field",
-		DependencyField: () => "Dependency Field",
-		SizeEstimateField: () => "Size Estimate Field",
-		FeatureOwnerField: (featureTerm) => `${featureTerm} Owner Field`,
-		EstimationField: () => "Estimation Field",
-	};
+// A sentence opens with this, so a label in the plural is worded to take the same singular verb as the others.
+const SETTING_SUBJECTS: Readonly<
+	Record<string, (featureTerm: string) => string>
+> = {
+	ParentOverrideField: () => "One of the Parent sources",
+	DependencyField: () => "The Dependency Field",
+	SizeEstimateField: () => "The Size Estimate Field",
+	FeatureOwnerField: (featureTerm) => `The ${featureTerm} Owner Field`,
+	EstimationField: () => "The Estimation Field",
+};
 
 const twoDistinctEnds = (seen: readonly string[]) =>
 	seen.length === 2 && seen[0].toLowerCase() !== seen[1].toLowerCase();
 
 // A type whose two ends share one phrase has no end to name instead, so advising one would repeat
 // the very name that failed.
-const pointsBothWays = (settingName: string, finding: RefreshFinding) => {
-	const statement = `The ${settingName} names "${finding.named}", which points both ways.`;
+const pointsBothWays = (settingSubject: string, finding: RefreshFinding) => {
+	const statement = `${settingSubject} names "${finding.named}", which points both ways.`;
 	if (!twoDistinctEnds(finding.seen)) {
 		return statement;
 	}
@@ -28,11 +30,11 @@ const pointsBothWays = (settingName: string, finding: RefreshFinding) => {
 };
 
 const matchedNothing = (
-	settingName: string,
+	settingSubject: string,
 	finding: RefreshFinding,
 	featureTerm: string,
 ) => {
-	const statement = `The ${settingName} names "${finding.named}", and no ${featureTerm} carries that link.`;
+	const statement = `${settingSubject} names "${finding.named}", and no ${featureTerm} carries that link.`;
 	if (finding.seen.length === 0) {
 		return statement;
 	}
@@ -40,22 +42,22 @@ const matchedNothing = (
 };
 
 type FindingSentence = (
-	settingName: string,
+	settingSubject: string,
 	finding: RefreshFinding,
 	featureTerm: string,
 ) => string;
 
-const cannotBeReadHere = (settingName: string) =>
-	`The ${settingName} points at an Azure DevOps relation type, which only the Dependency Field reads.`;
+const cannotBeReadHere = (settingSubject: string) =>
+	`${settingSubject} points at an Azure DevOps relation type, which only the Dependency Field reads.`;
 
-const hasNoDirection = (settingName: string, finding: RefreshFinding) =>
-	`The ${settingName} names "${finding.named}", which has no direction. Name a relation type with two ends, such as "System.LinkTypes.Dependency-Reverse".`;
+const hasNoDirection = (settingSubject: string, finding: RefreshFinding) =>
+	`${settingSubject} names "${finding.named}", which has no direction. Name a relation type with two ends, such as "System.LinkTypes.Dependency-Reverse".`;
 
-const namedWithoutItsEnd = (settingName: string, finding: RefreshFinding) =>
-	`The ${settingName} names "${finding.named}" without its end. Name one end: "${finding.named}-Forward" or "${finding.named}-Reverse".`;
+const namedWithoutItsEnd = (settingSubject: string, finding: RefreshFinding) =>
+	`${settingSubject} names "${finding.named}" without its end. Name one end: "${finding.named}-Forward" or "${finding.named}-Reverse".`;
 
 const parentSourceMatchedNothing = (
-	_settingName: string,
+	_settingSubject: string,
 	finding: RefreshFinding,
 ) =>
 	`Parent source "${finding.named}" matched no field and no link type. The next source in the list was read instead.`;
@@ -75,12 +77,12 @@ export const sentenceFor = (
 	finding: RefreshFinding,
 	featureTerm = "Feature",
 ): string | null => {
-	const settingName = SETTING_NAMES[finding.setting];
+	const settingSubject = SETTING_SUBJECTS[finding.setting];
 	const sentence = SENTENCES[finding.kind];
-	if (settingName === undefined || sentence === undefined) {
+	if (settingSubject === undefined || sentence === undefined) {
 		return null;
 	}
-	return sentence(settingName(featureTerm), finding, featureTerm);
+	return sentence(settingSubject(featureTerm), finding, featureTerm);
 };
 
 const MONTHS = [

@@ -23,7 +23,7 @@ import AdvancedInputsComponent from "./AdvancedInputs";
 /**
  * Sam, config-admin, is about to set the Parent sources on a Team's or a Portfolio's settings. Beside them sits
  * an info button, "About Parent sources". Opening it shows that the field reads the link or
- * field on the item that points to its parent, with the tracker's own example, that None keeps the tracker's own
+ * field on the item that points to its parent, with the tracker's own example, what stands for the tracker's own
  * parent, and a "Learn More" link opening the matching docs section in a new tab.
  */
 
@@ -69,12 +69,29 @@ const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(PARENT_OVERRIDE));
 
 describe("Story 6352: Parent sources says which way round it reads", () => {
-	it("on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and what None does", async () => {
+	it("on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and which row is Jira's own parent", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
 
 		const tip = await whenSamOpensTheTip();
 		expect(tip).toHaveTextContent(IS_CAUSED_BY);
-		expect(tip).toHaveTextContent(/None/);
+		expect(tip).toHaveTextContent(
+			"Parent (Jira's own) is the parent Jira itself records.",
+		);
+		expect(tip).not.toHaveTextContent(/None/);
+	});
+
+	it("the select an Azure DevOps Team still has keeps saying what None does", async () => {
+		await givenSamOpensTheSettingsOf("Team", "AzureDevOps");
+
+		expect(await whenSamOpensTheTip()).toHaveTextContent(
+			"With None, the parent the tracker itself records is used.",
+		);
+	});
+
+	it("the select on a Jira connection, which has a None until it holds a list, keeps saying what None does", () => {
+		expect(theTipOn("Jira")).toContain(
+			"With None, the parent the tracker itself records is used.",
+		);
 	});
 
 	it("on a Jira Portfolio, the tip gives the same example", async () => {

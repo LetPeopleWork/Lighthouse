@@ -4,6 +4,7 @@ import type {
 	WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { FieldInfo } from "../FormSelectField/FormSelectField";
+import { nameOfParentSource } from "./parentSources";
 
 /** The settings whose field is read off one end of a link, so the tip has to say which end. */
 type DirectionTipField = Extract<
@@ -11,6 +12,11 @@ type DirectionTipField = Extract<
 	| "parentOverrideForTeams"
 	| "parentOverrideForPortfolios"
 	| "dependencyFieldForPortfolios"
+>;
+
+type ParentSourcesTipField = Exclude<
+	DirectionTipField,
+	"dependencyFieldForPortfolios"
 >;
 
 /** The tenant's own words the tips speak in. */
@@ -80,6 +86,21 @@ const readsOneEndOfALink = (
 	setting: ConnectionDefaultName,
 ): setting is DirectionTipField => Object.keys(directions).includes(setting);
 
+const tipOf = (
+	direction: FieldDirection,
+	tracker: WorkTrackingSystemType | undefined,
+	terms: DirectionTipTerms,
+	lastSentence: string,
+): DirectionTip => {
+	const example = tracker ? direction.examples[tracker] : undefined;
+	return {
+		text: [direction.whichEnd(terms), example, lastSentence]
+			.filter(Boolean)
+			.join(" "),
+		learnMoreUrl: direction.learnMoreUrl,
+	};
+};
+
 /**
  * Which end of a link the setting's field reads, with the tracker's own example where the tracker is known, and
  * where the docs explain it; undefined for a setting whose field reads no link. One place for the copy, because
@@ -93,12 +114,18 @@ export const directionTip = (
 	if (!readsOneEndOfALink(setting)) {
 		return undefined;
 	}
-	const direction = directions[setting];
-	const example = tracker ? direction.examples[tracker] : undefined;
-	return {
-		text: [direction.whichEnd(terms), example, direction.none]
-			.filter(Boolean)
-			.join(" "),
-		learnMoreUrl: direction.learnMoreUrl,
-	};
+	return tipOf(directions[setting], tracker, terms, directions[setting].none);
 };
+
+/** The tip beside the ordered list, which has no None: the tracker's own parent is a row of it. */
+export const parentSourcesTip = (
+	setting: ParentSourcesTipField,
+	tracker: WorkTrackingSystemType,
+	terms: DirectionTipTerms,
+): DirectionTip =>
+	tipOf(
+		directions[setting],
+		tracker,
+		terms,
+		`${nameOfParentSource({ kind: "TrackerParent" }, tracker, [])} is the parent ${tracker} itself records.`,
+	);

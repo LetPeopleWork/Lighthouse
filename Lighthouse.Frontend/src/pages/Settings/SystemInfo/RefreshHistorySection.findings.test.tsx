@@ -59,7 +59,7 @@ const PointsBothWays: RefreshFinding = {
 	seen: ["blocks", "is blocked by"],
 };
 
-const ARelationTypeAsParentOverride: RefreshFinding = {
+const ARelationTypeAsParentSource: RefreshFinding = {
 	kind: "RelationTypeCannotBeReadHere",
 	setting: "ParentOverrideField",
 	named: "Contoso.DependsOn-Forward",
@@ -141,14 +141,14 @@ describe("Refresh History says what a Portfolio's settings named that its latest
 		).toBeInTheDocument();
 	});
 
-	it("a relation type named as the Parent Override Field says only the Dependency Field reads one", async () => {
+	it("a relation type named among the Parent sources says only the Dependency Field reads one", async () => {
 		await givenRefreshHistoryHolds(
-			paymentsPlatformRows([ARelationTypeAsParentOverride]),
+			paymentsPlatformRows([ARelationTypeAsParentSource]),
 		);
 
 		expect(
 			screen.getByText(
-				"The Parent Override Field points at an Azure DevOps relation type, which only the Dependency Field reads.",
+				"One of the Parent sources points at an Azure DevOps relation type, which only the Dependency Field reads.",
 			),
 		).toBeInTheDocument();
 	});

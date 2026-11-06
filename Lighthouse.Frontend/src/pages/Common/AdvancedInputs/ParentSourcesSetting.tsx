@@ -5,8 +5,8 @@ import {
 	trackerHoldingTheDefault,
 } from "../../../components/Common/ConnectionDefault/connectionDefaultEntry";
 import {
-	directionTip,
 	directionTipTermsFrom,
+	parentSourcesTip,
 } from "../../../components/Common/ConnectionDefault/fieldDirectionTips";
 import ParentSourcesList from "../../../components/Common/ConnectionDefault/ParentSourcesList";
 import { nameOfParentSource } from "../../../components/Common/ConnectionDefault/parentSources";
@@ -109,7 +109,11 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 			additionalFieldDefinitions={additionalFieldDefinitions}
 			onChange={(list) => onSettingsChange("parentSources", list)}
 			followed={follows}
-			info={directionTip(theDefault, tracker, directionTipTermsFrom(getTerm))}
+			info={parentSourcesTip(
+				theDefault,
+				tracker,
+				directionTipTermsFrom(getTerm),
+			)}
 			sourceChoice={
 				offersTheDefault && (
 					<RadioGroup

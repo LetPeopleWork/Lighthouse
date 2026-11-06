@@ -57,14 +57,14 @@ describe("the sentence a refresh finding reads as", () => {
 	});
 
 	it.each<[RefreshFindingSetting, string]>([
-		["ParentOverrideField", "Parent Override Field"],
-		["DependencyField", "Dependency Field"],
-		["SizeEstimateField", "Size Estimate Field"],
-		["FeatureOwnerField", "Feature Owner Field"],
-		["EstimationField", "Estimation Field"],
-	])("the %s is named as the screen labels it", (setting, label) => {
+		["ParentOverrideField", "One of the Parent sources"],
+		["DependencyField", "The Dependency Field"],
+		["SizeEstimateField", "The Size Estimate Field"],
+		["FeatureOwnerField", "The Feature Owner Field"],
+		["EstimationField", "The Estimation Field"],
+	])("the %s is named as the screen labels it", (setting, subject) => {
 		expect(sentenceFor({ ...bothWays("Blocks", []), setting })).toBe(
-			`The ${label} names "Blocks", which points both ways.`,
+			`${subject} names "Blocks", which points both ways.`,
 		);
 	});
 
