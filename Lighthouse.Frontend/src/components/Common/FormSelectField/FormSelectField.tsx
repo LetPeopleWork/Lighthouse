@@ -34,6 +34,7 @@ interface FormSelectFieldProps<T extends string | number> {
 	fullWidth?: boolean;
 	margin?: "none" | "dense" | "normal";
 	info?: FieldInfo;
+	disabled?: boolean;
 }
 
 function FormSelectField<T extends string | number>({
@@ -48,6 +49,7 @@ function FormSelectField<T extends string | number>({
 	fullWidth = true,
 	margin = "normal",
 	info,
+	disabled = false,
 }: Readonly<FormSelectFieldProps<T>>): React.ReactElement {
 	const labelId = useId();
 	// With an entry above None, None is a choice of its own and has to stay readable when picked.
@@ -62,6 +64,7 @@ function FormSelectField<T extends string | number>({
 		<FormControl
 			fullWidth={fullWidth}
 			margin={margin}
+			disabled={disabled}
 			sx={info ? { flex: 1 } : undefined}
 		>
 			<InputLabel id={labelId} shrink={showsNone || undefined}>

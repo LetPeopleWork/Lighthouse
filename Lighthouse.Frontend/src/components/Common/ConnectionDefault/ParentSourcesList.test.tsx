@@ -32,10 +32,8 @@ const aListOf = (value: ParentSourceEntry[]) => {
 const theRows = () =>
 	screen.getAllByRole("listitem").map((row) => row.textContent);
 
-// Skipped until Story 6501 builds the parent sources list; enable one test at a time.
 describe("the Parent sources list of a Team", () => {
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("shows the sources in order and moves one up with its button", () => {
+	it("shows the sources in order and moves one up with its button", () => {
 		const onChange = aListOf([field(11), field(12)]);
 
 		expect(theRows()[0]).toContain("Is caused by");
@@ -48,8 +46,7 @@ describe("the Parent sources list of a Team", () => {
 		expect(screen.getByLabelText("Move Program Ref down")).toBeDisabled();
 	});
 
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("will not let the only source be removed, and says why on its tooltip", async () => {
+	it("will not let the only source be removed, and says why on its tooltip", async () => {
 		aListOf([field(11)]);
 
 		const remove = screen.getByLabelText("Remove Is caused by");
@@ -61,8 +58,7 @@ describe("the Parent sources list of a Team", () => {
 		).toBeInTheDocument();
 	});
 
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("offers only what is not listed yet, stops at five with its reason, and names a field it cannot find", () => {
+	it("offers only what is not listed yet, stops at five with its reason, and names a field it cannot find", () => {
 		const onChange = aListOf([field(11), ownParent]);
 
 		fireEvent.mouseDown(screen.getByRole("combobox", { name: "Add a source" }));
@@ -79,8 +75,7 @@ describe("the Parent sources list of a Team", () => {
 		expect(onChange).toHaveBeenCalledWith([field(11), ownParent, field(13)]);
 	});
 
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("at five says why nothing more can be added, names a field it cannot find, and says what leaving out the tracker's own parent costs", () => {
+	it("at five says why nothing more can be added, names a field it cannot find, and says what leaving out the tracker's own parent costs", () => {
 		aListOf([field(11), field(12), field(13), field(14), field(15)]);
 
 		expect(

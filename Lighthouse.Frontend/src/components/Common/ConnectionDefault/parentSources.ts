@@ -105,6 +105,18 @@ export const entriesStillToAdd = (
 	return everySource.filter((entry) => !isListed(list, entry));
 };
 
+const definitionOf = (
+	entry: ParentSourceEntry,
+	additionalFieldDefinitions: readonly IAdditionalFieldDefinition[],
+): IAdditionalFieldDefinition | undefined =>
+	additionalFieldDefinitions.find(
+		(candidate) => candidate.id === entry.additionalFieldDefinitionId,
+	);
+
+/** Whose parent the tracker's own entry reads, in words: "Jira's own". */
+export const theTrackersOwn = (tracker: WorkTrackingSystemType): string =>
+	`${tracker}'s own`;
+
 /** How a row reads: the field's name, "Parent (Jira's own)", or "Unknown field (id 12)". */
 export const nameOfParentSource = (
 	entry: ParentSourceEntry,
@@ -112,14 +124,21 @@ export const nameOfParentSource = (
 	additionalFieldDefinitions: readonly IAdditionalFieldDefinition[],
 ): string => {
 	if (entry.kind === "TrackerParent") {
-		return `Parent (${tracker}'s own)`;
+		return `Parent (${theTrackersOwn(tracker)})`;
 	}
-	const fieldId = entry.additionalFieldDefinitionId;
-	const definition = additionalFieldDefinitions.find(
-		(candidate) => candidate.id === fieldId,
+	return (
+		definitionOf(entry, additionalFieldDefinitions)?.displayName ??
+		`Unknown field (id ${entry.additionalFieldDefinitionId})`
 	);
-	return definition?.displayName ?? `Unknown field (id ${fieldId})`;
 };
+
+/** True for a saved field the definitions no longer hold, the row that reads "Unknown field (id 12)". */
+export const namesAnUnknownField = (
+	entry: ParentSourceEntry,
+	additionalFieldDefinitions: readonly IAdditionalFieldDefinition[],
+): boolean =>
+	entry.kind === "AdditionalField" &&
+	definitionOf(entry, additionalFieldDefinitions) === undefined;
 
 /** Only the trackers that read the list show it; the others keep the parents they build themselves. */
 export const parentSourcesAreOffered = (
