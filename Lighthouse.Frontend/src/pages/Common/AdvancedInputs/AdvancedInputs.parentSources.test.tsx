@@ -161,6 +161,7 @@ describe("a Team's Advanced Configuration", () => {
 		fireEvent.click(screen.getByLabelText("toggle"));
 
 		expect(screen.getByText("Parent sources")).toBeInTheDocument();
+		expect(screen.getByText("Parent (Jira's own)")).toBeInTheDocument();
 	});
 
 	it("offers no Connection default while the connection holds no list and the Team does not follow it", () => {

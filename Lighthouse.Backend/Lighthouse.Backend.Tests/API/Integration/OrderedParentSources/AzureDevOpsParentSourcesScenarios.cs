@@ -152,13 +152,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
         }
 
         /// <summary>
-        /// Given a Team that named "Custom.EpicLink" as its only Parent Override Field before the upgrade, so it now
-        /// lists "Custom.EpicLink" then the native parent, and item 4710 has an Epic Link value while item 4713 has
-        /// none and the native parent 9050, when the Team refreshes after the upgrade, then 4710 keeps the parent it
-        /// had, 4713 now shows under 9050, and the relations are read on every refresh from then on.
+        /// Given a Team that lists "Custom.EpicLink" then the native parent, and item 4710 has an Epic Link value
+        /// while item 4713 has none and the native parent 9050, when the Team refreshes, then 4710 keeps the parent
+        /// its field gives, 4713 shows under 9050, and the relations are read on every refresh that fetches items.
         /// </summary>
         [Test]
-        public async Task After_the_upgrade_an_item_with_no_field_value_and_a_native_parent_hangs_under_it_and_relations_are_read_each_refresh_that_fetches_it()
+        public async Task A_list_of_a_field_then_the_own_parent_hangs_an_item_with_no_field_value_under_its_native_parent_and_reads_relations_each_refresh_that_fetches_it()
         {
             var contoso = TheOrganisationAt(ContosoOrganisation);
             contoso.FieldsItDefines.Add(EpicLink);
