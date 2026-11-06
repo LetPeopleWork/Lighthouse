@@ -221,7 +221,7 @@ lower than 56 needs the four slowest files faster first (Q4).
 - **Revised by D-6462-15**: the table below is the measurement, not the final list. The final list keeps the three "loosens" rows at their old ceiling and, of the rows marked new, only `JiraOriginalNamesLiveTest`, `CategoryListNormalisationSeederOnBothProvidersTests`, `ConnectionFieldChange.Slice01FieldChangeUpdatesItsOwnersTest` and `ConnectionDefaultsUpgradeMigrationTests`.
 - Reasons for new entries use the wording already in the file: "boots the app in a test host and creates and seeds a database for every scenario" for `API.Integration.*`, "starts a fresh Postgres container and applies every migration to prove the schema on a real provider" for `Integration.Containers.*`, "calls the live work tracking system over the network; runs only when that connector's code changes" for `JiraOriginalNamesLiveTest`.
 
-Entries after T4 (largest-first; "Runs" is the number of runs the class appeared in, a class with a failed test is left out of that run):
+Measured proposals before D-6462-15, not the final list (largest-first; "Runs" is the number of runs the class appeared in, a class with a failed test is left out of that run):
 
 | # | Class | Runs | Min | Median | Max | New ceiling | Old | Change |
 |---|---|---|---|---|---|---|---|---|
@@ -333,7 +333,7 @@ Old entries that drop (2.1 x largest time seen is at most 34 s):
 |---|---|---|
 | Backend budget step | always `--warn-only`; 3 to 5 warnings on every `main` run (Measurement), build green | fails the build; `LIGHTHOUSE_BUDGET_WARN_ONLY=true` softens it |
 | Frontend budget step | fails the build; `case` block in the YAML parses the variable | fails the build; the script parses the variable; one command; an invalid value exits 2 where the YAML exited 1 |
-| Frontend per-file budget | 63 s, 9 ceilings (97 to 182 s) | **56 s, no ceilings** |
+| Frontend per-file budget | 63 s, 9 ceilings (67 to 182 s) | **56 s, no ceilings** |
 | Backend per-class budget | 34 s, 61 ceilings | **34 s, 23 ceilings**: 4 new, 16 tightened, 3 unchanged, 42 gone |
 | Per-test `LIMIT_FACTOR` | 3 | 3 (measured; see above) |
 | Entry that is not needed | not detected (only a missing unit is "stale") | fails: ceiling equal to the budget (both stacks), frontend entry above the budget whose file ran under 14 s; a ceiling below the budget stays allowed |
@@ -353,7 +353,7 @@ flowchart LR
 |---|---|---|
 | `Scripts/test-timings/test-time-budget.json` | MODIFY (data) | Frontend: `budget_seconds` 56, `allowlist` empty. Backend: 23 entries as D-6462-15 narrows the table above, existing reasons kept. |
 | `Scripts/test-timings/check_budget.py` | MODIFY | `warn_only_requested(env, flag) -> bool` (pure; flag wins, then the variable, else enforce; other values raise `CannotJudge`); `unneeded_entries(stack, rows, budget, ceilings) -> list[str]` (pure; ceiling equal to the budget, or frontend ceiling above the budget with the file under budget / 4; a ceiling below the budget is never named); one extra annotation line, same escaping as the stale one; a `::notice::` naming the variable when it is `true`. `_check` returns 1 on stale or unneeded as well. |
-| `Scripts/test-timings/tests/test_check_budget.py` | MODIFY (extend `BudgetCheckTestCase` classes) | Rows below. |
+| `Scripts/test-timings/tests/test_check_budget_time_budgets.py` | NEW sibling file; `test_check_budget.py` unchanged | Rows below. |
 | `.github/workflows/ci_backend.yml` | MODIFY | Two steps: "Test the budget check" (the unit suite, no switch in its env) and "Check test-time budget" (`env:` with the variable, no `--warn-only`, comment rewritten). |
 | `.github/workflows/ci_frontend.yml` | MODIFY | Same two steps; the `case` block and its `--warn-only` branch go, replaced by one command with the same `env:`; comment says the limits are measured on plain runs. Line 17 comment unchanged. |
 | `Lighthouse.Frontend/vitest.config.ts`, `src/tests/timeBudget/*` | UNCHANGED | `LIMIT_FACTOR` stays 3. |
