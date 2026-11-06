@@ -1073,7 +1073,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             if (finding.Kind == RefreshFindingKind.RelationTypeCannotBeReadHere)
             {
                 logger.LogWarning(
-                    "{Owner}: its {Setting} names '{Named}', an Azure DevOps relation type, which only the Dependency Field reads, so that entry was skipped.",
+                    "{Owner}: its {Setting} names '{Named}', an Azure DevOps relation type, which only the Dependency Field reads, so it was skipped.",
                     owner,
                     setting,
                     finding.Named);

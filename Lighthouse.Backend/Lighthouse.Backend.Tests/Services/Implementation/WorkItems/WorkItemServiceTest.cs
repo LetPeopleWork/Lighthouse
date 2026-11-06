@@ -1993,7 +1993,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
 
             Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
                 $"Portfolio {portfolio.Name}: its Parent sources list names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
-                + "which only the Dependency Field reads, so that entry was skipped."));
+                + "which only the Dependency Field reads, so it was skipped."));
         }
 
         [TestCase(RefreshFindingKind.RelationTypeCannotBeReadHere)]
@@ -2041,7 +2041,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                     "Refresh History reads a Team's findings off what its refresh returns, once per kind and setting.");
                 Assert.That(whatTheServiceWrote.Warnings, Has.One.EqualTo(
                     $"Team {team.Name}: its Parent sources list names 'Contoso.DependsOn-Forward', an Azure DevOps relation type, "
-                    + "which only the Dependency Field reads, so that entry was skipped."));
+                    + "which only the Dependency Field reads, so it was skipped."));
             }
         }
 
