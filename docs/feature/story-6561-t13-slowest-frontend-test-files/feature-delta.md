@@ -447,3 +447,269 @@ E2E, `setupTests.ts`, the reporter and allow-list, every external call (this wor
 Enforcement tooling for the styles above: the existing Biome and `tsc` gates, the time-budget reporter (per-test) and
 `check_budget.py` (per-file, this Story's own target), and `reportsPage.enforcement.test.ts` and
 `layerBoundaries.enforcement.test.ts` for module boundaries. No new tool.
+
+## Wave: DEVOPS / [REF] Platform readiness
+
+Existing platform; nothing new is deployed and no workflow changes in this run. Written 2026-11-06 under `/afk`.
+
+| Topic | Answer |
+|---|---|
+| Environment | Local Vitest and the existing "Verify Frontend" job. |
+| CI/CD | Unchanged. The per-test guard and the per-file budget from T4 judge the rewritten files on the first push. |
+| Rollback | Revert the rewrite commit of a file; each file's rewrite is its own commit. |
+| Monitoring | `test-timings-frontend` artifacts, read by hand for the budget step after at least 5 `main` runs. No dashboard, no alert. |
+| Local measurement | Another session may run mutation testing at the same time. Load is recorded with each reading, before and after run in alternating pairs under similar load, and a reading under high load is retaken, not used. |
+| Mutation | Project strategy stays per-feature. A run applies only to a production file an extraction touched; none if the maintainer declines the extraction. It runs last, and after the other session's run has finished. |
+| Usage-data event | N/A, because no user of the product reaches test files, so no event could show use. |
+| RBAC, Clients, Website, UI sketch | N/A, because no route, DTO, page or marketing claim changes. |
+
+## Wave: DISTILL / [REF] Scope, reconciliation and baseline (2026-11-06, maintainer AFK)
+
+- Shape: behaviour-free rewrites of seven test files under FE7's contract. No product behaviour is specified, so there is no
+  new acceptance scenario to write: the acceptance criterion of every slice is that the existing behaviour stays pinned, and
+  the checks below pin that.
+- Reconciliation: DISCUSS (brief and Checklist), DESIGN and DEVOPS read; **0 hard contradictions**. Two soft points, both
+  resolved in favour of DESIGN and recorded: (1) the DISCUSS checklist says "the budget falls in this Story" while D-6561-13
+  makes it a follow-up commit after five `main` runs; read as "in this Story, as its last commit", so the checklist item stays
+  open until that commit. (2) DESIGN's counts differ from a run (next table); they are corrections of figures, not of
+  decisions, and the run's numbers win.
+- UI sketches: N/A, because nothing a user sees changes. No nWave scenario tag in any test; an untagged test is correct.
+- Mechanism: Vitest and React Testing Library, run per named file with `LIGHTHOUSE_TEST_WORKERS=2` from `Lighthouse.Frontend`.
+  The full suite and Stryker are not run in this wave (another session is mutating on the machine).
+
+### Baseline (run of 2026-11-06 on the pre-slice commit `d45a63265`, 329 of 329 passed, none skipped or todo)
+
+Saved in `baseline/`: `<file>.ids.txt` (sorted `file :: fullName`, from a run, never from source), `<file>.expects.txt`
+(count of `expect(` in the file's source, helpers inside the file included), `summary.md`.
+
+| File | Tests | `expect(` | DESIGN said | Note |
+|---|---|---|---|---|
+| `ModifyTeamSettings.refinementNeed.test.tsx` | 47 | 77 | 47 | same |
+| `ModifyTeamSettings.readiness.test.tsx` | 24 | 44 | 47 | DESIGN's figure was wrong (16 `it` and 8 `it.each` rows) |
+| `ModifyTeamSettings.test.tsx` | 35 | 59 | 33 | includes the nested describes |
+| `OverviewDashboard.test.tsx` | 51 | 113 | 51 | only 28 read no row, not "about 35" (counted below) |
+| `BaseMetricsView.loading.test.tsx` | 133 | 150 | 133 | same |
+| `ReportsPage.removal.test.tsx` | 21 | 37 | 21 | same |
+| `ReportsPage.combinedPdf.test.tsx` | 18 | 44 | 19 | 18 |
+| total | 329 | 524 | | |
+
+Regenerate (or produce the "after" set) from the frontend directory, then diff:
+
+```
+cd Lighthouse.Frontend
+LIGHTHOUSE_TEST_WORKERS=2 pnpm exec cross-env TZ=Europe/Zurich vitest run --reporter=json \
+  src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx \
+  src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx \
+  src/components/Common/Team/ModifyTeamSettings.test.tsx \
+  src/pages/Overview/OverviewDashboard.test.tsx \
+  src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx \
+  src/pages/Reports/ReportsPage.removal.test.tsx \
+  src/pages/Reports/ReportsPage.combinedPdf.test.tsx
+python3 -I ../docs/feature/story-6561-t13-slowest-frontend-test-files/baseline/baseline6561.py \
+  test-results.json "$PWD" <out-dir>
+diff ../docs/feature/story-6561-t13-slowest-frontend-test-files/baseline/<file>.ids.txt <out-dir>/<file>.ids.txt
+```
+
+The project's JSON reporter writes `Lighthouse.Frontend/test-results.json` whatever `--outputFile` says, so the script reads
+that file. `baseline6561.py` takes `<report.json> <frontend-root> <out-dir>`. When a test moves to a new file, diff the union of
+the touched files' ids: an id may change its file part, never silently disappear.
+
+## Wave: DISTILL / [REF] The guarantee
+
+**Stays green and unmodified (pinned by the baseline id lists):** every id not named in "changes by design" below, in all
+seven files; and, outside the seven, the files that share a helper this Story edits: `ReportsPage.reading.test.tsx`, `ReportsPage.test.tsx`, `ReportsPage.usageData.test.tsx` and
+`BulkReportWizard.test.tsx` (importers of `rowOf`, six in all), `ModifyTeamSettings.refinement.test.tsx`, `ModifyTeamSettings.queryCommit.test.tsx`,
+`OverviewDashboard.licenseCheck.test.tsx`, `useMetricsData.test.ts`. After each commit that is not a rewrite step (a pure move, the
+`rowOf` commit, the `printFailures` extraction) the unmodified tests pass with no test edit in that commit.
+
+**Changes by design (the only ids that may leave their file or shrink; each needs a row):**
+
+| File | Ids that may change | By how many (hypothesis, confirmed at the slice's step 1) |
+|---|---|---|
+| `refinementNeed` | stage rule display (4), cadence display and refusal (4), band display, marks, explanations and the two `it.each` families (15) move to a section render | 23 of 47 |
+| `readiness` | defaults, refusals, `aria-invalid`, `min`/`step`, remembered-threshold toggles (all but 6) move to a section render | 18 of 24 |
+| `ModifyTeamSettings.test` | three of the four "holds back autosave while a mapping ..." tests removed; the seven-row invalid-field loop shrinks to the rows the function tests do not cover | 3 + up to 5 of 35 |
+| `OverviewDashboard` | the 28 tests that read no row move, titles unchanged, to `OverviewDashboard.gating.test.tsx` and render the page with `DataOverviewTable` stubbed | 28 of 51 move; 0 removed |
+| `BaseMetricsView.loading` | the 8 "adds and removes no chart once its data has arrived" rows merge into the matching "opens with every chart's frame" rows; 7 of the 8 "is asked for without retrying" rows become two hook tests | 15 removed, 8 gain assertions, 2 added |
+| `ReportsPage.removal` | the confirmation, warning, reason, result, Escape, in-flight and cache tests move to dialog and hook renders | 15 of 21 |
+| `ReportsPage.combinedPdf` | three "Leave it out ..." rule tests move to function tests; "Cancel closes the word that no PDF was made" to the dialog alone | 4 of 18 |
+
+A change beyond these rows is allowed only when a slice's step 1 measures something different, and then the table above is
+edited in the same commit with the reason.
+
+**Loading and failure looks stay, every one, asserting what they did.** In `BaseMetricsView.loading` these are the 109
+untouched ids plus the merged opening tests: a dashboard as it opens, the dim under a spinner while the window changes, answers
+out of order, one failed request marks only its chart and comes back on retry, the aging chart's missing Doing columns. In
+`OverviewDashboard` they are "renders loading state initially" and the five "when the connection list is refused" tests.
+
+**No-new-behaviour checks:** no production file changes except the two optional ones (`printFailures.ts` new,
+`useReportsPdfExport.ts` importing it); no Playwright spec or `@screenshot` file in the diff; production behaviour and pixels
+are unchanged.
+
+## Wave: DISTILL / [REF] Per-file: wiring tests that stay on the whole form or page
+
+Named from DESIGN, titles as they are today. Each is the one proof of a seam that a unit render cannot give. **Total 193 ids
+stay on the whole form or page, unmodified**: 7 + 6 + 27 + 23 + 110 + 6 + 14. Counts for `ModifyTeamSettings.test` and
+`BaseMetricsView.loading` are the unmodified remainder, because those files change by removal or merge, not by moving the rest.
+
+**`refinementNeed` (7):** saves a changed Ready rule and leaves the Being refined rule as it was; saves nothing while a new
+rule is still incomplete; saves Thursdays every week; asks for the starting week once Refinements are more than a week apart,
+and saves it; saves nothing while every second week names no starting week, and marks the field; saves a changed high end with
+the low end as it was; refuses a decimal likelihood instead of saving it rounded, and saves nothing. (One "saves nothing while
+invalid" per section kind, because `teamAutoSaveBlockers` through `refinementSettingsBlockers` is only proven by a rendered
+form.) The blocks after line 693 (the blockers function tests, stage fields of a single Team, the states picker, the To Do and
+Doing changes, the cadence fields on their own) are not in the move list and stay as they are.
+
+**`readiness` (6):** saves a changed number of Yes votes with the rest of readiness as it was; starts a Team that has never
+chosen refinement at the default readiness, and saves it with no states; keeps the chosen refinement states when readiness
+changes; names readiness as what keeps the settings from being saved; saves nothing just because the form was opened; and one
+of the "switches a rule back on ..." tests, `switches a rule back on at the threshold it had before`, as the single proof that
+the toggle memory reaches the saved value.
+
+**`ModifyTeamSettings.test` (27, the form stays whole):** every test except three of the four mapping-name wirings and up to
+five rows of the invalid-field loop; one mapping-name wiring stays (`holds back autosave while a mapping is named after a
+Doing state it does not group, and saves once it is renamed`), and the two loop rows the function tests do not cover.
+
+**`OverviewDashboard` (23, real tables):** the 4 "Row action gating via DataOverviewTable predicates" tests; the 12 deletion
+tests ("what a deletion is reported as" 2 and "deleting a Team or Portfolio that has reports" 10, which open a real row's
+Delete); `renders loading state initially`; `renders portfolios section after loading`; the 5 "when the connection list is
+refused" tests. `OverviewDashboard.licenseCheck.test.tsx` is another file and is not touched.
+
+**`BaseMetricsView.loading` (110):** everything except the 24 rows of the three `everyOwnerAndCategory` families, plus **one
+page-level "asked for without retrying, and kept for no other window" row** kept as the seam proof (a correct hook with a
+widget that bypasses it would pass the hook test).
+
+**`ReportsPage.removal` (6):** a coach removes three trial reports on two Teams and a Portfolio, and they leave the list; Cancel
+removes nothing; when her permissions could not be loaded, pressing Remove asks nothing; a report the server did not remove is
+named with its reason and stays listed; changing the filter clears what was picked; sorting keeps what was picked.
+
+**`ReportsPage.combinedPdf` (14):** a coach exports the reports of two Teams as one PDF, each on a page of its own; once the
+print dialog closes the frame goes ...; the reports print in the table's order, as the reader sorted it; nothing prints while
+one of the reports is still on its way ...; picks and sorting changed while the PDF is prepared leave it as it was ...; while a PDF
+of several is prepared, a row's PDF icon is held back ...; while a row's PDF is prepared, Export PDF is held back ...; while the
+reports load, Export PDF shows it is preparing ...; a reader who is Admin of none of them may still export them; a report that
+cannot be loaded stops the PDF and is named; Leave it out unpicks the report that failed and prints the rest; Retry asks for the
+report again and prints once it arrives; when part of the page cannot be loaded no PDF is made and it says so; with nothing
+picked Export PDF is disabled and says why.
+
+## Wave: DISTILL / [REF] New direct tests, per slice, named as behaviours
+
+Moved tests keep their titles; the rows of the moved-assertions file name them. The tests below are the ones that do not exist
+today. All render the smallest unit that owns the behaviour, or call a function; none mounts the whole form or page.
+
+**Slice A**
+- `renderRefinementSection.test.tsx` (the helper's own tests, so a wrong host cannot hide a wrong section):
+  "hands the section the value it was given and no more", "a change the admin makes reaches the section as its new value",
+  "a second edit starts from the first edit's result, as in the form", "lists every value the section handed back, in order".
+- The moved Refinement tests land in `RefinementBandSettings.test.tsx`, `RefinementCadenceSettings.test.tsx` (existing last
+  block of `refinementNeed` may stay or move), `StageRulesSettings.test.tsx`, `ReadinessSettings.test.tsx` (names chosen at A-2
+  after the existing files are checked, so no duplicate file is made).
+- If A-1 shows a mapping-warning sentence or invalid-field scenario that no function test pins, the function test is added
+  before the wiring test is removed: "names the mapping that hides a Doing state" style, one per unpinned sentence.
+
+**Slice B**
+- `BulkReportsTestKit` self-test, only if the kit has none: "finds the row of a report on its owner", "tells two reports of the
+  same name on different owners apart", "fails naming the report and the owner when there is no such row".
+- `printFailures.test.ts` (only if the extraction is taken): "names the listed reports a failure belongs to, by id and owner",
+  "does not name another report of the same Team", "names nothing for an empty failure list", "offers leaving out when something
+  failed and something would be left", "does not offer it when every report failed", "leaves out exactly the failed ones and no
+  other".
+- `NoPdfDialog.test.tsx`: "offers Cancel, Leave it out and Retry when leaving out is possible", "offers Cancel and Retry when
+  it would leave nothing", "each button reports its own choice once". Moved: "Cancel closes the word that no PDF was made".
+- `RemoveSelectedDialog.test.tsx` and `useSelectionRemoval.test.ts`: the moved removal tests; new only where the page test
+  proved a reason no unit test can reach (decided at B-3, stated in the rows).
+
+**Slice C**
+- `OverviewDashboard.gating.test.tsx`: the 28 moved tests, titles unchanged; no new test. A test that passes against the stub
+  and fails against the real table (or the reverse) is a finding, written in the slice file.
+- `useMetricsData.test.ts`: "a team's dashboard asks for every chart's data without retrying and keeps none of it for another
+  window", "a portfolio's dashboard asks ... the same" (app default query client, every key of `allMetricsFetchKeys`).
+- `BaseMetricsView.loading`: the 8 merged rows keep the title of the "opens with every chart's frame in its place, each with a
+  spinner, before any data arrives" rows and also assert that no chart is added or removed once the data has arrived.
+
+## Wave: DISTILL / [REF] Shared helper contracts (written by DELIVER in the step that first needs them)
+
+**`renderRefinementSection` (slice A, step A-2, in `src/tests/`, test-only).** Renders one controlled Refinement section
+(`ReadinessSettings`, `RefinementBandSettings`, `RefinementCadenceSettings`, `StageRulesSettings`, `RefinementSettingsSection`)
+inside the providers the form's tests give it (the Team's terminology, the seeded default words unless the test passes its own)
+and a host that keeps the value in `useState`.
+- Input: the initial value and a function from `(value, onChange)` to the section element.
+- Returns the `user` from `userEvent.setup()`, `latest()` (the value the host holds), `changes()` (every value the section
+  handed to `onChange`, in order, as copies), and the usual RTL queries are used from `screen`.
+- `onChange` takes the complete next value, as `updateSettings` does in the form, and updates the state synchronously; no
+  query client, no fake clock, no debounce, no service. It never calls anything on its own, so a section that needs a service
+  is a wiring test and stays on the form.
+- It does not hide an error: a throwing section fails the test; no `try`, no `act` advance of timers.
+- One plain comment on why the value lives in state (a controlled section shows nothing new unless handed its change back).
+- Proved by its own four tests (above) before any Refinement test moves; the surviving wiring tests prove the form hands the
+  same value to the section.
+
+**Cheaper `rowOf` (slice B, step B-2, in `BulkReportsTestKit.tsx`, only if B-1 shows a saving).**
+- Same name, same arguments `(reportName, owner)`, same return (the one `row` element) and the same thrown message
+  `no row for "<name>" on <owner link name>`, so no importing test changes.
+- Finds the row by its text (the report name link) and confirms the owner with a cheap query; **no `*ByRole` call inside a
+  per-row loop** (`docs/ci-learnings.md`, "Use the cheap query unless the role is what you are testing"). The checkbox read by
+  `selectTheRowOf` may keep `getByRole("checkbox")` on the single row it returns.
+- Picks the correct row when two reports share a name on different owners, and when the owner's name is also a report's name.
+- Proved by: the six importing files (`removal`, `combinedPdf`, `reading`, `ReportsPage.test`, `ReportsPage.usageData.test`, `BulkReportWizard.test`; DESIGN named four) pass unmodified with the same sorted ids, and by
+  the kit's self-tests above.
+
+**`printFailures.ts` (slice B, step B-4, optional, veto point Q7).** Pure, return-only. `failedAmong(listed, failed)`
+returns the listed reports a failure names, matched by id **and** owner; `leaveOutPlanOf(listed, failed)` returns either "not
+offered" (nothing failed, or leaving the failed out would leave nothing) or the reports that remain. No hook, no React import.
+
+## Wave: DISTILL / [REF] How "no `.skip`, `.only`, `.todo`, looser matcher or longer timeout" is checked
+
+1. **Biome** already fails `pnpm build` on `noSkippedTests` and `noFocusedTests` (FE7 slice 1a), so `.skip` and `.only` cannot
+   reach review.
+2. **`baseline/check-behaviour-free.sh <before-commit>`**, run from the repository root at every slice close and before review.
+   It greps the diff of test files and `src/tests` since `<before-commit>` for added `.skip`, `.only`, `.todo`, `it.fails`,
+   `xit`, `xdescribe`, `toMatchObject`, `objectContaining`, `toBeGreaterThan`, `toBeLessThan`, `toContain(`, `toMatch(`, a
+   `{ timeout: ... }` option, `testTimeout`, `setConfig` and any 4-digit number as a last argument; counts removed against added
+   `not.`; prints the number of removed `expect(` lines per file; fails when a production file other than `printFailures.ts` and
+   `useReportsPdfExport.ts` changed, or when an E2E or screenshot file changed. It was tried against a planted `it.skip` and a
+   deleted `expect(` and reported both. Hits it cannot judge (an added `toContain(` on a string that was already one) are
+   answered in the slice file, a row each, not ignored.
+3. **Rule 1 counting** (FE7): per touched file, `git diff -U0 <before> -- <file> | grep -c '^-.*expect('` equals the rows for
+   that file in `measurement/slice-X-moved-assertions.md`, built from `measurement/moved-assertions-template.md`. The
+   "Assertion text" column holds the removed `expect(` line verbatim. The `expect(` totals in `baseline/` are the sum to explain.
+4. **Id diff** against `baseline/*.ids.txt` (command above): every missing id is a row, every added id is listed.
+5. **Deliberate break** for each new call site and each surviving wiring test: break the production seam it claims to prove
+   (drop the value handed from the form to the section, pass the stub the wrong prop, bypass `metricsQueryOptions` in one
+   widget), see the named test fail, restore, record both in the slice file.
+6. **Coverage** (opt-in for exactly this reason): per slice, `--coverage` over the named files of the touched directory only,
+   line and branch not lower than the slice's first-step reading (FE7 left `src/components/Common/Team` at 96.26 / 86.23).
+
+## Wave: DISTILL / [REF] Stop rule
+
+Inherited from D-6561-10 and made checkable: at the slice's step 2, the slice file states the projected cut per file (seconds
+after the moves as measured on the touched files, over the file's summed seconds before) next to the required cut of DESIGN's
+table (34 %, 24 %, 20 %, 19 %, 17 %, 13 %, 1 % for the seven; 38 to 6 % with margin). Below the required cut: stop that file,
+record the number and the reason ("target not met, because ...", which the AC allows), flag that the budget floor follows that
+file (Q3), and do not split the file (Q4 stays a maintainer decision). Other stops: A-1's spike shows the section render under
+about 2x cheaper than the form (stop slice A at A-1); B-1 shows the export tests spend their time drawing reports (skip B-2 for
+`combinedPdf`; if the cut is then under 17 %, record it); C-1's Overview spike saves under 20 % (ask the maintainer about the
+extraction, Q6). A conflict with trunk (T12 #6539) stops the slice and reports; nothing is rebased.
+
+## Wave: DISTILL / [REF] No scaffolds, no skipped tests, and why
+
+There is no new production behaviour, so no module is imported that does not exist, and a scaffold would only duplicate a test
+that already passes. Skipped tests are not written either: the project forbids `.skip` in committed tests (Biome), and the 329
+existing tests are the executable specification; they are green now (329 of 329) and that is the correct starting state.
+The "red" of this Story is the deliberate break of check 5 above, made per call site by DELIVER. The one optional production
+file (`printFailures.ts`) is created in its own `refactor(reports)` commit with no test change, not as a scaffold. Tier B,
+the domain-types module and the state-delta port: N/A, because the project has no Gherkin, state machine or generator at this
+layer. Self-completeness audit: C2 and C5 to C7 N/A (no state machine, mode flag, error contract or concurrency matrix is added).
+
+## Wave: DISTILL / [REF] Pre-requisites
+
+- **Done in this wave:** the worktree's `node_modules` (`pnpm install --frozen-lockfile`), the baseline run and files, the
+  check script, the moved-assertions template.
+- **Before slice A:** nothing external. **Before slice B:** the maintainer's yes or veto on the `useReportsPdfExport`
+  extraction (Q7); the default taken is yes. **Before slice C:** the ADO state of FE5 #6393 (Q1); if it landed, C changes and the
+  slice is redesigned with the maintainer.
+- **At every slice start:** re-read the slice's files against trunk for T12 #6539 (Q2); run `/continuous-improvement before 6561`
+  once at pick-up; agree the rigor profile (proposed `standard`, D-6561-16) and pass `model` on every dispatch; record the load
+  average, run the alternating pairs with `LIGHTHOUSE_TEST_WORKERS=2` on named files, discard a pair whose load exceeds half the
+  cores, and never run the full suite or Stryker while another session is mutating.
+- **After the slices:** the budget step (DESIGN, "Budget step"), once at least 5 complete `main` runs exist.

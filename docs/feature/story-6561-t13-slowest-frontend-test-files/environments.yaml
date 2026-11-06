@@ -1,0 +1,15 @@
+target_environments:
+  - name: clean
+    description: "Local Vitest run and the existing Verify Frontend job"
+    platform: [linux]
+    preconditions: []
+
+coexistence_matrix:
+  - tool: vitest time-budget reporter
+    must_not_break: true
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "No product deployment; the rewrites are test files"

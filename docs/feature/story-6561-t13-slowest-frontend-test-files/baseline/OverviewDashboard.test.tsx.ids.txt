@@ -1,0 +1,51 @@
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Add Team / Add Portfolio capability-based gating hides Add Team and Add Portfolio for Viewer with no create capabilities
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Add Team / Add Portfolio capability-based gating shows Add Portfolio for Portfolio Admin only and hides Add Team when canCreateTeam is false
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Add Team / Add Portfolio capability-based gating shows Add Team and Add Portfolio for system admin when license/connection conditions met
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Add Team / Add Portfolio capability-based gating shows Add Team for Team Admin only and hides Add Portfolio when canCreatePortfolio is false
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Add Team / Add Portfolio capability-based gating shows Add Team for non-system-admin Team Admin and shows Add Portfolio for non-system-admin Portfolio Admin
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Row action gating via DataOverviewTable predicates shows Edit only on Portfolio X row for a Portfolio Admin scoped to Portfolio X, no Delete or Clone (v1: only sysadmin deletes/clones)
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Row action gating via DataOverviewTable predicates shows Edit only on Team A row for a Team Admin scoped to Team A, no Delete or Clone (v1: only sysadmin deletes/clones)
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Row action gating via DataOverviewTable predicates shows Edit, Clone, and Delete on every team and portfolio row for system admin
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard Row action gating via DataOverviewTable predicates shows only Details icon on every team and portfolio row for Team Reader (no admin scopes)
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports forgets the deleted Team's reports
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports holds Delete until it has counted the reports itself, even when the row has just counted them
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports holds Delete until it knows how many reports go with it
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports keeps a Team's reports in memory and says something went wrong when the Team cannot be deleted
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports names the reports that go with one of the portfolios (Test Project 1) holding 1 when it is deleted
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports names the reports that go with one of the teams (Test Team 1) holding 1 when it is deleted
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports names the reports that go with one of the teams (Test Team 1) holding 3 when it is deleted
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports reports the Team deleted and never a report deleted
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports says any reports it has go with it when their number cannot be read
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard deleting a Team or Portfolio that has reports says nothing about reports when there are none
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard disables Add Team button when no connections exist
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard disables Add Team for system admin with no connections
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard does not fail overview when connection settings are forbidden for non-system admin
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard does not fail overview when team and portfolio reads are forbidden
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard enables Add Portfolio button when no teams are visible to user but rbac.canCreatePortfolio is true
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard goes to a new connection from Add Work Tracking System
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard hides Add Connection button when user is not system admin
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard hides Add Portfolio button when RBAC is enabled and canCreatePortfolio is false
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard hides Add Team button when RBAC is enabled and canCreateTeam is false
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard hides OnboardingStepper for pure viewer with no create permissions
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard hides OnboardingStepper when canCreateTeam is true but user is not system admin
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard hides connections section for non-system-admin viewer
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard renders connections section with connection name
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard renders dashboard header with add buttons
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard renders loading state initially
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard renders one ReconnectBanner per RefreshFailed connection and none for healthy connections
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard renders portfolios section after loading
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows Add Connection button when user is system admin
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows OnboardingStepper when user is system admin and onboarding incomplete
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows RBAC no-access guidance when enabled and no teams or portfolios are visible
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows all action buttons when RBAC is disabled
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows connections section for system admin
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows empty state alert when no connections exist
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows enabled Add Team for non-system-admin Team Admin even when no connections exist
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard shows main filter bar only
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard what a deletion is reported as reports a deleted Portfolio as a Portfolio
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard what a deletion is reported as reports a deleted Team as a Team
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard when the connection list is refused does not call a failed connection list a refusal
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard when the connection list is refused keeps the no-access guidance for a non-admin and says nothing about connections
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard when the connection list is refused says nothing about connections while the roles are still loading
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard when the connection list is refused still shows onboarding to a system admin who simply has no connections yet
+src/pages/Overview/OverviewDashboard.test.tsx :: OverviewDashboard when the connection list is refused tells a system admin that access was refused instead of showing onboarding

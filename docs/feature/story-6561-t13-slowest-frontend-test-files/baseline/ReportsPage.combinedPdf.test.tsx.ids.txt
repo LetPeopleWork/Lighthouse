@@ -1,0 +1,18 @@
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Cancel closes the word that no PDF was made, prints nothing and keeps what was picked
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out is not offered when leaving the failed reports out would leave nothing to print
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out leaves out only the report that failed, not the other report of the same Team
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out unpicks every report that failed
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Leave it out unpicks the report that failed and prints the rest
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports Retry asks for the report again and prints once it arrives
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a coach exports the reports of two Teams as one PDF, each on a page of its own
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a reader who is Admin of none of them may still export them
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports a report that cannot be loaded stops the PDF and is named
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports nothing prints while one of the reports is still on its way, and the PDF holds both once it arrives
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports once the print dialog closes the frame goes, Export PDF is ready again, and nothing says a PDF failed
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports picks and sorting changed while the PDF is prepared leave it as it was when Export PDF was pressed
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports the reports print in the table's order, as the reader sorted it
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports when part of the page cannot be loaded no PDF is made and it says so
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports while a PDF of several is prepared, a row's PDF icon is held back and starts no second
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports while a row's PDF is prepared, Export PDF is held back and starts no second
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports while the reports load, Export PDF shows it is preparing and nothing prints yet
+src/pages/Reports/ReportsPage.combinedPdf.test.tsx :: One PDF of several reports with nothing picked Export PDF is disabled and says why

@@ -1,0 +1,24 @@
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings does not let any of its numbers step below one vote
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings keeps the chosen refinement states when readiness changes
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks No votes that send to discussion as refused, describes it by why, and leaves “Yes, if…” votes that send to discussion unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks Voters needed as refused and leaves Yes votes needed unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks Yes votes needed as refused and leaves Voters needed unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings marks “Yes, if…” votes that send to discussion as refused, describes it by why, and leaves No votes that send to discussion unmarked
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings names readiness as what keeps the settings from being saved
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '' in No votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '' in “Yes, if…” votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '0' in No votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses '0' in “Yes, if…” votes that send to discussion, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses fewer than one Yes vote, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings refuses fewer voters than Yes votes, says why and saves nothing
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves a changed number of Yes votes with the rest of readiness as it was
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves a changed number of “Yes, if…” votes that send to discussion
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings saves nothing just because the form was opened
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings shows three Yes votes from three voters, and discussion at one No or two “Yes, if…”, until the admin changes them
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings starts a Team that has never chosen refinement at the default readiness, and saves it with no states
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it had before
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule back on at the threshold it was changed to before it was switched off
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches a rule that was refused when switched off back on at its last allowed threshold
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches off the No rule on its own, keeping the “Yes, if…” rule
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches on a No rule stored as off at its default threshold
+src/components/Common/Team/ModifyTeamSettings.readiness.test.tsx :: Readiness in the Refinement section of a Team's settings switches on a rule stored as off at its default threshold

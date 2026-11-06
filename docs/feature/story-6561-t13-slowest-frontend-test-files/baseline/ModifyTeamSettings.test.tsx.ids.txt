@@ -1,0 +1,35 @@
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior auto-saves without work item types when schema says not required
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior hides WorkItemTypesComponent when schema says isWorkItemTypesRequired is false
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior shows WorkItemTypesComponent when schema says isWorkItemTypesRequired is true
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings a Team following the Teams' Estimation default shows it, and picking a field of its own saves that choice
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings a connection read from the summary is selected and saved by its id
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings auto-saves a valid change after the debounce window
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping is named after a state another mapping groups, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping's name hides one of its states in Done, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while a mapping's name hides one of its states in To Do, and saves once it is renamed
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback holds back autosave while two complete mappings share a source state
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback names the work item types field when the schema requires them and none are set
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback renders no warning while the form can be saved
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback shows no warning for a mapping that was just added, and other edits still save
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings blocked autosave feedback tells the user which source state is used in more than one mapping
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Doing States is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Done States is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Feature WIP is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Name is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Throughput History is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when To Do States is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save when Work Item Types is invalid
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not auto-save while no field has been edited
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings does not render a Save button
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles adding and removing states
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles adding and removing work item types
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles team settings change
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings handles work tracking system change
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings renders components correctly after loading
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings renders loading state initially
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings shows no Advanced Configuration, where the Parent sources sit, while the settings load or when they cannot be loaded
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings shows the could-not-load words when the settings cannot be fetched
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings staleness opt-in seeds the revealed field with the team default of 5 on opt-in
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings the Parent Override Field reads the Teams' default of the connection now chosen
