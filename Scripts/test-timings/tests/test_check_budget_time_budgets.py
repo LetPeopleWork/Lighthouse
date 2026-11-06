@@ -351,7 +351,6 @@ class AnAllowlistEntryThatIsNotNeededFailsTheBuild(TimeBudgetTestCase):
 
                 self.assert_passes_quietly(workspace.check(stack, timings))
 
-    @unittest.skip("pending: the check does not judge a frontend file's run time yet")
     def test_a_frontend_entry_whose_file_ran_under_a_quarter_of_the_budget_fails(self):
         timings = self.workspace.frontend_timings({"src/pages/Quick.test.tsx": [7.0, 6.9]})
         self.workspace.budget(
@@ -503,13 +502,11 @@ class TheShippedBudgetFileObeysItsOwnRules(unittest.TestCase):
             with self.subTest(stack=stack):
                 self.assertEqual(check_budget.unneeded_entries(stack, [], budget, ceilings), [])
 
-    @unittest.skip("pending: the budgets are not recalibrated yet")
     def test_the_frontend_budget_is_56_seconds_and_nothing_is_allowlisted(self):
         budget, ceilings = self.sections()["frontend"]
 
         self.assertEqual((budget, ceilings), (Decimal(SHIPPED_FRONTEND_BUDGET), {}))
 
-    @unittest.skip("pending: the budgets are not recalibrated yet")
     def test_the_backend_budget_is_34_seconds_with_the_measured_ceilings_only(self):
         budget, ceilings = self.sections()["backend"]
 
@@ -524,7 +521,6 @@ class TheShippedBudgetFileObeysItsOwnRules(unittest.TestCase):
 
 
 class ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets(TimeBudgetTestCase):
-    @unittest.skip("pending: the frontend budget is not recalibrated yet")
     def test_a_frontend_file_of_57_seconds_fails_the_build(self):
         timings = self.workspace.frontend_timings({"src/pages/Planted.test.tsx": [57.0]})
 
@@ -539,7 +535,6 @@ class ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets(TimeBudgetTestCase):
 
         self.assert_fails_naming(result, "Planted.Slow", breach_phrase("35.0", 34))
 
-    @unittest.skip("pending: the budgets are not recalibrated yet")
     def test_a_planted_backend_class_is_only_a_warning_when_the_variable_is_true(self):
         timings = self.workspace.backend_timings({"Planted.Slow.Runs": 35.0})
 

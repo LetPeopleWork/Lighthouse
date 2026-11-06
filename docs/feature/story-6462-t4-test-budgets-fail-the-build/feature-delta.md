@@ -614,3 +614,17 @@ new active).
 - Not covered by a repository test, by design: replay of the new JSON against the 7 frontend and 8 backend CSVs of the
   measurement (data lives in the session scratchpad, not the repository; the replay command goes into `ci-learnings.md`
   at close-out); AC2, five green `main` runs after the push.
+
+## Wave: DELIVER / [REF] Replay
+
+Command, once per CSV, with `LIGHTHOUSE_BUDGET_WARN_ONLY` unset (the CSVs are the downloaded `test-timings-<stack>` artifacts of the measurement runs):
+
+```
+python3 Scripts/test-timings/check_budget.py --stack frontend --csv <csv>
+python3 Scripts/test-timings/check_budget.py --stack backend --csv <csv> --source-root Lighthouse.Backend/Lighthouse.Backend.Tests
+```
+
+Result: all 7 frontend runs (41845012379, 41845404684, 41884787953, 41904560367, 41923442666, 41953376165, 42232786032) exit 0.
+7 of the 8 backend runs exit 0. Run 41904560367, one of the two red runs, exits 1: `JiraWorkTrackingConnectorTest` took 141.0 s against its
+127 s ceiling. That class has a failed test in that run, `GetWorkItemsForTeam_CutOffDateSet_SkipsItemsIfBeyondCutOff(0,1)`, which
+ran 60.2 s (a timeout); the passing tests of the class add up to about 81 s. The ceiling was not changed.

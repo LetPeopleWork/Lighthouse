@@ -389,8 +389,7 @@ def _check(arguments: argparse.Namespace) -> int:
         print(breach_annotation(finding, allowlist_name, kind))
     for unit in stale:
         print(stale_annotation(stack, unit, allowlist_name))
-    # No run rows are passed yet, so only the ceilings are judged here.
-    unneeded = unneeded_entries(stack, [], budget_seconds, ceilings)
+    unneeded = unneeded_entries(stack, rows, budget_seconds, ceilings)
     for unit in unneeded:
         print(unneeded_annotation(unit, allowlist_name))
     breached = bool(findings) and not warn_only
