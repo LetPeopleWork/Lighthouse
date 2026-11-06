@@ -1,0 +1,24 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkItems/WorkItemService.cs",
+      "**/Services/Implementation/Connections/ConnectionSaveService.cs",
+      "**/API/WorkTrackingSystemConnectionController.cs",
+      "**/Models/Portfolio.cs",
+      "**/Models/Team.cs",
+      "**/Models/WorkItemBase.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~WorkTrackingConnectors.Jira|FullyQualifiedName~WorkTrackingConnectors.AzureDevOps|FullyQualifiedName~WorkItemServiceTest|FullyQualifiedName~ConnectionSaveServiceTest|FullyQualifiedName~API.WorkTrackingSystemConnectionController|FullyQualifiedName~Tests.Models.Parent|FullyQualifiedName~Tests.Models.WorkItem|FullyQualifiedName~Tests.Services.Implementation.Parents)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~LiveTest&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

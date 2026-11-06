@@ -1,0 +1,34 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Models/ParentSources.cs",
+      "**/Models/ParentSourceEntry.cs",
+      "**/Models/ParentResolution.cs",
+      "**/Models/AdditionalFieldDefinition.cs",
+      "**/Models/WorkTrackingSystemOptionsOwner.cs",
+      "**/API/DTO/ParentSourceEntryDto.cs",
+      "**/API/DTO/ConnectionDefaultsDto.cs",
+      "**/API/DTO/SettingsOwnerDtoBase.cs",
+      "**/API/Helpers/OwnerSettingRefusals.cs",
+      "**/API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs",
+      "**/Services/Implementation/Parents/ParentSourceSelector.cs",
+      "**/Services/Implementation/Parents/ParentPlacementReport.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/Jira/JiraWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsWorkTrackingConnector.cs",
+      "**/Services/Implementation/WorkItems/WorkItemService.cs",
+      "**/Services/Implementation/Connections/ConnectionSaveService.cs",
+      "**/API/WorkTrackingSystemConnectionController.cs"
+    ],
+    "ignore-mutations": ["linq.Count"],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Models.Parent|FullyQualifiedName~Tests.Models.AdditionalField|FullyQualifiedName~Tests.Models.WorkTrackingSystemOptionsOwner|FullyQualifiedName~Tests.Services.Implementation.Parents|FullyQualifiedName~ConnectionSaveServiceTest|FullyQualifiedName~Tests.API.DTO|FullyQualifiedName~Tests.API.Helpers|FullyQualifiedName~API.WorkTrackingSystemConnectionController|FullyQualifiedName~API.PortfolioControllerTest|FullyQualifiedName~API.TeamControllerTest|FullyQualifiedName~WorkTrackingConnectors.Jira|FullyQualifiedName~WorkTrackingConnectors.AzureDevOps|FullyQualifiedName~WorkItemServiceTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Integration.Containers&FullyQualifiedName!~LiveTest&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}

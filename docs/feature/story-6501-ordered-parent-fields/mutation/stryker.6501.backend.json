@@ -1,0 +1,37 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": ["Lighthouse.Backend.Tests.csproj"],
+    "mutate": [
+      "**/Models/ParentSources.cs",
+      "**/Models/ParentSourceEntry.cs",
+      "**/Models/ParentReadings.cs",
+      "**/Models/ParentResolution.cs",
+      "**/Models/ParentPlacement.cs",
+      "**/Models/ParentChoice.cs",
+      "**/Models/ConnectionFieldDefaults.cs",
+      "**/Models/RefreshFinding.cs",
+      "**/Models/AdditionalFieldDefinition.cs",
+      "**/Models/AdditionalFieldInUse.cs",
+      "**/Models/WorkTrackingSystemConnection.cs",
+      "**/Models/WorkTrackingSystemOptionsOwner.cs",
+      "**/API/DTO/ParentSourceEntryDto.cs",
+      "**/API/DTO/ConnectionDefaultsDto.cs",
+      "**/API/DTO/SettingsOwnerDtoBase.cs",
+      "**/API/Helpers/OwnerSettingRefusals.cs",
+      "**/API/Helpers/WorkTrackingSystemOptionsOwnerExtensions.cs",
+      "**/Services/Implementation/Parents/ParentSourceSelector.cs",
+      "**/Services/Implementation/Parents/ParentPlacementReport.cs",
+      "**/Services/Implementation/WorkItems/FetchFingerprint.cs",
+      "**/Services/Implementation/Connections/ChangedConnectionDefault.cs"
+    ],
+    "thresholds": { "high": 80, "low": 70, "break": 0 },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Tests.Models.Parent|FullyQualifiedName~Tests.Models.OwnersWhoseFetchMoved|FullyQualifiedName~Tests.Models.AdditionalField|FullyQualifiedName~Tests.Models.WorkTrackingSystemConnectionTest|FullyQualifiedName~Tests.Models.WorkTrackingSystemOptionsOwner|FullyQualifiedName~Tests.Models.EffectiveSettingTest|FullyQualifiedName~Tests.Services.Implementation.Parents|FullyQualifiedName~FetchFingerprint|FullyQualifiedName~JiraReadingVersionFingerprint|FullyQualifiedName~ConnectionSaveServiceTest|FullyQualifiedName~Tests.API.DTO|FullyQualifiedName~Tests.API.Helpers|FullyQualifiedName~API.WorkTrackingSystemConnectionControllerTest|FullyQualifiedName~API.WorkTrackingSystemConnectionsControllerTest|FullyQualifiedName~API.PortfolioControllerTest|FullyQualifiedName~API.TeamControllerTest|FullyQualifiedName~RefreshLogServiceTest|FullyQualifiedName~JiraParentReadingsTest|FullyQualifiedName~AzureDevOpsDependencyRelationTest|FullyQualifiedName~AzureDevOpsNamedRelationEndTest|FullyQualifiedName~JiraNamedDependencyLinkTest)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood&FullyQualifiedName!~Integration.Containers&TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration",
+    "reporters": ["progress", "json", "cleartext"],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
