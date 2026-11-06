@@ -16,6 +16,7 @@ import {
 	WorkTrackingSystemConnection,
 	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { WorkTrackingSystemService } from "../../../services/Api/WorkTrackingSystemService";
 import { TerminologyProvider } from "../../../services/TerminologyContext";
@@ -613,7 +614,7 @@ describe("defaults set once on the connection", () => {
 			});
 		});
 
-		it("removing the field a default names clears that default in the save, and leaves the others as they were", async () => {
+		it("removing the field an Estimation default names clears that default in the save, and leaves the others as they were", async () => {
 			const server = await givenPriyaOpensJiraDcPayments({
 				connection: jiraDcPayments({
 					defaults: {
@@ -623,10 +624,12 @@ describe("defaults set once on the connection", () => {
 				}),
 			});
 
-			const causedBy = screen
-				.getByText(CausedBy, { selector: ".MuiListItemText-primary" })
+			const storyPoints = screen
+				.getByText(StoryPoints, { selector: ".MuiListItemText-primary" })
 				.closest("li") as HTMLElement;
-			fireEvent.click(within(causedBy).getByRole("button", { name: "delete" }));
+			fireEvent.click(
+				within(storyPoints).getByRole("button", { name: "delete" }),
+			);
 			whenPriyaPressesSave();
 			const question = await screen.findByRole("dialog");
 			fireEvent.click(
@@ -635,9 +638,47 @@ describe("defaults set once on the connection", () => {
 
 			await theSaveIsSent(server);
 			expect(theSave(server).defaults).toEqual({
-				parentSourcesForTeams: null,
-				estimationForTeams: StoryPointsInPoints,
+				parentSourcesForTeams: sourcesOf(11),
+				estimationForTeams: null,
 			});
+		});
+
+		it("removing a field a Parent sources list names leaves the list as it stands, so the refusal names the default", async () => {
+			const server = await givenPriyaOpensJiraDcPayments({
+				connection: jiraDcPayments({
+					defaults: { parentSourcesForTeams: sourcesOf(11, 12) },
+				}),
+			});
+			const refusal =
+				'"Caused by" cannot be removed. It is the Teams\' Parent sources default. Nothing was saved.';
+			vi.mocked(server.updateWorkTrackingSystemConnection).mockRejectedValue(
+				new ApiError(
+					409,
+					refusal,
+					undefined,
+					undefined,
+					"additional-field-in-use",
+				),
+			);
+
+			const causedBy = screen
+				.getByText(CausedBy, { selector: ".MuiListItemText-primary" })
+				.closest("li") as HTMLElement;
+			fireEvent.click(within(causedBy).getByRole("button", { name: "delete" }));
+
+			expect(
+				within(theGroup("Teams")).getByText("Unknown field (id 11)"),
+			).toBeInTheDocument();
+			expect(within(theGroup("Teams")).getByText(ParentLink)).toBeInTheDocument();
+
+			whenPriyaPressesSave();
+			await whenSheAnswers(TheFieldsQuestion, "Save only");
+
+			await theSaveIsSent(server);
+			expect(theSave(server).defaults).toEqual({
+				parentSourcesForTeams: sourcesOf(11, 12),
+			});
+			expect(await screen.findByText(refusal)).toBeInTheDocument();
 		});
 
 		it("renaming the connection sends the Portfolios' default it was loaded with", async () => {

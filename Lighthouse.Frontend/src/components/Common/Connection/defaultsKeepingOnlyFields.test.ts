@@ -88,6 +88,33 @@ describe("defaultsKeepingOnlyFields", () => {
 		).toEqual({ estimationForTeams: unitOnly });
 	});
 
+	it.each([
+		"parentSourcesForTeams",
+		"parentSourcesForPortfolios",
+	] as const)(
+		"leaves %s as it stands when a field it lists is gone, so the server can refuse the save",
+		(name) => {
+			const list = [
+				{ kind: "AdditionalField", additionalFieldDefinitionId: 11 },
+				{ kind: "TrackerParent" },
+			] as const;
+
+			expect(defaultsKeepingOnlyFields({ [name]: list }, [field(12)])).toEqual({
+				[name]: list,
+			});
+		},
+	);
+
+	it("leaves a list that names a field the connection never held, so the row keeps reading Unknown field", () => {
+		const list = [
+			{ kind: "AdditionalField", additionalFieldDefinitionId: 99 },
+		] as const;
+
+		expect(
+			defaultsKeepingOnlyFields({ parentSourcesForTeams: list }, [field(12)]),
+		).toEqual({ parentSourcesForTeams: list });
+	});
+
 	it("returns no defaults for none", () => {
 		expect(defaultsKeepingOnlyFields({}, [field(11)])).toEqual({});
 	});

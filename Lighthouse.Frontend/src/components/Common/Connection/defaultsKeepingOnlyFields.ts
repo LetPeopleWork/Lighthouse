@@ -1,4 +1,3 @@
-import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type {
 	ConnectionDefaultName,
@@ -6,24 +5,10 @@ import type {
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { fieldOfDefault } from "./whatASaveAsks";
 
-const namesAKeptField = (
-	entry: ParentSourceEntry,
-	kept: ReadonlySet<number>,
-): boolean =>
-	entry.kind === "TrackerParent" ||
-	kept.has(entry.additionalFieldDefinitionId ?? Number.NaN);
-
-// A list loses the entries naming a removed field and is cleared when none is left.
-const listKeepingOnlyFields = (
-	list: readonly ParentSourceEntry[],
-	kept: ReadonlySet<number>,
-): readonly ParentSourceEntry[] | null => {
-	const remaining = list.filter((entry) => namesAKeptField(entry, kept));
-	return remaining.length > 0 ? remaining : null;
-};
-
-// A default left naming a removed field would still be sent, and every Team or Portfolio following it
-// would read a field the connection no longer has.
+// A single-field default left naming a removed field would still be sent, and every Team or Portfolio
+// following it would read a field the connection no longer has. A Parent sources list is left as it
+// stands instead: saving with a removed field in it is refused by the server, who names the default,
+// rather than the page quietly dropping an entry the Teams that follow it still read.
 export const defaultsKeepingOnlyFields = (
 	defaults: IConnectionDefaults,
 	fields: IAdditionalFieldDefinition[],
@@ -37,7 +22,7 @@ export const defaultsKeepingOnlyFields = (
 			][]
 		).map(([name, value]) => {
 			if (Array.isArray(value)) {
-				return [name, listKeepingOnlyFields(value, kept)];
+				return [name, value];
 			}
 			const fieldId = fieldOfDefault(name, defaults);
 			return [name, fieldId != null && !kept.has(fieldId) ? null : value];
