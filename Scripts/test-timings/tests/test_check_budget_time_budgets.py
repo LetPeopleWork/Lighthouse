@@ -281,7 +281,6 @@ class AnAllowlistEntryThatIsNotNeededFailsTheBuild(TimeBudgetTestCase):
         workspace.budget(backend_entries=[ALLOWED(unit, ceiling)])
         return timings, unit
 
-    @unittest.skip("pending: an entry that is not needed is not detected yet")
     def test_an_entry_whose_ceiling_equals_the_budget_fails_naming_the_entry(self):
         for stack in ("frontend", "backend"):
             with self.subTest(stack=stack):
@@ -340,7 +339,6 @@ class AnAllowlistEntryThatIsNotNeededFailsTheBuild(TimeBudgetTestCase):
 
                 self.assert_passes_quietly(workspace.check("backend", timings))
 
-    @unittest.skip("pending: an entry that is not needed is not detected yet")
     def test_an_entry_that_is_not_needed_still_fails_when_the_variable_is_true(self):
         for stack in ("frontend", "backend"):
             with self.subTest(stack=stack):
@@ -354,7 +352,6 @@ class AnAllowlistEntryThatIsNotNeededFailsTheBuild(TimeBudgetTestCase):
                     NOT_NEEDED,
                 )
 
-    @unittest.skip("pending: an entry that is not needed is not detected yet")
     def test_an_entry_that_is_not_needed_still_fails_when_the_flag_is_given(self):
         timings, unit = self.entry_that_fits_the_run(self.workspace, "frontend", 60)
 
@@ -372,7 +369,6 @@ class UnneededEntriesAreFoundFromTheTimingsAndTheLimits(unittest.TestCase):
             for unit, seconds in seconds_by_unit.items()
         ]
 
-    @unittest.skip("pending: unneeded_entries is not built yet")
     def test_only_a_ceiling_equal_to_the_budget_is_named_on_both_stacks(self):
         for stack in ("frontend", "backend"):
             with self.subTest(stack=stack):
@@ -382,7 +378,6 @@ class UnneededEntriesAreFoundFromTheTimingsAndTheLimits(unittest.TestCase):
                 )
                 self.assertEqual(found, ["A"])
 
-    @unittest.skip("pending: unneeded_entries is not built yet")
     def test_a_frontend_file_under_a_quarter_of_the_budget_is_named_and_one_at_a_quarter_is_not(self):
         rows = self.rows("frontend", {"quick": 13.9, "quarter": 14.0, "slow": 40.0})
         ceilings = {name: Decimal(120) for name in ("quick", "quarter", "slow")}
@@ -391,28 +386,24 @@ class UnneededEntriesAreFoundFromTheTimingsAndTheLimits(unittest.TestCase):
             check_budget.unneeded_entries("frontend", rows, Decimal(56), ceilings), ["quick"]
         )
 
-    @unittest.skip("pending: unneeded_entries is not built yet")
     def test_a_frontend_entry_below_the_budget_is_never_named_for_running_little(self):
         rows = self.rows("frontend", {"quick": 5.0})
         self.assertEqual(
             check_budget.unneeded_entries("frontend", rows, Decimal(56), {"quick": Decimal(45)}), []
         )
 
-    @unittest.skip("pending: unneeded_entries is not built yet")
     def test_nothing_is_named_when_every_entry_is_needed(self):
         rows = self.rows("frontend", {"slow": 40.0})
         self.assertEqual(
             check_budget.unneeded_entries("frontend", rows, Decimal(56), {"slow": Decimal(120)}), []
         )
 
-    @unittest.skip("pending: unneeded_entries is not built yet")
     def test_a_backend_class_is_never_named_for_running_little(self):
         rows = self.rows("backend", {"Small": 0.0008})
         self.assertEqual(
             check_budget.unneeded_entries("backend", rows, Decimal(34), {"Small": Decimal(76)}), []
         )
 
-    @unittest.skip("pending: unneeded_entries is not built yet")
     def test_an_entry_missing_from_the_run_is_left_to_the_stale_check(self):
         rows = self.rows("frontend", {"other": 40.0})
         self.assertEqual(
@@ -433,7 +424,6 @@ class TheShippedBudgetFileObeysItsOwnRules(unittest.TestCase):
 
         self.assertEqual(sorted(set(ceilings) - declared), [])
 
-    @unittest.skip("pending: unneeded_entries is not built yet")
     def test_no_entry_is_one_the_check_would_call_not_needed_on_either_stack(self):
         for stack, (budget, ceilings) in self.sections().items():
             with self.subTest(stack=stack):

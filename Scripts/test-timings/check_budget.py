@@ -156,7 +156,30 @@ def unneeded_entries(
     budget_seconds: Decimal,
     ceilings: dict[str, Decimal],
 ) -> list[str]:
-    raise AssertionError("unneeded_entries is not built yet")
+    seconds = seconds_per_unit(stack, rows)
+    return [
+        unit
+        for unit, ceiling in ceilings.items()
+        if _is_not_needed(stack, unit, ceiling, budget_seconds, seconds)
+    ]
+
+
+def _is_not_needed(
+    stack: str, unit: str, ceiling: Decimal, budget_seconds: Decimal, seconds: dict[str, Decimal]
+) -> bool:
+    if ceiling == budget_seconds:
+        return True
+    # Backend class sets vary per run, so only a frontend file's run time says its entry is idle.
+    return (
+        stack == "frontend"
+        and ceiling > budget_seconds
+        and unit in seconds
+        and seconds[unit] < budget_seconds / 4
+    )
+
+
+def unneeded_annotation(unit: str, allowlist_name: str) -> str:
+    return f"::error::{escaped(unit)} is allowlisted in {allowlist_name} but is not needed; remove its entry"
 
 
 def _is_build_or_mutation_output(folder: str) -> bool:
@@ -366,8 +389,12 @@ def _check(arguments: argparse.Namespace) -> int:
         print(breach_annotation(finding, allowlist_name, kind))
     for unit in stale:
         print(stale_annotation(stack, unit, allowlist_name))
+    # No run rows are passed yet, so only the ceilings are judged here.
+    unneeded = unneeded_entries(stack, [], budget_seconds, ceilings)
+    for unit in unneeded:
+        print(unneeded_annotation(unit, allowlist_name))
     breached = bool(findings) and not warn_only
-    return 1 if breached or stale else 0
+    return 1 if breached or stale or unneeded else 0
 
 
 def _still_present(
