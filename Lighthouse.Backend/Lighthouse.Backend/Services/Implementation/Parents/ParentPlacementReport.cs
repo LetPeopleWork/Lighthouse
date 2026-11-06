@@ -43,6 +43,20 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
             return lines;
         }
 
+        /// <summary>
+        /// The one line a fetch writes for whoever asks why an item hangs where it does: the list that was read
+        /// and how many records each position decided. A line per item would be noise at fetch volume.
+        /// </summary>
+        public static string WhereTheParentsCameFrom(string owner, string renderedList, int listLength, IReadOnlyList<ParentChoice> choices, int sentToPlacement)
+        {
+            var perPosition = Enumerable.Range(0, listLength)
+                .Select(position => $"{position + 1}: {choices.Count(choice => choice.WinnerPosition == position)}");
+            var unresolved = choices.Count(choice => choice.WinnerPosition is null);
+
+            return $"Parent sources for {owner}: {renderedList}; {Records(choices.Count)} resolved by position "
+                + $"{string.Join(", ", perPosition)}, none: {unresolved}; {sentToPlacement} fell through to stored-Feature placement";
+        }
+
         private static string Records(int count) => count == 1 ? "1 record" : $"{count} records";
 
         private static string WhereItWent(RecordPlacement record)

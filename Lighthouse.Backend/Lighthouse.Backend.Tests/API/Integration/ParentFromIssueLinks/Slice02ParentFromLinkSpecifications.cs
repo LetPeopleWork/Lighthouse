@@ -487,6 +487,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
                 .Setup(repository => repository.Add(It.IsAny<Feature>()))
                 .Callback((Feature feature) => whatStorageHoldsForTheFeatures.Add(feature));
 
+            storage
+                .Setup(repository => repository.GetStoredFeatureCreatedDates())
+                .Returns(() => new StoredFeatures(whatStorageHoldsForTheFeatures.ToDictionary(feature => feature.ReferenceId, feature => feature.CreatedDate)));
+
             return storage.Object;
         }
 

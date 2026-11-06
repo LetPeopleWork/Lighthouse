@@ -123,8 +123,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         public void GetWorkItemsForTeam_TheLinkTypesName_DatesEveryLinkTheChainStillHas()
         {
             var everyLink = theChainReadByTheName
-                .SelectMany(item => item.ParentCandidatesFromLinks.Select(candidate =>
-                    (Link: $"{item.ReferenceId} -> {candidate.Key}", candidate.LinkedAt)))
+                .SelectMany(item => item.ParentReadings.Positions
+                    .SelectMany(position => position.Reading.Links.CandidatesWithTheirLinkDates)
+                    .Select(candidate => (Link: $"{item.ReferenceId} -> {candidate.Key}", candidate.LinkedAt)))
                 .ToList();
 
             using (Assert.EnterMultipleScope())

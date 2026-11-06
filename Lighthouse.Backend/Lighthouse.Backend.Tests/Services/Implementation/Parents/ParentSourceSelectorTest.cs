@@ -169,7 +169,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
                 ClosedDate = new DateTime(2026, 3, 9, 8, 0, 0, DateTimeKind.Utc),
                 CurrentStateEnteredAt = new DateTime(2026, 3, 2, 8, 0, 0, DateTimeKind.Utc),
                 LastChangedRemote = new DateTime(2026, 3, 9, 9, 0, 0, DateTimeKind.Utc),
-                ParentCandidatesFromLinks = [new ParentCandidate(AParent, null), new ParentCandidate(AnotherParent, null)],
+                ParentReadings = ParentReadings.Of(new ParentReadingAt(
+                    ParentSourceEntry.Field(TheFieldTheOverridePointsAt),
+                    ParentReading.LinkCandidates(ParentResolution.From([AParent, AnotherParent])))),
             };
             record.AdditionalFieldValues[TheFieldTheOverridePointsAt] = AParent;
             record.AdditionalFieldValues[AnUnrelatedField] = "untouched";

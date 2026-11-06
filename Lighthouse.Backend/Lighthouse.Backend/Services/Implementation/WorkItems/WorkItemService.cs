@@ -195,61 +195,89 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
             };
 
         /// <summary>
-        /// Hangs each downloaded record whose links named several issues under one of them, before anything
-        /// is saved. A Team first sets aside the candidates Lighthouse does not hold as Features. A Portfolio
-        /// sets nothing aside: the issues above its Features are stored only once a refresh has read them, so
-        /// setting aside what Lighthouse does not hold would throw away every parent the first time it is
-        /// seen. Among what is left the oldest link wins, then the issue created first, then the lowest key.
-        /// The connector cannot make that choice, because only the stored Features say which candidate is one
-        /// and when it was created, so it hands every candidate on and the choice is made here. The stored
-        /// Features are read once for the whole fetch, and not at all when no record needs them. Records with
-        /// one link or none are not touched: the connector already gave them their parent. What was decided
-        /// is written as a warning, because a parent picked on the administrator's behalf, or not picked at
-        /// all, is something they are asked to check.
+        /// Settles, before anything is saved, the parent of each downloaded record whose choice hangs on the
+        /// stored Features. A Team first sets aside the candidates Lighthouse does not hold as Features. A
+        /// Portfolio sets nothing aside: the issues above its Features are stored only once a refresh has read
+        /// them, so setting aside what Lighthouse does not hold would throw away every parent the first time
+        /// it is seen. Among what is left the oldest link wins, then the issue created first, then the lowest
+        /// key, and links that leave nothing hand over to the next source, taking back the key the connector
+        /// hung the record under at face value. The connector cannot make that choice, because only the
+        /// stored Features say which candidate is one and when it was created. They are read once for the
+        /// whole fetch, and not at all when no record needs them; every other record keeps what the connector
+        /// gave it. Only links naming several issues are written as a warning and counted, because a parent
+        /// picked among them on the administrator's behalf, or not picked at all, is something they are asked
+        /// to check; a lone link has nothing to pick.
         /// </summary>
         private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen<TRecord>(IWorkItemQueryOwner owner, string ownerInTheLog, ParentNarrowing narrowing, List<TRecord> downloaded)
             where TRecord : WorkItemBase
         {
-            var undecided = downloaded.FindAll(LinksNameMoreThanOneParent);
+            var provisional = downloaded
+                .Where(record => record.ParentReadings.Positions.Count > 0)
+                .Select(record => (Record: record, Choice: ParentSourceSelector.ChooseProvisionally(record.ParentReadings, narrowing)))
+                .ToList();
+            var undecided = provisional.FindAll(reading => reading.Choice.NeedsStoredFeatures).ConvertAll(reading => reading.Record);
 
-            if (undecided.Count == 0)
+            var settled = PlaceByTheirReadings(narrowing, undecided);
+
+            if (provisional.Count > 0)
             {
-                return (0, 0);
+                var alreadyDecided = provisional.Where(reading => !reading.Choice.NeedsStoredFeatures).Select(reading => reading.Choice);
+                WriteWhereTheParentsCameFrom(owner, ownerInTheLog, [.. alreadyDecided, .. settled.Choices], undecided.Count);
             }
 
-            var placements = PlaceAmongTheirCandidates(owner, narrowing, undecided);
-
-            foreach (var line in ParentPlacementReport.Lines(ownerInTheLog, placements))
+            foreach (var line in ParentPlacementReport.Lines(ownerInTheLog, settled.Placements))
             {
                 logger.LogWarning("{ParentPlacementLine}", line);
             }
 
-            var placed = placements.Count(record => record.Placement.Outcome == ParentPlacementOutcome.Placed);
+            var placed = settled.Placements.Count(record => record.Placement.Outcome == ParentPlacementOutcome.Placed);
 
-            return (placed, undecided.Count - placed);
+            return (placed, settled.Placements.Count - placed);
         }
 
-        private List<RecordPlacement> PlaceAmongTheirCandidates<TRecord>(IWorkItemQueryOwner owner, ParentNarrowing narrowing, List<TRecord> undecided)
+        private void WriteWhereTheParentsCameFrom(IWorkItemQueryOwner owner, string ownerInTheLog, IReadOnlyList<ParentChoice> choices, int sentToPlacement)
+        {
+            var list = owner.TheEffectiveParentSources();
+
+            logger.LogDebug(
+                "{ParentSourcesLine}",
+                ParentPlacementReport.WhereTheParentsCameFrom(ownerInTheLog, FetchFingerprint.RenderParentSources(list), list.Entries.Count, choices, sentToPlacement));
+        }
+
+        private SettledParents PlaceByTheirReadings<TRecord>(ParentNarrowing narrowing, List<TRecord> undecided)
             where TRecord : WorkItemBase
         {
+            if (undecided.Count == 0)
+            {
+                return new SettledParents([], []);
+            }
+
             var storedFeatures = featureRepository.GetStoredFeatureCreatedDates();
+            var choices = new List<ParentChoice>();
             var placements = new List<RecordPlacement>();
 
             foreach (var record in undecided)
             {
-                var links = ParentResolution.From(record.ParentCandidatesFromLinks);
-                var placement = links.Place(storedFeatures, narrowing);
+                var choice = ParentSourceSelector.Choose(record.ParentReadings, storedFeatures, narrowing);
+                ParentSourceSelector.HangUnder(record, record.ParentReadings, choice);
+                choices.Add(choice);
 
-                if (placement.Outcome == ParentPlacementOutcome.Placed)
+                var links = ParentSourceSelector.TheLinksNamingSeveral(record.ParentReadings, choice);
+
+                if (links.IsAmbiguous)
                 {
-                    ParentSourceSelector.HangUnder(owner, record, placement.Key);
+                    placements.Add(new RecordPlacement(record.ReferenceId, links, links.Place(storedFeatures, narrowing)));
                 }
-
-                placements.Add(new RecordPlacement(record.ReferenceId, links, placement));
             }
 
-            return placements;
+            return new SettledParents(choices, placements);
         }
+
+        /// <summary>
+        /// What the second look at a fetch decided: a choice for each record it settled, and the placement of
+        /// those whose links named several issues, which are the only ones anybody is told about.
+        /// </summary>
+        private sealed record SettledParents(List<ParentChoice> Choices, List<RecordPlacement> Placements);
 
         /// <summary>
         /// Downloaded payloads only. SyncWorkItem, WithSyncDeltaTransition and SyncStateTransitions all
@@ -360,13 +388,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
                 [.. sweptOnce.Select(record => record.ReferenceId)],
                 SyncOutcome.DeltaSync(sweptRecords.Count, downloaded.Count));
         }
-
-        /// <summary>
-        /// Read from the candidates themselves, merged by key, so two links to the same issue are one
-        /// candidate rather than a question.
-        /// </summary>
-        private static bool LinksNameMoreThanOneParent(WorkItemBase record)
-            => ParentResolution.From(record.ParentCandidatesFromLinks).IsAmbiguous;
 
         // Compared per item against the stored stamp. No global watermark, so clock skew and
         // server-time drift stay out of the design. A record nobody stored yet has always moved.

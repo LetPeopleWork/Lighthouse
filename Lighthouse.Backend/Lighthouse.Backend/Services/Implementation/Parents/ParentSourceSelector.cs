@@ -84,6 +84,17 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
         public static ParentChoice ChooseProvisionally(ParentReadings readings, ParentNarrowing narrowing)
             => TheFirstThatYields(readings, links => (links.Key, NeedAFeatureTest(links, narrowing)));
 
+        /// <summary>
+        /// The links a choice has to answer for when they named several issues: the ones that won, or else the
+        /// last ones walked past on the way to the winner. One answer per record, so a record listing two link
+        /// entries is counted once. Empty when no such links were walked.
+        /// </summary>
+        public static ParentResolution TheLinksNamingSeveral(ParentReadings readings, ParentChoice choice)
+            => readings.Positions
+                .Take(choice.WinnerPosition + 1 ?? readings.Positions.Count)
+                .Select(position => position.Reading.Links)
+                .LastOrDefault(links => links.IsAmbiguous);
+
         private static bool NeedAFeatureTest(ParentResolution links, ParentNarrowing narrowing)
             => links.IsAmbiguous || (links.IsResolved && narrowing == ParentNarrowing.Narrow);
 

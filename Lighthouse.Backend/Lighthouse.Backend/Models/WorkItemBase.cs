@@ -13,7 +13,6 @@ namespace Lighthouse.Backend.Models
             Update(workItemBase);
             SyncedTransitions = workItemBase.SyncedTransitions;
             TransitionsAreItsWholeHistory = workItemBase.TransitionsAreItsWholeHistory;
-            ParentCandidatesFromLinks = workItemBase.ParentCandidatesFromLinks;
             ParentReadings = workItemBase.ParentReadings;
             RefreshFindings = workItemBase.RefreshFindings;
         }
@@ -67,17 +66,6 @@ namespace Lighthouse.Backend.Models
         /// </summary>
         [NotMapped]
         public bool TransitionsAreItsWholeHistory { get; set; }
-
-        /// <summary>
-        /// Every issue the links on this record named as somewhere to hang it, as this reading found them.
-        /// The tracker cannot tell which of several is the real parent, because it does not know which of
-        /// them Lighthouse holds as Features, so the choice is made later by the refresh, which does; more
-        /// than one is what makes the record a question at all. Not stored, because it is not a fact about
-        /// the record but about the reading that just happened: only that reading can tell a record whose
-        /// links named several issues apart from one nobody ever linked.
-        /// </summary>
-        [NotMapped]
-        public IReadOnlyList<ParentCandidate> ParentCandidatesFromLinks { get; set; } = [];
 
         /// <summary>
         /// What each position of the owner's parent source list found for this record, as this reading found

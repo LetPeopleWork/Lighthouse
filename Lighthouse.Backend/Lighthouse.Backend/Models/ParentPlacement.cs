@@ -1,9 +1,10 @@
 namespace Lighthouse.Backend.Models
 {
     /// <summary>
-    /// What placing one item whose links name several issues decided: under which of them it hangs, which
-    /// rule settled it, and which candidates were set aside - or that it could not be placed, and why. It
-    /// is a plan rather than a write, so the rule can be read and checked without touching a record.
+    /// What placing one item among the issues its links name decided, whether they name one or several:
+    /// under which of them it hangs, which rule settled it, and which candidates were set aside - or that it
+    /// could not be placed, and why. It is a plan rather than a write, so the rule can be read and checked
+    /// without touching a record.
     /// </summary>
     public sealed record ParentPlacement
     {

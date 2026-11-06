@@ -27,6 +27,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         private const string TheItemWithOneLink = "PAY-415";
 
+        private const string TheItemWithOneLinkToItsFeature = "PAY-417";
+
         private const string TheItemThatGainsASecondLink = "PAY-416";
 
         private const string TheItemWhoseFeatureIsStoredLater = "PAY-430";
@@ -171,18 +173,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         /// <summary>
-        /// One link is not a question, Feature or not. It is stored exactly as before, so a rule matching
-        /// "Parent Reference ID equals INC-5620" keeps matching, and it counts in neither figure.
+        /// One link is judged like several: a Feature is kept and anything else is no place to hang work. But
+        /// there was nothing to pick among, so it counts in neither figure and nobody is warned.
         /// </summary>
         [Test]
         [Category("edge")]
         [Category("kpi")]
-        public async Task A_Work_Item_with_a_single_link_keeps_it_Feature_or_not()
+        public async Task A_Work_Item_with_a_single_link_keeps_it_only_when_it_is_a_Feature_and_is_not_counted()
         {
             TheTeamReadsItsParentsFromTheCausedByLink();
             ThePortfolioHoldsTheFeature(TheFeature);
             TheTeamHoldsTheWorkItem(TheItemWithOneLink);
             TheIssueIsCausedBy(TheItemWithOneLink, TheLoneIncident);
+            TheTeamHoldsTheWorkItem(TheItemWithOneLinkToItsFeature);
+            TheIssueIsCausedBy(TheItemWithOneLinkToItsFeature, TheFeature);
             await ThePortfolioRefreshes();
 
             await TheTeamRefreshes();
@@ -190,8 +194,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             var figures = await WhatRefreshHistoryShowsForTheTeam();
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(TheStoredParentOfTheWorkItem(TheItemWithOneLink), Is.EqualTo(TheLoneIncident),
-                    "Rules the administrator already wrote against this value would silently stop matching if a lone link were narrowed too.");
+                Assert.That(TheStoredParentOfTheWorkItem(TheItemWithOneLinkToItsFeature), Is.EqualTo(TheFeature),
+                    "A lone link to a Feature Lighthouse holds is the parent.");
+                Assert.That(TheStoredParentOfTheWorkItem(TheItemWithOneLink), Is.Empty,
+                    "An incident is not a Feature and the tracker reports no parent of its own, so the item has none.");
                 Assert.That(figures.Placed, Is.Zero,
                     "Nothing had more than one candidate, so nothing was placed among several.");
                 Assert.That(figures.NotPlaced, Is.Zero,
@@ -202,13 +208,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
         }
 
         /// <summary>
-        /// Stored under its one incident yesterday, and today a second incident is linked. Now there is a
-        /// question, and no Feature answers it, so the item is not placed and takes what the tracker reports
-        /// for it now, which is nothing here. Keeping yesterday's incident would show an old answer as current.
+        /// Its one incident left it with no parent and no count yesterday, and today a second incident is
+        /// linked. Now the links name several issues and no Feature answers them, so the item is still under
+        /// nothing, but it is counted and named, because the administrator is asked to check such links.
         /// </summary>
         [Test]
         [Category("error")]
-        public async Task A_Work_Item_kept_under_its_lone_link_is_not_placed_once_a_second_non_Feature_is_linked()
+        public async Task A_Work_Item_under_nothing_is_counted_as_not_placed_once_a_second_non_Feature_is_linked()
         {
             TheTeamReadsItsParentsFromTheCausedByLink();
             ThePortfolioHoldsTheFeature(TheFeature);
@@ -217,6 +223,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             await ThePortfolioRefreshes();
             await TheTeamIsInSteadyUse();
             var whereTheLoneLinkPutIt = TheStoredParentOfTheWorkItem(TheItemThatGainsASecondLink);
+            var figuresWithTheLoneLink = await WhatRefreshHistoryShowsForTheTeam();
 
             TheIssueIsCausedBy(TheItemThatGainsASecondLink, AnotherIncident);
             TheIssueMoves(TheItemThatGainsASecondLink);
@@ -226,10 +233,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
             var line = TheOneLineThatCouldNotPlaceFor(TheTeam);
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(whereTheLoneLinkPutIt, Is.EqualTo(TheLoneIncident),
-                    "positive control: a lone link is stored as it is, so the item has to start under its incident for this scenario to replace anything.");
+                Assert.That(whereTheLoneLinkPutIt, Is.Empty,
+                    "positive control: a lone incident is no Feature, so the item starts under nothing.");
+                Assert.That(figuresWithTheLoneLink.NotPlaced, Is.Zero,
+                    "positive control: a lone link has nothing to pick among, so it was not counted yet.");
                 Assert.That(TheStoredParentOfTheWorkItem(TheItemThatGainsASecondLink), Is.Empty,
-                    "Neither incident is a Feature and the tracker reports no parent of its own, so the item has none. Keeping the lone incident would show yesterday's reading as today's.");
+                    "Neither incident is a Feature and the tracker reports no parent of its own, so the item has none.");
                 Assert.That(figures.NotPlaced, Is.EqualTo(1),
                     "The refused item has to be counted, or the change in its links goes unnoticed.");
                 Assert.That(line, Does.Contain($"{TheItemThatGainsASecondLink} (linked to "),
@@ -357,8 +366,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
 
         /// <summary>
         /// The count is a statement about every record with two or more candidates: each is placed or not
-        /// placed, never both and never neither, whatever the mix. Records with one link or none are left
-        /// exactly as they were read.
+        /// placed, never both and never neither, whatever the mix. Records with one link or none add to
+        /// neither figure, and a lone link to something that is no Feature hangs the record under nothing.
         /// </summary>
         [TestCaseSource(nameof(MixesOfRecords))]
         [Category("property")]
@@ -380,8 +389,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
                     "Every record with one Feature among its links is placed, and nothing else is.");
                 Assert.That(figures.NotPlaced, Is.EqualTo(withOnlyIncidents),
                     "Every record with no Feature among two or more links is refused, and nothing else is.");
-                Assert.That(lone.ConvertAll(TheStoredParentOfTheWorkItem), Is.EqualTo(lone.ConvertAll(TheOneLinkOf)),
-                    "A record with one link keeps exactly what it names. Changing it would change what every rule written against that value matches.");
+                Assert.That(lone.ConvertAll(TheStoredParentOfTheWorkItem), Is.All.Empty,
+                    "A lone incident is no Feature and the tracker reports no parent of its own, so the record has none.");
             }
         }
 

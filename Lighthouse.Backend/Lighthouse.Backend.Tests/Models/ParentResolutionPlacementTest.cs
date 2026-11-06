@@ -4,7 +4,7 @@ using Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidates;
 namespace Lighthouse.Backend.Tests.Models
 {
     /// <summary>
-    /// The pick that places a record whose links name several issues, asked directly. It reads nothing and
+    /// The pick that places a record among the issues its links name, asked directly. It reads nothing and
     /// writes nothing, so its rule can be held to properties over many inputs here, while the acceptance
     /// scenarios prove a refresh actually asks it.
     ///

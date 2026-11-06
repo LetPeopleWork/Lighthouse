@@ -1919,8 +1919,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
             workItem.ParentReadings = WhatEachParentSourceReads(issue, workItemQueryOwner, customFieldReferences, ownParentFieldName);
 
-            var fromTheMatchingLinks = SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
-            workItem.ParentCandidatesFromLinks = fromTheMatchingLinks.CandidatesWithTheirLinkDates;
+            SetTheParentTheOverrideNames(issue, workItemQueryOwner, workItem, customFieldReferences);
 
             return workItem;
         }
@@ -1975,7 +1974,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
         /// The parent whatever is named in Parent Override Field points at, when it points at anything.
         /// A reference that yielded nothing leaves standing the parent Jira reported for itself.
         /// </summary>
-        private static ParentResolution SetTheParentTheOverrideNames(
+        private static void SetTheParentTheOverrideNames(
             Issue issue,
             IWorkItemQueryOwner workItemQueryOwner,
             WorkItemBase workItem,
@@ -2002,8 +2001,6 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
             {
                 workItem.ParentReferenceId = parentReference;
             }
-
-            return fromTheMatchingLinks;
         }
 
         /// <summary>

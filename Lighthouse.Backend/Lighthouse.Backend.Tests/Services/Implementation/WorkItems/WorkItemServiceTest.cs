@@ -31,7 +31,9 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         private const string TheRecordWithOneLink = "ITEM-3";
         private const string TheRecordWithNoLink = "ITEM-4";
         private const string TheRecordThatSatStill = "ITEM-5";
+        private const string TheRecordWithALinkToAFeature = "ITEM-6";
         private const int TheFieldThatNamesTheLinkType = 7;
+        private const int ThePlainField = 8;
         private const string TheFeatureUnderAFeatureAndAnIncident = "FTR-1";
         private const string TheFeatureUnderTwoIncidents = "FTR-2";
         private const string TheFeatureWithOneLink = "FTR-3";
@@ -45,6 +47,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             [new ParentCandidate(TheStoredFeature, null), new ParentCandidate("INC-5602", null)];
 
         private static readonly ParentCandidate[] OneIncident = [new ParentCandidate(TheLoneLink, null)];
+
+        private static readonly ParentCandidate[] OneStoredFeature = [new ParentCandidate(TheStoredFeature, null)];
 
         private static readonly string[] BothDependencyPhrases = ["depends on", "is depended on by"];
 
@@ -1189,13 +1193,12 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// A whole-query refresh places the records whose links named several issues, counts each as placed
-        /// or not placed, and leaves every record with one link or none exactly as the tracker gave it, so a
-        /// rule written against a lone link keeps matching. A record nobody could place keeps what the
-        /// tracker said its parent is, never a guess from its links.
+        /// A whole-query refresh judges every link against the stored Features, and counts as placed or not
+        /// placed only the records whose links named several issues. A record no link could place hangs
+        /// under the next source that has a parent, never a guess from its links.
         /// </summary>
         [Test]
-        public async Task UpdateWorkItemsForTeam_FullRefresh_PlacesAndCountsOnlyTheRecordsWhoseLinksNameSeveralIssues()
+        public async Task UpdateWorkItemsForTeam_FullRefresh_PlacesEveryLinkAndCountsOnlyTheRecordsWhoseLinksNameSeveralIssues()
         {
             var team = CreateTeam();
             team.OwnParentOverride(TheFieldThatNamesTheLinkType);
@@ -1213,7 +1216,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             {
                 Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Full),
                     "positive control: this fixture is about the whole-query path, so it has to have taken it.");
-                ThePlacingStepTouchedOnlyTheRecordsWhoseLinksNameSeveralIssues(outcome);
+                ThePlacingStepCountedOnlyTheRecordsWhoseLinksNameSeveralIssues(outcome);
             }
 
             featureRepositoryMock.Verify(repository => repository.GetStoredFeatureCreatedDates(), Times.Once,
@@ -1261,7 +1264,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             {
                 Assert.That(outcome.Mode, Is.EqualTo(SyncMode.Delta),
                     "positive control: four stored records moved and one did not, so this refresh has to be the cheap one.");
-                ThePlacingStepTouchedOnlyTheRecordsWhoseLinksNameSeveralIssues(outcome);
+                ThePlacingStepCountedOnlyTheRecordsWhoseLinksNameSeveralIssues(outcome);
                 Assert.That(WhatTheStoredRecordShows(TheRecordThatSatStill), Is.EqualTo((string.Empty, (string?)null)),
                     "A record the refresh did not download is not read, so nothing about it can have changed.");
             }
@@ -1271,24 +1274,118 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// A refresh where every link named one issue has no question to answer, so it does not ask the
+        /// A lone link is judged against the stored Features like several are, but nobody is told about it:
+        /// the counts and the warning lines say links named more than one issue, and these did not.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_ADownloadOfSingleLinks_GivesZeroCountsAndNoWarningLines()
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            TheTeamDownloads(team, [
+                ADownload(TheRecordWithOneLink, TheLoneLink, OneIncident, TheLoneLink, TheFirstReadingDay),
+                ADownload(TheRecordWithALinkToAFeature, TheStoredFeature, OneStoredFeature, TheStoredFeature, TheFirstReadingDay)]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            var outcome = await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.Zero);
+                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.Zero);
+                Assert.That(whatTheServiceWrote.Warnings, Is.Empty);
+                Assert.That(WhatTheStoredRecordShows(TheRecordWithALinkToAFeature), Is.EqualTo((TheStoredFeature, (string?)TheStoredFeature)),
+                    "positive control: the lone Feature was judged and kept, so the silence above is not the placing step having been skipped.");
+                Assert.That(WhatTheStoredRecordShows(TheRecordWithOneLink), Is.EqualTo((TheTrackersOwnParent, (string?)string.Empty)),
+                    "positive control: the lone incident was judged and left behind, and that adds no count and no line either.");
+            }
+        }
+
+        /// <summary>
+        /// A record whose link names nothing the instance holds is not stuck on it: the next reading decides,
+        /// and a field's value yields even though it names no Feature either.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_ARecordWhoseOnlyLinkIsNoStoredFeature_FallsThroughToTheNextReading()
+        {
+            const string theNextFieldsValue = "INC-7001";
+            var team = ATeamReadingLinksThenItsOwnParent();
+            var download = ADownload(TheRecordWithOneLink, TheLoneLink, OneIncident, TheLoneLink, TheFirstReadingDay);
+            download.ParentReadings = ParentReadings.Of(
+                ALinkEntryReading(OneIncident),
+                new ParentReadingAt(ParentSourceEntry.Field(ThePlainField), ParentReading.FieldValue(theNextFieldsValue)));
+            download.AdditionalFieldValues[ThePlainField] = theNextFieldsValue;
+            TheTeamDownloads(team, [download]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            var stored = workItems.Single(workItem => workItem.ReferenceId == TheRecordWithOneLink);
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(stored.ParentReferenceId, Is.EqualTo(theNextFieldsValue));
+                Assert.That(stored.AdditionalFieldValues[TheFieldThatNamesTheLinkType], Is.Empty,
+                    "The link did not win, so its field shows no key anybody would go looking for.");
+                Assert.That(stored.AdditionalFieldValues[ThePlainField], Is.EqualTo(theNextFieldsValue),
+                    "A field's value is the tracker's and stays as it is.");
+            }
+        }
+
+        /// <summary>
+        /// The connector cannot see the stored Features, so it hangs a record under its lone link at face
+        /// value. When that link fails the test and nothing else yields, the key is taken back: the record
+        /// has no parent, rather than one nobody can find.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_AProvisionalParentThatFailsTheFeatureTest_IsTakenBack()
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            var download = ADownload(TheRecordWithOneLink, TheLoneLink, OneIncident, TheLoneLink, TheFirstReadingDay);
+            download.ParentReadings = ParentReadings.Of(ALinkEntryReading(OneIncident));
+            TheTeamDownloads(team, [download]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            Assert.That(WhatTheStoredRecordShows(TheRecordWithOneLink), Is.EqualTo((string.Empty, (string?)string.Empty)));
+        }
+
+        /// <summary>
+        /// One refresh of a mixed download: the placing step writes the record that needed it, and no other
+        /// record differs in any member, whether its parent came from a field, from the tracker, or it
+        /// carries no readings at all, as everything Linear and CSV hand over does.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_RecordsNeedingNoStoredFeatures_AreEqualBeforeAndAfterThePlacement()
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            var theRecordsThatNeedNothing = TheRecordsThatNeedNoStoredFeatures();
+            var before = theRecordsThatNeedNothing.ConvertAll(EveryMemberOf);
+            TheTeamDownloads(team, [
+                .. theRecordsThatNeedNothing,
+                ADownload(TheRecordUnderAFeatureAndAnIncident, TheTrackersOwnParent, AStoredFeatureAndAnIncident, string.Empty, TheFirstReadingDay)]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheStoredRecordShows(TheRecordUnderAFeatureAndAnIncident), Is.EqualTo((TheStoredFeature, (string?)TheStoredFeature)),
+                    "positive control: the placing step did run on this download.");
+                Assert.That(theRecordsThatNeedNothing.ConvertAll(EveryMemberOf), Is.EqualTo(before));
+            }
+        }
+
+        /// <summary>
+        /// A refresh where no record has a link to judge has no question to answer, so it does not ask the
         /// database which Features it holds.
         /// </summary>
         [Test]
-        public async Task UpdateWorkItemsForTeam_NoRecordWhoseLinksNameSeveralIssues_NeverReadsTheStoredFeatures()
+        public async Task UpdateWorkItemsForTeam_NoRecordNeedsTheStoredFeatures_NeverReadsThem()
         {
-            var team = CreateTeam();
-            team.OwnParentOverride(TheFieldThatNamesTheLinkType);
+            var team = ATeamReadingLinksThenItsOwnParent();
+            TheTeamDownloads(team, TheRecordsThatNeedNoStoredFeatures());
 
-            workTrackingConnectorMock
-                .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
-                .ReturnsAsync([
-                    ADownload(TheRecordWithOneLink, TheLoneLink, OneIncident, TheLoneLink, TheFirstReadingDay),
-                    ADownload(TheRecordWithNoLink, TheTrackersOwnParent, [], string.Empty, TheFirstReadingDay)]);
-
-            var subject = CreateSubject();
-
-            var outcome = await subject.UpdateWorkItemsForTeam(team);
+            var outcome = await CreateSubject().UpdateWorkItemsForTeam(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -1300,7 +1397,177 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 "Nothing needed placing, so a read of every stored Feature would be a query spent on no question.");
         }
 
-        private void ThePlacingStepTouchedOnlyTheRecordsWhoseLinksNameSeveralIssues(SyncOutcome outcome)
+        /// <summary>
+        /// Judging links only ever reads: the Features Lighthouse holds are asked questions, and a Team's
+        /// refresh writes none of them.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_SeveralRecordsNeedTheStoredFeatures_ReadsThemOnceAndWritesNoneOfThem()
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            TheTeamDownloads(team, ADownloadOfEveryKindOfRecord(TheFirstReadingDay));
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            featureRepositoryMock.Verify(repository => repository.GetStoredFeatureCreatedDates(), Times.Once);
+            featureRepositoryMock.Verify(repository => repository.Add(It.IsAny<Feature>()), Times.Never);
+            featureRepositoryMock.Verify(repository => repository.Update(It.IsAny<Feature>()), Times.Never);
+            featureRepositoryMock.Verify(repository => repository.Remove(It.IsAny<int>()), Times.Never);
+        }
+
+        /// <summary>
+        /// A record that lists two link entries is still one record: it is counted once, by the links that
+        /// won or else by the links that were passed over, and links naming one issue are never what it is
+        /// counted by.
+        /// </summary>
+        [TestCase(new[] { "INC-5620" }, new[] { TheStoredFeature, "INC-5602" }, 1, 0, TheStoredFeature, TestName = "A lone link fails and the several behind it place the record")]
+        [TestCase(new[] { "INC-5602", "INC-5610" }, new[] { TheStoredFeature }, 0, 1, TheStoredFeature, TestName = "Several links fail and the lone link behind them places the record")]
+        [TestCase(new[] { "INC-5602", "INC-5610" }, new[] { "INC-5620", "INC-5630" }, 0, 1, "", TestName = "Two sets of several links both fail")]
+        [TestCase(new[] { TheStoredFeature }, new[] { "INC-5602", "INC-5610" }, 0, 0, TheStoredFeature, TestName = "A lone link wins and the several behind it are never read")]
+        public async Task UpdateWorkItemsForTeam_TwoLinkEntries_CountTheRecordOnce(string[] first, string[] second, int placed, int notPlaced, string parent)
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            var download = ADownload(TheRecordWithOneLink, string.Empty, [], string.Empty, TheFirstReadingDay);
+            download.ParentReadings = ParentReadings.Of(
+                ALinkEntryReading([.. first.Select(key => new ParentCandidate(key, null))]),
+                new ParentReadingAt(ParentSourceEntry.Field(ThePlainField), ParentReading.LinkCandidates(ParentResolution.From(second))));
+            TheTeamDownloads(team, [download]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            var outcome = await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(outcome.RecordsPlacedFromLinksNamingMoreThanOneParent, Is.EqualTo(placed));
+                Assert.That(outcome.RecordsWhoseLinksNamedMoreThanOneParent, Is.EqualTo(notPlaced));
+                Assert.That(workItems.Single().ParentReferenceId, Is.EqualTo(parent));
+            }
+        }
+
+        /// <summary>
+        /// When somebody asks why an item hangs where it does, one line per fetch says which list was read
+        /// and how many records each position of it decided, instead of one line per item.
+        /// </summary>
+        [Test]
+        public async Task UpdateWorkItemsForTeam_ADownloadWithReadings_WritesOneDebugLineNamingTheListAndTheCountAtEachPosition()
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            team.Name = "Payments";
+            var theRecordNothingYieldsFor = ADownload(TheRecordThatSatStill, string.Empty, OneIncident, string.Empty, TheFirstReadingDay);
+            theRecordNothingYieldsFor.ParentReadings = ParentReadings.Of(ALinkEntryReading(OneIncident));
+            TheTeamDownloads(team, [.. ADownloadOfEveryKindOfRecord(TheFirstReadingDay), theRecordNothingYieldsFor]);
+            TheStoredFeaturesAre(TheStoredFeature);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            Assert.That(TheParentSourceLines(), Is.EqualTo(new[]
+            {
+                $"Parent sources for Team \"Payments\": F:{TheFieldThatNamesTheLinkType},P; 5 records resolved by position 1: 1, 2: 3, none: 1; 4 fell through to stored-Feature placement",
+            }));
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_NoRecordNeedsTheStoredFeatures_StillWritesTheDebugLine()
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            team.Name = "Payments";
+            TheTeamDownloads(team, [ADownload(TheRecordWithNoLink, TheTrackersOwnParent, [], string.Empty, TheFirstReadingDay)]);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            Assert.That(TheParentSourceLines(), Is.EqualTo(new[]
+            {
+                $"Parent sources for Team \"Payments\": F:{TheFieldThatNamesTheLinkType},P; 1 record resolved by position 1: 0, 2: 1, none: 0; 0 fell through to stored-Feature placement",
+            }));
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_RecordsWithNoReadings_AreLeftOutOfTheDebugLine()
+        {
+            var team = ATeamReadingLinksThenItsOwnParent();
+            TheTeamDownloads(team, [
+                ADownload(TheRecordWithNoLink, TheTrackersOwnParent, [], string.Empty, TheFirstReadingDay),
+                ARecordWithNoReadings("ITEM-90")]);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            Assert.That(TheParentSourceLines().Single(), Does.Contain("; 1 record resolved by position"));
+        }
+
+        [Test]
+        public async Task UpdateWorkItemsForTeam_ADownloadWithNoReadingsAtAll_WritesNoDebugLine()
+        {
+            var team = CreateTeam();
+            TheTeamDownloads(team, [ARecordWithNoReadings("ITEM-90")]);
+
+            await CreateSubject().UpdateWorkItemsForTeam(team);
+
+            Assert.That(TheParentSourceLines(), Is.Empty,
+                "Linear and CSV hand over no readings, so a line about them would describe a list nobody read.");
+        }
+
+        private List<string> TheParentSourceLines()
+            => [.. whatTheServiceWrote.Written(LogLevel.Debug).Where(line => line.StartsWith("Parent sources for ", StringComparison.Ordinal))];
+
+        private Team ATeamReadingLinksThenItsOwnParent()
+        {
+            var team = CreateTeam();
+            team.OwnParentOverride(TheFieldThatNamesTheLinkType);
+
+            return team;
+        }
+
+        private void TheTeamDownloads(Team team, List<WorkItem> download)
+            => workTrackingConnectorMock
+                .Setup(connector => connector.GetWorkItemsForTeam(team, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(download);
+
+        private static List<WorkItem> TheRecordsThatNeedNoStoredFeatures()
+        {
+            var aFieldValueWins = ADownload("ITEM-91", "INC-7001", OneIncident, string.Empty, TheFirstReadingDay);
+            aFieldValueWins.ParentReadings = ParentReadings.Of(
+                new ParentReadingAt(ParentSourceEntry.Field(ThePlainField), ParentReading.FieldValue("INC-7001")),
+                ALinkEntryReading(OneIncident));
+
+            return
+            [
+                aFieldValueWins,
+                ADownload(TheRecordWithNoLink, TheTrackersOwnParent, [], string.Empty, TheFirstReadingDay),
+                ARecordWithNoReadings("ITEM-92"),
+            ];
+        }
+
+        /// <summary>What Linear and CSV hand over: the parent the tracker gave, and no readings behind it.</summary>
+        private static WorkItem ARecordWithNoReadings(string referenceId)
+            => new()
+            {
+                ReferenceId = referenceId,
+                State = "To Do",
+                StateCategory = StateCategories.ToDo,
+                LastChangedRemote = TheFirstReadingDay,
+                ParentReferenceId = TheTrackersOwnParent,
+            };
+
+        /// <summary>
+        /// Every public member, read by reflection so a member added later is covered, and each Additional
+        /// Field value as its own entry, so a write to one of them cannot hide inside the dictionary.
+        /// </summary>
+        private static Dictionary<string, object?> EveryMemberOf(WorkItem record)
+        {
+            var members = typeof(WorkItem).GetProperties()
+                .Where(member => member.Name != nameof(WorkItem.AdditionalFieldValues))
+                .ToDictionary(member => member.Name, member => member.GetValue(record));
+
+            foreach (var (field, value) in record.AdditionalFieldValues)
+            {
+                members[$"AdditionalField:{field}"] = value;
+            }
+
+            return members;
+        }
+
+        private void ThePlacingStepCountedOnlyTheRecordsWhoseLinksNameSeveralIssues(SyncOutcome outcome)
         {
             using (Assert.EnterMultipleScope())
             {
@@ -1311,9 +1578,11 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Assert.That(WhatTheStoredRecordShows(TheRecordUnderAFeatureAndAnIncident), Is.EqualTo((TheStoredFeature, (string?)TheStoredFeature)),
                     "The placed record hangs under the Feature, and the Additional Field shows the key that was used.");
                 Assert.That(WhatTheStoredRecordShows(TheRecordUnderTwoIncidents), Is.EqualTo((TheTrackersOwnParent, (string?)string.Empty)),
-                    "A record nobody could place keeps the tracker's own parent and shows nothing, exactly as the tracker gave it.");
-                Assert.That(WhatTheStoredRecordShows(TheRecordWithOneLink), Is.EqualTo((TheLoneLink, (string?)TheLoneLink)),
-                    "A lone link is not a question: the record keeps exactly what the tracker gave it.");
+                    "A record its links could not place hangs under the next source, here the tracker's own parent, and the link's field shows nothing.");
+                Assert.That(WhatTheStoredRecordShows(TheRecordWithOneLink), Is.EqualTo((TheTrackersOwnParent, (string?)string.Empty)),
+                    "A lone link to something that is no stored Feature is judged like several: the record moves on to the next source.");
+                Assert.That(whatTheServiceWrote.Warnings.Where(line => line.Contains(TheRecordWithOneLink, StringComparison.Ordinal)), Is.Empty,
+                    "The lines say the links name more than one issue, which a lone link does not.");
                 Assert.That(WhatTheStoredRecordShows(TheRecordWithNoLink), Is.EqualTo((TheTrackersOwnParent, (string?)string.Empty)),
                     "A record with no link is not a question: the record keeps exactly what the tracker gave it.");
             }
@@ -1341,9 +1610,18 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
             ];
 
         /// <summary>
-        /// What a connector hands back: the parent the tracker reports, every issue the links named, and what
-        /// the Additional Field shows. For a lone link the connector already hung the record under it.
+        /// What a connector hands back: the parent as it left the connector, what each position of the list
+        /// read, and what the link entry's Additional Field shows. For a lone link the connector already
+        /// hung the record under it at face value.
         /// </summary>
+        private static ParentReadings ReadingsOf(ParentCandidate[] candidates)
+            => ParentReadings.Of(
+                ALinkEntryReading(candidates),
+                new ParentReadingAt(ParentSourceEntry.TrackerParent, ParentReading.TrackersOwn(TheTrackersOwnParent)));
+
+        private static ParentReadingAt ALinkEntryReading(ParentCandidate[] candidates)
+            => new(ParentSourceEntry.Field(TheFieldThatNamesTheLinkType), ParentReading.LinkCandidates(ParentResolution.From(candidates)));
+
         private static WorkItem ADownload(string referenceId, string trackersOwnParent, ParentCandidate[] candidates, string shown, DateTime lastChangedRemote)
             => new()
             {
@@ -1352,7 +1630,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 StateCategory = StateCategories.ToDo,
                 LastChangedRemote = lastChangedRemote,
                 ParentReferenceId = trackersOwnParent,
-                ParentCandidatesFromLinks = candidates,
+                ParentReadings = ReadingsOf(candidates),
                 AdditionalFieldValues = { [TheFieldThatNamesTheLinkType] = shown },
             };
 
@@ -1443,8 +1721,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
         }
 
         /// <summary>
-        /// A Portfolio refresh where every link named one issue has no question to answer, so it does not ask
-        /// the database which Features it holds.
+        /// A Portfolio does not narrow, so a link naming one issue is taken as it is and does not ask the
+        /// database which Features it holds.
         /// </summary>
         [Test]
         public async Task UpdateFeaturesForPortfolio_NoFeatureWhoseLinksNameSeveralIssues_NeverReadsTheStoredFeatures()
@@ -1883,7 +2161,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 Assert.That(WhatTheStoredFeatureShows(stored, TheFeatureUnderTwoIncidents), Is.EqualTo(("INC-5602", (string?)"INC-5602")),
                     "Two incidents nobody stores fall to the lowest key, rather than being refused as a Team refuses them.");
                 Assert.That(WhatTheStoredFeatureShows(stored, TheFeatureWithOneLink), Is.EqualTo((TheLoneLink, (string?)TheLoneLink)),
-                    "A lone link is not a question: the Feature keeps exactly what the tracker gave it.");
+                    "A Portfolio does not narrow, so a lone link needs no stored Feature and the Feature keeps what the connector gave it.");
                 Assert.That(WhatTheStoredFeatureShows(stored, TheFeatureWithNoLink), Is.EqualTo((TheTrackersOwnParent, (string?)string.Empty)),
                     "A Feature with no link is not a question: it keeps exactly what the tracker gave it.");
             }
@@ -1931,7 +2209,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 ReferenceId = referenceId,
                 LastChangedRemote = lastChangedRemote,
                 ParentReferenceId = trackersOwnParent,
-                ParentCandidatesFromLinks = candidates,
+                ParentReadings = ReadingsOf(candidates),
                 AdditionalFieldValues = { [TheFieldThatNamesTheLinkType] = shown },
             };
 
@@ -2854,7 +3132,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkItems
                 State = "To Do",
                 StateCategory = StateCategories.ToDo,
                 LastChangedRemote = lastChangedRemote,
-                ParentCandidatesFromLinks = TwoIssuesNobodyHoldsAsAFeature,
+                ParentReadings = ReadingsOf(TwoIssuesNobodyHoldsAsAFeature),
             };
 
         private void TheTrackerCanBeScanned()
