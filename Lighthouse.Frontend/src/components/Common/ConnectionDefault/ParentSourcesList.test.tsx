@@ -92,3 +92,40 @@ describe("the Parent sources list of a Team", () => {
 		).toBeInTheDocument();
 	});
 });
+
+describe("the Parent sources list on a settings page", () => {
+	const aFollowedList = (value: ParentSourceEntry[]) => {
+		render(
+			<ParentSourcesList
+				value={value}
+				tracker="Jira"
+				additionalFieldDefinitions={TheFields}
+				onChange={vi.fn()}
+				followed
+				sourceChoice={<div>The choice</div>}
+				info={{ text: "Read on each item." }}
+			/>,
+		);
+	};
+
+	it("keeps the add picker off when nothing is left to add", () => {
+		aListOf([field(11), field(12), field(13), ownParent]);
+
+		expect(
+			screen.getByRole("combobox", { name: "Add a source" }),
+		).toHaveAttribute("aria-disabled", "true");
+	});
+
+	it("shows a followed list without its rows and picker, keeping the source choice and the tip", () => {
+		aFollowedList([field(11)]);
+
+		expect(screen.getByText("The choice")).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "About Parent sources" }),
+		).toBeInTheDocument();
+		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+		expect(
+			screen.queryByRole("combobox", { name: "Add a source" }),
+		).not.toBeInTheDocument();
+	});
+});

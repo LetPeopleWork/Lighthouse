@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { ParentSourceEntry } from "../../components/Common/ConnectionDefault/parentSources";
 import type { ICycleTimeDefinition } from "../Metrics/NamedCycleTime";
 import type { WorkTrackingSystemType } from "../WorkTracking/WorkTrackingSystemConnection";
 import type { IDataRetrievalSchema } from "./DataRetrievalSchema";
@@ -36,6 +37,9 @@ export interface IBaseSettings {
 	parentOverrideAdditionalFieldDefinitionId: number | null;
 	parentOverrideSource?: SettingSource;
 	parentOverrideDefaultName?: string | null;
+	parentSources?: readonly ParentSourceEntry[] | null;
+	/** The list of the default this owner can follow; null while the connection holds none. */
+	parentSourcesDefault?: readonly ParentSourceEntry[] | null;
 	workTrackingSystem?: WorkTrackingSystemType;
 	blockedRuleSetJson?: string | null;
 	stateMappings: IStateMapping[];

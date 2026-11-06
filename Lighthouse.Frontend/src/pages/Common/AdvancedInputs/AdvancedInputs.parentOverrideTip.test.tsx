@@ -1,6 +1,7 @@
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
+import { directionTip } from "../../../components/Common/ConnectionDefault/fieldDirectionTips";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
 import {
 	type IWorkTrackingSystemConnection,
@@ -20,13 +21,13 @@ import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import AdvancedInputsComponent from "./AdvancedInputs";
 
 /**
- * Sam, config-admin, is about to pick a Parent Override Field on a Team's or a Portfolio's settings. Beside the
- * field sits an info button, "About Parent Override Field". Opening it shows that the field reads the link or
+ * Sam, config-admin, is about to set the Parent sources on a Team's or a Portfolio's settings. Beside them sits
+ * an info button, "About Parent sources". Opening it shows that the field reads the link or
  * field on the item that points to its parent, with the tracker's own example, that None keeps the tracker's own
  * parent, and a "Learn More" link opening the matching docs section in a new tab.
  */
 
-const PARENT_OVERRIDE = "Parent Override Field";
+const PARENT_OVERRIDE = "Parent sources";
 const IS_CAUSED_BY = /is caused by/;
 const THE_PARENTS_ID = /parent['’]s id/i;
 
@@ -58,10 +59,16 @@ const givenSamOpensTheSettingsOf = async (
 	fireEvent.click(screen.getByLabelText("toggle"));
 };
 
+const theTipOn = (tracker: WorkTrackingSystemType | undefined) =>
+	directionTip("parentOverrideForTeams", tracker, {
+		feature: "Feature",
+		workItem: "Work Item",
+	})?.text;
+
 const whenSamOpensTheTip = () =>
 	openTheTip(userEvent.setup(), theAboutButtonOf(PARENT_OVERRIDE));
 
-describe("Story 6352: Parent Override Field says which way round it reads", () => {
+describe("Story 6352: Parent sources says which way round it reads", () => {
 	it("on a Jira Team, the tip names the phrase read towards the parent, such as is caused by, and what None does", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
 
@@ -104,20 +111,17 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 
 	it.each(["Linear", "Csv", "ServiceNow", undefined] as const)(
 		"on a %s Team the tip stays tracker-neutral, without an example",
-		async (tracker) => {
-			await givenSamOpensTheSettingsOf("Team", tracker);
+		(tracker) => {
+			const tip = theTipOn(tracker);
 
-			const tip = await whenSamOpensTheTip();
-			expect(tip).toHaveTextContent(/parent/i);
-			expect(tip).not.toHaveTextContent(IS_CAUSED_BY);
-			expect(tip).not.toHaveTextContent(THE_PARENTS_ID);
+			expect(tip).toMatch(/parent/i);
+			expect(tip).not.toMatch(IS_CAUSED_BY);
+			expect(tip).not.toMatch(THE_PARENTS_ID);
 		},
 	);
 
-	it("without an example, the tip reads as two sentences: which end the field reads, then what None does", async () => {
-		await givenSamOpensTheSettingsOf("Team", "Linear");
-
-		expect(await whenSamOpensTheTip()).toHaveTextContent(
+	it("without an example, the tip reads as two sentences: which end the field reads, then what None does", () => {
+		expect(theTipOn("Linear")).toBe(
 			"Read on each Work Item, this names the link or field that points to its parent. With None, the parent the tracker itself records is used.",
 		);
 	});
@@ -138,7 +142,7 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		expect(tip).not.toHaveTextContent(/Feature/);
 	});
 
-	it("on a Team, Learn More opens the Team's Parent Override docs in a new tab", async () => {
+	it("on a Team, Learn More opens the Team's parent docs in a new tab", async () => {
 		await givenSamOpensTheSettingsOf("Team", "Jira");
 
 		expectLearnMoreToOpen(
@@ -147,7 +151,7 @@ describe("Story 6352: Parent Override Field says which way round it reads", () =
 		);
 	});
 
-	it("on a Portfolio, Learn More opens the Portfolio's Parent Override docs in a new tab", async () => {
+	it("on a Portfolio, Learn More opens the Portfolio's parent docs in a new tab", async () => {
 		await givenSamOpensTheSettingsOf("Portfolio", "Jira");
 
 		expectLearnMoreToOpen(

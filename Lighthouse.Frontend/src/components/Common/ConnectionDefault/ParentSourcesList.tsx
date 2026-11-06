@@ -14,7 +14,10 @@ import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { useTerminology } from "../../../services/TerminologyContext";
-import FormSelectField from "../FormSelectField/FormSelectField";
+import FormSelectField, {
+	type FieldInfo,
+} from "../FormSelectField/FormSelectField";
+import InfoPopoverButton from "../InfoPopoverButton/InfoPopoverButton";
 import {
 	entriesStillToAdd,
 	MaximumParentSources,
@@ -31,7 +34,20 @@ export interface ParentSourcesListProps {
 	tracker: WorkTrackingSystemType;
 	additionalFieldDefinitions: readonly IAdditionalFieldDefinition[];
 	onChange: (list: readonly ParentSourceEntry[]) => void;
+	/** The list belongs to the connection's default, so it is named but has no rows to edit. */
+	followed?: boolean;
+	/** Where the list comes from, shown between the intro line and the rows. */
+	sourceChoice?: React.ReactNode;
+	info?: FieldInfo;
 }
+
+type ParentSourcesRowsProps = Pick<
+	ParentSourcesListProps,
+	"value" | "additionalFieldDefinitions" | "onChange"
+> & {
+	nameOf: (entry: ParentSourceEntry) => string;
+	ownParentName: string;
+};
 
 interface ParentSourceRowProps {
 	position: number;
@@ -98,24 +114,15 @@ const ParentSourceRow: React.FC<Readonly<ParentSourceRowProps>> = ({
 	);
 };
 
-/** The ordered list of parent sources: a controlled value, handed on whole after every edit. */
-const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
+const ParentSourcesRows: React.FC<Readonly<ParentSourcesRowsProps>> = ({
 	value,
-	tracker,
 	additionalFieldDefinitions,
 	onChange,
+	nameOf,
+	ownParentName,
 }) => {
-	const { getTerm } = useTerminology();
-	const workItem = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
-	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
-	const feature = getTerm(TERMINOLOGY_KEYS.FEATURE);
-
-	const nameOf = (entry: ParentSourceEntry) =>
-		nameOfParentSource(entry, tracker, additionalFieldDefinitions);
-	const ownParentName = nameOf({ kind: "TrackerParent" });
 	const stillToAdd = entriesStillToAdd(value, additionalFieldDefinitions);
 	const isFull = value.length >= MaximumParentSources;
-	const listsOwnParent = value.some((entry) => entry.kind === "TrackerParent");
 
 	const isRefused = (action: ParentSourcesAction) =>
 		reduceParentSources(value, action) === value;
@@ -129,14 +136,7 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 	};
 
 	return (
-		<Box>
-			<Typography variant="subtitle2" component="h3">
-				Parent sources
-			</Typography>
-			<Typography variant="body2" color="text.secondary">
-				The first source that has a value gives the parent; the rest are ignored
-				for that {workItem}.
-			</Typography>
+		<>
 			<List component="ol" dense>
 				{value.map((entry, position) => (
 					<ParentSourceRow
@@ -154,7 +154,7 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 				value=""
 				onChange={handleAdd}
 				allowNone={false}
-				disabled={isFull}
+				disabled={isFull || stillToAdd.length === 0}
 				options={stillToAdd.map((entry, position) => ({
 					id: position,
 					label: nameOf(entry),
@@ -165,6 +165,64 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 						: `Adds ${ownParentName} or an Additional Field not yet in the list.`
 				}
 			/>
+		</>
+	);
+};
+
+/** The ordered list of parent sources: a controlled value, handed on whole after every edit. */
+const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
+	value,
+	tracker,
+	additionalFieldDefinitions,
+	onChange,
+	followed = false,
+	sourceChoice,
+	info,
+}) => {
+	const { getTerm } = useTerminology();
+	const workItem = getTerm(TERMINOLOGY_KEYS.WORK_ITEM);
+	const workItems = getTerm(TERMINOLOGY_KEYS.WORK_ITEMS);
+	const feature = getTerm(TERMINOLOGY_KEYS.FEATURE);
+
+	const nameOf = (entry: ParentSourceEntry) =>
+		nameOfParentSource(entry, tracker, additionalFieldDefinitions);
+	const ownParentName = nameOf({ kind: "TrackerParent" });
+	const listsOwnParent = value.some((entry) => entry.kind === "TrackerParent");
+
+	return (
+		<Box>
+			<Box
+				sx={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+				}}
+			>
+				<Typography variant="subtitle2" component="h3">
+					Parent sources
+				</Typography>
+				{info && (
+					<InfoPopoverButton
+						label="About Parent sources"
+						text={info.text}
+						learnMoreUrl={info.learnMoreUrl}
+					/>
+				)}
+			</Box>
+			<Typography variant="body2" color="text.secondary">
+				The first source that has a value gives the parent; the rest are ignored
+				for that {workItem}.
+			</Typography>
+			{sourceChoice}
+			{!followed && (
+				<ParentSourcesRows
+					value={value}
+					additionalFieldDefinitions={additionalFieldDefinitions}
+					onChange={onChange}
+					nameOf={nameOf}
+					ownParentName={ownParentName}
+				/>
+			)}
 			{!listsOwnParent && (
 				<Typography variant="body2" color="warning.main">
 					Not in the list: {ownParentName}. {workItems} whose only parent is{" "}

@@ -4,6 +4,11 @@ import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/Ad
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import AdvancedInputsComponent from "./AdvancedInputs";
 
+const aTeamOnAzureDevOps = () => ({
+	...createMockTeamSettings(),
+	workTrackingSystem: "AzureDevOps" as const,
+});
+
 describe("AdvancedInputsComponent", () => {
 	const mockAdditionalFields: IAdditionalFieldDefinition[] = [
 		{ id: 1, displayName: "Parent Link Field", reference: "System.ParentLink" },
@@ -11,7 +16,7 @@ describe("AdvancedInputsComponent", () => {
 	];
 
 	it("renders correctly with provided teamSettings", () => {
-		const teamSettings = createMockTeamSettings();
+		const teamSettings = aTeamOnAzureDevOps();
 		teamSettings.parentOverrideAdditionalFieldDefinitionId = 1;
 		teamSettings.doneItemsCutoffDays = 180;
 
@@ -27,7 +32,7 @@ describe("AdvancedInputsComponent", () => {
 		fireEvent.click(screen.getByLabelText("toggle"));
 
 		expect(
-			screen.getByRole("combobox", { name: "Parent Override Field" }),
+			screen.getByRole("combobox", { name: "Parent sources" }),
 		).toHaveTextContent("Parent Link Field");
 		expect(screen.getByLabelText("Closed Items Cutoff (days)")).toHaveValue(
 			180,
@@ -36,7 +41,7 @@ describe("AdvancedInputsComponent", () => {
 
 	it("calls onTeamSettingsChange with the correct parameters when the Select value changes", () => {
 		const onTeamSettingsChange = vi.fn();
-		const teamSettings = createMockTeamSettings();
+		const teamSettings = aTeamOnAzureDevOps();
 
 		render(
 			<AdvancedInputsComponent
@@ -63,7 +68,7 @@ describe("AdvancedInputsComponent", () => {
 
 	it("calls onTeamSettingsChange with null when None is selected", () => {
 		const onTeamSettingsChange = vi.fn();
-		const teamSettings = createMockTeamSettings();
+		const teamSettings = aTeamOnAzureDevOps();
 		teamSettings.parentOverrideAdditionalFieldDefinitionId = 1;
 
 		render(
@@ -112,7 +117,7 @@ describe("AdvancedInputsComponent", () => {
 
 	it("calls onTeamSettingsChange with numeric value when cutoff days changes", () => {
 		const onTeamSettingsChange = vi.fn();
-		const teamSettings = createMockTeamSettings();
+		const teamSettings = aTeamOnAzureDevOps();
 
 		render(
 			<AdvancedInputsComponent

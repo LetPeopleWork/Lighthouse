@@ -27,6 +27,7 @@ import {
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
+import { parentSourcesAreOffered } from "../ConnectionDefault/parentSources";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import CycleTimesEditor from "../StateMappings/CycleTimesEditor";
@@ -132,6 +133,7 @@ const ModifyProjectSettings: React.FC<ModifyProjectSettingsProps> = ({
 			),
 		additionalFetch: refreshDependentData,
 		initialFetch: loadTeams,
+		readsParentSources: parentSourcesAreOffered,
 	});
 
 	portfolioIdRef.current = projectSettings?.id ?? 0;

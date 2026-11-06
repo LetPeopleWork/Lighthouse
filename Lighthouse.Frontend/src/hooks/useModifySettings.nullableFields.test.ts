@@ -20,6 +20,8 @@ type Writes = "cleared" | "never-written";
 const baseSettings = {
 	parentOverrideAdditionalFieldDefinitionId: "cleared",
 	parentOverrideDefaultName: "never-written",
+	parentSources: "never-written",
+	parentSourcesDefault: "never-written",
 	blockedRuleSetJson: "cleared",
 	processBehaviourChartBaselineStartDate: "cleared",
 	processBehaviourChartBaselineEndDate: "cleared",

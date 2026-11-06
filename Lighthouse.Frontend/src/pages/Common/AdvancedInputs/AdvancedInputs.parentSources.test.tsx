@@ -1,7 +1,23 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import {
+	act,
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import {
+	type ParentSourceEntry,
+	parentSourcesAreOffered,
+} from "../../../components/Common/ConnectionDefault/parentSources";
+import { useModifySettings } from "../../../hooks/useModifySettings";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
+import type {
+	IWorkTrackingSystemConnection,
+	WorkTrackingSystemType,
+} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import AdvancedInputsComponent from "./AdvancedInputs";
 
@@ -34,10 +50,35 @@ const openTheSettingsPageOf = (settings: IBaseSettings) => {
 	return onSettingsChange;
 };
 
-// Skipped until Story 6501 builds the parent sources list; enable one test at a time.
+const aConnection = (
+	workTrackingSystem: WorkTrackingSystemType,
+	defaults: IWorkTrackingSystemConnection["defaults"],
+): IWorkTrackingSystemConnection => ({
+	id: 2,
+	name: "The chosen connection",
+	workTrackingSystem,
+	options: [],
+	authenticationMethodKey: "jira.cloud",
+	additionalFieldDefinitions: TheFields,
+	writeBackMappingDefinitions: [],
+	workTrackingSystemGetDataRetrievalDisplayName: () => "JQL Query",
+	defaults,
+});
+
+const aFollower = (parentSourcesDefault: IBaseSettings["parentSources"]) =>
+	Object.assign(aTeamOn("Jira"), {
+		parentOverrideSource: "ConnectionDefault",
+		parentSources: parentSourcesDefault ?? [{ kind: "TrackerParent" }],
+		parentSourcesDefault,
+	}) as IBaseSettings;
+
+const IsCausedByThenOwnParent: ParentSourceEntry[] = [
+	{ kind: "AdditionalField", additionalFieldDefinitionId: 1 },
+	{ kind: "TrackerParent" },
+];
+
 describe("a Team's Advanced Configuration", () => {
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("shows its Parent sources on Jira and hands the whole new list on when one is moved up", () => {
+	it("shows its Parent sources on Jira and hands the whole new list on when one is moved up", () => {
 		const onSettingsChange = openTheSettingsPageOf(aTeamOn("Jira"));
 
 		expect(screen.getAllByText("Parent sources")).toHaveLength(1);
@@ -52,8 +93,7 @@ describe("a Team's Advanced Configuration", () => {
 		]);
 	});
 
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("shows a Team that follows an unset connection default the tracker's own parent as its one source", () => {
+	it("shows a Team that follows an unset connection default the tracker's own parent as its one source", () => {
 		openTheSettingsPageOf(
 			Object.assign(aTeamOn("Jira"), {
 				parentOverrideSource: "ConnectionDefault",
@@ -68,11 +108,179 @@ describe("a Team's Advanced Configuration", () => {
 		expect(screen.getAllByText("Parent sources")).toHaveLength(1);
 	});
 
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("shows no Parent sources on a tracker that does not read them", () => {
+	it("shows no Parent sources on a tracker that does not read them", () => {
 		openTheSettingsPageOf(aTeamOn("Linear"));
 
 		expect(screen.queryByText("Parent sources")).not.toBeInTheDocument();
 		expect(screen.queryAllByText("Parent Override Field")).toHaveLength(0);
+	});
+
+	it("keeps the single select on Azure DevOps, now called Parent sources", () => {
+		openTheSettingsPageOf(aTeamOn("AzureDevOps"));
+
+		expect(
+			screen.getByRole("combobox", { name: "Parent sources" }),
+		).toBeInTheDocument();
+		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+	});
+
+	it("reads the tracker off the connection for a Team not saved yet", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={createMockTeamSettings()}
+				onSettingsChange={vi.fn()}
+				connection={aConnection("Jira", {})}
+				parentOverrideDefault="parentOverrideForTeams"
+				additionalFieldDefinitions={TheFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(screen.getByText("Parent sources")).toBeInTheDocument();
+	});
+
+	it("offers no Connection default while the connection holds no list and the Team does not follow it", () => {
+		openTheSettingsPageOf(aTeamOn("Jira"));
+
+		expect(screen.queryByRole("radio")).not.toBeInTheDocument();
+	});
+
+	it("lets a Team that keeps its own list follow the connection's default", () => {
+		const onSettingsChange = openTheSettingsPageOf(
+			Object.assign(aTeamOn("Jira"), {
+				parentSourcesDefault: IsCausedByThenOwnParent,
+			}) as IBaseSettings,
+		);
+
+		expect(screen.getByRole("radio", { name: "Set here" })).toBeChecked();
+		expect(screen.getAllByRole("listitem")).toHaveLength(2);
+
+		fireEvent.click(
+			screen.getByRole("radio", {
+				name: "Connection default: Is caused by, then Parent (Jira's own)",
+			}),
+		);
+
+		expect(onSettingsChange).toHaveBeenCalledWith(
+			"parentOverrideSource",
+			"ConnectionDefault",
+		);
+	});
+
+	it("shows a follower the default in words, with nothing to edit", () => {
+		openTheSettingsPageOf(aFollower(IsCausedByThenOwnParent));
+
+		expect(
+			screen.getByRole("radio", {
+				name: "Connection default: Is caused by, then Parent (Jira's own)",
+			}),
+		).toBeChecked();
+		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
+		expect(
+			screen.queryByRole("combobox", { name: "Add a source" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("judges the consequence line on the list a follower reads", () => {
+		openTheSettingsPageOf(
+			aFollower([{ kind: "AdditionalField", additionalFieldDefinitionId: 1 }]),
+		);
+
+		expect(
+			screen.getByText(/^Not in the list: Parent \(Jira's own\)\./),
+		).toBeInTheDocument();
+	});
+
+	it("starts a follower that picks Set here from the list it was following", () => {
+		const onSettingsChange = openTheSettingsPageOf(
+			aFollower(IsCausedByThenOwnParent),
+		);
+
+		fireEvent.click(screen.getByRole("radio", { name: "Set here" }));
+
+		expect(onSettingsChange).toHaveBeenCalledWith(
+			"parentOverrideSource",
+			"Own",
+		);
+		expect(onSettingsChange).toHaveBeenCalledWith(
+			"parentSources",
+			IsCausedByThenOwnParent,
+		);
+	});
+
+	it("once another Jira connection is chosen, follows that connection's default", () => {
+		render(
+			<AdvancedInputsComponent
+				settings={aFollower([{ kind: "TrackerParent" }])}
+				onSettingsChange={vi.fn()}
+				connection={aConnection("Jira", { parentOverrideForTeams: 2 })}
+				parentOverrideDefault="parentOverrideForTeams"
+				additionalFieldDefinitions={TheFields}
+			/>,
+		);
+		fireEvent.click(screen.getByLabelText("toggle"));
+
+		expect(
+			screen.getByText(
+				/^Connection default: Program Ref, then Parent \(Jira's own\)$/,
+			),
+		).toBeInTheDocument();
+	});
+
+	it("keeps the last of two quick reorders when the first is still being saved", async () => {
+		let finishTheFirstSave = () => {};
+		const saveSettings = vi
+			.fn()
+			.mockImplementationOnce(
+				() =>
+					new Promise<undefined>((resolve) => {
+						finishTheFirstSave = () => resolve(undefined);
+					}),
+			)
+			.mockResolvedValue(undefined);
+		const threeSources = Object.assign(aTeamOn("Jira"), {
+			parentSources: [
+				{ kind: "TrackerParent" },
+				{ kind: "AdditionalField", additionalFieldDefinitionId: 2 },
+				{ kind: "AdditionalField", additionalFieldDefinitionId: 1 },
+			],
+		}) as unknown as ITeamSettings;
+
+		const ThePage = () => {
+			const { settings, updateSettings } = useModifySettings<ITeamSettings>({
+				getWorkTrackingSystems: async () => [],
+				getSettings: async () => threeSources,
+				saveSettings,
+				validateSettings: async () => true,
+				modifyDefaultSettings: false,
+				validateForm: () => [],
+				getSchemaForSystem: () => null,
+				autoSave: { enabled: true, canSave: true, debounceMs: 1 },
+				readsParentSources: parentSourcesAreOffered,
+			});
+			return (
+				<AdvancedInputsComponent
+					settings={settings}
+					onSettingsChange={updateSettings}
+					parentOverrideDefault="parentOverrideForTeams"
+					additionalFieldDefinitions={TheFields}
+				/>
+			);
+		};
+		render(<ThePage />);
+		fireEvent.click(await screen.findByLabelText("toggle"));
+
+		fireEvent.click(await screen.findByLabelText("Move Program Ref up"));
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		fireEvent.click(screen.getByLabelText("Move Is caused by up"));
+		await new Promise((resolve) => setTimeout(resolve, 5));
+		await act(async () => finishTheFirstSave());
+
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+		expect(saveSettings.mock.lastCall?.[0].parentSources).toEqual([
+			{ kind: "AdditionalField", additionalFieldDefinitionId: 2 },
+			{ kind: "AdditionalField", additionalFieldDefinitionId: 1 },
+			{ kind: "TrackerParent" },
+		]);
 	});
 });

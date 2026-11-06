@@ -27,6 +27,7 @@ import {
 import FlowMetricsConfigurationComponent from "../BaseSettings/FlowMetricsConfigurationComponent";
 import GeneralSettingsComponent from "../BaseSettings/GeneralSettingsComponent";
 import { followOrOwn } from "../ConnectionDefault/connectionDefaultEntry";
+import { parentSourcesAreOffered } from "../ConnectionDefault/parentSources";
 import EstimationFieldComponent from "../EstimationField/EstimationFieldComponent";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import CycleTimesEditor from "../StateMappings/CycleTimesEditor";
@@ -100,6 +101,7 @@ const ModifyTeamSettings: React.FC<ModifyTeamSettingsProps> = ({
 		getSchemaForSystem: getDefaultTeamSchema,
 		additionalFetch: refreshDependentData,
 		autoSave: { enabled: true, canSave: !disableSave, refreshOnSave: true },
+		readsParentSources: parentSourcesAreOffered,
 		validateForm: (s, system, isDefault, stored) =>
 			teamAutoSaveBlockers(
 				s,

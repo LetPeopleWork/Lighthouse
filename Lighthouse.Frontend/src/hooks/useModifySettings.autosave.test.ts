@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { parentSourcesAreOffered } from "../components/Common/ConnectionDefault/parentSources";
 import type {
 	IWorkTrackingSystemConnection,
 	WorkTrackingSystemType,
@@ -929,5 +930,120 @@ describe("saving while a state mapping is still being filled in", () => {
 			saveSettings.mock.calls[saveSettings.mock.calls.length - 1][0]
 				.stateMappings,
 		).toEqual([complete]);
+	});
+});
+
+describe("auto-save names the parent sources one way only", () => {
+	beforeEach(() => {
+		vi.useFakeTimers({ shouldAdvanceTime: true });
+		vi.clearAllMocks();
+	});
+	afterEach(() => {
+		vi.runOnlyPendingTimers();
+		vi.useRealTimers();
+	});
+
+	const ownParent = { kind: "TrackerParent" } as const;
+	const programRef = {
+		kind: "AdditionalField",
+		additionalFieldDefinitionId: 2,
+	} as const;
+
+	const anOwnerOn = (
+		workTrackingSystem: WorkTrackingSystemType,
+		saveSettings: (settings: SimpleSettings) => Promise<undefined>,
+	) =>
+		makeArgs({
+			saveSettings,
+			readsParentSources: parentSourcesAreOffered,
+			getWorkTrackingSystems: vi
+				.fn()
+				.mockResolvedValue([
+					makeConnection(1, "Atlas Tracker", workTrackingSystem),
+				]),
+			getSettings: vi.fn().mockResolvedValue(
+				atlasSettings({
+					workTrackingSystem,
+					parentSources: [programRef, ownParent],
+					parentOverrideAdditionalFieldDefinitionId: 2,
+				}),
+			),
+		});
+
+	const afterTheDebounce = () =>
+		actAndSettle(() => {
+			vi.advanceTimersByTime(DEBOUNCE_MS);
+		});
+
+	it("on Jira, two saves in a row carry the list and never the old field", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = anOwnerOn("Jira", saveSettings);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() =>
+			result.current.updateSettings("parentSources", [ownParent, programRef]),
+		);
+		await afterTheDebounce();
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "60"));
+		await afterTheDebounce();
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+
+		for (const [saved] of saveSettings.mock.calls) {
+			expect(saved.parentSources).toEqual([ownParent, programRef]);
+			expect(saved).not.toHaveProperty(
+				"parentOverrideAdditionalFieldDefinitionId",
+			);
+		}
+	});
+
+	it("on Azure DevOps, two saves in a row carry the old field and leave out the list the page does not edit", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = anOwnerOn("AzureDevOps", saveSettings);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() =>
+			result.current.updateSettings(
+				"parentOverrideAdditionalFieldDefinitionId",
+				7,
+			),
+		);
+		await afterTheDebounce();
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(1));
+		await waitFor(() => expect(result.current.saveState).toBe("saved"));
+
+		act(() =>
+			result.current.updateSettings(
+				"parentOverrideAdditionalFieldDefinitionId",
+				8,
+			),
+		);
+		await afterTheDebounce();
+		await waitFor(() => expect(saveSettings).toHaveBeenCalledTimes(2));
+
+		expect(
+			saveSettings.mock.calls.map(
+				([saved]) => saved.parentOverrideAdditionalFieldDefinitionId,
+			),
+		).toEqual([7, 8]);
+		for (const [saved] of saveSettings.mock.calls) {
+			expect(saved).not.toHaveProperty("parentSources");
+		}
+	});
+
+	it("does not take leaving a field out for an edit when the page opens", async () => {
+		const saveSettings = vi.fn().mockResolvedValue(undefined);
+		const args = anOwnerOn("Jira", saveSettings);
+		const { result } = renderHook(() => useModifySettings(args));
+		await waitFor(() => expect(result.current.settings).not.toBeNull());
+
+		act(() => result.current.updateSettings("dataRetrievalValue", "my-query"));
+		await afterTheDebounce();
+
+		expect(saveSettings).not.toHaveBeenCalled();
 	});
 });

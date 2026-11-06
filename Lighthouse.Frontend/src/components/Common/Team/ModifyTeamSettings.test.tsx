@@ -476,7 +476,26 @@ describe("ModifyTeamSettings", () => {
 		);
 	});
 
-	it("the Parent Override Field reads the Teams' default of the connection now chosen", async () => {
+	it("a Team on Jira saves its Parent sources without the old field", async () => {
+		mockGetTeamSettings.mockResolvedValueOnce({
+			...createMockTeamSettings(),
+			workTrackingSystemConnectionId: 1,
+			parentOverrideAdditionalFieldDefinitionId: 7,
+			parentSources: [{ kind: "TrackerParent" }],
+		});
+		await renderModifyTeamSettings();
+
+		fireEvent.click(screen.getByText("Change Advanced"));
+
+		await waitFor(() => expect(mockSaveTeamSettings).toHaveBeenCalled());
+		const saved = mockSaveTeamSettings.mock.lastCall?.[0];
+		expect(saved.parentSources).toEqual([{ kind: "TrackerParent" }]);
+		expect(saved).not.toHaveProperty(
+			"parentOverrideAdditionalFieldDefinitionId",
+		);
+	});
+
+	it("the Parent sources read the Teams' default of the connection now chosen", async () => {
 		await renderModifyTeamSettings();
 
 		fireEvent.click(screen.getByText("Change Work Tracking System"));

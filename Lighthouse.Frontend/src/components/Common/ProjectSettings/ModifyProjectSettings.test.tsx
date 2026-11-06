@@ -1270,13 +1270,14 @@ describe("ModifyProjectSettings", () => {
 		);
 	});
 
-	describe("a Portfolio that follows the connection's Parent Override Field", () => {
+	describe("a Portfolio on Azure DevOps that follows the connection's Parent sources", () => {
 		const givenThePortfolioFollowsTheDefault = async (
 			theOtherConnection: Partial<IWorkTrackingSystemConnection> = {},
 		) => {
 			mockGetWorkTrackingSystems.mockResolvedValue([
 				{
 					...workTrackingSystems[0],
+					workTrackingSystem: "AzureDevOps",
 					additionalFieldDefinitions: [
 						{ id: 21, displayName: "Parent Link", reference: "customfield_1" },
 						{ id: 22, displayName: "Caused by", reference: "customfield_2" },
@@ -1286,7 +1287,7 @@ describe("ModifyProjectSettings", () => {
 			]);
 			mockGetProjectSettings.mockResolvedValue({
 				...createMockProjectSettings(),
-				workTrackingSystem: "Jira",
+				workTrackingSystem: "AzureDevOps",
 				parentOverrideSource: "ConnectionDefault",
 				parentOverrideDefaultName: "Parent Link",
 				parentOverrideAdditionalFieldDefinitionId: 21,
@@ -1310,7 +1311,7 @@ describe("ModifyProjectSettings", () => {
 				.getByText("Advanced Configuration")
 				.closest(".MuiCard-root") as HTMLElement;
 			fireEvent.click(within(advanced).getByLabelText("toggle"));
-			return screen.getByRole("combobox", { name: "Parent Override Field" });
+			return screen.getByRole("combobox", { name: "Parent sources" });
 		};
 
 		it("shows the followed field as the selected first entry", async () => {
@@ -1318,7 +1319,7 @@ describe("ModifyProjectSettings", () => {
 
 			expect(dropdown).toHaveTextContent("Connection default (Parent Link)");
 			expect(
-				screen.getByText("Set on the Jira connection."),
+				screen.getByText("Set on the Azure DevOps connection."),
 			).toBeInTheDocument();
 			fireEvent.mouseDown(dropdown);
 			expect(
@@ -1388,24 +1389,67 @@ describe("ModifyProjectSettings", () => {
 			);
 		});
 
-		it("switching to a connection whose tracker holds no default offers no connection default", async () => {
+		it("switching to a connection whose tracker reads no parent sources shows neither the select nor its default", async () => {
 			const dropdown = await givenThePortfolioFollowsTheDefault({
 				workTrackingSystem: "Linear",
 			});
 
 			fireEvent.click(screen.getByText("Change Work Tracking System"));
 
-			await waitFor(() =>
-				expect(dropdown).not.toHaveTextContent(/^Connection default/),
-			);
-			fireEvent.mouseDown(dropdown);
-			expect(
-				within(screen.getByRole("listbox"))
-					.getAllByRole("option")
-					.map((entry) => entry.textContent),
-			).not.toContainEqual(expect.stringMatching(/^Connection default/));
+			await waitFor(() => expect(dropdown).not.toBeInTheDocument());
 			expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
 		});
+	});
+
+	it("a Portfolio on Jira saves the whole list when one source is moved, and not the old field", async () => {
+		mockGetWorkTrackingSystems.mockResolvedValue([
+			{
+				...workTrackingSystems[0],
+				additionalFieldDefinitions: [
+					{ id: 21, displayName: "Program Ref", reference: "customfield_1" },
+				],
+			},
+		]);
+		mockGetProjectSettings.mockResolvedValue({
+			...createMockProjectSettings(),
+			workTrackingSystem: "Jira",
+			parentOverrideSource: "Own",
+			parentOverrideAdditionalFieldDefinitionId: 21,
+			parentSources: [
+				{ kind: "TrackerParent" },
+				{ kind: "AdditionalField", additionalFieldDefinitionId: 21 },
+			],
+		});
+
+		renderWithProvider(
+			<ModifyProjectSettings
+				title="Modify Project Settings"
+				getWorkTrackingSystems={mockGetWorkTrackingSystems}
+				getProjectSettings={mockGetProjectSettings}
+				getAllTeams={mockGetAllTeams}
+				saveProjectSettings={mockSaveProjectSettings}
+				validateProjectSettings={mockValidateProjectSettings}
+			/>,
+		);
+		await waitFor(() =>
+			expect(screen.queryByText("Loading...")).not.toBeInTheDocument(),
+		);
+		const advanced = screen
+			.getByText("Advanced Configuration")
+			.closest(".MuiCard-root") as HTMLElement;
+		fireEvent.click(within(advanced).getByLabelText("toggle"));
+
+		fireEvent.click(screen.getByLabelText("Move Program Ref up"));
+
+		await waitFor(() => expect(mockSaveProjectSettings).toHaveBeenCalled());
+		const saved = mockSaveProjectSettings.mock.lastCall?.[0];
+		expect(saved.parentSources).toEqual([
+			{ kind: "AdditionalField", additionalFieldDefinitionId: 21 },
+			{ kind: "TrackerParent" },
+		]);
+		expect(saved).not.toHaveProperty(
+			"parentOverrideAdditionalFieldDefinitionId",
+		);
 	});
 
 	describe.each([

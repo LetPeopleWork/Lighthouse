@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { IStateMapping } from "../models/Common/StateMapping";
-import type { IWorkTrackingSystemConnection } from "../models/WorkTracking/WorkTrackingSystemConnection";
+import type {
+	IWorkTrackingSystemConnection,
+	WorkTrackingSystemType,
+} from "../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../services/Api/ApiError";
 import { withoutIncompleteMappings } from "../utils/stateMappingValidation";
 
@@ -18,6 +21,9 @@ export interface ModifySettingsBase {
 	doingStates: string[];
 	doneStates: string[];
 	stateMappings: unknown[];
+	workTrackingSystem?: WorkTrackingSystemType;
+	parentSources?: readonly unknown[] | null;
+	parentOverrideAdditionalFieldDefinitionId?: number | null;
 }
 
 export type SaveState = "idle" | "saving" | "saved" | "error" | "conflict";
@@ -49,6 +55,8 @@ interface UseModifySettingsOptions<TSettings extends ModifySettingsBase> {
 	additionalFetch?: () => Promise<void>;
 	initialFetch?: () => Promise<void>;
 	autoSave?: AutoSaveOptions;
+	/** Whether the page edits the parent sources as a list on this tracker, rather than as the old single field. */
+	readsParentSources?: (tracker: WorkTrackingSystemType) => boolean;
 }
 
 export const DEBOUNCE_MS = 300;
@@ -92,6 +100,37 @@ function withoutDraftMappings<T extends ModifySettingsBase>(settings: T): T {
 			settings.stateMappings as IStateMapping[],
 		),
 	};
+}
+
+// A save names the parents one way only, the way the page edits them. The other value is the one read when the
+// page opened, and after the first save it is stale: the server would take it as the newer word and undo the edit.
+function withOneParentSetting<T extends ModifySettingsBase>(
+	settings: T,
+	editsTheList: boolean,
+): T {
+	const {
+		parentSources,
+		parentOverrideAdditionalFieldDefinitionId,
+		...theOtherSettings
+	} = settings;
+	return (
+		editsTheList
+			? { ...theOtherSettings, parentSources }
+			: { ...theOtherSettings, parentOverrideAdditionalFieldDefinitionId }
+	) as T;
+}
+
+/** The settings as a save sends them; a chosen connection tells the tracker before the settings do. */
+function formToSave<T extends ModifySettingsBase>(
+	settings: T,
+	chosenTracker: WorkTrackingSystemType | undefined,
+	readsParentSources: UseModifySettingsOptions<T>["readsParentSources"],
+): T {
+	const tracker = chosenTracker ?? settings.workTrackingSystem;
+	return withOneParentSetting(
+		withoutDraftMappings(settings),
+		!!tracker && !!readsParentSources?.(tracker),
+	);
 }
 
 // What autosave compares: the payload as it would be saved, minus the token, which changes on every save.
@@ -144,6 +183,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	additionalFetch,
 	initialFetch,
 	autoSave,
+	readsParentSources,
 }: UseModifySettingsOptions<TSettings>) {
 	const [saveState, setSaveState] = useState<SaveState>("idle");
 	const [refreshFailed, setRefreshFailed] = useState(false);
@@ -175,6 +215,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const initialFetchRef = useRef(initialFetch);
 	const saveSettingsRef = useRef(saveSettings);
 	const validateSettingsRef = useRef(validateSettings);
+	const readsParentSourcesRef = useRef(readsParentSources);
 	const tokenRef = useRef<string | undefined>(undefined);
 	getSettingsRef.current = getSettings;
 	getWorkTrackingSystemsRef.current = getWorkTrackingSystems;
@@ -182,6 +223,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	initialFetchRef.current = initialFetch;
 	saveSettingsRef.current = saveSettings;
 	validateSettingsRef.current = validateSettings;
+	readsParentSourcesRef.current = readsParentSources;
 	tokenRef.current = settings?.concurrencyToken;
 
 	const formInvalidReasons = settings
@@ -199,6 +241,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 	const autoSaveDebounceMs = autoSave?.debounceMs ?? DEBOUNCE_MS;
 	const autoRefreshOnSave = autoSave?.refreshOnSave ?? false;
 	const selectedConnectionId = selectedWorkTrackingSystem?.id ?? 0;
+	const selectedTracker = selectedWorkTrackingSystem?.workTrackingSystem;
 
 	const dispatchSaveRef = useRef<(payload: TSettings) => void>(() => {});
 
@@ -323,10 +366,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 				(s) => s.id === freshSettings.workTrackingSystemConnectionId,
 			) ?? null;
 		persistedFormRef.current = savedForm(
-			withoutDraftMappings({
-				...freshSettings,
-				workTrackingSystemConnectionId: system?.id ?? 0,
-			}),
+			formToSave(
+				{
+					...freshSettings,
+					workTrackingSystemConnectionId: system?.id ?? 0,
+				},
+				system?.workTrackingSystem,
+				readsParentSourcesRef.current,
+			),
 		);
 		setSettings(freshSettings);
 		setSelectedWorkTrackingSystem(system);
@@ -369,10 +416,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 			return;
 		}
 
-		const settingsToSave = withoutDraftMappings({
-			...settings,
-			workTrackingSystemConnectionId: selectedConnectionId,
-		} as TSettings);
+		const settingsToSave = formToSave(
+			{
+				...settings,
+				workTrackingSystemConnectionId: selectedConnectionId,
+			} as TSettings,
+			selectedTracker,
+			readsParentSourcesRef.current,
+		);
 
 		// While a save is in flight the persisted form is about to change, so it is no yardstick yet.
 		if (
@@ -396,6 +447,7 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		formValid,
 		settings,
 		selectedConnectionId,
+		selectedTracker,
 		dispatchSave,
 	]);
 
@@ -418,10 +470,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 						(s) => s.id === fetchedSettings.workTrackingSystemConnectionId,
 					) ?? null;
 				persistedFormRef.current = savedForm(
-					withoutDraftMappings({
-						...fetchedSettings,
-						workTrackingSystemConnectionId: system?.id ?? 0,
-					}),
+					formToSave(
+						{
+							...fetchedSettings,
+							workTrackingSystemConnectionId: system?.id ?? 0,
+						},
+						system?.workTrackingSystem,
+						readsParentSourcesRef.current,
+					),
 				);
 				setSettings(fetchedSettings);
 				setWorkTrackingSystems(systems);
@@ -476,10 +532,14 @@ export function useModifySettings<TSettings extends ModifySettingsBase>({
 		if (!settings) return;
 		setValidationError(null);
 		setValidationTechnicalDetails(null);
-		const updated = withoutDraftMappings({
-			...settings,
-			workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
-		});
+		const updated = formToSave(
+			{
+				...settings,
+				workTrackingSystemConnectionId: selectedWorkTrackingSystem?.id ?? 0,
+			},
+			selectedTracker,
+			readsParentSourcesRef.current,
+		);
 
 		if (!modifyDefaultSettings) {
 			try {

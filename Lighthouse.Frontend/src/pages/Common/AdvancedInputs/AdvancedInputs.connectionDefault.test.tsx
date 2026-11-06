@@ -6,12 +6,11 @@ import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import AdvancedInputsComponent from "./AdvancedInputs";
 
 /**
- * A Team on "Jira DC – Payments" whose Parent Override Field follows the connection's default. Its
- * settings page shows which field that is, as the first entry of the dropdown, "Connection default (Caused
- * by)", with "Set on the Jira connection." beneath it, and "Connection default (None)" while the default
- * names nothing. A Team admin who cannot read the connection still sees the name, because it travels on
- * the Team's own settings. Picking any other entry, None included, makes the value the Team's own. Only
- * Jira and Azure DevOps connections hold this default, so no other tracker offers the entry.
+ * A Team on an Azure DevOps connection whose single Parent sources select follows the connection's default.
+ * Its settings page shows which field that is, as the first entry of the dropdown, "Connection default
+ * (Caused by)", with "Set on the Azure DevOps connection." beneath it, and "Connection default (None)" while
+ * the default names nothing. A Team admin who cannot read the connection still sees the name, because it
+ * travels on the Team's own settings. Picking any other entry, None included, makes the value the Team's own.
  */
 
 const CausedBy = "Caused by";
@@ -26,7 +25,7 @@ type Source = "ConnectionDefault" | "Own";
 const aTeam = ({
 	source,
 	own = null,
-	tracker = "Jira",
+	tracker = "AzureDevOps",
 	defaultName = CausedBy,
 }: {
 	source: Source;
@@ -60,7 +59,7 @@ const givenTheTeamsSettingsPage = (
 };
 
 const theDropdown = () =>
-	screen.getByRole("combobox", { name: "Parent Override Field" });
+	screen.getByRole("combobox", { name: "Parent sources" });
 
 const theEntries = () => {
 	fireEvent.mouseDown(theDropdown());
@@ -76,12 +75,14 @@ const whenTheAdminPicks = (entry: string) => {
 	);
 };
 
-describe("a Team that follows the connection's Parent Override Field", () => {
+describe("a Team that follows the connection's Parent sources", () => {
 	it("shows the followed field as the first entry, with where it is set", () => {
 		givenTheTeamsSettingsPage(aTeam({ source: "ConnectionDefault" }));
 
 		expect(theDropdown()).toHaveTextContent("Connection default (Caused by)");
-		expect(screen.getByText("Set on the Jira connection.")).toBeInTheDocument();
+		expect(
+			screen.getByText("Set on the Azure DevOps connection."),
+		).toBeInTheDocument();
 		expect(theEntries()).toEqual([
 			"Connection default (Caused by)",
 			"None",
@@ -93,7 +94,7 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 	it("once another connection is chosen, shows the Teams' default of that connection", () => {
 		render(
 			<AdvancedInputsComponent
-				settings={aTeam({ source: "ConnectionDefault" })}
+				settings={aTeam({ source: "ConnectionDefault", tracker: "Jira" })}
 				onSettingsChange={vi.fn()}
 				additionalFieldDefinitions={TheFields}
 				connection={{
@@ -123,35 +124,15 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 		).toBeInTheDocument();
 	});
 
-	it("names the Azure DevOps connection the default is set on", () => {
-		givenTheTeamsSettingsPage(
-			aTeam({ source: "ConnectionDefault", tracker: "AzureDevOps" }),
-		);
-
-		expect(
-			screen.getByText("Set on the Azure DevOps connection."),
-		).toBeInTheDocument();
-	});
-
-	it.each(["Linear", "Csv", "ServiceNow"])(
-		"offers no connection default on a %s connection, which holds none",
-		(tracker) => {
-			givenTheTeamsSettingsPage(
-				aTeam({ source: "ConnectionDefault", tracker, defaultName: null }),
-			);
-
-			expect(screen.queryByText(/^Set on the /)).not.toBeInTheDocument();
-			expect(theEntries()).toEqual(["None", CausedBy, "Parent Link"]);
-		},
-	);
-
 	it("following a default that names nothing reads Connection default (None), with where it is set", () => {
 		givenTheTeamsSettingsPage(
 			aTeam({ source: "ConnectionDefault", defaultName: null }),
 		);
 
 		expect(theDropdown()).toHaveTextContent("Connection default (None)");
-		expect(screen.getByText("Set on the Jira connection.")).toBeInTheDocument();
+		expect(
+			screen.getByText("Set on the Azure DevOps connection."),
+		).toBeInTheDocument();
 		expect(theEntries()).toEqual([
 			"Connection default (None)",
 			"None",
@@ -175,7 +156,7 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 		);
 	});
 
-	it("before the settings arrive the dropdown offers no connection default and chooses nothing", () => {
+	it("before the settings arrive there is no tracker to offer a parent setting for", () => {
 		render(
 			<AdvancedInputsComponent
 				settings={null}
@@ -186,13 +167,8 @@ describe("a Team that follows the connection's Parent Override Field", () => {
 		);
 		fireEvent.click(screen.getByLabelText("toggle"));
 
-		expect(theEntries()).toEqual(["None", CausedBy, "Parent Link"]);
-		expect(
-			within(screen.getByRole("listbox")).getByRole("option", {
-				name: "None",
-				selected: true,
-			}),
-		).toBeInTheDocument();
+		expect(screen.queryByText("Parent sources")).not.toBeInTheDocument();
+		expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 	});
 
 	it("shows the followed field to a Team admin who cannot read the connection's fields", () => {
