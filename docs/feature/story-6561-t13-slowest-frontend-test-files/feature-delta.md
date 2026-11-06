@@ -957,3 +957,10 @@ layer. Self-completeness audit: C2 and C5 to C7 N/A (no state machine, mode flag
   mutating. `/continuous-improvement before` does not apply (it is for feature Epics; #6506 is an improvement Epic).
 - **After the slices:** the budget step (DESIGN, "Budget step"), once at least 5 complete `main` runs exist, one of them on a
   slow runner. The first push is judged against 56 s and the Story stays open until that commit lands.
+
+## Wave: DESIGN / [REF] Scope of this run (maintainer, 2026-11-06)
+
+After seeing the expected budget band, the maintainer asked for **slice A alone**, to reassess on 2026-11-07. Slices B and
+C are not dropped; they do not run now. The extraction question (Q7) and the Overview fallback (Q6) wait with them, so no
+production code changes in this run. No budget change follows from slice A alone: the frontend budget stays 56 s until the
+worst file left allows less, and `ModifyTeamSettings.refinementNeed` is only the worst file of seven.
