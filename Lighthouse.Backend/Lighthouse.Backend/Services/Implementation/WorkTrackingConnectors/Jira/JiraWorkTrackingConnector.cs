@@ -1979,7 +1979,7 @@ namespace Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.Jira
 
         private static string TheNameTheSettingsShowFor(IWorkItemQueryOwner workItemQueryOwner, ParentSourceEntry entry)
             => TheDefinitionNamed(workItemQueryOwner, entry.AdditionalFieldDefinitionId)?.DisplayName
-                ?? $"Unknown field (id {entry.AdditionalFieldDefinitionId})";
+                ?? AdditionalFieldDefinition.NameOfAnUnknownField(entry.AdditionalFieldDefinitionId);
 
         /// <summary>
         /// Links read as links even when none of them matched, because the field showing a link entry's key

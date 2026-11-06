@@ -13,5 +13,8 @@ namespace Lighthouse.Backend.Models
         public int WorkTrackingSystemConnectionId { get; set; }
 
         public WorkTrackingSystemConnection? WorkTrackingSystemConnection { get; set; }
+
+        /// <summary>What an id reads as once no definition answers to it, so it can still be told apart and fixed.</summary>
+        public static string NameOfAnUnknownField(int? id) => $"Unknown field (id {id})";
     }
 }

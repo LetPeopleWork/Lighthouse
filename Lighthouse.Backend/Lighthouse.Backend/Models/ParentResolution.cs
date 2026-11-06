@@ -85,10 +85,11 @@ namespace Lighthouse.Backend.Models
         }
 
         /// <summary>
-        /// Without narrowing nobody checked that the candidate is a Feature, so the rule must not say it is.
+        /// Without narrowing the one left is a lone candidate. Nobody checked that it is a Feature, so no rule
+        /// may say it is, and with nothing to choose between no other rule decided either.
         /// </summary>
         private static ParentPlacementRule TheRuleForTheOneLeft(ParentNarrowing narrowing)
-            => narrowing == ParentNarrowing.Narrow ? ParentPlacementRule.OnlyFeatureAmongLinks : ParentPlacementRule.OnlyCandidate;
+            => narrowing == ParentNarrowing.Narrow ? ParentPlacementRule.OnlyFeatureAmongLinks : ParentPlacementRule.None;
 
         /// <summary>
         /// The rule named is the first one on which the winner beats the runner-up, so the line never

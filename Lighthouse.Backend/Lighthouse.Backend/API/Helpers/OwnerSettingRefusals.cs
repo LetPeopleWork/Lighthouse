@@ -124,7 +124,7 @@ namespace Lighthouse.Backend.API.Helpers
             var repeated = setting.ParentSources?.GroupBy(entry => entry).First(group => group.Count() > 1).Key;
 
             return repeated?.AdditionalFieldDefinitionId is { } field
-                ? TheConnectionTheSaveLeavesItOn(owner, setting)?.DisplayNameOfField(field) ?? $"Unknown field (id {field})"
+                ? TheConnectionTheSaveLeavesItOn(owner, setting)?.DisplayNameOfField(field) ?? AdditionalFieldDefinition.NameOfAnUnknownField(field)
                 : "Parent";
         }
 

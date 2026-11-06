@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IPortfolioSettings } from "../../../models/Portfolio/PortfolioSettings";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -14,7 +15,6 @@ import {
 	createMockProjectSettings,
 	createMockTeamSettings,
 } from "../../../tests/TestDataProvider";
-import type { ParentSourceEntry } from "../ConnectionDefault/parentSources";
 import ModifyProjectSettings from "../ProjectSettings/ModifyProjectSettings";
 import ModifyTeamSettings from "./ModifyTeamSettings";
 

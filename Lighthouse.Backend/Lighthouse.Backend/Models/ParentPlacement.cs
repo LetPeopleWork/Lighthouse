@@ -17,6 +17,7 @@ namespace Lighthouse.Backend.Models
 
         public string Key { get; init; } = string.Empty;
 
+        /// <summary>None when there was nothing to choose: a lone candidate nobody tested for being a Feature.</summary>
         public ParentPlacementRule DecidedBy { get; init; }
 
         /// <summary>The link or created date that decided, when the deciding rule is a date.</summary>
@@ -53,7 +54,6 @@ namespace Lighthouse.Backend.Models
         OldestLink,
         EarliestCreated,
         LowestKey,
-        OnlyCandidate,
     }
 
     public enum ParentNotPlacedReason

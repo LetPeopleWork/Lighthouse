@@ -15,8 +15,8 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
     /// than to the tracker, and apart from the sibling that decides the same thing for dependencies
     /// because the two encode different knowledge: a record waits on any number of things, only a
     /// Portfolio has them, and a bad entry among them is skipped. A record hangs under at most one thing,
-    /// both grains have one, and when its links name several the choice among them is not made here but by
-    /// the refresh, which knows which of them this instance holds.
+    /// and both grains have one. Links can need the stored Features to be judged, which only the refresh
+    /// holds, so a connector walks the list provisionally and the refresh walks it again for what it left open.
     ///
     /// It sits here rather than beside the work item services because a connector has to call it, and a
     /// connector is a leaf input adapter that is not allowed to reach into those - a boundary the

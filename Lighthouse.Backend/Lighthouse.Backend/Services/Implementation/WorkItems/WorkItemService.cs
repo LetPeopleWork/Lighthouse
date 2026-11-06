@@ -196,17 +196,12 @@ namespace Lighthouse.Backend.Services.Implementation.WorkItems
 
         /// <summary>
         /// Settles, before anything is saved, the parent of each downloaded record whose choice hangs on the
-        /// stored Features. A Team first sets aside the candidates Lighthouse does not hold as Features. A
-        /// Portfolio sets nothing aside: the issues above its Features are stored only once a refresh has read
-        /// them, so setting aside what Lighthouse does not hold would throw away every parent the first time
-        /// it is seen. Among what is left the oldest link wins, then the issue created first, then the lowest
-        /// key, and links that leave nothing hand over to the next source, taking back the key the connector
-        /// hung the record under at face value. The connector cannot make that choice, because only the
-        /// stored Features say which candidate is one and when it was created. They are read once for the
-        /// whole fetch, and not at all when no record needs them; every other record keeps what the connector
-        /// gave it. Only links naming several issues are written as a warning and counted, because a parent
-        /// picked among them on the administrator's behalf, or not picked at all, is something they are asked
-        /// to check; a lone link has nothing to pick.
+        /// stored Features, which the connector cannot see. Links that leave nothing hand over to the next
+        /// source, taking back the key the connector hung the record under at face value. The stored Features
+        /// are read once for the whole fetch, and not at all when no record needs them; every other record
+        /// keeps what the connector gave it. Only links naming several issues are written as a warning and
+        /// counted, because a parent picked among them on the administrator's behalf, or not picked at all, is
+        /// something they are asked to check; a lone link has nothing to pick.
         /// </summary>
         private (int Placed, int NotPlaced) PlaceWhatTheLinksLeftOpen<TRecord>(IWorkItemQueryOwner owner, string ownerInTheLog, ParentNarrowing narrowing, List<TRecord> downloaded)
             where TRecord : WorkItemBase

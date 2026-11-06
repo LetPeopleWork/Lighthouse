@@ -75,8 +75,7 @@ namespace Lighthouse.Backend.Services.Implementation.Parents
             ParentPlacementRule.OldestLink => WithTheDay("oldest link", placement.DecidedOn),
             ParentPlacementRule.EarliestCreated => WithTheDay("earliest created", placement.DecidedOn),
             ParentPlacementRule.LowestKey => "lowest key",
-            ParentPlacementRule.OnlyCandidate => "only candidate",
-            ParentPlacementRule.None => throw new ArgumentOutOfRangeException(nameof(placement), placement.DecidedBy, "A placed record always names the rule that placed it."),
+            ParentPlacementRule.None => throw new ArgumentOutOfRangeException(nameof(placement), placement.DecidedBy, "A placed record whose links named several issues always names the rule that placed it."),
         };
 #pragma warning restore CS8524
 

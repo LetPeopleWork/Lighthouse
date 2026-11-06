@@ -1,12 +1,6 @@
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-
-export type ParentSourceKind = "TrackerParent" | "AdditionalField";
-
-export interface ParentSourceEntry {
-	kind: ParentSourceKind;
-	additionalFieldDefinitionId?: number | null;
-}
 
 export type ParentSourcesAction =
 	| { type: "add"; entry: ParentSourceEntry }

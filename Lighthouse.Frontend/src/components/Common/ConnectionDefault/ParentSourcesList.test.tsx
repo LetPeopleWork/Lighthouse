@@ -1,8 +1,8 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import ParentSourcesList from "./ParentSourcesList";
-import type { ParentSourceEntry } from "./parentSources";
 
 const ownParent: ParentSourceEntry = { kind: "TrackerParent" };
 const field = (id: number): ParentSourceEntry => ({

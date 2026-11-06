@@ -6,12 +6,10 @@ import {
 	waitFor,
 } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import {
-	type ParentSourceEntry,
-	parentSourcesAreOffered,
-} from "../../../components/Common/ConnectionDefault/parentSources";
+import { parentSourcesAreOffered } from "../../../components/Common/ConnectionDefault/parentSources";
 import { useModifySettings } from "../../../hooks/useModifySettings";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type {

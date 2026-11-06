@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	entriesStillToAdd,
 	nameOfParentSource,
-	type ParentSourceEntry,
 	type ParentSourcesAction,
 	parentSourcesAreOffered,
 	reduceParentSources,

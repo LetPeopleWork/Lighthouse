@@ -1,8 +1,8 @@
 import { z } from "zod";
-import type { ParentSourceEntry } from "../../components/Common/ConnectionDefault/parentSources";
 import type { ICycleTimeDefinition } from "../Metrics/NamedCycleTime";
 import type { WorkTrackingSystemType } from "../WorkTracking/WorkTrackingSystemConnection";
 import type { IDataRetrievalSchema } from "./DataRetrievalSchema";
+import type { ParentSourceEntry } from "./ParentSourceEntry";
 import type { IStateMapping } from "./StateMapping";
 
 /**

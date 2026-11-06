@@ -10,6 +10,7 @@ import {
 	Typography,
 } from "@mui/material";
 import type React from "react";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { WorkTrackingSystemType } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -23,7 +24,6 @@ import {
 	MaximumParentSources,
 	nameOfParentSource,
 	namesAnUnknownField,
-	type ParentSourceEntry,
 	type ParentSourcesAction,
 	reduceParentSources,
 	theTrackersOwn,

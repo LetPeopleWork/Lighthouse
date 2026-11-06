@@ -169,22 +169,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Parents
             Assert.That(lines, Is.EqualTo(TheLineForTheLowestKey), "Nothing dated decided, so the line shows no date.");
         }
 
-        [Test]
-        public void Lines_APortfoliosLoneCandidate_IsNamedTheOnlyCandidateAndNeverTheOnlyFeature()
-        {
-            var links = ParentResolution.From([new ParentCandidate(AnIncident, null)]);
-            var placement = new RecordPlacement("PRG-2", links, links.Place(new StoredFeatures(new Dictionary<string, DateTime?>()), ParentNarrowing.DoNotNarrow));
-
-            var line = ParentPlacementReport.Lines(TheOwner, [placement]).Single();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(line, Does.Contain($"PRG-2 under {AnIncident} (only candidate; "));
-                Assert.That(line, Does.Not.Contain("only Feature"),
-                    "Nothing checked that it is a Feature, because a Portfolio does not narrow.");
-            }
-        }
-
         private static RecordPlacement Placed(string referenceId, ParentCandidate[] candidates, params (string Key, DateTime? Created)[] storedFeatures)
         {
             var links = ParentResolution.From(candidates);

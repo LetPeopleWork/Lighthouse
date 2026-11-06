@@ -1,8 +1,9 @@
 import { useCallback, useRef } from "react";
 import type { IBaseSettings } from "../../../models/Common/BaseSettings";
+import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
 import { UsageDataEventName } from "../../../services/Api/UsageDataService";
 import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
-import { listsTheSameSources, type ParentSourceEntry } from "./parentSources";
+import { listsTheSameSources } from "./parentSources";
 
 const SeveralEntries = 2;
 
