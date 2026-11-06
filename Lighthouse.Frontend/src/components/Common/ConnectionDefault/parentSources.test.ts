@@ -22,10 +22,9 @@ const TheFields: IAdditionalFieldDefinition[] = [
 	{ id: 13, displayName: "Sponsor", reference: "customfield_10015" },
 ];
 
-// Skipped until Story 6501 builds the parent sources list; enable one case at a time.
 describe("reduceParentSources", () => {
 	// Every edit the rules allow, and what it leaves.
-	it.skip.each<
+	it.each<
 		[string, ParentSourceEntry[], ParentSourcesAction, ParentSourceEntry[]]
 	>([
 		[
@@ -57,7 +56,7 @@ describe("reduceParentSources", () => {
 	});
 
 	// Every edit the rules refuse: the list comes back exactly as it was given.
-	it.skip.each<[string, ParentSourceEntry[], ParentSourcesAction]>([
+	it.each<[string, ParentSourceEntry[], ParentSourcesAction]>([
 		[
 			"will not add a sixth source",
 			[field(11), field(12), field(13), field(14), field(15)],
@@ -99,8 +98,7 @@ describe("reduceParentSources", () => {
 		expect(result).toEqual(list);
 	});
 
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("never changes the list it was handed", () => {
+	it("never changes the list it was handed", () => {
 		const list = Object.freeze([field(11), field(12)]);
 
 		const result = reduceParentSources(list, { type: "moveUp", index: 1 });
@@ -111,8 +109,7 @@ describe("reduceParentSources", () => {
 });
 
 describe("entriesStillToAdd", () => {
-	// biome-ignore lint/suspicious/noSkippedTests: Story 6501 builds this; enabled in DELIVER
-	it.skip("offers the tracker's own parent and every field not yet listed, and nothing already listed", () => {
+	it("offers the tracker's own parent and every field not yet listed, and nothing already listed", () => {
 		expect(entriesStillToAdd([field(11)], TheFields)).toEqual([
 			ownParent,
 			field(12),
@@ -126,24 +123,37 @@ describe("entriesStillToAdd", () => {
 });
 
 describe("nameOfParentSource", () => {
-	it.skip.each<[WorkTrackingSystemType, ParentSourceEntry, string]>([
+	it.each<[WorkTrackingSystemType, ParentSourceEntry, string]>([
 		["Jira", ownParent, "Parent (Jira's own)"],
-		["AzureDevOps", ownParent, "Parent (Azure DevOps' own)"],
 		["Jira", field(12), "Program Ref"],
 		["Jira", field(99), "Unknown field (id 99)"],
+	])("on %s a row reads %j as %s", (tracker, entry, expected) => {
+		expect(nameOfParentSource(entry, tracker, TheFields)).toBe(expected);
+	});
+
+	// Azure DevOps does not read the list yet, so no row can show there.
+	it.skip.each<[WorkTrackingSystemType, ParentSourceEntry, string]>([
+		["AzureDevOps", ownParent, "Parent (Azure DevOps' own)"],
 	])("on %s a row reads %j as %s", (tracker, entry, expected) => {
 		expect(nameOfParentSource(entry, tracker, TheFields)).toBe(expected);
 	});
 });
 
 describe("parentSourcesAreOffered", () => {
-	it.skip.each<[WorkTrackingSystemType, boolean]>([
+	it.each<[WorkTrackingSystemType, boolean]>([
 		["Jira", true],
-		["AzureDevOps", true],
 		["Linear", false],
 		["Csv", false],
 		["ServiceNow", false],
 	])("on %s the Parent sources are offered: %s", (tracker, offered) => {
 		expect(parentSourcesAreOffered(tracker)).toBe(offered);
 	});
+
+	// Offering the list on Azure DevOps before it reads the list would promise an order nothing honours.
+	it.skip.each<[WorkTrackingSystemType, boolean]>([["AzureDevOps", true]])(
+		"on %s the Parent sources are offered: %s",
+		(tracker, offered) => {
+			expect(parentSourcesAreOffered(tracker)).toBe(offered);
+		},
+	);
 });
