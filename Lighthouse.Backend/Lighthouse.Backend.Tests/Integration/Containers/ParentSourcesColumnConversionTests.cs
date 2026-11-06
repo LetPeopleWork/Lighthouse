@@ -126,6 +126,37 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         [Test]
+        public async Task A_connection_row_an_older_build_left_with_an_empty_old_column_keeps_its_list_when_reloaded_and_when_read()
+        {
+            await using (var saving = AContext())
+            {
+                var stored = await saving.WorkTrackingSystemConnections.SingleAsync(owner => owner.Id == connectionId);
+                stored.SetParentSourcesDefaultForTeams(FieldThenOwnParent);
+                stored.SetParentSourcesDefaultForPortfolios(FieldThenOwnParent);
+                await saving.SaveChangesAsync();
+            }
+
+            await using var reloading = AContext();
+            var reloaded = await reloading.WorkTrackingSystemConnections.SingleAsync(owner => owner.Id == connectionId);
+            await reloading.Database.ExecuteSqlAsync($"""UPDATE "WorkTrackingSystemConnections" SET "ParentOverrideForTeams" = NULL, "ParentOverrideForPortfolios" = NULL WHERE "Id" = {connectionId}""");
+            await reloading.Entry(reloaded).ReloadAsync();
+
+            await using var reading = AContext();
+            var read = await reading.WorkTrackingSystemConnections.SingleAsync(owner => owner.Id == connectionId);
+
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var connection in new[] { reloaded, read })
+                {
+                    Assert.That(connection.ParentOverrideForTeams, Is.Null, "The row has to be the inconsistent one.");
+                    Assert.That(connection.ParentOverrideForPortfolios, Is.Null, "The row has to be the inconsistent one.");
+                    Assert.That(connection.ParentSourcesForTeams?.Entries, Is.EqualTo(FieldThenOwnParent.Entries).AsCollection);
+                    Assert.That(connection.ParentSourcesForPortfolios?.Entries, Is.EqualTo(FieldThenOwnParent.Entries).AsCollection);
+                }
+            }
+        }
+
+        [Test]
         public async Task Only_a_list_that_differs_counts_as_a_change_worth_saving()
         {
             await using (var saving = AContext())
