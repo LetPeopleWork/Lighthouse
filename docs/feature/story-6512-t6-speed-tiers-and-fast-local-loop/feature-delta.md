@@ -2335,7 +2335,7 @@ Why two: push 2's run was red for two reasons outside this Story, and it was jud
 
 | To | What |
 |---|---|
-| T9 #6536 | The `category` column is ready with slice F, once push 7 is on `main`, and it reads the base chain. T9's 5 calibration runs start after this. The four lines of its brief stand in slice-50's "Changes from T6's DESIGN and DEVOPS": slice F not D, container tests, connector classes left out of both ceilings, and `GITHUB_STEP_SUMMARY` with no workflow edit. Nothing further is owed there |
+| T9 #6536 | The `category` column is ready with slice F, once push 7 is on `main`, and it reads the base chain. T9's 5 calibration runs start after this. The four lines of its brief stand in slice-50's "Changes from T6's DESIGN and DEVOPS": slice F not D, container tests, connector classes left out of both ceilings, and `GITHUB_STEP_SUMMARY` with no workflow edit. One thing more is owed there: `Unplaced` is neither tier and must be reported or failed, not budgeted as `Unit`. T9's proposal 1 budgets rows whose category is not `Integration`, so as written an `Unplaced` row, which may be hosted, would be budgeted as fast. Slice-50's list says so too |
 | T9 #6536, on rollback | Slice F reverts alone only until T9's first ledger entry, not slice B, as T9's delta says. From then on T9's slice C goes first |
 | T9 and T10 | The class table of step 06-04 is the input for the missed backend target: four `Encryption` classes hold 43.1 % of the fast tier's time |
 | T10 #6537 | Lower the ceilings only after T10's 5 runs, as T9's "Owed to other briefs" says. `category` is slice F's, not slice D's |
@@ -2346,3 +2346,43 @@ Why two: push 2's run was red for two reasons outside this Story, and it was jud
 | Orchestrator | Push 7, its CSV against push 6's, its `Unit` rows against the fast list plus the 3 offline ids, both directions, which closes guarantee 14. ADO #6512 moves by the usual Story rule; the Epic is the maintainer's. No release notes |
 
 **Open.** The maintainer's answer on 73 s. Push 7 and guarantee 14's second half. Guarantee 13 stays not met: nothing can change that.
+
+## Wave: DELIVER / [REF] Review of slices E and F (2026-11-07)
+
+Four findings, fixed as review-fix commits outside the roadmap's steps: `b27724342`, `b4fc3c768` and this docs commit. None is pushed yet.
+
+| # | Finding | Fix | Failure shown first |
+|---|---|---|---|
+| 1 | `CLAUDE.md` sent red, green and refactor to `Test-Fast.ps1 -NoBuild`. That runs the last Debug build, so after an edit it tests the old binary | The DELIVER bullet names `Test-Fast.ps1`, which builds first. The Quality Gates line says it builds first and what `-NoBuild` risks | A planted `Assert.Fail` in the source, then `dotnet test --no-build`, the flag the script passes, on `TestSelectionClauseTest`: 23 passed, exit 0. The plant was then removed |
+| 2 | Nothing kept `Test-Fast.ps1`'s filter in step with CI or `TestSelectionClauseTest.Connectors`, and `Test-Coverage.ps1` holds a third copy of the list | `TheFastScriptLeavesOutIntegrationAndEveryConnector` and `TheCoverageScriptLeavesOutEveryConnectorByDefault` read each filter from the script's text and judge it with `Clause.Selects`. The scripts did not change | `LinearIntegration` dropped from both scripts for one run: 2 failed, 21 passed of 23, each naming `LinearIntegration`, exit 1. Both restored, `git diff` empty |
+| 3 | `simple_name_collisions` compared only classes already on a chain, so an off-chain `A.Harness` with `A.Leaf : Harness` beside `B.Harness : IntegrationFixture` read `Leaf` as `Integration` with no collision reported. A byte order mark before `namespace X;` dropped the file | Every declared class is compared with the simple names on chains, `IntegrationFixture` included. Source files are read as `utf-8-sig` | 4 failed of 159 before the fix: the `Harness` input, a namesake of the root, the reversed test below, and the mark. Each was an assertion failure on the result |
+| 4 | The T9 row said nothing further was owed, and T9's proposal 1 would budget an `Unplaced` row as fast | The row, and one line in slice-50's "Changes from T6's DESIGN and DEVOPS" | Read from slice-50's proposal 1 |
+
+**One existing test was reversed.** `test_a_namesake_off_the_chain_is_no_collision` pinned the reading finding 3 removes. It is now `test_a_namesake_off_the_chain_is_a_collision`. `test_namesakes_off_every_chain_are_no_collision` is new and keeps the other half of what it guarded, that names off every chain are not reported. The real-tree test is renamed `test_no_class_shares_a_simple_name_with_a_class_on_a_chain`, with its assertion unchanged.
+
+**The check reports, it does not resolve.** `Leaf` in that input still reads `Integration`. What changed is that the real-tree test goes red when such a pair appears.
+
+**The real tree.** 1,412 declared classes, 426 on a chain, 0 collisions, so nothing was widened to hide one. 73 files carry a byte order mark and none lost a namespace to it, because none opens on `namespace`. The script over `L7.trx` gives a byte-identical CSV before and after the fix.
+
+| Check | Result |
+|---|---|
+| `python3 -m unittest discover -s Scripts/test-timings/tests` | 159 tests, OK. It was 155 |
+| `TestSelectionClauseTest`, Debug, by the TRX | Total 23, passed 23, exit 0. Guarantee 2's row says 21, which was true at `L7` |
+| The same, `-c Release` | Total 23, passed 23, exit 0 |
+| `dotnet build`, Debug and `-c Release` | 0 warnings, 0 errors, each |
+
+`A` was not run again. Push 7's list is `L7` plus these two ids, both `Unit`, and the comparison for guarantee 14 should expect them:
+
+```text
+Lighthouse.Backend.Tests.Architecture.TestSelectionClauseTest.TheCoverageScriptLeavesOutEveryConnectorByDefault
+Lighthouse.Backend.Tests.Architecture.TestSelectionClauseTest.TheFastScriptLeavesOutIntegrationAndEveryConnector
+```
+
+**Gaps recorded, not fixed.**
+
+- The method-level scan is raw-line, simple-name and blind to nesting, so it is narrower than the guard on attribute shapes.
+- `#if` branches, aliased bases and multi-line interpolation holes are not modelled.
+- `trx_to_csv.py` does not skip `bin`, `obj` or `.stryker-tmp*`, unlike `check_budget.py`.
+- The `exit $LASTEXITCODE` line in `Test-Fast.ps1` is dead: under `$ErrorActionPreference = 'Stop'` the `Write-Error` above it ends the script first.
+- No run was made with Docker stopped, so `Test-Fast.ps1`'s claim that it needs no Docker has not been shown that way.
+- The `Unplaced` warning goes to stderr only, and is printed twice in CI.

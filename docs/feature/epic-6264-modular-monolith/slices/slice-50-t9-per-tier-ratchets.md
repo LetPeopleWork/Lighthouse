@@ -75,6 +75,7 @@ These override the proposals above where they differ.
   when a connector's path changed, and any `ci*.yml` edit causes that.
 - `check_budget.py` can write to `GITHUB_STEP_SUMMARY` itself, so publishing needs no `ci_backend.yml` edit, which would run
   every live suite once more.
+- `Unplaced` is neither tier and must be reported or failed, not budgeted as `Unit`: proposal 1's "not `Integration`" would budget an `Unplaced` row, which may be hosted, as fast.
 
 ## Test pyramid vision (maintainer, 2026-11-07)
 
