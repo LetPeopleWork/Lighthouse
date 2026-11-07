@@ -145,7 +145,7 @@ harness and the contract fixture. So they are composed, and a fixture holds them
 | `LighthouseAppContext` and repositories | Real, on a per-test copy of the template | Real, as today |
 | `IForecastService` | The existing scripted double; the shipped engine for the one moved row that asks for it | Unchanged |
 | `ILighthouseClock`, `TimeProvider` | The existing fakes (`FakeLighthouseClock`, `TestToday.Clock`) | Unchanged |
-| `ILicenseService` | Not reached: the licence is checked outside the port in this suite, confirmed at slice A | The existing mock |
+| `ILicenseService` | Reached, through `ITeamMetricsService` and `ForecastFilterRuleService`: the same premium mock the host has (ranking addendum, D-6469-26) | The existing mock |
 | `ILogger<T>` | `NullLogger`, or a capture where a scenario reads it | Serilog capture, as today |
 | Trackers, collector | The existing doubles | Unchanged |
 
@@ -787,3 +787,559 @@ Nothing here blocks the wave. Decided in your absence; say if any is wrong.
 ## Wave: DESIGN / [REF] The timing run, as it ran (2026-11-07)
 
 Run on `c8b26e574` with the five tracker tokens removed, because the two mixed classes write scratch items to a real tracker whenever a token is set; the command above now says so. Exit 0: 12,818 passed, 2 skipped, 12,820 total, 6 m 37 s. `fixture-setup-timings.csv` holds 326 fixture rows; `Slice13ReadinessTest` shows `setup_count` 44. `t5-tests.csv` holds 12,829 rows. The host-build total, the new baseline for the AC, is **619**. Load was up to about 14 during the run, so the family check against `L0.csv` decides whether it stands. The TRX and test CSV stay out of git, in `measurement/`.
+
+## Wave: DESIGN / [REF] Ranking addendum (2026-11-07, maintainer away)
+
+Closes "The timing run" and D-6469-10. Read from `measurement/`, T6's `L0` and the test and product code. No test ran. Classes come from the TRX by `testId`, `Passed` rows only, as the rule says. The scripts stayed in a scratch folder, so the row tables below are the record.
+
+**The run stands.**
+
+| Check | Must hold | Read |
+|---|---|---|
+| Exit, failures | No ranked family failed | 12,818 passed, 0 failed |
+| `fixture-setup-timings.csv` | About 300 rows or more, `Slice13ReadinessTest` at 44 | 326 rows, 44 |
+| Rows | Close to `L0`'s 12,810 | 12,829, of which 11 `NotExecuted`; `L0` has 12,799 `Passed` and 11 `NotExecuted` |
+| Host-build total | Sum of `host_build_count` | **619**, 101.5 s, summed here from the CSV |
+| Family sums against `L0.csv` | Top ten within 25 % | **Worst −21.3 %.** See below |
+
+**The family check passes, and load did not inflate the run.** The run is faster than `L0` overall: 2,144.7 s summed against 2,310.3 s. "Top ten" can be read two ways, so both were checked, on the classes that are ranked:
+
+| Top ten by | Worst | Next worst |
+|---|---|---|
+| `trx` sum | `SecretCustodyServiceTests` −21.3 % (37.0 s, 47.0 s) | `ConnectionFieldChangeAcceptanceTest` −10.6 % |
+| Ceiling, which is what gets ranked | `DeliverySourcesAcceptanceTest` −7.4 % (31.5 s, 34.0 s) | `ConnectionDefaultsAcceptanceTest` −6.6 % |
+
+Outside the ten, two families of 5 s or more disagree by over 25 %, both faster in this run: `UsageDataCollectorObservationTest` −56.7 % (12.4 s, 28.5 s) and `RefreshLogFindingsPersistenceTest` −45.7 %. Two Postgres families do too, at −72 %, and they are left out anyway. The usage family is the one that could matter, and it does not: even at `L0`'s 2.3 times, its ceiling is about 23.5 s, under the second place below.
+
+`L0` has no set-up column, so set-up has no second sample of its own. It sits inside the TRX, so sums that agree bound it. Against T2's D1 run, for a rough look only as D1 predates T2's hosts: Refinement +21 %, Reports +22 %, `ConnectionDefaults` −31 %.
+
+**Family, as grouped.** The topmost abstract harness on a class's chain, leaving out `IntegrationTestBase` and `IntegrationFixture`; a class with no harness is its own family. `d1-by-listed-owner.csv` could not group everything: it lists only what was on T2's allow-list, so `RefinementAcceptanceTest` and `ReportsAcceptanceTest` are not in it, and neither was in DESIGN's provisional table.
+
+**Left out, per class, not per family,** because a family can hold one Postgres class: 140 classes (66 `Architecture`, 37 `Integration.Containers`, 19 `API.Security`, 7 `Health`, 6 `Startup`, 4 pilot, `TestWebApplicationFactoryTest`). Live classes are not in the run. The pilot's set-up is 18.0 s; it does not count towards the top two.
+
+**Stage 1, the ceiling** (seconds).
+
+| # | Family | Classes | Tests | `trx` | `L0` | `setup` | `fixed` | Ceiling | `body` | Set-up per test |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | `RefinementAcceptanceTest` | 19 | 300 | 86.8 | 85.5 | 56.8 | 2.7 | **59.6** | 29.9 | 0.189 |
+| 2 | `ReportsAcceptanceTest` | 17 | 187 | 65.7 | 64.1 | 38.0 | 2.3 | **40.3** | 27.8 | 0.203 |
+| 3 | `TaskManagerHarness` | 25 | 188 | 118.9 | 121.2 | 35.3 | 3.8 | **39.1** | 83.6 | 0.188 |
+| 4 | `ConnectionDefaultsAcceptanceTest` | 9 | 105 | 89.4 | 95.7 | 32.9 | 1.5 | **34.4** | 56.5 | 0.313 |
+| 5 | `FasterUpdatesAcceptanceTest` | 7 | 94 | 68.6 | 68.1 | 22.6 | 0.0 | **22.6** | 46.0 | 0.240 |
+| 6 | `ReconstructOverTimeHistoryAcceptanceTest` | 7 | 54 | 238.1 | 241.3 | 18.2 | 1.1 | 19.3 | 219.9 | 0.337 |
+| 7 | `DependenciesAcceptanceTest` | 4 | 53 | 26.5 | 28.0 | 14.6 | 0.0 | 14.6 | 11.8 | 0.276 |
+| 8 | `ManualSortingAcceptanceTest` | 3 | 62 | 22.3 | 22.9 | 13.5 | 0.0 | 13.5 | 8.8 | 0.218 |
+| 9 | `PercentilesOverTimeAcceptanceTest` | 5 | 57 | 15.7 | 16.4 | 12.9 | 0.0 | 12.9 | 2.8 | 0.226 |
+| 10 | `DeliverySourcesAcceptanceTest` | 5 | 52 | 31.5 | 34.0 | 12.5 | 0.0 | 12.5 | 19.0 | 0.240 |
+| 14 | `UsageDataCollectorObservationTest` | 15 | 288 | 12.4 | 28.5 | 8.6 | 1.6 | 10.2 | 3.8 | 0.030 |
+
+Ranks 11 to 13 are each under 12 s and left out. `TaskManagerHarness` is partly unmeasured: `TaskManagerAcceptanceTest`'s two classes (17 rows, 18.8 s) have no timer rows. At the family's 0.188 s they add 3.2 s, making 42.3 s, which would pass Reports here and changes nothing below.
+
+**Unmeasured, listed apart.** At the seeded figure of 210 ms a test, marked as an estimate: `NamedDependencyLinkAcceptanceTest` 70 rows, about 14.7 s plus 1.0 s fixed; `ParentPlacementAcceptanceTest` 47 rows, about 9.9 s plus 0.6 s; `RunChartPayloadContractIntegrationTest` 27 rows, about 5.7 s; `SleRiskAcceptanceTest` 22 rows, about 4.6 s. `CategoryListsHoldRawStatesSettingsIntegrationTest` has 75 rows, but its whole `trx` is 9.6 s, which caps it. `SecretCustodyServiceTests` starts no host. None reaches the top five at that figure. `NamedDependencyLink` at `ConnectionDefaults`' 0.313 s would be about 22.9 s, level with fifth, and cannot reach second place either, as the next paragraph shows.
+
+**Stage 2, the first pass.** `m` = rows that are neither wire, nor without a port, nor over 2 s of body. Body per row is its TRX time less its class's mean set-up.
+
+| Family | Ceiling | Tests | Over 2 s | Wire or no port | `m` | Ceiling x `m` / tests |
+|---|---|---|---|---|---|---|
+| **`RefinementAcceptanceTest`** | 59.6 | 300 | 0 | 136, including 2 skeletons | **164** | **32.6** |
+| **`ReportsAcceptanceTest`** | 40.3 | 187 | 0 | 55, including 2 skeletons | **132** | **28.4** |
+| `ConnectionDefaultsAcceptanceTest` | 34.4 | 105 | 11 | About 79 | About 15 | About 4.9 |
+| `TaskManagerHarness` | 39.1 | 188 | 5 | About 169 | About 14 | About 2.9 |
+| `FasterUpdatesAcceptanceTest` | 22.6 | 94 | 0 | All, see below | 0 | 0 |
+
+- **Refinement and Reports** were read row by row: "Slice E note" and "Slice F note" hold the tables, and "How each row was read" holds the reading, so it can be re-summed. It is a reading of test names and steps, so the tallies are expectations until the crafter's own pass (D-6469-34).
+- **`ConnectionDefaults`.** Its harness says the route is the point, and it is: `IConnectionSaveService` is `Open`, an edit, `Commit`, and the edit is the controller's mapping from the page's body. "A script saves back what it read", "older payloads" and the owner saves are that mapping or `TeamController`'s, so they have no port. What can move is the field-in-use refusals, which are `ConnectionSaveOutcome`: 12 rows of "the admin removes the field", the parent-source one, and 2 stale-copy ones. Eleven rows are over 2 s, and those that wait on a scheduled update need the update path.
+- **`TaskManagerHarness`.** Its driving port is a refresh on the production queue, read over the task route. `GetTasks` filters and orders inside `UpdateController`, so the 30 rows of what the list says have no port (Slice 02, 03, 07, Story 6055). The refresh rows and the 68 forecast-round rows need the queue, the lanes and the hosted services. What is left is about 14 rows of `Slice08` that call the connection check directly.
+- **Why the top two is safe.** `m` / tests is at most 1, so no family with a ceiling under 28.4 s can overtake. Only four families are above it. `ConnectionDefaults` would need 88 of 105 rows and `TaskManager` 128 of 188 at its 42.3 s, against about 15 and 14 read. Refinement over Reports is the close call, 32.6 to 28.4 on a reading, and it decides only the order of E and F.
+
+**Top two: `RefinementAcceptanceTest`, then `ReportsAcceptanceTest`.** Both have ports that map nearly one to one onto their routes, and no row over 2 s.
+
+**Stage 3, what is still open.** `saving = m x (setup / tests − c + h)`; `fixed` is not added, as neither family leaves whole. The hosted classes sum to 1,408.5 s in this run, so the 1 % stop line is **14.1 s**.
+
+| Suite | At `c` = 0, before `h` | At `c` = 50 ms, an estimate | Moved only if `c` − `h` is at most |
+|---|---|---|---|
+| Refinement | 31.0 s | 22.8 s | 0.103 s |
+| Reports | 26.8 s | 20.2 s | 0.096 s |
+
+Slice A's `c` decides this. **The risk is the seeders.** Both harnesses run all 8 `ISeeder`s per test today, and `TeamMetricsService` reads `GetTeamDataRefreshSettings()` in its constructor, so a port that keeps the seeders keeps most of the set-up. `RealityCheckQueryCountTest` already answers it with an `IAppSettingService` double. Each host fixture that goes also saves one host: about 11 for Refinement and 10 for Reports, about 3.4 s in all at this run's 164 ms a build.
+
+**`FasterUpdates`: answered, and it does not rank.** Its ceiling, 22.6 s, is under second place at any `m`, so it would not be chosen even if every row could move. And it could not: `ITeamUpdater` and `IPortfolioUpdater` run through the production queue in their own scope. Following constructors and `GetRequiredService` calls from `Program.cs` gives about 98 concrete types, against about 49 for Refinement and Reports and 38 for the pilot, an over-count by text search, compared like for like. It pulls in `IHubContext`, `IHttpClientFactory`, `ForecastLane` and the Redis multiplexer. The harness also replaces about 15 services, the logger factory among them, because the quiet log is the promise under test. On top, the 47 rows of `Slice05` mostly enter through the operator's settings save, which is a controller. **So it stays on the list, and no wider port fixture is allowed** (D-6469-25): a container of that size is a second `Program.cs`, and it keeps the set-up, which is the "host's container without HTTP" DESIGN rejected. Its rows pass the "needs the host's container" boundary case, so they are host tests and not violations. The value that is left there is T10's.
+
+**The licence: reached.** DESIGN's line was wrong. `ForecastRealityCheckService` has no licence collaborator, and its controller has no guard, but `Run` calls `ITeamMetricsService.GetThroughputForTeam(team, start, end, mode)`. For any mode but `SkipFilter` that reaches `ApplyForecastFilter`, then `ForecastFilterRuleService.GetEffectiveRuleSet`, whose first line asks `ILicenseService.CanUsePremiumFeatures()`. So the pilot's port registers the same premium mock the host has, and "Driven ports and adapters" now says so. `RealityCheckQueryCountTest` hides this by doubling `IForecastFilterRuleService`. Nothing in the moved rows sets a filter rule, so a wrong answer would not show in a row: a missing registration fails loudly at resolve, which is why the real service stays. At the top two: Refinement reaches it the same way through `ITeamMetricsService`, and `ReportCommands` and `ReportQueries` take the licence directly, as the cap is a business rule at that port.
+
+**`A_Team_finishing_one_Work_Item_every_day...`, for slice B:** the shipped engine needs `IRandomNumberService`, `IFeatureRepository`, `IPortfolioRepository`, `IWhatTheForecastWaitsFor`, `ForecastSimulation` and `TimeProvider` beyond what the port holds. Rule for the crafter: if those registrations outnumber everything the other 50 port rows need, the row stays as the flow's second skeleton. Its id moves class either way only in that case; say so in the id table.
+
+**Changed assumptions.** Original, "Driven ports and adapters": "`ILicenseService`: Not reached". New: reached, as above. Original, DEVOPS: "`P0` is the timing run". New: the maintainer ran it on `c8b26e574`, so `P0` is the first list and needs no timer, as DEVOPS allowed. Original, "Honest size of the prize": "two suites of about 100 tests each". New: 164 and 132 rows leave the host. With the pilot's 56, the saving is about 53 to 70 s summed (`c` from 50 ms to 0, an estimate), just under DESIGN's 60 to 90 s: more rows, but a row's set-up here is 0.19 to 0.20 s, the bottom of DESIGN's range. Original, slices E and F: 1 day each. New: see D-6469-30.
+
+## Wave: DESIGN / [REF] Slice E note: Refinement (the addendum DESIGN owes)
+
+**Ports.**
+
+| Port | Stands for | Note |
+|---|---|---|
+| `IRefinementViewQuery.ForTeam(teamId, presentedVoterKey)` | The tab | Null for no such Team |
+| `IRefinementViewQuery.LogOf(teamId, workItemReference, presentedVoterKey)` | One Work Item's log | Null when not listed |
+| `ISizingLogCommands.Vote`, `.Comment`, `.TakeBack` | What a reader adds | Answers `SizingOutcome`. Takes an established `Voter`, not a declared name |
+
+No port: everything through `TeamController` and `TeamsController`. `RefinementSettingsValidator`, the stage-rule and state-mapping checks and the merge of a partial save all run in the controller, so the settings rows stay, as input for #6508. `RefinementVotesController` also holds the voter resolution, the body checks and the outcome-to-status mapping.
+
+**Driven at the port.** Real: `LighthouseAppContext`, the Team, Work Item and sizing-log repositories, `RefinementList`, `SleYardstickResolver`, `StageRuleMatcher`, `RefinementCalendar`, `RefinementNeedCalculator`, `VoterIdentityResolver`, `IBlackoutPeriodService`, `ITeamMetricsService`. Doubles, as today: `ForecastWithScriptedHorizons` for `IForecastService`, the licence mock, `FakeLighthouseClock`. New doubles: `IAuthModeResolver` and an empty `IHttpContextAccessor`, which a read only touches when sign-in is on, and no port row has sign-in on.
+
+**Three traps.**
+
+- **The voter's key.** The port's `Voter.Key` is the stored key, derived from what the browser presents. A step must get it from `VoterIdentityResolver.ForWriteAsync`, as the controller does, or `ForTeam` will not recognise the voter's own vote. Writing the raw key would turn `Every_voter_counts_once...` green for the wrong reason.
+- **A port row's Given skips the settings save.** Today a Given chooses states through the settings route, so it runs its normalising and healing. At the port it writes `RefinementSettings` on the Team. A Given could then store a shape no save can produce. New row E10 replays the Givens' own inputs through the save and compares what is stored.
+- **The tear-down drain and the rate limiter do not exist at the port.** Nothing to carry. `CallersComeFrom` stays with the contract fixtures: it gives each scenario its own address, which is why the 429 row does not use up its neighbours' allowance on a host with the limiters on.
+
+**Rows.**
+
+| Class | Rows | Seconds | Port | Skeleton | Contract | Stays, no port |
+|---|---|---|---|---|---|---|
+| `NeedOverOneCycleTest` | 22 | 7.2 | 22 | | | |
+| `Slice01RefinementStatesTest` | 18 | 4.1 | | | 1 | 17 |
+| `Slice02RefinementListTest` | 15 | 3.8 | 10 | 1 | 3 | 1 |
+| `Slice03StageRulesTest` | 30 | 8.5 | 18 | | | 12 |
+| `Slice04RefinementCadenceTest` | 31 | 8.3 | 16 | | | 15 |
+| `Slice05NeedAndVerdictTest` | 18 | 6.0 | 17 | | | 1 |
+| `Slice07BandPercentilesTest` | 18 | 4.6 | 3 | | | 15 |
+| `Slice09ClientNeedTest`, `...WithAnApiKeyTest` | 4 | 1.5 | | | 4 | |
+| `Slice10SleYardstickTest` | 12 | 3.0 | 12 | | | |
+| `Slice11CastAVoteTest` | 29 | 8.2 | 11 | 1 | 16 | 1 |
+| `Slice12CommentsTest` | 26 | 7.3 | 22 | | 4 | |
+| `Slice13ReadinessTest` | 44 | 13.1 | 25 | | | 19 |
+| `Slice15VotesWithAnAccountTest`, `...WithoutRolesTest` | 9 | 2.7 | | | 9 | |
+| `Slice16TakeBackTest` | 9 | 3.1 | 8 | | 1 | |
+| `Slice16TakeBackWithAnAccountTest` | 3 | 1.1 | | | 3 | |
+| `Slice17ClientVotesTest`, `...WithAnApiKeyTest` | 12 | 4.1 | | | 12 | |
+| **Total** | **300** | **86.8** | **164** | **2** | **53** | **81** |
+
+How a row was read: its first `When` decides. "The coach opens the tab", a vote, a question or a take-back is the port; a settings save, a settings read or a Team create stays; a row whose assertion is the status, a header, the body's shape, an address, the rate limit, a sign-in or the client's reading of the JSON is a contract. Named cases: `No_row_carries_an_age_or_a_category` walks the JSON, so contract. `Votes_outlive_a_Work_Item_leaving_refinement...` acts through a settings save, so it stays. `The_range_uses_the_same_horizon_as_the_manual_forecast` compares with the forecast route's answer, so it stays. The not-in-refinement refusals (2 votes, 1 question, 1 take-back) and the comment refusals stay at the port with their `SizingOutcome`; their status and code go to E6 and E7.
+
+**Skeletons.** `The_coach_sees_every_Work_Item_in_refinement_in_backlog_order`, user flow "A reader opens a Team's Refinement tab and sees what is in it". `A_reader_votes_in_seconds_without_an_account`, user flow "A reader votes and the tab counts it". Both need the route, the DI wiring and the voter key through the header to appear.
+
+**HTTP-coverage table.**
+
+| What is visible on the wire | Pinned today by | After the move, pinned by |
+|---|---|---|
+| GET tab, GET log, POST votes, POST comments, DELETE votes/mine | Every row, through the harness | Skeletons; contract rows E1, E5, E8, E9, E11 |
+| Versioned `api/v1` routes | **Nothing here** | Unchanged: a gap today, not made by this move |
+| 200 and a readable body | `ReadOk`, `ReadOkAs`, every row | Skeletons, contract rows |
+| 404 for a Team that does not exist, on the tab and on a vote | 2 rows | The same rows, now contract |
+| 404 for a Work Item with no log | 1 row | The same row, now contract |
+| 404 and refusal for no role (RBAC) | `Somebody_without_a_role...` x3, `Only_a_Team_admin...` | The same rows, now contract |
+| 409 and `code` for a Work Item outside refinement | 4 rows | **New row** E6 |
+| 400 and `code` for a comment empty or too long | 5 rows | **New rows** E7 |
+| 400 for a bad answer, channel, name or key; 403 for a credential with no person; 429 | 11 rows and `Slice17...ApiKey` | The same rows, now contract |
+| Header `X-Lighthouse-Voter-Key`; the key never in an answer | `ConnectionOf`, `The_voter_key_never_comes_back...` | The same row, now contract; both skeletons |
+| Escaped and slashed references in the address | 4 rows | The same rows, now contract |
+| **Every member name**, nested too: `workItems`, `yardstick`, `need`, `split`, `readyCount`, `readySource`, `stagesConfigured` and the rest | The readers, spread over all rows | **New row** E1, every member of `RefinementViewDto` and what it holds |
+| **Log member names:** `entries`, `voters`, `kind`, `isMine`, `isOpenQuestion` | `LogEntryReading` | **New row** E5 |
+| **Null members present as null:** `verdict`, `low`, `cycleStart`, `nextRefinementDate`, `stage`, `myVote` | The readers, on such cases | **New row** E2 |
+| **Date formats:** `yyyy-MM-dd` for days, `yyyy-MM-ddTHH:mm:ss.fffZ` for `recordedAt` | Readers comparing text | **New row** E3 |
+| **Enums as text:** answer, channel, entry kind, readiness, stage, ready source, verdict, reason, yardstick source, voter identity | String comparisons | **New row** E4, every member of each |
+| `madeReady` on a vote's answer | 3 rows | **New row** E8; the port rows read `RecordedAndMadeReady` |
+| The answer to a take-back that took nothing back | 2 rows | **New row** E9 |
+| The row in the answer to a question or comment | `HasCommented` | **New row** E11 |
+| `refinementConfigured` on the Team read; settings read and save | `Slice01` and the settings rows | The same rows, unchanged |
+| What a client reads (`Slice09`, `Slice17`) | 16 rows | The same rows, now contract |
+
+**Business assertions in shared steps.**
+
+| Shared step | What it asserts | Kind | After the move |
+|---|---|---|---|
+| `ReadOk`, `ReadOkAs` | Status 200 | Wire | Contract rows |
+| `HasVoted`, `HasCommented` | The vote or comment was accepted | **Business** | The port step asserts `Recorded` or `RecordedAndMadeReady`, or a Given that was refused would go unnoticed |
+| `TheAdminHasChosen`, `TheAdminHasSetReadiness`, the cadence, band and stage-rule Givens | The save was accepted | Wire on the way to a Given | Gone at the port, E10 stands for it |
+| `RowOf` | The Work Item is listed | **Business** | The port reader keeps it |
+| `RowsIn`, `YardstickIn`, `NeedIn` | The member exists | Wire | E1 |
+| `NeedIn` | Cycle dates are given together | Wire shape of a business fact | E2; the port reads `Need.Range` |
+| `DiscussWhenIn` | Both thresholds are named | Settings read | Stays, with its rows |
+| `RefusalCodeOf` | The code named | Wire | E6, E7 and the contract rows |
+| `ThenTheVerdictCameBackInTime`, the 300 Work Items row | Within two seconds | Business budget, read over HTTP | Kept at the port: the same query with no HTTP, so it can only get easier. Said so, not hidden |
+| `WorkItemsStoredFor` | Work Items kept | Business | Stays with the settings rows that use it |
+
+**Universe of the read.** `Opening_the_tab_changes_nothing...` widens as the pilot's row does: the write counter over the whole database during `ForTeam`, on both the non-query and reader hooks. `Voting_changes_nothing...` is bounded: one more sizing-log entry, nothing else.
+
+**Id table.** 193 rows keep their ids: 161 at the port, 32 in `Slice01` and `Slice07`. 107 change class and are mapped one by one: 3 band rows, 49 no-port rows, 2 skeletons, 53 contract rows. 16 are new. Anything else fails.
+
+**Where rows go** (D-6469-27). Port rows keep their class. `Slice07BandPercentilesTest` is the exception: its no-port side is the larger, so it stays where it is, and 3 rows go to a new port class, `Slice07BandDecidesTheNeedTest`. The 49 no-port rows of mixed classes go to one class, `RefinementSettingsSavesTest`, on the old harness. Contract rows go to four classes, one per kind of instance: `RefinementWithoutSignInWireContractTest`, `RefinementWithRolesWireContractTest`, `RefinementWithoutRolesWireContractTest`, and `RefinementWithLimitersOnWireContractTest` for `Slice11`'s contract rows, whose host keeps the rate limiters on. Skeletons go to `RefinementSkeletonTest`, on a plain host: neither needs the limiters. **Host fixtures: 19 before, about 8 after**: `Slice01`, `Slice07`, the settings class, the skeleton class and the four contract classes, into which the classes that are all contract rows fold. Whether the API-key rows of `Slice09` and `Slice17` fit the sign-in kinds is not confirmed: the scheme is registered in the shared harness, which suggests they do. If they do not, that is a ninth.
+
+**Deliberate break.** `SizingLogEntry.LongestComment` from 2000 to 1999, in the working tree: `A_comment_of_two_thousand_characters_is_kept_whole` must go red at the port, and the output is kept. Then revert.
+
+**Budget and paths.** `Slice13ReadinessTest` keeps its name and entry (ceiling 37 s), and sheds 19 rows. The largest new class, `RefinementSettingsSavesTest`, is about 25 s on CI for 49 rows at the pilot's 510 ms a row, an estimate, under the 34 s budget. No row is on T2's lists; `RefinementAcceptanceTest` has one line in `SharedHostsDrainTheUpdateQueueGuardTest`, which stays true while the harness stays. `path-classifier.sh` on the suite's real files and planned `Contracts/` paths: `backend` true, every connector and `shared` false.
+
+## Wave: DESIGN / [REF] Slice F note: Reports (the addendum DESIGN owes)
+
+**Ports.**
+
+| Port | Stands for | Note |
+|---|---|---|
+| `IReportQueries.Templates`, `.List`, `.ListAcross`, `.CreationOptions`, `.Get` | Reads | Answers `ReportOutcome<T>`: status, value, code |
+| `IReportCommands.Create`, `.Edit`, `.Delete` | One owner's report | The refusal code is at the port, so a row reads it exactly, where today it only looks for it in the body |
+| `IReportBulkCommands.CreateForEach`, `IReportBulkRemover.RemoveEach` | Bulk | Each takes an `IReportOwnerWriteAccess`, in practice the caller's RBAC |
+
+`ReportOwner` is the address: `ReportOwner.Team(id)` or `.Portfolio(id)`, so "through another Team's address" is a real port case.
+
+No port: `ToNewReport` in the request DTO and the `ValidationProblem`s, the bulk limits and de-duplication in `ReportsController`, `ReadableOwners`, `[LicenseGuard]`, `earliestStart` in `Refusal`, and `StatusOf`. Those rows stay or become contracts, as input for #6508.
+
+**Driven at the port.** Real: `ReportRepository` behind `IReportReader` and `IReportWriter`, `ReportOwnerLookup`, `ReportMetricSeriesByOwner`, the Team and Portfolio series, `ReportMetricCatalog`, the four `IReportMetric`s, `ThenAndNowTemplate`, `ITeamMetricsService`, the Portfolio metrics service. Doubles, as today: the licence mock per scenario, `FakeLighthouseClock`, `CapturedLogMessages` where a row reads a log. An allow-all `IReportOwnerWriteAccess` for the bulk port rows, which assert no refusal: every row pinning a refusal by role is a contract, so no port row stands in for RBAC. `Program.RegisterReports` lists the 17 registrations to copy. A port row's Given builds `NewReport` itself and so skips `ToNewReport`; F9 is the row that watches that.
+
+**Rows.**
+
+| Class | Rows | Seconds | Port | Skeleton | Contract | Stays, no port |
+|---|---|---|---|---|---|---|
+| `BulkReportsWithRolesNotEnforcedScenarios` | 4 | 1.6 | | | 4 | |
+| `BulkReportsWithoutSignInScenarios` | 4 | 1.7 | | | 4 | |
+| `CreateForSeveralTeamsScenarios` | 18 | 6.1 | 7 | 1 | 5 | 5 |
+| `EveryReportInOnePlaceScenarios` | 9 | 3.5 | 5 | | 4 | |
+| `PortfoliosJoinTheSelectionScenarios` | 8 | 3.0 | 6 | | 2 | |
+| `RemoveReportsInBulkScenarios` | 8 | 3.4 | 4 | | 2 | 2 |
+| `ReportWindowBoundaryScenarios` | 15 | 4.3 | 15 | | | |
+| `ReportsWithoutSignInScenarios` | 3 | 1.0 | | | 3 | |
+| `Slice01TeamReportScenarios` | 30 | 8.8 | 19 | 1 | 2 | 8 |
+| `Slice02ThenInThePastScenarios` | 19 | 5.4 | 14 | | | 5 |
+| `Slice04ThroughputAndShownMetricsScenarios` | 8 | 2.5 | 8 | | | |
+| `Slice05WipAndWorkItemAgeScenarios` | 7 | 2.8 | 7 | | | |
+| `Slice05bCycleTime95thScenarios` | 6 | 2.1 | 6 | | | |
+| `Slice06PortfolioReportScenarios` | 7 | 2.7 | 5 | | 1 | 1 |
+| `Slice07NowLengthScenarios` | 12 | 4.2 | 11 | | 1 | |
+| `Slice08DeleteAndCommunityCapScenarios` | 15 | 6.4 | 13 | | 2 | |
+| `Slice10EditReportScenarios` | 14 | 6.4 | 12 | | 1 | 1 |
+| **Total** | **187** | **65.8** | **132** | **2** | **31** | **22** |
+
+Named cases. Stay, no port: `A_create_without_a_readable_Then...` x4, `A_Then_missing_its_end...` x2, `A_Then_end_that_is_not_a_day...` x3 and `A_type_this_version_does_not_offer...` all die in `ToNewReport` or the binder; `Deleting_a_Team...` and `Deleting_a_Portfolio...` act through the owner's route; `An_edit_that_does_not_name_the_version...` is the controller's; the bulk limits and `A_Team_named_twice...` are `ReportsController`'s. `The_operator_is_warned...` and `A_stored_report_whose_Now...` stay too, though `ReportQueries` logs the warning, because their promise is what reaches the place operators read, and that sink is the host's. Contract: `Changes_during_the_run...` and `Losing_Admin...` are about access changing mid-run, and the instance rows are about who may do what.
+
+`The_rebuilt_Then_matches_the_Metrics_tab...`, `Thens_total_age_agrees...` and `Thens_95th_is_the_95th...` compare with the Metrics routes today. At the port they compare with `ITeamMetricsService`, which those routes call. The rows stay honest because the comparison is what they pin; the routes keep their own tests.
+
+**Skeletons.** `A_coach_freezes_the_Cycle_Time_of_the_last_ninety_days_for_a_Team`, user flow "A coach freezes a report and every reader finds it". `A_coach_creates_the_same_comparison_for_two_Teams_in_one_go`, user flow "A coach creates the same report for several owners at once": it is the one row on `ReportsController`'s bulk wiring, with its RBAC and licence guard.
+
+**HTTP-coverage table.**
+
+| What is visible on the wire | Pinned today by | After the move, pinned by |
+|---|---|---|
+| Team and Portfolio routes, list, one report, templates, POST, PUT, DELETE | Every row | Skeletons, F1, F3, F4, the contract rows, and F5 for POST, GET, PUT and DELETE on each owner kind: the two controllers have their own routes |
+| `api/latest/reports`, `/creation-options`, `/bulk`, `/bulk-removal` | The bulk rows | The bulk skeleton, F3, F4, the contract rows, and F8 for both the run and the removal |
+| Versioned `api/v1` routes | **Nothing here** | Unchanged: a gap today |
+| 200, a readable body | `ReadOk` | Skeletons, contract rows |
+| 201 with the report's address; 200 with the read on an edit; 204; 404 on a second delete | `ThenItWasCreated`, `Slice08`, `Slice10` | **New rows** F5 |
+| What a request's body becomes (`ToNewReport`) | Every create, through the harness | **New row** F9 |
+| 400 and its code | `ThenItIsRefusedFor`, about 30 rows | **New rows** F6 |
+| 403 and `report-cap-reached` | `Slice08` | **New rows** F6 |
+| 422 and its code for a type this version does not offer | `Slice01` | **New rows** F6 |
+| 404 for a report of another owner | 5 rows | **New rows** F6; the port rows read `NotFound` |
+| `earliestStart` in a refusal | `A_Then_reaching_past_the_data_cutoff...` | **New row** F7; the port row keeps the code |
+| 403 and hiding by role (RBAC) | The reader and no-role rows | The same rows, now contract |
+| Premium guard on the bulk route | 3 rows | The same rows, now contract |
+| Instance kinds: without sign-in, roles not enforced | 11 rows | The same rows, now contract |
+| Bad JSON, malformed dates | The rows that stay | The same rows |
+| **Report member names:** `thenAndNow`, `thenWindow`, `nowWindow`, `start`, `end`, `lengthDays`, `daysSinceThenEnded`, `thenRebuildable`, `metrics`, `atThen`, `atNow`, `value`, `sampleSize`, `absentReason`, `shownMetricKeys`, `concurrencyToken`, `createdOn` | The readers | **New row** F1. Metric keys and value names are dictionary keys, so it also pins that the host's JSON options leave them as written |
+| **An absent value:** present, `value` null, its reason | `ThenItIsADashFor` | **New row** F2 |
+| **Dates** as `yyyy-MM-dd` | Readers comparing text | F1 |
+| **List members:** `reports`, `creationBlockedByCap`, `communityCap`; `ownerName` and `thenAndNow` left out when null | `CreationBlockedByCapIn`, `The_per_owner_list_names_no_owner...` | **New row** F3, and that row as a contract |
+| **Types and creation options:** `templates`, `templateKey`, `metrics`, `metricKeysByOwnerKind`, `earliestStart` | The readers | **New row** F4 |
+| **Bulk answers,** `ownerKind` as text | Bulk readers, `The_answer_is_the_one_the_browsers...` | **New rows** F8, and that row as a contract |
+| The address ignoring another Now | `Asking_for_another_Now_in_the_address...` | The same row, now contract |
+
+**Business assertions in shared steps.**
+
+| Shared step | What it asserts | Kind | After the move |
+|---|---|---|---|
+| `ReadOk` | Status 200 | Wire | Contract rows |
+| `ThenItWasCreated`, `GivenTheAdminCreated` | The report was created | **Business** | The port step asserts `Done` and returns the read |
+| `ThenItIsRefusedFor`, `ThenItIsRefusedWith` | Status, and the reason in the body | Both | The port reads the exact code; statuses go to F6 |
+| `ThenItIsNotFound` | 404 | Both | The port reads `NotFound`; F6 |
+| `ThenItIsForbidden` | 403 | Wire, or the cap | Role rows are contracts; the cap reads its code at the port |
+| `ThenTheOwnerHoldsNoReport` | Nothing was stored | **Business** | The port reader keeps it, through `List` |
+| `ThenItIsADashFor` | A value is stated absent, never 0 | **Business** | Kept, on `CapturedValue`; F2 for the wire |
+| `CapturedValue.Missing` | A value not there at all is no dash | **Business** | Kept: a missing key must not pass for an absent value |
+| `ReportsIn`, `MetricIn`, `TheThenAndNowOf`, `WindowIn` | The member exists | Wire | F1, F3 |
+| `BulkReportsAcceptanceTest` line 277 | A refused request wrote nothing | **Business** | Stays with the refused rows, which stay at the host |
+| Tear-down: filler and queue drained | The host is left idle | Host only | Nothing to carry. The rows that delete an owner stay at the host |
+
+**Id table.** 132 rows keep their ids, all at the port. 55 change class and are mapped one by one: 22 no-port rows, 2 skeletons, 31 contract rows. 14 are new. `ReportCreationTimingProbe` is `[Explicit]` and stays where it is.
+
+**Where rows go.** Ten classes are mixed, four are all port rows and three all contract rows. Port rows keep the class. No-port rows go to `ReportsThatStayAtTheHostScenarios` and `BulkReportsThatStayAtTheHostScenarios`, as the two have different harnesses. Skeletons are one class per harness: `ReportsSkeletonTest`, `BulkReportsSkeletonTest`. Contracts are three classes, one per kind of instance: `ReportsWireContractTest`, `ReportsWithoutSignInWireContractTest`, `ReportsWithRolesNotEnforcedWireContractTest`. **Host fixtures: 17 before, 7 after.**
+
+**Deliberate break.** `ReportWindowPolicy.MinimumLengthDays` from 14 to 15: `A_Then_of_exactly_fourteen_days_is_accepted` must go red at the port. Then revert.
+
+**Budget and paths.** No Reports class is on `test-time-budget.json`. `ReportCreationTimingProbe` holds a line in T2's list that stays true. `path-classifier.sh`: as for Refinement.
+
+## Wave: DESIGN / [REF] How each row was read
+
+The whole first-pass reading, in a form that re-sums to the tables above: a class's kind applies to every row but those named. Re-run on the TRX, it gives 164, 2, 53, 81 and 132, 2, 31, 22. Slice E and F check it row by row (D-6469-34).
+
+**Refinement.**
+
+| Class | Every row but those named | Named by how the test name starts |
+|---|---|---|
+| `NeedOverOneCycleTest` | Port |  |
+| `Slice01RefinementStatesTest` | Stays | Contract: `Only_a_Team_admin_can_change` |
+| `Slice02RefinementListTest` | Port | Contract: `Somebody_without_a_role`, `Asking_for_the_Refinement_tab_of_a_Team_that_does_not`, `No_row_carries_an_age`; Stays: `Work_Items_in_a_state_taken_out_of_Doing`; Skeleton: `The_coach_sees_every_Work_Item` |
+| `Slice03StageRulesTest` | Port | Stays: `A_Team_admin_sets_a_Ready_rule`, `A_rule_on_a_field_Work_Items`, `A_rule_with_more_conditions`, `Creating_a_Team_with`, `A_rule_of_twenty`, `A_save_that_says_nothing`, `A_Ready_rule_on_an_additional_field_that_went_away_reads_back`, `A_Ready_rule_whose_operator`, `Setting_stage_rules_keeps` |
+| `Slice04RefinementCadenceTest` | Port | Stays: `A_Team_admin_sets_the_Refinement_cadence`, `A_starting_week_named`, `The_same_weekday_named_twice`, `Every_few_weeks_without`, `Fewer_than_one_or_more`, `A_Refinement_day_that_is_not`, `Checking_settings`, `A_save_that_says_nothing`, `Clearing_every_Refinement_day`, `Setting_the_cadence_keeps` |
+| `Slice05NeedAndVerdictTest` | Port | Stays: `The_range_uses_the_same_horizon_as_the_manual_forecast` |
+| `Slice07BandPercentilesTest` | Stays | Port: `The_band_decides` |
+| `Slice09ClientNeedTest` | Contract |  |
+| `Slice09ClientNeedWithAnApiKeyTest` | Contract |  |
+| `Slice10SleYardstickTest` | Port |  |
+| `Slice11CastAVoteTest` | Contract | Port: `Changing_ones_mind`, `Two_people_who_declare`, `Voting_changes_nothing`, `Votes_are_open`, `Every_reader_sees`, `Every_voter_counts_once`, `A_Work_Item_that_is_not_in_refinement`, `Without_sign_in_the_tab`; Skeleton: `A_reader_votes_in_seconds`; Stays: `Votes_outlive` |
+| `Slice12CommentsTest` | Port | Contract: `A_question_without_a_name`, `The_log_of_a_Work_Item_whose_reference`, `The_log_of_a_Work_Item_that_is_not` |
+| `Slice13ReadinessTest` | Port | Stays: `A_Team_that_never_chose_readiness`, `A_Team_admin_sets_readiness`, `Either_discussion_rule`, `Fewer_than_one_Yes`, `Fewer_voters_than`, `A_partial_save`, `As_many_voters`, `A_discussion_rule_of_zero`, `A_save_that_says_nothing`, `A_readiness_save`, `A_save_of_only`, `A_save_that_sends_only`, `Changing_readiness_keeps` |
+| `Slice15VotesWithAnAccountTest` | Contract |  |
+| `Slice15VotesWithoutRolesTest` | Contract |  |
+| `Slice16TakeBackTest` | Port | Contract: `Taking_back_without_a_voter_key` |
+| `Slice16TakeBackWithAnAccountTest` | Contract |  |
+| `Slice17ClientVotesTest` | Contract |  |
+| `Slice17ClientVotesWithAnApiKeyTest` | Contract |  |
+
+**Reports.**
+
+| Class | Every row but those named | Named by how the test name starts |
+|---|---|---|
+| `BulkReportsWithRolesNotEnforcedScenarios` | Contract |  |
+| `BulkReportsWithoutSignInScenarios` | Contract |  |
+| `CreateForSeveralTeamsScenarios` | Port | Contract: `The_creation_options_leave_out`, `A_Community_instance`, `A_Team_she_only_reads`, `A_run_where_every_Team`, `Changes_during_the_run`; Stays: `A_malformed_run`, `More_than_50_owners`, `A_Team_named_twice`; Skeleton: `A_coach_creates_the_same_comparison` |
+| `EveryReportInOnePlaceScenarios` | Port | Contract: `A_report_on_a_Team_he_cannot`, `A_report_on_a_Portfolio_he_cannot`, `A_caller_who_can_read_no_owner`, `The_per_owner_list_names_no_owner` |
+| `PortfoliosJoinTheSelectionScenarios` | Port | Contract: `A_Portfolio_she_only_reads`, `The_answer_is_the_one_the_browsers` |
+| `RemoveReportsInBulkScenarios` | Port | Stays: `A_removal_naming_no_report`, `More_than_50_reports`; Contract: `Losing_Admin`, `A_report_on_an_owner_she_only_reads` |
+| `ReportWindowBoundaryScenarios` | Port |  |
+| `ReportsWithoutSignInScenarios` | Contract |  |
+| `Slice01TeamReportScenarios` | Port | Stays: `A_create_without_a_readable_Then`, `The_operator_is_warned`, `A_type_this_version_does_not_offer_is_refused_as_such`, `A_stored_report_whose_Now`, `Deleting_a_Team`; Contract: `Somebody_with_no_role`, `A_reader_cannot_create`; Skeleton: `A_coach_freezes_the_Cycle_Time` |
+| `Slice02ThenInThePastScenarios` | Port | Stays: `A_Then_missing_its_end`, `A_Then_end_that_is_not_a_day` |
+| `Slice04ThroughputAndShownMetricsScenarios` | Port |  |
+| `Slice05WipAndWorkItemAgeScenarios` | Port |  |
+| `Slice05bCycleTime95thScenarios` | Port |  |
+| `Slice06PortfolioReportScenarios` | Port | Stays: `Deleting_a_Portfolio`; Contract: `A_Portfolio_reader_finds_the_report_and_cannot_create` |
+| `Slice07NowLengthScenarios` | Port | Contract: `Asking_for_another_Now_in_the_address` |
+| `Slice08DeleteAndCommunityCapScenarios` | Port | Contract: `A_reader_cannot_delete`, `A_Portfolio_reader_cannot_delete` |
+| `Slice10EditReportScenarios` | Port | Contract: `A_reader_cannot_edit`; Stays: `An_edit_that_does_not_name_the_version` |
+
+## Wave: DISTILL / [REF] Scope, reconciliation and baseline (2026-11-07, maintainer away)
+
+- **Shape.** Test structure, no product behaviour. The specification is NUnit, as for T2 and T6: scenarios by planned test title, and for a guard, planted cases that must go red. No Gherkin, so no `.feature` files, Tier B, domain-types module or state-delta port.
+- **Specified, not scaffolded.** T5 cannot start before T6's slice E, so this wave wrote no test and no production file and ran no test. The "fails for the right reason" gate moves to DELIVER: each step shows its red before its green, as in T6.
+- **No `deliver/roadmap.json`.** The DISTILL skill's outputs do not name it, so it is not required. DELIVER's roadmap is written when T5 starts, from these tables.
+- **No nWave scenario tag anywhere** in a test title, comment or file. An untagged test is correct here. The kind column below lives in this workspace only.
+- **UI sketches: N/A,** because nothing a user sees changes: no screen, chart, copy or word. Loading and failure looks: N/A for the same reason.
+- **E2E: unchanged.** A thin sanity check, with no spec or page object touched.
+- **Maintainer's rules, applied.** Fast is decided by time, not by where a class sits. Moving a test down a layer is good even if it slows the fast loop a little. T5's moved suites landing in the fast tier is accepted, so DEVOPS's raised point is closed, and nothing below gates on it.
+- **Read:** this delta, slice-49, T6's DISTILL for its form and the rules of a list run, `atdd-infrastructure-policy.md`, the harnesses and controllers named in the addendum. `docs/product/journeys/epic-4172-forecast-reality-check.yaml` exists for the pilot; no scenario changes behaviour, so its failure modes keep their rows. KPI contract: none for this Story. Deliverable type: application, as `.nwave/des-config.json` declares none. Outcome registry: not run, no typed contract is added. Language: C#.
+- **Not open any more:** T6's containers and fast-filter answers are settled there, so ignore "Still open from T6" in DEVOPS. DEVOPS's owed lines to T9, T10, T11 and T6 are the maintainer's to apply and are not touched here.
+
+**Reconciliation: 0 hard contradictions.** Soft points, resolved as recorded:
+
+| Point | Resolved |
+|---|---|
+| D-6469-9 "becomes T9's limit", D-6469-21 "stays T5's own rule" | D-6469-21 stands |
+| DESIGN's printed run, DEVOPS "`P0` is the timing run", the run as it ran | The maintainer's run stands, as the family check passed; `P0` has no timer |
+| DESIGN "`ILicenseService`: not reached" against the code | Corrected in place, see the addendum |
+| DESIGN "two suites of about 100 tests", 1 day each | 164 and 132 rows; see D-6469-30 |
+| Slice-49's "stays at the host and goes on the skeleton list" against "Wire-contract tests: a separate namespace" | The brief's last section wins: `Contracts` |
+
+## Wave: DISTILL / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6469-24 | Slice E is Refinement, slice F is Reports | Stage 2 reads 32.6 and 28.4; no other family can reach second place |
+| D-6469-25 | No wider port fixture. `FasterUpdates` and the update-path rows of `TaskManager` stay on the shrinking list as host tests | A container that holds the update path is a second `Program.cs`, and keeps the set-up a move exists to remove |
+| D-6469-26 | The pilot's port registers the host's premium licence mock and the real `ForecastFilterRuleService` | The licence is reached; a double of the rule service would hide the path |
+| D-6469-27 | In a mixed class, port rows keep the class and the id. If the no-port side is the larger, the class stays and the port rows go to a new class. No-port rows go to one class per harness, contract rows to one class per kind of instance | A kept id is the strongest proof where a row's text really changes, and each new fixture is a host build, which must not rise |
+| D-6469-28 | Stage 3 runs at the close of slice A, on `c` and `h`, with the stop line of 14.1 s. Under it, the suite is reported and not moved, then ask | D-6469-10; slice E must not start on a guess |
+| D-6469-29 | Every list run removes the five tracker tokens with `env -u`, and a count of `IntegrationTestToken` in the environment prints 0 first, as under "The guarantee" | The two mixed classes write to a real tracker whenever a token is set |
+| D-6469-30 | Re-sized: slice E about 3 days, slice F about 2.5 days, so the Story about 8.25 days, estimates | Each row's Given and Then change, not only its base, and the harnesses' 1,900 and 1,100 lines must become composed parts, as the pilot's did |
+| D-6469-31 | A port row's Given writes the model. One contract row per suite sends those same inputs through the real door and compares what is stored (E10, F9) | A Given that no save can produce would make a port row green for the wrong reason |
+| D-6469-32 | The new row count is the coverage table's, not a target: 7 for the pilot, 16 for Refinement, 14 for Reports | Each row takes over a pin that only shared steps held |
+| D-6469-33 | Slice D also adds a "Driving" row to `atdd-infrastructure-policy.md`: application-service port, `ServicePortHarness` | The policy is what a later DISTILL reads, and this wave may not edit it |
+| D-6469-34 | The row tables are expectations. A slice E or F starts by checking them row by row against "How each row was read", keeps the list under `evidence/`, and re-runs Stage 3 if `m` moves by more than 5 rows | They rest on reading names and steps, and stop-line arithmetic should not outlive a misread row |
+
+## Wave: DISTILL / [REF] What each slice must show
+
+"Red" means a named failure for the reason given, never a build or set-up error. A planned title is a sentence, in the style of the suite beside it, with no tag. **Kind** is ok, sad or edge, and stays here. A new test carries no `[Category("slice-…")]`; moved rows keep the attributes they have. Comments follow CLAUDE.md: the why, in plain words, with no slice or Story id.
+
+**Slice A: the helper, and `Slice04`.** New: `ServicePortHarnessTest` in `TestHelpers/`.
+
+| # | Planned title | Given | When | Then | Kind |
+|---|---|---|---|---|---|
+| A1 | `Each_scenario_gets_a_database_of_its_own_holding_the_schema_and_nothing_else` | Two harnesses open at once | A Team is saved through the first | The second holds no Team, and its schema is there | ok |
+| A2 | `What_a_fixture_registers_is_what_its_scenario_is_given` | A fixture registers a scripted forecast | Its scenario asks for the forecast | It gets the script | ok |
+| A3 | `A_finished_scenario_leaves_no_file_behind` | A harness that has written rows | It is disposed | Its database and side files are gone | ok |
+| A4 | `Each_scenario_reads_what_is_stored_not_what_an_earlier_step_still_holds` | A Team saved in one scope | It is read in the next scope | The read is a fresh one from the file | edge |
+| A5 | `A_row_that_breaks_a_foreign_key_is_refused_as_the_host_refuses_it` | An open harness | A Work Item naming no real Team is saved | It is refused and nothing is stored | sad |
+| A6 | `A_scenario_that_failed_with_its_scope_open_leaves_no_file_behind` | A harness with a scope and a connection still open | It is disposed | Nothing is left, and no error hides the failure | sad |
+| A7 | `Disposing_a_harness_twice_or_unused_does_no_harm` (2 cases) | A disposed harness; one never used | It is disposed | Nothing happens | edge |
+| A8 | `A_service_no_fixture_registered_is_named_when_a_scenario_asks_for_it` | A fixture that registered no licence | Its port is resolved | The failure names the missing service | sad |
+| A9 | `An_answer_whose_check_learned_from_more_than_its_own_window_is_not_read` | A scripted forecast that kept a history longer than its window | The port's answer reader reads the answer | It fails, naming the window | sad |
+
+Moved: the 5 rows of `Slice04`, same ids, on the port base. A9 is why the history invariant can be trusted on every row: the reader carries it, and this shows it can fail.
+
+Also in the slice: `c` and `h` measured on `Slice04` before and after on the same machine, and whether a TRX duration holds tear-down, read on one fixture. **Then Stage 3** (D-6469-28).
+
+**Slice B: the base, and the pilot's split.** New: `WireContractTestTest` in `Contracts/`, `RealityCheckWireContractTest`, `RealityCheckSkeletonTest`.
+
+| # | Planned title | Given | When | Then | Kind |
+|---|---|---|---|---|---|
+| B1 | `A_contract_fixture_starts_one_host_however_many_scenarios_it_holds` | A planted fixture of three scenarios | It runs | One host build | ok |
+| B2 | `Each_contract_scenario_starts_from_a_fresh_database_on_the_same_day` | A scenario that stored a Team and moved the clock | The next scenario starts | No Team, the starting day | ok |
+| B3 | `A_fixture_changes_the_host_through_its_one_hook` | A fixture that turns on test sign-in | A caller with no role asks | The answer is the refusal | ok |
+| B4 | `A_contract_fixture_is_in_the_hosted_tier_without_saying_so` | A class on the base with no category of its own | Its categories are read | `Integration`, by inheritance | ok |
+| B5 | `A_contract_scenario_that_leaves_work_in_the_queue_fails_at_tear_down` | A scenario that queued a refresh | It ends | Tear-down fails, naming the host not idle | sad |
+| B6 | `Every_member_of_a_real_answer_has_the_name_the_browser_reads` | A Team with a shipped-engine answer | The check runs over the route | Every member of the DTO is read in full, the five new names too | ok |
+| B7 | `A_cell_that_cannot_be_evaluated_states_its_members_as_null_and_days_as_plain_dates` | A Team with cells that cannot be evaluated | The check runs | `forecast`, `actualCompleted`, `outcome`, `levelOutcomes` are present and null; days are `yyyy-MM-dd` | edge |
+| B8 | `Every_reason_and_outcome_travels_as_its_name` | Every member of the six enums | Each goes through the host's JSON options | Each is its name, never a number | edge |
+| B9, B10 | `No_part_of_the_answer_on_the_wire_can_rank_a_window` (the 2 cases of the row it is split from) | As the split row | The check runs | The walk over the tree finds nothing that ranks | edge |
+| B11 | `The_windows_of_an_off_ladder_setting_rank_nothing_on_the_wire` | As the split row | The check runs | The same walk | edge |
+| B12 | `A_check_with_no_forecast_ranks_nothing_on_the_wire` | As the split row | The check runs | The same walk | edge |
+
+Moved: 51 rows at the port (47 plus the 4 split), 14 to contracts, 1 to the skeleton, 10 stay. The no-write row widens to the whole database through the command counter, on the non-query **and** reader hooks. **Before trusting the counter,** plant a write inside the scripted forecast: the row must go red. Remove it.
+
+Proofs: the id table; the coverage table, row by row; the deliberate break of the five-day bar; family seconds before and after; each class run alone 3 times, as DESIGN says.
+
+**Slice C: the guard.** `TestHostUseGuardTest`, planted the `PlantedFixtures` way.
+
+| # | Planted case | Rule | Must show | Kind |
+|---|---|---|---|---|
+| C1 | A host from `[OneTimeSetUp]`, on neither list | 1 | Red, naming the type | sad |
+| C2 | A host from a constructor | 1 | Red, naming the type | sad |
+| C3 | A host from a base class's set-up | 1 | Red, naming the concrete type | sad |
+| C4 | A host through a helper | 1 | Red, naming the type | sad |
+| C5 | A host in a class whose tests carry `[TestCase]` only | 1 | Red: the root set holds it | sad |
+| C6 | A nested class with a host | 1 | Red, keyed `Outer/Inner` | edge |
+| C7 | Any rule 1 failure | 1 | The message gives the three ways out and says to fix the type, not to add it | sad |
+| C8 | A type on both lists | 3 | Red, naming it | sad |
+| C9 | On the base and on a list | 3 | Red, naming it | sad |
+| C10 | A listed type that reaches no host | 2 | Red: its line goes in this commit | sad |
+| C11 | A listed type that no longer exists | 2 | Red | sad |
+| C12 | The contract base used outside `...Tests.Contracts` | 4 | Red | sad |
+| C13 | A fixture in that namespace off the base | 4 | Red | sad |
+| C14 | A port fixture on `ServicePortHarness` | | Green: the helper reads as no host | ok |
+| C15 | A fixture on `WireContractTest`, in the namespace | | Green | ok |
+| C16 | A listed skeleton with its user flow | | Green | ok |
+| C17 | A real concrete class in the working tree, under Debug | 1 | Red, with its full name, output kept, then removed | sad |
+| C18 | The same under `-c Release` | 1 | The same: Release is what CI tests, and `async` edges have read differently there | sad |
+
+Before the planted reds go green the rule's code does not exist, so each fails its assertion. T2's and T6's guards stay green with the same ids. The first run prints the real size of `HostUsersStillToMove`. Limits stay as DESIGN states them; a third skeleton for a user flow is the reviewer's to catch, by the maintainer's decision.
+
+**Slice D: the text.** No test: these are read in review.
+
+| # | Check | Must show | Kind |
+|---|---|---|---|
+| D1 | The CLAUDE.md bullet | As drafted, with the DISTILL sentence and the no-tag rule beside it | ok |
+| D2 | The bullet against rule 1's message | The same three ways out, in the same words | sad |
+| D3 | Push 1 | The bullet and the guard land together, as a `CLAUDE.md`-only push starts no CI | ok |
+| D4 | `atdd-infrastructure-policy.md` | The row of D-6469-33 | ok |
+
+"A new scenario lands at the port" is first tested by the next feature's DISTILL, as DESIGN says.
+
+**Slice E: Refinement.** Runs only if Stage 3 clears it. New: the four contract classes, `RefinementSkeletonTest`, `Slice07BandDecidesTheNeedTest` and `RefinementSettingsSavesTest`, as named in the note.
+
+| # | Planned title | Given | When | Then | Kind |
+|---|---|---|---|---|---|
+| E1 | `Every_member_of_the_Refinement_tab_has_the_name_the_browser_and_the_clients_read` | A Team with votes, stages, a cadence and a need | The tab is read over the route | Every member, nested ones too, read in full | ok |
+| E2 | `A_Team_with_no_number_states_its_need_as_nulls_and_names_no_date` | A Team without a cadence or stages | The tab is read | `verdict`, `low`, `high`, `cycleStart`, `nextRefinementDate`, `stage`, `myVote` are present and null | edge |
+| E3 | `A_day_on_the_tab_is_a_plain_date_and_a_log_entry_is_a_time_in_utc` | A Team that refines, with a vote | Tab and log are read | `yyyy-MM-dd`, and `yyyy-MM-ddTHH:mm:ss.fffZ` | edge |
+| E4 | `Every_answer_stage_verdict_and_reason_travels_as_its_name` | Every member of the enums of the coverage table | Each goes through the host's JSON options | Each is its name, never a number | edge |
+| E5 | `Every_member_of_a_Work_Items_log_has_the_name_the_browser_reads` | A Work Item with a vote and a question | The log is read | Every member, read in full | ok |
+| E6 | `A_vote_on_a_Work_Item_outside_refinement_is_a_conflict_that_names_its_code` | A Work Item outside refinement | A vote is sent | 409 and the code | sad |
+| E7 | `A_comment_that_is_empty_or_too_long_is_refused_and_names_its_code` (2 cases) | A Work Item in refinement | The comment is sent | 400 and the code | sad |
+| E8 | `A_vote_answers_with_the_row_as_it_now_stands_and_whether_it_made_it_Ready` | One Yes short of Ready | The last Yes is sent | The row, with `madeReady` true | ok |
+| E9 | `A_take_back_with_nothing_to_take_back_answers_with_the_row_as_it_stands` | A voter with no vote | They take back | 200 and the row, with nothing recorded | edge |
+| E10 | `A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up` (5 cases or more, one per kind of setting, read from the same source the port's Givens use) | Refinement states, a cadence, a band, readiness or a stage rule | They are saved through the settings form | What is stored equals what the port's Given writes | ok |
+| E11 | `A_question_answers_with_the_row_as_it_now_stands` | A Work Item in refinement | A question is sent | 200 and the row, now with a question open | ok |
+
+Moved: 164 port rows, of which 161 keep their ids; 53 to contracts, 2 to the skeleton, 49 re-homed, 32 stay. Before trusting the port's voter step, plant the raw key: `Every_voter_counts_once...` must go red. Remove it. Proofs: as slice B, with `LongestComment` as the break.
+
+**Slice F: Reports.** Runs only if Stage 3 clears it. New: the three contract classes and two skeleton classes named in the note, and the two classes for the rows that stay.
+
+| # | Planned title | Given | When | Then | Kind |
+|---|---|---|---|---|---|
+| F1 | `Every_member_of_a_report_has_the_name_the_browser_reads` | A report with all four metrics | It is read over the route | Every member read in full; metric keys and value names as written; days as `yyyy-MM-dd` | ok |
+| F2 | `A_value_with_nothing_to_compute_is_stated_with_its_reason_and_no_number` | A report with no finished Work Items | It is read | `value` is null, `absentReason` is there | edge |
+| F3 | `Every_member_of_the_lists_has_the_name_the_browser_reads` | Reports on a Team and a Portfolio | The owner's list and the list of everything are read | Every member; `ownerName` only where it is named | ok |
+| F4 | `Every_member_of_the_types_and_the_creation_options_has_the_name_the_browser_reads` | A Team and a Portfolio | Both are read | Every member, owner kinds as text | ok |
+| F5 | `A_report_is_created_at_its_address_edited_there_and_a_delete_answers_with_nothing` (2 cases: a Team, a Portfolio) | An admin | They create, read, edit and delete it, and delete it again | 201 with the address, 200, 200 with the read, 204, 404 | ok |
+| F6 | `Each_kind_of_refusal_has_its_status_and_names_its_code` (4 cases) | A too-short Then; a Community cap reached; a type not offered; a report of another owner | Each is sent | 400, 403, 422, 404, each with its code where it has one | sad |
+| F7 | `A_Then_past_the_data_cutoff_says_the_earliest_day_in_its_refusal` | A Team that keeps 90 days | A Then before that is sent | 400, the code and `earliestStart` | sad |
+| F8 | `A_bulk_answer_names_each_owner_and_its_outcome` (2 cases: a run, a removal) | One created and one refused; one removed and one not found | It is sent | Every member, `ownerKind` as text | edge |
+| F9 | `A_report_sent_through_the_route_is_the_report_a_port_scenario_sets_up` | The report a port Given builds | The same is sent over the route | What is stored is the same | ok |
+
+Moved: 132 port rows, all keeping their ids; 31 to contracts, 2 to skeletons, 22 re-homed. Before trusting the port's refusal reader, plant a wrong code in one row's expectation: it must go red by the code, not by a status. Remove it. Proofs: as slice B, with `MinimumLengthDays` as the break.
+
+**Counts.**
+
+| Slice | New titles | New rows | Sad or edge | Port (moved) | Skeleton | Contract (moved) | Stays or re-homed |
+|---|---|---|---|---|---|---|---|
+| A | 9 | 10 | 6 of 9 | 5 | | | |
+| B | 11 | 12 | 6 of 11 | 51 | 1 | 14 | 10 |
+| C | 18 cases | 18 | 15 of 18 | | | | |
+| D | 4 checks | | 1 of 4 | | | | |
+| E | 11 | 16 | 6 of 11 | 164 | 2 | 53 | 81 |
+| F | 9 | 14 | 4 of 9 | 132 | 2 | 31 | 22 |
+| **Total** | **62** | **70** | **38 of 62, 61 %** | **352** | **5** | **98** | **113** |
+
+## Wave: DISTILL / [REF] The guarantee
+
+Each is a check that can fail. It holds for every slice.
+
+| # | Guarantee | Command | Fails when |
+|---|---|---|---|
+| 1 | No production file changes | `git diff --name-only <last green> HEAD -- Lighthouse.Backend/Lighthouse.Backend/`, before each push | It prints anything from this Story. The deliberate breaks are reverted first |
+| 2 | No nWave scenario tag | The first command below | It prints a line |
+| 3 | No test lost | "Proof that no test is lost", each push's list against the last, with that slice's id table | A line is off the table |
+| 4 | No list run touches a tracker | The second command below prints 0, and the run starts with the same `env -u` list | Any other number, or the run lacks it |
+| 5 | Host builds fall as planned | `host_build_count` summed, from a list run with the timer on, at the close of each of B, E and F | Over **619** at any point, or over the slice's own figure: B no more than the fixtures of `WireContractTestTest` above the last count, E 11 below it, or 10 if the API-key rows need a fixture of their own, F 10 below it. About 598 at the end, an estimate |
+| 6 | The moved suites' seconds fall | The summed TRX seconds of the family's ids, wherever they landed, plus its new rows, same machine, before and after | They do not. A sum by harness would fall by itself, as rows leave it. Baselines: pilot 39.0 s in `L0`, Refinement 86.8 s, Reports 65.7 s in this run |
+| 7 | No row is left unexplained | Each slice's table adds up to its family: 81, 300, 187 | Any table does not |
+| 8 | A push stays plain | D-6469-17's check on the push's own files | A connector answer is `true` |
+| 9 | Every restricted run states a count | The TRX's `Counters total` | It is 0 or not the stated number: `dotnet test` exits 0 on an empty filter |
+
+```
+git diff <parent of T5's first commit> HEAD -- Lighthouse.Backend/Lighthouse.Backend.Tests | grep -E '^\+.*(@us-|@slice-|@kpi-|@walking_skeleton|@driving_port|@contract-shape|@real-io|@error|@US-|@BUG-)'
+
+env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken env | grep -c IntegrationTestToken
+```
+
+Rules of a list run: T6's, word for word, plus D-6469-29. `P0` is the first list, at the parent of T5's first commit, with no timer. Each step's other checks are class filters with a stated count. **No crafter runs an unfiltered `dotnet test`.**
+
+## Wave: DISTILL / [REF] Completeness audit and hold
+
+| Item | Answer |
+|---|---|
+| C1a | A7 (never used), `An_empty_refinement...`, `An_instance_without_reports...` |
+| C1b | The five-day bar, 2,000 characters, 14 days and 50 owners, on moved rows; `ReportWindowBoundaryScenarios` |
+| C2a | The guard's four rules; the harness's life, open to disposed, in "The port helper" |
+| C2b | A6, A7, C8 to C13 |
+| C3 | A1 (two at once), B1, the empty and full lists in the moved rows |
+| C4a | A7, `Running_the_check_twice...`, `Taking_back_twice...`, `Deleting_a_report_twice...` |
+| C4b | A7, `Taking_back_a_vote_you_do_not_have...`, E9 |
+| C5a | Debug and Release (C17, C18); the three kinds of instance; premium and Community |
+| C5b | N/A, because T5 adds no flag. The timer's variable changes only what the CSV holds, and the list rule compares ids |
+| C6a | The malformed rows stay at the host, unchanged; C11 for a list entry |
+| C6b | One planted case per guard rule; A8, A9, B5 |
+| C6c | C14 to C16 show nothing else fires; the port rows now read the exact code from a closed set |
+| C7a | No Docker: none of the new tests needs it, per the environment matrix. A failed template copy is `TestDatabaseTemplate`'s own test |
+| C7b | A6, B5 |
+| C7c | A1; parallel per fixture on CI; never two list runs |
+
+**15 of 15, COMPLETE**, with C5b N/A and C7a by reference. No `SPECIFICATION_AMBIGUITY`. Error and edge scenarios: 61 %, or 23 of 44, 52 %, without the guard's planted reds. Tier B: no, this is test structure. Driving adapters: every route of the two suites is on a skeleton or a contract row, by the coverage tables. Driven adapters: none new. Walking skeletons: 5, one per user flow but for the pilot's single one, each a business outcome that needs the route.
+
+**Hold.** Rigor `thorough`. DELIVER starts after T6's slice E, and T5's first push waits for T6's last. Open for DELIVER: `c` and `h`, and so Stage 3; `A_Team_finishing_one_Work_Item_every_day...`, by its rule; the first list's size; the 2 s body limit, which no moved row comes near.
+
+## Wave: DISTILL / [REF] For the maintainer
+
+Nothing here blocks the wave. Decided in your absence; say if any is wrong.
+
+1. **Refinement and Reports, not the suites you expected.** Neither was on D1's list, so neither was in the brief or DESIGN's table. `UsageData`, `ConnectionDefaults`, `TaskManager` and `FasterUpdates` all fall out at stage 2.
+2. **E and F are about three times DESIGN's size:** 3 and 2.5 days against 1 each, for 23 to 31 s and 20 to 27 s summed. That is the honest trade, and it is why Stage 3 runs first. **A choice worth making when `c` is in:** take only the classes that are nearly all port rows (`NeedOverOneCycle`, `Slice05`, `Slice10`, `Slice12`; `ReportWindowBoundary`, `Slice04`, `Slice05`, `Slice05b`). That is 109 of the 296 rows, so about 37 % of the saving, with hardly any class to split. How much work it spares is not known until slice E has started.
+3. **The licence line in DESIGN was wrong,** and is corrected.
+4. **Moving a Given to the model is the new risk.** E10 and F9 are the new host rows that exist only to watch it.
+5. **D-6469-23 left DEVOPS to the consolidated review at the end of DISTILL.** You named one reviewer, the acceptance one, so the platform reviewer did not run. The review below read DEVOPS's proofs only as far as the scenarios lean on them.
+
+## Wave: DISTILL / [REF] Review
+
+`nw-acceptance-designer-reviewer`, on Sonnet, 2 passes. It was told an untagged scenario is correct here.
+
+**Pass 1: rejected, on 2 high findings.** Reports' Portfolio and edit routes and the bulk removal had no contract row (F5 and F8 widened); Refinement's host with the limiters on was missing as a kind of instance (fourth contract class, about 8 fixtures, about 598 builds). Its 5 medium findings are fixed too: the reading is recorded and tallies are expectations (D-6469-34); guarantees 5 and 6 can now fail; guarantee 2's command is pasteable; E10 runs from the Givens' own inputs and F9 is new. Its worry that the limiter is shared across scenarios did not hold: `CallersComeFrom` gives each scenario its own address, and pass 2 confirmed that reading.
+
+**Pass 2: approved.** All findings closed, every count re-added. Its 2 low findings are fixed.
+
+**Not reviewed or not verified.** The platform, solution and product reviewers of the consolidated gate did not run, as the dispatch named one reviewer (see "For the maintainer"). Neither pass verified the TRX and CSV figures behind the tables, the type counts for `FasterUpdates`, or the 8 seeders. Nothing here has run: `c`, `h`, the size of the first list and every red are DELIVER's.
