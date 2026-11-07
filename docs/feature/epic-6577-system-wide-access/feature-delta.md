@@ -1,8 +1,8 @@
 <!-- markdownlint-disable MD024 -->
 # Feature Delta: epic-6577-system-wide-access
 
-> ADO User Story #6577, "Viewer access for all Teams and Portfolios through a system-level group". State Next, `Release
-> Notes` tag, no parent Epic. Raised at a customer workshop on 2026-11-06: they want everyone to be able to view all
+> ADO Epic #6577, Stories 6578 to 6582 with Bug 6576 as a child, replacing Story 6562, "Viewer access for all Teams and
+> Portfolios through a system-level group". The `Release Notes` tag sits on the Epic. Raised at a customer workshop on 2026-11-06: they want everyone to be able to view all
 > Teams without granting access Team by Team. A user with no Team-level role sees no Teams, so they made their Head of
 > Engineering and CTO System Admins just to see data. They asked for "default viewer access at the very least", view
 > rights from the first login. Everyone there already has Jira access, so visibility is no concern for them. Today the
@@ -10,8 +10,7 @@
 > opt-in: other customers want Teams hidden from each other. Builds on Story 4965 (SSO groups mapped to roles). Related
 > to Epic 6473 (Settings split, Planned).
 >
-> Mode: DISCUSS, lean density. DISCOVER and DIVERGE were skipped by the maintainer's explicit word. Nothing is committed,
-> nothing touched on ADO. ADR-270, ADR-271, ARCHITECTURE.md and `docs/settings/rbac.md` are not edited here; what they
+> Waves so far: DISCUSS and DESIGN, lean density. DISCOVER and DIVERGE were skipped by the maintainer's explicit word. ADR-270, ADR-271, ARCHITECTURE.md and `docs/settings/rbac.md` are not edited here; what they
 > owe is listed under the context map and the house checklist.
 
 ## Wave: DISCUSS / [REF] Prior-Wave Reading Confirmation
@@ -38,19 +37,19 @@ Paths under `Lighthouse.Backend/Lighthouse.Backend/` and `Lighthouse.Frontend/sr
 | Surface | Today | Why it matters here |
 |---|---|---|
 | `Models/Authorization/RbacGroupMapping.cs` | GroupValue, Role, ScopeType (System, Team, Portfolio), nullable ScopeId | The mapping can already say "System"; only System Admin may use it |
-| `IsValidGroupMappingScope` (`RbacAdministrationService.cs:1276`) | System scope for System Admin only; Viewer needs a Team or Portfolio id | Refuses the rule this Story needs |
-| `HasTeamReadPermission` and its three twins (L1244-1274) | Look up the exact unit key | No "all units" concept |
-| `GetOwnerEffectivePermissionsAsync` (L1040) | Merges group and explicit roles; an explicit role replaces a group role on the same key. Pinned by `CanWriteTeamAsync_ExplicitViewerOverridesVirtualTeamAdmin_ReturnsFalse` | Precedence question P5 |
-| `GetVirtualPermissionsAsync` (L1133) | Nothing without group values; API key and embed principals fall back to `LastKnownGroupClaimValues` | "Everyone signed in" cannot ride on it; a key keeps a group until its owner next signs in |
-| `IntersectWithApiKeyScope`, `OwnerCoversScope` (L1084-1131) | Exact key only | A limited key under a rule-only owner would read nothing |
+| `IsValidGroupMappingScope` (`RbacAdministrationService.cs:1289`) | System scope for System Admin only; Viewer needs a Team or Portfolio id | Refuses the rule this Story needs |
+| `HasTeamReadPermission` and its three twins (L1257-1287) | Look up the exact unit key | No "all units" concept |
+| `GetOwnerEffectivePermissionsAsync` (L1053) | Merges group and explicit roles; an explicit role replaces a group role on the same key. Pinned by `CanWriteTeamAsync_ExplicitViewerOverridesVirtualTeamAdmin_ReturnsFalse` | Precedence question P5 |
+| `GetVirtualPermissionsAsync` (L1146) | Nothing without group values; API key and embed principals fall back to `LastKnownGroupClaimValues` | "Everyone signed in" cannot ride on it; a key keeps a group until its owner next signs in |
+| `IntersectWithApiKeyScope`, `OwnerCoversScope` (L1097-1144) | Exact key only | A limited key under a rule-only owner would read nothing |
 | `ApiKeyController.cs:50-71` | A limited key is allowed if the caller can read or write that unit | After slice 01 the key is created, then reads nothing, until slice 02 |
-| `GetAuthorizationSummaryAsync` (L405), `CanSatisfyAnyScopedAdminAsync` (L372) | Exact keys feed `adminTeamIds`, `adminPortfolioIds`, and the guard for "any scoped admin" | Slice 05 |
-| `RbacGuardRequirement.TeamContribute` (L366) | Any reader may vote and comment on Refinement | A Viewer is not strictly read-only: P4 |
-| `TeamController.cs:93`, `PortfolioController.cs:69` | `DELETE` is guarded by Team write and Portfolio write; only the UI hides it (`OverviewDashboard.tsx:572,582`) | **Contradicts rbac.md.** A Team Admin can delete their Team through the API. Admin on all would reach every unit: Bug 6575 closes it first |
+| `GetAuthorizationSummaryAsync` (L418), `CanSatisfyAnyScopedAdminAsync` (L385) | Exact keys feed `adminTeamIds`, `adminPortfolioIds`, and the guard for "any scoped admin" | Slice 05 |
+| `RbacGuardRequirement.TeamContribute` (L367) | Any reader may vote and comment on Refinement | A Viewer is not strictly read-only: P4 |
+| `TeamController.cs:93`, `PortfolioController.cs:69` | `DELETE` is guarded by `CanDeleteUnit`: the enforcement gate, then System Admin (Bug 6575, shipped). The UI hides it too (`OverviewDashboard.tsx:572,582`) | Admin on all stays out, because it never makes `CanManageRbacAsync` true |
 | `AuthorizationController.cs:366,411,452` | Creating, changing, removing a mapping needs System Admin. Reading a unit's mappings needs membership rights | A Team Admin's Access tab shows an Add Group Mapping form whose save is always refused: P10 |
 | `AuthorizationController.cs:318` | `GET group-mappings` is System Admin only | The Access tab line needs its own read for Team and Portfolio Admins |
 | `GetUsersAsync`, `GetUnassignedUserCountAsync` | "Unassigned" means no explicit row | A person reached by a rule still reads as Unassigned: P8 |
-| `IsEnforcementGateSatisfiedAsync` (L1327) | Needs Premium and an explicit System Admin row, else every read is refused | System-wide rules inherit it |
+| `IsEnforcementGateSatisfiedAsync` (L1340) | Needs Premium and an explicit System Admin row, else every read is refused | System-wide rules inherit it |
 | `pages/Settings/Rbac/RbacSettings.tsx:60-65,133-138,349` | Lists and creates only System plus System Admin mappings; heading "System Admin SSO Groups" | The surface to widen |
 | `components/Common/Authorization/ScopedGroupMappingManager.tsx` | Group value, Role select, table, Remove | The form to reuse |
 | `TeamDetail.tsx:148-149`, `PortfolioDetail.tsx:119-120` | The Access tab shows only to admins of that unit | A Viewer never sees the D4 line |
@@ -102,10 +101,10 @@ Maintainer decisions, not reopened here.
 
 Wave settings: cross-cutting feature; brownfield, walking skeleton evaluated (below); lightweight UX research; JTBD on.
 
-## Wave: DISCUSS / [REF] Proposed and Open (need the maintainer)
+## Wave: DISCUSS / [REF] Proposals and Decisions
 
-Not locked. Each has a default so that the stories read whole. **Blocks** names the slice that cannot start without an
-answer.
+Decided by the maintainer, except P8 and P12, which wait for the sketch review, and P15, which DESIGN answered. **Blocks**
+names the slice that could not start without an answer.
 
 | # | Item | Proposal | Blocks |
 |---|---|---|---|
@@ -122,8 +121,8 @@ answer.
 | P11 | Someone leaves the identity provider group: their browser session loses the rule when the token refreshes or at next sign-in, their API key only at next sign-in. Removing the rule works at once | DECIDED: accept and document; existing behaviour, wider reach | Slice 02 |
 | P12 | The word on screen: D4 says "system-wide rule", ADR-270 says "organisation-wide roles", and ADR-271 has separate areas named Organisation and System | OPEN: settle at the sketch review; this document uses "system-wide rule" | No |
 | P13 | A key limited to "Viewer on all" | DECIDED: out of scope; keys stay per unit or unlimited | No |
-| P14 | **`DELETE` on a Team or Portfolio is open to its admin through the API, against rbac.md and against P1** | DECIDED: Bug 6575 guards both as System Admin, fixed ahead of this work, which also closes it for today's Team and Portfolio Admins | Slice 05 |
-| P15 | Log a line naming who changed a system-wide rule? Mapping changes log nothing today | OPEN: DESIGN weighs it | No |
+| P14 | **`DELETE` on a Team or Portfolio was open to its admin through the API, against rbac.md and against P1** | DECIDED and shipped: Bug 6575 guards both as System Admin, ahead of this work, which also closed it for today's Team and Portfolio Admins | Slice 05 |
+| P15 | Log a line naming who changed a system-wide rule? Mapping changes log nothing today | DECIDED at DESIGN: yes, see DDD-14 | No |
 
 ## Wave: DISCUSS / [REF] Capability table for P1
 
@@ -134,7 +133,7 @@ DECIDED. Rows are the matrix of `docs/settings/rbac.md` L55-80; the last rows ar
 | Create a new Team | No | No | Yes |
 | Create a new Portfolio | No | No | Yes |
 | Clone a Team or Portfolio | No | No | Yes |
-| Delete a Team or Portfolio | No | No (needs Bug 6575) | Yes |
+| Delete a Team or Portfolio | No | No (Bug 6575) | Yes |
 | See who the licence belongs to | No | No | Yes |
 | Edit settings on a Team or Portfolio | No | Yes, every unit | |
 | Read a Team or Portfolio | Yes, every unit | Yes, every unit | |
@@ -165,9 +164,9 @@ Notes tag sits on the Epic only.
 | 02 Limited API keys follow their owner, ships with 01 | 6579 |
 | 03 The Access tab says who else reaches a unit | 6580 |
 | 04 Everyone signed in can view, if we say so | 6581 |
-| 05 One group administers every unit, needs Bug 6575 | 6582 |
+| 05 One group administers every unit | 6582 |
 
-Related: Bug 6575 closes the open `DELETE` and goes first. Bug 6576, a child of this Epic, hides the refused mapping form from scoped admins, alongside slice 03.
+Related: Bug 6575 closed the open `DELETE` and has shipped. Bug 6576, a child of this Epic, hides the refused mapping form from scoped admins, alongside slice 03.
 
 ## Wave: DISCUSS / [REF] Context-Map Placement (ADR-270)
 
@@ -302,13 +301,12 @@ Backbone: Decide the rule → Grant it → Person arrives → Person works → O
 | 2 | 02 Limited keys follow their owner | 0.5 day | That a key can follow a rule and stay no wider than its limit | 01 |
 | 3 | 03 The Access tab says so | 1 day | That a read-only line is enough for a Team Admin to trust who sees their Team | 01 |
 | 4 | 04 Everyone signed in can view | 1 day | That the rule's reach does not depend on groups, and opt-in holds | 01, 02 for keys, 03 for the line; P2, P6, P7 |
-| 5 | 05 One group administers every unit | 1 day, top of band | That wide write can stop short of System Admin rights | 01, 02, 03; Bug 6575 |
+| 5 | 05 One group administers every unit | 1 day, top of band | That wide write can stop short of System Admin rights | 01, 02, 03 |
 
 **Priority rationale.** Slice 01 first: it holds the riskiest assumption and is what the customer asked for, because
 they already have the group. Slice 02 straight after because slice 01 leaves a trap: a limited key is created without
 complaint and reads nothing. The two go out in one release; if 02 were dropped, key creation would have to refuse instead.
-Slice 03 comes before the switch because a wider rule needs its explanation first. Slice 05 last: the widest power, and
-three open answers feed it. Slices 04 and 05 are independent of each other, and either can be dropped.
+Slice 03 comes before the switch because a wider rule needs its explanation first. Slice 05 last: the widest power. Slices 04 and 05 are independent of each other, and either can be dropped.
 
 **Taste tests.** No slice ships 4 or more new components. The shared seam, a rule that reaches every unit, ships inside
 slice 01 rather than as an abstraction of its own. Every slice can disprove something. Every slice runs on the real
@@ -520,7 +518,8 @@ Scenario: A reader gets no view of the rules
 
 #### Acceptance criteria
 
-- AC-3.1 A unit's Access tab lists every system-wide rule that reaches it, by role and group name.
+- AC-3.1 A unit's Access tab lists every system-wide rule that reaches it, by role and group name. System Admin groups are
+  not rules on units, so they are not listed.
 - AC-3.2 With no rule, no box shows.
 - AC-3.3 The box has no control; only Settings → Access changes rules.
 - AC-3.4 A Team or Portfolio Admin may read the rules for a unit they manage, and nobody else except a System Admin.
@@ -590,6 +589,12 @@ Scenario: Only a System Admin can use the switch
   When he tries to turn the switch on with a direct request
   Then the request is refused
   And his Access tab reads "Viewer: everyone signed in" when Alex turns it on
+
+Scenario: A removed person's embedded session reads nothing
+  Given the switch is on and Sam reads Team Zenith in a session embedded in another tool
+  When Alex removes Sam from Users
+  Then Sam's next request in that session reads nothing
+  And no new profile is created for him
 ```
 
 #### Acceptance criteria
@@ -603,6 +608,8 @@ Scenario: Only a System Admin can use the switch
 - AC-4.7 Each Access tab names "everyone signed in" while it is on (D4).
 - AC-4.8 An API key or embed session reads as its owner, and a key whose owner has no profile reads nothing (P6).
 - AC-4.9 Two System Admins changing it at once: a stale change is refused, not silently applied.
+- AC-4.10 A session embedded in another tool speaks only for a person who still has a profile: after removal it reads nothing
+  and creates no profile. A new ordinary sign-in stays under P7.
 
 Technical notes: `GetVirtualPermissionsAsync` stops at no group values, so the switch cannot ride on it. Where the setting
 lives is DESIGN's. Premium needs no separate check (see the house checklist). E2E: `test@user.com` has no groups, so it is the
@@ -777,7 +784,7 @@ Keycloak group, read path, Overview.
 | R2 | The customer's identity provider sends the group in its token | They map a Jira users group today, so yes; confirm its value |
 | R3 | P3 and P4 answered | Done 2026-11-07 |
 | R4 | P2, P6, P7 answered | Done 2026-11-07 |
-| R5 | P1, P5, P14 answered; Bug 6575 fixed | Answered 2026-11-07; the Bug is needed before slice 05 |
+| R5 | P1, P5, P14 answered; Bug 6575 fixed | Answered 2026-11-07; the Bug has shipped |
 | R6 | Sketch walkthrough with the maintainer, with P8 and P12 | Start of DISTILL |
 | R7 | Premium licence fixture copied into the worktree | Needed for E2E and 2 Licensing tests |
 
@@ -788,11 +795,11 @@ Keycloak group, read path, Overview.
 | 1 | Problem in domain language | Leaders made System Admin to read; a mapping per Portfolio does not scale | PASS |
 | 2 | Persona with characteristics | Noor (42 Teams, no role), Alex, Jordan, Ines, Morgan | PASS |
 | 3 | 3+ domain examples with real data | US-01: 4, US-02: 4, US-03: 4, US-04: 4, US-05: 4 | PASS |
-| 4 | UAT in Given/When/Then, 3-7 | US-01: 6, US-02: 4, US-03: 5, US-04: 6, US-05: 6 | PASS |
+| 4 | UAT in Given/When/Then, 3-7 | US-01: 6, US-02: 4, US-03: 5, US-04: 7, US-05: 6 | PASS |
 | 5 | AC derived from UAT | AC-x.y map to the scenarios; AC-1.7, AC-2.6, AC-3.5, AC-4.9, AC-5.6 add negatives and constraints for DISTILL | PASS |
 | 6 | Right-sized | 0.5 to 1 day per slice, 4.5 days in all; slice 05 at the top of the band, a watch item | PASS |
 | 7 | Technical notes | Each story | PASS |
-| 8 | Dependencies tracked | Pre-requisites table; the PROPOSED table names what each slice waits for | PASS, with slices 04 and 05 waiting on answers |
+| 8 | Dependencies tracked | Pre-requisites table; the PROPOSED table names what each slice waits for | PASS |
 | 9 | Outcome KPIs | K1 to K4 with numeric targets and methods, G1 to G3; proxies marked | PASS |
 
 Every story has a `job_id` and an Elevator Pitch. No `@infrastructure` story. Per-wave peer review not run: optional in this wave,
@@ -801,7 +808,7 @@ and the consolidated review fires at the end of DISTILL.
 ## Wave: DISCUSS / [REF] House Checklist (every item answered)
 
 - **RBAC impact: this Story is RBAC.** New: a Viewer and an Admin that reach every unit, the switch, a read of rules for unit
-  admins. `DELETE` guards change under Bug 6575. All through `IRbacAdministrationService`; nothing fetches `my-summary` directly.
+  admins. `DELETE` guards changed under Bug 6575, which has shipped. All through `IRbacAdministrationService`; nothing fetches `my-summary` directly.
 - **Lighthouse-Clients CLI/MCP versioning: no change expected.** `/storage/repos/lighthouse-clients` turned out to be readable: a
   search for `group-mapping`, `groupMapping`, `authorization/`, `apikeys` and `api-keys` over 293 files finds nothing, so no client
   lists or creates mappings or keys. Clients read Teams and Portfolios with a key, and read more only where the owner may.
@@ -825,7 +832,9 @@ and the consolidated review fires at the end of DISTILL.
 - **Slow connection:** views are named above; the looks are DESIGN's.
 - **Usage data (DEVOPS) proposal:** one name-only event when a system-wide rule is added or the switch is turned on, for K3; never
   the group value. Settled at DEVOPS.
-- **Continuous-improvement check: N/A, because** this is a standalone Story, not a new feature Epic.
+- **Continuous-improvement check: run for Epic 6577.** No item has to come first. FE5 #6393, a shared RBAC handler hook for
+  `TeamDetail` and `PortfolioDetail`, is an optional item during this work, as its own improvement item. S03e #6363, packaging
+  Access, should wait until this Epic has shipped.
 - **Docs at finalize, not now.** `docs/settings/rbac.md`: L43-48 (roles table: Viewer on "a specific team"), L53 (System Admin
   the only unscoped role: false), the matrix, L201-205 and the Common Tasks drift, the sentence that removing the last role leaves
   nothing, API Keys interplay, a new section with P7 and P11. Release notes are written at `/release`.
@@ -837,7 +846,7 @@ and the consolidated review fires at the end of DISTILL.
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
 | A read or write path keeps checking exact keys and misses the rule, or grants too much | Medium | High | Consumers listed per story; DISTILL pins each capability row |
-| Admin on all reaches the open `DELETE` | Certain if unaddressed | High | Bug 6575, AC-5.3 |
+| Admin on all reaches `DELETE` | Closed by Bug 6575, shipped | High | AC-5.3 pins it for Admin on all |
 | The switch is turned on by mistake on a confidential instance | Low | High | Off by default, confirm dialog, every Access tab says so |
 | One customer's need shapes the model | Medium | Medium | Opt-in; slices 04 and 05 droppable |
 | A stale key snapshot keeps wide read for a departed person | Medium | Medium | P11, remove the rule or the user |
@@ -845,13 +854,266 @@ and the consolidated review fires at the end of DISTILL.
 ## Wave: DISCUSS / [REF] Changed Assumptions
 
 No DISCOVER documents exist, so nothing is back-propagated. The briefing's "a Viewer-for-all cannot write" holds except for
-Refinement votes and comments (P4). The stated proposal that Admin on all excludes delete needs a code change (Bug 6575).
+Refinement votes and comments (P4). The stated proposal that Admin on all excludes delete needed a code change, shipped as Bug 6575.
 
 ## Wave: DISCUSS / [REF] Wave Decisions Summary
 
-- Decisions: D1 to D4 and C1 locked; P1 to P7, P9 to P11, P13 and P14 decided by the maintainer on 2026-11-07; P8 and P12 wait for the sketch review, P15 for DESIGN.
+- Decisions: D1 to D4 and C1 locked; P1 to P7, P9 to P11, P13 and P14 decided by the maintainer on 2026-11-07; P8 and P12 wait for the sketch review; DESIGN answered P15.
 - Primary need: read every Team and Portfolio without unit-by-unit grants or System Admin, opt-in.
 - Walking skeleton: Strategy A, slice 01. Feature type: cross-cutting.
 - Constraints: opt-in, Access context only, rule names no unit, "applies to" distinct, expand-only.
 - Upstream changes: none.
 - Density: lean, ask-intelligent. Triggers are in the hand-back; no expansion rendered.
+
+## Wave: DESIGN / [REF] Prior-Wave Reading Confirmation
+
+- ✓ This delta, slices 01 to 05, `docs/product/journeys/epic-6577-system-wide-access.yaml`.
+- ✓ ADR-001, ADR-002, ADR-004, ADR-270 (Access row, glossary), ADR-271 (Access row), `docs/ci-learnings.md`.
+- ✓ `brief.md`: outline and the embed section on the group snapshot. ADR-136, ADR-137, ADR-217: through the code and `brief.md`.
+- ✓ The code of the Current-State Surface Inventory, plus `CurrentUserProfileService`, `OidcGroupSnapshotWriter`,
+  `EmbedEntryController`, `AuthModeResolver`, `AuthConfigurationValidator`, `AppSettingService`, `OptionalFeatureSeeder`.
+- ⊘ No SPIKE, none needed. Paradigm: OOP, as the project states. Style: unchanged, ports and adapters in the modular monolith.
+- Continuous improvement: run, see the house checklist.
+
+Maintainer decisions of 2026-11-07, taken from options: M1 the `AllUnits` scope on the mapping row, M2 the generic `UnitAdmin`
+role, M3 an own one-row record for the switch, M4 System Admin groups stay off the Access tab line, and removed people's
+embedded sessions are closed in this Epic. ADR-280 and ADR-281 hold the alternatives.
+
+## Wave: DESIGN / [REF] DDD List
+
+Source M is the maintainer, A the architect.
+
+- **DDD-1 (M) A rule is a mapping row on a new scope.** `PermissionScopeType.AllUnits` (3) with a null `ScopeId` on
+  `RbacGroupMapping`. The scope is the "applies to" part (C1), read from the row. No schema change.
+- **DDD-2 (M) Admin on all is `UserRole.UnitAdmin` (4), shown as "Admin".** One row, as D2 asks. It reads as `TeamAdmin` on a
+  Team and `PortfolioAdmin` on a Portfolio, so write checks compare what they compare today.
+- **DDD-3 (A) Permissions resolve by reach, in one pure value.** `EffectiveAccess` replaces the private dictionary and keeps
+  unit roles, the System role and reach apart. Rules are not expanded into unit keys: permission checks stay off the unit tables.
+- **DDD-4 (A) A rule only adds (P5).** The role on a unit is the higher of the unit role and any reach. The merge that lets an
+  explicit role replace a group role runs before that, on unit keys only, unchanged.
+- **DDD-5 (A) "Applies to" answers one question.** `AppliesTo.Reaches(unit)` alone decides coverage, so a later value changes
+  it and its stored form, not the read check or the Access tab line. A value that needs a unit's name extends the unit reference.
+- **DDD-6 (A) Limited keys carry no reach.** The intersection yields the key's exact rows only, so a key cannot widen (AC-2.6).
+  Coverage asks `RoleOn` for that unit on each request, so removing a rule stops the key at once. Slices 01 and 02 ship together.
+- **DDD-7 (A) `my-summary` keeps its contract.** Viewer on all needs nothing in the browser: lists arrive filtered. For an admin
+  reach the server fills `adminTeamIds` and `adminPortfolioIds` from the units that exist at that call, through `Reaches`.
+  `useRbac()` does not change, nothing is stored, and a limited key gets the right answer.
+- **DDD-8 (M) The switch is its own record.** `EveryoneSignedInSetting`: one row, one boolean `EveryoneCanView`, a
+  `ConcurrencyToken`. It can only say view, so P2 needs no check. Written by an idempotent `ISeeder`; a missing row is off.
+- **DDD-9 (A) The switch is read outside the group path.** `GetOwnerEffectivePermissionsAsync` reads it once a profile is resolved
+  and adds a Viewer reach. So it works with no group claim, and a person with no stable subject or no profile gets nothing.
+- **DDD-10 (M, A) A unit's rules have their own read.** See Driving Ports. It merges rules and the switch through `Reaches`,
+  and answers role plus group name or "everyone signed in", with no mapping id. System Admin groups are left out.
+- **DDD-11 (A) No domain event, published or consumed.** Evaluated on each request. A rule names no unit, so nothing reacts.
+- **DDD-12 (A) No cache; fail closed.** The service has no cache dependency, so a change applies on the next request (NFR-2). A
+  failed read ends in an error, never a grant (NFR-3).
+- **DDD-13 (A) Removal removes all twins.** The unique index does not hold for a null `ScopeId`, so a race can store two rows.
+  Removing a rule deletes every row with the same group, role and scope.
+- **DDD-14 (A) P15: log who changed it.** One Information line per rule add, rule remove and switch change: actor's profile id
+  and group value, in the existing log. Nothing goes to usage data.
+- **DDD-15 (M) Embedded sessions speak only for an existing person.** The guard in `CurrentUserProfileService` widens from API
+  keys to embed principals, so a person removed during an embedded session reads nothing and gets no new profile (AC-4.10).
+- **DDD-16 (A) Bug 6576 through `useRbac()`, with one guard.** `isSystemAdmin` is true while loading and after a failed load, so
+  the parent passes `isSystemAdmin && !isLoading && !loadFailed` as a prop to `ScopedGroupMappingManager`. The add form and the
+  Actions column go; the list stays. No hook in the child.
+- **DDD-17 (A) Modes need no new code.** RBAC off answers before a rule is read. Before the first explicit System Admin, or with
+  Premium lapsed, the gate refuses first. Authorization on with authentication off is a configuration error, so the shared
+  auth-off subject is not reached, except on standalone, which is single-user. The Settings section stays behind
+  `status.hasSystemAdmin`.
+- **DDD-18 (A) Bulk reports are outside NFR-1.** `ReportBulkCommands` and `ReportBulkRemover` check per owner, as they do for a
+  System Admin. That is a bulk write, not a list, and its cost grows with owners selected. Left alone.
+
+## Wave: DESIGN / [REF] Decisions Table
+
+| # | Decision | Source | ADR | First slice |
+|---|---|---|---|---|
+| DDD-1 | `AllUnits` scope on the mapping row | Maintainer | 280 | 01 |
+| DDD-2 | `UnitAdmin` role, shown as "Admin" | Maintainer | 280 | 05 |
+| DDD-3 | `EffectiveAccess`, rule-aware | Architect | 280 | 01 |
+| DDD-4 | Higher role wins against a rule | Architect, from P5 | 280 | 01 |
+| DDD-5 | `AppliesTo.Reaches` | Architect, from C1 | 280 | 01 |
+| DDD-6 | Limited keys carry no reach | Architect | 280 | 02 |
+| DDD-7 | `my-summary` contract unchanged | Architect | 280 | 05 |
+| DDD-8 | Switch as an own record | Maintainer | 281 | 04 |
+| DDD-9 | Switch read outside the group path | Architect | 281 | 04 |
+| DDD-10 | A unit's own rules read, no System Admin groups | Maintainer, Architect | 280 | 03 |
+| DDD-11 | No domain event | Architect | 280 | 01 |
+| DDD-12 | No cache, fail closed | Architect | 280, 281 | 01 |
+| DDD-13 | Removal removes all twins | Architect | 280 | 01 |
+| DDD-14 | Log who changed a rule or the switch | Architect, answers P15 | 280, 281 | 01, 04 |
+| DDD-15 | Embedded sessions speak only for an existing person | Maintainer | 281 | 04 |
+| DDD-16 | Bug 6576 by a prop from `useRbac()` | Architect | none | 03 |
+| DDD-17 | Modes need no new code | Architect | none | 01 |
+| DDD-18 | Bulk reports outside NFR-1 | Architect | 280 | none |
+
+## Wave: DESIGN / [REF] Component Decomposition
+
+Paths under `Lighthouse.Backend/Lighthouse.Backend/` and `Lighthouse.Frontend/src/`.
+
+| Component | Path | Change | Slice |
+|---|---|---|---|
+| `PermissionScopeType`, `UserRole` | `Models/Authorization/` | Modified: `AllUnits`, `UnitAdmin` appended | 01, 05 |
+| `AppliesTo` | `Models/Authorization/` | New: pure value | 01 |
+| `EffectiveAccess` | `Models/Authorization/` | New: pure value, takes over the role priorities | 01 |
+| `SystemWideRule` | `Models/Authorization/` | New: read model of holder, role, applies to | 03 |
+| `EveryoneSignedInSetting` | `Models/Authorization/` | New: entity, `IConcurrencyTokenEntity` | 04 |
+| `IRbacAdministrationService`, `RbacAdministrationService` | `Services/` | Modified: resolves `EffectiveAccess`, valid pairs, removal, unit rules, switch; test doubles widen too | 01 to 05 |
+| `CurrentUserProfileService` | `Services/Implementation/Auth/` | Modified: guard covers embed principals | 04 |
+| `EveryoneSignedInSeeder` | `Services/Implementation/Seeding/` | New: `ISeeder` | 04 |
+| `LighthouseAppContext` | `Data/` | Modified: one `DbSet`, token configured; migration through `Create-Migration.ps1` | 04 |
+| `AuthorizationController` | `API/` | Modified: four new actions, actor logged on rule changes | 01, 03, 04 |
+| `RbacModels.ts`, the RBAC service | `models/`, `services/Api/` | Modified: new unions and calls | 01, 03, 04 |
+| `RbacSettings.tsx` | `pages/Settings/Rbac/` | Modified: Role select, "Applies to", switch, dialog, loading and failure looks | 01, 04, 05 |
+| `ScopedGroupMappingManager.tsx` | `components/Common/Authorization/` | Modified: read-only mode | 03 |
+| Access tab notice | `components/Common/Authorization/` | New: read-only, one keyed TanStack query, three looks | 03 |
+| `TeamDetail.tsx`, `PortfolioDetail.tsx` | `pages/` | Modified: pass the prop, mount the notice | 03 |
+
+Unchanged: `RbacGuardAttribute`, `RbacGuardRequirement`, `useRbac`, `useRbacGate`, `ApiKeyController`, `GetVirtualPermissionsAsync`,
+`RbacGroupMapping`'s columns, every controller that calls a read or write check, `FeatureMoveAuthorization`, the report write
+checks, the Overview, the identity provider and sign-in.
+
+Slice 01 builds `EffectiveAccess` with the reach it needs, so slice 02 is mostly its coverage check and tests. Only slice 04 has a
+migration.
+
+## Wave: DESIGN / [REF] Driving Ports
+
+All under `api/latest` and `api/v1`, through the single inbound port `IRbacAdministrationService`.
+
+| Port | Change | Access | Slice |
+|---|---|---|---|
+| `GET`, `POST`, `PUT`, `DELETE authorization/group-mappings` | Accept and return the new scope and role | System Admin, as today | 01, 05 |
+| `GET authorization/teams/{teamId}/system-wide-rules` | New | Those who manage that Team's members | 03 |
+| `GET authorization/portfolios/{portfolioId}/system-wide-rules` | New | Those who manage that Portfolio's members | 03 |
+| `GET authorization/everyone-signed-in` | New: `everyoneCanView`, `concurrencyToken` | System Admin | 04 |
+| `PUT authorization/everyone-signed-in` | New: refuses a missing token; a stale one answers 409 | System Admin | 04 |
+| `GET authorization/my-summary` | Same contract, fuller lists for an admin reach | Signed in; only through `useRbac()` | 05 |
+| Unit read and write routes, `POST apikeys`, any key-authenticated route | No change of their own | `RbacGuard`, as today | 01, 02 |
+
+UI: Settings → Access, a unit's Access tab, Overview.
+
+## Wave: DESIGN / [REF] Driven Ports and Adapters
+
+| Port or adapter | Use | Change |
+|---|---|---|
+| `LighthouseAppContext` on SQLite and PostgreSQL | Mappings, permissions, keys, the switch row, unit ids for `my-summary` | One additive table |
+| Identity provider token, stored group snapshot | Group values | Unchanged, no new call |
+| `ILicenseService` | Enforcement gate | Unchanged |
+| `ILogger` | Who changed a rule or the switch | One new line each |
+
+**External integrations:** none new, so no contract tests are recommended.
+
+**Earned Trust.** No new driven adapter, so no new probe. The substrate facts this design must not assume, and what covers each:
+
+- Null `ScopeId` is distinct in a unique index on both databases: DDD-13, and the switch is not a mapping row.
+- EF InMemory is not proof of a stale save: one test on SQLite and PostgreSQL through the shared test container.
+- A group claim can be missing, malformed or stale: rules then give nothing and the switch still works; a key's snapshot
+  stays stale as P11 accepts.
+- A restore can bring back a database with no switch row: a missing row is off, and the seeder runs again.
+
+## Wave: DESIGN / [REF] Technology Choices
+
+Nothing new. .NET 10, ASP.NET Core, EF Core, SQLite and PostgreSQL, React 19, MUI 9, TanStack Query, NUnit, Vitest, Playwright: all as
+pinned today. No new dependency, so no new licence.
+
+## Wave: DESIGN / [REF] Reuse Analysis
+
+Contract shape: pure means return-only; bounded means a declared set of rows changes.
+
+| Existing component | File | Overlap | Decision | Shape and assertion | Justification |
+|---|---|---|---|---|---|
+| `RbacGroupMapping` | `Models/Authorization/RbacGroupMapping.cs` | Group, role, scope | EXTEND | Bounded: only mapping rows change | Two enum values, no column |
+| `IsValidGroupMappingScope` | `RbacAdministrationService.cs:1289` | Role fits scope | EXTEND | Pure: table test over every pair | Serves create and update |
+| `GetVirtualPermissionsAsync` | `:1146` | Groups to mappings | Unchanged | Read-only | Already returns rule rows |
+| `GetOwnerEffectivePermissionsAsync` | `:1053` | Merges roles | EXTEND | Read-only: pinned explicit-replaces-group test | Reads the switch, builds `EffectiveAccess` |
+| Private dictionary and `Has*Permission` | `:1257-1287` | Exact-key lookup | CREATE NEW `EffectiveAccess` | Pure: table tests | Seven readers need one higher-role rule; as a dictionary P5 would be written seven times. Nothing outside the class sees it |
+| `OwnerCoversScope`, `IntersectWithApiKeyScope` | `:1097-1144` | Key limit | EXTEND | Pure: a key never exceeds the lower of limit and owner role | Result stays exact rows |
+| `GetAuthorizationSummaryAsync` | `:418` | `my-summary` | EXTEND | Read-only | `HasAnyTeamAsync` already reads `context.Teams` |
+| `useRbac`, `useRbacGate` | `hooks/` | UI gating | Unchanged | | Fed by the same lists |
+| `AuthorizationController` | `API/AuthorizationController.cs` | Access endpoints | EXTEND | | `EveryActionDeclaresItsAccessArchitectureTest` covers new actions |
+| `GetTeamGroupMappingsAsync` and twin | `:882`, `:899` | Unit mappings | NOT reused | | Rule rows would land beside a Remove button |
+| `ApplyConcurrencyTokenForEdit`, `ConcurrencyConflictExceptionFilter` | `Data/`, `API/Filters/` | Stale edit | Reuse | Bounded: one row | NFR-5 as a house rule |
+| `AppSetting`, `OptionalFeature` | `Models/` | A stored toggle | Rejected | | No token, and neither is Access (ADR-281) |
+| `EveryoneSignedInSetting` | new | The switch | CREATE NEW | Bounded: one row, one boolean | Nothing existing has a token and belongs to Access |
+| `ISeeder` | `Services/Implementation/Seeding/` | Startup rows | Reuse | Idempotent | Also runs after a restore |
+| `ScopedGroupMappingManager` | `components/Common/Authorization/` | Form and table | EXTEND | | Read-only mode; layout reused on Settings |
+| Access tab notice | new | D4 line | CREATE NEW | Read-only | No existing read-only list of rules |
+| Domain-event bus | | | NOT used | | DDD-11 |
+
+## Wave: DESIGN / [REF] Loading and Failure Looks
+
+No view may show the previous answer as current, or an empty area that reads as "no rules".
+
+| View | While loading | When it cannot load | Reuses |
+|---|---|---|---|
+| Access tab notice | Same slot, small spinner, "Checking system-wide rules" | Warning `Alert`: the check failed, so more people may reach this unit than listed here, with Retry. Never hidden | `CircularProgress`, `Alert`, a TanStack query keyed by unit |
+| Settings → Access rules table | Spinner where the table goes | Error in place of the table, with Retry. Today the error sits at the top over an empty table | `CircularProgress` and `Alert`, as in `ScopedGroupMappingManager` |
+| Everyone switch | Disabled with a spinner; never shown off until known | No toggle: an error with Retry. A 409 reloads the state and shows the existing conflict message | Same |
+
+- The notice's query is keyed by unit, so a late answer for another unit never lands. With no rule, the tab looks as it does today,
+  and only after the answer has arrived.
+- `WidgetShell` does not apply: these are not dashboard widgets.
+- The Overview is unchanged: its no-access alert sits inside `LoadingAnimation`, which covers its failure.
+- These looks go into the sketches at the start of DISTILL, and are checked by hand on a throttled connection.
+
+## Wave: DESIGN / [REF] Context-Map Placement (ADR-270)
+
+- **Contexts touched:** Access only. Organisation set-up is read for unit ids, as `HasAnyTeamAsync` already does. Licensing gates it
+  unchanged. Reports and Refinement see more readers and do not change. No new context or edge.
+- **New terms:** as DISCUSS listed; the design adds no user-facing term. `UnitAdmin` is the code's name for "Admin" in a rule.
+- **Domain events:** none published, none reacted to (DDD-11).
+- **UI surface (ADR-271):** Access. Settings → Access today, and the unit's Access tab for the line. The section stops being about
+  System Admin only, which is the one step towards the target.
+
+**Owed at DELIVER, not edited now, because nothing has shipped:**
+
+- **ADR-270, Access row:** name Admin on all beside broad readers.
+- **ADR-270, glossary:** Access rows for system-wide rule, everyone signed in, Viewer on all, Admin on all, applies to.
+- **ADR-270 "target only" marks: nothing to change.** The Access row's only target mark is membership per unit on any level, which
+  this Epic does not deliver, and broad readers carries no mark. The DISCUSS note "drop 'target' from what ships" has nothing to
+  act on.
+- **`ARCHITECTURE.md` §4 and the authorization bullet at L289:** one sentence that a role can reach every unit through a system-wide
+  rule. The ADR table at L440 gains ADR-280 and ADR-281.
+- **ADR-271 L57:** add system-wide rules to the Access surface.
+- **`job-rbac-scoped-admin` and `docs/settings/rbac.md`:** as P10 and the house checklist list them.
+
+## Wave: DESIGN / [REF] Architecture Enforcement
+
+Style: ports and adapters in the modular monolith. Language: C#, TypeScript. Tools: the repository's ArchUnitNET tests, NUnit.
+
+- Only the Access service reads `RbacGroupMappings` and `UserPermissions` (new, reading compiled IL).
+- Every `UserRole` and `PermissionScopeType` value has an answer in `EffectiveAccess` and the valid-pairs table (new).
+- New actions declare their access (existing `EveryActionDeclaresItsAccessArchitectureTest`).
+- NFR-1: a test counts queries for a list with 200 Teams.
+
+## Wave: DESIGN / [REF] Open Questions
+
+For DISTILL:
+
+- P8 and P12, the "Unassigned" wording and the on-screen word, at the sketch review, together with the loading and failure looks.
+- Exact copy of the notice's failure sentence, at the same review.
+
+For DELIVER:
+
+- Who reads `LastSeenAt` for embed viewers: the widened guard also skips the profile update, so keep whatever depends on it
+  (slice 04).
+- Optional FE5 #6393, as its own improvement item, if the new prop and notice make `TeamDetail` and `PortfolioDetail` repeat more.
+
+For DEVOPS: the usage-data event for K3.
+
+## Wave: DESIGN / [REF] Changed Assumptions
+
+- AC-3.1 said "every system-wide rule"; it now says System Admin groups are not listed. Maintainer, M4.
+- AC-4.10 and one scenario are new, and slice 04 carries them: DISCUSS assumed "a key of a removed person has no profile", which held
+  for keys and not for a live embedded session. Maintainer.
+- Quoted from the DISCUSS context map: `drop "target" from what ships`. Nothing is marked target for this feature, so that part
+  of what ADR-270 owes falls away.
+- Slice 01's hypothesis, "without touching each caller", holds for every caller outside the service; inside it, seven readers move to
+  `EffectiveAccess`.
+
+## Wave: DESIGN / [REF] Wave Decisions Summary
+
+- Pattern: unchanged, ports and adapters in the modular monolith. Paradigm: OOP, with `EffectiveAccess` and `AppliesTo` as pure values.
+- Key components: `EffectiveAccess`, `AppliesTo`, `EveryoneSignedInSetting`, the unit rules read, the Access tab notice.
+- Migration: one additive table, in slice 04. Rule rows need none.
+- External integrations: none new.
+- Records: ADR-280, ADR-281, a correcting note on ADR-002, the `epic-6577-system-wide-access` section of `brief.md`.

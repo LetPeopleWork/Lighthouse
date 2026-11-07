@@ -24,7 +24,7 @@ capability table is reachable, through the UI or the API.
 - Removing the mapping ends the reach on the next request.
 - Nothing makes everyone signed in an admin.
 
-**Dependencies:** slices 01, 02, 03 and Bug 6575. P1, P5, P14 are answered.
+**Dependencies:** slices 01, 02, 03. Bug 6575 has shipped. P1, P5, P14 are answered.
 
 **Effort:** 1 day, top of the band; a watch item.
 **Reference class:** Team Admin's reach, and the write twins in `RbacAdministrationService`.

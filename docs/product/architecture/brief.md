@@ -11100,3 +11100,95 @@ property test on normalisation; shared validation fixtures for the backend and t
 
 External integrations: none touched; no contract-test recommendation applies. Workspace:
 `docs/feature/bug-6458-typed-category-entries/feature-delta.md`.
+
+## Application Architecture — epic-6577-system-wide-access (a group, or everyone signed in, reaches every Team and Portfolio)
+
+Epic 6577, DESIGN, propose mode. Decisions: [ADR-280](./adr-280-a-system-wide-rule-is-a-group-mapping-on-the-all-units-scope-and-permissions-are-resolved-by-reach.md)
+and [ADR-281](./adr-281-the-everyone-signed-in-switch-is-its-own-one-row-record-with-a-concurrency-token.md). Workspace:
+`docs/feature/epic-6577-system-wide-access/feature-delta.md`. Style unchanged: ports and adapters in the modular monolith.
+
+**The one hard problem.** Every permission answer is built on exact unit keys, and a rule names no unit. It has to reach every
+read and write path, including units created later, stay a list of rules rather than a stored list of units, and never
+reach what a System Admin alone may do.
+
+### Key invariants introduced
+
+- A rule only adds: the role on a unit is the higher of the unit role and any reach. On unit keys an explicit role still
+  replaces a group role.
+- Only `AppliesTo.Reaches` decides whether a rule covers a unit.
+- A limited API key carries no reach: it holds its exact rows, and never more than the lower of its limit and its owner's role.
+- `CanManageRbacAsync` answers only to `SystemAdmin` on the System key or an emergency subject, so no rule reaches unit delete,
+  creating units, connections or the rules themselves.
+- The switch can only say view, and a missing or unreadable switch is off.
+- Nothing about a rule is cached or stored per unit: a change applies on the next request, and nothing reacts to a new unit.
+
+### Component decomposition
+
+| Component | Change |
+|---|---|
+| `PermissionScopeType.AllUnits`, `UserRole.UnitAdmin` | Modified, values appended; no schema change |
+| `EffectiveAccess`, `AppliesTo` | New pure values in `Models/Authorization`; `EffectiveAccess` replaces a private dictionary |
+| `SystemWideRule` | New read model: holder, role, applies to |
+| `EveryoneSignedInSetting`, its seeder and table | New: one row, one boolean, a concurrency token |
+| `RbacAdministrationService`, `IRbacAdministrationService` | Modified: all rule logic stays behind this one inbound port |
+| `CurrentUserProfileService` | Modified: an embedded session, like a key, speaks only for a person who still has a profile |
+| `AuthorizationController` | Modified: unit `system-wide-rules` reads, `everyone-signed-in` GET and PUT |
+| `RbacSettings`, `ScopedGroupMappingManager`, `TeamDetail`, `PortfolioDetail` | Modified: rule choice and "Applies to", switch, read-only mapping list for scoped admins |
+| Access tab notice | New: read-only line, one keyed query, explicit loading and failure looks |
+
+Unchanged: `RbacGuardAttribute`, `useRbac`, `ApiKeyController`, `GetVirtualPermissionsAsync`, every controller that asks a read or
+write check, sign-in. `my-summary` keeps its contract: for an admin reach the server fills `adminTeamIds` and `adminPortfolioIds` from
+the units that exist at that call.
+
+### Quality attributes
+
+| Attribute | Strategy |
+|---|---|
+| Performance | Each resolve is a fixed number of queries and lists filter in memory, so cost does not grow with units; a query-count test with 200 Teams pins it. The switch adds one query. |
+| Security | Opt-in, off by default; System Admin only; server-side checks are the guard and the UI only follows them; one test per capability row. |
+| Reliability | Failed reads end in an error, never a grant. A failed load on screen never reads as "no rules". |
+| Maintainability | The higher-role rule exists once, in a pure value tested without a database. |
+| Upgrade | Expand-only: one additive table. With no rule and the switch off, every answer equals the one before. A build one release back ignores both. |
+
+### External integration
+
+None new. The identity provider's token and the stored group snapshot are used as they are, so no contract test is recommended.
+
+### Architectural enforcement (this feature)
+
+ArchUnitNET and NUnit: only the Access service reads `RbacGroupMappings` and `UserPermissions`, every role and scope value has an
+answer in `EffectiveAccess`, and new actions declare their access through `EveryActionDeclaresItsAccessArchitectureTest`.
+
+### C4
+
+```mermaid
+C4Context
+  title System Context — system-wide access
+  Person(admin, "System Admin", "Owns the rules and the switch")
+  Person(unitadmin, "Team or Portfolio Admin", "Reads which rules reach their unit")
+  Person(reader, "Reader or admin through a rule", "Reaches every Team and Portfolio")
+  System(lighthouse, "Lighthouse", "Answers who may do what on each request")
+  System_Ext(idp, "Identity provider", "Signs people in and sends their groups")
+  System_Ext(client, "API clients and embedding tools", "Call Lighthouse for a person")
+  Rel(admin, lighthouse, "Sets rules and the switch in")
+  Rel(unitadmin, lighthouse, "Reads a unit's rules in")
+  Rel(reader, lighthouse, "Reads and works on units in")
+  Rel(client, lighthouse, "Reads as its owner through")
+  Rel(lighthouse, idp, "Signs people in through")
+```
+
+```mermaid
+C4Container
+  title Container diagram — system-wide access
+  Person(user, "Signed-in person")
+  System_Ext(idp, "Identity provider", "Sends group claims")
+  Container_Boundary(lh, "Lighthouse") {
+    Container(spa, "Frontend", "React, MUI, TanStack Query", "Settings, Access tab notice, gating through useRbac")
+    Container(api, "Backend", "ASP.NET Core, IRbacAdministrationService", "Resolves EffectiveAccess on each request")
+    ContainerDb(db, "Database", "SQLite or PostgreSQL", "Group mappings, the switch row, permissions, keys")
+  }
+  Rel(user, spa, "Works in")
+  Rel(spa, api, "Calls rule, switch and my-summary endpoints on")
+  Rel(api, db, "Reads rules and the switch from")
+  Rel(api, idp, "Validates sign-in with")
+```

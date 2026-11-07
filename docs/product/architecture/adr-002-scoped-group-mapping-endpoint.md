@@ -5,6 +5,11 @@
 **Feature**: rbac-enhancements
 **Decider**: Morgan (Solution Architect) based on WD-08 (DISCUSS wave)
 
+> **Correction (2026-11-07).** The read decision below stands. Two statements in this record no longer hold. Only a System
+> Admin creates or removes a group mapping, so Team and Portfolio Admins can read a unit's mappings but cannot manage them;
+> Bug 6576 hides add and remove from them, on a form whose save the server always refused. And
+> `ScopedGroupMappingManager` takes a fetcher rather than ready data.
+
 ---
 
 ## Context

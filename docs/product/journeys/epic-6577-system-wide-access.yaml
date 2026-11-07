@@ -2,9 +2,9 @@ schema_version: 1
 feature_id: epic-6577-system-wide-access
 updated: 2026-11-07
 note: >
-  ADO User Story #6577, no parent Epic. DISCOVER and DIVERGE skipped by the maintainer. Raised at a customer workshop
-  on 2026-11-06. Extends rbac-enhancements.yaml, whose scoped roles and group mappings stay as they are. Proposals P1 to
-  P15 in the feature delta are not locked; steps that rest on one name it.
+  ADO Epic #6577, Stories 6578 to 6582. DISCOVER and DIVERGE skipped by the maintainer. Raised at a customer workshop
+  on 2026-11-06. Extends rbac-enhancements.yaml, whose scoped roles and group mappings stay as they are. The decisions
+  in the feature delta are locked, except P8 and P12, which wait for the sketch review; steps that rest on one name it.
 
 journeys:
 
@@ -173,3 +173,6 @@ changelog:
   - date: 2026-11-07
     feature: epic-6577-system-wide-access
     change: Journeys created at DISCUSS.
+  - date: 2026-11-07
+    feature: epic-6577-system-wide-access
+    change: Header corrected at DESIGN; the feature is an Epic and its decisions are locked.
