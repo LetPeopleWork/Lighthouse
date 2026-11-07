@@ -1,0 +1,178 @@
+schema_version: 1
+feature_id: epic-6577-system-wide-access
+updated: 2026-11-07
+note: >
+  ADO Epic #6577, Stories 6578 to 6582. DISCOVER and DIVERGE skipped by the maintainer. Raised at a customer workshop
+  on 2026-11-06. Extends rbac-enhancements.yaml, whose scoped roles and group mappings stay as they are. The decisions
+  in the feature delta are locked, except P8 and P12, which wait for the sketch review; steps that rest on one name it.
+
+journeys:
+
+  - name: open-every-unit-to-a-group
+    goal: >
+      A System Admin gives one SSO group a role on every Team and Portfolio, so nobody is granted unit by unit and nobody
+      is made System Admin to read.
+    persona: "config-admin (Alex Chen, as System Admin)"
+    job_id: job-rbac-grant-access-once-for-all-units
+
+    emotional_arc:
+      start: Anxious - "am I opening too much, and for whom?"
+      middle: Focused - "the table says which group gets what, on what."
+      end: Relieved - "the per-Portfolio mappings are gone and my leaders are not System Admins any more."
+
+    steps:
+      - step: Open Settings -> Access (slice 01)
+        sees: SSO Groups, with the group value, the Role choice and the table of rules
+      - step: Add the group as Viewer on all
+        sees: "the row lighthouse-readers | Viewer | All Teams and Portfolios"
+      - step: Ask Noor to sign in
+        sees: her Overview lists every Team and Portfolio
+      - step: Revoke what is no longer needed
+        sees: Noor's System Admin gone, per-Portfolio mappings removed, her reading unchanged
+      - step: Later, add a second group as Admin on all (slice 05)
+        sees: "the row delivery-leads | Admin | All Teams and Portfolios"
+
+    error_paths:
+      - when: the group value does not match the token, for example by case
+        sees: nobody gains anything; the hint under the form says values are case-sensitive
+      - when: the group claim is not configured
+        sees: the RBAC Status chip "Group claim - Not configured"; the switch is the other route
+      - when: a Team Admin or Viewer sends the request directly
+        sees: a refusal
+      - when: the rule was too wide
+        sees: Remove ends the reach on each person's next request
+
+    shared_artifacts:
+      - name: system-wide rules (group, role, applies to)
+        source: the stored group mappings; consumed by Settings -> Access, the Access tab box and every permission check
+      - name: group value
+        source: the identity provider's token; for API keys and embed sessions the owner's stored snapshot
+      - name: Team / Portfolio nouns
+        source: Terminology (TerminologySeeder defaults, user-renamable)
+
+  - name: read-everything-from-the-first-sign-in
+    goal: >
+      Someone who leads across Teams reads every Team and Portfolio from the first sign-in, holding no admin rights.
+    persona: "viewer (Noor Haddad, Head of Engineering)"
+    job_id: job-viewer-see-every-unit-from-first-login
+
+    emotional_arc:
+      start: Stuck - "it says I have no access to any Teams."
+      middle: Oriented - "they are all here, and nothing asks me to configure anything."
+      end: Informed - "I have the forecast for the review, and I cannot break anything."
+
+    steps:
+      - step: Sign in (group rule, slice 01; or the switch, slice 04)
+        sees: every Team and Portfolio on the Overview; no no-access alert
+      - step: Open a Team or Portfolio
+        sees: its metrics and forecasts; no Settings tab, no Access tab, no write controls
+      - step: Create a key for a script (slice 02)
+        sees: a key limited to one Team reads that Team and nothing else
+
+    error_paths:
+      - when: she is not in the group and the switch is off
+        sees: the no-access alert naming the System Admins, as today
+      - when: the rule is removed while she reads
+        sees: the no-access alert on the next page load
+      - when: a direct write is attempted
+        sees: a refusal; Refinement votes and comments stay open to Viewers (P4)
+
+    shared_artifacts:
+      - name: what she may reach
+        source: effective permissions, computed on each request through IRbacAdministrationService
+
+  - name: understand-who-else-reaches-my-unit
+    goal: >
+      A Team or Portfolio Admin sees that a system-wide rule also reaches the unit, and knows who changes it.
+    persona: "config-admin (Jordan Reyes, as Team Admin)"
+    job_id: job-rbac-see-every-route-to-a-unit
+
+    emotional_arc:
+      start: Puzzled - "I removed Noor and she still reads my Team."
+      middle: Informed - "a rule reaches this Team; it says which one."
+      end: Settled - "this is not mine to change, and I know who to ask."
+
+    steps:
+      - step: Open the unit's Access tab (slice 03)
+        sees: an information box above Team Access naming each rule's role and group, or "everyone signed in" (slice 04)
+      - step: Read who changes it
+        sees: only a System Admin, in Settings -> Access; the box has no control
+
+    error_paths:
+      - when: the rules cannot be loaded
+        sees: a look that DESIGN sets; it must not read as "no rules"
+      - when: there is no rule
+        sees: the tab as it is today
+
+    shared_artifacts:
+      - name: system-wide rules
+        source: as above; read through a route open to those who manage the unit
+
+  - name: turn-on-everyone-signed-in
+    goal: >
+      A System Admin, on an instance where everyone may see everything, gives all signed-in people reading with one
+      deliberate switch.
+    persona: "config-admin (Alex Chen, as System Admin)"
+    job_id: job-rbac-grant-access-once-for-all-units
+
+    emotional_arc:
+      start: Careful - "this reaches everyone who can sign in."
+      middle: Reassured - "the dialog says exactly what it does, and I can turn it off."
+      end: Done - "no group to maintain; a new colleague reads on day one."
+
+    steps:
+      - step: Turn on the switch on Settings -> Access (slice 04)
+        sees: a confirm dialog naming the reach
+      - step: Confirm with Turn on
+        sees: the switch on; each Access tab reads "Viewer - everyone signed in"
+      - step: A newcomer signs in
+        sees: every Team and Portfolio, with no group and no role
+
+    error_paths:
+      - when: Alex chooses Cancel
+        sees: the switch stays off
+      - when: another System Admin changed it first
+        sees: the stale change refused
+      - when: Alex turns it off
+        sees: reach ends on the next request; real roles and mappings untouched
+
+    shared_artifacts:
+      - name: the everyone-signed-in switch
+        source: one stored setting; consumed by Settings -> Access, the Access tab box and every permission check
+
+  - name: look-after-every-unit
+    goal: >
+      Someone who keeps all Teams in order edits settings and members on every unit, without running the system.
+    persona: "config-admin (Ines Moreau, as admin on all)"
+    job_id: job-rbac-look-after-all-units-without-running-the-system
+
+    emotional_arc:
+      start: Blocked - "I need 42 grants, or the keys to everything."
+      middle: Capable - "Settings and Access are on every Team."
+      end: Trusted - "I can do my work, and I cannot touch connections or the licence."
+
+    steps:
+      - step: Open any Team or Portfolio (slice 05)
+        sees: its Settings and Access tabs, also on units created later
+      - step: Change settings and members
+        sees: the changes stored, as for a Team Admin
+      - step: Look for system things
+        sees: no Add Team, no Clone, no Delete, no Settings -> Access, no connection editing
+
+    error_paths:
+      - when: a direct request tries a System Admin action, including DELETE on a unit
+        sees: a refusal (Bug 6575)
+      - when: the rule is removed
+        sees: the tabs go on the next page load
+
+    shared_artifacts:
+      - name: which units she administers
+        source: GET /api/latest/authorization/my-summary, through useRbac() only
+
+changelog:
+  - date: 2026-11-07
+    feature: epic-6577-system-wide-access
+    change: Journeys created at DISCUSS.
+  - date: 2026-11-07
+    feature: epic-6577-system-wide-access
+    change: Header corrected at DESIGN; the feature is an Epic and its decisions are locked.

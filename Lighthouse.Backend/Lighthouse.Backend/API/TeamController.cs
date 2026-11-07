@@ -90,7 +90,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete]
-        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
+        [RbacGuard(RbacGuardRequirement.CanDeleteUnit)]
         public async Task<IActionResult> DeleteTeam(int teamId, CancellationToken cancellationToken)
         {
             var workedPortfolioIds = portfolioRepository.GetPortfolioIdsForTeam(teamId);

@@ -1,0 +1,81 @@
+{
+  "roadmap": {
+    "project_id": "bug-6575-delete-guard-scoped-admins",
+    "created_at": "2026-11-07",
+    "total_steps": 1,
+    "total_phases": 1,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "deliverable_type": "application",
+    "scope": "ADO Bug #6575. Backend only (Lighthouse.Backend): the guard on DELETE for a Team and a Portfolio. No frontend, no UI, no migration.",
+    "goal": "With RBAC on, only a System Admin can delete a Team or a Portfolio, through any route: scoped admins and their API keys are refused and the row survives. Nobody gains access they do not have today.",
+    "paradigm_note": "C# .NET 10 / NUnit 4 / WebApplicationFactory tests. No DISTILL wave for a bugfix: RED is a crafter-authored regression test failing on today's code."
+  },
+  "validation": {
+    "status": "approved",
+    "reviewer": "orchestrator (inline, following the bug-6424 precedent for a surgical bugfix)",
+    "reviewed_at": "2026-11-07",
+    "notes": "RCA approved by the maintainer. Fix sites verified by the orchestrator: TeamController.cs:92-94, PortfolioController.cs:68-70, RbacAdministrationService.CanSatisfyRequirementAsync (:342-370); the SystemAdmin arm at :350 skips the enforcement gate that CanWriteTeamAsync honours at :233."
+  },
+  "user_decisions": [
+    "Root cause confirmed (2026-11-07).",
+    "Dedicated CanDeleteUnit requirement, not the existing SystemAdmin one.",
+    "Rigor profile thorough (crafter opus, reviewer sonnet, double review). Do not push."
+  ],
+  "ssot_inputs": [
+    "docs/feature/bug-6575-delete-guard-scoped-admins/rca.md",
+    "docs/ci-learnings.md"
+  ],
+  "out_of_scope": [
+    "Any other endpoint or guard.",
+    "Epic 6577 work, including Admin on all.",
+    "Docs: rbac.md is already correct. Release notes are written at /release."
+  ],
+  "phases": [
+    {
+      "id": "01",
+      "name": "Only a System Admin deletes a Team or a Portfolio",
+      "description": "Regression tests, then the minimal fix.",
+      "default_agent": "nw-software-crafter",
+      "default_deps_strategy": "sequential",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "DELETE on a Team and a Portfolio is refused for everyone but a System Admin",
+          "description": "A dedicated CanDeleteUnit requirement guards both delete endpoints. The tests that used delete as a write probe move to PUT.",
+          "agent": "nw-software-crafter",
+          "test_file": "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/DeleteUnitRightsTests.cs",
+          "scenario_name": "DeleteTeam_AsTeamAdmin_Returns403AndTheTeamSurvives",
+          "red_to_green_tests": [
+            "Team Admin DELETE own Team -> 403, row survives",
+            "Portfolio Admin DELETE own Portfolio -> 403, row survives",
+            "Team-scoped API key DELETE Team -> 403, row survives",
+            "System Admin DELETE Team and Portfolio -> 204, row gone (already green, must stay green)",
+            "Enforcement gate unsatisfied (RBAC on, gate not met) -> a System Admin is refused, as today (already green, must stay green)",
+            "Attribute test beside CreateRightsControllerGuardTest.cs: both delete actions declare CanDeleteUnit and no scope route key"
+          ],
+          "files_to_modify": [
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGuardRequirement.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend/API/TeamController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend/API/PortfolioController.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/DeleteUnitRightsTests.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend.Tests/API/CreateRightsControllerGuardTest.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/F_BE_1_GroupSnapshotInheritanceTests.cs",
+            "/storage/repos/Lighthouse/.claude/worktrees/quizzical-fluttering-crane/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Security/S5_ApiKeyScopesTests.cs"
+          ],
+          "dependencies": [],
+          "criteria": [
+            "RED first: the three refusal tests fail on today's code with 204 instead of 403.",
+            "CanDeleteUnit has its own switch arm in CanSatisfyRequirementAsync: not enforced -> allowed; gate unsatisfied -> refused; otherwise CanManageRbacAsync. It does not call or reuse CanCreateTeam.",
+            "Both delete actions use RbacGuardRequirement.CanDeleteUnit with no ScopeIdRouteKey.",
+            "BE_1_4 in F_BE_1_GroupSnapshotInheritanceTests probes write through PUT on a Team with an empty body: 400 proves the guard passed, because the guard runs before model validation.",
+            "S5_ScopedReadKey_AttemptWriteAction_Returns403 probes write through PUT on a Portfolio, so it still tests a scoped write refusal.",
+            "dotnet build has zero warnings; the backend suite is green under the standard filter."
+          ]
+        }
+      ]
+    }
+  ]
+}

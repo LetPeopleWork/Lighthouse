@@ -359,6 +359,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     && await CanWritePortfolioAsync(principal, scopeId.Value, cancellationToken),
                 RbacGuardRequirement.CanCreateTeam => await CanCreateTeamAsync(principal, cancellationToken),
                 RbacGuardRequirement.CanCreatePortfolio => await CanCreatePortfolioAsync(principal, cancellationToken),
+                RbacGuardRequirement.CanDeleteUnit => await CanDeleteUnitAsync(principal, cancellationToken),
                 RbacGuardRequirement.SystemAdminOrBootstrap => !await IsRbacEnforcedAsync(cancellationToken)
                     || !await HasSystemAdminAsync(cancellationToken)
                     || await CanManageRbacAsync(principal, cancellationToken),
@@ -367,6 +368,18 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     && await CanReadTeamAsync(principal, scopeId.Value, cancellationToken),
                 _ => false,
             };
+        }
+
+        // Deleting has its own rule so a change to who may create cannot quietly change who may delete.
+        private async Task<bool> CanDeleteUnitAsync(ClaimsPrincipal principal, CancellationToken cancellationToken)
+        {
+            if (!await IsRbacEnforcedAsync(cancellationToken))
+            {
+                return true;
+            }
+
+            return await IsEnforcementGateSatisfiedAsync(cancellationToken)
+                && await CanManageRbacAsync(principal, cancellationToken);
         }
 
         private async Task<bool> CanSatisfyAnyScopedAdminAsync(

@@ -44,6 +44,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     || (scopeId.HasValue && grants.Contains($"{PortfolioAdminGrantPrefix}{scopeId.Value}")),
                 RbacGuardRequirement.CanCreateTeam => isSystemAdmin,
                 RbacGuardRequirement.CanCreatePortfolio => isSystemAdmin,
+                RbacGuardRequirement.CanDeleteUnit => isSystemAdmin,
                 _ => false,
             });
         }

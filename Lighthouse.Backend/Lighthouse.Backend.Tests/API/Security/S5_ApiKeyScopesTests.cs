@@ -141,7 +141,7 @@ namespace Lighthouse.Backend.Tests.API.Security
             using var keyClient = factory.CreateClient();
             keyClient.WithApiKey(plainTextKey);
 
-            var response = await keyClient.DeleteAsync($"/api/v1/portfolios/{InScopePortfolioId}");
+            var response = await keyClient.PutAsJsonAsync($"/api/v1/portfolios/{InScopePortfolioId}", new { });
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.Forbidden));
         }

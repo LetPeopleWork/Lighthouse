@@ -1,0 +1,40 @@
+schema_version: 1
+id: viewer
+created: 2026-11-07
+created_in_feature: epic-6577-system-wide-access
+
+display_name: Viewer
+aliases:
+  - reader
+  - broad-reader
+
+short_description: >
+  Reads Lighthouse and changes nothing in it. Either a person working with a few Teams and Portfolios, or someone who leads
+  across all of them and needs the numbers without any admin role. jobs.yaml has named this persona since rbac-enhancements;
+  this file gives it a home.
+
+examples:
+  - Morgan Davies, Product Manager, reads a few Teams' forecasts for stakeholders (rbac-enhancements)
+  - Noor Haddad, Head of Engineering, reads all 42 Teams and 9 Portfolios and holds no role on any (epic-6577)
+
+primary_jobs:
+  - job-rbac-viewer-clarity  # rbac-enhancements: understand what I can and cannot do
+  - job-viewer-see-every-unit-from-first-login  # epic-6577-system-wide-access (2026-11-07, #6577): read every unit without being granted each
+
+goals:
+  - See the Teams and Portfolios I need from my first login
+  - Read forecasts and metrics without being able to break anything
+
+frustrations:
+  - A first login that says I have no access to any Teams
+  - Being made a System Admin just to read, which nobody wanted
+
+mental_model:
+  - My company already lets me see this work in the tracker, so Lighthouse should too
+  - Reading is not a privilege to apply for, Team by Team
+
+related_personas:
+  - config-admin (grants what this persona reads)
+
+not_this_persona:
+  - Anyone who saves configuration; that is config-admin

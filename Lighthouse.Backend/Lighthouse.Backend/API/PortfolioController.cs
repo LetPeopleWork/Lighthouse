@@ -66,7 +66,7 @@ namespace Lighthouse.Backend.API
         }
 
         [HttpDelete]
-        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
+        [RbacGuard(RbacGuardRequirement.CanDeleteUnit)]
         public async Task<IActionResult> DeletePortfolio(int portfolioId)
         {
             if (!portfolioRepository.Exists(portfolioId))
