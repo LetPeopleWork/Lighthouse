@@ -142,6 +142,48 @@ describe("reading a Vitest run", () => {
 		).toEqual(["started first"]);
 	});
 
+	it("prefers a test with a recorded start over a listed-first test without one", () => {
+		const observed = observeVitestRun(
+			aRunOutcome([
+				aFile(reportsFile, [
+					{ name: "listed first, no start", state: "passed", durationMs: 10 },
+					{
+						name: "started",
+						state: "passed",
+						durationMs: 900,
+						startedAtMs: 1000,
+					},
+				]),
+			]),
+			everythingExists,
+		);
+
+		expect(
+			observed.tests
+				.filter((test) => test.firstInFile)
+				.map((test) => test.name),
+		).toEqual(["started"]);
+	});
+
+	it("keeps the listed order for a file in which no test has a recorded start", () => {
+		const observed = observeVitestRun(
+			aRunOutcome([
+				aFile(reportsFile, [
+					{ name: "filtered out", state: "skipped", durationMs: 0 },
+					{ name: "listed first", state: "passed", durationMs: 10 },
+					{ name: "listed second", state: "passed", durationMs: 10 },
+				]),
+			]),
+			everythingExists,
+		);
+
+		expect(
+			observed.tests
+				.filter((test) => test.firstInFile)
+				.map((test) => test.name),
+		).toEqual(["listed first"]);
+	});
+
 	it("keeps the listed order for tests that started in the same millisecond", () => {
 		const observed = observeVitestRun(
 			aRunOutcome([

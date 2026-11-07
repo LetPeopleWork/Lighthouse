@@ -28,6 +28,16 @@ function observedState(
 	return state === "pending" ? "skipped" : state;
 }
 
+/** A test with a recorded start beats one without; with neither, the listed order stands. */
+function startsBefore(
+	candidate: VitestTestOutcome,
+	current: VitestTestOutcome,
+): boolean {
+	if (candidate.startedAtMs === undefined) return false;
+	if (current.startedAtMs === undefined) return true;
+	return candidate.startedAtMs < current.startedAtMs;
+}
+
 /**
  * Vitest lists a file's tests in the order they were collected. When the test
  * order is shuffled they run in another order, so the one that pays for the
@@ -42,12 +52,7 @@ function indexOfFirstTestThatRan(file: VitestFileOutcome): number {
 			first = index;
 			return;
 		}
-		const firstStarted = file.tests[first].startedAtMs;
-		if (
-			test.startedAtMs !== undefined &&
-			firstStarted !== undefined &&
-			test.startedAtMs < firstStarted
-		) {
+		if (startsBefore(test, file.tests[first])) {
 			first = index;
 		}
 	});
