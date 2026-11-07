@@ -1798,3 +1798,29 @@ Seen while here, also not fixed, each 0 in the tree: a generic `[TestCase<T>]` h
 ## Wave: DELIVER / [REF] Push 5 judged (2026-11-07)
 
 Run 42393654124 at `8fb288160`, the guard's push, with T9's slice A beside it. `force_full=false`, so a plain run: 12,892 passed, 2 skipped, 12,894 in all, the count `L5` gave locally. Against push 4's CSV: 0 ids lost, 0 outcomes changed, and 61 added, all in `TestTierGuardTest`. Every gate passed and the run stopped at deploy approval, which counts as a green base. The review's fixes came after this push and go out with slice E.
+
+## Wave: DELIVER / [REF] Slice E, step 05-02: `API/Security` and the rest, what ran (2026-11-07)
+
+Commit `c3dfcb3bb`, the move alone: 39 files, 39 insertions, 94 deletions, all modified, none renamed. Not pushed. 38 class lines took `: IntegrationFixture`, and 1 of those files also took the `using`. 52 lines left `FixturesNotYetOnTheBase`, which goes from 86 to 34, every one a class of `Integration.Containers`. A diff read by a script shows nothing else: 38 class lines, 1 `using` line, 52 list lines, 4 constants.
+
+**52 types, 38 edits.** 37 classes took the base on their own line. `UsageDataCollectorObservationTest` took it for its 15 subclasses, which were not touched; `Story6193EveryEventSaysItsSourceTest`, partial and one of those, needed no edit. `TestWebApplicationFactoryTest` sits in the base's own namespace, so needs no `using`. None of the 37 had a base or a primary constructor.
+
+**The stop rule.** It did not stop anything. The one shared base is `UsageDataCollectorObservationTest`, and all 15 classes under it are hosted: they were all on the list, and the text search finds no other subclass. No listed class stayed regular.
+
+**Beyond the list lines.** The four reasons no container line uses left `TestTierGuardTest` with them: `StartsOneHostForTheFixture`, `StartsAHostInItsTests`, `InheritsItsHostFromTheUsageDataRoot`, `ChecksTheTestHostItself`. Keeping them would have left dead constants. Whether the build would have refused them was not tried.
+
+| Case | What ran | Result |
+|---|---|---|
+| Stale, shown once | All 38 class lines moved, all 52 lines left in, `FullyQualifiedName~TestTierGuardTest`, Debug | TRX total 74, passed 73, failed 1, exit 1: `EveryTypeOnTheListStillOwesAMoveToTheBase`, naming 52 types. 05-01 showed this for one class on its own line; here the 15 subclasses show it through their root, and no other rule fired |
+| The guards, after the move | `TestTierGuardTest` and `TestHostPerFixtureGuardTest`, Debug and `-c Release` | TRX total 92, passed 92, exit 0, each: 74 + 18 |
+| Moved classes and the clause pin, run | `S1_CorsFailClosedTests`, `UsageDataEventPipeTests`, `Story6193EveryEventSaysItsSourceTest`, `TestWebApplicationFactoryTest`, `ServiceProviderValidationTest`, `OptionalFeatureApplierSeamArchUnitTest`, `IntegrationFixtureCategoryTest`, `TestSelectionClauseTest`, `-c Release` | TRX total 97, passed 97, exit 0 |
+| The 52, by tier | `H` and `F`, each `&`-joined with the 52 names, `--list-tests`, `-c Release` | `H` 589 lines, `F` 0 |
+| `H` as a whole | `--list-tests`, `-c Release` | 3,265 lines: 05-01's 2,676 and these 589 |
+| Builds | `dotnet build` in `Lighthouse.Backend`, then the test project with `-c Release` | 0 warnings, 0 errors, each |
+| The diff | `git diff --name-only` through the regexes of `path-classifier.sh`, each run by `grep -Eq` from a Python script | `jira`, `ado`, `linear`, `servicenow`, `github` and `connector_shared` answer `false`. `classify_backend` answers `true`, 39 files, as any file of the test project does |
+
+The seven variables were removed from every run. Only named classes ran, so this is not a list; that comes in step 05-04. 14 of the 52 ran, the 6 named here and the 8 of the comment commit below; the rest were listed by tier only. `Services/Implementation/OAuth` looks like a shared path and is not: the shared regex reads `WorkTrackingConnectors/(Auth|OAuth)/` and production `Models/OAuth/`.
+
+**The comments.** Commit `36b05ea1b`, apart from the move: 8 of the touched files, comments only, 27 insertions, 28 deletions. They explained themselves through Epic, story, bug, decision and ADR ids; each now says the reason, or loses the pointer where the sentence stood without it. The scan was widened after the first pass missed ids like `F3`. It matches ids, not narration, so other comments that break the rule may remain, as at 05-01. On that commit's tree, both builds 0 warnings and 0 errors, and the 8 classes with both guards TRX total 176, passed 176, exit 0, on Debug and `-c Release`, with the diff answering as above on 8 files.
+
+Left as it is: `Start_DoesNotChallengeAMisconfiguredIdentityProvider` says `(D31)` in an assertion message. That is a string a test run can print, not a comment, so changing it does not belong in a comments-only commit.
