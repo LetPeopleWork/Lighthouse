@@ -75,3 +75,14 @@ These override the proposals above where they differ.
   when a connector's path changed, and any `ci*.yml` edit causes that.
 - `check_budget.py` can write to `GITHUB_STEP_SUMMARY` itself, so publishing needs no `ci_backend.yml` edit, which would run
   every live suite once more.
+
+## Test pyramid vision (maintainer, 2026-11-07)
+
+Direction, not a gate: about 90 % fast, 9.5 % integration, 0.5 % E2E, by test count, as upper limits on the two upper layers.
+
+- **Layers:** fast is the fast tier (`pnpm test:fast`, `Test-Fast.ps1`). Integration is everything in the middle, including frontend `.test.tsx`. E2E is everything in Playwright.
+- **Moving down beats the limit:** a test moved from E2E to integration is good, even if the integration share goes over for a while.
+- **The hard rule stays time:** the time ceilings gate the build; the shares are only reported, because a share can be met by adding trivial tests.
+- **Where it stood on 2026-11-07:** frontend 3,648 fast and 5,857 `.test.tsx` of 9,505; about 56 Playwright tests, 0.25 % of about 22,600. The backend split is known only once T6 has labelled it.
+
+T9 prints the three shares in its report, with no gate on them.
