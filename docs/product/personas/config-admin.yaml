@@ -45,6 +45,9 @@ primary_jobs:
   - job-config-admin-configure-jira-in-its-original-names  # story-6453-jira-original-names (2026-10-31, #6453): load and sync a Jira Team in the original status and type names, whatever the token account's language
   - job-config-admin-find-how-we-work-in-one-place  # epic-6473-settings-split (2026-11-02, #6473): how we work in one place, apart from running the server
   - job-config-admin-say-item-types-once  # epic-6474-one-structure (2026-11-02, #6474): say once which types each level holds; units only narrow
+  - job-rbac-grant-access-once-for-all-units  # epic-6577-system-wide-access (2026-11-07, #6577): one rule for all units, as a deliberate choice
+  - job-rbac-see-every-route-to-a-unit  # epic-6577-system-wide-access (2026-11-07, #6577): the Access tab names rules that also reach the unit
+  - job-rbac-look-after-all-units-without-running-the-system  # epic-6577-system-wide-access (2026-11-07, #6577): admin on every unit, short of System Admin
 
 goals:
   - Save a configuration change and trust that what I saved is what persisted

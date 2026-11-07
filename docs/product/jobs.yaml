@@ -74,6 +74,7 @@ feature_context:
   - epic-6474-one-structure
   - epic-6473-settings-split
   - story-6501-ordered-parent-fields
+  - epic-6577-system-wide-access
 
 jobs:
   - id: job-rbac-bootstrap
@@ -8904,3 +8905,97 @@ jobs:
       anxiety: "Will my Teams' numbers move when the list moves? Not on upgrade; only on an explicit, previewed removal."
       habit: Copying a working Team's settings by hand.
     opportunity_score: {importance: 3, current_satisfaction: 2, gap: 1, rationale: "Desk estimate; preparation value dominates (D8)."}
+
+  - id: job-viewer-see-every-unit-from-first-login
+    title: Read every Team and Portfolio from my first login, without being granted each
+    persona: viewer
+    feature_context: epic-6577-system-wide-access
+    ado: "Story #6577"
+    created: 2026-11-07
+    note: >
+      NEW in DISCUSS of epic-6577-system-wide-access. Evidence is one customer workshop on 2026-11-06. Desk estimates.
+    job_story: >
+      When I lead people across many Teams and my organisation has no reason to hide them from me,
+      I want to see every Team and Portfolio from my first login,
+      so I can read the numbers I am responsible for without anyone granting them one by one and without admin rights.
+    dimensions:
+      functional: Read every unit, including ones created later, with no role on any of them
+      emotional: Feel informed rather than locked out; no fear of breaking anything
+      social: Not be the leader who needed System Admin to look at a chart
+    forces:
+      push: A user with no Team-level role sees no Teams, so leaders were made System Admins just to see data.
+      pull: View rights from the first login, as they already have in the tracker.
+      anxiety: "Will I see something I should not, or be able to change something by accident?"
+      habit: Asking the Lighthouse admin for access, or being given more than needed.
+    opportunity_score: {importance: 5, current_satisfaction: 1, gap: 4, rationale: "Desk estimate; the workaround hands out System Admin."}
+
+  - id: job-rbac-grant-access-once-for-all-units
+    title: Grant access once for all units, as a deliberate choice
+    persona: config-admin
+    feature_context: epic-6577-system-wide-access
+    ado: "Story #6577"
+    created: 2026-11-07
+    note: >
+      NEW in DISCUSS of epic-6577-system-wide-access. Desk estimates. Other customers want Teams hidden from each other, so
+      the choice must stay opt-in.
+    job_story: >
+      When my organisation wants its Teams and Portfolios open to a known group or to everyone,
+      I want to say so once, for all units including later ones,
+      so I stop mapping a group per Portfolio and nobody waits on me to see a new Team.
+    dimensions:
+      functional: Add and remove one rule for a group, or switch on everyone signed in; see what is in force
+      emotional: Feel in control of a wide decision; know it can be taken back
+      social: Be seen to open access deliberately, not by accident
+    forces:
+      push: A group mapped per Portfolio does not scale with many Teams.
+      pull: One rule, and new Teams are covered.
+      anxiety: "Am I opening too much? Will an upgrade open anything on its own?"
+      habit: Mapping groups unit by unit.
+    opportunity_score: {importance: 4, current_satisfaction: 1, gap: 3, rationale: "Desk estimate; a workaround exists and does not scale."}
+
+  - id: job-rbac-see-every-route-to-a-unit
+    title: See every route by which someone reaches my unit
+    persona: config-admin
+    feature_context: epic-6577-system-wide-access
+    ado: "Story #6577"
+    created: 2026-11-07
+    note: >
+      NEW in DISCUSS of epic-6577-system-wide-access. Maintainer decision D4. Desk estimates.
+    job_story: >
+      When I manage who has access to my Team or Portfolio and a wider rule also reaches it,
+      I want the Access tab to say so and name the rule,
+      so I do not remove someone, watch them keep reading, and conclude that Lighthouse is broken.
+    dimensions:
+      functional: Read which system-wide rules reach this unit and who changes them
+      emotional: Feel that the page tells the whole truth
+      social: Answer "who can see our Team?" correctly
+    forces:
+      push: A member removed from the list can still read, with nothing saying why.
+      pull: One read-only line at the place I already look.
+      anxiety: "Is my Team private? Can I change this?"
+      habit: Treating the member list as the whole answer.
+    opportunity_score: {importance: 3, current_satisfaction: 2, gap: 1, rationale: "Desk estimate; arises only once a rule exists."}
+
+  - id: job-rbac-look-after-all-units-without-running-the-system
+    title: Look after every Team and Portfolio without running the system
+    persona: config-admin
+    feature_context: epic-6577-system-wide-access
+    ado: "Story #6577"
+    created: 2026-11-07
+    note: >
+      NEW in DISCUSS of epic-6577-system-wide-access. Maintainer decision D3; what Admin on all grants is PROPOSED (P1).
+      Desk estimates.
+    job_story: >
+      When I keep the settings and members of all Teams and Portfolios in order,
+      I want an admin role on every unit, including later ones,
+      so I can do that work without being granted each unit and without holding connections, licence and system settings.
+    dimensions:
+      functional: Edit settings and manage members on every unit; nothing a System Admin alone may do
+      emotional: Feel trusted and unblocked, and safe from breaking the system
+      social: Hold the rights the work needs, no more
+    forces:
+      push: The choice today is many unit grants, or System Admin.
+      pull: One group, and the role follows new units.
+      anxiety: "Can this role reach connections or delete a Team?"
+      habit: Handing out System Admin because it is quick.
+    opportunity_score: {importance: 3, current_satisfaction: 1, gap: 2, rationale: "Desk estimate; the maintainer included it beyond the customer's ask."}
