@@ -373,3 +373,123 @@ New external call: none.
 - **Sampling with a fixed rule and a rule for the verdict set first:** chosen for the audit. Rejected: reading every file (hours, no extra decision) and a random draw (cannot be redone).
 - **Domain events, outbox, unit of work, value objects, optimistic concurrency, JSON column against child table:** not applicable, no domain or persistence change.
 - **Enforcement by hook on dispatch:** weighed, **not chosen**: it is a new mechanism with false hits, and the deferred read will show if it is needed.
+
+## Wave: DEVOPS / [REF] Platform readiness
+
+Existing platform; nothing is deployed. Written 2026-11-07 with the maintainer away, so each choice takes the recommended option and says why.
+**No test ran and no file but this one changed.** Read: this delta, T9's DEVOPS sections for shape, `ci.yml`, `pages.yml`, `ci_changes.yml`,
+`ci_frontend.yml`, `.githooks/`, `docs/_config.yml`, `package.json`. Read from GitHub, read-only: the runs of recent `main` pushes, and the artifact
+lists of two runs. `environments.yaml` is not written: this wave may edit this file only.
+
+| Topic | Answer |
+|---|---|
+| Environments | **Local only. Nothing is deployed.** The skill, the three `CLAUDE.md` lines and the two records are files in the repository, read by agents on the maintainer's machine. No CI job judges any of it. The one hosted effect is the documentation site (see the push table) |
+| Pipeline | **No `ci*.yml` edit, no new step, no new workflow, no new tool.** T11 adds Markdown and edits Markdown |
+| Deployment strategy | None: a trunk push to `main`, one commit per step. Rollback is below |
+| Branching | Trunk-based, unchanged |
+| Observability | None to add. The only signal is the deferred note: the next feature's DISTILL writes "skill loaded: yes/no, deviations" in its `feature-delta.md`, and the maintainer reads it |
+| Mutation | N/A, because only documents change and Stryker has nothing to mutate. The deliberate-break rule in the skill stands in, as in DESIGN. `CLAUDE.md` keeps its strategy line |
+| Usage-data event | **N/A, because nobody using the product reads a test-writing skill, so no event could show use.** `UsageDataEventName` and `docs/settings/usagedata.md` are unchanged |
+| Peer review | Not run: no new target, framework, stack or security change. The review at the end of DISTILL covers this wave |
+
+## Wave: DEVOPS / [REF] What each push triggers
+
+Read from `ci.yml`, `pages.yml` and `docs/_config.yml`, and checked against real runs on 2026-11-07.
+
+| Path pushed | Build And Deploy Lighthouse (`ci.yml`) | Deploy Documentation (`pages.yml`) |
+|---|---|---|
+| `.claude/skills/**` | **No run.** Not in the `paths` list | No run |
+| `CLAUDE.md` | **No run** | No run |
+| `docs/feature/**` (this delta, the audit record, the trial scenarios) | **No run** | **Runs**, about 40 seconds. The site excludes `feature`, so the build leaves it out, but the workflow still starts |
+| `docs/ci-learnings.md` (only if the pointer is approved) | **No run** | **Runs**, and the page is published |
+
+`ci.yml`'s push `paths` are the backend, backend tests, E2E and frontend folders, `ci*.yml`, `.github/actions`, `.github/scripts`,
+`Scripts/test-timings`, `examples/postgres`, `Dockerfile`, `.nvmrc`, `.dockerignore`, `LICENSE` and `NOTICE`. None of T11's paths is in it.
+`ci.yml` also has a `pull_request` trigger with no paths filter, but this project pushes to `main` and opens no pull request.
+
+**Confirmed, not assumed.** Commit 71e1d3cea changed only files under `docs/`. Its sha has one run, Deploy Documentation, and no Build And Deploy
+Lighthouse run. The docs-titled commits that do show a Build And Deploy run are explained by the push: a push is judged on all its commits, and
+those pushes also carried backend test files, so the docs commit was only the head. **So the one rule for each T11 push:** list the unpushed range
+first (`git diff --name-only origin/main..HEAD`) and read it. Any file outside `docs/`, `.claude/` and `CLAUDE.md` is another session's code and
+would start the full tail. If it is there, say so to the maintainer and do not push. Today the working tree holds an uncommitted edit of
+`TestTierGuardTest.cs` that is not T11's.
+
+**Hooks.** The commit hook scans staged files for secrets with `gitleaks`, so the skill's examples must hold no token-shaped string. The push hook
+scans with the `sonar` CLI and skips itself when the CLI is absent. Neither is a CI step. Sonar's analysis excludes `.claude/**` and `docs/**`.
+
+## Wave: DEVOPS / [REF] What needs a run, and what the checks run as
+
+**Nothing needs a CI run or a test run.** No gate in `CLAUDE.md` applies, as DESIGN answered line by line. The proofs listed under DESIGN "Slices" are
+**by-hand searches at DELIVER**, run once per slice and written into the record with their output. They are not a ledger rule and not a tool.
+
+| Check | Runs as | Why not more |
+|---|---|---|
+| "End of <file>" on each file, read as a subagent would | By hand: a `ctx_read` of each file in full mode, fresh, and the last line quoted into the record. The trial agent reports it too | One reading per file; a tool would check a line that a human must also see in a subagent's cut output |
+| Fast cycle rule: skill, dispatch wording and `CLAUDE.md` agree | By hand: `git grep` of the rule's distinctive phrases in `CLAUDE.md` and `SKILL.md`, output pasted, and the dispatch wording compared against the same phrases | The dispatch wording is text the orchestrator writes, not a file, so no tool can read it. A ledger rule would claim a check nobody runs |
+| Every named identifier and every quoted guard message exists | By hand: `git grep` of each, list in the record, "planned by" marks left as they are | A quote is stale the day its guard changes, and a later check is not kept (DESIGN says so) |
+| Convention has one home; no Story, slice or ADR number in the three lines | By hand: one `git grep` for the T5 phrase, one for the number patterns in `CLAUDE.md` | One-off at the cut |
+
+**The drift after DELIVER is not caught**, as DESIGN says: the next DELIVER's dispatch check and the deferred read are the only readers. If the
+maintainer wants it caught, that is DESIGN's candidate 3, its own Story.
+
+## Wave: DEVOPS / [REF] The audit, local and read-only
+
+Runs in `Lighthouse.Frontend` on Linux. It writes nothing but the record, edits no test and needs no Docker, no backend and no database.
+
+| Input | How it is read | What the record keeps so it can be redone |
+|---|---|---|
+| The file population and counts | `git ls-files` for the `.test.tsx` files, and Vitest's listing command for the titles. The listing runs no test; DELIVER confirms its flags on the day | The commit it ran at; the counts per group; the sorted list of each group; the picked files, in pick order |
+| Seconds per test | The `test-timings-frontend` artifact of one green `main` run, downloaded read-only with `gh`. Run 42372930241 holds it and does not expire until 2027-02-05 (checked today). DELIVER may pick a newer one and names it | The run id; the ten slowest files with their seconds, pasted, because the artifact expires after 90 days |
+| Labels | Two raters per DESIGN's rule and five lookup steps | One row per file: tests, logic, UI and mixed counts, extraction class, call. The second rater's labels for its files. The agreement figure and, if used, the list of disagreeing tests |
+| The estimate | Computed from the rows; resampling within groups | The seed or the resampled intervals as printed, the statistic named, the N used and where it came from |
+| The models | Read from the profile at DELIVER | The `agent_model` and `reviewer_model` used, and a line saying so if they are the same |
+
+A stranger with the commit, the pick list and the labelled rows can recompute every share. The CSV is the one input that expires, so its figures are
+pasted. The audit needs no `LIGHTHOUSE_TEST_WORKERS` setting: listing is light. Runs elsewhere in the checkout (T6, T9) are not disturbed by it.
+
+## Wave: DEVOPS / [REF] Rollback
+
+Every step is a `git revert` and a plain push: no `ci*.yml`, no data, no product file, nothing a user sees. A docs revert starts Deploy Documentation
+again and nothing else.
+
+| Step | How | Constraint |
+|---|---|---|
+| Slice A, the audit record | Revert the commit. Nothing reads it | None |
+| Slice A, the skill and `references/frontend.md` | Revert the commit | **Not while the three `CLAUDE.md` lines are in.** They point at the skill, so revert slice B's `CLAUDE.md` commit first |
+| Slice B, `references/backend.md` and the fast cycle text | Revert the commit | If `CLAUDE.md`'s lines are still in, they point at a skill without a backend half; revert them in the same push |
+| Slice B, the three `CLAUDE.md` lines and the cut of T5's bullet | Revert the commit: T5's bullet comes back whole, so the convention then also stands in the skill's backend half until that is reverted. State that in the revert message | Revert before the skill folder, never after |
+| The dispatch wording | Not a file. The orchestrator stops writing it, and the next dispatch is without it | |
+| The trial and record | Revert the docs commit | None |
+
+A wrong rule in the skill needs no revert: it is a one-line edit of a Markdown file, with the same searches re-run.
+
+## Wave: DEVOPS / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6538-13 | No `ci*.yml` edit, no new step, no tool, no new workflow | Markdown has no build; each addition would be code to maintain for text |
+| D-6538-14 | The "End of <file>" and fast-cycle agreement checks are **by-hand searches at DELIVER, output pasted in the record**. No ledger rule, no tool | The dispatch wording is not a file, so no tool reads all three; a ledger rule would promise a check nobody runs |
+| D-6538-15 | Before each push, read the unpushed range; push only if it holds nothing outside `docs/`, `.claude/` and `CLAUDE.md` | A push is judged on all its commits. A stray code commit would start the whole tail for a docs change |
+| D-6538-16 | Usage-data event: **N/A, because nobody using the product reads test guidance** | Nothing in the product changes |
+| D-6538-17 | The audit's record keeps the commit, the pick list, the labelled rows and the pasted top ten seconds | The artifact expires; the record must stand without it |
+| D-6538-18 | Rollback per commit; the `CLAUDE.md` commit goes before the skill's | The lines point at the skill |
+| D-6538-19 | Environments: local only | Nothing is deployed |
+
+## Wave: DEVOPS / [REF] Changed assumptions
+
+| Was | Is | Why |
+|---|---|---|
+| DESIGN, quality gates: "A docs-only push starts no CI run; none is expected" | **Holds for the build and test workflow.** A push of `docs/**` does start Deploy Documentation, about 40 seconds, which publishes the site | `pages.yml` triggers on `docs/**`. It cannot fail on `docs/feature/**`, which the site excludes |
+| The stored note that a docs-only push starts no run | Too wide: it holds for Build And Deploy Lighthouse only, and its path list is longer than the note says | Read from `ci.yml` today |
+
+## Wave: DEVOPS / [REF] For the maintainer
+
+Nothing new needs you here. What is still open is DESIGN's list, unchanged: the ledger pointer, the order of slice A against T5, the three tool
+candidates, the trial's feature, and the audit's verdict when it exists. One thing to know: a `docs/**` push redeploys the documentation site
+whether or not any page changed.
+
+## Wave: DEVOPS / [REF] Open for DISTILL and DELIVER
+
+- DISTILL: the proofs under DESIGN "Slices" become the scenarios, each written as the by-hand search above. No tags in them.
+- DELIVER: run the push check of D-6538-15 before each push; paste each search's output; name the CSV run; read the profile's models.
+- The Vitest listing command's flags are confirmed on the day, because this wave ran nothing.
