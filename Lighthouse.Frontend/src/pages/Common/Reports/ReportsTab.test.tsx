@@ -1038,7 +1038,9 @@ describe("The layout of the Reports list", () => {
 		const sortButtonOf = (column: string) =>
 			within(
 				screen.getByRole("columnheader", { name: column }),
-			).queryByLabelText("Sort", { selector: "button" });
+			).queryByLabelText(/^(Sort|Remove sorting from) /, {
+				selector: "button",
+			});
 
 		expect(sortButtonOf("Actions")).toBeNull();
 		expect(sortButtonOf("Created")).not.toBeNull();
