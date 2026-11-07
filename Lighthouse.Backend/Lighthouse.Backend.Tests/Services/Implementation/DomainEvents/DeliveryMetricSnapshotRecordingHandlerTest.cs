@@ -775,7 +775,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
             };
         }
 
-        // The row has to name its team: since Story #5587 the delivery rollup enumerates FROM
+        // The row has to name its team: the delivery rollup enumerates FROM
         // FeatureWork and LEFT JOINs Forecasts, so a row that names no team covers no contributing
         // pair and the delivery reports "cannot forecast".
         private static WhenForecast SingleOutcomeForecast(Team team, int days)

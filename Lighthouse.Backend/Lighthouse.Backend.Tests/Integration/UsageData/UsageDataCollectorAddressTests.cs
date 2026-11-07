@@ -20,14 +20,14 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - which address this instance is allowed to send to.
+    /// Which address this instance is allowed to send to.
     ///
     /// There is exactly one collector project, and it is the live census. The free plan allows one;
     /// a paid plan is refused because it would raise the retention floor from one year to seven,
     /// which the shipped disclosure commits us to re-asking every consenting person about. So there
     /// is no second project for continuous integration to send into, and there is not going to be.
     ///
-    /// That matters far more than it used to. The event this slice ships fires when somebody opens a
+    /// That matters far more than it used to. The tab-view event fires when somebody opens a
     /// Team or Portfolio tab, and the browser tests open those tabs constantly - so every run is now
     /// a source of invented events aimed at the real numbers. Sending degrades silently by
     /// specification, so this would happen with no error and no red build.

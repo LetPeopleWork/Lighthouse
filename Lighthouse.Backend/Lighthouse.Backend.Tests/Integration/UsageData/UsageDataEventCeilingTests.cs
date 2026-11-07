@@ -21,7 +21,7 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.Integration.UsageData
 {
     /// <summary>
-    /// Epic 5733 slice 01c (ADO #5980) - the ceilings, which bound different things and fail in
+    /// The ceilings, which bound different things and fail in
     /// opposite directions.
     ///
     /// The first bounds one browser against one instance and refuses when it is passed. Underneath

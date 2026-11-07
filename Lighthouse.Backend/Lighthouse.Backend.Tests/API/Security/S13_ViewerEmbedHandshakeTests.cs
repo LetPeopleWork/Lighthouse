@@ -5,8 +5,8 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-137. The negatives on the sign-in hop and the handshake
-    /// channel: F2 carried forward, D45's no-existence-oracle, D62's observable loss, D31/D44/DQ-7.
+    /// The negatives on the sign-in hop and the handshake channel: a session cannot mint its own
+    /// successor, a nonce gives away nothing about whether it ever existed, and a lost one says so.
     /// </summary>
     public class S13_ViewerEmbedHandshakeTests : IntegrationFixture
     {
@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         /// <summary>
-        /// F2's carried negative. An embed cookie satisfies a bare [Authorize], and if that counted as
+        /// An embed cookie satisfies a bare [Authorize], and if that counted as
         /// signed in here a session would mint its own successor forever. It is challenged, not
         /// refused — an embed-cookie-only caller completes an ordinary login and ends up with a real one.
         /// </summary>
@@ -78,7 +78,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         /// <summary>
-        /// F4 at the integration layer. Both cookies in one jar is reachable — opening an embed link at
+        /// Both cookies in one jar is reachable — opening an embed link at
         /// top level does exactly that — and there the person's own login must win.
         /// </summary>
         [Test]
@@ -107,8 +107,8 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         /// <summary>
-        /// D45. Unknown, never-resolved, already-consumed and malformed are one response. Under D51 the
-        /// first two are literally the same database state, so this asserts a structural property.
+        /// Unknown, never-resolved, already-consumed and malformed are one response. The first two are
+        /// literally the same database state, so this asserts a structural property.
         /// </summary>
         [Test]
         public async Task UnknownPendingConsumedAndMalformedNonces_AreOneIdenticalResponse()
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.API.Security
             }
         }
 
-        /// <summary>D62. Single use already refuses the second reader; it must also say so.</summary>
+        /// <summary>Single use already refuses the second reader; it must also say so.</summary>
         [Test]
         public async Task ASecondReadOfAConsumedNonce_IsRecordedAsAnAnomaly()
         {
@@ -186,7 +186,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         /// <summary>
-        /// DQ-7. Hop 1 is the only endpoint in this feature that challenges an identity provider, so a
+        /// The first hop is the only endpoint in this feature that challenges an identity provider, so a
         /// misconfigured registration is reachable here in a way it was not before. Sending a viewer at
         /// a provider the instance cannot talk to is a worse failure than saying nothing.
         /// </summary>
@@ -203,10 +203,10 @@ namespace Lighthouse.Backend.Tests.API.Security
 
         /// <summary>
         /// The Forge app has to decide, on a later page load, whether the embed cookie it already
-        /// holds is still worth framing — and it cannot ask: D13 gives a cross-origin frame no
+        /// holds is still worth framing — and it cannot ask: a cross-origin frame gets no
         /// observable signal, and the cookie is HttpOnly and partitioned. So the grant carries the
         /// window. Hardcoding it in the app would duplicate `Embed:SessionLifetimeMinutes` and drift
-        /// from it, which is the shape of Bug #5696.
+        /// from it.
         /// </summary>
         [Test]
         public async Task AGrant_CarriesTheSessionWindow_AndNothingElseDoes()

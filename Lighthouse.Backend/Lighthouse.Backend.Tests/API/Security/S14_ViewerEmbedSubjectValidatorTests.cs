@@ -4,8 +4,8 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-137 D57/D58. The embed cookie validator re-resolves a subject
-    /// on every request, and it must never create one.
+    /// The embed cookie validator re-resolves a subject on every request, and it must never create
+    /// one.
     /// </summary>
     public class S14_ViewerEmbedSubjectValidatorTests : IntegrationFixture
     {
@@ -33,8 +33,8 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         /// <summary>
-        /// F3's carried equivalent. The old lever stopped unredeemed tokens; this one ends established
-        /// sessions. There is no deactivation in Lighthouse (D58), so the control is deletion.
+        /// This ends established sessions, not only unredeemed tokens. There is no deactivation in
+        /// Lighthouse, so the control is deletion.
         /// </summary>
         [Test]
         public async Task DeletingTheViewer_EndsTheirLiveFrame()
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         /// <summary>
-        /// The trap D57 exists to close. GetOrCreateFromPrincipalAsync creates; calling it from the
+        /// GetOrCreateFromPrincipalAsync creates; calling it from the
         /// validator re-creates the profile an administrator just deleted, on that person's very next
         /// request, and every other assertion in this file still passes.
         /// </summary>
@@ -118,8 +118,9 @@ namespace Lighthouse.Backend.Tests.API.Security
         }
 
         /// <summary>
-        /// D57's effect is observable to an administrator, so it is asserted there rather than against
-        /// the table — an internal row count would pass a rename of the column it reads.
+        /// A deleted profile staying deleted is observable to an administrator, so it is asserted there
+        /// rather than against the table — an internal row count would pass a rename of the column it
+        /// reads.
         /// </summary>
         private async Task<bool> ListedInTheUserListAsync()
         {

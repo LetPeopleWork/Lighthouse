@@ -13,7 +13,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
     /// <summary>
-    /// Bug #5567 - T1 at the unit level. The codebase conflated "store instants in UTC" with
+    /// The codebase conflated "store instants in UTC" with
     /// "compute calendar days in UTC". This fixture pins the second: which calendar day the
     /// instance is on, given an instant and a zone that disagree.
     ///
@@ -40,8 +40,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         ];
 
         /// <summary>
-        /// RCA section 8-T1. Row 1 and row 2 straddle midnight in opposite directions; row 3 is the
-        /// control that must not move. All three are wrong on unmodified HEAD.
+        /// Row 1 and row 2 straddle midnight in opposite directions; row 3 is the control that must not
+        /// move.
         /// </summary>
         private static readonly object[] ZoneBoundaryRows =
         [
@@ -60,8 +60,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
         }
 
         /// <summary>
-        /// The R1 guard at the source, and the single most important assertion in this step. The
-        /// global EF converter applies ToUniversalTime() to values AND to query parameters, so a
+        /// The global EF converter applies ToUniversalTime() to values AND to query parameters, so a
         /// local-midnight leaking out of the clock with Kind = Local would be shifted back by the
         /// offset on write and land on the previous UTC day - re-introducing this exact bug through
         /// the persistence layer.
