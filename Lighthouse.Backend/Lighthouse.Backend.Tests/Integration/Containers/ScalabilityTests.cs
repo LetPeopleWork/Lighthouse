@@ -21,7 +21,7 @@ using StackExchange.Redis;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
-    public class ScalabilityTests
+    public class ScalabilityTests : IntegrationFixture
     {
         [Test]
         public async Task NoRedisOneHost_BehaviourAndCodePathIdenticalToToday()

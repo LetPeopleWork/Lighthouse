@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// and leaves the old ones holding what an older build reads.
     /// </summary>
     [TestFixture]
-    public class ParentSourcesUpgradeMigrationTests
+    public class ParentSourcesUpgradeMigrationTests : IntegrationFixture
     {
         private const string PreviousMigrationIdSqlite = "20261023085259_AddForecastInputFingerprintAndRefreshLogSkipped";
 

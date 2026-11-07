@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// </summary>
     [TestFixture]
     [Category("epic-5427-percentiles-over-time")]
-    public class ProcessBehaviorSnapshotMigrationTests
+    public class ProcessBehaviorSnapshotMigrationTests : IntegrationFixture
     {
         // Started by the first Postgres case, so a run of the SQLite cases alone needs no Docker.
         private SharedPostgresContainer? postgres;

@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     [Category("epic-6400-fast-with-many-features")]
     [Category("slice-04")]
-    public class FeatureListParityOnPostgresTests
+    public class FeatureListParityOnPostgresTests : IntegrationFixture
     {
         private SharedPostgresContainer? postgres;
 

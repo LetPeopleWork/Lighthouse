@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// real providers. A second start must find nothing left to do, and an owner it cannot read must not stop the start.
     /// </summary>
     [TestFixture]
-    public class CategoryListNormalisationSeederOnBothProvidersTests
+    public class CategoryListNormalisationSeederOnBothProvidersTests : IntegrationFixture
     {
         public enum Provider
         {

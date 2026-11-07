@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// </summary>
     [TestFixture]
     [Category("bug-5567-utc-today-anchor")]
-    public class DeliveryMetricSnapshotDayKeyMigrationTests
+    public class DeliveryMetricSnapshotDayKeyMigrationTests : IntegrationFixture
     {
         public enum ProviderUnderTest
         {

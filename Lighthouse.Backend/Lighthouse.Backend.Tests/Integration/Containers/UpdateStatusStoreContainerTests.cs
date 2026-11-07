@@ -10,7 +10,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
-    public class UpdateStatusStoreContainerTests
+    public class UpdateStatusStoreContainerTests : IntegrationFixture
     {
         private static readonly UpdateKey KeyWaitingToStart = new(UpdateType.Team, 21);
 

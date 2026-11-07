@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
-    public class ConcurrentStartupMigrationTests
+    public class ConcurrentStartupMigrationTests : IntegrationFixture
     {
         private const string MigrationsAssemblyName = "Lighthouse.Migrations.Postgres";
 

@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     [Category("epic-5511-task-manager")]
     [Category("slice-02")]
-    public class TaskManagerMultiReplicaTests
+    public class TaskManagerMultiReplicaTests : IntegrationFixture
     {
         [Test]
         public async Task AdmittedWork_IsReadBackByAnotherReplica_WithItsTypeIdAndStatus()
@@ -112,7 +112,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("epic-5511-task-manager")]
     [Category("slice-03")]
     [Category("requires-docker")]
-    public class TaskManagerMomentsMultiReplicaTests
+    public class TaskManagerMomentsMultiReplicaTests : IntegrationFixture
     {
         /// <summary>
         /// White-box on purpose, and the only assertion here that is. An orphaned moment is invisible from
@@ -279,7 +279,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("epic-5511-task-manager")]
     [Category("slice-07")]
     [Category("requires-docker")]
-    public class TaskManagerQueueOrderMultiReplicaTests
+    public class TaskManagerQueueOrderMultiReplicaTests : IntegrationFixture
     {
         /// <summary>
         /// Comfortably past redis 7's default <c>hash-max-listpack-entries</c> of 128, above which the hash
@@ -380,7 +380,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("epic-5511-task-manager")]
     [Category("slice-04")]
     [Category("requires-docker")]
-    public class TaskManagerCancellationMultiReplicaTests
+    public class TaskManagerCancellationMultiReplicaTests : IntegrationFixture
     {
         [Test]
         public async Task ACancelAskedForOnOneReplica_ReachesTheReplicaThatIsRunningTheWork()

@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// </summary>
     [TestFixture]
     [Category("epic-5074-blocked-items")]
-    public class BlockedRuleSetMigrationTests
+    public class BlockedRuleSetMigrationTests : IntegrationFixture
     {
         private const string BlockedStateOne = "Blocked";
         private const string BlockedStateTwo = "On Hold";

@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// </summary>
     [TestFixture]
     [Category("epic-5074-blocked-items")]
-    public class BlockedDurationMigrationTests
+    public class BlockedDurationMigrationTests : IntegrationFixture
     {
         [Test]
         public async Task Migration_OnSqlite_PersistsWorkItemBlockedTransitionTable()

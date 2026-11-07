@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// is tested is how the context is used, not a provider.
     /// </summary>
     [TestFixture]
-    public class CategoryListNormalisationSeederIsolationTests
+    public class CategoryListNormalisationSeederIsolationTests : IntegrationFixture
     {
         private static string[] Listed(params string[] states) => states;
 

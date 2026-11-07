@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("ac-05.6")]
     [Category("requires-docker")]
     [Category("real-io")]
-    public class CancelAllMultiReplicaTests
+    public class CancelAllMultiReplicaTests : IntegrationFixture
     {
         private static readonly TimeSpan TheLongestTheStopMayTake = TimeSpan.FromSeconds(10);
 

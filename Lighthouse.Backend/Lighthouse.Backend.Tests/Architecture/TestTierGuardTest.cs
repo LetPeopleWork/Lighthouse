@@ -20,48 +20,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string IntegrationCategory = "Integration";
         private const string CanaryCategory = "UsageDataCanary";
         private const string ContainerNamespace = "Lighthouse.Backend.Tests.Integration.Containers";
-        private const string RunsAgainstAContainer = "runs against a Postgres or Redis container and has not moved to the base yet";
-        private const string SitsAmongTheContainerTests = "sits in the container namespace, runs on SQLite with no container, and has not moved to the base yet";
-        private const string StartsAHostBesideAContainer = "runs against a Postgres or Redis container, starts a host of its own and has not moved to the base yet";
 
         // Keys are full type names. Moving a class to the base removes its line in the same commit; nothing is added here.
-        private static readonly IReadOnlyDictionary<string, string> FixturesNotYetOnTheBase = new Dictionary<string, string>
-        {
-            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedCountSnapshotMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedDurationMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedRuleSetMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedStalenessThresholdMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.CancelAllMultiReplicaTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.CategoryListNormalisationSeederIsolationTests"] = SitsAmongTheContainerTests,
-            ["Lighthouse.Backend.Tests.Integration.Containers.CategoryListNormalisationSeederOnBothProvidersTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ClusterSubstrateHealthCheckTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ConcurrentStartupMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ConnectionDefaultsUpgradeMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.DeliveryMetricSnapshotDayKeyMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.EmbedSessionSingleUseConcurrencyTests"] = StartsAHostBesideAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.FeatureDependencyReferenceMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.FeatureListParityOnPostgresTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ForecastInputFingerprintAcrossProvidersTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ForecastInputsCompareAndSetOnPostgresTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ForecastOnTheLaneIdentityOnPostgresTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.LongSecretRoundTripTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ParentSourcesColumnConversionTests"] = SitsAmongTheContainerTests,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ParentSourcesUpgradeMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.PercentilesOverTimeSnapshotMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.PostgresUpdateExecutionLockTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.PredefinedAdditionalFieldMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ProcessBehaviorSnapshotMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ReEncryptionCompareAndSwapProbeTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.RefreshLogSkippedColumnMigrationTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ScalabilityTests"] = StartsAHostBesideAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.SubstrateProbeTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerCancellationMultiReplicaTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerMomentsMultiReplicaTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerMultiReplicaTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerQueueOrderMultiReplicaTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.UpdateStatusStoreContainerTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.Containers.ViewerEmbedStorageGuaranteeTests"] = RunsAgainstAContainer,
-        };
+        private static readonly IReadOnlyDictionary<string, string> FixturesNotYetOnTheBase = new Dictionary<string, string>();
 
         // A permanent list, not a baseline. Every test of these classes carries the connector category, and only the
         // tests that write to a real tracker are in the integration tier. On the base, the offline tests would count

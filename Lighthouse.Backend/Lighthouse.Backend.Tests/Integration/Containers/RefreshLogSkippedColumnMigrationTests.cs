@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("story-6354-skip-unchanged-forecasts")]
     [Category("slice-01")]
     [Category("contract-shape:bounded-change")]
-    public class RefreshLogSkippedColumnMigrationTests
+    public class RefreshLogSkippedColumnMigrationTests : IntegrationFixture
     {
         // Started by the first Postgres case, so a run of the SQLite case alone needs no Docker.
         private SharedPostgresContainer? postgres;

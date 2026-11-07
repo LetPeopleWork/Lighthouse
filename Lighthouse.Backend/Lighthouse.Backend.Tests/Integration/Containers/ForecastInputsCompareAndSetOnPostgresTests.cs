@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     [Category("story-6354-skip-unchanged-forecasts")]
     [Category("slice-01")]
-    public class ForecastInputsCompareAndSetOnPostgresTests
+    public class ForecastInputsCompareAndSetOnPostgresTests : IntegrationFixture
     {
         private const string WhatTheTenOClockRunRead = "3f1c0a9e5b7d4c2e8a6f1b0d9c7e5a31";
 

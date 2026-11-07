@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Health;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
@@ -7,7 +8,7 @@ using StackExchange.Redis;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
-    public class ClusterSubstrateHealthCheckTests
+    public class ClusterSubstrateHealthCheckTests : IntegrationFixture
     {
         [Test]
         public async Task Probe_RealPostgresAndRedis_ReportsHealthy()

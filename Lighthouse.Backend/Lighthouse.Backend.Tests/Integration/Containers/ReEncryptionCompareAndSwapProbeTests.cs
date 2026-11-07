@@ -5,6 +5,7 @@ using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,7 +24,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// </summary>
     [TestFixture]
     [Category("epic-5775-secret-encryption")]
-    public class ReEncryptionCompareAndSwapProbeTests
+    public class ReEncryptionCompareAndSwapProbeTests : IntegrationFixture
     {
         private const string SecretOptionKey = "PersonalAccessToken";
 

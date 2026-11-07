@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     [Category("epic-6400-fast-with-many-features")]
     [Category("slice-01")]
-    public class ForecastOnTheLaneIdentityOnPostgresTests
+    public class ForecastOnTheLaneIdentityOnPostgresTests : IntegrationFixture
     {
         /// <summary>
         /// Seven runs in ten finish, on the fifth day; the other three never do and leave no row. Recorded once,

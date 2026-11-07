@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     [Category("epic-5074-blocked-items")]
     [Category("slice-05")]
-    public class PredefinedAdditionalFieldMigrationTests
+    public class PredefinedAdditionalFieldMigrationTests : IntegrationFixture
     {
         [Test]
         public async Task Migration_OnSqlite_PersistsColumnAndDefaultsToFalse()

@@ -6,6 +6,7 @@ using Lighthouse.Backend.Models.OAuth;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.Encryption;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// </summary>
     [TestFixture]
     [Category("epic-5775-secret-encryption")]
-    public class LongSecretRoundTripTests
+    public class LongSecretRoundTripTests : IntegrationFixture
     {
         private const int CredentialLength = 100 * 1024;
 

@@ -1,12 +1,13 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Options;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
-    public class PostgresUpdateExecutionLockTests
+    public class PostgresUpdateExecutionLockTests : IntegrationFixture
     {
         [Test]
         public async Task SameKey_SecondAcquisition_WaitsUntilFirstReleases()

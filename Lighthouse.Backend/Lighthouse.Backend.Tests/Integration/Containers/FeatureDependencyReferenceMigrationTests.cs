@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     // that applies the generated migration can tell whether the table is actually there.
     [TestFixture]
     [Category("epic-4365-dependencies")]
-    public class FeatureDependencyReferenceMigrationTests
+    public class FeatureDependencyReferenceMigrationTests : IntegrationFixture
     {
         private const string TrackerReferenceId = "PROJ-4365";
 

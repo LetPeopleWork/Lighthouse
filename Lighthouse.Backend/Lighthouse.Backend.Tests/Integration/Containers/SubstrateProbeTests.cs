@@ -1,12 +1,13 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Npgsql;
 using StackExchange.Redis;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     [TestFixture]
-    public class SubstrateProbeTests
+    public class SubstrateProbeTests : IntegrationFixture
     {
         [Test]
         public async Task AdvisoryLock_TwoConnectionsSameKey_ExactlyOneAcquires()

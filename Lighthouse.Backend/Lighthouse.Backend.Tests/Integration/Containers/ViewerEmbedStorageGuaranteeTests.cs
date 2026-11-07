@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// </summary>
     [TestFixture]
     [Category("epic-5146-jira-forge-app")]
-    public class ViewerEmbedStorageGuaranteeTests
+    public class ViewerEmbedStorageGuaranteeTests : IntegrationFixture
     {
         public const string GrantOrRefusalConstraintName = "CK_EmbedSessionTokens_GrantOrRefusal";
 

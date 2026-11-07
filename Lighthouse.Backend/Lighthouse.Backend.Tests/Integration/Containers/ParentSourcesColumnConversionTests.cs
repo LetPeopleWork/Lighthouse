@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     /// repaired, because a repaired list would quietly change where parents come from.
     /// </summary>
     [TestFixture]
-    public class ParentSourcesColumnConversionTests
+    public class ParentSourcesColumnConversionTests : IntegrationFixture
     {
         private static readonly ParentSources FieldThenOwnParent = ParentSources.Of([ParentSourceEntry.Field(11), ParentSourceEntry.TrackerParent]).List!;
 

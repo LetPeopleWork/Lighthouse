@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     // EF InMemory cannot model the conditional update this property rests on, so the probe needs a real provider.
     [TestFixture]
     [Category("requires-docker")]
-    public class EmbedSessionSingleUseConcurrencyTests
+    public class EmbedSessionSingleUseConcurrencyTests : IntegrationFixture
     {
         private const string OwnerSubject = "embed-concurrency-owner";
         private const int ConcurrentRedemptions = 8;

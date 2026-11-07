@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [Category("story-6304")]
     [Category("story-6313")]
     [Category("contract-shape:bounded-change")]
-    public class ConnectionDefaultsUpgradeMigrationTests
+    public class ConnectionDefaultsUpgradeMigrationTests : IntegrationFixture
     {
         private const string PreviousMigrationIdSqlite = "20261015132326_AddPlacedParentCountToRefreshLog";
 

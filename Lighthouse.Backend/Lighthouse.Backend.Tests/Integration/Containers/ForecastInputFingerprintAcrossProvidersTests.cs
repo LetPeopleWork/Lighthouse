@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     [TestFixture]
     [Category("story-6354-skip-unchanged-forecasts")]
     [Category("slice-01")]
-    public class ForecastInputFingerprintAcrossProvidersTests
+    public class ForecastInputFingerprintAcrossProvidersTests : IntegrationFixture
     {
         private static readonly DateOnly TheInstanceDay = new(2026, 10, 23);
 
