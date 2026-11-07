@@ -1302,3 +1302,28 @@ Push `2c1f0ae0c`, run 42379254193, force-full as expected. Against `T0`'s CSV (r
 The run is red for two reasons outside this Story: `PortfolioUpdaterTest.ExecuteAsync_ShouldBeRefreshed_PremiumLicense_MoreThanOneProject_Refreshes` saw a second update call (a looping background service, a file this Story did not touch; timing flake suspected, not proven), and `Verify Authentication` could not pull `traefik:v3.3` from Docker Hub.
 
 **Maintainer's word (2026-11-07):** do not hold the work for this. Push 2 counts as judged on the ids, without the re-run, because a re-run would spend the shared Linear key to prove nothing about the clause. Push 3 is the first plain run and shows both jobs again.
+
+## Wave: DELIVER / [REF] Slice C, step 03-02: the scan move and `L3`, what ran (2026-11-07)
+
+Commit `bf353051c`, the move alone: 2 files, 126 insertions, 127 deletions. Not pushed. `HostBuildingScan` is now a nested class of `TestHostScanning`. Sorted, the lines removed and the lines added differ in two places only: `private sealed class` became `public sealed class`, and the guard lost `using Mono.Cecil.Cil;`, which it no longer needs.
+
+| Case | What ran | Result |
+|---|---|---|
+| Builds | `dotnet build Lighthouse.Backend`, then the test project with `-c Release` | 0 warnings, 0 errors, each |
+| The guard, Debug | `FullyQualifiedName~TestHostPerFixtureGuardTest` | TRX total 18, passed 18; the same 18 ids as `L2.csv` |
+| The guard, `-c Release` | The same filter | TRX total 18, passed 18; the same 18 ids as `L2.csv` |
+| Push's diff | `git diff --name-only 2c1f0ae0c HEAD` through the regexes of `path-classifier.sh`, read by a Python script because the shell gate here refuses `.` | `classify_jira`, `_ado`, `_linear`, `_servicenow`, `_github` and `_shared` answer `false`. `classify_backend` answers `true` |
+
+**`classify_backend` is `true` on purpose.** Its regex matches both moved files, and that answer is what starts the plain backend run push 3 is for. D-6512-29 asks for every *connector* answer to be `false`, and they are. The Pushing row of the stop conditions and the step's criterion say every `classify_*`, which no backend push can meet; read literally, they would stop push 3 and every push after it.
+
+**`L3`.** Run on the working tree that became `bf353051c`, once, with no other test process, after `dotnet build-server shutdown`, with the 5 token variables removed.
+
+| Item | Value |
+|---|---|
+| Filter | `A` |
+| Console | `Failed: 0, Passed: 12831, Skipped: 2, Total: 12833`, 6 m 21 s, exit 0 |
+| TRX `Counters` and CSV rows | total 12,842, executed 12,831, passed 12,831. CSV: 12,842 rows, 12,831 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `efff1264c406145909d8df8b37c9cb82ddb2ba4db51342b4503410d7c18ab6ff` |
+| Kept | `L3.csv` and `L3.trx.gz` in `evidence/`, out of git |
+
+**`L3` against `L2`.** 0 lines only in `L2`, 0 lines only in `L3`, and the same `sha256`, so no line needed excusing. `PortfolioUpdaterTest` did not fail here.
