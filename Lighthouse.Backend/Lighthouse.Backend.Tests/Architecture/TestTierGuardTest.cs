@@ -21,9 +21,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string CanaryCategory = "UsageDataCanary";
         private const string ContainerNamespace = "Lighthouse.Backend.Tests.Integration.Containers";
 
-        // Keys are full type names. Moving a class to the base removes its line in the same commit; nothing is added here.
-        private static readonly IReadOnlyDictionary<string, string> FixturesNotYetOnTheBase = new Dictionary<string, string>();
-
         // A permanent list, not a baseline. Every test of these classes carries the connector category, and only the
         // tests that write to a real tracker are in the integration tier. On the base, the offline tests would count
         // as live too, and CI would stop running them.
@@ -60,7 +57,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         private HostBuildingScan scan = null!;
         private List<TypeDefinition> allTypes = [];
         private List<TypeDefinition> concreteFixtures = [];
-        private IReadOnlyList<string> hostedFixturesOffTheBase = [];
 
         [OneTimeSetUp]
         public void ReadTheTestAssemblyOnce()
@@ -69,30 +65,17 @@ namespace Lighthouse.Backend.Tests.Architecture
             scan = new HostBuildingScan(module, RunsWhenAFixtureRuns);
             allTypes = [.. module.Types.SelectMany(TypeAndItsNestedTypes)];
             concreteFixtures = [.. allTypes.Where(IsAConcreteClassWithTests)];
-            hostedFixturesOffTheBase = HostedAndOffTheBase(concreteFixtures);
         }
 
         [OneTimeTearDown]
         public void ReleaseTheTestAssembly() => module.Dispose();
 
         [Test]
-        public void EveryFixtureThatStartsAHostIsOnTheBaseOrOnTheList()
+        public void EveryFixtureThatStartsAHostIsOnTheBase()
         {
-            var newcomers = Compare(FixturesNotYetOnTheBase.Keys, hostedFixturesOffTheBase).Newcomers;
+            var offTheBase = HostedAndOffTheBase(concreteFixtures);
 
-            Assert.That(newcomers, Is.Empty, MustDeriveFromTheBase(newcomers));
-        }
-
-        [Test]
-        public void EveryTypeOnTheListStillOwesAMoveToTheBase()
-        {
-            var stale = Compare(FixturesNotYetOnTheBase.Keys, OwedAMoveToTheBase(concreteFixtures)).Stale;
-
-            Assert.That(
-                stale,
-                Is.Empty,
-                "These types are on the list but no longer owe a move to the base: " + string.Join(", ", stale) +
-                ". Remove them from the list, so it can only shrink.");
+            Assert.That(offTheBase, Is.Empty, MustDeriveFromTheBase(offTheBase));
         }
 
         [TestCase(nameof(PlantedFixtures.HostInOneTimeSetUp), true)]
@@ -116,32 +99,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             var found = HostedAndOffTheBase([Planted(plantedType)]);
 
             Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
-        }
-
-        [Test]
-        public void AListedTypeNowOnTheBaseIsStale()
-        {
-            var nowOnTheBase = Planted(nameof(PlantedFixtures.OnTheBaseWithAHost));
-            var stillOffTheBase = Planted(nameof(PlantedFixtures.HostInOneTimeSetUp));
-
-            var comparison = Compare(
-                [nowOnTheBase.FullName, stillOffTheBase.FullName],
-                OwedAMoveToTheBase([nowOnTheBase, stillOffTheBase]));
-
-            Assert.That(comparison.Stale, Is.EqualTo(new[] { nowOnTheBase.FullName }));
-        }
-
-        [Test]
-        public void AListedContainerFixtureNowOnTheBaseIsStale()
-        {
-            var nowOnTheBase = Planted(nameof(PlantedContainerFixtures.ContainerOnTheBaseWithNoHost));
-            var stillOffTheBase = Planted(nameof(PlantedContainerFixtures.ContainerOffTheBase));
-
-            var comparison = Compare(
-                [nowOnTheBase.FullName, stillOffTheBase.FullName],
-                OwedAMoveToTheBase([nowOnTheBase, stillOffTheBase]));
-
-            Assert.That(comparison.Stale, Is.EqualTo(new[] { nowOnTheBase.FullName }));
         }
 
         [Test]
@@ -177,11 +134,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void EveryLiveOrContainerFixtureIsOnTheBaseOrOnTheList()
+        public void EveryLiveOrContainerFixtureIsOnTheBase()
         {
-            var newcomers = Compare(FixturesNotYetOnTheBase.Keys, LiveOrContainerOffTheBase(concreteFixtures)).Newcomers;
+            var offTheBase = LiveOrContainerOffTheBase(concreteFixtures);
 
-            Assert.That(newcomers, Is.Empty, LiveAndContainerMustDeriveFromTheBase(newcomers));
+            Assert.That(offTheBase, Is.Empty, LiveAndContainerMustDeriveFromTheBase(offTheBase));
         }
 
         [Test]
@@ -315,21 +272,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
-        public void TheListExcusesAFixtureFromBeingOffTheBaseAndFromNothingElse()
-        {
-            var fixture = Planted(nameof(PlantedContainerFixtures.ContainerOffTheBaseThatBreaksOtherRules));
-            var itsName = new[] { fixture.FullName };
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(LiveOrContainerOffTheBase([fixture]), Is.EqualTo(itsName));
-                Assert.That(Compare(itsName, LiveOrContainerOffTheBase([fixture])).Newcomers, Is.Empty);
-                Assert.That(PlacesThatWriteTheCategory([fixture]), Is.EqualTo(itsName));
-                Assert.That(CanariesWithNoConnector([fixture]), Is.EqualTo(itsName));
-            }
-        }
-
-        [Test]
         public void TheMessageForAStaleMarkerNamesTheTypeAndSaysItMustLeaveTheBase()
         {
             var message = MustLeaveTheBase(["Some.Namespace.SomeFixture"]);
@@ -432,9 +374,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         // A nested type has no namespace of its own in the assembly; its full name still starts with the outer type's.
         private static bool IsAContainerFixture(TypeDefinition fixture)
             => fixture.FullName.StartsWith(ContainerNamespace + ".", StringComparison.Ordinal);
-
-        private List<string> OwedAMoveToTheBase(IReadOnlyCollection<TypeDefinition> fixtures)
-            => [.. HostedAndOffTheBase(fixtures).Union(LiveOrContainerOffTheBase(fixtures), StringComparer.Ordinal)];
 
         private List<string> LiveOrContainerOffTheBase(IEnumerable<TypeDefinition> fixtures)
             => SortedNames(fixtures.Where(IsLiveOrContainerOffTheBase));
@@ -821,14 +760,6 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         internal abstract class ContainerOffTheBase
-        {
-            [Test]
-            public void Serve() => Assert.Pass();
-        }
-
-        [Category("Integration")]
-        [Category("UsageDataCanary")]
-        internal abstract class ContainerOffTheBaseThatBreaksOtherRules
         {
             [Test]
             public void Serve() => Assert.Pass();
