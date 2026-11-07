@@ -243,7 +243,8 @@ W=docs/feature/story-6469-t5-acceptance-at-the-service-port/measurement
 mkdir -p $W
 dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests -c Release
 dotnet build-server shutdown
-LIGHTHOUSE_TEST_WORKERS=6 LIGHTHOUSE_FIXTURE_TIMING=1 LIGHTHOUSE_FIXTURE_TIMING_OUT=$PWD/$W/fixture-setup-timings.csv \
+env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken \
+  LIGHTHOUSE_TEST_WORKERS=6 LIGHTHOUSE_FIXTURE_TIMING=1 LIGHTHOUSE_FIXTURE_TIMING_OUT=$PWD/$W/fixture-setup-timings.csv \
   dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Release --no-build \
   --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration" \
   --logger "trx;LogFileName=t5.trx" --results-directory $PWD/$W
@@ -782,3 +783,7 @@ Nothing here blocks the wave. Decided in your absence; say if any is wrong.
 **Not verified.** Anything that needs a run: `c`, `h`, a port row's real cost, `TestHostUseGuardTest`'s time, the real `Integration` column and mean, T6's fast-tier figure. CI seconds are one run. The `Integration` stand-in leaves out hosted tests in other folders and counts every test in those three. The classifier was run on planned and existing paths, not on E's and F's real file lists. `ci_docker.yml` and `green-base-run.mjs` were not read; the second is taken from T6's account.
 
 **Open for DISTILL and DELIVER.** DISTILL: the planted guard cases and id tables are as DESIGN has them; nothing here adds a scenario. DELIVER: each pre-push check above is a line in the step before a push, not a step of its own. Still open from DESIGN: the top two, `FasterUpdates`, the licence question. Still open from T6: the containers answer, which T5 does not read.
+
+## Wave: DESIGN / [REF] The timing run, as it ran (2026-11-07)
+
+Run on `c8b26e574` with the five tracker tokens removed, because the two mixed classes write scratch items to a real tracker whenever a token is set; the command above now says so. Exit 0: 12,818 passed, 2 skipped, 12,820 total, 6 m 37 s. `fixture-setup-timings.csv` holds 326 fixture rows; `Slice13ReadinessTest` shows `setup_count` 44. `t5-tests.csv` holds 12,829 rows. The host-build total, the new baseline for the AC, is **619**. Load was up to about 14 during the run, so the family check against `L0.csv` decides whether it stands. The TRX and test CSV stay out of git, in `measurement/`.
