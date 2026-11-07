@@ -1,5 +1,5 @@
 schema_version: 1
-updated: 2026-11-02
+updated: 2026-11-07
 feature_context:
   - rbac-enhancements
   - work-tracking-oauth-authentication
@@ -73,6 +73,7 @@ feature_context:
   - epic-6455-deeper-hierarchies
   - epic-6474-one-structure
   - epic-6473-settings-split
+  - story-6501-ordered-parent-fields
 
 jobs:
   - id: job-rbac-bootstrap
@@ -7051,6 +7052,17 @@ jobs:
           - Minimise the time it takes an administrator to find which items were placed by picking the oldest link, and under which Feature.
           - Minimise the number of extra requests to the tracker that placing an ambiguous item costs.
           - Minimise the number of refreshes between an ambiguous item being read and it counting toward its Feature.
+      - story: story-6501-ordered-parent-fields
+        date: 2026-11-02
+        wave: DISCUSS
+        note: >
+          Same job and persona. The hierarchy sits in two or more non-native places, and the tracker's own
+          Parent is sometimes not wanted at all; the Parent Override Field took one place and always fell back
+          to the own Parent. Forces: Push = one source places only part of the items and the rest land under
+          an own Parent that is not a Feature; Pull = list the places in order, drop the own Parent; Anxiety = a
+          wrong order or a dropped own Parent silently leaves items unparented, mitigated by the visible order
+          and a copy line naming the consequence; Habit = the existing single override must keep its result.
+          Shipped as Parent sources, ADR-279.
 
   - id: job-lead-size-features-from-real-children-not-a-default
     title: Size features from their real children, not from a default
@@ -8379,6 +8391,13 @@ jobs:
       rationale: >
         Importance 4 on instances with many Teams on one connection (Steve's customer: 14+). Satisfaction 2 - it
         works, by repetition. Estimated from the report, not surveyed.
+    revisions:
+      - story: story-6501-ordered-parent-fields
+        date: 2026-11-02
+        wave: DISCUSS
+        note: >
+          Same job and persona. The Parent Override Field default became an ordered list, the Parent sources,
+          followed whole and in its order. See ADR-279.
 
   - id: job-config-admin-see-which-owners-differ-from-the-connection
     title: See at a glance which Teams and Portfolios differ from their connection
