@@ -200,6 +200,9 @@ A change is **not done** until every gate below passes locally. CI enforces them
 ### Frontend (`Lighthouse.Frontend/`)
 
 - `pnpm test` — must pass. This is the baseline prerequisite; nothing else counts as done while tests are red.
+- `pnpm test:fast` runs only the logic tests (`.test.ts`), and `pnpm test:fast --changed` only those an edit
+  affects. It cannot see a component's `.test.tsx`, so after a component edit run `pnpm test --changed` instead.
+  Neither is a gate: they are for a quick answer while working, and `pnpm test` stays what "done" means.
 - `pnpm build` — must complete with zero errors and zero warnings (runs `tsc -b` then `vite build`).
 - Biome — zero errors and zero warnings on `./src`. `pnpm build`'s `prebuild` runs `pnpm biome check --write ./src`, so a clean `pnpm build` implies a clean Biome check (and may have rewritten files — check `git status` afterwards).
 

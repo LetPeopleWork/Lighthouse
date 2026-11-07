@@ -931,3 +931,38 @@ These answer the two stops, so 02-02 and 05-03 no longer wait for the maintainer
 
 - **Fast filter:** the fast loop also leaves out the five connector categories. It cannot reach a real system, and 3 offline tests leave it. They still run in the full suite and in CI.
 - **Containers:** they sit on `IntegrationFixture`. They work with an outside system, and they are not fast: in CI run 42345830021, 139 container tests took 385 s in total, about 2.8 s each, which is 1 % of the tests and 17 % of the test time.
+
+## Wave: DELIVER / [REF] Slice A, step 01-01: what ran (2026-11-07)
+
+Run on `82b53525f` plus this step's edit, from `Lighthouse.Frontend`, one run at a time, at the default 6 workers. No test process was active
+before or between the runs.
+
+| Case | What ran | Result |
+|---|---|---|
+| The command exists | `pnpm test:fast` before the edit | Exit 1, `Command "test:fast" not found` |
+| | `pnpm test:fast` after it | Exit 0, 208 files, 3,648 tests, 33 s; `test-results.json` holds 0 `.test.tsx` files |
+| A planted failing `.test.tsx` | `pnpm test:fast` | Exit 0, still 3,648 tests, named in neither the log nor `test-results.json` |
+| | `pnpm test src/tests/plantedFailure.test.tsx` | Exit 1, `FAIL src/tests/plantedFailure.test.tsx > planted failure` |
+| A planted failing `.test.ts` | `pnpm test:fast` | Exit 1, `FAIL src/tests/plantedFailure.test.ts > planted failure`. Both removed; `git status` shows neither |
+| An edit that touches no `.test.ts` | A comment in `GeneralSettingsComponent.tsx`, `pnpm test:fast --changed` | Exit 0, `No affected test files found, exiting with code 0`. So `--passWithNoTests` stays out of the script |
+| | The same edit, `pnpm test --changed` | Exit 0, 8 files, 147 tests: the component's tests the fast command cannot see |
+| A subset run and the time-budget reporter | `pnpm test:fast` | `0 offenders`, in fail mode, and no line for any of the 3 `.tsx` entries of `slowTests.ts` |
+
+**`--changed` with `package.json` edited runs the whole tier.** Vitest treats `package.json` as a reason to re-run everything, so with this
+step's own edit uncommitted `pnpm test:fast --changed` ran all 3,648 tests. The row above was read with `package.json` hidden from git for that
+one run, which is the state a developer has once it is committed. Whoever measures `--changed` needs a clean `package.json`.
+
+**Guarantee 15, the tiers add up.** `test-results.json` deleted before each run; ids as `file :: full name`, sorted, duplicates kept.
+
+| List | Run | Count | `sha256` of the sorted list |
+|---|---|---|---|
+| Fast | `pnpm test:fast`, exit 0, 33 s | 3,648 | `15b5d1d0297c0aefdfa4b877fccbfe9c8c7522e7b438f3e89008b1bca26ca661` |
+| The `.test.tsx` ids of the full run | | **5,857**, in 410 files | `b9867a12c5916c66a4b8a96db5558223111f28b04696e238d3a95c02d4176a87` |
+| Full | `pnpm test`, exit 0, 231 s, 618 files | 9,505 | `b707c1ae64d1cfa714377b60e2e79a02193c9f1414d71bdd4ed0594fc52848a4` |
+| Fast and `.test.tsx` together | | 9,505 | `b707c1ae64d1cfa714377b60e2e79a02193c9f1414d71bdd4ed0594fc52848a4` |
+
+No id on one side only, no overlap, no `.stryker-tmp` id. The full list holds 5 repeated ids, tests sharing a name in one file, which is why the
+lists are compared with their duplicates kept.
+
+`git diff` showed one added line in `package.json` and no Vitest config change. `pnpm build` was clean, with Biome making no fixes, and `git status`
+afterwards showed only this step's files.
