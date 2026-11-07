@@ -4,6 +4,8 @@ export interface VitestTestOutcome {
 	name: string;
 	state: "passed" | "failed" | "skipped" | "pending";
 	durationMs: number;
+	/** When the test started, in milliseconds. Absent when Vitest did not record it. */
+	startedAtMs?: number;
 }
 
 export interface VitestFileOutcome {
@@ -26,10 +28,34 @@ function observedState(
 	return state === "pending" ? "skipped" : state;
 }
 
+/**
+ * Vitest lists a file's tests in the order they were collected. When the test
+ * order is shuffled they run in another order, so the one that pays for the
+ * file's setup is the one that started first, not the first in the list.
+ * Tests that started in the same millisecond keep their listed order.
+ */
+function indexOfFirstTestThatRan(file: VitestFileOutcome): number {
+	let first = -1;
+	file.tests.forEach((test, index) => {
+		if (observedState(test.state) === "skipped") return;
+		if (first === -1) {
+			first = index;
+			return;
+		}
+		const firstStarted = file.tests[first].startedAtMs;
+		if (
+			test.startedAtMs !== undefined &&
+			firstStarted !== undefined &&
+			test.startedAtMs < firstStarted
+		) {
+			first = index;
+		}
+	});
+	return first;
+}
+
 function observeFile(file: VitestFileOutcome): ObservedTest[] {
-	const firstRan = file.tests.findIndex(
-		(test) => observedState(test.state) !== "skipped",
-	);
+	const firstRan = indexOfFirstTestThatRan(file);
 
 	return file.tests.map((test, index) => ({
 		file: file.file,
@@ -64,7 +90,7 @@ export interface VitestTestCaseLike {
 	name: string;
 	parent: VitestParent;
 	result(): { state: VitestTestOutcome["state"] };
-	diagnostic(): { duration: number } | undefined;
+	diagnostic(): { duration: number; startTime?: number } | undefined;
 }
 
 export interface VitestModuleLike {
@@ -99,6 +125,7 @@ export function vitestRunOutcome(
 				name: jsonReporterFullName(test),
 				state: test.result().state,
 				durationMs: test.diagnostic()?.duration ?? 0,
+				startedAtMs: test.diagnostic()?.startTime,
 			})),
 		})),
 		reason,

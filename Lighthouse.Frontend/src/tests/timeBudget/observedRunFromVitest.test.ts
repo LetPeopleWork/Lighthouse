@@ -102,6 +102,74 @@ describe("reading a Vitest run", () => {
 		]);
 	});
 
+	it("marks the test that started first as the file's first when the order was shuffled", () => {
+		const observed = observeVitestRun(
+			aRunOutcome([
+				aFile(reportsFile, [
+					{
+						name: "listed first",
+						state: "passed",
+						durationMs: 10,
+						startedAtMs: 3000,
+					},
+					{
+						name: "started first",
+						state: "passed",
+						durationMs: 900,
+						startedAtMs: 1000,
+					},
+					{
+						name: "started last",
+						state: "passed",
+						durationMs: 10,
+						startedAtMs: 4000,
+					},
+					{
+						name: "filtered out",
+						state: "skipped",
+						durationMs: 0,
+						startedAtMs: 500,
+					},
+				]),
+			]),
+			everythingExists,
+		);
+
+		expect(
+			observed.tests
+				.filter((test) => test.firstInFile)
+				.map((test) => test.name),
+		).toEqual(["started first"]);
+	});
+
+	it("keeps the listed order for tests that started in the same millisecond", () => {
+		const observed = observeVitestRun(
+			aRunOutcome([
+				aFile(reportsFile, [
+					{
+						name: "listed first",
+						state: "passed",
+						durationMs: 10,
+						startedAtMs: 1000,
+					},
+					{
+						name: "listed second",
+						state: "passed",
+						durationMs: 10,
+						startedAtMs: 1000,
+					},
+				]),
+			]),
+			everythingExists,
+		);
+
+		expect(
+			observed.tests
+				.filter((test) => test.firstInFile)
+				.map((test) => test.name),
+		).toEqual(["listed first"]);
+	});
+
 	it("lists every collected file, including one that reported no tests", () => {
 		const observed = observeVitestRun(
 			aRunOutcome([
@@ -206,6 +274,19 @@ describe("naming Vitest tests like the JSON reporter", () => {
 			true,
 			false,
 		]);
+	});
+
+	it("carries the start time Vitest recorded for a test", () => {
+		const aStartedCase = {
+			...aCase("ran", aSuite("S"), "passed", 12.5),
+			diagnostic: () => ({ duration: 12.5, startTime: 1700 }),
+		};
+		const outcome = vitestRunOutcome(
+			[aModule("src/x.test.ts", [aStartedCase])],
+			"passed",
+		);
+
+		expect(outcome.files[0].tests[0].startedAtMs).toBe(1700);
 	});
 
 	it("maps file, state and duration, defaulting a missing duration to zero", () => {
