@@ -56,7 +56,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     ///
     /// Every request either tracker answered is recorded, so "naming a link costs nothing extra" is a count.
     /// </summary>
-    public abstract class NamedDependencyLinkAcceptanceTest
+    public abstract class NamedDependencyLinkAcceptanceTest : IntegrationFixture
     {
         protected const string PaymentsPlatform = "Payments Platform";
 

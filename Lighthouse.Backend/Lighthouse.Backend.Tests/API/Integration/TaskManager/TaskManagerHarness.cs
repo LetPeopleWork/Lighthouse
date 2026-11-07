@@ -40,7 +40,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TaskManager
     /// Faked: the work-tracking connector, <see cref="IForecastService"/> and the licence service — the
     /// external and non-deterministic driven ports.
     /// </summary>
-    public abstract class TaskManagerHarness
+    public abstract class TaskManagerHarness : IntegrationFixture
     {
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;

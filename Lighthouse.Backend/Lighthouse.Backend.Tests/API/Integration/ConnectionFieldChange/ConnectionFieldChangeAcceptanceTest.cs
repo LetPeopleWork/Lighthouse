@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConnectionFieldChange
     /// the scenario lets it go, and to refuse one Team. It says it can update incrementally, so an update
     /// that downloads everything is one that had a reason to.
     /// </summary>
-    public abstract class ConnectionFieldChangeAcceptanceTest
+    public abstract class ConnectionFieldChangeAcceptanceTest : IntegrationFixture
     {
         protected const string NordwindJiraDc = "Nordwind Jira DC";
         protected const string NordwindAzureDevOps = "Nordwind Azure DevOps";

@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// tracker holds. What the Team's refinement states are, and what the tab lists, is only ever put there
     /// by the scenario's own action through the Team settings write.
     /// </summary>
-    public abstract class RefinementAcceptanceTest
+    public abstract class RefinementAcceptanceTest : IntegrationFixture
     {
         protected const string Backlog = "Backlog";
 

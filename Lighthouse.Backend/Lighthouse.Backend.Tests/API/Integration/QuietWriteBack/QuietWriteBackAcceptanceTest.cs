@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.QuietWriteBack
     /// the license service, and the three data-refresh services whose job is to talk to the tracker -
     /// so every recorded connector call is a write-back and nothing else.
     /// </summary>
-    public abstract class QuietWriteBackAcceptanceTest
+    public abstract class QuietWriteBackAcceptanceTest : IntegrationFixture
     {
         protected const string FieldReference = "customfield_10042";
         protected const string ForecastFieldReference = "customfield_10099";

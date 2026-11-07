@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// and reads the answer as JSON, so the scenarios pin what a caller receives, and a change that breaks
     /// that fails on the answer rather than on the build.
     /// </summary>
-    public abstract class ForecastRealityCheckAcceptanceTest
+    public abstract class ForecastRealityCheckAcceptanceTest : IntegrationFixture
     {
         protected const string LatestRoute = "/api/latest/forecast/reality-check/";
 

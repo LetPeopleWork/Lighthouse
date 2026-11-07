@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BehaviourSettings
     /// production. Substituting any of them would make "nothing moved" a statement about a double.
     /// </para>
     /// </summary>
-    public abstract class BehaviourSettingsAcceptanceTest
+    public abstract class BehaviourSettingsAcceptanceTest : IntegrationFixture
     {
         protected const string OrderOwnedByThisInstance = "ManualOrder";
 

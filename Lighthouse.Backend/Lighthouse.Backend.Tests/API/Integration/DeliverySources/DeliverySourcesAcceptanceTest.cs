@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DeliverySources
     /// Real: EF over SQLite, the routing and authorization pipeline, the delivery source resolver, and
     /// the connectors of every tracker other than Jira. Faked: the Jira connector and the licence.
     /// </summary>
-    public abstract class DeliverySourcesAcceptanceTest
+    public abstract class DeliverySourcesAcceptanceTest : IntegrationFixture
     {
         protected const string ApiV1Prefix = "api/v1";
         protected const string ApiLatestPrefix = "api/latest";

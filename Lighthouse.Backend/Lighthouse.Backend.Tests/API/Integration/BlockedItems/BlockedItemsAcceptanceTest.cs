@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// port (external/non-deterministic) is faked. Per-slice fixtures inherit these step-support methods
     /// and add their own business-language Given/When/Then steps.
     /// </summary>
-    public abstract class BlockedItemsAcceptanceTest
+    public abstract class BlockedItemsAcceptanceTest : IntegrationFixture
     {
         private static int testDateOffset;
 

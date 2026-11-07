@@ -15,7 +15,7 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public abstract class BlackoutForecastShiftTestBase
+    public abstract class BlackoutForecastShiftTestBase : IntegrationFixture
     {
         protected const int WorkingDaysAtAllPercentiles = 10;
 

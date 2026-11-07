@@ -45,7 +45,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     /// Parent Override Field the owner gave it, and the tracker remembers which field it was asked to read for
     /// each setting. So "follows the default" is observed where it matters, in what the tracker was asked for.
     /// </summary>
-    public abstract class ConnectionDefaultsAcceptanceTest
+    public abstract class ConnectionDefaultsAcceptanceTest : IntegrationFixture
     {
         protected const string JiraDcPayments = "Jira DC – Payments";
         protected const string JiraDcTreasury = "Jira DC – Treasury";

@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Dependencies
     /// connector faked, because that is the one driven port a refresh scenario cannot reach for real.
     /// Everything between it and the store - the work item service, the reconciler, EF - stays production.
     /// </summary>
-    public abstract class DependenciesAcceptanceTest
+    public abstract class DependenciesAcceptanceTest : IntegrationFixture
     {
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;

@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.TeamFeatureSize
     /// the Nth percentile is the size at place N% of the count, rounded down, counting the smallest as
     /// place 1, or the smallest when that place comes to less than 1.
     /// </summary>
-    public abstract class TeamFeatureSizeAcceptanceTest
+    public abstract class TeamFeatureSizeAcceptanceTest : IntegrationFixture
     {
         protected const string ToDo = "To Do";
         protected const string InProgress = "In Progress";

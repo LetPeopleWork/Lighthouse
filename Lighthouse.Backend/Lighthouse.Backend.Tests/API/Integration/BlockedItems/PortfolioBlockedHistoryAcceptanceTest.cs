@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// InMemory, because InMemory does not enforce foreign keys and the foreign-key assertions would pass
     /// on broken code too.
     /// </summary>
-    public abstract class PortfolioBlockedHistoryAcceptanceTest
+    public abstract class PortfolioBlockedHistoryAcceptanceTest : IntegrationFixture
     {
         private static int testDateOffset;
 

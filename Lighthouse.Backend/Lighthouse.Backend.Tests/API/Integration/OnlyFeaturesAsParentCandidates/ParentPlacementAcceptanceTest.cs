@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidate
     /// Jira Cloud writes newest first. No scenario depends on that order: the connector replays a history by
     /// when each entry happened, and the scenarios that reverse or shuffle a history are there to prove it.
     /// </summary>
-    public abstract class ParentPlacementAcceptanceTest
+    public abstract class ParentPlacementAcceptanceTest : IntegrationFixture
     {
         protected const string TheTeamName = "Payments";
 

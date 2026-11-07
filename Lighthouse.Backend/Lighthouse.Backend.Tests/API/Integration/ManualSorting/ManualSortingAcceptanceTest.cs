@@ -34,7 +34,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ManualSorting
     /// (external/non-deterministic) is faked, plus the shipped claims-driven RBAC double every
     /// integration test in this project already uses.
     /// </summary>
-    public abstract class ManualSortingAcceptanceTest
+    public abstract class ManualSortingAcceptanceTest : IntegrationFixture
     {
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;

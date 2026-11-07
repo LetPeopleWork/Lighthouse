@@ -41,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Staleness
     /// (Work Items, Features, when they entered their state, when they became Blocked); what is stale
     /// is only ever read back off the WIP reads.
     /// </summary>
-    public abstract class StaleWorkItemsAcceptanceTest
+    public abstract class StaleWorkItemsAcceptanceTest : IntegrationFixture
     {
         protected const string InProgress = "In Progress";
         protected const string Review = "Review";

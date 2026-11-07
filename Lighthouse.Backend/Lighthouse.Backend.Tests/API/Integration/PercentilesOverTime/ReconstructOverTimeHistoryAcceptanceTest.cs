@@ -48,7 +48,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
     /// again - so a scenario ends by running out the filler's queue and making the memo forget each owner
     /// it seeded, and fails if the host is not left idle.
     /// </summary>
-    public abstract class ReconstructOverTimeHistoryAcceptanceTest
+    public abstract class ReconstructOverTimeHistoryAcceptanceTest : IntegrationFixture
     {
         /// <summary>
         /// The most days one background pass may write. Locked at ninety: a pass that stops there is

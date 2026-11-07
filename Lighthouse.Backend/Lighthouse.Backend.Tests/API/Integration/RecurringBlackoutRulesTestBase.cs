@@ -16,7 +16,7 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public abstract class RecurringBlackoutRulesTestBase
+    public abstract class RecurringBlackoutRulesTestBase : IntegrationFixture
     {
         protected const int WorkingDaysAtAllPercentiles = 10;
 

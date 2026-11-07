@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FasterUpdates
     /// vacuous: <c>WorkItemService</c> and <c>TeamDataService</c> are the loudest voices on the update
     /// path and the quiet-log promise is about exactly them.
     /// </summary>
-    public abstract class FasterUpdatesAcceptanceTest
+    public abstract class FasterUpdatesAcceptanceTest : IntegrationFixture
     {
         protected TestWebApplicationFactory<Program> RootFactory = null!;
         protected WebApplicationFactory<Program> Factory = null!;

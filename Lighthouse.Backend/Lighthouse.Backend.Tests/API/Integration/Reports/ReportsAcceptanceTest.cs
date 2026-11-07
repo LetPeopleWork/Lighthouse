@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// those addresses. The few scenarios about rows a later version wrote, or rows an older version wrote,
     /// reshape a stored row directly, because no address of this version can write one.
     /// </summary>
-    public abstract class ReportsAcceptanceTest
+    public abstract class ReportsAcceptanceTest : IntegrationFixture
     {
         protected const string PendingSlice06 = "Epic #5878 slice 06 (#6164) - pending DELIVER";
         protected const string PendingSlice08 = "Epic #5878 slice 08 (#6166) - pending DELIVER";

@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.SleRisk
     /// instance believes it is, so without a fixed instant the ages drift with the calendar and the
     /// expected numbers in every scenario go stale overnight rather than at a boundary anyone chose.
     /// </summary>
-    public abstract class SleRiskAcceptanceTest
+    public abstract class SleRiskAcceptanceTest : IntegrationFixture
     {
         protected const string InProgress = "In Progress";
 

@@ -38,7 +38,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.FastWithManyFeatures
     /// Faked, as the infrastructure policy says: the tracker, the licence and the forecast service. The
     /// instance's clock is pinned, because the bodies held against approved copies carry dates.
     /// </summary>
-    public abstract class FastWithManyFeaturesAcceptanceTest
+    public abstract class FastWithManyFeaturesAcceptanceTest : IntegrationFixture
     {
         protected static readonly DateTimeOffset Now = new(2026, 10, 24, 9, 0, 0, TimeSpan.Zero);
 

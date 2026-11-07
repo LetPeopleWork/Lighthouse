@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
     [TestFixture]
-    public abstract class IntegrationTestBase
+    public abstract class IntegrationTestBase : IntegrationFixture
     {
         private readonly TestWebApplicationFactory<Program> webApplicationFactory;
         private IServiceScope serviceScope;
