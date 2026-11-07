@@ -1,0 +1,10 @@
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name after the debounce without anyone leaving a field
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves a changed name when the page is left before the debounce runs out
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the page is left while the form is invalid
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the page is left without an edit
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the query is edited back to what was saved before the field is left
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing when the query is focused and left without a change
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves nothing while the query is being typed and the field is still focused
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query once, after the field is left
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the edited query when the page is left straight after the field
+src/components/Common/Team/ModifyTeamSettings.queryCommit.test.tsx :: ModifyTeamSettings query field saves the latest edit after the save already on its way, when the page is left meanwhile

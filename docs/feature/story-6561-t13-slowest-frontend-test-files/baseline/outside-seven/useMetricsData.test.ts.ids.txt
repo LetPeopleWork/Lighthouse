@@ -1,0 +1,110 @@
+src/hooks/useMetricsData.test.ts :: useMetricsData A failed window after the owner changes shows nothing rather than the previous owner's answer
+src/hooks/useMetricsData.test.ts :: useMetricsData An owner that has finished an update is asked again asks every owner-keyed metric again once the owner reports a later update
+src/hooks/useMetricsData.test.ts :: useMetricsData An owner that has finished an update is asked again does not ask again for a re-read owner whose last update has not moved
+src/hooks/useMetricsData.test.ts :: useMetricsData Baseline fetch orchestration should call all PBC methods on mount
+src/hooks/useMetricsData.test.ts :: useMetricsData Baseline fetch orchestration should call all core metrics service methods on mount
+src/hooks/useMetricsData.test.ts :: useMetricsData Baseline fetch orchestration should fetch blackout periods on mount
+src/hooks/useMetricsData.test.ts :: useMetricsData Baseline fetch orchestration should populate throughput data from service
+src/hooks/useMetricsData.test.ts :: useMetricsData Baseline fetch orchestration should populate totalWorkItemAge from service
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) fetches a newly activated key once without refetching the already-active ones
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) fetches everything when no key set is supplied
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) fetches only the chart-only process-behaviour charts for pbcCharts and throughputPbc
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) fetches the feature-size percentiles info without the estimation data
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) holds the first-open request budget for the default team view
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) keeps fetching for an active key exactly once across re-renders
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) keeps the cycle-time batch parallel when its own keys are active
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) performs no service call at all when the active key set is empty
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) separates the age-in-state fetch from the cycle-time batch
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) separates the cumulative-state-time fetch from the cycle-time batch
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) skips every fetch whose key is not active
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) splits the core process-behaviour charts from the chart-only ones
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) splits the portfolio feature-size group by consumer
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) splits the work-in-progress-over-time fetch from the in-progress items fetch
+src/hooks/useMetricsData.test.ts :: useMetricsData Category-scoped fetch gating (Bug #5571) still refetches an active key when the date window moves
+src/hooks/useMetricsData.test.ts :: useMetricsData Feature-size target extraction should NOT set featureSizeTarget for team entity without portfolio fields
+src/hooks/useMetricsData.test.ts :: useMetricsData Feature-size target extraction should NOT set featureSizeTarget when probability is 0
+src/hooks/useMetricsData.test.ts :: useMetricsData Feature-size target extraction should extract featureSizeTarget from portfolio entity
+src/hooks/useMetricsData.test.ts :: useMetricsData Graceful fallback on failure fetches blockedCountHistory and populates the blockedCountHistory field
+src/hooks/useMetricsData.test.ts :: useMetricsData Graceful fallback on failure requests blocked-count history from the day BEFORE the range start, so the trend baseline is inside the window (AC0)
+src/hooks/useMetricsData.test.ts :: useMetricsData Graceful fallback on failure sets blockedCountHistory to null on fetch error
+src/hooks/useMetricsData.test.ts :: useMetricsData Graceful fallback on failure should fall back to empty blackout periods on service error
+src/hooks/useMetricsData.test.ts :: useMetricsData Graceful fallback on failure should keep null for predictability data on fetch error
+src/hooks/useMetricsData.test.ts :: useMetricsData Graceful fallback on failure should keep null for throughput on fetch error
+src/hooks/useMetricsData.test.ts :: useMetricsData Per-state pace percentiles fetch should populate perStatePercentileValues without disturbing cycle time percentiles
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating a service missing getFeatureSizeEstimation is not treated as a portfolio service, but is still asked for its Feature sizes
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating a service missing getFeatureSizePbc is not treated as a portfolio service, but is still asked for its Feature sizes
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating asks a team metrics service for its Feature sizes, and never for a Feature Size process behaviour chart or estimate
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating does not fetch features-worked-on info from a service that cannot report it
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating does not treat a service missing getAllFeaturesForSizeChart as a portfolio service
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating does not treat a service missing getFeatureSizePercentilesInfo as a portfolio service
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating does not treat a service missing getSizePercentiles as a portfolio service
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating should call project-specific methods for IProjectMetricsService
+src/hooks/useMetricsData.test.ts :: useMetricsData Project-only fetch gating should populate size percentiles for project service
+src/hooks/useMetricsData.test.ts :: useMetricsData Service level expectation extraction should NOT set SLE when probability is 0
+src/hooks/useMetricsData.test.ts :: useMetricsData Service level expectation extraction should NOT set SLE when range is 0
+src/hooks/useMetricsData.test.ts :: useMetricsData Service level expectation extraction should extract SLE from entity with valid SLE properties
+src/hooks/useMetricsData.test.ts :: useMetricsData Systemic cumulative state time fetch should populate cumulativeStateTime without disturbing cycle time percentiles
+src/hooks/useMetricsData.test.ts :: useMetricsData The risk does not follow the date range asks for the risk once and does not ask again when the range moves
+src/hooks/useMetricsData.test.ts :: useMetricsData The risk does not follow the date range asks for the team alone, with no window to disagree about
+src/hooks/useMetricsData.test.ts :: useMetricsData Work Item Age Percentiles previous-period fetch exposes current and previous snapshots as separate readings
+src/hooks/useMetricsData.test.ts :: useMetricsData Work Item Age Percentiles previous-period fetch reads the same endpoint over a same-length window ending the day before the range
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching SLE risk: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching Size Percentile Data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching WIP overview info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching arrivals data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching arrivals info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching blocked count history: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching core process behaviour chart data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching cumulative state time for the chosen stretch: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching cumulative state time for the chosen work items: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching cumulative state time: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching cycle time percentiles info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching cycleTime data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching estimation vs cycle time data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching feature size PBC data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching feature size estimation data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching feature size percentiles info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching features worked on info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching per-state percentiles: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching predictability data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching predictability score info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching process behaviour chart data: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching throughput info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching total work item age info: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error fetching total work item age: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error getting blocked workItems: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error getting throughput: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error getting workItems in progress: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs Error getting workItems over time: when that request fails
+src/hooks/useMetricsData.test.ts :: useMetricsData when a request fails logs a failure to read the blackout periods, and draws the charts without them
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a portfolio's featureSizeData reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a portfolio's featureSizeEstimation reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a portfolio's featureSizePbc reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a portfolio's featureSizePercentilesInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's ageInStatePercentiles reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's arrivals reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's arrivalsInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's blackoutPeriods reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's blockedCountHistory reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's blockedItems reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's cumulativeStateTime reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's cycleTimeData reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's cycleTimePercentiles reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's cycleTimePercentilesInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's estimationVsCycleTime reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's featuresWorkedOnInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's flowEfficiency reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's inProgressItems reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's pbcCharts reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's pbcCore reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's predictability reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's predictabilityScoreInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's sleRisk reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's throughput reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's throughputInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's throughputPbc reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's totalWorkItemAge reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's totalWorkItemAgeInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's wipOverTime reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's wipOverviewInfo reads loading until its answer arrives
+src/hooks/useMetricsData.test.ts :: useMetricsData while its requests are on their way a team's workItemAgePercentiles reads loading until its answer arrives

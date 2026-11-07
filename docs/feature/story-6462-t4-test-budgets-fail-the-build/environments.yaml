@@ -1,0 +1,18 @@
+target_environments:
+  - name: clean
+    description: "GitHub Actions verify jobs and a local checkout; the check reads a timing CSV and the budget file"
+    platform: [linux]
+    preconditions: ["Python 3.12 or newer"]
+
+coexistence_matrix:
+  - tool: vitest time-budget reporter
+    must_not_break: true
+  - tool: trx_to_csv and vitest_to_csv converters
+    must_not_break: true
+
+platform_coverage:
+  CI: [GitHub Actions ubuntu-latest]
+
+deployment_assumptions:
+  - "An unset, empty or false LIGHTHOUSE_BUDGET_WARN_ONLY enforces; exactly lowercase true turns over-budget verdicts into warnings and prints a notice; any other value fails the step with exit 2"
+  - "The switch does not soften stale or not-needed entries (exit 1) or cannot-judge (exit 2); the unit-test step of each workflow has no switch in its env"

@@ -178,10 +178,17 @@ jobs:
         name: sonar-report-backend
         path: .sonarqube/out/.sonar/report-task.txt
 
-    # Warn only until the backend budget has held on post-push main runs without a warning. The limits were
-    # measured on runs that collected coverage, which are slower, so they are looser on today's plain run.
-    - name: Check test-time budget
+    # The budget check's own tests run apart from the budget step, so the switch below never reaches them.
+    - name: Test the budget check
       run: |
         python3 --version
         python3 -m unittest discover -s Scripts/test-timings/tests
-        python3 Scripts/test-timings/check_budget.py --stack backend --csv test-timings-backend.csv --source-root Lighthouse.Backend/Lighthouse.Backend.Tests --warn-only
+
+    # A test class over its time budget fails the build. The limits were measured on plain runs.
+    # The step is skipped when the tests failed, so a failed run gets no budget verdict.
+    # To report it as a warning instead, set the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY
+    # to true; empty, unset or false enforces. The script rejects any other value.
+    - name: Check test-time budget
+      env:
+        LIGHTHOUSE_BUDGET_WARN_ONLY: ${{ vars.LIGHTHOUSE_BUDGET_WARN_ONLY }}
+      run: python3 Scripts/test-timings/check_budget.py --stack backend --csv test-timings-backend.csv --source-root Lighthouse.Backend/Lighthouse.Backend.Tests

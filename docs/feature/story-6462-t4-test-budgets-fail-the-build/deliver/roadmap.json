@@ -1,0 +1,133 @@
+{
+  "roadmap": {
+    "project_id": "story-6462-t4-test-budgets-fail-the-build",
+    "created_at": "2026-11-06",
+    "total_steps": 4,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "A breach of the frontend or backend time budget fails the build on plain CI runs, limits are measured on plain runs, an allow-list entry that is not needed fails the check, and the warn-only switch is read by the check itself from LIGHTHOUSE_BUDGET_WARN_ONLY.",
+    "notes": "Slice 3 (docs close-out: ci-learnings.md, ADR-237 amendment, ADR-268 status line, brief, feature-delta wrap-up) is deliberately NOT in this roadmap: docs wait for the maintainer's confirmation per the project rule. The after-push read (at least 5 green main runs on both budget steps) is elapsed-time work and is not a step either. 25 tests in the test file are skipped; each belongs to exactly one step below (01-01: 9, 01-02: 10, 02-01: 5, 02-02: 1). Nothing is pushed."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "S1 The check owns the switch and knows what is not needed",
+      "description": "check_budget.py reads LIGHTHOUSE_BUDGET_WARN_ONLY itself and judges allow-list entries that are not needed; the shipped limits are untouched.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The budget check reads its warn-only switch from the environment",
+          "description": "Replace the stub of warn_only_requested and wire it into the check. Unset, empty or false enforces; the exact lowercase value true turns a breach into a warning and prints a notice naming the variable and saying enforcement is off; the flag wins over the variable whatever its value; any other value gives no verdict (exit 2) and names the variable, even when nothing is over budget.",
+          "criteria": [
+            "An unset, empty or false variable enforces: a breach on either stack fails with the phrase took 70.0s, over the 60s budget",
+            "The variable set to true turns a breach on either stack into a warning with the same phrase and exit 0, and a notice line names the variable and says enforcement is off",
+            "No notice is printed while the budget is enforced",
+            "--warn-only warns whatever the variable says, including maybe and TRUE",
+            "TRUE, True, 1, yes, on, a value with surrounding spaces and maybe give no verdict, exit 2, with an error naming the variable; this also holds when nothing is over the budget",
+            "With the variable true, a breach is a warning while a stale entry in the same run still fails with exit 1, and no error line names the breached unit",
+            "Missing timing file and malformed allow-list still give no verdict under true (unchanged)",
+            "The existing 85 tests in test_check_budget.py stay green and unedited",
+            "Comments follow the project rule: no internal references, no nWave scenario tags"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_time_budgets.py",
+          "scenario_name": "TheWarnOnlySwitchIsReadFromTheEnvironment.test_an_unset_empty_or_false_variable_enforces; TheWarnOnlySwitchIsReadFromTheEnvironment.test_the_variable_set_to_true_warns; TheWarnOnlySwitchIsReadFromTheEnvironment.test_the_flag_warns_whatever_the_variable_says; TheWarnOnlySwitchIsReadFromTheEnvironment.test_any_other_value_gives_no_verdict_and_names_the_variable; TheSwitchDecidesWhatABreachDoesOnBothStacks.test_a_breach_is_a_warning_and_the_build_passes_when_the_variable_is_true; TheSwitchDecidesWhatABreachDoesOnBothStacks.test_a_notice_names_the_variable_and_says_enforcement_is_off_when_it_is_true; TheSwitchDecidesWhatABreachDoesOnBothStacks.test_any_other_value_gives_no_verdict_and_names_the_variable; TheSwitchDecidesWhatABreachDoesOnBothStacks.test_an_invalid_value_gives_no_verdict_even_when_nothing_is_over_the_budget; TheSwitchDecidesWhatABreachDoesOnBothStacks.test_a_breach_is_softened_but_a_stale_entry_in_the_same_run_still_fails",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_time_budgets.py"
+          ],
+          "dependencies": [],
+          "estimated_size": "S",
+          "implementation_notes": "Remove the unittest.skip decorators of the 9 listed tests and make them pass; run them red first. Contract is pinned in the Pre-requisites of feature-delta.md: values matched exactly, no trimming, case-sensitive; the notice is a ::notice:: annotation; an invalid value is an ::error:: and exit 2. Keep the pure function separate from the shell. Commit: feat(test-infra): the budget check reads its warn-only switch itself."
+        },
+        {
+          "id": "01-02",
+          "name": "An allow-list entry that is not needed fails the check",
+          "description": "Replace the stub of unneeded_entries with both rules (a ceiling equal to the budget on either stack; on the frontend, an entry above the budget whose file ran under a quarter of the budget) and add the failure annotation. The check wires only the static rule here: it passes no run rows, so the frontend run-time rule stays off until step 02-01. The shipped file is held to the same rule.",
+          "criteria": [
+            "An entry whose ceiling equals the budget fails on both stacks, naming the unit, the allow-list file and the words not needed, exit 1",
+            "The same failure holds when the variable is true and when --warn-only is given, like a stale entry",
+            "A ceiling below the budget is never named, and a ceiling above the budget passes: only a ceiling equal to the budget is named, on both stacks",
+            "A frontend file that ran under a quarter of the budget is named and one at exactly a quarter is not; a frontend entry below the budget is never named for running little",
+            "A backend class is never named for running little; an entry missing from the run is left to the stale check; nothing is named when every entry is needed",
+            "With no run rows only ceilings are judged, and the shipped budget file holds no entry the check would call not needed on either stack",
+            "This step passes no run rows to the check, so a frontend file that ran quickly is not yet judged on a real run",
+            "Comments follow the project rule: no internal references, no nWave scenario tags"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_time_budgets.py",
+          "scenario_name": "AnAllowlistEntryThatIsNotNeededFailsTheBuild.test_an_entry_whose_ceiling_equals_the_budget_fails_naming_the_entry; AnAllowlistEntryThatIsNotNeededFailsTheBuild.test_an_entry_that_is_not_needed_still_fails_when_the_variable_is_true; AnAllowlistEntryThatIsNotNeededFailsTheBuild.test_an_entry_that_is_not_needed_still_fails_when_the_flag_is_given; UnneededEntriesAreFoundFromTheTimingsAndTheLimits.test_only_a_ceiling_equal_to_the_budget_is_named_on_both_stacks; UnneededEntriesAreFoundFromTheTimingsAndTheLimits.test_a_frontend_file_under_a_quarter_of_the_budget_is_named_and_one_at_a_quarter_is_not; UnneededEntriesAreFoundFromTheTimingsAndTheLimits.test_a_frontend_entry_below_the_budget_is_never_named_for_running_little; UnneededEntriesAreFoundFromTheTimingsAndTheLimits.test_nothing_is_named_when_every_entry_is_needed; UnneededEntriesAreFoundFromTheTimingsAndTheLimits.test_a_backend_class_is_never_named_for_running_little; UnneededEntriesAreFoundFromTheTimingsAndTheLimits.test_an_entry_missing_from_the_run_is_left_to_the_stale_check; TheShippedBudgetFileObeysItsOwnRules.test_no_entry_is_one_the_check_would_call_not_needed_on_either_stack",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_time_budgets.py"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Remove the unittest.skip decorators of the 10 listed tests. Test 18 (a frontend entry whose file ran under a quarter of the budget, run through the CLI) is NOT in this step: it needs the run's rows and belongs to 02-01. The function judges the run-time rule when rows are given; the check wires it with an empty row list here. Commit: feat(test-infra): a budget allow-list entry that is not needed fails the check."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "S2 Measured limits, then enforcement",
+      "description": "The budget file holds limits measured on plain CI runs, the frontend run-time check goes on, and both workflows enforce the budget.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Limits measured on plain runs, and the frontend run-time check on",
+          "description": "New test-time-budget.json: frontend budget 56 s with an empty list; backend budget 34 s with the 23 entries of the tighten-only variant (16 tightened, 3 unchanged, 4 new). The check now passes the run's rows, so the frontend run-time not-needed check is on. Replay the new file over every frontend and backend timing CSV of the measurement and plant a slow unit on each stack.",
+          "criteria": [
+            "The shipped frontend budget is 56 s and nothing is allow-listed",
+            "The shipped backend budget is 34 s and the list is exactly the 23 measured ceilings, none raised above its previous value except the four named new classes",
+            "A frontend file entry above the budget whose file ran 13.9 s against a budget of 56 fails naming the entry and not needed, exit 1",
+            "A planted frontend file of 57 s fails the build against the shipped file with the phrase took 57.0s, over the 56s budget",
+            "A planted backend class of 35 s only warns with exit 0 when the variable is true",
+            "Replay of the shipped file over all 7 frontend and 8 backend timing CSVs of the measurement exits 0 on every one, and the command is recorded in feature-delta.md",
+            "The shipped file holds no entry the check would call not needed, and every backend entry still names a class in the test source",
+            "Comments follow the project rule: no internal references, no nWave scenario tags"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_time_budgets.py",
+          "scenario_name": "AnAllowlistEntryThatIsNotNeededFailsTheBuild.test_a_frontend_entry_whose_file_ran_under_a_quarter_of_the_budget_fails; TheShippedBudgetFileObeysItsOwnRules.test_the_frontend_budget_is_56_seconds_and_nothing_is_allowlisted; TheShippedBudgetFileObeysItsOwnRules.test_the_backend_budget_is_34_seconds_with_the_measured_ceilings_only; ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets.test_a_frontend_file_of_57_seconds_fails_the_build; ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets.test_a_planted_backend_class_is_only_a_warning_when_the_variable_is_true",
+          "files_to_modify": [
+            "Scripts/test-timings/test-time-budget.json",
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_time_budgets.py"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Remove the unittest.skip decorators of the 5 listed tests. The ceilings are fixed by D-6462-15 (tighten-only) and by the SHIPPED_BACKEND_CEILINGS table in the test file; do not re-derive or raise a limit without a decision (D-6462-22). Order 02-01 before 02-02 matters: the step must never enforce limits measured on coverage runs. The replay is the local proof that the first push does not turn red. Commit: fix(test-infra): set the time budgets from plain CI runs."
+        },
+        {
+          "id": "02-02",
+          "name": "Both workflows enforce the budget in a step of its own",
+          "description": "In ci_backend.yml and ci_frontend.yml split the unit-test run into a step Test the budget check (no switch in its env) and keep Check test-time budget with the switch in its env, read through LIGHTHOUSE_BUDGET_WARN_ONLY. The backend loses --warn-only; the frontend loses its case block and the BUDGET_WARN_ONLY env and its --warn-only branch; comments are rewritten.",
+          "criteria": [
+            "On both stacks the unit-test step runs the unit suite only and does not run check_budget.py, does not carry the switch and does not carry --warn-only",
+            "On both stacks the Check test-time budget step carries the switch in its env, read from the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY, and does not carry --warn-only",
+            "The frontend workflow has no case block and no BUDGET_WARN_ONLY env",
+            "The backend budget step no longer runs with --warn-only, so a breach fails the build",
+            "actionlint reports nothing on the changed workflows; the comments above the steps say what they do in plain language, with no internal references and no nWave scenario tags",
+            "The full test-timings unit suite is green"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_time_budgets.py",
+          "scenario_name": "TheWorkflowStepsKeepTheSwitchOutOfTheUnitTests.test_the_switch_is_in_the_environment_of_the_budget_step_and_not_of_the_unit_test_step",
+          "files_to_modify": [
+            ".github/workflows/ci_backend.yml",
+            ".github/workflows/ci_frontend.yml",
+            "Scripts/test-timings/tests/test_check_budget_time_budgets.py"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Remove the unittest.skip decorator of the one listed test. The unit-test step runs python3 -m unittest discover -s Scripts/test-timings/tests as today, but apart from the budget step. Nothing is pushed; the push waits for the maintainer. Commit: ci(test-infra): the backend time budget fails the build."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}

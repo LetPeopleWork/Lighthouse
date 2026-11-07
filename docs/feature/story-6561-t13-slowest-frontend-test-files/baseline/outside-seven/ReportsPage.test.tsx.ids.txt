@@ -1,0 +1,17 @@
+src/pages/Reports/ReportsPage.test.tsx :: Editing from a row Edit on a report that no longer exists says so and takes its row off the list
+src/pages/Reports/ReportsPage.test.tsx :: Editing from a row a saved edit shows the report's new name on the list
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place a coach finds the reports of two Teams and a Portfolio on one page and opens one
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place a report of a type this version cannot show is listed and says so
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place a report whose Then can no longer be rebuilt is marked on its row
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place the empty page and the disabled Create reports speak of the instance's own words for Team and Portfolio
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place the filter narrows the rows by owner name
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place the filter still matches an owner's kind, though the cell shows only its name
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place the owner cell shows the name alone, is announced with its kind, and opens that Team or Portfolio
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place the owner's kind is announced in the instance's own word
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place two reports of the same name on different owners are both listed and told apart by owner
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place when the reports cannot be loaded it says so, shows no empty table, and Retry loads them
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place while the reports are on their way it shows a loading look and no table
+src/pages/Reports/ReportsPage.test.tsx :: Every report in one place with no report anywhere it says where reports are created
+src/pages/Reports/ReportsPage.test.tsx :: The icons on each row Delete on a row asks the owner tab's confirmation, deletes that report alone and takes it off the list
+src/pages/Reports/ReportsPage.test.tsx :: The icons on each row Edit and Delete show only on rows the reader is Admin of; PDF shows on every row
+src/pages/Reports/ReportsPage.test.tsx :: The icons on each row while permissions are on their way no row offers Edit or Delete, and every row offers PDF

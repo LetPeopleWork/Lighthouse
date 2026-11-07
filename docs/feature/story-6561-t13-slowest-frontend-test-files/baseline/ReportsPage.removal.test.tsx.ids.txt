@@ -1,0 +1,21 @@
+src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports changing the filter clears what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Picking reports sorting keeps what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Cancel removes nothing
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape at the confirmation closes it, removes nothing and keeps what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once Escape on the result closes it and clears what was picked
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a coach removes three trial reports on two Teams and a Portfolio, and they leave the list
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a picked report without a Then & Now carries no warning
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report somebody else removed first counts as removed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once a report the server did not remove is named with its reason and stays listed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once each report the removal took, or found already gone, is forgotten, and one it could not remove is kept
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the confirmation warns in the plural when two Thens would be lost
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the confirmation warns when one of them holds a Then that can no longer be rebuilt
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the report forgotten is the one removed, not one picked before it
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once the result counts only the reports removed, and names only the one that was not
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when her permissions could not be loaded, Remove is disabled and says to reload
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when her permissions could not be loaded, pressing Remove asks nothing
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once when no answer arrives it says it cannot confirm what was removed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once while the removal is under way the dialog cannot be closed
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once with every Then still rebuildable the confirmation carries no warning
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once with one picked report on an owner she only reads, Remove is disabled and says why
+src/pages/Reports/ReportsPage.removal.test.tsx :: Remove several reports at once with two picked reports on owners she only reads, the reason says they are

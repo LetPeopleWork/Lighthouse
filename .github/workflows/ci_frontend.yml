@@ -57,25 +57,17 @@ jobs:
           name: sonar-report-frontend
           path: ./Lighthouse.Frontend/.scannerwork/report-task.txt
 
-      # A test file over its time budget fails the build. The limits were measured on runs that collected
-      # coverage, which are slower, so they are looser on today's plain run until they are measured again.
-      # To report it as a warning instead, set the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY
-      # to true; empty, unset or false enforces. Any other value fails this step.
-      - name: Check test-time budget
-        env:
-          BUDGET_WARN_ONLY: ${{ vars.LIGHTHOUSE_BUDGET_WARN_ONLY }}
+      # The budget check's own tests run apart from the budget step, so the switch below never reaches them.
+      - name: Test the budget check
         run: |
           python3 --version
           python3 -m unittest discover -s Scripts/test-timings/tests
-          case "$BUDGET_WARN_ONLY" in
-            true)
-              python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv --warn-only
-              ;;
-            ""|false)
-              python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv
-              ;;
-            *)
-              echo "::error::LIGHTHOUSE_BUDGET_WARN_ONLY must be empty, true or false (got '$BUDGET_WARN_ONLY')"
-              exit 1
-              ;;
-          esac
+
+      # A test file over its time budget fails the build. The limits were measured on plain runs.
+      # The step is skipped when the tests failed, so a failed run gets no budget verdict.
+      # To report it as a warning instead, set the repository variable LIGHTHOUSE_BUDGET_WARN_ONLY
+      # to true; empty, unset or false enforces. The script rejects any other value.
+      - name: Check test-time budget
+        env:
+          LIGHTHOUSE_BUDGET_WARN_ONLY: ${{ vars.LIGHTHOUSE_BUDGET_WARN_ONLY }}
+        run: python3 Scripts/test-timings/check_budget.py --stack frontend --csv test-timings-frontend.csv

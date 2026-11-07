@@ -1,0 +1,40 @@
+src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run 30 Teams and 20 Portfolios make exactly 50: Create is enabled, with no ceiling message
+src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run 30 Teams and 21 Portfolios make 51: Create is disabled and says at most 50
+src/pages/Reports/BulkReportWizard.test.tsx :: At most 50 Teams and Portfolios in one run Select all picks all 60 Teams, the button counts them, and Create says at most 50
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a Team refused for a kept history too short for the window gets its own line
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a Team refused for the Community cap after the licence lapsed gets its own line
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a Team refused is named with its reason while the others are created and can be opened
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams a coach creates the same comparison for Zenith and Gravity and finds both listed
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams creating the same report twice creates it twice, with no warning
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams every Team picked gets the same comparison, in the order the step lists them
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams in the desktop app, which opens no second window, Open moves to the report in place and the result closes
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams when every Team is refused the headline says none was created and each line says why
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams when no answer arrives it says it cannot confirm what was created and leads back to Reports
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams while the run is under way the result says so and cannot be closed
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with 180 days left as it opens, Then ends the day before Now starts
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with 30 days left as it opens, Then ends the day before Now starts
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with 90 days left as it opens, Then ends the day before Now starts
+src/pages/Reports/BulkReportWizard.test.tsx :: Create reports for several Teams with no report anywhere yet, the empty page also offers Create reports, on Premium and Community alike
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard Back leads from Then to the Type step, which offers no Back of its own
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard Escape leaves the result open while the run is under way, and closes it once the run has answered
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard Next waits while Then's length is no number of days
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard a Team picked a second time is no longer picked
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard a Team the answer leaves unnamed takes the name it was picked under
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard an owner neither the answer nor the picks name is spoken of as this Team
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard is titled Create reports and names its steps Type, Then, Now, Metrics & name and Owners
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard lists only the Teams the reader is Admin of
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard one report created is counted in the singular, and its line names its Team
+src/pages/Reports/BulkReportWizard.test.tsx :: Moving through the wizard the owner step offers Create, not Next, and nothing can be created before a Team is picked
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs Cancel closes it and creates nothing
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs Retry asks again and opens the first step once it arrives
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs once it has arrived the wizard opens at its first step, filled
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs when it cannot be loaded the wizard says so, shows no step, and offers Cancel and Retry
+src/pages/Reports/BulkReportWizard.test.tsx :: The wizard waits for what a report needs while it loads, Create reports spins and is disabled, and no wizard opens
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed an Admin of one Team on Premium may press it
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed for someone who is Admin of no Team or Portfolio it is disabled and says why
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed on Community it is shown but disabled, with the Premium licence tooltip
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed when permissions cannot be loaded it stays enabled, so the owner step can say what went wrong
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed where roles are not enforced anyone may press it on Premium
+src/pages/Reports/BulkReportWizard.test.tsx :: When Create reports can be pressed while permissions are on their way it is disabled
+src/pages/Reports/BulkReportWizard.test.tsx :: Who may press Create reports an Admin of one Portfolio alone on Premium may press it
+src/pages/Reports/BulkReportWizard.test.tsx :: Who may press Create reports for an Admin on Premium it carries no tooltip

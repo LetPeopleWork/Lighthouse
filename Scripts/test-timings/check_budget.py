@@ -26,6 +26,7 @@ require_python(sys.version_info)
 import argparse
 import csv
 import json
+import os
 import re
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
@@ -130,6 +131,55 @@ def judge(
 
 def stale_entries(allowlisted: list[str], still_present: set[str]) -> list[str]:
     return [unit for unit in allowlisted if unit not in still_present]
+
+
+WARN_ONLY_VARIABLE = "LIGHTHOUSE_BUDGET_WARN_ONLY"
+
+
+def warn_only_requested(environment: dict[str, str], flag: bool) -> bool:
+    if flag:
+        return True
+    value = environment.get(WARN_ONLY_VARIABLE, "")
+    if value in ("", "false"):
+        return False
+    if value == "true":
+        return True
+    raise CannotJudge(
+        f"{WARN_ONLY_VARIABLE} is set to {escaped(repr(value))}, "
+        "but only true or false (or leaving it unset) are understood"
+    )
+
+
+def unneeded_entries(
+    stack: str,
+    rows: list[dict[str, str]],
+    budget_seconds: Decimal,
+    ceilings: dict[str, Decimal],
+) -> list[str]:
+    seconds = seconds_per_unit(stack, rows)
+    return [
+        unit
+        for unit, ceiling in ceilings.items()
+        if _is_not_needed(stack, unit, ceiling, budget_seconds, seconds)
+    ]
+
+
+def _is_not_needed(
+    stack: str, unit: str, ceiling: Decimal, budget_seconds: Decimal, seconds: dict[str, Decimal]
+) -> bool:
+    if ceiling == budget_seconds:
+        return True
+    # Backend class sets vary per run, so only a frontend file's run time says its entry is idle.
+    return (
+        stack == "frontend"
+        and ceiling > budget_seconds
+        and unit in seconds
+        and seconds[unit] < budget_seconds / 4
+    )
+
+
+def unneeded_annotation(unit: str, allowlist_name: str) -> str:
+    return f"::error::{escaped(unit)} is allowlisted in {allowlist_name} but is not needed; remove its entry"
 
 
 def _is_build_or_mutation_output(folder: str) -> bool:
@@ -321,6 +371,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _check(arguments: argparse.Namespace) -> int:
     stack, allowlist_name = arguments.stack, arguments.allowlist.name
+    warn_only = warn_only_requested(os.environ, arguments.warn_only)
     rows = load_timings(stack, arguments.csv)
     budget_seconds, ceilings = load_allowlist(stack, arguments.allowlist)
     if stack == "backend" and not arguments.source_root.is_dir():
@@ -331,13 +382,18 @@ def _check(arguments: argparse.Namespace) -> int:
     findings = judge(stack, rows, budget_seconds, ceilings)
     still_present = _still_present(stack, rows, arguments.source_root, ceilings)
     stale = stale_entries(list(ceilings), still_present)
-    kind = "warning" if arguments.warn_only else "error"
+    kind = "warning" if warn_only else "error"
+    if os.environ.get(WARN_ONLY_VARIABLE) == "true":
+        print(f"::notice::{WARN_ONLY_VARIABLE} is true, so budget enforcement is off")
     for finding in findings:
         print(breach_annotation(finding, allowlist_name, kind))
     for unit in stale:
         print(stale_annotation(stack, unit, allowlist_name))
-    breached = bool(findings) and not arguments.warn_only
-    return 1 if breached or stale else 0
+    unneeded = unneeded_entries(stack, rows, budget_seconds, ceilings)
+    for unit in unneeded:
+        print(unneeded_annotation(unit, allowlist_name))
+    breached = bool(findings) and not warn_only
+    return 1 if breached or stale or unneeded else 0
 
 
 def _still_present(

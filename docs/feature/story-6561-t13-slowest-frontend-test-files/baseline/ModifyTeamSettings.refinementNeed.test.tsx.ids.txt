@@ -1,0 +1,47 @@
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings keeps an edited Ready rule when the Yes votes needed change before it is saved
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings offers optional stages, a Ready rule and a Being refined rule, each with nothing set
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings saves a changed Ready rule and leaves the Being refined rule as it was
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings saves nothing while a new rule is still incomplete
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings shows the Ready rule the Team stored
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: Stage rules in the Refinement section of a Team's settings switches the Ready rule off when its last condition is removed
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own asks for a day in the week of a Refinement when every second week has no starting week
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own does not mark a valid number of weeks as invalid
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own drops a ticked weekday when it is ticked again and keeps the others
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own keeps the starting week when a weekday is ticked
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own saves just the ticked weekday for a Team without a cadence
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence fields on their own says Refinements are at least one week apart for fewer than one week
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings asks for the starting week once Refinements are more than a week apart, and saves it
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings leaves the Team without a cadence when the last weekday is unticked
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings offers the weekdays Monday to Sunday and every week, with no starting week asked for
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves Thursdays every week
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves nothing for fewer than one week between Refinements
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves nothing for more than 52 weeks between Refinements, and says why
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement cadence in the Refinement section of a Team's settings saves nothing while every second week names no starting week, and marks the field
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement states a Team admin can choose from the refinement picker offers a mapping's name, not its states
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The Refinement states when the To Do and Doing states change leaves the chosen states alone while every one of them is still offered
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the band as last edited when only the low end changed
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the band as last edited, not as it was when the form opened
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the high end at 95 as reached with only 5% likelihood
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings explains the range as a How Many forecast between the next Refinement and the one after, in the Team's word
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings heads the band with the Team's words for work items and Refinement
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings keeps explaining the last valid band while the low end is cleared
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings marks neither end while the band is valid, and shows each end in percent
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings marks only the low end when it is out of range above the high end, since that is not an inverted band
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings marks the high end being typed in when it falls below the low end, and explains why there
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses High end likelihood at 96, outside 50 to 95, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses Low end likelihood at 49, outside 50 to 95, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses a decimal likelihood instead of saving it rounded, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses a low end of 85 against a high end of 85, naming both, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings refuses a low end of 90 against a high end of 85, naming both, and saves nothing
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings saves a changed high end with the low end as it was
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings shows a cleared low end as empty, not as 0, and says what it takes
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The band in the Refinement section of a Team's settings shows the range read at 50% and 85% until the admin changes it
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team asks for no fields and offers no stages for a Team that is not saved yet
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team ignores the fields of a Team the form has already moved away from
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team offers no stages when the fields of the Team cannot be fetched
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team saves a stage rule switched to match any condition
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team saves the first condition of an empty stage as matching all conditions
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team says what each empty stage would do, in the Team's word for work items
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: The stage rules of a single Team stops offering stages once the form is for a Team that is not saved yet
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What holds back the save of the Refinement settings names an unfinished stage rule and a cadence with a mistake, in the Team's word
+src/components/Common/Team/ModifyTeamSettings.refinementNeed.test.tsx :: What holds back the save of the Refinement settings names likelihoods with the low end not below the high end
