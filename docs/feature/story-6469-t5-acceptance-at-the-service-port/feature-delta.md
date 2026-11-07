@@ -587,3 +587,198 @@ Confirmed from the code: the row counts, `L0` ranks and durations, D1's ranking,
 | One step layer that runs a scenario either over HTTP or at the port | Rejected | Hides which layer a test is at, which is the thing being made visible |
 | Method-level guard list | Rejected | Thousands of entries; T9's ceiling covers the gap |
 | Domain events, outbox, unit of work, optimistic concurrency, value objects, JSON column | N/A | No production model or persistence changes |
+
+## Wave: DEVOPS / [REF] Platform readiness
+
+Existing platform; nothing is deployed. Written 2026-11-07 with the maintainer away, so each choice takes the recommended option. Rigor `thorough`. Files were read and no test
+ran, because another agent has the machine. Local seconds are from T6's `evidence/L0.csv`; CI seconds are from `test-timings-backend` of run 42372930241 (T6's `T0`, commit `d852cf98e`), which was downloaded and read. That is one run, so each CI figure below is a reading of one sample, and what is an estimate says so. The classifier answers below come from running `path-classifier.sh` on the file names, which runs no test.
+
+T5 changes test code only: no `ci*.yml` edit, no new CI step, no new script. This wave's job is to keep it that way and to say what each push costs.
+
+| Topic | Answer |
+|---|---|
+| Usage-data event | **N/A, because nobody using the product reaches a test.** A port scenario, a skeleton or a guard runs on a developer's machine or in CI, so no event could show use. `UsageDataEventName` and `docs/settings/usagedata.md` are unchanged. T5 may move tests that observe usage events; that changes no event |
+| Terminology, release notes, RBAC, Clients, Website, UI sketch | N/A, as the brief and DESIGN answer item by item: no route, DTO, screen or word a user sees changes. Release notes are written at `/release`, with nothing to say here |
+| Outcome KPIs | `docs/product/kpi-contracts.yaml` holds no row for T5 and gains none, because this is test structure. The Story's numbers are in "What is watched" below |
+| Deployment | **None.** Trunk push to `main`. The publish step builds `Lighthouse.Backend.csproj` alone, so test files reach the Docker build stage by `COPY` but not the published output. The `release` job waits for the maintainer as ever. So no canary, no feature flag, no database step |
+| Mutation | **N/A, because only test files change and Stryker mutates the product assembly**, as the maintainer accepted. The deliberate break of one production line per moved suite stands in. That break edits a production file in the working tree, so before each push `git diff --name-only <last green> HEAD -- Lighthouse.Backend/Lighthouse.Backend/` must print nothing from this Story; the N/A rests on that line |
+| E2E | Stays a thin sanity check: no spec, page object or Playwright test changes. Playwright still runs in `verifysqlite` and `verifypostgres` on every backend push, against an unchanged product, so its green says nothing about T5 |
+| Branching | Trunk-based, on `main`, as the project works. Merge `origin/main` if clean; a conflict stops and is reported; nothing is rebased |
+| Observability | No new tool. Logs: the CI log of "Test Backend" and "Check test-time budget". Metrics: the `test-timings-backend` CSV; `LIGHTHOUSE_FIXTURE_TIMING=1` locally for host builds. Traces: N/A, because nothing here is a request in production. The red run is the alert; no dashboard |
+| Secrets | None added. Port scenarios use `FakeCryptoService` and doubles. List runs keep T6's rule: no token variable set. A kept TRX is searched for token shapes and real hosts first, as T6 did with `L0` |
+| Sonar | Applies to new test code as to any other. `sonar-gates` has to stay green, or the window of the next push widens. S4144 in `docs/ci-learnings.md` is the likely one here: reader and seed helpers copied between the port base, the host harness and the contract fixture |
+
+## Wave: DEVOPS / [REF] Environment matrix
+
+`devops/environments.yaml` is not written: this wave may edit this file only, and T6 kept its inventory in its delta too. Nothing installs, so the skill's short form applies: `clean`, on Linux. This table is what DISTILL reads.
+
+| Environment | Runs | What differs for T5 |
+|---|---|---|
+| **Linux, local** | Class filters per step, Release and Debug; the `A` list before a push; `Test-Fast.ps1` | The only place a list is made. The test host's `TZ` pin sits in `lighthouse.runsettings`, on the process, so port scenarios keep `Europe/Zurich` with no work in `ServicePortHarness` |
+| **CI, `ubuntu-latest`** | The only `dotnet test` in any workflow: Release, `A`, no worker cap | Port scenarios and contracts both run under `A`, by different halves of the clause. Parallel per fixture (`ParallelScope.Fixtures`), so a class's rows run one after another |
+| **Windows and macOS jobs** | Package, sign, start the app; no test | So `ServicePortHarness`'s retry on delete, which exists for Windows, has no cover on any platform. **Unverified, and it stays so:** it copies `IntegrationTestBase`'s retry. A Windows test job was rejected in T6 for the same reason; it would be a `ci*.yml` edit |
+| **A worktree** | As local | 2 Licensing failures until the licence file is copied, so lists come from the main checkout. Pass absolute paths to subagents |
+| **No Docker** | Port scenarios, contracts, skeletons, the guard | None needs it. `A` does, as it holds the container tests, so a list run needs Docker up |
+| **Postgres** | Container tests only, as today | Every moved row ran on SQLite before and runs on SQLite after, so nothing is lost. A port scenario proves nothing about Postgres; none did |
+
+**Coexistence: these keep working unchanged.** T2's `TestHostPerFixtureGuardTest` and `SharedHostsDrainTheUpdateQueueGuardTest`; T6's `TestTierGuardTest`; `ServiceProviderValidationTest`; `trx_to_csv.py`, `check_budget.py` and their tests; `dev-test.*`. Stryker: moved suites stay under `API.Integration`, so its filters skip them as before. New scenarios under `Tests/Acceptance/` start no host, so they do not bring back the slow Stryker run, but filters are written by hand per feature, so such a scenario kills a mutant only if the config names it. That belongs in T11's guidance.
+
+**Pre-requisites.** T6's slice E done, for `IntegrationFixture` and `TestHostScanning` (T6 stands at 3 of 21 steps as this is written). `Lighthouse.Backend.Tests.csproj` untouched: it has no `Compile` item, so `Contracts/` and `Acceptance/` compile with no edit, and neither folder exists yet.
+
+## Wave: DEVOPS / [REF] What each push triggers
+
+Read from `ci.yml`, `ci_changes.yml` and `path-classifier.sh`.
+
+| Slice | Paths | Backend | Live suites | Frontend | Then |
+|---|---|---|---|---|---|
+| A | `TestHelpers/`, `API/Integration/ForecastRealityCheck/` | Plain | None | No | Package and verify tail |
+| B | `Contracts/`, `API/Integration/ForecastRealityCheck/` | Plain | None | No | Tail |
+| C | `Architecture/` | Plain | None | No | Tail |
+| D | `CLAUDE.md` alone | **No run:** the path is not in `ci.yml`'s `paths` | None | No | Nothing |
+| E, F | Named in their addenda | Plain, if the addendum's files pass the check below | None expected | No | Tail |
+| Any, with `test-time-budget.json` | `Scripts/test-timings/` | Plain | None | **Yes**, this path also switches the frontend on | Tail |
+
+Every classifier answers `false` for the connectors and `connector_shared` on each of those paths, and on every file in the tree that names `UsageDataCollectorObservation`, `ConnectionDefaults`, `FasterUpdates` or `TaskManager`, by text search. `backend` answers `true`, except for `CLAUDE.md`.
+
+**The tail is the real cost.** A backend-path push also runs `version`, package, Docker, SBOM, `verifysqlite`, `verifypostgres`, `verifyauth`, the three standalone packages and the Windows and macOS checks, on a product that has not changed. `e2e` stays `false`, which skips only the compile job. So fewer pushes is the saving, not fewer tests.
+
+**Three pushes at most, not six (D-6469-18).**
+
+| Push | Carries | Why |
+|---|---|---|
+| 1 | Slices A to D | **The guard and the text land together.** Rule 1 reds any other Story's new host test from that moment, so the bullet that explains it must be on trunk with it, not after it. The pilot needs the guard's first list anyway |
+| 2 | Slice E, after its addendum is reviewed | Its own list and its own revert |
+| 3 | Slice F, the same | The same |
+
+Rejected: one push per slice, which is five tails and five lists for no extra diagnosis, as a list line names its class. One push for the Story, because E and F wait on the maintainer's decision after the numbers, and the guard should not wait for them.
+
+**Keeping a push plain (D-6469-17).** Change detection diffs from the last green run, so a push can run live suites through nothing of ours: a foreign `ci*.yml`, csproj or `Program.cs` change still in the window, which includes a Renovate bump. So T6's D-6512-29 applies as it stands, with one addition. Before each push: `git diff --name-only <last green> HEAD`, then `. Scripts/test-selection/path-classifier.sh` and each `classify_*` on that list, and a grep for `^.github/workflows/ci.*\.yml`. Any `true` means wait for a green run that closes the window, or tell the maintainer. T5 is never the cause of a live run, and never pushes into one by accident: the Linear key is shared with CI. An E or F addendum that needs a file in `WorkTrackingConnectors/` splits that file out or stops.
+
+**Each push waits for the one before to end**, as `ci.yml` has no `concurrency` and a red leaves the window open. A red run's cause is diagnosed, and a failed job is re-run, before anything else is pushed.
+
+**T5's first push waits for T6's last to end (D-6469-22).** D-6469-13 lets the work start after slice E. Pushing before push 7 would put T5's rows in T6's last proof as foreign lines, and the `category` column the cross-check below reads comes only with slice F. In the chain's order they do not overlap; this covers a change of plan.
+
+## Wave: DEVOPS / [REF] Proof that no test is lost
+
+**T6's method, unchanged, with T5's id table as the only allowance (D-6469-19).** No CI step, no `check_selection.py` by another name, as T6's review revision argued: a new check's first failure is a red trunk. Before each push, one local run of the always-on clause `A`, its TRX kept as that push's list, compared with the last list **before the push**. It is also the whole-suite gate that push needs anyway, so a list costs no extra run. T6's "The rules of a list run" and "Reading a diff" apply word for word.
+
+| List | When | Proves | Machine time |
+|---|---|---|---|
+| `P0` | At the parent of T5's first commit | The first list. Compared with T6's `L7`, it shows trunk's foreign lines at no cost. **It is also the timing run** | About 6 minutes |
+| `P1` | Before push 1 | 66 ids unchanged, 15 changed class exactly as mapped, 7 new, and the helper's and guard's own tests named. Nothing else | About 6 minutes |
+| `P2`, `P3` | Before pushes 2 and 3 | The same, on each addendum's id table | About 6 minutes each |
+
+So 4 runs, about 24 minutes, or 2 if the maintainer stops after D. A line in the diff is accepted only if it is on the slice's id table, a test this Story added and named here (D-6512-27's rule), or a foreign commit whose diff shows that exact test added or removed.
+
+**`P0` is the timing run (a change to DESIGN, see below).** The same command with `LIGHTHOUSE_TEST_WORKERS=6`, as `L0` had, and `LIGHTHOUSE_FIXTURE_TIMING=1` and `LIGHTHOUSE_FIXTURE_TIMING_OUT` set; DESIGN's table of what the run must read still applies. It saves a run and the maintainer's time. DESIGN's printed filter must not be used: it holds `TestCategory!=Integration`, which from T6's slice C on leaves out every hosted test and ranks nothing.
+
+**CI's part is a cross-check by the orchestrator, after the push, on files CI already writes.** CI's CSV is compared with CI's and local with local, never across.
+
+1. The log prints `force_full=false` and `filter=` with `A` alone. If not, the run does not count.
+2. Its CSV against the last plain run's, read the same way, with the same id table.
+3. `Total:` = the last plain run's + tests this Story added + foreign tests added - foreign tests removed, written out as a sum.
+4. The `category` column: exactly the moved ids change, from `Integration` to `Unit` (56 for the pilot). Contract rows, the skeleton and `Slice06` stay `Integration`. A reading of a column CI writes anyway, not a new check: it shows on CI what T6's guard rule 2 enforces at build time.
+
+An unexplained line stops further pushes until the test is back or the line is explained, as T6's stop rules say.
+
+**Why a move cannot lose a test through the filter.** T6's review named three ways to lose one; T5 adds none. A class leaving the base passes `A` by its first half, a contract class by its second, and that shape was proven by T6's probe. A hosted class gaining a connector category is T6's guard rule 4, at build time.
+
+**`--list-tests` is not used here.** T6 found it prints a test's name without its class, so a test moving between classes under the same name would not show, and that is exactly what T5's 15 rows do. Ids come from the TRX.
+
+**One thing to expect on E or F.** A class leaving the base with an `[Explicit]` test gains a `NotExecuted` row under `A`, as the off-base tests have today. By the maintainer's probe decision it reads as not selected. None does in the pilot: `RealityCheckWallClockProbe` is on no base and is not moved.
+
+**What is lost, plainly.**
+
+1. **Ids prove a test still ran, not that it still checks the same thing.** That is the coverage table, the shared-step table and the deliberate break, and the break shows one rule per suite. The list does not replace them.
+2. A list covers a push, not a commit, and push 1 holds four slices. A diff line names its class, so finding the commit stays easy.
+3. CI's cross-check comes after the push. The local list is what stops a loss before it.
+4. Lists are not kept in git. Like T6, T5 keeps them on disk under `evidence/`, out of git, with count and `sha256` written here. The id tables stay in this delta.
+
+## Wave: DEVOPS / [REF] Budgets and T9's ceilings
+
+| Limit | Effect of T5 | Answer |
+|---|---|---|
+| **Frontend, 54 s per file** | None | **N/A, because no frontend test or file changes.** The only exposure: a push with `test-time-budget.json` starts the frontend job, so it is judged again on a runner whose time is known to swing |
+| **Backend, 34 s per class: the classes that shrink** | `Slice01...` is 33.6 s on CI with 66 rows, against a ceiling of 78. Its 51 port rows should take about 13 s (an estimate: 510 ms a row now, less DESIGN's 0.2 to 0.3 s) | Keeping the entry fails nothing: `_is_not_needed` calls a backend entry idle only when its ceiling equals the budget, and the class stays declared. See D-6469-20 |
+| **Backend, 34 s per class: the new classes** | `RealityCheckWireContractTest`, 21 rows: about 10.7 s at the family's mean of 510 ms, 24.6 s if every row took the family's slowest. `RealityCheckSkeletonTest`, 1 row. One-time set-up is outside TRX durations, so the host build does not count | Under budget with T4's factor of 2.1 (10.7 x 2.1 = 22.5 s). **T5 adds no allow-list entry.** A new class over the budget is split, not listed |
+| **Backend, 34 s: the guard** | T2's `TestHostPerFixtureGuardTest` is 0.16 s for 18 rows locally; `SharedHostsDrainTheUpdateQueueGuardTest` 2.78 s | Far under, by likeness only. T6's `TestTierGuardTest` gives the real figure before T5 starts |
+| **Moved ids and the budget's names** | A moved class keeps its name (D-6469-8), so nothing goes stale | If a class on the list were renamed, `check_budget.py` would red until its entry went in the same commit |
+| **T9, fast-tier per-test limit** (2.1 x the largest fast-tier test) | The largest test on CI outside the hosted, container and connector sets is 5.1 s (`DomainEventDispatcherSeamArchUnitTest`, with `ForecastLaneTest` at 5.0 s), so the limit is at least about 10.8 s. The slowest pilot row is 1.17 s on CI, at the host | **T5's moves do not set it.** So D-6469-9's line that the 2 s "becomes T9's limit" does not hold, see D-6469-21 |
+| **T9, `Integration` mean** | Pilot rows average 510 ms against about 752 ms for the tier, using `API/Integration`, `Integration/Containers` and `API/Security` as a stand-in, as the real column does not exist yet. Moving below-mean rows **lifts** the mean: about +0.7 % for 56 rows, +3 to +4 % for 250 to 300. A suite of very cheap rows lifts it most: `Integration/UsageData` averages 97 ms, and 279 such rows would add about 9 % | Inside T9's 1.25 x headroom, so no red in either order. **But T9's brief says "T5 and T10 move the slowest, so the risk is small", and T5 does the opposite:** D-6469-9 keeps the slowest at the host. Owed line below |
+| **T9, `Integration` total** | Falls: the pilot takes about 29 s out and its 7 new rows add about 4 s, so about 25 s net of about 2,068 s. Nothing here raises it, so no reviewed raise is needed | **The fall overstates the saving.** A moved row leaves the column whole, while most of its time reappears as `Unit`. T5's number is therefore read by class, summed over the family, never from the tier column |
+| **T9, calibration** | Each T5 push shifts both figures | The chain's order already puts T9 after T5. T9's 5 runs should start after T5's last move push, as T10's brief says of its own runs. A later E or F stays inside the headroom |
+| **T6, fast tier under 60 s** (not a gate) | **The one number T5 makes worse.** Moved rows join the fast tier: about +15 s summed for the pilot, +65 to +78 s for 250 to 300 rows, at about 260 ms a row (an estimate). The tier is at most about 317 s summed on CI today, an upper bound, as hosted tests outside those three folders are still in that figure. At 6 workers that is about +2 s of wall clock for the pilot and +11 to +13 s for all of it, if the work spreads evenly | Accepted, by the maintainer's own rule that moving a test down is good. `SecretCustodyServiceTests`, at 50 s in one fixture, stays the longest class, and `Slice01...` would not replace it. Reported, not gated: T6's slice F figure is the before, one `Test-Fast.ps1 -NoBuild` median after push 1 and one after the last push are the after, with their test counts. Raised below |
+
+**What is watched.**
+
+| Outcome | Instrument | Read when |
+|---|---|---|
+| Moved suites' seconds fall (D-6469-14) | Family sums, local, before and after on the same machine; the slice's proof. CI as a report from the CSV. Baseline on CI, one run: `Slice01...` 33.63 s, `Slice04...` 2.85 s, `Slice06...` 5.10 s, 41.58 s for 81 rows. Local `L0`: 30.82, 2.74, 5.42, 38.98 s | Each slice's close |
+| Host builds do not rise | `host_build_count`, summed, from `P0` and from a list run with the timer on at the Story's end | Twice |
+| The shrinking list shrinks | The diff of `HostUsersStillToMove`; rule 2 fails a stale line | Each move |
+| No test lost | "Proof that no test is lost" | Each push |
+
+## Wave: DEVOPS / [REF] Rollback
+
+Every step is a `git revert` of test commits and a plain push: no `ci*.yml`, no data, no product file, so no live run and nothing for a user to notice. **Reverse order, because later slices stand on earlier ones.** A rollback push takes a list like any other, and the diff shows the id table in reverse.
+
+| Slice | Revert | Constraint |
+|---|---|---|
+| F, E | Alone, its commits in reverse | A move's commit holds its base, its guard line and any T2 line, so the revert restores all three together |
+| D | Alone, at any time, starts no CI | Revert with C if the guard goes, or the text describes a guard that is not there |
+| C | After E and F, or alone | Reverting the guard reds nothing |
+| B | **Only after C.** The guard's first list leaves the pilot off, so a revert of B alone puts `Slice01...` back on a host, unlisted, and rule 1 reds | Skeleton and contract classes go with it |
+| A | Only after B, which uses the harness | |
+
+**Fix forward once anything else depends on it.** When a later Story's test uses `ServicePortHarness`, `WireContractTest` or a `Contracts/` class, or T10 has started from T5's files, A and B cannot simply be reverted. A single red test after a push is a fix, not a rollback.
+
+**T5 adds one line to T6's rollback.** T6 says the filter goes last, because reverting it while hosted tests carry `Integration` loses them all. Once T5 lands, `WireContractTest` is on that base too, so the same holds for every contract test. T6's rollback order stands; T5's slice B goes before T6's slice B.
+
+## Wave: DEVOPS / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6469-17 | No `ci*.yml` edit, no new CI step, no new script; before each push the window goes through `path-classifier.sh` and a `ci*.yml` grep, every connector answer `false` | A workflow edit forces every live suite on a key shared with CI, and T5 needs nothing from one |
+| D-6469-18 | At most three pushes: A to D, E, F | Each backend push runs the whole tail, and the guard must land with its text |
+| D-6469-19 | T6's `A` list before each push, read by T6's rules, with the id table as the allowance; CI's CSV is a cross-check; `P0` doubles as the timing run | Reuses a run the push needs anyway; `--list-tests` cannot see a class move |
+| D-6469-20 | `test-time-budget.json` is edited only in a backend push already going. An entry drops when the class's largest time over at least 5 plain `main` runs, x 2.1, is at most 34 s, so at most about 16 s. If the Story ends first, T9 does it | T4's rule; a lone edit would run backend, frontend and tail for one line; a kept entry fails nothing |
+| D-6469-21 | D-6469-9's 2 s stays T5's own rule and does not become T9's limit, whatever T9 calibrates | While today's slowest fast-tier tests stand, T9's limit will be about 11 s or more, and following it would let body-bound tests move |
+| D-6469-22 | T5's first push waits until T6's push 7 has ended | Keeps T6's last proof clean; the `category` reading needs slice F |
+| D-6469-23 | No per-wave Forge review: none of the skill's triggers applies (no new target, CI framework, observability stack or security posture). The consolidated review at the end of DISTILL covers this wave | The skill's default |
+
+## Wave: DEVOPS / [REF] Changed assumptions
+
+Original, DESIGN, "The timing run": "**Run it before T6's slice C**", as a separate run for the maintainer.
+New: no separate run; `P0` is it, after T6's slice E, under `A`. Why: T5 starts after slice E, so "before slice C" is only possible if the run happens now, no `measurement/` folder exists yet, and the list before the first push is needed anyway. `A` also holds the container tests; the ranking already leaves them out. If the maintainer has run it by then, `P0` needs no timer.
+
+Original, D-6469-9: "The 2 s becomes T9's limit once T9 calibrates".
+New: D-6469-21. Why: the largest fast-tier test today gives a limit near 11 s.
+
+Original, DESIGN, "Component decomposition": "`Slice01...` entry drops once CI shows it under the 34 s budget".
+New: D-6469-20. Why: at 33.6 s on CI it is under the budget today, so that test says nothing; T4's factor is what makes the drop safe.
+
+Original, "Slices": each slice proved alone, and "A move is its own commit". The commits stand; only the pushes group, as D-6469-18 says.
+
+No story or AC changes, and no architecture changes, so no upstream note.
+
+## Wave: DEVOPS / [REF] Owed to other briefs (not edited here)
+
+- **T9, slice 50, proposal 2:** "T5 and T10 move the slowest, so the risk is small" is wrong for T5, which moves below-mean rows on purpose. The effect is a few percent and inside the headroom; the sentence should say so.
+- **T9, slice 50, Goal:** the frontend budget reads 56 s; it is 54 s since `37cc1a614`.
+- **T9, slice 50, calibration:** "5 runs after T6" becomes after T6 and after T5's last move push, matching T10.
+- **T9 and T10:** read a host-to-port saving by class, not from the `Integration` column.
+- **T6, Rollback:** T5's slice B goes before T6's slice B, once T5 lands.
+- **T11:** a Stryker config must name `Tests.Acceptance.<Feature>` for a new port scenario to count.
+
+## Wave: DEVOPS / [REF] For the maintainer
+
+Nothing here blocks the wave. Decided in your absence; say if any is wrong.
+
+1. **T5 slows the fast loop a little, on purpose.** About 2 s for the pilot and perhaps 11 to 13 s for all three suites, estimates against a 60 s target the tier may already be close to. Backend CI gets faster and the fast loop gets slower, because the tests go from the slow tier to the fast one. Reported, not gated. If it matters, it counts against E and F when you decide after the numbers.
+2. **The timing run is no longer yours to make.** It folds into the list before the first push.
+3. **T5 will not raise a live run, but a foreign change can.** The check before each push makes T5 wait rather than push into one.
+4. **Three pushes, each with the whole package-and-verify tail, on an unchanged product.** The pipeline has no way to skip the tail for a test-only change, and changing that would be a `ci*.yml` edit, which is outside this Story.
+
+**Not verified.** Anything that needs a run: `c`, `h`, a port row's real cost, `TestHostUseGuardTest`'s time, the real `Integration` column and mean, T6's fast-tier figure. CI seconds are one run. The `Integration` stand-in leaves out hosted tests in other folders and counts every test in those three. The classifier was run on planned and existing paths, not on E's and F's real file lists. `ci_docker.yml` and `green-base-run.mjs` were not read; the second is taken from T6's account.
+
+**Open for DISTILL and DELIVER.** DISTILL: the planted guard cases and id tables are as DESIGN has them; nothing here adds a scenario. DELIVER: each pre-push check above is a line in the step before a push, not a step of its own. Still open from DESIGN: the top two, `FasterUpdates`, the licence question. Still open from T6: the containers answer, which T5 does not read.
