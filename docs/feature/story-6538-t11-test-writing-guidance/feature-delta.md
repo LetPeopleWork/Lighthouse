@@ -493,3 +493,281 @@ whether or not any page changed.
 - DISTILL: the proofs under DESIGN "Slices" become the scenarios, each written as the by-hand search above. No tags in them.
 - DELIVER: run the push check of D-6538-15 before each push; paste each search's output; name the CSV run; read the profile's models.
 - The Vitest listing command's flags are confirmed on the day, because this wave ran nothing.
+
+## Wave: DISTILL / [REF] Scope, reconciliation and baseline (2026-11-07, maintainer away)
+
+AFK: each choice takes the recommended option and says why. Written as a specification only.
+
+- **Shape.** T11 delivers a skill, three `CLAUDE.md` lines and two records. There is no test code to scaffold, so this wave writes no test file, no production file, no scaffold, no Tier B, no domain-types module and no state-delta port. The only file changed is this one. A scenario here is a Given-When-Then that a person can check by a search, by reading a record, or by a run, and each one says how it fails.
+- **No nWave scenario tag goes anywhere,** not in these scenarios, not in the skill, not in the trial's output. An untagged scenario is correct here. The classification lives in the plain `Kind` column: `H` happy path, `B` boundary, `E` the check fires on a planted fault or refuses.
+- **UI sketches: N/A,** because nothing a user of the product sees changes. Loading and failure looks: N/A, no screen. The skill's one example of a new view pinning both looks is test advice, and a scenario reads that it is there.
+- **Language and policy.** Markdown and shell searches. Deliverable type: skill, so the reviewer is `nw-skill-reviewer`. Journey, KPI contract: none. Infrastructure policy read as inherited; no port is added. Outcome registry: not run, since no typed contract is introduced.
+- **No test, build or search ran in this wave.** Every "then" below is a rule for reading what DELIVER runs, not a result.
+- **Contract shape.** One row is bounded-change: the changed-path ranges (C-5), whose universe is the list of changed paths. Everything else is a pure check of text.
+
+**Reconciliation: 0 hard contradictions** across DISCUSS, DESIGN and DEVOPS. Soft points:
+
+| Point | Resolved |
+|---|---|
+| DESIGN "Slices" says slice A needs "nothing hard"; the brief says T5 is a hard dependency | DESIGN's open point 1 keeps the brief's order. B-1 gates slice B |
+| DESIGN says a docs-only push starts no CI run; DEVOPS found Deploy Documentation starts for `docs/**` | DEVOPS's changed assumption stands. C-5 holds the push check |
+| File count 408 (DESIGN) against 410 (`git ls-files`, DESIGN's own open point 6) | 410 is the count. Quotas are recomputed from it, and the listing is compared against it (A-1) |
+
+## Wave: DISTILL / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6538-20 | **Each scenario names its proof kind:** search, read, listing or run. A search prints its output into the record; a read quotes a line | A claim with no kept output cannot be checked later |
+| D-6538-21 | **Every scenario names how it can fail. Where a check could pass by luck, a planted fault is run once:** a read cut short for the last-line check, a known-missing name for a names search, a known-present pattern for a search that must print nothing | A check never seen failing may be one that cannot fail |
+| D-6538-22 | **The trial's wording is frozen here** and pasted unchanged in the record. The one sentence that is the project's own, the no-tags sentence, is named and exempt from the "no hint" check | A wording changed after the result fits the result |
+| D-6538-23 | **The audit's band wording is fixed here,** before any number | Same reason as the verdict rule in DESIGN |
+| D-6538-24 | **The trial reviewer is never the agent that wrote the skill or ran the trial,** and runs on the profile's `reviewer_model` | A writer reading its own output finds what it expects |
+| D-6538-25 | **A deviation found by the trial changes the skill only by a separate edit,** after which the searches of the changed slice run again | A silent fix would leave the record saying the skill was followed as written |
+| D-6538-26 | **A guard's message is quoted only from committed source. If the file differs from `HEAD`, the work stops.** No wait, no quoting of the working tree | `TestTierGuardTest.cs` is edited and uncommitted in this checkout today, and a quote from it can go stale in the next commit |
+| D-6538-27 | **A planned name carries a role and never a number:** "planned: the per-tier report". The number search stays strict and has no exceptions | An exception in the search would let a number in |
+| D-6538-28 | **One stop form.** A dated STOPPED block (see "Stop rules"). No other way of reporting a stop | The orchestrator reads one shape and takes it to the maintainer |
+| D-6538-29 | **No control trial for the tags.** The trial does not measure the tag rule, and B-11 records that | The wording carries the project's sentence, so a clean result says nothing about the skill |
+
+## Wave: DISTILL / [REF] The trial, as worded
+
+The standard DISTILL wording as the three `CLAUDE.md` lines will make the orchestrator write it. Only the angle-bracket parts change. **The last sentence is the project's own no-tags sentence** and is the only part of the wording exempt from the "no hint of the checklist" check (B-9). The checklist is not in the wording.
+
+```
+You are the acceptance designer for <feature>, a feature that is already delivered. Its stories are in <feature workspace>/discuss/.
+First read, with ctx_read in full mode and fresh=true, .claude/skills/test-writing/SKILL.md and the file in
+.claude/skills/test-writing/references/ for your half (frontend.md or backend.md). Each file ends with a line "End of <file>".
+Quote that last line back in your report, one per file. If you did not see it, say so and read the file again in pages.
+Then write the acceptance scenarios for <feature> into <scratch workspace>/ and nowhere else. Write no test file and no production file.
+Report: the files you read with their last lines, the scenarios you wrote, and any rule of the skill you did not follow and why.
+No nWave scenario tags (@us-, @slice-, @kpi-, @contract-shape and the like) in anything you write.
+```
+
+Fixed for the trial: the feature (small, delivered, with DISTILL scenarios; story 6501 is the candidate, its size not checked, B-7), the scratch workspace (`docs/feature/story-6538-t11-test-writing-guidance/trial/`), the model (`agent_model`) and the reviewer (a different dispatch, `reviewer_model`).
+
+## Wave: DISTILL / [REF] Scenarios
+
+**Kinds:** `H` happy path, `B` boundary, `E` the check fires on a planted fault or refuses. **Proof kinds:** search, read, listing, run. A run is a Vitest listing or a `gh` download; no test is executed. Rows marked C run at the end of each slice, over what that slice changed.
+
+### Slice A: the audit and the frontend half
+
+| # | Scenario | Given / When / Then | Proof and output kept | Can fail when | Kind |
+|---|---|---|---|---|---|
+| A-1 | The population is counted and compared with the file list | Given the commit the audit runs at. When the test files are listed by `git ls-files` (410 on 2026-11-07) and the tests by Vitest's listing. Then the record holds the commit, the file count per group and quotas recomputed from 410 that add to 50, and any difference between the listing and `git ls-files` is named file by file. **Any difference left unexplained stops the audit** | Listing and `git ls-files`, both pasted with counts | The counts differ and no file is named, quotas add to 49 or 51, or labelling starts with an open difference | E |
+| A-2 | The picks can be redone from the rule | Given a group sorted by path. When the i-th pick is taken at position ceil(i x files / quota). Then anyone gets the same files; for `pages/Settings` (28 files, quota 3) the positions are 10, 19 and 28 | Search: the smallest and largest group redone by hand, pasted beside the record's lists | A redone list differs, or the last pick is not the last file | B |
+| A-3 | Every sampled file has a row and the rows add up | Given the 50 picks. When the rows are written. Then each file has tests, logic, UI and mixed counts, an extraction class and a call, the test counts add to the sample's total, and the record says the call is a label for the reader and plans nothing | Read: the table with its sum line and the sentence | A file has no row or call, the sum is off by one, or the sentence is absent | H |
+| A-4 | Agreement decides whether the first rater's labels stand | Given a second rater read the same 10 files blind. When agreement is the unrounded share of tests given the same label. Then **80 % means the share is at least 0.80**: 0.80 stands with no redo and kappa is reported beside it, not gating; 0.7996 does not stand even though it prints as 80.0. Below 0.80, disagreeing tests are listed, the rule's wording is tightened with them, both raters redo those files, and a second result below 0.80 marks the headline "low confidence". One round only | Read: the share as a fraction, before and after, the list, the wording change | A redo at 0.80, no redo at 0.7996, a second round, or an unmarked headline after a second miss | B |
+| A-5 | The verdict comes from the lower interval end by the bands written in design | Given Low, Middle and High, each with its interval, and N with its source. When the band is chosen. Then the lower end of the interval is compared. The interval is a percentile bootstrap: files resampled within their group, **10,000 resamples, seed 6538**, the 2.5th and 97.5th percentiles; count and seed are printed | Read: the statistic table and the method line. Search: `git diff` of the verdict rule's text against the DESIGN commit (3ad54cfa0) prints nothing | The point or the upper end picks the band, N has no source, the method line is missing, or the diff is not empty | E |
+| A-6 | The heaviest files come from a named green `main` run and stay out of the estimate | Given the `test-timings-frontend` file of one green run. When the ten files with the most seconds are listed. Then the run id and ten rows with seconds are pasted and none enters the estimate unless the pick rule chose it. If the file has expired, another green run is named, and if none exists the seconds line reads "unavailable" and the headline stands on the shares | Run: the `gh` download or listing, pasted | The run id is missing, a failed run's file is used, or seconds are dropped with no mention | E |
+| A-7 | The verdict reaches the maintainer before any rewrite is planned | Given the finished audit. When slice A closes. Then the record ends with the verdict block below, and no roadmap changed by this slice holds a step to rewrite or move a test | Search: the roadmap files in the slice's changed paths for "rewrite" and "move", pasted; read: the block is last | A changed roadmap holds such a step, or the block is not the last thing in the record | E |
+| A-8 | The skill folder has its files and the checklist comes first | Given slice A done. When the folder is listed. Then `SKILL.md` and `references/frontend.md` exist and the checklist is the first section of `SKILL.md` | Search: listing; read: the first heading | A file is missing, or the checklist is below the rules | H |
+| A-9 | Each frontend rule has a title, a measured finding in words and one example | Given `references/frontend.md`. When the rules named below are read. Then each has all three, and the three counts (titles, findings, examples) are equal | Read: the table below filled with the line of each | A rule is missing, has no finding or no example, or two rules share one example | H |
+| A-10 | The deliberate break is in `SKILL.md` for both halves | Given `SKILL.md`. When it is read. Then "a check that cannot fail is not a check" has a title, a finding and an example: delete the production line and the test must go red; a test-only change has nothing to mutate, so the break is the proof | Read: the three lines quoted | The rule has no example, or says the break is optional | H |
+| A-11 | The pyramid is a direction and a layer rule, with no dated count | Given the skill. When it is read. Then the shares appear once as a direction, "lowest layer that can prove it; time is the gate" appears, and no share is written as a gating limit. The counts are searched in C-4 | Read, quoted | A share is written as a limit that gates | E |
+
+Rules A-9 reads, each with title, finding in words and example (the finding is a sentence, never a Story number):
+
+| Rule | What the example shows |
+|---|---|
+| Logic on the function, not through a render | A rule asserted on a function, with the render kept for wiring |
+| One render per wiring | Several checks sharing one render |
+| Small fixtures | A short list where a long one is not the test |
+| Fake clock, no real wait | `vi.useFakeTimers({ shouldAdvanceTime: true })`, never a sleep |
+| No `testTimeout` or retry as the fix | A slow test made fast, not allowed more time |
+| No order dependence | A test that passes alone and in a shuffled run |
+| A new view pins its loading look and its failure look | Both looks, a failed load never shown as "no data", E2E waiting for `data-widget-status="ready"` |
+
+### Checks at the end of each slice (rows C)
+
+| # | Scenario | Given / When / Then | Proof and output kept | Can fail when | Kind |
+|---|---|---|---|---|---|
+| C-1 | Each file ends with its last line when read as a subagent would, after every edit | Given a file ending "End of <file>". When it is read with `ctx_read`, full mode, fresh. Then the last line is quoted. A read cut to a window shows no such line. Run after slice A for `SKILL.md` and `frontend.md`, after slice B for `SKILL.md` and `backend.md` | Read: a quote per file, and one deliberately short read pasted without the line | The line is absent in a full read (shorten the file and read again), or the cut read still seems to show it | E |
+| C-2 | Every name the skill gives exists, or is marked planned with a role | Given the skill names identifiers, scripts, folders and tools. When each is searched for in the tree. Then each is found, or its line reads "planned: <role>" such as "planned: the per-tier report", never a number. After slice B the four T5 names (`ServicePortHarness`, `WireContractTest`, `TestHostUseGuardTest`, `Test-Fast.ps1`) carry no planned mark | Search: name, hits, and the marked ones; one known-missing name run to show an empty result | A name has no hit and no mark, a mark carries a number, or a T5 name is still marked | E |
+| C-3 | Every quoted guard message is found in the guard it is attributed to | Given a message quoted in the skill, frontend (the per-test limit) or backend (`TestHostPerFixtureGuardTest`, `TestTierGuardTest`, `TestHostUseGuardTest`). When it is searched for in that guard's source at `HEAD`. Then it is found there. If the file differs from `HEAD`, the work stops | Search with `git grep` at `HEAD`, and `git diff --stat HEAD -- <file>` printing nothing | No hit, a hit in another guard, or the file differs from `HEAD` | E |
+| C-4 | One search, three pattern lists, finds nothing | Given the skill's folder and, after slice B, the three `CLAUDE.md` lines. When searched for list 1, references: `#` and four digits, `Story`, `slice`, `ADR-`, task names such as `FE7`, `T5`; list 2, scenario tags: `@us-`, `@slice-`, `@kpi-`, `@contract-shape`, `@walking_skeleton`, `@driving_port`, `@real-io`, `@BUG-`; list 3, dated counts: 3,648; 5,857; 9,505; 22,600. Then nothing prints for any list. The skill says "no nWave scenario tags" in words | Search, with each list run once on a file known to hold one of its items (D-6538-21); the rule's own wording is not in the lists | Any hit, including inside an example | E |
+| C-5 | Each range changes only the paths it may | Given the range. When `git diff --name-only` over it is read. Then it matches the row of the table below | Search: the diff and `git status --short`, pasted | A path outside the allowed set. At the push, another session's code in the range: do not push | E |
+| C-6 | The examples hold nothing token-shaped | Given the examples. When the commit's secret scan runs. Then it passes with no bypass | Run: the hook's own result | The hook rejects: remove the string, never bypass it | E |
+| C-7 | The skill review leaves no open critical point | Given `nw-skill-reviewer` on `reviewer_model`, told an untagged example is correct here. When it reviews the skill after each slice. Then no critical point is open after at most two rounds | Read: the verdict per round | A critical point stays open after round two: stop | E |
+
+Ranges for C-5:
+
+| Range | Allowed paths | Must not appear |
+|---|---|---|
+| The audit's commits (slice A) | `docs/feature/story-6538-t11-test-writing-guidance/` only | Anything under `Lighthouse.Frontend`, `Lighthouse.Backend`, `Lighthouse.EndToEndTests` |
+| Slice A's commits | The above, `.claude/skills/test-writing/` | Any guard test, budget file, script under `Scripts/test-timings`, workflow, `docs/ci-learnings.md` |
+| Slice B's commits | Slice A's, `CLAUDE.md` | The same, `docs/ci-learnings.md` included while the maintainer has not answered |
+| The trial | `docs/feature/story-6538-t11-test-writing-guidance/trial/` | Any test project or other workspace |
+| The unpushed range | Under `docs/`, under `.claude/`, or `CLAUDE.md` | Anything else |
+
+### Slice B: the backend half, `CLAUDE.md`, the trial and the record
+
+| # | Scenario | Given / When / Then | Proof and output kept | Can fail when | Kind |
+|---|---|---|---|---|---|
+| B-1 | Slice B does not start until T5 and the fast cycle rule are on `main` | Given the working tree. When the four T5 names and the fast cycle rule in `CLAUDE.md` are searched for. Then each is found | Search, each name with its hit | A name has no hit: STOPPED, nothing is written for the backend half | E |
+| B-2 | Each backend rule has a title, a measured finding in words and one example | Given `references/backend.md`. When the rules below are read. Then each has all three | Read: the table below filled with the line of each | A rule or its example is missing | H |
+| B-3 | The T5 convention has one home | Given the distinctive phrase of T5's bullet, copied before it is cut and pasted first into the record. When the tree is searched for it. Then the hits are `references/backend.md` and the one rule line of `CLAUDE.md` | Search, with the phrase | A third file holds it, or `CLAUDE.md` keeps the long body | E |
+| B-4 | `CLAUDE.md` gets three lines, in the right place, and T5's bullet is cut to the rule | Given `CLAUDE.md` before and after. When the diff is read. Then three lines are added: the service-port rule, the pointer, the load instruction; the load line sits in the Wave section and names DISTILL, DELIVER and reviewers; T5's bullet is the rule line | Search: `git diff` of `CLAUDE.md`; read: the section | A fourth line, the load line outside the Wave section, a missing name among the three, or the bullet left whole | B |
+| B-5 | The DELIVER dispatch wording is written down with the fast cycle rule | Given the rule as `CLAUDE.md` words it. When the wording is written into the record section `## Wave: DELIVER / [REF] Dispatch wording` of this delta. Then it names the skill and the read instruction, and carries the fast cycle rule's distinctive phrases | Read: the section, pasted into the closing record | The section is absent, or lacks a phrase | H |
+| B-6 | The fast cycle rule reads the same in three places, with its clause | Given the rule's distinctive phrases, chosen from `CLAUDE.md` and pasted first. When `CLAUDE.md`, `SKILL.md` and the B-5 section are searched for each. Then all three hold every phrase, including the clause that a step whose behaviour lives in a `.test.tsx` or an integration test also runs its own named test | Search, pasted, each phrase marked in each place | A phrase, or the clause, is missing from any one of the three | E |
+| B-7 | The trial's feature is small and has scenarios to compare | Given the candidate. When its workspace is read. Then it has a DISTILL section and not more than about 20 scenarios; the count is written | Read, with the count | Larger, or no DISTILL: take the next; if none fits, STOPPED | B |
+| B-8 | The checklist's minimum items are fixed before the trial runs | Given the skill's checklist. When its items are written into `## Wave: DELIVER / [REF] Skill checklist, minimum items` and committed. Then it holds at least one item for each rule of A-9, A-10 and B-2, the load-and-quote item and the fast cycle item | Read: each rule with its item. Search: `git log` shows this commit before the trial's output | A rule has no item, or the trial's output is older than the list | E |
+| B-9 | The trial wording is the frozen one and gives no hint of the checklist | Given the wording pasted in the record. When it is read against the B-8 items. Then it equals "The trial, as worded" with only angle-bracket parts filled, and no item's phrase appears in it, **except the project's no-tags sentence, which is named and exempt** | Read: the wording, each item struck off | A changed wording, or a non-exempt item phrase in it | E |
+| B-10 | The trial agent quotes the last line of each file it read | Given the report. When it is read. Then it quotes "End of SKILL.md" and the half's last line | Read | A line is missing: the trial is void; shorten the file and run once more | E |
+| B-11 | A reviewer reads the output against the checklist item by item | Given a reviewer that wrote neither the skill nor the trial, on `reviewer_model`. When it reads the output and the trial writes only in the trial folder (C-5). Then each item is marked followed, not followed or not applicable, with a quoted line. **The tag item is recorded as not measured by the trial** | Read: the reviewer's table | An item has no mark or quote, the reviewer is the writer, or the tag item is marked followed | H |
+| B-12 | A deviation is recorded, not fixed silently | Given an item not followed. When the record is written. Then the deviation is listed with the output's line, and any change to the skill is a separate edit after which C-1 to C-4 run again | Read: the list; search: the re-run outputs | The skill changes with no re-run | E |
+| B-13 | The deferred check is recorded open, with where and who reads it | Given the closing record. When read. Then it says: the next feature's DISTILL writes "skill loaded: yes/no, deviations" in its `feature-delta.md`, the maintainer reads it after that DELIVER, status open | Read | Status reads passed or done, or no place or reader is named | E |
+
+Rules B-2 reads, each with title, finding in words and example:
+
+| Rule | What the example shows |
+|---|---|
+| New acceptance scenario goes to the service port | A scenario through the port harness |
+| A host test only as a named skeleton or in `Contracts` | One skeleton test named as such |
+| The rule by a unit test, the wiring by one host test | The same rule at both levels, one host test |
+| No shared state across fixtures | A fixture that builds its own state |
+| Fake clock, no real wait | `FakeLighthouseClock`, never the ambient clock |
+| A feature's mutation config names `Tests.Acceptance.<Feature>`, with the reason | The folder is outside the integration filter, so unnamed code shows as uncovered |
+
+## Wave: DISTILL / [REF] The audit verdict going to the maintainer
+
+Closes slice A's record. It is the only thing the audit decides.
+
+| Field | Content |
+|---|---|
+| Commit, file and test counts | From A-1, with any difference named |
+| N used and where it came from | Frontend alone is about 84 %; the whole suite only once T6 has labelled the backend |
+| Low, Middle, High | Point, lower end, upper end, weighted by test count; the method line of A-5 |
+| Seconds | In the logic tests, from the named run (A-6), beside each share |
+| Agreement and confidence | From A-4 |
+| Band and verdict | One of the four below |
+| What the maintainer decides | Whether to plan any rewrite |
+
+| Band | Wording sent to the maintainer |
+|---|---|
+| 1 | "The logic tests could move to existing functions. Whether moving them pays is for you to decide; time is the rule." |
+| 2 | "Small extractions would move the logic. The files are listed." |
+| 3 | "Hook or context changes are needed before any move. That is design work." |
+| 4 | "Moving logic cannot reach 90 %. Keep the shares as a direction and let time stay the rule." |
+
+A "low confidence" mark from A-4 is printed above the band. No rewrite is planned in this Story under any band.
+
+## Wave: DISTILL / [REF] Stop rules
+
+One form. The record gets a block, and the orchestrator reads it and takes it to the maintainer:
+
+```
+STOPPED <date>, row <id>
+Evidence: <the output, pasted>
+Last completed row: <id>
+```
+
+| Stop when | The check that decides | Instead of |
+|---|---|---|
+| T5 or the fast cycle rule is not on `main` (B-1) | The B-1 search has an empty hit | Writing the backend half, the cut of T5's bullet, or the fast cycle text |
+| The listing and `git ls-files` differ and the difference is not named file by file (A-1) | The A-1 comparison | Labelling, or running tests for a count |
+| Agreement is below 0.80 after the one round (A-4) | The unrounded share after the redo | A second round; mark "low confidence" and go on |
+| The verdict rule was edited after a number was seen (A-5) | `git diff 3ad54cfa0 -- docs/feature/story-6538-t11-test-writing-guidance/feature-delta.md` over the rule's text is not empty, and for the band wording the same diff against this wave's commit | Using the edited rule |
+| The same row's check fails a **second** time, meaning the same row, the same pattern, after one fix of the text | The row's own search, run again | Editing the search |
+| A quoted guard's file differs from `HEAD` (C-3) | `git diff --stat HEAD -- <file>` is not empty | Quoting it, or waiting |
+| The commit hook rejects a file (C-6) | The hook's exit | Bypassing it |
+| The skill review has a critical point open after round two (C-7) | The reviewer's second verdict | A third round |
+| The trial agent did not see a last line (B-10) | The report lacks the quote | Reading its result. One rerun is allowed after shortening; a second miss is a stop |
+| No trial feature fits (B-7) | The scenario count | Using a large one |
+| The unpushed range holds a path outside the allowed set (C-5) | The range diff | Pushing |
+| A gap in a guard or a budget is found while writing | Reading it | Editing the guard; it goes on the candidate list, and the work goes on |
+| The ledger pointer is unanswered | The maintainer's answer is absent | Touching `docs/ci-learnings.md` |
+
+## Wave: DISTILL / [REF] Coverage
+
+| Slice | Scenarios | `H` | `B` | `E` |
+|---|---|---|---|---|
+| A | 11 | 5 | 2 | 4 |
+| C (end of each slice) | 7 | 0 | 0 | 7 |
+| B | 13 | 3 | 2 | 8 |
+| **All** | **31** | **8** | **4** | **19** |
+
+No share is given for errors: seven of the 31 rows are checks whose whole job is to fail on a planted fault, and a percentage over them would say nothing.
+
+| Source | Covered by |
+|---|---|
+| Brief: the skill has both parts and a checklist; a reviewer pass leaves no open critical point | A-8, A-9, A-10, B-2, B-8, C-1, C-7 |
+| Brief: `CLAUDE.md` names the skill and the load instruction, and the convention appears once | B-3, B-4, C-4 |
+| Brief: the trial is read against the checklist and written down; the deferred check is recorded open | B-7 to B-13 |
+| Brief: the audit's number to the maintainer before any rewrite | A-1 to A-7 and the verdict block |
+| Brief: the fast cycle rule in the skill and every DELIVER dispatch | B-5, B-6 |
+| Brief: the pyramid as a direction, time the hard rule | A-11 |
+| Brief: rules per half, including the deliberate break | A-9, A-10, B-2 |
+| DESIGN "what can lie" rows | C-1 (cut file), C-2 (missing names), C-3 (changed quotes), B-6 (drift), B-9 and B-11 (primed trial), B-13 (forgotten load), A-1 to A-6 (biased sample, seconds), B-2 (Stryker config) |
+| DESIGN: no new guard; ledger pointer pending | C-5 |
+| DEVOPS: by-hand searches with pasted output; push check; secret scan; expiring CSV | Every search row, C-5, C-6, A-6 |
+
+**Driving ports.** The reader of the skill is a subagent with `ctx_read`: C-1, B-10. The orchestrator's dispatch: B-5, B-9. The maintainer's read of the record: A-7, B-13. Beyond files, `git`, `gh` and Vitest's listing, all read-only, there is no adapter with real I/O.
+
+**Mandates, for this shape.** No state-delta port, property tests or step layer: there is no test code. Pillar 2: rows build on each other, with C-1 to C-4 reused by both slices and B-12 re-running them. Pillar 3: every proof reads the real tree.
+
+## Wave: DISTILL / [REF] Completeness audit
+
+| Item | Result |
+|---|---|
+| C1a empty or zero | Pass: A-6 (no file), C-4 |
+| C1b each boundary | Pass: A-2, A-4, B-4, B-7 |
+| C2a state machine documented | N/A, counted as passing: the only state is the deferred check, open or done (B-13) |
+| C2b illegal event per state | Pass: B-13 refuses "passed" |
+| C3 zero, one, many | Pass: A-2, B-4, B-7 |
+| C4a apply twice | Pass: B-12 re-runs the searches after an edit |
+| C4b inverse without prerequisite | Pass: B-1; rollback order is DEVOPS's |
+| C5a mode combinations | N/A, counted as passing: no flags |
+| C5b flag orthogonality | N/A, counted as passing: no flags |
+| C6a malformed input | Pass: A-1, A-6, C-6 |
+| C6b each declared error | Pass: every stop row has a row above |
+| C6c closed error set | Pass: each row ends in a pass or the one STOPPED block |
+| C7a degraded resource | Pass: A-6 |
+| C7b interruption | Pass: B-10 voids a cut trial |
+| C7c concurrent actors | Pass: C-5 and C-3 guard against other sessions' edits |
+
+**15 of 15: COMPLETE.** No gap needs an upstream answer.
+
+## Wave: DISTILL / [REF] Changed assumptions
+
+Original, DESIGN, "The audit": 408 files, "the two are not reconciled", "408 is used here". New: **410** by `git ls-files` (DESIGN's own open point 6 said so). The listing is compared against 410 and quotas are recomputed from it (A-1).
+
+Original, DESIGN: agreement "at 80 % or more". New: the unrounded share is at least 0.80 (A-4).
+
+Original, DEVOPS "Open for DISTILL": the proofs become the scenarios. New: they do, with added rows for the audit, the rules per half, the dispatch wording, the checklist and the trial. Nothing here changes the architecture.
+
+## Wave: DISTILL / [REF] Review
+
+The first review came back NEEDS_REVISION. What changed:
+
+- **Planted marks.** Carry a role, never a number; the number search stays strict (D-6538-27, C-2, C-4).
+- **DELIVER dispatch wording.** B-5 writes it with the fast cycle rule into a named section; B-6 reads that text. The frozen trial wording is unchanged.
+- **Content.** Rules per half as read rows with title, finding and example (A-9, B-2), the deliberate break (A-10), and one row fixing the checklist's minimum items before the trial (B-8).
+- **Tags.** The project's no-tags sentence is named and exempt in B-9; B-11 records the tag item as not measured; no control trial (D-6538-29).
+- **Stops.** One dated block, each row naming its deciding check; "the second time" defined; the edit-after-a-number check is a diff against the design commit. Guard messages: committed source only, and a stop if the file differs, in D-6538-26, C-3 and the stop table, which now agree.
+- **Verdict wording.** The reviewer's text for bands 1 to 3; the interval method, 10,000 resamples and seed 6538 named.
+- **A-1.** 410 against the listing, no 408 tolerance, any unexplained difference stops.
+- **Merged to 31 rows** from 42: the changed-path family (C-5 with a table), names (C-2), last line (C-1), quotes (C-3), three pattern lists (C-4), agreement (A-4), fast cycle (B-6). Row ids were renumbered and every reference follows them.
+- **A-7** scoped to roadmaps the slice changed; **A-3** says the call is a label. **80 %** means at least 0.80. **B-4** reads the load line's place and names. The error-share figure is dropped.
+
+**Could not settle.**
+
+- Two references in the review ("631 against 711", "row 635") are line numbers I could not map with certainty; I read them as the clash between "wait for the commit" and "quote nothing from the working tree" and made the quote rule one rule everywhere. If they meant something else, say so.
+- The section names for the dispatch wording and the checklist items, and the seed 6538, are my choice.
+- Quotas recomputed from 410 need the listing, so they are not in this wave.
+
+**Not verified.** No search, listing or run was made, so none of the 31 scenarios has been seen to fail. The A-2 positions were computed by hand. Whether the trial candidate is small enough is untested.
+
+## Wave: DISTILL / [REF] For the maintainer
+
+Nothing here blocks DELIVER, apart from the order the brief already sets.
+
+1. **Slice B cannot start** until T5 and T6's step 06-05 are on `main` (B-1). Slice A can start after T5, or earlier if you say so.
+2. **The trial's feature is unchecked for size.** Story 6501 is a candidate; B-7 sets the limit and takes the next one if it does not fit.
+3. **The trial does not measure the tag rule.** The wording carries your no-tags sentence, so a clean tag search says nothing about the skill (B-11).
+4. **Still yours from DESIGN:** the ledger pointer, the three tool candidates, and the audit verdict when it exists.
+
+## Wave: DISTILL / [REF] Open for DELIVER
+
+- The Vitest listing flags are confirmed on the day. If they would run a test, use the file list and stop.
+- Pick the CSV run on the day (A-6). Run 42372930241 was seen to hold it, with no expiry before 2027-02-05.
+- Choose the fast cycle rule's phrases from `CLAUDE.md` once step 06-05 has written it, and T5's phrase from its bullet before the cut; paste both first (B-3, B-6).
+- No title, comment or file carries a tag. Nothing in `ci*.yml` changes.
