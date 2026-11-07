@@ -1,10 +1,11 @@
 using System.Net;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.JwtBearerAuth;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [Category("epic-5305-k8s-readiness")]
-    public class JwtBearerAuthIntegrationTest
+    public class JwtBearerAuthIntegrationTest : IntegrationFixture
     {
         private JwtBearerTestHost host = null!;
 

@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     // Layer 5 (real stack): one representative example, traditional assertions.
     [TestFixture]
     [Category("epic-5513-servicenow")]
-    public class ServiceNowConnectionAcceptanceTest
+    public class ServiceNowConnectionAcceptanceTest : IntegrationFixture
     {
         private const string UnreachableInstance = "http://127.0.0.1:1/";
         private const string Password = "the-platform-teams-password";

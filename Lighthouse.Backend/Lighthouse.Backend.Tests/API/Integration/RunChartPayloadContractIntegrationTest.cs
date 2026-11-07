@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// graph, because that is the only place the defect is visible.
     /// </summary>
     [TestFixture]
-    public class RunChartPayloadContractIntegrationTest
+    public class RunChartPayloadContractIntegrationTest : IntegrationFixture
     {
         private const string ThroughputEndpoint = "throughput";
         private const string ArrivalsEndpoint = "arrivals";

@@ -1,10 +1,11 @@
 using System.Net;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.McpInboundAuth;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [Category("epic-5305-k8s-readiness")]
-    public class McpInboundAuthIntegrationTest
+    public class McpInboundAuthIntegrationTest : IntegrationFixture
     {
         private McpInboundAuthTestHost host = null!;
 

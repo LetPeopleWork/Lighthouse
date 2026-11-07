@@ -18,7 +18,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class TeamThroughputHistoryValidationIntegrationTest
+    public class TeamThroughputHistoryValidationIntegrationTest : IntegrationFixture
     {
         private const string ThroughputHistoryError = "Throughput history must be at least 1 day.";
         private const int StoredThroughputHistory = 45;

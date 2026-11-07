@@ -22,7 +22,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class ConnectionValidationUnreadableSecretTests
+    public class ConnectionValidationUnreadableSecretTests : IntegrationFixture
     {
         private const string ValidateRoute = "/api/latest/worktrackingsystemconnections/validate";
 

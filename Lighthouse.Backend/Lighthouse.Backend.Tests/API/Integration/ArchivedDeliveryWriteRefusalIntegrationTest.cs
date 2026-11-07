@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// second because closing it was always meant to be undoable.
     /// </summary>
     [TestFixture]
-    public class ArchivedDeliveryWriteRefusalIntegrationTest
+    public class ArchivedDeliveryWriteRefusalIntegrationTest : IntegrationFixture
     {
         private const string ArchivedCode = "delivery-archived";
         private const string NameAtClosure = "Q3 Launch";

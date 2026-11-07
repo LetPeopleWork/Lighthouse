@@ -15,7 +15,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class CycleTimeDefinitionSettingsIntegrationTest
+    public class CycleTimeDefinitionSettingsIntegrationTest : IntegrationFixture
     {
         private const string ConcurrencyConflictCode = "concurrency-conflict";
 

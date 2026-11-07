@@ -17,7 +17,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest
+    public class WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest : IntegrationFixture
     {
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;

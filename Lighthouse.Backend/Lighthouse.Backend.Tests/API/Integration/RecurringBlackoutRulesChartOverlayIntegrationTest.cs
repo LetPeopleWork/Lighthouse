@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [Category("recurring-blackout-events")]
-    public class RecurringBlackoutRulesChartOverlayIntegrationTest
+    public class RecurringBlackoutRulesChartOverlayIntegrationTest : IntegrationFixture
     {
         private static readonly JsonSerializerOptions JsonOptions = new()
         {

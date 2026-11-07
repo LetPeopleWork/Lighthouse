@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// </summary>
     [TestFixture(OwnerKind.Team)]
     [TestFixture(OwnerKind.Portfolio)]
-    public class CycleTimeDefinitionOverAMappingIntegrationTest(OwnerKind kind)
+    public class CycleTimeDefinitionOverAMappingIntegrationTest(OwnerKind kind) : IntegrationFixture
     {
         private const string Backlog = "Backlog";
         private const string Analysis = "Analysis";

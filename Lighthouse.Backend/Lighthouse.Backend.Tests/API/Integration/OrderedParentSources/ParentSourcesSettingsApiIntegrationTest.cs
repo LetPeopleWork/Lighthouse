@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.OrderedParentSources
     /// <c>ParentSourcesTest</c>; the host is built once for the fixture.
     /// </summary>
     [TestFixture]
-    public class ParentSourcesSettingsApiIntegrationTest
+    public class ParentSourcesSettingsApiIntegrationTest : IntegrationFixture
     {
         // The text the browser sends for a saved list, kinds as words, an own-parent entry carrying no field.
         // The frontend's save test pins the same two texts; change them together or not at all.

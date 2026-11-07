@@ -11,7 +11,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class CumulativeStateTimePortfolioReadApiIntegrationTest
+    public class CumulativeStateTimePortfolioReadApiIntegrationTest : IntegrationFixture
     {
         private const string Analyzing = "Analyzing";
         private const string Building = "Building";

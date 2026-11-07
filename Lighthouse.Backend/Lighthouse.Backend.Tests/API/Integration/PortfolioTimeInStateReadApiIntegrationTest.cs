@@ -11,7 +11,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class PortfolioTimeInStateReadApiIntegrationTest
+    public class PortfolioTimeInStateReadApiIntegrationTest : IntegrationFixture
     {
         private static int testDateOffset;
 

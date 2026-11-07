@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting
     [Category("acceptance")]
     [Category("epic-5792-dependency-aware-forecasting")]
     [Category("slice-00")]
-    public class Slice00OneForecastPerBatchScenarios
+    public class Slice00OneForecastPerBatchScenarios : IntegrationFixture
     {
         private const string SizeFieldReference = "customfield_10042";
         private const string ForecastFieldReference = "customfield_10099";

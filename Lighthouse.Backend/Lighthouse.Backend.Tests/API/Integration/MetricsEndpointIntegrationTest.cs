@@ -1,11 +1,12 @@
 using System.Net;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.Health;
 using Lighthouse.Backend.Tests.TestHelpers.Telemetry;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [Category("epic-5305-k8s-readiness")]
-    public class MetricsEndpointIntegrationTest
+    public class MetricsEndpointIntegrationTest : IntegrationFixture
     {
         [Test]
         public async Task Metrics_Endpoint_ReturnsPrometheusFormatWithHttpServerMetrics()

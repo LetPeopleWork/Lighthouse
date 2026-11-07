@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// only exists for the browser.
     /// </summary>
     [TestFixture]
-    public class WorkItemEstimateApiIntegrationTest
+    public class WorkItemEstimateApiIntegrationTest : IntegrationFixture
     {
 
         private const string EstimateField = "estimate";

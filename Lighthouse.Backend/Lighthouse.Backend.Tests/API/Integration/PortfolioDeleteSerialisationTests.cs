@@ -20,7 +20,7 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class PortfolioDeleteSerialisationTests
+    public class PortfolioDeleteSerialisationTests : IntegrationFixture
     {
         private TestWebApplicationFactory<Program> factory;
         private WebApplicationFactory<Program> hostedFactory;

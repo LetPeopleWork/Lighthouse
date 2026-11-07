@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class OAuthCallbackCsrfIntegrationTest
+    public class OAuthCallbackCsrfIntegrationTest : IntegrationFixture
     {
         private const string ProviderKey = AuthenticationMethodKeys.JiraOAuth;
         private const string EncryptedClientId = "enc-client-id";

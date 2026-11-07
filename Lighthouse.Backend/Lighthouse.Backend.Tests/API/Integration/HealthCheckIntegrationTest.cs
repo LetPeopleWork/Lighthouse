@@ -1,9 +1,10 @@
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.Health;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [Category("epic-5305-k8s-readiness")]
-    public class HealthCheckIntegrationTest
+    public class HealthCheckIntegrationTest : IntegrationFixture
     {
         [Test]
         public async Task HealthLive_ProcessUp_Returns200()

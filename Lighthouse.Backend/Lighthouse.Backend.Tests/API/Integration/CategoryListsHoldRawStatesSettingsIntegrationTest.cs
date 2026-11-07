@@ -21,7 +21,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// </summary>
     [TestFixture(OwnerKind.Team)]
     [TestFixture(OwnerKind.Portfolio)]
-    public class CategoryListsHoldRawStatesSettingsIntegrationTest(OwnerKind kind)
+    public class CategoryListsHoldRawStatesSettingsIntegrationTest(OwnerKind kind) : IntegrationFixture
     {
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;

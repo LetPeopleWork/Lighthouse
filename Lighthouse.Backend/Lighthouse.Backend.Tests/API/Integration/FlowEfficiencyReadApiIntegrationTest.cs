@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     // Black-box tests over WebApplicationFactory<Program>: they assert the HTTP/JSON contract only.
     [TestFixture]
-    public class FlowEfficiencyReadApiIntegrationTest
+    public class FlowEfficiencyReadApiIntegrationTest : IntegrationFixture
     {
         private const string InProgress = "In Progress";
         private const string WaitingForReview = "Waiting for Review";

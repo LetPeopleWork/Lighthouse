@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// on a controller of its own - a framed viewer is signed in, so being signed in cannot be the bar.
     /// </summary>
     [TestFixture]
-    public class EncryptionControllerTests
+    public class EncryptionControllerTests : IntegrationFixture
     {
         private const string VersionedRoute = "/api/v1/encryption";
 

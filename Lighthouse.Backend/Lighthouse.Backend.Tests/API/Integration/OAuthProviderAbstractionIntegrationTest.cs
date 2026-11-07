@@ -17,7 +17,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class OAuthProviderAbstractionIntegrationTest
+    public class OAuthProviderAbstractionIntegrationTest : IntegrationFixture
     {
         private const string StubProviderKey = AuthenticationMethodKeys.StubOAuth;
         private const string EncryptedClientId = "enc-client-id";

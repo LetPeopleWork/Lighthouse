@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class ConnectionSecretStatePayloadTests
+    public class ConnectionSecretStatePayloadTests : IntegrationFixture
     {
         private const string LostCredentialKey = "Personal Access Token";
 

@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class DeliveryMetricsHistoryReadApiIntegrationTest
+    public class DeliveryMetricsHistoryReadApiIntegrationTest : IntegrationFixture
     {
         private static readonly JsonSerializerOptions CaseInsensitiveJson = new() { PropertyNameCaseInsensitive = true };
 

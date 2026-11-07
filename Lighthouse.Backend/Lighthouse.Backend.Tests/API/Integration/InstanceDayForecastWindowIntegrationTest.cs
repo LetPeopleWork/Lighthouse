@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// discriminates between them on every date a run happens to fall on.
     /// </summary>
     [TestFixture]
-    public class InstanceDayForecastWindowIntegrationTest
+    public class InstanceDayForecastWindowIntegrationTest : IntegrationFixture
     {
         private const string InstanceTimeZoneId = "Europe/Zurich";
 

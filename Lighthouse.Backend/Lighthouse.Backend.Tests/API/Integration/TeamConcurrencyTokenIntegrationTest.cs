@@ -16,7 +16,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class TeamConcurrencyTokenIntegrationTest
+    public class TeamConcurrencyTokenIntegrationTest : IntegrationFixture
     {
         private const string ConcurrencyConflictCode = "concurrency-conflict";
 

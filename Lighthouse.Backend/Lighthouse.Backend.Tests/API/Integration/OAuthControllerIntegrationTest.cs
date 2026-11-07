@@ -20,7 +20,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    public class OAuthControllerIntegrationTest
+    public class OAuthControllerIntegrationTest : IntegrationFixture
     {
         private const string ProviderKey = "jira.oauth";
         private const string EncryptedClientId = "enc-client-id";

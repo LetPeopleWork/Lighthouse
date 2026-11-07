@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     // added in the same edit arrives pointing at that placeholder. These drive the real HTTP pipeline on
     // SQLite with foreign keys enforced, where a placeholder that reaches the database fails the save.
     [TestFixture]
-    public class WriteBackMappingForNewAdditionalFieldIntegrationTest
+    public class WriteBackMappingForNewAdditionalFieldIntegrationTest : IntegrationFixture
     {
         private const int NewFieldPlaceholderId = -1;
         private const string NewFieldReference = "customfield_1";

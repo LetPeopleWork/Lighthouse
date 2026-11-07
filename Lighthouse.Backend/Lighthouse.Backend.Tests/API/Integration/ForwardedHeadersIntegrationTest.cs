@@ -1,10 +1,11 @@
 using System.Net;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.ForwardedHeaders;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [Category("epic-5305-k8s-readiness")]
-    public class ForwardedHeadersIntegrationTest
+    public class ForwardedHeadersIntegrationTest : IntegrationFixture
     {
         private const string TrustedProxyIp = "10.20.30.40";
         private const string LoopbackSource = "::1";

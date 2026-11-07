@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     [TestFixture]
     [Category("acceptance")]
     [Category("auth-off")]
-    public class FeatureMoveAuthOffIntegrationTest
+    public class FeatureMoveAuthOffIntegrationTest : IntegrationFixture
     {
         private const string SearchIndex = "Rebuild the search index";
         private const string LegacyImporter = "Retire the legacy importer";

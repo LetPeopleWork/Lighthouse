@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
     [Category("recurring-blackout-events")]
-    public class RecurringBlackoutRulesWriteBackIntegrationTest
+    public class RecurringBlackoutRulesWriteBackIntegrationTest : IntegrationFixture
     {
         private const int WorkingDaysToCompletion = 10;
         private const string FieldReference = "customfield_forecast";

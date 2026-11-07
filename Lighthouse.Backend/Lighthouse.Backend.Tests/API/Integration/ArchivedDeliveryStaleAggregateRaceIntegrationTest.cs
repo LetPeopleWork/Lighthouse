@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// refresh is holding the older one. These tests pin what happens when the two meet.
     /// </summary>
     [TestFixture]
-    public class ArchivedDeliveryStaleAggregateRaceIntegrationTest
+    public class ArchivedDeliveryStaleAggregateRaceIntegrationTest : IntegrationFixture
     {
         private const string MatchedType = "Epic";
 

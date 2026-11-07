@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// HTTP, and not only against the status of the write.
     /// </summary>
     [TestFixture]
-    public class DeliveryFeatureSelectionScopeIntegrationTest
+    public class DeliveryFeatureSelectionScopeIntegrationTest : IntegrationFixture
     {
         private const string FeatureType = "Epic";
         private const string StoredName = "Q3 Launch";

@@ -22,7 +22,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class DeliveryArchiveClosurePinIntegrationTest
+    public class DeliveryArchiveClosurePinIntegrationTest : IntegrationFixture
     {
         private const int TotalWorkItems = 10;
         private const int RemainingWorkItems = 3;

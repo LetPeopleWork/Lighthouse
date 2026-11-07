@@ -9,7 +9,7 @@ using Microsoft.Extensions.Configuration;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class SystemInfoAuthVisibilityCrossLayerTest
+    public class SystemInfoAuthVisibilityCrossLayerTest : IntegrationFixture
     {
         [Test]
         public async Task BannerAndApi_AgreeOnAllThreeAuthFields_WhenAuthAndRbacEnabledWithEmergencyAdmin()

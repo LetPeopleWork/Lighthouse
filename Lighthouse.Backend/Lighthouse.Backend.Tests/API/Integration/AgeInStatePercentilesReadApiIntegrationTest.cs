@@ -11,7 +11,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class AgeInStatePercentilesReadApiIntegrationTest
+    public class AgeInStatePercentilesReadApiIntegrationTest : IntegrationFixture
     {
         private const string InProgress = "In Progress";
         private const string Review = "Review";

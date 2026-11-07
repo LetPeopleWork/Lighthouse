@@ -13,7 +13,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class WorkItemAgePercentilesReadApiIntegrationTest
+    public class WorkItemAgePercentilesReadApiIntegrationTest : IntegrationFixture
     {
         private const string InProgress = "In Progress";
 

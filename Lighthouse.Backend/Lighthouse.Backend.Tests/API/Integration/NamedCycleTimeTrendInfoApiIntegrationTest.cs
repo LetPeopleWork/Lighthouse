@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// window, so cache collisions are observable as an equality that should be an inequality.
     /// </summary>
     [TestFixture]
-    public class NamedCycleTimeTrendInfoApiIntegrationTest
+    public class NamedCycleTimeTrendInfoApiIntegrationTest : IntegrationFixture
     {
         private const string Backlog = "Backlog";
         private const string Implementation = "Implementation";

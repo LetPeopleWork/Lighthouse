@@ -7,7 +7,7 @@ using Microsoft.Extensions.Configuration;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [TestFixture]
-    public class SystemInfoWireFormatRegressionTests
+    public class SystemInfoWireFormatRegressionTests : IntegrationFixture
     {
         [Test]
         public async Task GetSystemInfo_JsonResponse_UsesAuthenticationEnabledPropertyName_NotIsAuthenticationEnabled()

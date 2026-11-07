@@ -1,9 +1,10 @@
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestHelpers.Health;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     [Category("epic-5305-k8s-readiness")]
-    public class ShutdownIntegrationTest
+    public class ShutdownIntegrationTest : IntegrationFixture
     {
         [Test]
         public async Task Shutdown_ApplicationStopping_ReadinessFlipsNotReadyBeforeDrain()

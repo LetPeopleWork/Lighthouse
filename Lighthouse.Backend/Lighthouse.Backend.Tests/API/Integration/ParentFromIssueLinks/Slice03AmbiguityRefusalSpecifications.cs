@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks
     /// code: the real connector resolves the real reference over the real field and link-type payloads and
     /// reads the real link entries off the real issue payloads.
     /// </summary>
-    public partial class Slice03AmbiguityRefusalTest
+    public partial class Slice03AmbiguityRefusalTest : IntegrationFixture
     {
         private const string TheAmbiguousItem = "PROJ-7";
 

@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// moves a third's counts and brings a fourth into the Portfolio.
     /// </summary>
     [TestFixture]
-    public class ArchivedDeliveryReadStabilityIntegrationTest
+    public class ArchivedDeliveryReadStabilityIntegrationTest : IntegrationFixture
     {
         private const string RemovedFeatureName = "Checkout";
         private const string RenamedFeatureName = "Search";

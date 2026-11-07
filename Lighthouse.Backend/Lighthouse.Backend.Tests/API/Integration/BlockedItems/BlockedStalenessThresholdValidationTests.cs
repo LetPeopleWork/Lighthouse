@@ -23,7 +23,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.BlockedItems
     /// constants. These tests fail RED because the validation is not yet wired.
     /// </summary>
     [TestFixture]
-    public class BlockedStalenessThresholdValidationTests
+    public class BlockedStalenessThresholdValidationTests : IntegrationFixture
     {
         private TestWebApplicationFactory<Program> rootFactory = null!;
         private WebApplicationFactory<Program> factory = null!;

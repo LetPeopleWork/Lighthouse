@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     /// Epic 5146 slice 01 (#5692) — ADR-137. The three hops read in order: a viewer signs in at top
     /// level, the resolver polls the outcome back, the frame is entered as that person.
     /// </summary>
-    public class ViewerEmbedSessionJourneyTests
+    public class ViewerEmbedSessionJourneyTests : IntegrationFixture
     {
         private ViewerEmbedTestHost host = null!;
         private WebApplicationFactory<Program> hostAheadOfRealTime = null!;
