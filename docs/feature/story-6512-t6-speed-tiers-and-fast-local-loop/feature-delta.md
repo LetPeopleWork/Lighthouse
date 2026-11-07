@@ -1733,3 +1733,64 @@ No listed class stayed regular. `ParentFromIssueLinksAcceptanceTest`, `Slice01Li
 The seven variables were removed from every run. Only named classes ran, so this is not a list; that comes in step 05-04. `H`'s 2,676 has no matching count from before this step to subtract, as `H` was not listed at `8fb288160`.
 
 **The comments.** Commit `892a58942`, apart from the move so that one stays the move alone: 14 of the touched files, comments only, 55 insertions, 59 deletions. They explained themselves through story, decision and ADR ids. A diff read shows no line outside a comment, and the scan for those ids over the 64 files now prints nothing. The scan matches ids, not narration, so other comments that break the rule may remain. After it, on Debug only: a build with 0 warnings and 0 errors, and `TestTierGuardTest` TRX total 61, passed 61, exit 0. `-c Release` did not run on the comment commit.
+
+## Wave: DELIVER / [REF] Review of slices C and D (2026-11-07)
+
+A review fix outside the roadmap's steps, commit `6aadc2bc5`. Not pushed.
+
+**What NUnit does with spaces.** NUnit 5.0.0, read from the framework and through a real `dotnet test --filter` with adapter 6.3.1, not from memory.
+
+| Written | NUnit's category | `Category=Integration` selects it |
+|---|---|---|
+| `[Category(" Integration ")]` | `Integration`, trimmed | Yes |
+| `Category = "x,Integration"` on `[TestCase]`, `[TestCaseSource]`, `[TestFixture]`, `[TestFixtureSource]` | `x` and `Integration` | Yes |
+| `Category = "x, Integration"` on the same four | `x` and ` Integration`, the space kept | No |
+| `Category = " Integration"` on `[TestCase]` | ` Integration` | No |
+
+A list is cut at the commas, empty pieces are dropped and nothing is trimmed. The guard had it the wrong way round on both paths: it left the name raw and trimmed the list. It now trims the name, cuts the list as NUnit does, and `TheGuardReadsACategoryTheWayNUnitDoes` asks the framework, so an upgrade that changes this fails there. The three plants that wrote `"some-slice, X"` claimed a reading NUnit does not make, so they now write `"some-slice,X"`. No real test writes a space after a comma, so the real pass did not change.
+
+**The plants.** Each ran with only its root removed, Debug, then the file was restored and compared byte for byte. The plant's case failed every time. "Nothing else" means no other net would have caught the root's loss, and that is the gap the review named.
+
+| Root removed | The plant that failed | Also failed |
+|---|---|---|
+| `[Test]` | `HostInATestBody` | `EveryTypeOnTheListStillOwesAMoveToTheBase` |
+| `[TestCase]` | `HostInATestCaseBody` | `EveryTypeOnTheListStillOwesAMoveToTheBase` |
+| `[TestCaseSource]` | `HostInATestCaseSourceBody` | Nothing else |
+| `[Theory]` | `HostInATheoryBody` | Nothing else |
+| `[SetUp]` | `HostInASetUp` | `NoFixtureSitsOnTheBaseWithoutAReason` |
+| `[TearDown]` | `HostInATearDown` | Nothing else |
+| `[OneTimeTearDown]` | `HostInAOneTimeTearDown` | Nothing else |
+| The static constructor, by `method.IsConstructor && !method.IsStatic` | `HostInAStaticConstructor` | Nothing else |
+
+A static constructor was already a root, because Cecil's `IsConstructor` covers it; no code changed for it. `[TestCaseSource]` and `[Theory]` go beyond the review's list, as they sit in the same set with the same gap.
+
+Being abstract does not hide a plant from `TestHostPerFixtureGuardTest`, because its scan reads abstract classes. The first run proved it: `NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList` named `TestTierGuardTest`. That guard now leaves both guards' plants out by name, and its real pass stays at 18 tests.
+
+**The connectors.** One list, `TestSelectionClauseTest.Connectors`, which the tier guard reads. `TheConnectorListIsWhatTheClauseInCiLeavesOut` pins it to the `Category!=` terms of the clause in `ci_backend.yml`, so the clause's text stays the source of truth. A temporary `Category!=PlanetIntegration` in that clause failed the test, TRX total 1, failed 1, exit 1; the workflow file was then restored byte for byte.
+
+**What ran.** The seven variables were removed from every run.
+
+| Run | Result, by the TRX |
+|---|---|
+| Before the fix, Debug, without `IntegrationFixtureCategoryTest` | total 113, passed 107, failed 6: five category cases, and the host guard naming the plants |
+| The four classes, Debug | total 115, passed 115, exit 0: 74 + 18 + 21 + 2 |
+| The four classes, `-c Release` | total 115, passed 115, exit 0: 74 + 18 + 21 + 2 |
+| `DbContextComesFromAScopeGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`, `BackendTestParallelizationGuardTest`, `-c Release` | total 29, passed 29, exit 0 |
+| Builds: `Lighthouse.Backend`, then the test project in Debug and `-c Release` | 0 warnings, 0 errors, each |
+
+**The guard's time.** In `L5`'s TRX, the 61 tests of `TestTierGuardTest` add up to 2.68 s, one after another from 17:44:50.2 to 17:44:52.9. 2.31 s of that is one test, `NoFixtureSitsOnTheBaseWithoutAReason`, the first to walk the hosted fixtures' call trees. `TestHostPerFixtureGuardTest` takes 0.17 s. The TRX gives a test's time only, so the one-time set-up that reads the assembly and runs the first scan is not in these figures. After this fix, with 74 tests and a run of only these classes: 1.34 s in `-c Release`, 2.38 s in Debug.
+
+**Gaps not fixed.** Each is known and left as it is.
+
+- **Interface dispatch is not followed.** The scan follows calls to overrides of a virtual method, not to implementations of an interface. A fixture that reaches a host only through an interface call looks hostless.
+- **A static class with tests is invisible to every rule.** Such a class is abstract in the assembly, and the real pass reads concrete classes only. NUnit would run it. The real tree has 0, read from the compiled assembly.
+- **`[Sequential]`, `[Pairwise]` or `[Combinatorial]` without `[Test]`.** NUnit treats such a method as a test; the guard does not count it as one. The tree has 0 of these; the 2 methods that use one also carry a test attribute.
+- **A host in a `[SetUpFixture]`.** It is not in the root set and sits on no fixture. The tree has 2 such classes, `FixtureTimingReporter` and `InstanceCulturePin`; neither mentions a host or a factory.
+- **`[assembly: Category]`.** The guard reads classes and methods only. The tree has 0.
+- **Container identity is a namespace proxy.** A class counts as a container test because of the namespace it sits in, not because it starts a container. A container test outside that namespace goes unseen, and one in it that needs none counts as one, which is why `SitsAmongTheContainerTests` exists.
+- **A wrongly-cased connector or canary runs silently, by design.** Selection matches exactly, so `jiraintegration` is no connector and the rules treat it as what NUnit treats it as. The clause lets such a test through.
+- **A space after a comma now behaves the same way, and this is new.** `Category = "x, JiraIntegration"` is not that connector, for NUnit or the guard, so a live test written so would run in CI against its real tracker, and no rule says so. Before this fix the guard saw a connector NUnit did not. The tree has 0.
+- **A class can be added to the list to dodge a rule.** The list has no count constant, on purpose: it is emptied in slice E, and the review of the diff is what stops an addition until then.
+- **Each guard reads the assembly again, and a positive answer is not cached.** Each guard reads the module and builds its own scan. The scan remembers methods that reach no host, not those that do, so a walk that finds a host is walked again for the next root. At about 3 s this is not worth a shared cache.
+
+Seen while here, also not fixed, each 0 in the tree: a generic `[TestCase<T>]` has another attribute name, so it is no root; `TestCaseData.SetCategory` and a class derived from `CategoryAttribute` are not read.
