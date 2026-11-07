@@ -1177,3 +1177,19 @@ Figures and proofs in `measurement/slice-A-measurement.md`.
 - **Mutation testing N/A:** no production file changed.
 - **Budget stays 56 s** until the budget commit after the push (at least 5 complete plain `main` runs). Slices B and C are
   not part of this Story and can be picked up later as their own item.
+
+## Wave: DELIVER / [REF] Budget commit (2026-11-07)
+
+Five complete plain `main` runs after the rewrites, none stopped early. The CSVs and the Vitest Duration are read from each run:
+
+| Run | Commit | Duration | Files, tests | Largest file |
+|---|---|---|---|---|
+| 42354918984 | d2a8a6b68 | 473.91 s | 618, 9500 | `BaseMetricsView.loading` 12.0 s |
+| 42366736330 | db8b295bf | 594.92 s | 618, 9500 | `ReportsPage.combinedPdf` 13.8 s |
+| 42369233738 | 82b53525f | 587.37 s | 618, 9505 | `BaseMetricsView.loading` 15.8 s |
+| 42370581769 | c0292b875 | 490.53 s | 618, 9505 | `BaseMetricsView.loading` 11.7 s |
+| 42370793984 | fcc395c1c | 453.51 s | 618, 9505 | `BaseMetricsView.loading` 11.9 s |
+
+The last three ran in a shuffled order. No run has a Duration of 950 s or more, so L is multiplied by 1.62: L = 15.78 s, and B = ceil(2.1 x 1.62 x 15.78) = ceil(53.67) = **54 s**, below the 56 s in force.
+
+This is less than the 47 s expected: that figure took L = 22.0 s without the slow-runner factor. Slices B and C stay open if a lower budget is wanted later.
