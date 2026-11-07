@@ -78,7 +78,7 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		["90", "85"],
 		["85", "85"],
 	])(
-		"refuses a low end of %s against a high end of %s, naming both, and saves nothing",
+		"refuses a low end of %s against a high end of %s, naming both",
 		async (low, high) => {
 			const { replaceTheLikelihood } = renderBand({
 				lowPercentile: 50,
@@ -98,19 +98,16 @@ describe("The band in the Refinement section of a Team's settings", () => {
 	it.each([
 		["Low end likelihood", "49"],
 		["High end likelihood", "96"],
-	])(
-		"refuses %s at %s, outside 50 to 95, and saves nothing",
-		async (fieldName, value) => {
-			const label = new RegExp(`^${fieldName}`);
-			const { replaceTheLikelihood } = renderBand();
+	])("refuses %s at %s, outside 50 to 95", async (fieldName, value) => {
+		const label = new RegExp(`^${fieldName}`);
+		const { replaceTheLikelihood } = renderBand();
 
-			await replaceTheLikelihood(label, value);
+		await replaceTheLikelihood(label, value);
 
-			const field = screen.getByRole("spinbutton", { name: label });
-			expect(field).toHaveAttribute("aria-invalid", "true");
-			expect(field).toHaveAccessibleDescription("Between 50% and 95%.");
-		},
-	);
+		const field = screen.getByRole("spinbutton", { name: label });
+		expect(field).toHaveAttribute("aria-invalid", "true");
+		expect(field).toHaveAccessibleDescription("Between 50% and 95%.");
+	});
 
 	it("marks the high end being typed in when it falls below the low end, and explains why there", async () => {
 		const { replaceTheLikelihood } = renderBand({

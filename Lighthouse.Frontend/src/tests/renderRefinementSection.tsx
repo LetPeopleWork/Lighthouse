@@ -5,7 +5,8 @@ import { type ReactElement, useState } from "react";
 /**
  * Renders one controlled part of a Team's Refinement settings on its own, handing it a value and an
  * `onChange` as the settings form does, and returns the `user` that edits it and `latest()`, the
- * value the host holds now.
+ * value the host holds now. It wraps the section in no providers, so a test that needs the Team's
+ * own words has to mock the terminology, or the section quietly shows the product's own words.
  */
 export const renderRefinementSection = <TValue,>(
 	initial: TValue,

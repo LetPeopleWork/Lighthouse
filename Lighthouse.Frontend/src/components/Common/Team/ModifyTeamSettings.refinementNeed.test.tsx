@@ -213,6 +213,34 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		);
 	});
 
+	it("saves an edited Ready rule together with Yes votes needed changed before the first save", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				stageRules: {
+					ready: tagsContain("ready"),
+					beingRefined: tagsContain("analysing"),
+				},
+			}),
+		);
+
+		const value = within(await theStageGroup(READY_WHEN)).getByLabelText(
+			"Value",
+		);
+		await userEvent.clear(value);
+		await userEvent.type(value, "groomed");
+		await replaceTheNumberIn("Yes votes needed", "2");
+
+		const bothEdits = {
+			states: [{ state: "Backlog" }, { state: "Analysing" }, { state: "Next" }],
+			readiness: { minYes: 2, minVoters: 3, discussWhen: { no: 1, yesIf: 2 } },
+			stageRules: {
+				ready: tagsContain("groomed"),
+				beingRefined: tagsContain("analysing"),
+			},
+		};
+		await waitFor(() => expect(theRefinementLastSaved()).toEqual(bothEdits));
+	});
+
 	it("saves nothing while a new rule is still incomplete", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 

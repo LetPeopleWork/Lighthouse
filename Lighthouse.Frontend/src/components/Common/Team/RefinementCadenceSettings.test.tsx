@@ -74,7 +74,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		expect(screen.queryByLabelText("Starting week")).not.toBeInTheDocument();
 	});
 
-	it("saves nothing for fewer than one week between Refinements", async () => {
+	it("refuses fewer than one week between Refinements", async () => {
 		const { replaceTheNumberIn } = renderCadence(THURSDAYS_EVERY_WEEK);
 
 		await replaceTheNumberIn(REPEAT_EVERY, "0");
@@ -85,7 +85,7 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 	});
 
 	// The server looks a year ahead for the next Refinement, so a longer gap could leave it none.
-	it("saves nothing for more than 52 weeks between Refinements, and says why", async () => {
+	it("refuses more than 52 weeks between Refinements, and says why", async () => {
 		const { replaceTheNumberIn } = renderCadence(THURSDAYS_EVERY_WEEK);
 
 		await replaceTheNumberIn(REPEAT_EVERY, "53");

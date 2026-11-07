@@ -263,6 +263,15 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		);
 	});
 
+	it("saves nothing while a refused number of Yes votes is typed", async () => {
+		await renderGravitysSettingsForm(gravitysSettings());
+
+		await replaceTheNumberIn(YES_VOTES_NEEDED, "0");
+		await pastTheAutosaveDelay();
+
+		expect(saveTeamSettings).not.toHaveBeenCalled();
+	});
+
 	it("saves nothing just because the form was opened", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 

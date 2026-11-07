@@ -68,7 +68,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		expect(screen.getByText("or more “Yes, if…” votes")).toBeVisible();
 	});
 
-	it("refuses fewer than one Yes vote, says why and saves nothing", async () => {
+	it("refuses fewer than one Yes vote and says why", async () => {
 		const { replaceTheNumberIn } = renderReadiness();
 
 		await replaceTheNumberIn(YES_VOTES_NEEDED, "0");
@@ -76,7 +76,7 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		expect(screen.getByText("At least one Yes vote is needed")).toBeVisible();
 	});
 
-	it("refuses fewer voters than Yes votes, says why and saves nothing", async () => {
+	it("refuses fewer voters than Yes votes and says why", async () => {
 		const { replaceTheNumberIn } = renderReadiness();
 
 		await replaceTheNumberIn(VOTERS_NEEDED, "2");
@@ -153,22 +153,19 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		{ field: NO_THRESHOLD, typed: "" },
 		{ field: YES_IF_THRESHOLD, typed: "0" },
 		{ field: YES_IF_THRESHOLD, typed: "" },
-	])(
-		"refuses '$typed' in $field, says why and saves nothing",
-		async ({ field, typed }) => {
-			const { user } = renderReadiness();
+	])("refuses '$typed' in $field and says why", async ({ field, typed }) => {
+		const { user } = renderReadiness();
 
-			const threshold = screen.getByRole("spinbutton", { name: field });
-			await user.clear(threshold);
-			if (typed !== "") {
-				await user.type(threshold, typed);
-			}
+		const threshold = screen.getByRole("spinbutton", { name: field });
+		await user.clear(threshold);
+		if (typed !== "") {
+			await user.type(threshold, typed);
+		}
 
-			expect(
-				screen.getByText("A discussion rule needs at least 1 vote"),
-			).toBeVisible();
-		},
-	);
+		expect(
+			screen.getByText("A discussion rule needs at least 1 vote"),
+		).toBeVisible();
+	});
 
 	it.each([
 		{ refused: YES_VOTES_NEEDED, typed: "0", accepted: VOTERS_NEEDED },
