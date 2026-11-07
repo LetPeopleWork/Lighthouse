@@ -575,3 +575,20 @@ PortfolioDetail test count before: 36.
 - **Update-deferral describe (read-only check).** Alone and shuffled on seeds 11, 33, 7: 2 passed each. Clean, no second leak.
 - **Gates.** `pnpm build` exit 0, no errors or warnings, `git status` shows only the two step files. Plain `pnpm test`: 618 files,
   9500 tests passed, 0 budget offenders.
+
+## Wave: DELIVER / [REF] Step 01-03 ActionButton stray event (2026-11-07)
+
+- **Guard check, before any edit.** With `if (isMounted.current)` removed (uncommitted), `-t "leaves the page alone"` failed on
+  `expect(rejections).toEqual([])` with `TypeError: Cannot read properties of undefined (reading 'event')`. File restored with
+  `git checkout`; no production diff.
+- **Pair before, seeds 1, 2, 4, 5, 6.** All tests green, `Errors  2 errors` (`reading 'nodeName'` and `reading 'event'`), exit 1.
+  Seed 3: clean.
+- **Stray event.** Temporary capture-phase listeners on `window` and `document`, installed before the stub, logged on seed 1:
+  `selectionchange` on `#document`, on both, with the 300 ms timer running inside the stub window. Seed 3 logged only the click.
+  Not a `focus` event itself: it is the selection change the focus test's `autoFocus` leaves queued, which React's document
+  listener handles while `window` is gone. Listeners removed again before the fix.
+- **Fix.** The test waits one real tick (`setImmediate`) before `vi.useFakeTimers()`, so the queued event is delivered first.
+  The stub stays, no console.error assertion, no timeout.
+- **After.** Pair on seeds 1, 2, 4, 5, 6: exit 0, no Errors line. Whole file on seeds 1 and 7: 13 passed.
+- **Repeat guard check with the fix.** Guard removed: `-t "leaves the page alone"` red, and the pair on seed 1 red; restored.
+- **Gates.** `pnpm build` clean. Plain `pnpm test`: 618 files, 9500 tests passed.

@@ -256,6 +256,9 @@ describe("ActionButton component", () => {
 	});
 
 	it("leaves the page alone when its minimum wait ends after it is gone", async () => {
+		// The test before may have left a selection change queued; it would
+		// arrive while the window is gone below and fail inside React.
+		await new Promise((resolve) => setImmediate(resolve));
 		vi.useFakeTimers();
 		const rejections: unknown[] = [];
 		const onRejection = (reason: unknown) => rejections.push(reason);
