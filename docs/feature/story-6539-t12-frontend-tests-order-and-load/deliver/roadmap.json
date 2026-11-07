@@ -1,0 +1,170 @@
+{
+  "roadmap": {
+    "project_id": "story-6539-t12-frontend-tests-order-and-load",
+    "created_at": "2026-11-07",
+    "total_steps": 6,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "Frontend tests do not depend on order: the three order-dependent test files are fixed, and a shuffled run in the CI frontend job keeps the class from coming back, with the replay rule in docs/ci-learnings.md.",
+    "notes": "Rigor profile standard (pass model explicitly on every dispatch). Mutation testing N/A while only test files, a CI input and a docs line change; accepted by the maintainer on 2026-11-07. Load: not reproduced, no fix claimed, watched; no timeout or retry is added as a fix. The guard is --sequence.shuffle.tests with seed = github.run_id. Before-commit is the trunk commit 01-01 starts from. Every run from Lighthouse.Frontend with pnpm test <file> [flags]; delete test-results.json before a run that is read for ids. No test is skipped, deleted or weakened; no production file changes (the temporary, uncommitted edit of ActionButton.tsx in 01-03 is restored). No nWave scenario tag in any test title or comment. Step ids map to DESIGN: 01-01..01-04 = A1..A4, 02-01 = B1 (action input, workflow line, reporter check), 02-02 = B2. The Story is pushed at its end, after 02-02; then 5 consecutive green main runs with distinct run ids close it. A conflict with trunk stops the step and reports; nothing is rebased."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Fixes and sweep",
+      "description": "Reproduce each order dependence on the pre-fix tree with the guard's own flag, fix the three test files, and sweep seeds locally until all are green. Directory: Lighthouse.Frontend/src.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "PortfolioDetail: file-level mock defaults and anchored absence tests",
+          "description": "Record the pre-fix reproductions with --sequence.shuffle.tests (PortfolioDetail seeds 11, 33, 3; GeneralSettings seeds 1, 2; ActionButton seed 1; an 11-digit seed accepted; one full CI-flag run red). Then fix PortfolioDetail: add the positive anchor to the two absence tests, show them red in the broken order, add one file-level beforeEach with every default the first describe sets, check the update-deferral beforeEach for a second leak.",
+          "criteria": [
+            "git diff --stat 57176a17c HEAD -- Lighthouse.Frontend prints nothing before the first edit, and the pre-fix reproduction table of the feature delta is filled with exit status and failing test names, for .tests and not only the bare flag; a row that does not reproduce is named at the hold and the bare flag is the stated fallback",
+            "pnpm test src/pages/Portfolios/Detail/PortfolioDetail.test.tsx -t \"a refresh that failed\" is red before the fix with 2 failed and 5 passed (portfolio-no-access-alert in the DOM) and is green with 7 passed after it",
+            "With the anchors added and the defaults not yet added, the two tests that assert absence (stops saying so, leaves the button alone) go red in that run; if they stay green the anchor is fixed before going on",
+            "renderAndWaitForTheUpdateFeed also waits for the portfolio heading",
+            "The update-deferral describe is run alone and on a shuffled seed; a second leak is fixed or recorded as clean",
+            "The whole file passes plain and with --sequence.shuffle.tests on seeds 11, 33, 1, 2, 3, 4, 5, 6, 7, 8; the test count equals the before count",
+            "The diff adds no .skip, .only, .todo, skipIf, runIf, timeout option or retry and removes no expect( without the assertion living elsewhere; only PortfolioDetail.test.tsx changes under Lighthouse.Frontend",
+            "pnpm build in Lighthouse.Frontend is clean with zero errors and zero warnings, git status is checked afterwards, and plain pnpm test is green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx",
+          "scenario_name": "A refresh that failed says so on the refresh button in any test order",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx",
+            "docs/feature/story-6539-t12-frontend-tests-order-and-load/feature-delta.md"
+          ],
+          "dependencies": [],
+          "estimated_size": "S",
+          "implementation_notes": "Cause is a missing mock default (mockGetPortfolio and siblings set only in the first describe's beforeEach at line 177), not a leaked implementation. Nested beforeEach hooks run after a file-level one, so describes still override. Commit: test(portfolio). The pre-fix reproductions are recorded in the delta in this step's docs part, before the test edit."
+        },
+        {
+          "id": "01-02",
+          "name": "GeneralSettingsComponent: reset the administrator flag in the top-level beforeEach",
+          "description": "Reset rbac.isSystemAdmin to true (and any other rbac field a test writes) in the top-level beforeEach; the one test that needs false sets it itself.",
+          "criteria": [
+            "pnpm test src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx -t \"does not offer it to someone who cannot open it|shows wizard button when selected work tracking system is CSV\" --sequence.shuffle.tests --sequence.seed=1 is red before (Unable to find the CSV button), also on seeds 2 and 4, and green on seed 3 as the control; the same pair is green on seeds 1, 2, 3, 4 after",
+            "Every field of the hoisted rbac object that a test writes is found by grep and reset in the same place, listed in the commit body",
+            "The whole file passes plain and with --sequence.shuffle.tests on the ten seeds; the test count equals the before count",
+            "The diff adds no .skip, .only, .todo, skipIf, runIf, timeout option or retry and removes no expect(; only this test file changes",
+            "pnpm build is clean with zero errors and zero warnings and plain pnpm test is green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx",
+          "scenario_name": "A system administrator is offered the CSV wizard whatever test ran before",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Cause: the test that sets rbac.isSystemAdmin = false never sets it back, and the CSV and wizard tests rely on the initial true. Commit: test(settings)."
+        },
+        {
+          "id": "01-03",
+          "name": "ActionButton: prove the stray event and let it finish before the window stub",
+          "description": "Guard check first: delete the isMounted guard temporarily and show the stubbed test red. Prove which event arrives by temporary listeners. Keep the stub and remove the event's source. Repeat the guard check on the fixed test.",
+          "criteria": [
+            "Before any edit, with if (isMounted.current) removed from ActionButton.tsx (uncommitted), pnpm test src/components/Common/ActionButton/ActionButton.test.tsx -t \"leaves the page alone\" is red; the file is restored with git checkout and git diff shows no production file; if it stays green the finding is written in the delta and the step stops at the hold",
+            "The stray event is named from the log of temporary capture-phase listeners (focus, focusin, selectionchange, click) on the pair -t \"takes the focus when asked to|leaves the page alone\" with --sequence.shuffle.tests --sequence.seed=1, and seed 3 logs nothing; if it is not the focus test's event the true cause is written in the delta before the fix",
+            "The pair is red before on seeds 1, 2, 4, 5, 6 (unhandled nodeName TypeError, all tests green, exit 1) and exits 0 with no Errors line on those seeds after; the whole file exits 0 on seeds 1 and 7 after",
+            "The window stub stays; no console.error assertion is added; the instrumentation is gone from the diff",
+            "The guard check repeated with the fix in place still turns the test red with the guard removed, then is restored; if the stub cannot stay the coverage loss is named at the hold and nothing is deleted without its assertion living elsewhere",
+            "The diff adds no .skip, .only, .todo, skipIf, runIf, timeout option or retry; only ActionButton.test.tsx changes; pnpm build clean and plain pnpm test green"
+          ],
+          "test_file": "Lighthouse.Frontend/src/components/Common/ActionButton/ActionButton.test.tsx",
+          "scenario_name": "A button leaves the page alone when its minimum wait ends after it is gone, in any test order",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/components/Common/ActionButton/ActionButton.test.tsx",
+            "docs/feature/story-6539-t12-frontend-tests-order-and-load/feature-delta.md"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "The design's fix (drop the stub) is withdrawn: the stub is what makes the isMounted guard observable. ActionButton.tsx is touched only temporarily and must show no diff at commit. Commit: test(common)."
+        },
+        {
+          "id": "01-04",
+          "name": "Local sweep: ten seeds per file, four full runs on the CI flags",
+          "description": "Run the three files on the ten seeds and four full suite runs with CI=true and --sequence.shuffle.tests on seeds 11, 33, 4, 5; fix a local cause or pause at the cap of 5 extra files.",
+          "criteria": [
+            "pnpm test <file> --sequence.shuffle.tests --sequence.seed=N exits 0 with no Errors line for each of the three files and N in 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 (30 runs)",
+            "CI=true pnpm test --sequence.shuffle.tests --sequence.seed=N exits 0 for N in 11, 33, 4, 5, with test-results.json deleted before each and 618 files with the same test count as the plain run",
+            "The delta holds a table of file, seed, exit status, errors and load average, and names each time-budget offender of the four runs for the reporter check of 02-01",
+            "A red full run is diagnosed and fixed if local, each new file counts against the cap of 5 extra files (2 used so far), and at 5 the run pauses and asks the maintainer",
+            "All four full runs are green before slice 02 starts"
+          ],
+          "test_file": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx",
+          "scenario_name": "No frontend test file fails on any of the swept test orders",
+          "files_to_modify": [
+            "docs/feature/story-6539-t12-frontend-tests-order-and-load/feature-delta.md"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "About 16 minutes of full runs on an idle machine, mostly waiting; run one at a time. A fix found here is its own focused commit inside this step. Commit for the results: docs(test-infra)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "The guard",
+      "description": "Add the shuffled run to the CI frontend job through the existing build-frontend action, check the time-budget reporter under shuffle, then record the replay line and the rule in docs/ci-learnings.md.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Shuffle-seed action input, workflow line and reporter check",
+          "description": "Add the optional shuffle-seed input to .github/actions/build-frontend/action.yml, pass github.run_id from ci_frontend.yml, and check that the time-budget reporter, CSV and budget scripts behave under shuffle.",
+          "criteria": [
+            "The action has an optional input shuffle-seed with default empty; the test step reads it through env SHUFFLE_SEED, never interpolated in the run text; empty runs exactly pnpm test; set prints Test order seed, emits a notice and runs pnpm test --sequence.shuffle.tests --sequence.seed with the value",
+            "ci_frontend.yml passes shuffle-seed: ${{ github.run_id }} in the existing with block and nothing else changes; package-app and every other caller are unchanged",
+            "node --test .github/scripts/*.test.mjs stays at 132 of 132",
+            "The set branch with an 11-digit seed run locally exits 0 on the fixed tree, and exits 1 on a throwaway copy of the pre-fix PortfolioDetail test (the copy is deleted, never committed); the empty branch prints no seed line",
+            "The budget offenders of the four 01-04 runs are named in the delta; if one is a test that moved out of first place, the reporter takes the first test by start time, with its own test, in its own commit, and never a looser limit; vitest_to_csv.py output and the check_budget.py verdict are the same for a shuffled run's CSV as for a plain one",
+            "pnpm build is clean with zero errors and zero warnings and plain pnpm test is green"
+          ],
+          "test_file": ".github/scripts/action-pins.test.mjs",
+          "scenario_name": "A shuffled frontend run keeps the pinned workflow files valid and prints its seed",
+          "files_to_modify": [
+            ".github/actions/build-frontend/action.yml",
+            ".github/workflows/ci_frontend.yml",
+            "docs/feature/story-6539-t12-frontend-tests-order-and-load/feature-delta.md"
+          ],
+          "dependencies": [
+            "01-04"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "build-frontend/action.yml confirmed this wave as the only place pnpm test runs in CI (step Test Frontend and Sonar report, run-tests true, env CI true). The reporter files (src/tests/timeBudget/observedRunFromVitest.ts, Scripts/test-timings/) change only on evidence; a reporter change is a test tool and is measured (its own tests). Commit: ci(frontend)."
+        },
+        {
+          "id": "02-02",
+          "name": "docs/ci-learnings.md: replay line and the isolation rule",
+          "description": "Add the replay line, the one rule and the signatures of a new order dependence to the Tests section; record the load position; list what closes the Story.",
+          "criteria": [
+            "grep -n \"sequence.shuffle.tests\" docs/ci-learnings.md finds the replay line: seed is the run id, printed as Test order seed and in the Vitest header, replay with pnpm test --sequence.shuffle.tests --sequence.seed=<run id> <the red file>, bisect a pair with -t \"A|B\"",
+            "The rule is present: tests may not depend on another test's set-up or leave shared state changed, and the guard checks it; the three signatures of a new order dependence and the time-budget kind are listed; no longer timeout or retry as the fix",
+            "Line 118 (explicit timeout for marginal tests) is left in place and the new text says how the two relate",
+            "The delta records the load position (not reproduced, no fix claimed, watch for Test timed out in 5000ms and pointer-events none) and the closing list: push at the end of this step, 5 consecutive green main runs with distinct run ids recorded, ADO 6539 comment, one-week review of the guard, rollback by reverting 02-02 and 02-01 as one commit",
+            "The DISCUSS Checklist boxes are ticked by evidence; no release notes are written"
+          ],
+          "test_file": "docs/ci-learnings.md",
+          "scenario_name": "The ledger tells how to replay a red shuffled run",
+          "files_to_modify": [
+            "docs/ci-learnings.md",
+            "docs/feature/story-6539-t12-frontend-tests-order-and-load/feature-delta.md"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Docs only, so this commit alone starts no frontend run; the Story is pushed after this step, and the push carrying 02-01 starts the run that counts. Commit: docs(test-infra)."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved"
+  }
+}

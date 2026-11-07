@@ -295,3 +295,174 @@ included.
   reproduces" is overstated; that run was too saturated to judge.
 - **Mutation:** the maintainer accepted N/A on 2026-11-07 in chat, for Stories where only test files change; the reporter is
   a test tool, and if B1 changes it, it is measured.
+
+## Wave: DISTILL / [REF] Scope, reconciliation and baseline (2026-11-07, maintainer AFK)
+
+- Shape: three order-independence fixes in test files, then one CI guard (a shuffled run) and one ledger rule. No product
+  behaviour is specified, so there is no new acceptance scenario to write. The executable specification is Vitest: the existing
+  tests of the three files are the behaviour, and the checks below are what can fail. No Gherkin, no scaffolds, no skipped
+  tests (Biome forbids `.skip`); Tier B, the domain-types module and the state-delta port are N/A because the project has no
+  Gherkin, state machine or generator at this layer. An untagged test is correct here: no nWave scenario tag goes into any test
+  title, comment or file; classification stays in this workspace.
+- UI sketches: N/A, because nothing a user sees changes. Loading and failure looks: N/A, no screen is added or changed.
+- Reconciliation: DISCUSS (brief, Checklist), DESIGN with its two amendments and the "Review revision and maintainer word", and
+  DEVOPS read. **0 hard contradictions.** Soft points, resolved as recorded: (1) the first Orchestrator amendment says full runs on
+  seeds 1, 4, 5, 6 and the review revision says 11, 33, 4, 5 with `CI=true`; **the revision wins** (it is the last section).
+  (2) DESIGN and DEVOPS still read "seven full runs" in places; read four. (3) The brief says load failures are fixed; the maintainer
+  word says not reproduced, no fix claimed (D-6539-7). (4) The ActionButton fix of DESIGN (drop the stub) is withdrawn; this wave
+  uses the revised fix. (5) Step ids: DESIGN's A1 to A4 and B1 to B2 are 01-01 to 01-04 and 02-01 to 02-02 in the roadmap, with the
+  action input, workflow line and reporter check in 02-01.
+- Baseline: trunk `93dc95b80` (frontend sources unchanged since the sweep's `57176a17c`; 01-01 confirms with
+  `git diff --stat 57176a17c HEAD -- Lighthouse.Frontend`, which must print nothing, and re-runs the pre-fix reproductions below
+  on the commit it starts from). Vitest 5.0.5, 618 files, 9500 tests, about 235 s a run. Test counts per file are taken from a run
+  at 01-01 (`pnpm test <file>`) and must be equal after each fix: no test added, removed, skipped or made `todo`, except where a
+  step says an anchor is added inside an existing test.
+- Mechanism: from `Lighthouse.Frontend`, `pnpm test <file> [flags]` (`pnpm test` is `cross-env TZ=Europe/Zurich vitest run`).
+  `test-results.json` is deleted before every run that is read for ids. Local runs use `LIGHTHOUSE_TEST_WORKERS` unset.
+
+## Wave: DISTILL / [REF] The guarantee
+
+Stated as checks that can fail. Each is a command and an exit status or a named test.
+
+1. **Order independence of the three files.** After the fixes, for each file `F` in {`PortfolioDetail.test.tsx`,
+   `GeneralSettingsComponent.test.tsx`, `ActionButton.test.tsx`} and each seed `N` in {11, 33, 1, 2, 3, 4, 5, 6, 7, 8}:
+   `pnpm test <F> --sequence.shuffle.tests --sequence.seed=N` exits 0 with no `Errors` line (an unhandled error fails the run
+   with every test green, so exit status, not the pass count, is the check). 30 runs, seconds each.
+2. **Order independence of the suite on the CI flags.** `CI=true pnpm test --sequence.shuffle.tests --sequence.seed=N` exits 0 for
+   N in {11, 33, 4, 5}, with `test-results.json` deleted before each, 618 files and the same test count as the plain run.
+3. **Behaviour-free.** `git diff --stat <before-commit> HEAD -- Lighthouse.Frontend/src` names only the three test files while
+   slice 01 runs, and nothing else under `Lighthouse.Frontend` (the temporary edit of `ActionButton.tsx` in 01-03 is restored and
+   leaves no diff). Per file the test count is unchanged and the id list from a run equals the before list.
+4. **No weakening.** The diff of the three files adds no `.skip`, `.only`, `.todo`, `skipIf`, `runIf`, `{ timeout: ... }`,
+   `testTimeout`, `retry`, `waitFor` option with a larger `timeout`, and removes no `expect(` without the same assertion living on
+   elsewhere (the Epic's non-goal): `git diff <before-commit> -- <file> | grep -E '^[-+].*(\.skip|\.only|\.todo|skipIf|runIf|timeout|retry)'`
+   prints nothing and each removed `expect(` is quoted in the step's note with where it went.
+5. **The guard bites.** The CI command line, run locally on the pre-fix commit, goes red (see "How the shuffled flag is proven").
+6. **Nothing else moves.** `node --test .github/scripts/*.test.mjs` stays 132 of 132; `pnpm build` is clean (zero errors, zero
+   warnings); `git status` is checked after it for files Biome rewrote; `pnpm test` plain (no shuffle) is green.
+7. **Mutation:** N/A while only test files, a CI input and a docs line change; accepted by the maintainer on 2026-11-07. If 02-01
+   has to change the budget reporter (a test tool), that change is measured: its own test, and `pnpm test <reporter test files>`.
+
+## Wave: DISTILL / [REF] What each fix must show (red before, green after)
+
+All commands from `Lighthouse.Frontend`. "Red" means exit non-zero for the reason named, not for a set-up error: the failing
+test names and the message are pasted into the step's commit body or this delta.
+
+**01-01 `PortfolioDetail.test.tsx` (cause 1, a missing mock default; reproduces with no shuffle).**
+- Red before: `pnpm test src/pages/Portfolios/Detail/PortfolioDetail.test.tsx -t "a refresh that failed"` gives 2 failed, 5 passed
+  (`says so on the refresh button`, `keeps saying so when a forecast run finishes afterwards`; the DOM shows
+  `portfolio-no-access-alert`). Also red on the shuffled pair `... --sequence.shuffle.tests --sequence.seed=11` (and 33, 3).
+- Anchors first: add the positive anchor (the portfolio heading is rendered) to `stops saying so ...` and `leaves the button alone ...`
+  and run `-t "a refresh that failed"` again **before** the defaults are added: those two must now also go red (they passed
+  vacuously). If they stay green the anchor does not anchor; fix the anchor. `renderAndWaitForTheUpdateFeed` also waits for the
+  portfolio heading.
+- Then add the file-level `beforeEach` with every default the first describe sets; the first describe keeps only what differs.
+  Check the update-deferral `beforeEach` (line 463 block) for a second leak with `-t "settings tab update deferral"` alone and on a
+  shuffled seed.
+- Green after: `-t "a refresh that failed"` gives 7 passed; the whole file passes plain and on the ten seeds with
+  `--sequence.shuffle.tests`; test count equals before.
+
+**01-02 `GeneralSettingsComponent.test.tsx` (cause 2, `rbac.isSystemAdmin` left `false`).**
+- Red before: `pnpm test src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx -t "does not offer it to someone who cannot open it|shows wizard button when selected work tracking system is CSV" --sequence.shuffle.tests --sequence.seed=1`
+  fails the CSV test (`Unable to find ... /Select CSV File/i`); seeds 2 and 4 the same; seed 3 passes (the control).
+  The whole file on seeds 1 and 2 is red as well.
+- Fix: `rbac.isSystemAdmin = true` in the top-level `beforeEach`; the one test that needs `false` sets it itself. Grep the file for
+  every other field of the hoisted `rbac` object that a test writes and reset those in the same place.
+- Green after: the same pair on seeds 1, 2, 3, 4 passes; the whole file passes on the ten seeds.
+
+**01-03 `ActionButton.test.tsx` (cause 3, a stray event while `window` is stubbed).**
+- **Guard check before any edit (D-6539-10 revised).** The stub is the only thing that makes the `isMounted` guard observable. So
+  first show that the test pins the guard: temporarily (uncommitted) delete the line `if (isMounted.current)` in
+  `ActionButton.tsx` (keep `setInternalIsWaiting(false)`), run
+  `pnpm test src/components/Common/ActionButton/ActionButton.test.tsx -t "leaves the page alone"`, and expect it **red** (the
+  state set after unmount reaches React with no `window`). Restore with `git checkout -- src/components/Common/ActionButton/ActionButton.tsx`
+  and confirm `git diff --stat` shows no production file. If it stays green with the guard removed, the test does not pin the
+  guard today: write that in the delta first and stop at the hold with the finding, do not proceed on the DESIGN assumption.
+- **Prove the event** (inferred until now): add temporary uncommitted capture-phase listeners on `document` for `focus`, `focusin`,
+  `selectionchange` and `click` that log `event.type` and target, run
+  `pnpm test <file> -t "takes the focus when asked to|leaves the page alone" --sequence.shuffle.tests --sequence.seed=1`; the log
+  names the stray event. Control: seed 3 (focus test second) logs nothing. If the event is not the focus test's, write the true
+  cause in the delta before fixing.
+- Red before: that pair on seeds 1, 2, 4, 5, 6 gives `TypeError: Cannot read properties of undefined (reading 'nodeName')` as an
+  unhandled error with all tests green (exit 1); the whole file on seed 1 the same, twice in a row.
+- Fix: keep the stub; remove the stray event's source, by letting it finish before the stub goes on (an awaited tick or the
+  event's own settle). No `console.error` assertion is added (it accumulates across a file and would be order-dependent).
+- Green after: remove the instrumentation (`git diff` shows none); the pair on seeds 1, 2, 4, 5, 6 exits 0 with no `Errors`; the
+  whole file on seeds 1 and 7 exits 0; **repeat the guard check** with the fix in place (guard removed, test red; restored): the
+  fixed test still pins the guard. If the stub cannot stay, the coverage loss is named at the hold; nothing is deleted
+  without its assertion living elsewhere.
+
+**01-04 sweep.** The 30 per-file runs of guarantee 1 and the four full runs of guarantee 2, all green before slice 02 starts. A
+red full run is diagnosed and fixed if local; each new file counts against the cap of 5 extra files (2 used); at 5, pause and ask.
+Results (file, seed, exit, errors, load average) go in a table in this delta. Time-budget offenders are counted, not failures;
+name each (they feed the 02-01 reporter check).
+
+## Wave: DISTILL / [REF] How the shuffled flag is proven on the pre-fix commit
+
+The sweep ran the bare `--sequence.shuffle` (files and tests). The guard uses `--sequence.shuffle.tests`, a deliberate change
+that rests on "files are isolated", which is not measured. So the proof is the same failures with the narrower flag, on a tree
+with the three test files at their pre-fix content (the commit 01-01 starts from, before any edit):
+
+| Pre-fix reproduction | Command (from `Lighthouse.Frontend`) | Must be |
+|---|---|---|
+| PortfolioDetail | `pnpm test src/pages/Portfolios/Detail/PortfolioDetail.test.tsx --sequence.shuffle.tests --sequence.seed=11` (also 33, 3) | exit 1, the 2 refresh-failed tests |
+| GeneralSettings | `pnpm test src/components/Common/BaseSettings/GeneralSettingsComponent.test.tsx --sequence.shuffle.tests --sequence.seed=1` (also 2) | exit 1, one CSV or wizard test |
+| ActionButton | `pnpm test src/components/Common/ActionButton/ActionButton.test.tsx --sequence.shuffle.tests --sequence.seed=1` | exit 1, unhandled `nodeName` error, all tests green |
+| Seed accepted at run-id size | `pnpm test src/components/Common/ActionButton/ActionButton.test.tsx --sequence.shuffle.tests --sequence.seed=26000000000` | runs, prints `Running tests with seed "26000000000"` (no 32-bit truncation; a different order from seed 1 is fine) |
+| Full run, CI flags, pre-fix | `CI=true pnpm test --sequence.shuffle.tests --sequence.seed=11` (once) | exit 1, names `PortfolioDetail`; shows `.tests` alone is enough in the whole suite |
+
+If a row does not reproduce with `.tests`, fall back to the bare `--sequence.shuffle` for the guard, say so in the delta, and
+re-run the row; the decision of the maintainer was "tests only", so a fallback is named at the hold, not taken silently.
+At 02-01 the final action command line (`pnpm test --sequence.shuffle.tests --sequence.seed="$SHUFFLE_SEED"` with an 11-digit id)
+is run once locally on the **fixed** tree and must exit 0, and the same line on a scratch copy of the pre-fix PortfolioDetail test
+must exit 1 (the throwaway copy is deleted, never committed).
+
+## Wave: DISTILL / [REF] The guard (slice 02): what it must show
+
+- **02-01 action input and workflow line.** `.github/actions/build-frontend/action.yml` is confirmed as the only place `pnpm test`
+  runs in CI (read this wave: step "Test Frontend and Sonar report", `if: inputs.run-tests == 'true'`, `run: pnpm test`, `env: CI: true`;
+  `package-app` passes `run-tests: 'false'`). Edit: optional input `shuffle-seed`, `default: ''`; the test step receives it as
+  `env: SHUFFLE_SEED: ${{ inputs.shuffle-seed }}`, branches on empty in the shell (empty runs exactly `pnpm test`; set prints
+  `Test order seed: $SHUFFLE_SEED`, emits `::notice::Test order seed: $SHUFFLE_SEED`, and runs
+  `pnpm test --sequence.shuffle.tests --sequence.seed="$SHUFFLE_SEED"`). Never interpolate the input inside the `run:` text.
+  `.github/workflows/ci_frontend.yml` passes `shuffle-seed: ${{ github.run_id }}` in the existing `with:` block, nothing else.
+  Checks: `node --test .github/scripts/*.test.mjs` stays 132 of 132; the empty branch run locally prints no seed line and runs the
+  plain command; the set branch run locally (shell snippet, `SHUFFLE_SEED=26000000000`) exits per above; `pnpm build` clean.
+- **Reporter check (open questions 1 and 2).** Over the four full runs of 01-04, name the budget offenders. A shuffled run whose
+  offender is a test that moved out of first place, or an offender that appears only under shuffle, means the per-test guard's
+  first-test allowance (declaration order in `observedRunFromVitest.ts`) needs "first by start time"; that is a change to the reporter
+  with its own test, in its own commit inside this step, never a looser limit. Also check that `vitest_to_csv.py` output and
+  `check_budget.py`'s verdict are the same for a shuffled run's CSV as for a plain one (`Scripts/test-timings/`): same rows, same
+  verdict. Result written in the delta either way ("no offender moved" is a result).
+- **02-02 `docs/ci-learnings.md`, Tests section.** The replay line of DESIGN, verbatim in meaning: *A frontend CI run is shuffled
+  with seed = the run id (printed as "Test order seed" and in the Vitest header); replay with
+  `cd Lighthouse.Frontend && pnpm test --sequence.shuffle.tests --sequence.seed=<run id> <the red file>`, and bisect a pair with
+  `-t "A|B"`.* Plus the one rule (tests may not depend on another test's set-up or leave shared state changed; the guard checks it),
+  the three signatures of a new order dependence (red test in an untouched file that passes alone; same seed red on the previous
+  commit; run ends all green with `Errors 1 error`), and the third kind: a time-budget failure on a slow test moved out of first place.
+  Check: `grep -n "sequence.shuffle.tests" docs/ci-learnings.md` finds the line, and the file keeps its heading order. Line 118
+  (explicit timeout for marginal tests) stays, and the new text says the rule "no longer timeout as the fix" covers order and load work.
+  No release notes (written at `/release`).
+
+## Wave: DISTILL / [REF] What closes the Story
+
+1. Roadmap steps 01-01 to 02-02 done, each with its focused commit, `pnpm test` plain and `pnpm build` clean at each. The Story is
+   **pushed at its end** (after 02-02), not per step; the push is to `main` per the trunk rule, and the maintainer's go-ahead rules
+   as usual; a docs-only push starts no frontend run, so the push that carries 02-01 is the one that counts.
+2. After the push: 5 consecutive `main` runs of the frontend job, with 5 different run ids (so 5 seeds), all green including
+   "Check test-time budget", each recorded here (run id, seed, result). A red from an order dependence is fixed, counts against the
+   cap of 5 extra files and restarts the count; a red from infrastructure is noted and does not reset it.
+3. Finalize checks: the `ci-learnings.md` rule present; the load position recorded as an ADO #6539 comment ("not reproduced, no
+   fix claimed; watch for `Test timed out in 5000ms` or `pointer-events: none`"); ADO #6539 moved by the usual story rule; the
+   one-week review of the guard recorded (revert if reds need a seed to replay and that proves a nuisance), rollback per DEVOPS:
+   `git revert --no-commit <02-02> <02-01>` and one commit; the three fixes stay.
+4. The DISCUSS Checklist boxes are ticked by evidence: production unchanged (guarantee 3), no longer timeouts or retries
+   (guarantee 4), ratchet in the same change (02-01), docs (02-02), mutation N/A (guarantee 7).
+
+## Wave: DISTILL / [REF] Pre-requisites and hold
+
+- Before 01-01: nothing external. Agree the rigor profile `standard` with the maintainer (recorded in the roadmap); pass `model`
+  explicitly on every dispatch (the profile's `agent_model` for the crafter, `reviewer_model` for reviewers).
+- DESIGN's peer review (D-6539-11) is still owed by the orchestrator; it is not satisfied by this wave.
+- A conflict with trunk stops the step and reports; nothing is rebased.
+- Self-completeness audit: C2 and C5 to C7 N/A (no state machine, mode flag, error contract or concurrency matrix is added).
