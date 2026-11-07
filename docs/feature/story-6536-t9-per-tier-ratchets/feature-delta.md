@@ -1004,3 +1004,36 @@ Nothing here blocks DELIVER.
 - Slice A's local read needs a free machine, and only while T6 waits on CI, as the roadmap says.
 
 **Not verified.** No test or build ran and no CI run was read, so not one scenario has been seen red. The scan rule of D-6536-34 was checked by `grep` on today's tree only. `playwright test --list` was run once, and its 140 includes whatever projects the config defines. That T6's slice F leaves a walk the connector scan can reuse: read from T6's roadmap, not from code, as it is not written yet. All of DEVOPS's "Not verified" list stands.
+
+## Wave: DELIVER / [REF] Slice A's figure, read 2026-11-07 (step 01-02)
+
+**The limit is 0.7 s, or 2.1 s on CI, nothing listed.** It replaces the 0.6 s DEVOPS read: `L` rose to 0.890 s, so `ceil(2.1 x 0.890 / 3)` to 0.1 s is 0.7 s. Five eligible runs were found, so neither fallback was used.
+
+The five latest eligible runs, each read per job, all attempt 1, all with `Build Frontend (composite)` green and no `Failed` row:
+
+| Run | Artifact | Commit | Vitest Duration | Largest not `.test.tsx` | Rows |
+|---|---|---|---|---|---|
+| 42387692805 | 13580572673 | 9825d4e5d | 778 s | 0.735 s | 9,530 |
+| 42382479502 | 13578073321 | 5d1faea04 | 809 s | 0.797 s | 9,505 |
+| 42379254193 | 13577221403 | 2c1f0ae0c | 598 s | 0.726 s | 9,505 |
+| 42372930241 | 13574906907 | d852cf98e | 777 s | 0.664 s | 9,505 |
+| 42372874167 | 13574935787 | 37cc1a614 | 786 s | **0.890 s** | 9,505 |
+
+- **Slowest run seen:** 42382479502, 809 s, is in the set. Older eligible runs were faster: 42370793984 at 454 s, 42370581769 at 491 s, 42369233738 at 587 s. None of them beats 0.890 s, so all eight give the same `L`.
+- **Skipped:** 42384656167 and 42375494664 did not run the frontend job.
+- **Red runs:** 42372874167's frontend job failed at `Test the budget check`, after green tests, so its times count under "Reading a run". It sets `L`. Without it the rule gives 0.6 s. 42379254193's run failed elsewhere and its frontend job was green.
+- **One file still sets it.** The top test of all eight runs is in `src/layerBoundaries.enforcement.test.ts`. The next file's largest is 0.167 s.
+
+**Local read.** One `pnpm test:fast`, 3,673 tests, 62 s, started with no `dotnet test` or build running and none at its end, on 12 processors with 6 workers. The load average was still 10 at the start, from a `dotnet test` that had just finished, so the machine was free of test runs but not fully idle. `layerBoundaries.enforcement.test.ts` took 2.285 s over 19 tests, its slowest 0.374 s. The next file's slowest was 0.161 s. No test is over 0.7 s, so `slowTests.ts` is unchanged and no listed test can retire itself.
+
+**A-9, on real Vitest.** A planted `.test.ts` and `.test.tsx`, each with a quick test and then a 1.2 s test:
+
+| Limit | Command | Exit | Closing lines |
+|---|---|---|---|
+| 2 s | `pnpm test:fast` | 0 | 0 offenders |
+| 0.7 s | `pnpm test:fast` | 1 | `src/tests/timeBudget/plantedSlow.test.ts :: planted slow logic test took 1.21 s, limit 0.7 s` |
+| 0.7 s | `pnpm test` on the `.test.tsx` | 0 | 0 offenders |
+
+Both files were removed and `git status` showed neither.
+
+**The gates.** `pnpm build` passed. The first `pnpm test` overlapped another session's backend compile and failed: 2 `.test.tsx` failures, one a 5 s timeout, and 20 offenders, all `.test.tsx` at their unchanged 2 s limit. No logic test was named, even under that load. Re-run on a quiet machine, load 3.8 at the start: 9,530 tests passed, 0 offenders.
