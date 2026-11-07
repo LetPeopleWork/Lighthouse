@@ -592,3 +592,50 @@ PortfolioDetail test count before: 36.
 - **After.** Pair on seeds 1, 2, 4, 5, 6: exit 0, no Errors line. Whole file on seeds 1 and 7: 13 passed.
 - **Repeat guard check with the fix.** Guard removed: `-t "leaves the page alone"` red, and the pair on seed 1 red; restored.
 - **Gates.** `pnpm build` clean. Plain `pnpm test`: 618 files, 9500 tests passed.
+
+## Step 01-04: local sweep
+
+Run from `Lighthouse.Frontend` with `LIGHTHOUSE_TIME_BUDGET=warn`. Per-file runs add `--sequence.shuffle.tests --sequence.seed=N`;
+full runs add `CI=true` and delete `test-results.json` first. Load average is the one-minute figure when the run started.
+
+### Per-file runs (30, all exit 0, no Errors line)
+
+| File | Seeds | Tests | Load average |
+|---|---|---|---|
+| PortfolioDetail | 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 | 36 passed | 0.43 to 0.89 |
+| GeneralSettingsComponent | 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 | 39 passed | 1.22 to 1.71 |
+| ActionButton | 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 | 13 passed | 1.41 to 1.70 |
+
+### Full runs, `CI=true`
+
+| Run | Seed | Exit | Result | Errors | Time-budget offenders | Load |
+|---|---|---|---|---|---|---|
+| 1 | 11 | 0 | 618 files, 9500 tests passed | none | 0 | 1.67 |
+| 2 | 33 | 1 | 618 files, 9500 tests passed | 5 x `EnvironmentTeardownError: Closing rpc while "onUserConsoleLog" was pending` | 0 | 16.57 |
+| 3 | 4, first attempt | 1 | bail 1 stopped it at 48 of 618 files: `ReportPrintPage.test.tsx` "is still preparing, and not ready, while the report has not arrived", line 148, expected `"false"`, received `undefined` | none | 0 | 14.86 |
+| 4 | 5 | 0 | 618 files, 9500 tests passed | none | 0 | 14.39 |
+| 3b | 4, second attempt, no fix | 0 | 618 files, 9500 tests passed | none | 0 | n/a |
+| 3c | 4, third attempt, with the ReportPrintPage fix | 0 | 618 files, 9500 tests passed | none | 0 | n/a |
+
+No run named a time-budget offender, so the reporter check of 02-01 has none to look for.
+
+### Finding A: ReportPrintPage, seed 4 (fixed, one test file, 3 of 5 extra files used)
+
+- The file alone, `--sequence.shuffle.tests --sequence.seed=4`, failed the same test (31 passed, 1 failed). Seeds 11, 1 passed.
+  So the order within the file decides it, and it is not only load.
+- Cause as far as the evidence goes: the print route is `lazy(...)`. When this test is the first to need the page, five
+  microtask turns in `aMomentLater` pass before the lazy chunk has been drawn, so `[data-render-ready]` is absent and
+  `renderReadiness()` is `undefined`. Run after any test that already loaded the chunk, the page is there. That accounts for
+  the alone-and-seed-4 failure. It does not by itself explain why the same seed, same flags, passed in the second full run:
+  there the chunk load can have been finished by another test in the same worker, which depends on how files are spread
+  over workers, so the full-run result is load- and scheduling-dependent. I did not prove that part.
+- Fix: `await waitFor(() => thePrintPage())` before `aMomentLater()` in the `it.each` test. After it, the file passed alone
+  on seeds 4, 11, 33, 1, 2, 3, 5, 6, 7, 8 (32 passed each) and the full run on seed 4 was green.
+- The fix was committed, withdrawn on the coordinator's instruction, then restored on the maintainer's decision.
+
+### Finding B: seed 33 teardown errors (recorded, not fixed)
+
+- All five errors are attributed to `FeatureSizeComponent.test.tsx`; vitest says that only means the file was running when
+  the worker closed. The log does not show which test files were still logging. Every test passed.
+- Not reproduced: no other full run showed it, and nothing was changed for it. A re-run of seed 33 was not done.
+- The run started at load 16.57, so contention is a possible factor, unproven.
