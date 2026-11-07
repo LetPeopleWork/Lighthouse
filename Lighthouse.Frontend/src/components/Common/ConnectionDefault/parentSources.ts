@@ -147,14 +147,13 @@ export const theTrackersOwn = (tracker: WorkTrackingSystemType): string =>
 		? `${nameOfTracker(tracker)}' own`
 		: `${tracker}'s own`;
 
-/** How a row reads: the field's name, "Parent (Jira's own)", or "Unknown field (id 12)". */
+/** How a row reads: the field's name, "Parent (default)", or "Unknown field (id 12)". */
 export const nameOfParentSource = (
 	entry: ParentSourceEntry,
-	tracker: WorkTrackingSystemType,
 	additionalFieldDefinitions: readonly IAdditionalFieldDefinition[],
 ): string => {
 	if (entry.kind === "TrackerParent") {
-		return `Parent (${theTrackersOwn(tracker)})`;
+		return "Parent (default)";
 	}
 	return (
 		definitionOf(entry, additionalFieldDefinitions)?.displayName ??

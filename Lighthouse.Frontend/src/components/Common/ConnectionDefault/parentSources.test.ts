@@ -127,13 +127,12 @@ describe("entriesStillToAdd", () => {
 });
 
 describe("nameOfParentSource", () => {
-	it.each<[WorkTrackingSystemType, ParentSourceEntry, string]>([
-		["Jira", ownParent, "Parent (Jira's own)"],
-		["Jira", field(12), "Program Ref"],
-		["Jira", field(99), "Unknown field (id 99)"],
-		["AzureDevOps", ownParent, "Parent (Azure DevOps' own)"],
-	])("on %s a row reads %j as %s", (tracker, entry, expected) => {
-		expect(nameOfParentSource(entry, tracker, TheFields)).toBe(expected);
+	it.each<[ParentSourceEntry, string]>([
+		[ownParent, "Parent (default)"],
+		[field(12), "Program Ref"],
+		[field(99), "Unknown field (id 99)"],
+	])("a row reads %j as %s", (entry, expected) => {
+		expect(nameOfParentSource(entry, TheFields)).toBe(expected);
 	});
 });
 

@@ -197,7 +197,7 @@ describe("the Parent sources list of a Team", () => {
 
 		expect(
 			screen.getByText(
-				"Adds Parent (Jira's own) or an Additional Field not yet in the list.",
+				"Adds Parent (default) or an Additional Field not yet in the list.",
 			),
 		).toBeInTheDocument();
 	});
@@ -232,12 +232,7 @@ describe("the words of the Parent sources list", () => {
 
 		expect(
 			screen.getByText(
-				"The first source that has a value gives the parent; the rest are ignored for that Work Item.",
-			),
-		).toBeInTheDocument();
-		expect(
-			screen.getByText(
-				"Not in the list: Parent (Jira's own). Work Items whose only parent is Jira's own parent get no Feature.",
+				"Not in the list: Parent (default). Work Items whose only parent is Jira's own parent get no Feature.",
 			),
 		).toBeInTheDocument();
 	});
@@ -247,14 +242,17 @@ describe("the words of the Parent sources list", () => {
 
 		expect(
 			screen.getByText(
-				"The first source that has a value gives the parent; the rest are ignored for that Feature.",
+				"Not in the list: Parent (default). Features whose only parent is Jira's own parent get no parent.",
 			),
 		).toBeInTheDocument();
-		expect(
-			screen.getByText(
-				"Not in the list: Parent (Jira's own). Features whose only parent is Jira's own parent get no parent.",
-			),
-		).toBeInTheDocument();
+	});
+});
+
+describe("the rule of the Parent sources list", () => {
+	it("leaves which source wins to the info tip", () => {
+		aListOf([field(11)], "Team");
+
+		expect(screen.queryByText(/first source/)).not.toBeInTheDocument();
 	});
 });
 

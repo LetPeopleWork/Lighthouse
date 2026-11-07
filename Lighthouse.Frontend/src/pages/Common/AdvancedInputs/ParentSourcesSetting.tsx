@@ -81,9 +81,7 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 			!!trackerHoldingTheDefault(settings, connection, theDefault));
 
 	const followedInWords = followedList
-		.map((entry) =>
-			nameOfParentSource(entry, tracker, additionalFieldDefinitions),
-		)
+		.map((entry) => nameOfParentSource(entry, additionalFieldDefinitions))
 		.join(", then ");
 
 	const handleSourceChosen = (choice: string) => {
@@ -124,7 +122,7 @@ const ParentSourcesSetting: React.FC<Readonly<ParentSourcesSettingProps>> = ({
 						<FormControlLabel
 							value="Own"
 							control={<Radio size="small" />}
-							label="Set here"
+							label="Override"
 						/>
 						<FormControlLabel
 							value="ConnectionDefault"

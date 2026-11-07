@@ -75,7 +75,7 @@ describe("Story 6352: Parent sources says which way round it reads", () => {
 		const tip = await whenSamOpensTheTip();
 		expect(tip).toHaveTextContent(IS_CAUSED_BY);
 		expect(tip).toHaveTextContent(
-			"Parent (Jira's own) is the parent Jira itself records.",
+			"The first source that has a value gives the parent. Parent (default) is the parent Jira itself records.",
 		);
 		expect(tip).not.toHaveTextContent(/None/);
 	});
@@ -85,14 +85,14 @@ describe("Story 6352: Parent sources says which way round it reads", () => {
 
 		const tip = await whenSamOpensTheTip();
 		expect(tip).toHaveTextContent(
-			"Parent (Azure DevOps' own) is the parent Azure DevOps itself records.",
+			"The first source that has a value gives the parent. Parent (default) is the parent Azure DevOps itself records.",
 		);
 		expect(tip).not.toHaveTextContent(/None/);
 	});
 
-	it("on Jira, the tip reads which end the field reads, the example, then which row is Jira's own parent", () => {
+	it("on Jira, the tip reads which end the field reads, the example, which source wins, then which row is Jira's own parent", () => {
 		expect(theTipOn("Jira")).toBe(
-			'Read on each Work Item, this names the link or field that points to its parent. In Jira, pick the link phrase read towards the parent, such as "is caused by". Parent (Jira\'s own) is the parent Jira itself records.',
+			'Read on each Work Item, this names the link or field that points to its parent. In Jira, pick the link phrase read towards the parent, such as "is caused by". The first source that has a value gives the parent. Parent (default) is the parent Jira itself records.',
 		);
 	});
 
@@ -139,9 +139,9 @@ describe("Story 6352: Parent sources says which way round it reads", () => {
 		},
 	);
 
-	it("without an example, the tip reads as two sentences: which end the field reads, then which row is the tracker's own parent", () => {
+	it("without an example, the tip reads which end the field reads, which source wins, then which row is the tracker's own parent", () => {
 		expect(theTipOn("Linear")).toBe(
-			"Read on each Work Item, this names the link or field that points to its parent. Parent (Linear's own) is the parent Linear itself records.",
+			"Read on each Work Item, this names the link or field that points to its parent. The first source that has a value gives the parent. Parent (default) is the parent Linear itself records.",
 		);
 	});
 

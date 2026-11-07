@@ -77,7 +77,7 @@ vi.mock("../../../pages/Common/AdvancedInputs/AdvancedInputs.tsx", () => ({
 				type="button"
 				onClick={() => onSettingsChange("parentOverrideSource", "Own")}
 			>
-				Set here
+				Override
 			</button>
 			<button
 				type="button"
@@ -262,7 +262,7 @@ describe("usage data of saving several parent sources", () => {
 	it("counts a follower setting its own list of two", async () => {
 		await openTeam(parentSettings([Tracker, Field], "ConnectionDefault"));
 
-		await editAndSave("Set here");
+		await editAndSave("Override");
 
 		expect(theEventsSent()).toEqual(oneEventNamedAndNothingElse);
 	});

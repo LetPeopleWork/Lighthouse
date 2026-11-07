@@ -122,5 +122,5 @@ export const parentSourcesTip = (
 		directions[setting],
 		tracker,
 		terms,
-		`${nameOfParentSource({ kind: "TrackerParent" }, tracker, [])} is the parent ${nameOfTracker(tracker)} itself records.`,
+		`The first source that has a value gives the parent. ${nameOfParentSource({ kind: "TrackerParent" }, [])} is the parent ${nameOfTracker(tracker)} itself records.`,
 	);

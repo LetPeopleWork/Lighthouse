@@ -8,7 +8,7 @@ import AdvancedInputsComponent from "./AdvancedInputs";
 
 /**
  * A Team on an Azure DevOps connection that follows the connection's Parent sources reads the default in words,
- * with Azure DevOps' own parent named as such, and has no list of its own to edit until it picks Set here.
+ * with Parent (default) named as such, and has no list of its own to edit until it picks Override.
  */
 
 const TheFields: IAdditionalFieldDefinition[] = [
@@ -49,19 +49,19 @@ describe("a Team that follows the connection's Parent sources", () => {
 
 		expect(
 			screen.getByRole("radio", {
-				name: "Connection default: Caused by, then Parent (Azure DevOps' own)",
+				name: "Connection default: Caused by, then Parent (default)",
 			}),
 		).toBeChecked();
 		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
 		expect(screen.queryByRole("combobox")).not.toBeInTheDocument();
 	});
 
-	it("on Azure DevOps starts from the followed list once Set here is picked", () => {
+	it("on Azure DevOps starts from the followed list once Override is picked", () => {
 		const onSettingsChange = givenTheTeamsSettingsPage(
 			aTeamFollowing(CausedByThenOwnParent),
 		);
 
-		fireEvent.click(screen.getByRole("radio", { name: "Set here" }));
+		fireEvent.click(screen.getByRole("radio", { name: "Override" }));
 
 		expect(onSettingsChange).toHaveBeenCalledWith(
 			"parentOverrideSource",

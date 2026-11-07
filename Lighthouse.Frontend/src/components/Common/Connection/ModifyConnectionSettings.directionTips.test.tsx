@@ -155,7 +155,7 @@ describe("Story 6352: the connection's defaults say which way round they read", 
 
 			const tip = await whenPriyaOpensTheTipOf(PARENT_OVERRIDE, group);
 			expect(tip).toHaveTextContent(
-				"Parent (Jira's own) is the parent Jira itself records.",
+				"The first source that has a value gives the parent. Parent (default) is the parent Jira itself records.",
 			);
 			expect(tip).not.toHaveTextContent(/None/);
 		},

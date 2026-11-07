@@ -102,7 +102,7 @@ describe("a Team's Advanced Configuration", () => {
 		);
 
 		expect(
-			screen.getByText(/^Connection default: Parent \(Jira's own\)$/),
+			screen.getByText(/^Connection default: Parent \(default\)$/),
 		).toBeInTheDocument();
 		expect(screen.getAllByText("Parent sources")).toHaveLength(1);
 	});
@@ -114,12 +114,12 @@ describe("a Team's Advanced Configuration", () => {
 		expect(screen.queryAllByText("Parent Override Field")).toHaveLength(0);
 	});
 
-	it("shows the Parent sources list on Azure DevOps, naming Azure DevOps' own parent as such", () => {
+	it("shows the Parent sources list on Azure DevOps, naming Parent (default) parent as such", () => {
 		openTheSettingsPageOf(aTeamOn("AzureDevOps"));
 
 		expect(screen.getAllByText("Parent sources")).toHaveLength(1);
 		expect(screen.getAllByRole("listitem")).toHaveLength(2);
-		expect(screen.getByText("Parent (Azure DevOps' own)")).toBeInTheDocument();
+		expect(screen.getByText("Parent (default)")).toBeInTheDocument();
 		expect(
 			screen.queryByRole("combobox", { name: "Parent sources" }),
 		).not.toBeInTheDocument();
@@ -143,7 +143,7 @@ describe("a Team's Advanced Configuration", () => {
 
 		expect(
 			screen.getByText(
-				"Not in the list: Parent (Azure DevOps' own). Features whose only parent is Azure DevOps' own parent get no parent.",
+				"Not in the list: Parent (default). Features whose only parent is Azure DevOps' own parent get no parent.",
 			),
 		).toBeInTheDocument();
 	});
@@ -161,7 +161,7 @@ describe("a Team's Advanced Configuration", () => {
 		fireEvent.click(screen.getByLabelText("toggle"));
 
 		expect(screen.getByText("Parent sources")).toBeInTheDocument();
-		expect(screen.getByText("Parent (Jira's own)")).toBeInTheDocument();
+		expect(screen.getByText("Parent (default)")).toBeInTheDocument();
 	});
 
 	it("shows the tracker's own parent alone while the settings are still on their way", () => {
@@ -177,7 +177,7 @@ describe("a Team's Advanced Configuration", () => {
 		fireEvent.click(screen.getByLabelText("toggle"));
 
 		expect(screen.getAllByRole("listitem")).toHaveLength(1);
-		expect(screen.getByText("Parent (Jira's own)")).toBeInTheDocument();
+		expect(screen.getByText("Parent (default)")).toBeInTheDocument();
 	});
 
 	it("offers no Connection default while the connection holds no list and the Team does not follow it", () => {
@@ -193,12 +193,12 @@ describe("a Team's Advanced Configuration", () => {
 			}) as IBaseSettings,
 		);
 
-		expect(screen.getByRole("radio", { name: "Set here" })).toBeChecked();
+		expect(screen.getByRole("radio", { name: "Override" })).toBeChecked();
 		expect(screen.getAllByRole("listitem")).toHaveLength(2);
 
 		fireEvent.click(
 			screen.getByRole("radio", {
-				name: "Connection default: Is caused by, then Parent (Jira's own)",
+				name: "Connection default: Is caused by, then Parent (default)",
 			}),
 		);
 
@@ -213,7 +213,7 @@ describe("a Team's Advanced Configuration", () => {
 
 		expect(
 			screen.getByRole("radio", {
-				name: "Connection default: Is caused by, then Parent (Jira's own)",
+				name: "Connection default: Is caused by, then Parent (default)",
 			}),
 		).toBeChecked();
 		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
@@ -228,7 +228,7 @@ describe("a Team's Advanced Configuration", () => {
 		);
 
 		expect(
-			screen.getByText(/^Not in the list: Parent \(Jira's own\)\./),
+			screen.getByText(/^Not in the list: Parent \(default\)\./),
 		).toBeInTheDocument();
 	});
 
@@ -247,18 +247,18 @@ describe("a Team's Advanced Configuration", () => {
 
 		expect(
 			screen.getByText(
-				"Not in the list: Parent (Jira's own). Features whose only parent is Jira's own parent get no parent.",
+				"Not in the list: Parent (default). Features whose only parent is Jira's own parent get no parent.",
 			),
 		).toBeInTheDocument();
 		expect(screen.queryAllByRole("listitem")).toHaveLength(0);
 	});
 
-	it("starts a follower that picks Set here from the list it was following", () => {
+	it("starts a follower that picks Override from the list it was following", () => {
 		const onSettingsChange = openTheSettingsPageOf(
 			aFollower(IsCausedByThenOwnParent),
 		);
 
-		fireEvent.click(screen.getByRole("radio", { name: "Set here" }));
+		fireEvent.click(screen.getByRole("radio", { name: "Override" }));
 
 		expect(onSettingsChange).toHaveBeenCalledWith(
 			"parentOverrideSource",
@@ -270,7 +270,7 @@ describe("a Team's Advanced Configuration", () => {
 		);
 	});
 
-	it("keeps the way back for a follower of an unset default that picks Set here", () => {
+	it("keeps the way back for a follower of an unset default that picks Override", () => {
 		const ThePageHoldingItsEdits = () => {
 			const [settings, setSettings] = useState(aFollower(null));
 			return (
@@ -287,12 +287,12 @@ describe("a Team's Advanced Configuration", () => {
 		render(<ThePageHoldingItsEdits />);
 		fireEvent.click(screen.getByLabelText("toggle"));
 		const theDefault = {
-			name: "Connection default: Parent (Jira's own)",
+			name: "Connection default: Parent (default)",
 		};
 
-		fireEvent.click(screen.getByRole("radio", { name: "Set here" }));
+		fireEvent.click(screen.getByRole("radio", { name: "Override" }));
 
-		expect(screen.getByRole("radio", { name: "Set here" })).toBeChecked();
+		expect(screen.getByRole("radio", { name: "Override" })).toBeChecked();
 		expect(screen.getAllByRole("listitem")).toHaveLength(1);
 		expect(screen.getByRole("radio", theDefault)).not.toBeChecked();
 
@@ -321,7 +321,7 @@ describe("a Team's Advanced Configuration", () => {
 
 		expect(
 			screen.getByText(
-				/^Connection default: Program Ref, then Parent \(Jira's own\)$/,
+				/^Connection default: Program Ref, then Parent \(default\)$/,
 			),
 		).toBeInTheDocument();
 	});

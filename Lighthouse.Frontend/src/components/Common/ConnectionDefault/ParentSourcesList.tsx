@@ -210,12 +210,10 @@ const wordsFor = (
 ) =>
 	owner === "Portfolio"
 		? {
-				item: getTerm(TERMINOLOGY_KEYS.FEATURE),
 				items: getTerm(TERMINOLOGY_KEYS.FEATURES),
 				itsParent: "parent",
 			}
 		: {
-				item: getTerm(TERMINOLOGY_KEYS.WORK_ITEM),
 				items: getTerm(TERMINOLOGY_KEYS.WORK_ITEMS),
 				itsParent: getTerm(TERMINOLOGY_KEYS.FEATURE),
 			};
@@ -232,10 +230,10 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 	info,
 }) => {
 	const { getTerm } = useTerminology();
-	const { item, items, itsParent } = wordsFor(owner, getTerm);
+	const { items, itsParent } = wordsFor(owner, getTerm);
 
 	const nameOf = (entry: ParentSourceEntry) =>
-		nameOfParentSource(entry, tracker, additionalFieldDefinitions);
+		nameOfParentSource(entry, additionalFieldDefinitions);
 	const ownParentName = nameOf({ kind: "TrackerParent" });
 	const listsOwnParent = value.some((entry) => entry.kind === "TrackerParent");
 
@@ -259,10 +257,6 @@ const ParentSourcesList: React.FC<Readonly<ParentSourcesListProps>> = ({
 					/>
 				)}
 			</Box>
-			<Typography variant="body2" color="text.secondary">
-				The first source that has a value gives the parent; the rest are ignored
-				for that {item}.
-			</Typography>
 			{sourceChoice}
 			{!followed && (
 				<ParentSourcesRows

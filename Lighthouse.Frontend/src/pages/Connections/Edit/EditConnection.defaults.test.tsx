@@ -466,7 +466,7 @@ describe("defaults set once on the connection", () => {
 		});
 
 		it.each([
-			["no list", {}, "Parent (Jira's own)"],
+			["no list", {}, "Parent (default)"],
 			[
 				"a field the connection does not list",
 				{

@@ -1319,12 +1319,12 @@ describe("ModifyProjectSettings", () => {
 			fireEvent.click(within(advanced).getByLabelText("toggle"));
 		};
 
-		it("shows the followed list in words, with Azure DevOps' own parent named as such", async () => {
+		it("shows the followed list in words, with Parent (default) named as such", async () => {
 			await givenThePortfolioFollowsTheDefault();
 
 			expect(
 				screen.getByRole("radio", {
-					name: "Connection default: Parent Link, then Parent (Azure DevOps' own)",
+					name: "Connection default: Parent Link, then Parent (default)",
 				}),
 			).toBeChecked();
 			expect(
