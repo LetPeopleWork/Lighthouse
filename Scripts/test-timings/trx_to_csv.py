@@ -2,8 +2,9 @@
 
 NUnit's TRX adapter does not surface ``[Category("Integration")]`` in TRX
 attributes, so integration classification is derived by scanning the C#
-source tree for class-level ``[Category("Integration")]`` and matching
-against the ``className`` recorded in ``<TestMethod>``.
+source tree for classes that carry the attribute or derive from
+``IntegrationFixture``, and matching against the ``className`` recorded in
+``<TestMethod>``.
 """
 
 from __future__ import annotations
@@ -14,10 +15,11 @@ import re
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Iterable, TextIO
+from typing import Iterable, Iterator, TextIO
 
 TRX_NS = "{http://microsoft.com/schemas/VisualStudio/TeamTest/2010}"
 CSV_COLUMNS = ("fully_qualified_name", "category", "duration_ms", "outcome")
+INTEGRATION_ROOT_CLASS = "IntegrationFixture"
 INTEGRATION_CATEGORY_AT_CLASS_PATTERN = re.compile(
     r'\[Category\(\s*"Integration"\s*\)\]\s*(?:public\s+|internal\s+|sealed\s+|static\s+|partial\s+)*class\s+([A-Za-z_][A-Za-z0-9_]*)'
 )
@@ -29,6 +31,23 @@ CLASS_DECLARATION_PATTERN = re.compile(
 )
 INTEGRATION_ATTRIBUTE_PATTERN = re.compile(
     r'\[Category\(\s*"Integration"\s*\)\]'
+)
+COMMENT_OR_LITERAL_PATTERN = re.compile(
+    r"//[^\n]*"
+    r"|/\*.*?\*/"
+    r"|^[ \t]*#[^\n]*"
+    r'|\$*("{3,}).*?\1(?!")'
+    r'|(?:\$@|@\$|@)"(?:[^"]|"")*"'
+    r'|\$?"(?:\\.|[^"\\\n])*"'
+    r"|'(?:\\.|[^'\\\n])+'",
+    re.DOTALL | re.MULTILINE,
+)
+CLASS_SCOPE_TOKEN_PATTERN = re.compile(
+    r"\bclass\s+(?P<name>[A-Za-z_]\w*)"
+    r"\s*(?:<[^<>]*>)?"
+    r"\s*(?:\((?:[^()]|\([^()]*\))*\))?"
+    r"(?:\s*:\s*(?:global::)?(?P<base>[A-Za-z_][\w.]*))?"
+    r"|[{}]"
 )
 METHOD_DECLARATION_PATTERN = re.compile(
     r"^\s*(?:public\s+|internal\s+|protected\s+|private\s+|static\s+|async\s+|virtual\s+|override\s+|sealed\s+)*"
@@ -101,19 +120,62 @@ def parse_trx(
 
 
 def discover_integration_class_names(source_root: Path) -> set[str]:
-    """Scan a C# source tree for classes carrying class-level ``[Category("Integration")]``."""
+    """Scan a C# source tree for classes in the ``Integration`` category.
+
+    A class qualifies through its own ``[Category("Integration")]`` or through
+    a chain of first bases that reaches ``IntegrationFixture``. Names read as
+    TRX writes them, with ``+`` between a class and the class nested in it.
+    """
     names: set[str] = set()
-    for cs_file in source_root.rglob("*.cs"):
-        content = _read_cs_file(cs_file)
-        if content is None:
-            continue
-        namespace_match = NAMESPACE_PATTERN.search(content)
-        if not namespace_match:
-            continue
-        namespace = namespace_match.group(1)
+    base_by_class: dict[str, str | None] = {}
+    for namespace, content in _namespaced_sources(source_root):
         for class_match in INTEGRATION_CATEGORY_AT_CLASS_PATTERN.finditer(content):
             names.add(f"{namespace}.{class_match.group(1)}")
-    return names
+        for class_name, base in _class_declarations(content):
+            full_name = f"{namespace}.{class_name}"
+            # Only one part of a partial class needs to name the base.
+            base_by_class[full_name] = base or base_by_class.get(full_name)
+    return names | _classes_reaching_the_root(base_by_class)
+
+
+def _class_declarations(content: str) -> Iterator[tuple[str, str | None]]:
+    """Yield each class's ``Outer+Inner`` name with its first base's simple name."""
+    code = COMMENT_OR_LITERAL_PATTERN.sub(" ", content)
+    enclosing: list[str | None] = []
+    opening_class: str | None = None
+    for token in CLASS_SCOPE_TOKEN_PATTERN.finditer(code):
+        text = token.group()
+        if text == "{":
+            enclosing.append(opening_class)
+            opening_class = None
+        elif text == "}":
+            del enclosing[-1:]
+        else:
+            opening_class = token.group("name")
+            nested_name = "+".join(
+                [name for name in enclosing if name] + [opening_class]
+            )
+            base = token.group("base")
+            yield nested_name, base.rsplit(".", 1)[-1] if base else None
+
+
+def _classes_reaching_the_root(base_by_class: dict[str, str | None]) -> set[str]:
+    reached_simple_names = {INTEGRATION_ROOT_CLASS}
+    reached: set[str] = set()
+    while True:
+        newly_reached = {
+            name
+            for name, base in base_by_class.items()
+            if base in reached_simple_names
+        } - reached
+        if not newly_reached:
+            return reached
+        reached |= newly_reached
+        reached_simple_names |= {_simple_name(name) for name in newly_reached}
+
+
+def _simple_name(full_name: str) -> str:
+    return re.split(r"[.+]", full_name)[-1]
 
 
 def discover_integration_method_fqns(source_root: Path) -> set[str]:
@@ -124,15 +186,7 @@ def discover_integration_method_fqns(source_root: Path) -> set[str]:
     the ``(...)`` argument tail.
     """
     fqns: set[str] = set()
-    for cs_file in source_root.rglob("*.cs"):
-        content = _read_cs_file(cs_file)
-        if content is None:
-            continue
-        namespace_match = NAMESPACE_PATTERN.search(content)
-        if not namespace_match:
-            continue
-        namespace = namespace_match.group(1)
-
+    for namespace, content in _namespaced_sources(source_root):
         current_class: str | None = None
         pending_integration = False
         for line in content.splitlines():
@@ -152,6 +206,16 @@ def discover_integration_method_fqns(source_root: Path) -> set[str]:
                     )
                     pending_integration = False
     return fqns
+
+
+def _namespaced_sources(source_root: Path) -> Iterator[tuple[str, str]]:
+    for cs_file in source_root.rglob("*.cs"):
+        content = _read_cs_file(cs_file)
+        if content is None:
+            continue
+        namespace_match = NAMESPACE_PATTERN.search(content)
+        if namespace_match:
+            yield namespace_match.group(1), content
 
 
 def _read_cs_file(path: Path) -> str | None:

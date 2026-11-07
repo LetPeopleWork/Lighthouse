@@ -1,5 +1,6 @@
 import csv
 import io
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -16,6 +17,57 @@ from trx_to_csv import (
 )
 
 FIXTURES = HERE / "fixtures"
+
+TEST_NAMESPACE = "Lighthouse.Backend.Tests.Shapes"
+OFF_THE_BASE_CLASS = f"{TEST_NAMESPACE}.OffTheBaseTest"
+SHARED_BASES = """
+using NUnit.Framework;
+
+namespace Lighthouse.Backend.Tests.Shapes
+{
+    [Category("Integration")]
+    public abstract class IntegrationFixture
+    {
+    }
+
+    public abstract class IntegrationTestBase : IntegrationFixture
+    {
+        protected IntegrationTestBase(string hostName = "default")
+        {
+        }
+    }
+
+    public abstract class RegularBase
+    {
+    }
+
+    public class OffTheBaseTest : RegularBase
+    {
+    }
+}
+"""
+
+
+def in_test_namespace(source):
+    return f"namespace {TEST_NAMESPACE}\n{{\n{source}\n}}\n"
+
+
+def trx_listing(class_names):
+    definitions = "".join(
+        f'<UnitTest id="t{index}">'
+        f'<TestMethod className="{class_name}" name="Runs" /></UnitTest>'
+        for index, class_name in enumerate(class_names)
+    )
+    results = "".join(
+        f'<UnitTestResult testId="t{index}" testName="Runs" '
+        'duration="00:00:00.0010000" outcome="Passed" />'
+        for index in range(len(class_names))
+    )
+    return (
+        '<TestRun xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">'
+        f"<Results>{results}</Results>"
+        f"<TestDefinitions>{definitions}</TestDefinitions></TestRun>"
+    )
 
 
 class ParseTrxTests(unittest.TestCase):
@@ -157,6 +209,164 @@ class DiscoverIntegrationClassNamesTests(unittest.TestCase):
     def test_does_not_treat_method_level_decoration_as_class_level(self):
         names = discover_integration_class_names(FIXTURES)
         self.assertNotIn("Lighthouse.Backend.Tests.Mixed.MixedTest", names)
+
+
+class ATestClassOnTheBaseReadsIntegrationTests(unittest.TestCase):
+    def assert_reads_integration(self, class_name, *sources):
+        categories = self.categories_of(
+            [f"{TEST_NAMESPACE}.{class_name}", OFF_THE_BASE_CLASS], sources
+        )
+        self.assertEqual(
+            categories,
+            {
+                f"{TEST_NAMESPACE}.{class_name}": "Integration",
+                OFF_THE_BASE_CLASS: "Unit",
+            },
+        )
+
+    def categories_of(self, class_names, sources):
+        with tempfile.TemporaryDirectory() as directory:
+            source_root = Path(directory)
+            (source_root / "SharedBases.cs").write_text(
+                SHARED_BASES, encoding="utf-8"
+            )
+            for index, source in enumerate(sources):
+                (source_root / f"Shape{index}.cs").write_text(
+                    in_test_namespace(source), encoding="utf-8"
+                )
+            rows = parse_trx(
+                trx_listing(class_names),
+                integration_class_names=discover_integration_class_names(
+                    source_root
+                ),
+            )
+        return {
+            str(row["fully_qualified_name"]).removesuffix(".Runs"): row[
+                "category"
+            ]
+            for row in rows
+        }
+
+    def test_primary_constructor(self):
+        self.assert_reads_integration(
+            "PrimaryConstructorTest",
+            "public class PrimaryConstructorTest() : IntegrationTestBase { }",
+        )
+
+    def test_primary_constructor_with_parameters(self):
+        self.assert_reads_integration(
+            "PrimaryConstructorParametersTest",
+            """
+            public class PrimaryConstructorParametersTest(
+                string first, int second = (1 + 2)) : IntegrationTestBase
+            {
+            }
+            """,
+        )
+
+    def test_base_with_arguments(self):
+        self.assert_reads_integration(
+            "BaseArgumentsTest",
+            'public class BaseArgumentsTest() : IntegrationTestBase("other") { }',
+        )
+
+    def test_base_on_the_next_line(self):
+        self.assert_reads_integration(
+            "NextLineBaseTest",
+            """
+            public class NextLineBaseTest
+                : IntegrationTestBase
+            {
+            }
+            """,
+        )
+
+    def test_interface_after_the_base(self):
+        self.assert_reads_integration(
+            "InterfaceAfterBaseTest",
+            "public class InterfaceAfterBaseTest : IntegrationTestBase, "
+            "IDisposable { }",
+        )
+
+    def test_qualified_base(self):
+        self.assert_reads_integration(
+            "QualifiedBaseTest",
+            "public class QualifiedBaseTest : "
+            "Lighthouse.Backend.Tests.Shapes.IntegrationTestBase { }",
+        )
+
+    def test_base_named_in_one_part_of_a_partial_class(self):
+        self.assert_reads_integration(
+            "PartialTest",
+            "public partial class PartialTest { }",
+            "public partial class PartialTest : IntegrationTestBase { }",
+            "public partial class PartialTest { }",
+        )
+
+    def test_nested_class(self):
+        self.assert_reads_integration(
+            "Outer+Inner",
+            """
+            public class Outer
+            {
+                private const string ClosingBrace = "}";
+
+                public class Inner : IntegrationTestBase
+                {
+                }
+            }
+            """,
+        )
+
+    def test_private_nested_class(self):
+        self.assert_reads_integration(
+            "Outer+Inner",
+            """
+            public class Outer
+            {
+                // A closing brace in a comment } closes no scope.
+                private sealed class Inner : IntegrationTestBase
+                {
+                }
+            }
+            """,
+        )
+
+    def test_a_class_after_a_nested_class_is_not_nested_in_it(self):
+        self.assert_reads_integration(
+            "AfterOuterTest",
+            """
+            public class Outer
+            {
+                public class Inner
+                {
+                }
+            }
+
+            public class AfterOuterTest : IntegrationTestBase
+            {
+            }
+            """,
+        )
+
+    def test_a_declaration_in_a_comment_or_a_string_counts_for_nothing(self):
+        categories = self.categories_of(
+            [
+                f"{TEST_NAMESPACE}.CommentedOutTest",
+                f"{TEST_NAMESPACE}.QuotedTest",
+            ],
+            [
+                """
+                // public class CommentedOutTest : IntegrationTestBase { }
+                public class Holder
+                {
+                    private const string Quoted =
+                        "public class QuotedTest : IntegrationTestBase { }";
+                }
+                """
+            ],
+        )
+        self.assertEqual(set(categories.values()), {"Unit"})
 
 
 class DiscoverIntegrationMethodFqnsTests(unittest.TestCase):

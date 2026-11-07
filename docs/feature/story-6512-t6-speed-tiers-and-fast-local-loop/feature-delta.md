@@ -2081,3 +2081,27 @@ The script takes no logger argument, so the TRX came from the environment: `VSTe
 So the script itself costs about 5 s, and the tests are 94 % of it. The test durations add up to 320 s, which on 6 workers would be about 53 s if spread evenly. The slowest classes: `SecretCustodyServiceTests` 42.8 s, `PublishedKeySecretCountTests` 31.7 s, `ReferencedKeyIdsTests` 29.7 s, `ReadableSecretsNotOnTheActiveKeyTests` 26.7 s, `TestTierGuardTest` 16.6 s. Those first four are 41 % of the sum. This is one run, not the 5 warm runs of 06-04, and nothing was tuned here.
 
 **Peak memory, recorded once.** On the green `-NoBuild` run, sampled from `/proc` every 0.2 s: 3,196 MB for the test host, 3,600 MB for the script's whole process tree.
+
+## Wave: DELIVER / [REF] Slice F, step 06-02: the CSV follows base classes, what ran (2026-11-07)
+
+Run on `c8ecd06da` plus this step's change. Python only: no `dotnet test` ran, and the real TRX files are step 05-04's `L6` runs. Not pushed.
+
+**What changed.** `discover_integration_class_names` now reads each class's first base and closes over the chain to `IntegrationFixture`, as well as the literal attribute it read before. It reads the code with comments, strings and preprocessor lines blanked out, and tracks braces to name a nested class `Outer+Inner`. `parse_trx`, `CSV_COLUMNS`, `NAMESPACE_PATTERN` and the method-level path keep their behaviour; the two discovery functions now share the loop that reads the files.
+
+| Case | What ran | Result |
+|---|---|---|
+| Count before | `python3 -m unittest discover -s Scripts/test-timings/tests` | 125 tests, OK |
+| Red, the eight shapes | The new tests, before the code | Each failed its assertion, `Unit` where `Integration` was expected. 135 tests, 9 failures: the eight shapes, primary constructor twice, with and without parameters. The control class on another base read `Unit` |
+| Green | The same command, after the code | 136 tests, OK, exit 0 |
+| Column unchanged | Old and new `trx_to_csv.py` over `L6.trx` | 12,933 rows each; `fully_qualified_name` identical in order; `duration_ms` and `outcome` identical. A spot check: 06-04 proves it |
+| Real tree against the lists | Discovery on `Lighthouse.Backend.Tests`, 1 s, 426 names, with the `(...)` tail cut by hand | `H`: 364 of 364 classes found. `F`: 0 of 622. `O`: 0 of 2. Every class in `L6.trx` has a declaration |
+| The column on `L6.trx` | New script | `Integration` 3,271, `Unit` 9,662. 124 of those `Unit` rows sit in 4 parametrised fixtures, which 06-03 takes. 9,662 - 124 = 9,538 = `F` 9,535 + `O` 3 |
+| Hand mutants | 10 edits of the scan, each on a scratch copy | All 10 killed, judged against an unmutated run of the same copy, where 5 budget tests already fail because they read repository paths |
+
+The first mutant run left two survivors. No test had a class after a closed class, so one was added. The handling of `;` after a body-less class changed nothing a test could see, so it was removed.
+
+**For 06-03.**
+- A chain crossing files already works, because a partial class needs the whole tree in one map: its test will be green when it is written, not red.
+- Two namespaces in a file are untouched and still read the first one.
+- No real TRX row holds a `+`, because no nested class has tests today. So `Outer+Inner` rests on DESIGN's statement and not on a real file.
+- A type other than a class does not count as an enclosing scope, so a class nested in a struct or record would lose its outer name.
