@@ -572,7 +572,9 @@ PortfolioDetail test count before: 36.
 - **Fix.** One file-level `beforeEach` holds the portfolio and settings defaults the first describe used to set; that describe's own
   `beforeEach` is gone because it set nothing else. `-t "a refresh that failed"` gives 7 passed.
 - **Whole file.** 36 tests (same as before): plain and `--sequence.shuffle.tests` on seeds 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 all pass.
-- **Update-deferral describe (read-only check).** Alone and shuffled on seeds 11, 33, 7: 2 passed each. Clean, no second leak.
+- **Update-deferral describe (read-only check).** No second leak was seen in the whole-file shuffled runs above (seeds 11, 33, 1 to 8,
+  36 passed each). A describe run alone cannot show a leak between tests, because the leaking test is not there to leave anything behind;
+  the alone runs on seeds 11, 33, 7 (2 passed each) only show that the two tests pass by themselves.
 - **Gates.** `pnpm build` exit 0, no errors or warnings, `git status` shows only the two step files. Plain `pnpm test`: 618 files,
   9500 tests passed, 0 budget offenders.
 
@@ -585,8 +587,8 @@ PortfolioDetail test count before: 36.
   Seed 3: clean.
 - **Stray event.** Temporary capture-phase listeners on `window` and `document`, installed before the stub, logged on seed 1:
   `selectionchange` on `#document`, on both, with the 300 ms timer running inside the stub window. Seed 3 logged only the click.
-  Not a `focus` event itself: it is the selection change the focus test's `autoFocus` leaves queued, which React's document
-  listener handles while `window` is gone. Listeners removed again before the fix.
+  Not a `focus` event itself. Consistent with it being the selection change an earlier test's `autoFocus` leaves queued, which
+  React's document listener handles while `window` is gone; the source test was not isolated. Listeners removed again before the fix.
 - **Fix.** The test waits one real tick (`setImmediate`) before `vi.useFakeTimers()`, so the queued event is delivered first.
   The stub stays, no console.error assertion, no timeout.
 - **After.** Pair on seeds 1, 2, 4, 5, 6: exit 0, no Errors line. Whole file on seeds 1 and 7: 13 passed.
@@ -605,6 +607,9 @@ full runs add `CI=true` and delete `test-results.json` first. Load average is th
 | PortfolioDetail | 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 | 36 passed | 0.43 to 0.89 |
 | GeneralSettingsComponent | 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 | 39 passed | 1.22 to 1.71 |
 | ActionButton | 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 | 13 passed | 1.41 to 1.70 |
+| ReportPrintPage | 4 (5 runs, with the change) | 32 passed | 0.86 to 0.98 |
+| ReportPrintPage | 4, 11, 33, 1, 2, 3, 5, 6, 7, 8 (with the change) | 32 passed | not recorded |
+| ReportPrintPage | 4 (without the change) | 31 passed, 1 failed | not recorded |
 
 ### Full runs, `CI=true`
 
@@ -619,7 +624,7 @@ full runs add `CI=true` and delete `test-results.json` first. Load average is th
 
 No run named a time-budget offender, so the reporter check of 02-01 has none to look for.
 
-### Finding A: ReportPrintPage, seed 4 (fixed, one test file, 3 of 5 extra files used)
+### Finding A: ReportPrintPage, seed 4 (changed, one test file, 3 of 5 extra files used)
 
 - The file alone, `--sequence.shuffle.tests --sequence.seed=4`, failed the same test (31 passed, 1 failed). Seeds 11, 1 passed.
   Before that, the same file, seed and flags passed 32 of 32 in the orchestrator's run (`sw/rp_4.log`), so order alone does not decide
@@ -630,13 +635,35 @@ No run named a time-budget offender, so the reporter check of 02-01 has none to 
   the alone-and-seed-4 failure. It does not by itself explain why the same seed, same flags, passed in the second full run:
   there the chunk load can have been finished by another test in the same worker, which depends on how files are spread
   over workers, so the full-run result is load- and scheduling-dependent. I did not prove that part.
-- Fix: `await waitFor(() => thePrintPage())` before `aMomentLater()` in the `it.each` test. After it, the file passed alone
+- Change: `await waitFor(() => thePrintPage())` before `aMomentLater()` in the `it.each` test. After it, the file passed alone
   on seeds 4, 11, 33, 1, 2, 3, 5, 6, 7, 8 (32 passed each) and the full run on seed 4 was green.
-- The fix was committed, withdrawn on the coordinator's instruction, then restored on the maintainer's decision.
+- What the runs show after it: the file alone on seed 4, five times, 32 passed each (load 0.86 to 0.98); full seed 4 twice more,
+  both exit 0. With the earlier green attempt that is three green full runs on seed 4 with the change, against one red and one
+  green without it. Three green runs fit the change working but do not prove it, since the unfixed code also passed one full run.
+- Limit: `waitFor` has a 1000 ms ceiling. Under heavy load, a lazy chunk that takes longer than that would turn this failure into a
+  timeout instead of an assertion on `undefined`. It is a smaller window than five microtask turns, not an absent one.
+- The change was committed, withdrawn on the coordinator's instruction, then restored on the maintainer's decision.
+
+### Review pass on slice 01
+
+- Full runs after the test edits, `CI=true`, seeds 33, 33, 4, 4: all exit 0, 618 files, 9500 tests, 0 time-budget offenders.
+  The first of them started at load 0.98; the other three started at 16.00, 16.64 and 15.90, the average lagging the run before,
+  so only the first and the five alone runs were on a quiet machine.
+- ActionButton yield, temporary listener on `document` for `selectionchange`, not committed. On seeds 11, 33, 1, 2, 3, 4, 5, 6, 7, 8
+  no event arrived inside the stub window. On seeds 1, 5 and 4 one arrived inside the yield; on the others it arrived in an
+  earlier test or after the test. So the yield is where the queued event lands, and the stub window never saw one.
+- PortfolioDetail: the absence checks anchored on the heading, while the title sits on the Refresh Features button, which needs the
+  permission summary and can draw later. `renderAndWaitForTheUpdateFeed` now also waits for the button by role. Whole-file shuffled
+  runs after this edit: seed 11 only, plus the full runs above; the 30-run table above ran before it.
+- Comments reworded in ActionButton, ReportPrintPage and PortfolioDetail (the old "this whole slice" wording predated this feature).
 
 ### Finding B: seed 33 teardown errors (recorded, not fixed)
 
 - All five errors are attributed to `FeatureSizeComponent.test.tsx`; vitest says that only means the file was running when
   the worker closed. The log does not show which test files were still logging. Every test passed.
-- Not reproduced: no other full run showed it, and nothing was changed for it. A re-run of seed 33 was not done.
-- The run started at load 16.57, so contention is a possible factor, unproven.
+- First seen on the first seed 33 run, which was the only full run on that seed. Nothing was changed for it.
+- It started at load 16.57, so contention is a possible factor, unproven.
+- Re-run of seed 33, twice, with the test edits of this step in place: both exit 0, 618 files, 9500 tests, no Errors line (loads below).
+  So it did not come back in two attempts; it is not explained, and two green runs do not show it cannot happen.
+- Gates after the test edits: `pnpm build` exit 0, no errors or warnings, `git status` showed only the three test files. Plain
+  `pnpm test` with the time budget on: 618 files, 9500 tests passed, 0 offenders.
