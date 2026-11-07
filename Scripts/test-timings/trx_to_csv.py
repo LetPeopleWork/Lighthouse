@@ -158,14 +158,20 @@ def discover_declared_class_names(source_root: Path) -> set[str]:
 
 
 def simple_name_collisions(source_root: Path) -> dict[str, set[str]]:
-    """Return the simple names held by more than one class on a chain to the root.
+    """Return the simple names on a chain to the root held by more than one class.
 
-    Bases are resolved by simple name, so such a pair could put a class on the
-    wrong side of the column without anything else noticing.
+    Bases are resolved by simple name, so a namesake off the chain can pull its
+    own subclasses onto it, and put them on the wrong side of the column without
+    anything else noticing.
     """
+    base_by_class = _base_by_class(source_root)
+    names_on_chains = {INTEGRATION_ROOT_CLASS} | {
+        _simple_name(name) for name in _classes_reaching_the_root(base_by_class)
+    }
     classes_by_simple_name: dict[str, set[str]] = {}
-    for name in _classes_reaching_the_root(_base_by_class(source_root)):
-        classes_by_simple_name.setdefault(_simple_name(name), set()).add(name)
+    for name in base_by_class:
+        if _simple_name(name) in names_on_chains:
+            classes_by_simple_name.setdefault(_simple_name(name), set()).add(name)
     return {
         simple_name: classes
         for simple_name, classes in classes_by_simple_name.items()
@@ -278,7 +284,7 @@ def _namespace_blocks(content: str) -> Iterator[tuple[str, str]]:
 
 def _read_cs_file(path: Path) -> str | None:
     try:
-        return path.read_text(encoding="utf-8")
+        return path.read_text(encoding="utf-8-sig")
     except (OSError, UnicodeDecodeError):
         return None
 

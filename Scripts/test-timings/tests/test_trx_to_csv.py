@@ -850,7 +850,7 @@ class SimpleNameCollisionTests(unittest.TestCase):
             {},
         )
 
-    def test_a_namesake_off_the_chain_is_no_collision(self):
+    def test_a_namesake_off_the_chain_is_a_collision(self):
         self.assertEqual(
             self.collisions_in(
                 {
@@ -860,8 +860,64 @@ class SimpleNameCollisionTests(unittest.TestCase):
                     "public class Shared { }\n",
                 }
             ),
+            {"Shared": {"Shapes.One.Shared", "Shapes.Two.Shared"}},
+        )
+
+    def test_a_namesake_that_pulls_its_own_subclass_onto_a_chain_is_reported(self):
+        self.assertEqual(
+            self.collisions_in(
+                {
+                    "Both.cs": "namespace B { class Harness : IntegrationFixture { } }\n"
+                    "namespace A { class Harness { } class Leaf : Harness { } }\n",
+                }
+            ),
+            {"Harness": {"A.Harness", "B.Harness"}},
+        )
+
+    def test_a_namesake_of_the_root_is_reported(self):
+        self.assertEqual(
+            self.collisions_in(
+                {
+                    "One.cs": "namespace Shapes.One;\n"
+                    "public class IntegrationFixture { }\n",
+                    "Two.cs": "namespace Shapes.Two;\n"
+                    "public class IntegrationFixture { }\n"
+                    "public class Leaf : IntegrationFixture { }\n",
+                }
+            ),
+            {
+                "IntegrationFixture": {
+                    "Shapes.One.IntegrationFixture",
+                    "Shapes.Two.IntegrationFixture",
+                }
+            },
+        )
+
+    def test_namesakes_off_every_chain_are_no_collision(self):
+        self.assertEqual(
+            self.collisions_in(
+                {
+                    "One.cs": "namespace Shapes.One;\npublic class Shared { }\n",
+                    "Two.cs": "namespace Shapes.Two;\npublic class Shared { }\n",
+                }
+            ),
             {},
         )
+
+
+class ByteOrderMarkTests(unittest.TestCase):
+    def test_a_mark_before_a_file_scoped_namespace_keeps_the_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_root = write_tree(
+                directory,
+                {
+                    "Marked.cs": "\ufeffnamespace Shapes;\n"
+                    "public class Marked : IntegrationFixture { }\n",
+                },
+            )
+            self.assertIn(
+                "Shapes.Marked", discover_integration_class_names(source_root)
+            )
 
 
 class TheRealTreeTests(unittest.TestCase):
@@ -909,7 +965,7 @@ class TheRealTreeTests(unittest.TestCase):
             {anchor: category for anchor, (_, category) in self.ANCHORS.items()},
         )
 
-    def test_no_two_classes_on_a_chain_share_a_simple_name(self):
+    def test_no_class_shares_a_simple_name_with_a_class_on_a_chain(self):
         self.assertEqual(simple_name_collisions(REAL_SOURCE_ROOT), {})
 
 
