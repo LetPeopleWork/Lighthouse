@@ -29,7 +29,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     [Category("JiraIntegration")]
     [Category("epic-5500-quiet-writeback")]
     [Category("slice-04")]
-    public class JiraSuppressionRetryIntegrationTest
+    public class JiraSuppressionRetryIntegrationTest : IntegrationFixture
     {
         private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
 
@@ -86,7 +86,6 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
         /// whole (SPIKE-03 Q4 — `SPIKEPRM-1.duedate` stayed null).
         /// </summary>
         [Test]
-        [Category("Integration")]
         public async Task WriteFieldsToWorkItems_CredentialCannotSuppress_WritesTheValueAnywayAndReportsItNoisy()
         {
             SkipWithoutRestrictedCredential();

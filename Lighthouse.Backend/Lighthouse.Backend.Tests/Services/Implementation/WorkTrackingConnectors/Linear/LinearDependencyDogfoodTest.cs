@@ -14,9 +14,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// pair is the point - they must read empty, because a mapper that read a Project's own relations
     /// instead of its inverse ones would point every edge backwards and still produce a plausible count.
     /// </summary>
-    [Category("Integration")]
     [Category("LinearIntegration")]
-    public class LinearDependencyDogfoodTest
+    public class LinearDependencyDogfoodTest : IntegrationFixture
     {
         private const string Epsilon960 = "7b822efd-fae2-4c9f-b731-47b489efe75d";
         private const string Zeta361 = "eb8f471d-18f8-456b-9385-b7a6fb43a432";

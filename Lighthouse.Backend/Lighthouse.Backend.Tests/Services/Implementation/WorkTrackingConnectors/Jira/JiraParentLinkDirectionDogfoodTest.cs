@@ -22,9 +22,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// parent on its own links, not on something fetched alongside it.
     /// </summary>
     [TestFixture]
-    [Category("Integration")]
     [Category("JiraIntegration")]
-    public class JiraParentLinkDirectionDogfoodTest
+    public class JiraParentLinkDirectionDogfoodTest : IntegrationFixture
     {
         private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
 

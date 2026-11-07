@@ -1,10 +1,10 @@
 ﻿using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
-    [Category("Integration")]
     [Category("GithubIntegration")]
-    public class GithubServiceTest
+    public class GithubServiceTest : IntegrationFixture
     {
         [Test]
         public async Task GetLatestVersion_DoesGetLatestTag()

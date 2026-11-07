@@ -17,9 +17,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// available the fixture ignores itself rather than failing.
     /// </summary>
     [TestFixture]
-    [Category("Integration")]
     [Category("JiraIntegration")]
-    public class JiraOriginalNamesLiveTest
+    public class JiraOriginalNamesLiveTest : IntegrationFixture
     {
         private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
 

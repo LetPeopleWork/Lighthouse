@@ -22,9 +22,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// Path-scoped via Category("ServiceNowIntegration") — see Scripts/test-selection/path-classifier.sh.
     /// Slice 02 extends this fixture with work-item reads rather than adding a second one.
     /// </summary>
-    [Category("Integration")]
     [Category("ServiceNowIntegration")]
-    public class ServiceNowWorkTrackingConnectorIntegrationTest
+    public class ServiceNowWorkTrackingConnectorIntegrationTest : IntegrationFixture
     {
         // PDIs are reclaimed after ~10 days idle, so the instance moves. Override without a code
         // change when it does.

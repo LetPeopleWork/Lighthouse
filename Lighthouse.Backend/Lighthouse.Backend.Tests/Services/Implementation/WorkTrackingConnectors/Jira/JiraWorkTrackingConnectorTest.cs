@@ -14,9 +14,8 @@ using System.Text;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira
 {
-    [Category("Integration")]
     [Category("JiraIntegration")]
-    public class JiraWorkTrackingConnectorTest
+    public class JiraWorkTrackingConnectorTest : IntegrationFixture
     {
         [Test]
         public void GetPredefinedAdditionalFields_JiraConnection_ContributesFlaggedFieldAsPredefined()

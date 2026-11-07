@@ -27,9 +27,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// real instance can offer a real populated parent field to beat.
     /// </summary>
     [TestFixture]
-    [Category("Integration")]
     [Category("JiraIntegration")]
-    public class JiraParentLinkDogfoodTest
+    public class JiraParentLinkDogfoodTest : IntegrationFixture
     {
         private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
 

@@ -6,9 +6,8 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Linear
 {
-    [Category("Integration")]
     [Category("LinearIntegration")]
-    public class LinearWorkTrackingConnectorTest
+    public class LinearWorkTrackingConnectorTest : IntegrationFixture
     {
         [Test]
         public async Task ValidateConnection_GivenValidSettings_ReturnsTrue()

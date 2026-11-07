@@ -13,9 +13,8 @@ using AdoWorkItem = Microsoft.TeamFoundation.WorkItemTracking.WebApi.Models.Work
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps
 {
-    [Category("Integration")]
     [Category("AdoIntegration")]
-    public class AzureDevOpsWorkTrackingConnectorTest
+    public class AzureDevOpsWorkTrackingConnectorTest : IntegrationFixture
     {
         [Test]
         public async Task GetWorkItemsForTeam_GetsAllItemsThatMatchQuery()

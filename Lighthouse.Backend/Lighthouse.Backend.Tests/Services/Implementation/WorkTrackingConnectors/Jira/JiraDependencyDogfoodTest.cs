@@ -18,9 +18,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// far end of somebody else's. Those two are the point: they must read empty, because a mapper that
     /// walked both ends would double every dependency in the instance and still look plausible.
     /// </summary>
-    [Category("Integration")]
     [Category("JiraIntegration")]
-    public class JiraDependencyDogfoodTest
+    public class JiraDependencyDogfoodTest : IntegrationFixture
     {
         private const string TheDemoEpics = "project = LGHTHSDMO AND issuetype = Epic AND key in (LGHTHSDMO-7, LGHTHSDMO-8, LGHTHSDMO-9, LGHTHSDMO-10)";
 

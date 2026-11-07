@@ -23,9 +23,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
     /// is the assertion these tests are built around, not a warm-up to them.
     /// </summary>
     [TestFixture]
-    [Category("Integration")]
     [Category("JiraIntegration")]
-    public class JiraLinkTypeDogfoodTest
+    public class JiraLinkTypeDogfoodTest : IntegrationFixture
     {
         private const string OrganizationUrl = "https://letpeoplework.atlassian.net";
 

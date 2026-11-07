@@ -1,5 +1,6 @@
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Diagnostics;
@@ -9,10 +10,9 @@ using Moq.Protected;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {
-    [Category("Integration")]
     [Category("GithubIntegration")]
     [NonParallelizable]
-    public class LighthouseReleaseServiceIntegrationTest
+    public class LighthouseReleaseServiceIntegrationTest : IntegrationFixture
     {
         // Use static service to work around rate limits
         private static readonly IGitHubService GitHubService = new GitHubService();
