@@ -1,0 +1,553 @@
+{
+  "roadmap": {
+    "project_id": "story-6469-t5-acceptance-at-the-service-port",
+    "created_at": "2026-11-07",
+    "total_steps": 20,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "New backend acceptance scenarios drive the application-service port. A shared helper, a wire-contract base and a guard make that the convention, the reality check proves the shape, and the first Refinement class measures whether more moves are worth it. No product code changes.",
+    "rigor": "thorough",
+    "dependencies": {
+      "t6_slice_e_done": "T6 #6512 slice E is finished and pushed, so T5 can start. What that changes: (1) every hosted test is on IntegrationFixture, so WireContractTest takes that base at once, and the delta's 'If T6 never lands' section and its partial case fall away. (2) TestTierGuardTest has no list and 7 rules, 90 tests. A class leaving the host leaves the base in the same commit, because NoFixtureSitsOnTheBaseWithoutAReason reds otherwise, and there is no line of T6's to remove. A move touches its base, its line in TestHostUseGuardTest once slice C is in, and any line in T2's lists. (3) TestHostPerFixtureGuardTest stays, with its lists. No pilot or Refinement class is on them, by search. It needs one new line, see 03-01. (4) TestHostScanning exists, so slice C gains no scan work; but the root set is private to TestTierGuardTest and must be shared, see 03-01. (5) Hosted rows carry Integration, so the fast filter leaves out contract, skeleton and host rows: run those by class. (6) The latest list is L6, so P0 is compared with L6, or L7 if it exists by then.",
+      "t6_slice_f_in_progress": "Test-Fast.ps1 exists: Lighthouse.Backend/Test-Fast.ps1, commit c8ecd06da (T6 06-01), so the fast cycle can use it now. Still to come from T6: its delta records nothing past 06-01, so the category column (06-02, 06-03), L7 and the fast-loop text in CLAUDE.md (06-05) are not to be relied on yet. T6's 06-05 also edits CLAUDE.md, so 04-01 merges with it.",
+      "first_push": "T5's first push waits until T6's push 7 has ended (D-6469-22). Work may start earlier, but never a test run beside one of T6's, and never beside a timed run."
+    },
+    "held": "Not planned here, by the maintainer's scope: Slice E beyond NeedOverOneCycleTest (Slice05NeedAndVerdictTest, Slice10SleYardstickTest, Slice12CommentsTest and their rows), and all of slice F (ReportWindowBoundaryScenarios first, then the 3 small classes, F1 to F10, ReportPortGivens, the IReportOwnerWriteAccess double, P3). After 05-05 the Story stops and asks. If the maintainer goes on, a new roadmap covers it from the re-cut tables. The other Refinement and Reports classes stay on the shrinking list.",
+    "notes": "Rigor profile thorough: pass model explicitly on every dispatch, the profile's agent_model for crafters and reviewer_model for reviewers. Every step is executed by a crafter; no step is orchestrator-only. A push is not a step: the orchestrator makes it after the step named in that step's implementation_notes. Sources: feature-delta.md. Its sections 'Maintainer decisions (2026-11-07)', 'Review revision' and 'What each slice must show' override earlier text, and rows A1 to E13 and C1 to C20 are named there. Those ids stay in the delta: no nWave scenario tag and no row id goes into a test title, comment or file. An untagged test is correct here. New tests carry no [Category(\"slice-...\")]; moved rows keep the attributes they have. Comments follow CLAUDE.md: the why in plain words, no slice or Story id. NO PRODUCT CODE: guarantee 1, git diff --name-only <last green> HEAD -- Lighthouse.Backend/Lighthouse.Backend/ prints nothing from this Story before each push. A deliberate break is made in the working tree, its output kept, then reverted, and it must compile. Lighthouse.Backend.Tests.csproj stays untouched; no ci*.yml edit, no new script (D-6469-17). A step needing either stops and reports. T5 adds no port: a scenario with no port stays at the host and the gap goes to #6508. No port row asserts a refusal by role. Mutation N/A in every slice: Stryker mutates the product and only test files change; the deliberate break stands in. The Hypothesis and state-delta mandate of the roadmap skill does not apply: docs/architecture/atdd-infrastructure-policy.md rules it out for this C# project. EVERY TEST RUN, class runs included, removes seven variables: env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken. The same env -u list followed by env | grep -cE 'IntegrationTestToken|LinearAPIKey|AzureDevOpsLighthouseE2ETestToken' prints 0 first. This replaces the delta's five names and its grep, which cannot see the last two. FAST CYCLE: while working a step, run the named class, or Test-Fast.ps1 -NoBuild once it exists; contract, skeleton and host rows are outside the fast tier, so run them by class. One full run of the always-on clause A at each slice end and before each push, never more. A = Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration). No crafter runs an unfiltered or standard-filter dotnet test. Every restricted run states a nonzero count read from the TRX's Counters total, because dotnet test exits 0 on no match. RULES OF A LIST RUN, T6's: one at a time, never beside any other test run, ps -eo args | grep -cE '[t]esthost|[v]itest' prints 0, no build going, dotnet build-server shutdown first, Docker up, never repeated for a failed test, only for a crash that leaves a short TRX. Ids come from the TRX, never --list-tests, which hides a class move. Lists: P0 (01-01), PA (01-03), PB with the timer (02-07), P1 (04-01), P2 with the timer (05-05). PA and PB are additions to the delta's list of runs, for the slice-end rule. Each is compared with the one before, before any push: a line is accepted only if it is on the slice's id table, a test this Story added and named in the delta, or a foreign commit whose diff shows that exact test. An unexplained line stops the pushes. TRX and CSV stay out of git under evidence/, with count and sha256 in the delta. A kept TRX is searched for token shapes and real hosts first. CHECKS BEFORE EACH PUSH, part of the step before it: merge origin/main if clean, a conflict stops and reports, nothing is rebased; git diff --name-only <last green> HEAD through path-classifier.sh with each classify_* and a grep for ^.github/workflows/ci.*\\.yml, any true means wait for a green run or tell the maintainer; guarantee 1; guarantee 2's tag grep; TestHostUseGuardTest by name with its count after the last merge. Each push waits for the one before to end, and read the result before pushing. After a push the orchestrator does the CI cross-check of the delta, CI CSV against CI CSV. At most two pushes here: push 1 after 04-01 (slices A to D, the guard and its text together), push 2 for E's first class, only after the maintainer's answer. test-time-budget.json is not edited: the Slice01 entry drops only under D-6469-20, needing 5 plain main runs after the move, and T9 does it if T5 ends first. New classes stay under the 34 s budget; one over it is split, never listed. A contract class name ends in WireContractTest, as T6's chain check fails on two classes sharing a simple name. File names for new shared parts are proposals; their internal shape is the crafter's. Measurement: the timing run of 2026-11-07 and the ranking addendum are the baseline. Rejected alternatives are in the delta: the host's container without HTTP, a base class for the helper, a wider port fixture."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice A: the helper and Slice04",
+      "description": "ServicePortHarness with its test, the reality check's shared parts drawn out of the harness, Slice04 moved to the port, and c and h measured. Mutation N/A: test files only.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "The first list, the before readings and ServicePortHarness",
+          "description": "Take P0 and the pilot's before readings on unchanged code, then add the helper: a per-test copy of the schema template, connected as the host connects, with a small container a fixture fills.",
+          "criteria": [
+            "P0 is one run of clause A at the parent of this step's first commit, no timer, its count and sha256 in the delta, compared with T6's latest list; only foreign lines differ",
+            "Before readings on the same machine, per class by TRX: Slice01 66 rows, Slice04 5, Slice06 10, summed seconds (guarantee 6), and c's and h's starting figures on Slice04",
+            "A1 to A8 are each seen red for their own reason, never a build error, then green: 9 rows in ServicePortHarnessTest by the TRX",
+            "A5 shows a broken foreign key refused; A3 and A6 show no database or side file left; A8's failure names the missing service",
+            "The helper holds no static state, no factory type and no RBAC service, and TestTierGuardTest stays green with its 90 tests"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarnessTest.cs",
+          "scenario_name": "Each_scenario_gets_a_database_of_its_own_holding_the_schema_and_nothing_else",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarnessTest.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/.gitignore"
+          ],
+          "dependencies": [],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies: ServicePortHarnessTest by class while working. P0 is taken first, so it holds nothing of T5. evidence/.gitignore keeps TRX and CSV files out of git, as measurement/.gitignore does. TestDatabaseTemplate.CopyTo, DatabaseConfigurator.ConfigureSqlite and Pooling=False as the delta's 'The port helper' says. Windows retry stays unverified. Commit: test(test-infra)."
+        },
+        {
+          "id": "01-02",
+          "name": "The reality check's shared parts leave the harness",
+          "description": "The forecast script, seed steps and host answer reader become composed parts a fixture holds, because the port base, the host harness and the contract fixture each need them and a class has one base. Behaviour stays as it is.",
+          "criteria": [
+            "The 81 rows of Slice01, Slice04 and Slice06 pass with the same ids and counts as 01-01, by TRX",
+            "The shared parts name no host or factory type, so a fixture holding them reads as no host to TestTierGuardTest",
+            "ForecastRealityCheckAcceptanceTest keeps its host life cycle, its tear-down and its base",
+            "No step is copied between parts: a reader or seed helper exists once, as Sonar S4144 would flag",
+            "dotnet build is clean with zero warnings under Debug and -c Release"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice04TheAnswerOpensInADialogScenarios.cs",
+          "scenario_name": "Every_period_the_check_scored_is_in_the_answer_with_its_days_and_what_the_Team_delivered",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckForecastScript.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckSeedSteps.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAnswer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice04TheAnswerOpensInADialogSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice06AnOperatorSeesEveryRealityCheckSpecifications.cs"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies, but these rows are hosted: run the three classes by name, not Test-Fast.ps1. Behaviour-free, so it is its own commit, apart from any move. RealityCheckWallClockProbe is on no base and is not touched. Commit: refactor(test-infra)."
+        },
+        {
+          "id": "01-03",
+          "name": "Slice04 at the port, with the history rule in the reader",
+          "description": "Add the port base and an answer reader that carries the history rule, move Slice04's 5 rows onto them, and measure c and h. Whether a TRX duration holds tear-down is read on one fixture.",
+          "criteria": [
+            "A9 is seen red, then green: a scripted forecast with a history longer than its window fails the reader, naming the window",
+            "Slice04's 5 rows pass with the same ids on the port base, no longer on IntegrationFixture, in one commit, and TestTierGuardTest stays green",
+            "A missing licence registration fails at resolve; the port uses the real ForecastFilterRuleService and the host's premium mock (D-6469-26)",
+            "c and h are in the delta, before and after on one machine, and the tear-down reading on one fixture; this c proves the helper only",
+            "PA, one run of clause A: Slice04's ids are unchanged, and only this slice's new tests differ from P0, named in the delta"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckPortAnswerTest.cs",
+          "scenario_name": "An_answer_whose_check_learned_from_more_than_its_own_window_is_not_read",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckPortAnswer.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckPortAnswerTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice04TheAnswerOpensInADialogScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice04TheAnswerOpensInADialogSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/PortDoubles.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md"
+          ],
+          "dependencies": [
+            "01-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies: Slice04 and the reader's test are fast tier now, so the class or Test-Fast.ps1 -NoBuild. Slice end: PA. A9 sits beside the reader, not in ServicePortHarnessTest, as the reader is the reality check's. PortDoubles.cs holds the licence double now; 05-02 adds the Refinement ones. Moved class keeps namespace, name and test names (D-6469-8). Reader first, then the move as its own commit. Commit: test(test-infra)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice B: the contract base and the pilot's split",
+      "description": "WireContractTest, then Slice01 split into contract, skeleton and port, the no-write row widened, and the host compared with the port's registrations. Mutation N/A: test files only.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "WireContractTest",
+          "description": "A small abstract base on IntegrationFixture: one host per fixture, one hook to adjust it, a fresh database per scenario, and a tear-down that leaves the host idle. No seeding, routes or domain words.",
+          "criteria": [
+            "B1 to B5 are each seen red for their own reason, then green in WireContractTestTest",
+            "B4: a class on the base with no category of its own reads Integration by inheritance",
+            "B5 asserts the tear-down's failure inside its test, so no planted scenario leaves a red row in the suite; it calls the one-time tear-down only through MethodInfo.Invoke, which the IL scan does not follow, or on a hand-built instance that never reaches a host start",
+            "No test body in WireContractTestTest calls a fixture's one-time set-up, a hook or new Nested() directly",
+            "SharedHostsDrainTheUpdateQueueGuardTest and TestTierGuardTest pass with no list entry for the base",
+            "B1 to B3 are concrete fixtures nested in WireContractTestTest and on the base, and NUnit itself runs them: no test method calls a fixture's one-time set-up or its hook, so no test-rooted IL path reaches a host start",
+            "TestTierGuardTest passes: the nested fixtures reach a host through the base and sit on it; the outer class holds only B4, by reflection, reaches no host and stays off the base",
+            "TestHostPerFixtureGuardTest passes with the same ids and no new line, as neither class is found from its SetUp and test roots. If the outer class reaches a host, stop and report: TypesThatHoldPlantedFixtures covers only TestHostPerFixtureGuardTest and TestTierGuardTest has no such list, so a list line cannot fix it"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WireContractTestTest.cs",
+          "scenario_name": "A_contract_fixture_starts_one_host_however_many_scenarios_it_holds",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/WireContractTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/WireContractTestTest.cs"
+          ],
+          "dependencies": [
+            "01-03"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies, but the class is hosted: run WireContractTestTest by name. UseSchemaTemplate on. T6's abstract planted idiom cannot run a fixture, so B1 to B3's are concrete and need no reflection or engine: a fixture's own scenarios read what its hook recorded. A host start is a new factory, WithWebHostBuilder or WithTestAuthentication; those sit under [OneTimeSetUp], which T2's roots leave out, and CreateClient is none. Their scenario rows are new ids to name in the delta. WireContractTestTest sits in TestHelpers under one exemption added in 03-01 (D-6469-39). Commit: test(test-infra)."
+        },
+        {
+          "id": "02-02",
+          "name": "Fifteen rows leave Slice01 for the contract and the skeleton",
+          "description": "Move the 14 wire rows to RealityCheckWireContractTest and Maria's row to RealityCheckSkeletonTest, as the delta's outcome table maps them. Test names stay; only the class changes.",
+          "criteria": [
+            "Slice01 holds 51 rows, RealityCheckWireContractTest 14 and RealityCheckSkeletonTest 1, by TRX, each passing",
+            "Each of the 15 is mapped one by one in the id table, with its old and new class",
+            "The skeleton keeps the stored-state check, so the controller's own GetForecastThroughputStatus call stays covered",
+            "Tom's, the unreadable Team's and the missing Team's rows reach the auth outcome through the base's hook, with no RBAC logic in a test",
+            "Every class name ends as planned, so no two classes on a chain share a simple name"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs",
+          "scenario_name": "The_same_check_answers_on_the_versioned_route_as_well",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckSkeletonTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "Fast cycle applies, but all three classes are hosted: run them by name. A move is its own commit and never mixes with an edit. The 14 are 13 from the outcome table plus Running_the_check_twice. Slice01 stays on the host until 02-05. Commit: test(test-infra)."
+        },
+        {
+          "id": "02-03",
+          "name": "The seven new wire rows",
+          "description": "Pin on the contract what today only shared steps pin: every member name, null members, date format, enums as text, and the four JSON walks split from their rows.",
+          "criteria": [
+            "B6 reads a real answer in full, through the reader extended to every DTO member, and pins teamId, teamName, levelOutcomes[].forecastValue, filterApplied and excludedSummary",
+            "B7 shows forecast, actualCompleted, outcome and levelOutcomes present and null, and days as yyyy-MM-dd",
+            "B8 shows each member of the six enums travels as its name through the host's JSON options",
+            "B9 to B12 hold the JSON walks; each is seen red before green, by breaking the expectation",
+            "RealityCheckWireContractTest holds 21 rows by TRX and its summed seconds are under the 34 s budget"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs",
+          "scenario_name": "Every_member_of_a_real_answer_has_the_name_the_browser_reads",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAnswer.cs"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies: the contract class by name. This comes before 02-04 so that no wire pin is lost for a moment: the four rows keep their walk until the contract holds it. Values of filterApplied and excludedSummary stay a known gap for #6508. Commit: test(test-infra)."
+        },
+        {
+          "id": "02-04",
+          "name": "The four split rows give up their JSON walks",
+          "description": "While Slice01 is still at the host, the 4 split rows drop the walks the contract now holds and keep their business values and ids. This is an edit, apart from the move: a class has one base, so its rows can only move together.",
+          "criteria": [
+            "Each of the 4 rows keeps its id and its business values: the ladder order, the region, the setting, DegenerateForecast, 15 evaluated",
+            "Each walk given up is named in the id table beside the row of B9 to B12 that holds it, green by TRX",
+            "Slice01 still holds 51 rows on the host, all passing, and this commit touches none of the other 47"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs",
+          "scenario_name": "No_part_of_the_answer_can_rank_one_sampling_window_above_another",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies, but both classes are still hosted: run Slice01 and the contract class by name. Commit: test(test-infra)."
+        },
+        {
+          "id": "02-05",
+          "name": "Slice01's 51 rows at the port",
+          "description": "Slice01 moves to the port base: the 47 rows and the 4 narrowed rows keep their ids. The shipped-engine row follows the rule below.",
+          "criteria": [
+            "Slice01's rows pass with the same ids on the port base and off IntegrationFixture, in one commit, and TestTierGuardTest stays green",
+            "All port rows read through the reader that carries the history rule, so it holds on every row",
+            "The 4 rows narrowed in 02-04 hold the same business values at the port",
+            "A_Team_finishing_one_Work_Item_every_day stays as a second skeleton if it needs more distinct service registrations, beyond that union, than the union of the other 50 rows holds; both counts are in the delta, and the id table says which way it went",
+            "ForecastRealityCheckAcceptanceTest now serves Slice06 and the skeleton only; Slice06's 10 rows pass unchanged"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs",
+          "scenario_name": "Five_days_with_finished_work_is_enough_to_check_and_four_is_not",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckPortAnswer.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "Fast cycle applies: Slice01 by class or Test-Fast.ps1 -NoBuild. Count distinct service types. The no-write row moves with today's check here; 02-06 widens it. Each row's Given and Then change, so expect the Specifications file to carry the work and the test names to stay. Commit: test(test-infra)."
+        },
+        {
+          "id": "02-06",
+          "name": "The no-write row sees the whole database",
+          "description": "The no-write row keeps today's check and adds a command counter on the harness's context and a file-level check on a watcher connection, so a write through any other connection is seen too.",
+          "criteria": [
+            "The counter sees INSERT, UPDATE and DELETE on both the non-query and reader hooks, and names the statement",
+            "PRAGMA data_version on a watcher connection that shares no cache does not move during Run",
+            "A write planted inside the scripted forecast turns the row red; a write planted through a second context turns it red by the file check alone; both are removed",
+            "If data_version proves unreliable under these connection settings, the check compares the bytes of the database and its -wal file, and the delta says so",
+            "The plants' output is kept in evidence/, and the row's id does not change"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs",
+          "scenario_name": "Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarnessTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/"
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies: Slice01 and ServicePortHarnessTest by class. D-6469-37. data_version under this project's settings is unproven, so the first act is to show it moves on a commit from another connection. Commit: test(test-infra)."
+        },
+        {
+          "id": "02-07",
+          "name": "The port's registrations against the host, and the slice's proofs",
+          "description": "B13 compares what the port fixture registers with the host, by service type and lifetime. Then the slice closes: id table, coverage table, deliberate break, seconds before and after, and the list with the timer on.",
+          "criteria": [
+            "B13 is seen red on a scoped service planted as a singleton, then green; the named doubles are exempt from the implementation-type comparison only",
+            "Id table: 66 ids kept, 15 changed class as mapped, 7 new wire rows and B13 named; the family's table adds up to 81",
+            "Deliberate break: ForecastDataSufficiencyPolicy.MinimumActiveDays off by one turns Five_days_with_finished_work_is_enough_to_check_and_four_is_not red at the port; output kept; reverted",
+            "The family's summed TRX seconds, wherever rows landed and with new rows, fall against 01-01's; each class run alone 3 times stays green",
+            "PB, clause A with LIGHTHOUSE_FIXTURE_TIMING=1: every line explained, and summed host_build_count no more than 619 plus WireContractTestTest's fixtures"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesWireContractTest.cs",
+          "scenario_name": "Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesWireContractTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/"
+          ],
+          "dependencies": [
+            "02-06"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies to B13: by name, it is hosted. Slice end: PB. The break sits in ForecastDataSufficiencyPolicy, not ForecastRealityCheckService as the delta says; the service reads it there. It is shared, so run only the pilot's classes while it stands, and git diff on Lighthouse.Backend/Lighthouse.Backend/ prints nothing afterwards. The delta places B13 in no class; Contracts is the only route that needs no new line on the shrinking list. B13 and E13 are not really wire tests, so a reviewer may object. Commit: test(test-infra), then docs(test-infra)."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice C: the guard",
+      "description": "TestHostUseGuardTest: four rules on planted cases, then both lists from its first run, under Debug and Release. Mutation N/A: test files only.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "The root set is shared, and the guard's frame stands",
+          "description": "TestTierGuardTest's root set moves to TestHostScanning with what it uses, and TestHostUseGuardTest starts with no rule yet: the scan, the named exemption for WireContractTestTest, and its place in T2's planted list.",
+          "criteria": [
+            "RunsWhenAFixtureRuns, TestAttributes, SetUpAndTearDownAttributes and HasAnAttribute move to TestHostScanning together and exist once; TestTierGuardTest reads them from there, and no guard keeps a copy",
+            "TestTierGuardTest's 90 ids all pass unchanged, by TRX, and TestHostPerFixtureGuardTest's ids too",
+            "The exemption is one named line for WireContractTestTest and what it nests, read by no rule yet",
+            "TestHostUseGuardTest is in TypesThatHoldPlantedFixtures before any planted class exists",
+            "dotnet build is clean with zero warnings under Debug and -c Release"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
+          "scenario_name": "EveryFixtureThatStartsAHostIsOnTheBase",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostScanning.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs"
+          ],
+          "dependencies": [
+            "02-07"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies: the guards by class, or Test-Fast.ps1 -NoBuild. Two edits the delta did not name. The root set and its helpers are private to TestTierGuardTest, and IsAConcreteClassWithTests there keeps using them through the shared copy. T2's guard reads abstract planted classes too, so it would find this guard's. T2's PerTestAttributes stays its own: its roots answer a different question. One behaviour-free commit. Commit: refactor(test-infra)."
+        },
+        {
+          "id": "03-02",
+          "name": "Rule 1: a host needs a reason",
+          "description": "A concrete fixture that reaches a host, is on neither list and is off WireContractTest fails, naming the type and the three ways out. Planted cases C1 to C7 and C20 show it.",
+          "criteria": [
+            "C1 to C6 each fail their assertion before the rule exists, then pass; a red names the type, a nested one keyed Outer/Inner, and C5 is caught through the shared root set",
+            "C7: the message gives the three ways out and says to fix the type, not to add it",
+            "C20: a class elsewhere copying WireContractTestTest's shape off the base stays red, so the exemption is one type wide",
+            "TestTierGuardTest and TestHostPerFixtureGuardTest stay green with the same ids"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs",
+          "scenario_name": "A host from a one-time set-up, on neither list, fails naming the type",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies: the guard by class. Planted classes are abstract, as T6's are. The rule judges planted classes only until 03-04 gives it lists. A copy that derives from the base passes rule 1 by design, so C20's on-the-base case is rule 4's, in 03-03; that is one more case than the delta's 20. Commit: test(test-infra)."
+        },
+        {
+          "id": "03-03",
+          "name": "Rules 2 to 4: no stale entry, one list only, Contracts means the base",
+          "description": "The remaining rules on planted cases C8 to C16, with the green cases that show nothing else fires.",
+          "criteria": [
+            "C10 and C11, rule 2: a listed type that reaches no host, or no longer exists, is red, and says its line goes in this commit",
+            "C8 and C9, rule 3: a type on both lists, or on the base and on a list, is red, naming it",
+            "C12 and C13, rule 4: the base outside Contracts, and a fixture in that namespace off the base, are red; so is C20's copy on the base",
+            "WireContractTestTest's nested fixtures pass rule 4 only through the exemption, which is keyed by type, not by namespace, as that class lives in TestHelpers",
+            "C14, C15, C16 are green: a port fixture on ServicePortHarness reads as no host, a fixture on the base in the namespace passes, and a listed skeleton passes"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs",
+          "scenario_name": "A listed type that reaches no host is red and its line goes in this commit",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies: the guard by class. Each red case fails its assertion before its rule exists. Lists are still empty, so these rules take planted lists. Commit: test(test-infra)."
+        },
+        {
+          "id": "03-04",
+          "name": "Both lists from the first run, and a real class caught",
+          "description": "Generate HostUsersStillToMove and SkeletonsByUserFlow from the guard's first run, compare them under Debug and Release, turn on the real pass, and show a real planted class red under both.",
+          "criteria": [
+            "C19: the first list comes out equal under Debug and -c Release, or the step stops; its real size is in the delta",
+            "The real pass of all four rules is green: Slice06 is on the first list, RealityCheckSkeletonTest on the second with its user flow, and no pilot port class on either",
+            "C17, C18: a real concrete class in the working tree is red with its full name under Debug and under -c Release; output kept in evidence/; git status shows it gone",
+            "One why for each list, with no slice or Story id, and the guard's seconds are in the delta, far under the 34 s budget"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs",
+          "scenario_name": "A real concrete class with a host, on neither list, is red under Debug and under Release",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/"
+          ],
+          "dependencies": [
+            "03-03"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "Fast cycle applies: the guard by class. No separate list here: this slice's end is P1 in 04-01, which follows at once and changes no test. List keys are Cecil's FullName. More than 400 entries expected. Classes that test the host itself stay on the first list. No count constant (D-6469-7). Commit: test(test-infra)."
+        }
+      ]
+    },
+    {
+      "id": "04",
+      "name": "Slice D: the text, and push 1",
+      "description": "The CLAUDE.md bullet and the policy row land with the guard, and the checks before push 1 run. Mutation N/A: docs only.",
+      "steps": [
+        {
+          "id": "04-01",
+          "name": "The bullet, the policy row and P1",
+          "description": "CLAUDE.md gains the bullet as drafted, atdd-infrastructure-policy.md gains its Driving row, and P1 proves slices A to D before the first push.",
+          "criteria": [
+            "D1: the bullet is as drafted in the delta, with the DISTILL sentence and the no-tag rule beside it",
+            "D2: the bullet and rule 1's message give the same three ways out, in the same words",
+            "D4: the policy's Driving table has a row for the application-service port and ServicePortHarness",
+            "P1 against the last list: 66 pilot ids unchanged, 15 changed class as mapped, the new rows and the helper's and guard's tests named, nothing else",
+            "Every check before a push passes on the merged tree, with TestHostUseGuardTest run by name after the last merge; a foreign host user stops and reports"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs",
+          "scenario_name": "The guard and the text that explains it land on trunk together",
+          "files_to_modify": [
+            "CLAUDE.md",
+            "docs/architecture/atdd-infrastructure-policy.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/"
+          ],
+          "dependencies": [
+            "03-04"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "No fast cycle: no code. P1 is the slice-end run for C and D together. It waits until T6's push 7 has ended (D-6469-22), so T6's CLAUDE.md text is merged first and P1 is taken on the merged tree. D3: after this step the orchestrator makes push 1, slices A to D in one push, as a CLAUDE.md-only push starts no CI. After it, the CI cross-check: 56 ids change from Integration to Unit. One Test-Fast.ps1 -NoBuild median goes in the delta as a report, not a gate. Commit: docs(test-infra)."
+        }
+      ]
+    },
+    {
+      "id": "05",
+      "name": "Slice E, first class only: NeedOverOneCycleTest, in a one-day box",
+      "description": "The Refinement port and one class, measured, then stop and ask. The box is one working day from the start of 05-01, the re-cut included; a box that runs out is a stop too, and the step then running stops and reports what it has. Mutation N/A: test files only.",
+      "steps": [
+        {
+          "id": "05-01",
+          "name": "Re-cut the tables to the first class, and have them reviewed",
+          "description": "Slice E's tables are re-cut to NeedOverOneCycleTest before anything moves, the row reading is checked for the smaller option's classes, and the before readings are taken on this class.",
+          "criteria": [
+            "NeedOverOneCycleTest's 22 rows are checked one by one, with their coverage, shared-step and id tables; the suite's table still adds up to 300, the rest held on the list",
+            "The tallies of the 4 smaller-option Refinement classes are re-checked; if m moves by more than 5, or c by over 10 ms, Stage 3's figure is restated (D-6469-34)",
+            "Each of E1 to E11 is recorded as needed or not, with a reason: every pin this class holds through the tab's JSON (cycleStart, cycleEnd, nextRefinementDate, range, no-number reasons) names the host row that keeps it, or a needed row that takes it over",
+            "The tables say how E10's inputs cover cadence, ready rule and each kind of blackout day",
+            "A new deliberate break is named, as LongestComment and the voter-key plant belong to classes that do not move",
+            "Before readings by TRX on one machine: the 22 rows' seconds, and set-up per test; then the review of the re-cut is recorded in the delta"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
+          "scenario_name": "Without_a_number_the_need_names_no_cycle",
+          "files_to_modify": [
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/"
+          ],
+          "dependencies": [
+            "04-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "No code. Reviewed before the move, as the brief demands: the orchestrator dispatches nw-acceptance-designer-reviewer at the profile's reviewer_model; 05-02 waits for it. Facts read from the code: the 4 rows of A_Team_refining_on_two_weekdays script no forecast, so the port reaches the shipped engine through ForecastWithScriptedHorizons, and blackout Givens go through a route today, with IBlackoutPeriodService.Create as the port. Candidate break: RefinementCadenceCalendar.SearchHorizonDays, against the row honoured a year ahead. Commit: docs(test-infra)."
+        },
+        {
+          "id": "05-02",
+          "name": "The Refinement port and its builder",
+          "description": "Add the Refinement port base with the registrations this class needs, the doubles, and RefinementPortGivens, the one way a port Given writes a Team. A guard row holds Givens to it.",
+          "criteria": [
+            "RefinementPortGivens lists every distinct Given input of the class by EveryInput, and its summary names the command to run E10 and E13 by name",
+            "E12 is seen red on a planted port class writing RefinementSettings itself, then green",
+            "The port resolves IRefinementViewQuery with real repositories, calendar and need calculator; IAuthModeResolver and the empty IHttpContextAccessor come from PortDoubles only",
+            "The port base and builder name no host or factory type, and the host harness and its 300 rows are unchanged",
+            "B13 gains a case for this port fixture, seen red by a planted wrong lifetime, then green"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs",
+          "scenario_name": "No_port_scenario_sets_up_a_Team_except_through_the_builder",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/PortDoubles.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesWireContractTest.cs"
+          ],
+          "dependencies": [
+            "05-01"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "Fast cycle applies: the new guard by class or Test-Fast.ps1 -NoBuild; B13 by name. Only what this class reads moves into composed parts; the rest of RefinementAcceptanceTest waits for the maintainer's answer. If the shipped engine's registrations prove too wide, say so in the delta: that is a checkpoint finding. Build with an IAppSettingService double and without seeders first; 05-05 measures both. Trap: a Given can store what no save can produce, which E10 guards. Commit: test(test-infra)."
+        },
+        {
+          "id": "05-03",
+          "name": "The wire pins land before the class moves",
+          "description": "Each row 05-01 recorded as needed is written in RefinementWithoutSignInWireContractTest, so no pin this class holds through the tab's JSON is lost when it moves. Guarantee 3 depends on it.",
+          "criteria": [
+            "Every row of E1 to E11 that 05-01 recorded as needed is in RefinementWithoutSignInWireContractTest, and the TRX count equals the count 05-01 stated",
+            "Each is seen red for its own reason, by breaking its expectation, then green",
+            "They land in a commit before the move; 05-04 does not move the class while any is missing",
+            "The class is on WireContractTest in Contracts.Refinement, needs no line on either list, and all three guards stay green",
+            "If 05-01 recorded none as needed, the delta says so and this step closes with no test"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.cs",
+          "scenario_name": "Every_member_of_the_Refinement_tab_has_the_name_the_browser_and_the_clients_read",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md"
+          ],
+          "dependencies": [
+            "05-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Fast cycle applies, but the class is hosted: run it by name with its count. Its rows are new ids for the re-cut id table, and they count as new host rows in Stage 3. Commit: test(test-infra)."
+        },
+        {
+          "id": "05-04",
+          "name": "NeedOverOneCycleTest at the port",
+          "description": "The class moves to the port base with its 22 rows and test names. Host rows E10 and E13 watch the builder and the settings double from the one new contract class.",
+          "criteria": [
+            "The 22 rows pass with the same ids on the port base, off IntegrationFixture and off HostUsersStillToMove, in one commit; all three guards stay green",
+            "E10: one case per EveryInput, each read red first; what the real door stores equals what the port's Given writes",
+            "E13: one case for this port fixture; for every setting the port reads, the double's answer equals the seeded host's",
+            "The deliberate break named in 05-01 turns its row red at the port; output kept; reverted",
+            "The class's assertions lost no business rule or wire pin: each shared step it used is on the re-cut table with its new place, and each pin it gave up names its row"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
+          "scenario_name": "The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleSpecifications.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md"
+          ],
+          "dependencies": [
+            "05-03"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "Fast cycle applies: the class by name or Test-Fast.ps1 -NoBuild; E10 and E13 are hosted, so run them by name with their counts, as the delta's filter shows. The class moves in one commit, so a box that runs out leaves it wholly at the host or wholly at the port. Spec steps change from reading JSON to reading the DTO. 05-03's rows are already in; every other pin stays with the 278 rows still at the host, as 05-01 recorded. Commit: test(test-infra)."
+        },
+        {
+          "id": "05-05",
+          "name": "The checkpoint: measure, re-run Stage 3, stop and ask",
+          "description": "Measure c and h on this class with and without the seeders, re-run Stage 3 for E and F together against 14.1 s, take P2, and put the numbers to the maintainer. Nothing further moves.",
+          "criteria": [
+            "c and h are measured on this class with the real registrations, with and without the seeders, on one machine, before and after; seeded tables each port reads are listed",
+            "Stage 3 is written as a sum, net of new host rows, with F projected at E's c; the verdict against 14.1 s is stated, and under the line the recommendation is to stop",
+            "Guarantee 6: seconds of the 22 rows plus new rows, against 05-01's. If they do not fall, that is reported as a finding, not fixed",
+            "P2, clause A with the timer: every line on the re-cut id table; host_build_count not above the last count",
+            "The question to the maintainer is written in the delta, with the seeders choice, and no further step is started"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
+          "scenario_name": "The first class's numbers go to the maintainer before the rest of the suite moves",
+          "files_to_modify": [
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/feature-delta.md",
+            "docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/"
+          ],
+          "dependencies": [
+            "05-04"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "Runs whatever the box did: if the box ran out, it reports what exists and what could not be measured. Slice end: P2. This class alone adds 1 host fixture and removes 1, so guarantee 5's 'about 3 below' does not apply yet; it is restated here. New host rows may outweigh 22 rows' saving, which is why a rise is a finding. Stop whatever the number. Push 2 waits for the answer and for every check before a push; the orchestrator makes it, and P2 stands only if nothing changes first. Commit: docs(test-infra)."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "approved",
+    "note": "Two reviews of this roadmap ran. The first returned NEEDS_REVISION; its answer added the wire-pin step 05-03, split the guard into 03-01 to 03-04 and the 4 split rows into 02-04, stated the shipped-engine threshold and how B1 to B3 run, and took the step count from 16 to 20. The second passed everything but 02-01, and it changed how B5 runs, made the outer class reaching a host a stop, took 'or with it' out of 05-03 and keyed the exemption by type in 03-03. Upstream, the DISTILL delta's review was conditionally approved and is answered in its section Review revision. No test or build ran for this roadmap. File paths were checked against the working tree at c8ecd06da: every path named exists or is created by an earlier step here. Test-Fast.ps1 is T6's and exists from that commit."
+  }
+}
