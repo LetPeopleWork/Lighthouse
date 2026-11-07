@@ -1331,3 +1331,29 @@ Commit `bf353051c`, the move alone: 2 files, 126 insertions, 127 deletions. Not 
 ## Wave: DELIVER / [REF] Pushing row reworded (2026-11-07)
 
 This overrides "every `classify_*` answers false" wherever it stands. The check is that every **connector and shared** answer is false: `jira`, `ado`, `linear`, `servicenow`, `github` and `connector_shared`. `classify_backend` must answer true on a backend push, because that is what starts the plain run; D-6512-29 already says this.
+
+## Wave: DELIVER / [REF] Slice D, step 04-01: the root set as a parameter and `L3b`, what ran (2026-11-07)
+
+**Pulled forward, ahead of 03-03.** The run for push 3 turned out force-full, so it was not the first plain run, and the hosted commit still waits. "Push plan" names this commit as the way out: it is a backend-path commit that changes no category, so it can make the plain run. The roadmap's dependency on 03-03 is waived for that reason.
+
+Commit `4103cadc3`, this change alone: 2 files, 26 insertions, 20 deletions. Not pushed. `HostBuildingScan` now takes the root set in its constructor, as a predicate on a method, because the tier guard's wider set holds constructors, which no attribute names. `PerTestAttributes` moved unchanged into `TestHostPerFixtureGuardTest`, which passes it in. The scan still skips compiler-made types itself, whatever the set says. RED was skipped: the change has no behaviour of its own.
+
+| Case | What ran | Result |
+|---|---|---|
+| Builds | `dotnet build Lighthouse.Backend`, then the test project with `-c Release` | 0 warnings, 0 errors, each |
+| The guard, Debug | `FullyQualifiedName~TestHostPerFixtureGuardTest` | TRX total 18, passed 18; the same 18 ids as `L3.csv` |
+| The guard, `-c Release` | The same filter | TRX total 18, passed 18; the same 18 ids as `L3.csv` |
+| Host only in `[OneTimeSetUp]`, T2's set | The planted `StartsAHostOnlyInOneTimeSetUp` case, in both runs above | Not found, the case passes |
+| That case can fail | Debug, once, with `OneTimeSetUpAttribute` added to T2's set by hand, then taken out and the file's `sha256` checked | 2 failed, 16 passed: the planted case, and `NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList` |
+
+**`L3b`.** Run on the working tree that became `4103cadc3`, once, with no other test process, after `dotnet build-server shutdown`, with the 5 token variables removed.
+
+| Item | Value |
+|---|---|
+| Filter | `A` |
+| Console | `Failed: 0, Passed: 12831, Skipped: 2, Total: 12833`, 6 m 37 s, exit 0 |
+| TRX `Counters` and CSV rows | total 12,842, executed 12,831, passed 12,831. CSV: 12,842 rows, 12,831 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `efff1264c406145909d8df8b37c9cb82ddb2ba4db51342b4503410d7c18ab6ff` |
+| Kept | `L3b.csv` and `L3b.trx.gz` in `evidence/`, out of git |
+
+**`L3b` against `L3`.** 0 lines only in `L3`, 0 lines only in `L3b`, and the same `sha256`, so no line needed excusing. This is the local list for the plain push.
