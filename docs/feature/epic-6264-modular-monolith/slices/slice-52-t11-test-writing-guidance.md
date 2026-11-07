@@ -76,3 +76,5 @@ Direction, not a gate: about 90 % fast, 9.5 % integration, 0.5 % E2E, by test co
 - **Where it stood on 2026-11-07:** frontend 3,648 fast and 5,857 `.test.tsx` of 9,505; about 56 Playwright tests, 0.25 % of about 22,600. The backend split is known only once T6 has labelled it.
 
 T11 puts this in the test-writing guidance, so a new test lands in the lowest layer that can prove it.
+
+**Component test audit (maintainer, 2026-11-07).** T11 samples about 50 `.test.tsx` files and sorts their tests into "really logic" and "really UI", then estimates the share that could move to a `.test.ts` over an extracted function. It touches no tests. The number decides whether 9.5 % is reachable or only a direction, and it goes to the maintainer before any rewrite is planned.
