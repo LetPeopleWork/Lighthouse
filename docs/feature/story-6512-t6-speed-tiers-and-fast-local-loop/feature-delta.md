@@ -1709,3 +1709,27 @@ The functions themselves were not called, because this shell refuses to source a
 - `LinearAPIKey` is read in the test project only by `LinearWorkTrackingConnectorTest` and `LinearDependencyDogfoodTest`, each with the category on the class. `AzureDevOpsLighthouseE2ETestToken` is read only by the Playwright config, so `dotnet test` never reads it.
 - `Category=LinearIntegration` with `--list-tests`, which runs nothing, selects 21 tests. In `L4`'s TRX, none of its 12,824 distinct test ids belongs to those two classes, and none carries the name of one of the 21.
 - `L4`'s TRX has no categories to read, so that check goes by class and name.
+
+## Wave: DELIVER / [REF] Slice E, step 05-01: the fixtures of `API/Integration`, what ran (2026-11-07)
+
+Commit `c547370b0`, the move alone: 65 files, 70 insertions, 128 deletions, all modified, none renamed. Not pushed. 64 classes in 64 files took `: IntegrationFixture`; 6 of those files also took the `using`. Their 64 lines left `FixturesNotYetOnTheBase`, which goes from 150 to 86. A diff read shows nothing else: 64 class lines, 6 `using` lines, 64 list lines.
+
+**64, not about 56.** The step's figure was an estimate; the count is the list's keys under `API.Integration`, each found in that folder. No listed type of that namespace lives elsewhere, and none of the 64 had a base, so the stop rule on a non-hosted base did not arise and no shared base moved. Two have a primary constructor, `CategoryListsHoldRawStatesSettingsIntegrationTest` and `CycleTimeDefinitionOverAMappingIntegrationTest`, and took the base after it. `Slice03AmbiguityRefusalTest` is partial: it took the base on its `Specifications` part, where `Slice01LinkTypeReferenceTest` carries its own, so 65 files hold these classes and 64 changed.
+
+No listed class stayed regular. `ParentFromIssueLinksAcceptanceTest`, `Slice01LinkTypeReferenceTest` and `Slice02ParentFromLinkTest` were never listed and stay regular, as step 03-03 has it.
+
+| Case | What ran | Result |
+|---|---|---|
+| Stale, shown once | `FeatureMoveAuthOffIntegrationTest` moved, its line left in, Debug | TRX total 61, passed 60, failed 1, exit 1: `EveryTypeOnTheListStillOwesAMoveToTheBase`, naming that class |
+| Its line removed | The same, Debug | TRX total 61, passed 61, exit 0 |
+| The guard, after the move | `FullyQualifiedName~TestTierGuardTest`, Debug and `-c Release` | TRX total 61, passed 61, exit 0, each |
+| The host guard | `FullyQualifiedName~TestHostPerFixtureGuardTest`, Debug and `-c Release` | TRX total 18, passed 18, exit 0, each |
+| The other guards and the clause pin | `IntegrationFixtureCategoryTest`, `TestSelectionClauseTest`, `DbContextComesFromAScopeGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`, `-c Release` | TRX total 49, passed 49, exit 0 |
+| Three moved classes, run | `FeatureMoveAuthOffIntegrationTest`, `Slice03AmbiguityRefusalTest`, `CategoryListsHoldRawStatesSettingsIntegrationTest`, `-c Release` | TRX total 84, passed 83, exit 0. The 84th is `SavingAnOwnersUnchangedSettings_WhoseStoredCycleTimeRunsInsideOneGroup_Saves`, ignored for a Portfolio in the test itself |
+| Those three, by tier | `H` and `F`, each `&`-joined with those classes, `--list-tests`, `-c Release` | `H` 84 lines, `F` 0 |
+| `H` as a whole | `--list-tests`, `-c Release` | 2,676 lines |
+| Builds | `dotnet build` in `Lighthouse.Backend`, then the test project with `-c Release` | 0 warnings, 0 errors, each |
+
+The seven variables were removed from every run. Only named classes ran, so this is not a list; that comes in step 05-04. `H`'s 2,676 has no matching count from before this step to subtract, as `H` was not listed at `8fb288160`.
+
+**The comments.** Commit `892a58942`, apart from the move so that one stays the move alone: 14 of the touched files, comments only, 55 insertions, 59 deletions. They explained themselves through story, decision and ADR ids. A diff read shows no line outside a comment, and the scan for those ids over the 64 files now prints nothing. The scan matches ids, not narration, so other comments that break the rule may remain. After it, on Debug only: a build with 0 warnings and 0 errors, and `TestTierGuardTest` TRX total 61, passed 61, exit 0. `-c Release` did not run on the comment commit.
