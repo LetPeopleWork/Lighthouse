@@ -83,6 +83,7 @@ describe("GeneralSettingsComponent", () => {
 	];
 
 	beforeEach(() => {
+		rbac.isSystemAdmin = true;
 		mockOnSettingsChange.mockClear();
 		mockOnWorkTrackingSystemChange.mockClear();
 	});
