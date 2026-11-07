@@ -1649,3 +1649,63 @@ The working-tree and temporary-edit rows ran before the last edit, which only dr
 - **Slice E's `git grep` of the connector names will not match line for line.** The planted fixtures and `ConnectorCategories` in this file, added in 04-03 and here, hold those names. That check has to leave this file out.
 
 **Limits.** Rule 6 judges the fixture, as the design has it: a canary on one method and a connector on another pass, though the canary's test would run in CI. No test carries the canary today. "No other rule passes for a listed type" reads as rules 2, 3, 4 and 6, because the design gives rule 1 the same list. Rule 2 is not in the working-tree row, as it looks only at fixtures on the base, and no rule 2 code reads the list.
+
+## Wave: DELIVER / [REF] Slice D, step 04-05: the real planted classes and `L5`, what ran (2026-11-07)
+
+This section is the only file changed. Not pushed. The guard's code stays as `fc62ba407` left it.
+
+**The two classes.** Each was a real concrete class in `Architecture/`, in a temporary file, alone in the tree for its two runs. `TierGuardPlantedRealHostedFixture` has no base and starts its host in an async `[OneTimeSetUp]` after an `await`, the shape the compiler builds differently under Release. `TierGuardPlantedRealStaleFixture` derives from `IntegrationFixture`, starts no host and carries no category. Each run was a build, then `FullyQualifiedName~TestTierGuardTest` with the seven variables below removed.
+
+| Run | Build | Result, by the TRX | Exit | Failed test |
+|---|---|---|---|---|
+| Hosted, Debug | 0 warnings, 0 errors | total 61, passed 60, failed 1 | 1 | `EveryFixtureThatStartsAHostIsOnTheBaseOrOnTheList` |
+| Hosted, `-c Release` | 0 warnings, 0 errors | total 61, passed 60, failed 1 | 1 | The same |
+| On the base with no host, Debug | 0 warnings, 0 errors | total 61, passed 60, failed 1 | 1 | `NoFixtureSitsOnTheBaseWithoutAReason` |
+| On the base with no host, `-c Release` | 0 warnings, 0 errors | total 61, passed 60, failed 1 | 1 | The same |
+
+The message, the same in Debug and `-c Release` for each class:
+
+```text
+These fixtures start an application host, so the fast test loop would run them. Each must derive from IntegrationFixture: Lighthouse.Backend.Tests.Architecture.TierGuardPlantedRealHostedFixture.
+```
+
+```text
+These fixtures start no application host, carry no connector category and are no container tests, so the fast test loop leaves them out for no reason. Each must leave IntegrationFixture: Lighthouse.Backend.Tests.Architecture.TierGuardPlantedRealStaleFixture.
+```
+
+**Removed.** Both classes are gone and were never committed. The guard then ran on a fresh build: TRX total 61, passed 61, exit 0, in Debug and in `-c Release`. `git status --short` after those runs listed neither class.
+
+**What the classifier answers for push 5.** On `git diff --name-only 9825d4e5d HEAD`, read at `88482340c`, before this section's commit, and again after it.
+
+| Function | Answer | Matching paths |
+|---|---|---|
+| `classify_backend` | `true`, as expected | `Architecture/TestHostScanning.cs`, `Architecture/TestTierGuardTest.cs` |
+| `classify_jira` | `false` | None |
+| `classify_ado` | `false` | None |
+| `classify_linear` | `false` | None |
+| `classify_servicenow` | `false` | None |
+| `classify_github` | `false` | None |
+| `classify_shared` | `false` | None |
+
+The range holds 7 paths: the two above, `Lighthouse.Frontend/vitest.config.ts`, this delta, and the deltas of Stories 6536, 6537 and 6538. The other Stories' docs change no answer: the same seven regexes without those three paths answer the same. The `vitest.config.ts` line is `88482340c`, which is another Story's and matches none of the regexes. `Lighthouse.Backend.Tests.csproj` is not in the range, so NUnit and the adapter are unchanged.
+
+The functions themselves were not called, because this shell refuses to source a script. A Python script read each function's regex from `path-classifier.sh` and ran it through the same `grep -Eq`, as step 03-03 read them.
+
+**`L5`.** Run at `88482340c`, with `git status` clean for `Lighthouse.Backend`, `Scripts` and `.github`; `git diff fc62ba407 88482340c` prints nothing for those three. The check for another test run found none just before it and just after it, though nothing watched during it. Docker was up, and `dotnet build-server shutdown` ran first. No wait was needed for that run.
+
+| Item | Value |
+|---|---|
+| Command | `dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Release --no-build --filter "<A>" --logger "trx;LogFileName=L5.trx"`, at the default 6 workers, `LIGHTHOUSE_TEST_WORKERS` unset on 12 cores |
+| Console | `Failed: 0, Passed: 12892, Skipped: 2, Total: 12894`, 6 m 14 s, exit 0 |
+| TRX `Counters` and CSV rows | total 12,903, executed 12,892, passed 12,892. CSV: 12,903 rows, 12,892 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `03f6dbc87ea3873a40cf89c63de65aae6fee96f0d0a547895be17e1229304688` |
+| `sha256` of the files | `L5.csv` `d57472745296d0652b391b47e8239fb51921b17d5ee7aea69cab88d7c835463c`, `L5.trx.gz` `fcd91e8779777605a6a99752303dbcb17123cedc865c4a192bc53d828d4eddc6` |
+| Kept | `L5.csv` and `L5.trx.gz` in `evidence/`, out of git |
+
+**`L5` against `L4`.** 0 lines only in `L4`, so no `Passed` id was lost and nothing needed excusing. 61 lines only in `L5`, each `Passed`, all in `Lighthouse.Backend.Tests.Architecture.TestTierGuardTest`: the guard's 61 tests, which this Story added in steps 04-02 to 04-04, so 12,842 + 61 = 12,903. The 11 `NotExecuted` lines are the same in both. The `category` column reads `Unit` on all 12,903 rows, as before slice F.
+
+**Seven variables, not five.** `L5` and every run in this step removed seven variables. `L0` to `L4` removed five, and `LinearAPIKey` and `AzureDevOpsLighthouseE2ETestToken` stayed set on this machine. That changes nothing in the comparison:
+
+- `LinearAPIKey` is read in the test project only by `LinearWorkTrackingConnectorTest` and `LinearDependencyDogfoodTest`, each with the category on the class. `AzureDevOpsLighthouseE2ETestToken` is read only by the Playwright config, so `dotnet test` never reads it.
+- `Category=LinearIntegration` with `--list-tests`, which runs nothing, selects 21 tests. In `L4`'s TRX, none of its 12,824 distinct test ids belongs to those two classes, and none carries the name of one of the 21.
+- `L4`'s TRX has no categories to read, so that check goes by class and name.
