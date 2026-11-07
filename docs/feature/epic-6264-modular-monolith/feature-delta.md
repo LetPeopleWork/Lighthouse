@@ -767,6 +767,9 @@ Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in 
 | #6512 | T6 Speed tiers from the code's structure, and a fast-only local loop, brief `slices/slice-48-t6-speed-tiers-and-fast-local-loop.md` |
 | #6469 | T5 Acceptance scenarios at the application-service port, brief `slices/slice-49-t5-acceptance-at-the-service-port.md` |
 | #6561 | T13 The slowest frontend test files run faster, brief `slices/slice-46-t13-slowest-frontend-test-files.md` |
+| #6536 | T9 Per-tier ratchets, brief `slices/slice-50-t9-per-tier-ratchets.md` |
+| #6537 | T10 Backend rules pinned by unit tests, brief `slices/slice-51-t10-backend-rules-at-unit-level.md` |
+| #6538 | T11 Test-writing guidance, brief `slices/slice-52-t11-test-writing-guidance.md` |
 | #6468 | S03i Package Organisation set-up (created 2026-11-01 from ADR-270; brief `slices/slice-45-s03i-package-organisation-set-up.md`) |
 
 ## Wave: DISCUSS / [REF] Improvement log
