@@ -665,3 +665,342 @@ Nothing here blocks DISTILL except the ruling already asked for.
 - **DELIVER, slice C:** the calibration table; the first comparison of a force-full run's mean against plain runs.
 
 **Not verified.** Any backend tier figure, as the column does not exist yet. The factor 3 for `layerBoundaries.enforcement.test.ts` on a local machine. That the reporter's per-test seconds equal the CSV's `duration_ms`. Whether a re-run picks up a changed repository variable. Whether live suites slow the `Integration` rows beside them. How `gh run download` chooses between two artifacts of one name, which is why the table holds the artifact id. That the step summary cannot be read through the API. Why a skipped `sonar-gates` skips what needs it: observed on three runs, not explained by the `if` in `ci.yml`. The cause of the `PortfolioUpdaterTest` flake, which T6 records as suspected only.
+
+## Wave: DISTILL / [REF] Scope, reconciliation and baseline (2026-11-07, maintainer away)
+
+Rigor `thorough`. AFK: each choice takes the recommended option and says why.
+
+- **Shape.** As T6: the specification is `unittest` and Vitest, and an acceptance scenario for a guard is a planted case that must go red. No Gherkin, so no scaffolds, no Tier B, no domain-types module, no state-delta port. Nothing is written in this wave but this section and `deliver/roadmap.json`. The tests are written red-first in DELIVER, so the "fails for the right reason" gate is met step by step. **No test or build ran here,** because T6 is using the machine, so every "then" below is a rule for reading a run, not a result.
+- **No nWave scenario tag goes into any test title, comment or file.** An untagged test is correct here. The kinds below (`W`, `H`, `E`, `B`, `P`) live only in this file.
+- **UI sketches: N/A,** because no user of the product sees anything; the report is CI text. Loading and failure looks: N/A, no screen.
+- **Language:** Python for the check, TypeScript for the reporter. Deliverable type: application. Journey, KPI contract: none for this Story; `docs/product/kpi-contracts.yaml` is not touched. Policy: `docs/architecture/atdd-infrastructure-policy.md` read as inherited; its row for the timing scripts (`unittest`, the script run as a process) applies and no port is added.
+- **Outcome registry: not run.** `--pyramid` is a new operation, but registering writes outside the two files this wave may edit.
+- **Read:** the whole of this delta, slice 50, `check_budget.py`, `trx_to_csv.py`, `vitest_to_csv.py`, the budget file, `test_check_budget.py` and `test_check_budget_time_budgets.py` (helpers and shipped-file tests), `compareToAllowList.ts` and its test, `timeBudgetReporter.ts`, `timeBudgetOptions.ts`, `slowTests.ts`, `vitest.config.ts`, `package.json`, `ci_backend.yml`'s budget steps, T6's roadmap and slice F. Run: `playwright test --list` only, which executes no test.
+
+**Reconciliation: 0 hard contradictions.** The one block was DESIGN's point 1, which gated the total's scenarios. This wave's dispatch says seconds only for now, option (a), so they are written for (a). Soft points:
+
+| Point | Resolved |
+|---|---|
+| DESIGN point 1, D-6536-8: the brief's "a feature that adds integration tests raises it" | Option (a), from the dispatch (D-6536-32). This wave cannot see the maintainer's own words, so it stays listed in "For the maintainer" |
+| DESIGN "Slices": slice B is "safe before" T6's slice F; DEVOPS "What goes ahead without 5 runs": slice B "Waits for: Nothing" | Slice B waits for it (D-6536-33). Provisional and report-only still hold; only its start moves |
+| DESIGN: E2E is "a count of `test(` calls" | Wrong for this tree, and `--list` shows it (D-6536-34) |
+| DESIGN: `--pyramid` "exit 0 always" | Exit 0 whatever the shares say; unreadable inputs exit 2 (D-6536-35) |
+| D-6536-10 "stays provisional" against D-6536-9 "5 distinct ids is enforced" | The enforcing push is not made, so the entry keeps fewer ids (D-6536-40) |
+| DEVOPS push table: A and B in one push | Slice A may go alone and early: DEVOPS's own row "A alone" |
+| D-6536-19: ADR-237 "at finalization"; DEVOPS: docs "need no number, so they do not wait" | D-6536-19 stands, and docs come with what they describe: the last step, 03-03, after the enforcing push |
+
+## Wave: DISTILL / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6536-31 | **No property-based tests.** Neither Hypothesis nor fast-check is installed, and D-6536 adds no dependency. Input domains are tables through `subTest` and `it.each`; "writes nothing" uses the existing `snapshot()` helper | The rules are small finite tables, and a dependency for them is not worth a CI change |
+| D-6536-32 | **The total is seconds only, option (a).** Option (b) stays one named follow-up scenario, F-1, in no step | The dispatch's word; DEVOPS shows nothing else depends on it |
+| D-6536-33 | **Slice B waits for T6's slice F on `main`,** not only slice C. Slice A waits for nothing | The connector scan reuses the base-chain walk T6 writes in 06-02 and 06-03, and both edit `trx_to_csv.py`. Before F there is also no number to read |
+| D-6536-34 | **The E2E scan counts a line-start `test(` or `testWith<Name>(` in `*.spec.ts`.** Not `test.describe(`, `test.skip(`, `testUserRow.getByRole(`, a comment or a `.feature` file | Only 52 tests use plain `test(`; 83 use a fixture such as `testWithDemo(`. Playwright lists 140, this rule finds 135, the planned one 52 |
+| D-6536-35 | `--pyramid` exits 0 whatever the shares are. A missing or unreadable CSV or spec folder exits 2 | "Never judged" is about the shares; a share computed from nothing is worse than none |
+| D-6536-36 | **Any** of the three ledgers holding an entry, with no counted `Integration` row, exits 2. The fast ledger counts too | A column reading all `Unit` would put hosted tests under the fast limit and name innocent ones |
+| D-6536-37 | Refusals in reading a bad ledger print no report, since the limits are what it would print. The "no `Integration` row" refusal comes after the report. Exit 2 beats a breach, and no switch softens it | Follows D-6536's order read, report, judge, exit, and that report is what shows the column is empty |
+| D-6536-38 | **Slice B rewrites T4's two planted backend tests in `ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets` so they survive a filled ledger; the frontend one stays.** Proof is a trial: entries put in the shipped file, the suite run, the file restored | As they stand they carry no `Integration` row, so slice C's first entries turn them to exit 2 and red `Test the budget check`. That is run 42372874167 again, and D-6536-27 forbids it |
+| D-6536-39 | **The test helpers clear `GITHUB_STEP_SUMMARY`** in both `CheckWorkspace.check` and `Workspace._run` | Both inherit the environment, and `Test the budget check` runs in CI, so every planted run would append to the real job summary |
+| D-6536-40 | A spread over 1.25 means the enforcing push is not made and the maintainer is asked; the provisional entry stays as it is, with fewer than 5 ids | A ledger entry with 5 ids is enforced by the check, so "keep it provisional" can only mean not writing them |
+| D-6536-41 | Rounded up to: fast limit 0.1 s, mean 0.01 s, total 1 s. Messages of the new limits print three decimals; T4's keep one | `breach_annotation` prints `.1f`, so a 2.04 s test would read "took 2.0s, over the 2s". The rounding is what DESIGN's stand-ins already show |
+| D-6536-42 | One limit, one breach line: over the enforced number is an error and no breach warning; between a lower provisional and the enforced is a breach warning. The progress line of a provisional limit is separate and prints on every run, breached or not. A test in a listed class answers only to its class ceiling | Two lines for one fact read as two problems; progress and breach are two facts |
+| D-6536-43 | A provisional entry equal to the newest enforced one is allowed; above it is refused for mean and fast limit, as D-6536-9 says "above". Every entry needs at least one run id | The literal rule, and a harmless case: it can never be enforced, as enforced entries must fall |
+| D-6536-44 | The report shows the limit that can fail, with any provisional one beside it; "since the total was set" reads that same entry. A `Not run` line closes the sum, so tests, left out and not run add up to the CSV's rows. A row in a connector class is `Left out` whatever its outcome; `Not run` is the rest that did not pass. The frontend counts `Passed` too | One counting rule, and a report whose lines add up can be checked by eye |
+| D-6536-45 | The reader refuses more than 10 `fast_allowlist` entries, and any entry while the fast ledger has no enforced entry | Each is a line in a reader that exists. The second makes D-6536-24 a check, and leaves no state where a listed class has no limit to be listed against |
+| D-6536-46 | **The connector scan fails closed:** an unreadable `.cs` exits 2. It skips `bin`, `obj` and `.stryker-tmp` as `declared_classes` does | `_read_cs_file` skips quietly, which here would count a live class in the ceilings |
+| D-6536-47 | The step summary holds the report inside a code fence, and no annotation lines | The summary renders Markdown, so a plain table collapses into one paragraph |
+
+## Wave: DISTILL / [REF] The report, as worded
+
+Backend. Figures are stand-ins; the words are fixed, with spacing the crafter's.
+
+```
+Backend test time
+Tier          Tests   Seconds   Mean s   Ceiling                         Room
+Fast         10,010     317.0    0.032   per test 10.8 s                 largest 5.1 s
+Integration   2,750   2,068.0    0.752   mean 0.85                       12 %
+                                         total 2,340                     12 %
+Left out        275   connector classes, not judged
+Not run          11   did not pass, not counted
+Since the total was set: +41 tests
+This stack only, not the pyramid shares: 78.4 % fast, 21.6 % integration. No gate.
+```
+
+- A provisional limit reads `mean 0.85 (provisional, 2 of 5)`. An enforced limit with a lower provisional one reads `mean 0.85, provisional 0.80 (2 of 5)`. No entry reads `not set`. Room is `(limit - value) / limit`, negative when over.
+- `Integration` with no row, and no ledger: its figures read `nothing labelled yet`.
+- `Since the total was set` prints a sign: `+41 tests`, `-4 tests`, `+0 tests`. With no total entry the line is left out.
+- Frontend: the title `Frontend test time`, the same two tiers with no ceiling or room column, `Not run` for skipped tests, and the line `The seconds do not compare across runs: the runner sets them.`, and the same `This stack only` line
+
+Annotations. Each fragment in quotes is pinned by a scenario.
+
+| Case | Line |
+|---|---|
+| Fast test | `::error::<test> took 3.400s, over the 2s fast test limit set in test-time-budget.json` |
+| Listed class | `::error::<test> took 6.000s, over the 5s class ceiling set in test-time-budget.json` |
+| Mean | `::error::Integration tests averaged 0.600s each over 16 tests, over the 0.5s mean ceiling set in test-time-budget.json` |
+| Total | `::error::Integration tests took 10.400s in all over 26 tests, over the 10s total ceiling set in test-time-budget.json; +6 tests since it was set` |
+| Provisional, each run | `::warning::the Integration mean ceiling of 0.5s is provisional, 2 of 5 runs, so it warns and does not fail` |
+| Provisional, breached | The limit's own line as `::warning::`, reading `provisional mean ceiling`, `provisional total ceiling` or `provisional fast test limit` |
+| Nothing to judge | `::error::test-time-budget.json holds limits that need Integration tests, but this run has none, so it cannot be judged` |
+
+## Wave: DISTILL / [REF] Scenarios
+
+**Kinds:** `W` walking skeleton, `H` happy path, `E` error or refusal, `B` boundary, `P` a check made by reading real runs. A title is the planned test's title, in the words of the people reading the build. One title may be one table test. Contract shape: slices A and B are pure-function except the two rows named bounded-change (B-16) and unbounded-preservation (B-17, B-57).
+
+### Slice A: the frontend fast limit
+
+When the reporter judges a finished run with budget 2 s, fast budget 0.6 s, factor 3, allowance 0.31 s. A test is not first in its file unless the row says so. Test files: `compareToAllowList.test.ts`, `timeBudgetReporter.test.ts`. **Edge values sit off the computed sums, because 0.6 x 3 and 0.6 + 0.31 are not exact in floating point.**
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| A-1 | A slow logic test fails the run and is named, and a component test of the same length does not | Plain run in fail mode; `src/a.test.ts` and `src/a.test.tsx` at 0.7 s | One finding, `src/a.test.ts :: <test> took 0.7 s, limit 0.6 s`; exit code 1 through the reporter | W |
+| A-2 | A logic test is judged at the edge of its limit | Plain 0.6 / 0.61; plain first in file 0.9 / 0.92; on CI 1.79 / 1.81; on CI first in file 2.1 / 2.12 | First of each pair passes, second is named | B |
+| A-3 | A component test keeps the limit it had | `.test.tsx` at 2.0 and 2.01 | 2.0 passes, 2.01 named. Every existing case keeps its expected values; the shared options only gain the new field, and A-8's closing line changes | B |
+| A-4 | The tier comes from how the file name ends | `src/tsx/logic.test.ts`, `src/layerBoundaries.enforcement.test.ts`, `src/a.test.ts.test.tsx` at 0.7 s | The first two are named, the third is not | B |
+| A-5 | A listed logic test answers to its own ceiling | `.test.ts` entry with ceiling 1.5 s; runs of 1.4 and 1.6 s | 1.4 passes though over 0.6; 1.6 is `over-ceiling`, naming 1.5 | E |
+| A-6 | A list entry retires against its own tier's limit | Plain runs: `.test.ts` entry at 0.14, 0.15, 0.3 s; `.test.tsx` entry at 0.49, 0.5 s | `ran-far-under-budget` for 0.14 and 0.49 only | E |
+| A-7 | The switches treat both tiers alike | Warn mode with one slow test per tier; off mode; a skipped slow logic test | Warn names both, does not fail; off names none; skipped is not judged | E |
+| A-8 | The run's closing line states both limits | Any judged run | `Time budget: fail mode, budget 2 s, fast budget 0.6 s, limit factor 2, first-test allowance 0.5 s, 1 offenders`, with the test's own options | H |
+| A-9 | A real slow logic test fails `pnpm test:fast` | One planted `.test.ts` with two tests, the second sleeping past the limit; one planted `.test.tsx` the same | `pnpm test:fast` exits non-zero and names the `.test.ts`; `pnpm test <the .test.tsx>` passes. Both removed | W |
+| A-10 | The limit comes from five shuffled runs and fits a developer's machine | The 5 latest green shuffled frontend runs at DELIVER; one `pnpm test:fast` on a free machine | `ceil(2.1 x L / 3)` to 0.1 s, run ids in this file; no test over the limit locally | P |
+
+### Slice B: the planted run
+
+Every case in slice B starts from one **steady run** and one **planted budget**, and changes only what its row says. Each builds on the row above where it can, so the table reads as a story:
+
+- **Planted budget:** fast limit 2 s, mean ceiling 0.5 s, total ceiling 10 s set at 20 tests, each enforced on 5 distinct ids; T4's budget 5,000 s, which no class in these rows reaches unless a row plants that on purpose.
+- **Steady run:** 100 `Unit` rows at 0.01 s, 20 `Integration` rows at 0.4 s, so 8 s and mean 0.4 s. 3 `NotExecuted` rows. 4 rows in one planted class carrying `[Category("JiraIntegration")]`, one of them 30 s. The `NotExecuted` rows sit in a regular class.
+
+Unless a row says otherwise: when `check_budget.py --stack backend` reads it, as a process, in a temporary folder.
+
+**Connector classes (step 02-01).** Test file `test_connector_classes.py`: planted source folders, real files.
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-1 | A live class leaves the count and the regular class in its file stays | One file, two classes, the attribute on the first | Only the first is left out | W |
+| B-2 | A comment naming a connector leaves nobody out | The category named in a doc comment above a class | Not left out | E |
+| B-3 | A mixed class leaves whole | Live and offline tests in a class carrying the attribute | Every row of the class is left out | H |
+| B-4 | A hosted class in a connector's folder stays counted | A class on `IntegrationFixture` under `WorkTrackingConnectors/Jira` | Not left out | E |
+| B-5 | The attribute is found however the class is written | Another attribute between; a blank line between; two namespaces in a file; `sealed`, `abstract`, primary constructor; nested class written `Outer+Inner` | Left out, under the namespace that holds it | B |
+| B-6 | A class built on a connector class leaves too | Chain of one and of two; base in another file | All left out; a class on an unrelated base stays | H |
+| B-7 | A connector missing from the list stops the check's own tests | Five names read from the always-on clause in `ci_backend.yml`; then the same text with a sixth planted | Equal for the real file; different for the planted text | E |
+| B-8 | The real tree leaves out what it should | The real test source | `JiraWriteBackTest` and `AzureDevOpsWriteBackTest` left out; `AzureDevOpsHistoryCutoffTest`, `AzureDevOpsStateTransitionParserTest`, `JiraHistoryCutoffTest` counted. Named classes, no count of 16 | H |
+
+**Tiers and the report (step 02-02).** Test file `test_check_budget_tiers.py`, as are the next five groups.
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-9 | Each run shows how many tests each tier has, how long they took and how much room is left | Steady run, ledgers empty | The report as worded: Fast 100, 1.0 s; Integration 20, 8.0 s, 0.400; each ceiling `not set`; Left out 4; Not run 3; exit 0. The ceiling and room cells are pinned by B-21 | W |
+| B-10 | The frontend shows its two tiers and says its seconds do not compare | Frontend CSV with `.test.ts`, `.test.tsx` and skipped rows; `--stack frontend` | Both tiers, no ceiling, `Not run`, the line on seconds | W |
+| B-11 | Only tests that passed outside connector classes count | The steady run with `Failed`, `NotExecuted` and connector rows at 0, 1 and many, each of them slow; a `NotExecuted` row in a connector class | Count, sum and mean do not move; that last row is `Left out`, once; Tests + Left out + Not run equal the CSV's rows in every case | H |
+| B-12 | With no limit written the check only reports | Steady run with `Integration` at 5 s a test; empty ledgers | `not set`, exit 0, no annotation. The same run with all entries removed from the planted budget reads the same | H |
+| B-13 | A run with nothing labelled says so | All rows `Unit`; empty ledgers | `nothing labelled yet`, exit 0, no failure from dividing by zero | E |
+| B-14 | The frontend tiers follow the same rule as the fast command | `package.json`; then its text with the exclude taken out | The real `test:fast` line excludes `**/*.test.tsx`, the suffix the counting uses; the planted text does not, and the test says so | E |
+| B-15 | Source that cannot be read gives no verdict, and build output is not source | An undecodable `.cs`; a connector class only under `obj/` | Exit 2 naming the file; the class under `obj/` leaves nothing out | E |
+
+**The step summary (step 02-03).**
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-16 | The report also lands in the job's summary, after what is there | `GITHUB_STEP_SUMMARY` names a file holding text | The text stays; the report follows in a code fence, with no annotation line. A second run adds a second report | H |
+| B-17 | With no summary file named the run only prints | The variable unset, then empty | The report is in the log; the folder's `snapshot()` is unchanged | E |
+| B-18 | A summary that cannot be written warns and changes no verdict | The variable names a folder | One `::warning::`, the report still in the log, exit 0. Step 02-06 repeats it on a breach, exit 1 | E |
+| B-19 | The report comes before any verdict | A class over T4's budget | Every report line is above the first `::error::`, exit 1 | H |
+| B-20 | The check's own tests leave the real summary alone | Both test helpers run with `GITHUB_STEP_SUMMARY` set in the outer environment | That file is unchanged | E |
+
+**Ledger rules (step 02-04).** Each `E` row: exit 2, one `::error::` naming the ledger and the file, no report, no traceback.
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-21 | A limit is lowered by a new entry | The planted budget; then its mean ledger 0.5 then 0.45, both on 5 ids | First: `per test 2 s`, `mean 0.5`, `total 10`, 20 % room on each, `+0 tests`. Second: accepted, `mean 0.45`, 11 % room | H |
+| B-22 | A mean or fast limit that rises is refused | Each ledger with an enforced entry above, then equal to, the one before | Refused, four cases | E |
+| B-23 | The total may rise, with a reason | Total 10 then 13 with a reason; then with a blank reason | First accepted, second refused | E |
+| B-24 | A provisional entry cannot sit above the mean or fast limit | Enforced 0.5 with provisional 0.6, 0.5, 0.45; the same for the fast limit; total with provisional 13 | Above refused on mean and fast limit; equal and below accepted; the total accepted | E |
+| B-25 | There is one provisional entry at most, and it comes last | Two provisional; provisional before enforced | Both refused | E |
+| B-26 | Distinct run ids decide what an entry is | Entries with 0, 1, 4, 5, 6 ids; 5 ids with one repeated | 0 refused; 1 and 4 provisional; 5 and 6 enforced; the repeat refused, not read as 4 | B |
+| B-27 | A malformed entry is refused | Seconds 0, -1, text, `true`; no reason; ledger not a list; ids not a list; a total entry with no count at derivation, or 0 | Refused, naming what is wrong | E |
+| B-28 | The switch does not soften a bad ledger | B-22's case, with `--warn-only`, then the variable `true` | Exit 2 both times | E |
+
+**The fast limit on the backend (step 02-05).**
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-29 | A slow fast test fails the build and is named | Steady run, one `Unit` row at 3.4 s | Exit 1; the test's full name, `3.400s`, `2s`, `fast test limit`, the file name | W |
+| B-30 | A fast test is judged at the edge of the limit | `Unit` rows at 2000 ms and 2001 ms | The first passes, the second is named as `2.001s` | B |
+| B-31 | Only fast tests answer to this limit | An `Integration` row at 3 s with the rest of its tier at 0.2 s; a connector row and a `NotExecuted` row at 30 s | Exit 0, none named | H |
+| B-32 | Every slow test is named, not only the first | Three slow rows, two in one class | Three lines | H |
+| B-33 | A listed class answers to its own ceiling | `fast_allowlist` ceiling 5 s; rows at 3 and 6 s, one of them of a parametrised fixture | 3 passes; 6 is named with `class ceiling`, `5s`; the fixture's row finds its class | E |
+| B-34 | A listed class that is gone fails, whatever the switch | An entry for a class not in the source; the variable `true` | Exit 1, naming the entry, as T4's stale line | E |
+| B-35 | A listed class that no longer earns its place fails | Ceiling equal to the limit, then ceiling below it | Equal fails as not needed; below is stricter and stays, as T4's | E |
+| B-36 | The list stays short and complete | 10 and 11 entries; no reason; no ceiling; a class listed twice; an entry with the fast ledger empty, then provisional only | 10 accepted; the others exit 2 | B |
+
+**The ceilings (step 02-06).**
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-37 | A slower integration tier fails the build though no test is over any other limit | 16 `Integration` rows at 0.6 s, so total 9.6 s | Exit 1, `averaged 0.600s`, `16 tests`, `0.5s mean ceiling`, the file name | W |
+| B-38 | More tests at the same mean pass, until the total is reached | Steady rows at 0.4 s: 20, 25, then 26 of them | 20 and 25 pass; 26 fails on the total alone, `10.400s`, `26 tests`, `+6 tests since it was set` | H |
+| B-39 | Each ceiling is judged at its edge | 10 `Integration` rows at a mean of exactly 0.5 s, then 1 ms more in all; 25 rows at 0.4 s, exactly 10 s, then 1 ms more | Each exact value passes; each other is named, on that ceiling alone | B |
+| B-40 | A reviewed raise gives the total room again | B-38's 26 rows; a new total entry of 13 s, 5 ids, a reason, set at 26 tests | Exit 0, `+0 tests` | H |
+| B-41 | A raise on too few runs lifts nothing | The same with 4 ids | Exit 1 against 10 s, and the provisional warning `4 of 5` | E |
+| B-42 | A push that runs the live suites does not move the ceilings | The steady run plus 40 connector rows at 30 s | The same `Integration` figures, exit 0 | E |
+| B-43 | The switch softens every new breach and nothing else | Fast, mean and total breaches with the variable `true`; then a stale list entry in the same run | Three `::warning::` lines and exit 0; the report's text equals the run without the switch; with the stale entry, exit 1 | E |
+| B-44 | T4's limits still judge beside the new ones | A class over T4's budget with ledgers in force; then a breach with a summary that cannot be written | Exit 1 with T4's message unchanged; exit 1 and one `::warning::` | E |
+
+**Provisional limits, nothing to judge, and the shipped file (step 02-07).**
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-45 | A provisional limit warns and never fails | Each of the three limits alone, provisional on 2 ids, breached | Exit 0, no `::error::`; one breach warning on its own number, and the progress line | H |
+| B-46 | A provisional limit says how far along it is on every run | The same with nothing over | One `::warning::` per limit, `provisional, 2 of 5`, and the report says the same | H |
+| B-47 | A newer short entry cannot switch off an enforced one | Mean enforced 0.5, provisional 0.45; 16 `Integration` rows at 0.6 s, then at 0.47 s | 0.6: one error on 0.5, no breach warning on 0.45. 0.47: a breach warning on 0.45, exit 0 | E |
+| B-48 | A limit in force with no integration tests gives no verdict | All rows `Unit`; an entry in the mean ledger, enforced; then provisional; then in the fast ledger alone; then in the total ledger alone; then with a `Unit` row also over the fast limit; then with the variable `true` | Exit 2 each time, the report printed first, the "cannot be judged" line | E |
+| B-49 | Filling the budget file is a data commit | **A trial:** a provisional entry in each shipped ledger; then an enforced entry in each, with a real class in `fast_allowlist` | `python3 -m unittest discover -s Scripts/test-timings/tests` stays green in all three states, with no test file touched; the file restored | E |
+| B-50 | The shipped file obeys the ledger rules, whatever its numbers | The shipped file, empty and in B-49's states, with the trial's seconds chosen so they appear nowhere else | The reader accepts it; a search of the tests finds none of the trial's values, so a test cannot be pinning them | E |
+| B-51 | A breach planted from the shipped limits fails | Each shipped limit, read from the file, that has an enforced entry: a row or tier just over it | Exit 1, named. An empty ledger is said so in the test's name, and the planted budget covers it | H |
+
+**The pyramid (step 02-08).** Test file `test_check_budget_pyramid.py`.
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| B-52 | The three shares across both stacks and Playwright are printed beside their limits | Both planted CSVs and a planted spec folder | `--pyramid` prints fast, integration and E2E as counts and shares beside 90 / 9.5 / 0.5, exit 0 | W |
+| B-53 | The shares never judge | Integration at 40 %, E2E at 2 %; then a backend CSV with no `Integration` row | Exit 0, `No gate.`; the second prints `nothing labelled yet` | H |
+| B-54 | A share counts what the run's report counts | The same CSVs through `--stack` and `--pyramid` | The tier counts are equal; connector and not-passed rows are out of both | H |
+| B-55 | Only real test declarations count as E2E tests | Lines with `test(`, `testWithDemo(`, tab-indented inside a loop; `test.describe(`, `test.skip(`, `test.beforeEach(`, `testUserRow.getByRole(`, a comment, a `.feature` file, a helper outside `*.spec.ts` | The first three count, nothing else does. On the real folder the count is above zero | B |
+| B-56 | Inputs that cannot be read give no shares | A missing CSV; a CSV with the wrong columns; a missing spec folder; a missing source folder; `--frontend-csv` or `--backend-csv` left out | Exit 2, naming it | E |
+| B-57 | The command writes nothing | `GITHUB_STEP_SUMMARY` set | The `snapshot()` of the folder and that file are unchanged | E |
+
+### Slice C: real runs
+
+Each is a check made on real CI, recorded here. No new test file.
+
+| # | Scenario | Given | Then | Kind |
+|---|---|---|---|---|
+| C-1 | The first plain run after the tiers are labelled gives the first limits, and the next run shows them as warnings | The first eligible backend CSV after slice F | Three provisional entries with their run id; the next run's report and `provisional, 1 of 5` warnings; exit 0 on any breach | W |
+| C-2 | A run that fails the reading rule does not teach the ledger | Each row of DEVOPS "Reading a run" that says no | No id, no table row counted; a green re-run enters with its attempt and artifact id | P |
+| C-3 | The three shares are written down | The two CSVs of one commit | `--pyramid`'s output recorded here; its E2E count set beside `playwright test --list` | P |
+| C-4 | Five eligible runs turn the limits on | 5 distinct eligible ids after T5's last move or stop, the slowest seen among them, spread at or under 1.25, a clean window, no other push running | Entries with 5 ids; the first verdict read alone; no provisional warning left | W |
+| C-5 | A spread too wide to trust stops at the maintainer | A figure whose largest / smallest exceeds 1.25 | No enforcing push for it, and the maintainer is asked; no run is dropped to fix the spread | E |
+| C-6 | A class is listed only if it is slow in every run | The 5 CSVs; a class slow in all, another in 4 | The first may be listed, the second may not; at most 10 entries; none on a provisional limit | E |
+| C-7 | Each limit push is a data commit | `git show --name-only` of the first-entries and enforcing commits | `test-time-budget.json`, and `slowTests.ts` only if listed; no test file. `Test the budget check` green | E |
+| C-8 | The docs say what shipped | ADR-237, `docs/ci-learnings.md` | The amendment and recipe are in; line 471's "still only warns" is gone; no figure is cited that slice C has not read | P |
+
+**Named follow-up, not written, in no step.**
+
+| # | Scenario | What it would need |
+|---|---|---|
+| F-1 | Every feature that adds an integration test says so in a reviewed count line | Option (b): one at-most count field beside the total, one report row, this one scenario. See DEVOPS "The total ceiling: seconds only". Nothing above changes |
+
+## Wave: DISTILL / [REF] Coverage
+
+| Slice | Scenarios | `W` | `H` | `E` | `B` | `P` |
+|---|---|---|---|---|---|---|
+| A | 10 | 2 | 1 | 3 | 3 | 1 |
+| B | 57 | 6 | 17 | 28 | 6 | 0 |
+| C | 8 | 2 | 0 | 3 | 0 | 3 |
+| **All** | **75** | **10** | **18** | **34** | **9** | **4** |
+
+Errors and boundaries are 43 of 75, 57 %, against the 40 % floor. Follow-up F-1 is not counted.
+
+**Each acceptance criterion and owed item.**
+
+| Source | Covered by |
+|---|---|
+| Brief AC: a planted slow fast test, each stack, fails and is named | A-1, A-9, B-29 |
+| Brief AC: a mean over its ceiling fails and is named; more tests at the same mean pass, until the total is reached, which the maintainer's second ceiling adds | B-37, B-38 |
+| Brief AC: limits from 5 plain runs, ids written down | C-1, C-2, C-4 |
+| Brief AC: each run shows count, sum, mean | B-9, B-10, B-16 |
+| Maintainer: total raised in a reviewed diff with a reason | B-23, B-40, B-41 |
+| Maintainer: three shares, no gate | B-52, B-53 |
+| DESIGN "What can lie": zero labels; connector drift; comment; ledger raised; summary unwritable; lost teeth | B-48; B-7; B-2; B-22; B-18; B-51 and T4's planted runs |
+| D-6536-27 | B-49, B-50, B-51, C-7 |
+| DEVOPS: provisional entry with no `Integration` row exits 2 | B-48 |
+
+**Driving ports.** `check_budget.py --stack`, as a process: B-9 on. `--pyramid`, as a process: B-52 on. The Vitest reporter hook: A-1, A-8; through real Vitest, A-9.
+
+**Driven adapters, each with real I/O.** Timing CSVs, temp files: every row. Budget file, temp and shipped: B-21 on, B-49 to B-51. Test source, temp and real: B-1 on, B-8. Spec folder: B-55. Annotations and exit code: every row. Step summary: B-16 to B-18. Nothing is faked: the check has no external port.
+
+**Test placement.** Python in `Scripts/test-timings/tests/`, siblings as T4, on `base.BudgetCheckTestCase`, so both `Test the budget check` steps run them with no workflow edit. Frontend under `Lighthouse.Frontend/src/tests/timeBudget/`. Unit tests beyond these: none planned; the rules are small enough to read at the process boundary, and a crafter may add pure ones. The state of a limit is none, provisional, enforced: the module docstring of `test_check_budget_tiers.py` says so.
+
+**Mandates, for this project's shape.** Mandate 8's `assert_state_delta`: no such port here; B-16, B-17, B-57 assert the same by before and after. Mandate 9 and Tier B: no property machinery, D-6536-31. Mandate 12: no Gherkin steps, so no step layer to measure; planted-case helpers are the shared vocabulary. Pillar 2: the steady run and planted budget, with rows that build on each other. Pillar 3: the real script as a process, the real Vitest in A-9.
+
+## Wave: DISTILL / [REF] Completeness audit
+
+Run over the 75 scenarios.
+
+| Item | Result |
+|---|---|
+| C1a empty or zero | Pass: B-12, B-13, B-26 |
+| C1b each boundary | Pass: A-2, A-3, B-26, B-30, B-36, B-39 |
+| C2a state machine documented | Pass: none, provisional, enforced, planned in the docstring |
+| C2b illegal event per state | Pass: B-22, B-24, B-25, B-41 |
+| C3 zero, one, many | Pass: B-11, B-26, B-32, B-36 |
+| C4a apply twice | Pass: B-16; the check is otherwise read-only |
+| C4b inverse without prerequisite | Pass: B-12, entries removed; the rollback order in DEVOPS |
+| C5a mode combinations | Pass: B-43, B-45, B-47, B-48; A-7 |
+| C5b flag orthogonality | Pass: B-43, the report's text is equal |
+| C6a malformed input | Pass: B-27, B-56, B-15; T4's cover CSVs |
+| C6b each declared error | Pass: B-13 to B-15, B-22 to B-28, B-34, B-36, B-48, B-56 |
+| C6c closed error set | Pass: exit 0, 1, 2 only and no traceback, through `assert_refuses_to_judge` |
+| C7a degraded resource | Pass: B-18, B-44 |
+| C7b interruption | N/A, counted as passing: the step runs only after green tests, so a stopped run gets no check; ADR-237's rule, DESIGN "What can lie" |
+| C7c concurrent actors | N/A, counted as passing: one process per job, reading only |
+
+**15 of 15: COMPLETE.** No `SPECIFICATION_AMBIGUITY` is left: every gap found was closed by a decision above. Audit log: `(story-6536, C1 to C7, 0 open, none)`; three findings were closed in delivery scope: D-6536-34, D-6536-38, D-6536-39.
+
+## Wave: DISTILL / [REF] Review
+
+One pass by `nw-acceptance-designer-reviewer` (Sonnet), read-only, told an untagged scenario is correct here: **conditionally approved, 0 blockers, 2 high, 8 medium, 10 low.** It also read DESIGN and DEVOPS, as DEVOPS asked. It confirmed by reading the tallies, the exit codes, the boundaries, the real-tree facts and that no step needs a `ci*.yml` or product edit. All findings but one are fixed in the sections above. The revision was not reviewed again.
+
+| Finding | Severity | Resolution |
+|---|---|---|
+| B-9 pinned ceilings in 02-02, two steps before the ledgers exist | High | B-9 reads empty ledgers; B-21 pins the ceiling and room cells |
+| "T4's budget left high" hid T4's class judge, which sums every row and would trip B-12, B-42 | High | The planted budget sets 5,000 s and says which class holds which rows |
+| A connector row that did not pass is both `Left out` and `Not run` | Medium | Connector class wins (D-6536-44); a B-11 case |
+| "Three" backend tests of T4 | Medium | Two; the frontend one stays (D-6536-38) |
+| DEVOPS row "slice B waits for nothing" not reconciled | Medium | Row added, and a changed assumption |
+| A `fast_allowlist` entry with no enforced fast limit undefined; B-49 planted one | Medium | The reader refuses it (D-6536-45); B-36, B-49 changed |
+| Whether a breached provisional limit prints one warning or two | Medium | Two: breach and progress (D-6536-42) |
+| Planted-row helpers in no listed file | Medium | A subclass in the new test file, "Open for DELIVER" |
+| `--pyramid`'s arguments not fixed | Medium | Named in "Open for DELIVER"; B-56 changed |
+| B-14 green at birth | Medium | A planted text gives it a red; the same for the real-file half of B-7 and B-8 in the roadmap |
+| Stand-in of 20 tests at 0.6 s also breaches the total; `+N` undefined when lower or absent; refusal wording; total alone in B-48; B-50 vacuous on empty ledgers; `not first in file` unsaid; the AC row unqualified | Low | Fixed where each stands |
+| ADR-237 before the limits are on | Low | Docs moved last, step 03-03 |
+| Pushes do not check for a workflow path | Low | Added to both push steps |
+| Who owns nested classes in the scan | Low | T6's walk; 02-01's entry reads it, and this step adds it if missing |
+| Four steps at 8 scenarios | Low | Not changed: informational, and at T6's cap |
+
+## Wave: DISTILL / [REF] Changed assumptions
+
+Original, DESIGN, "The figures": "E2E declared | About 56 | About 52 in `tests/specs`". New: **140** by `playwright test --list` on 2026-11-07, 135 by the scan. Why: 83 tests use a fixture such as `testWithDemo(`, which a search for `test(` does not see. The brief's 0.25 % is about 0.6 %, so the E2E share **is over its 0.5 % limit today**. See "For the maintainer".
+
+Original, DESIGN, "The shares": "Parametrised specs read low, and at 0.25 % that moves nothing". New: 5 of 140; it still moves nothing.
+
+Original, DESIGN, "The shares": `--pyramid` "exit 0 always". New: D-6536-35.
+
+Original, DESIGN, "Slices": slice B "is safe before", and DEVOPS, "What goes ahead without 5 runs": "Slice B, all of it | Empty ledgers | ... Nothing". New: D-6536-33.
+
+Original, DEVOPS, same table: "ADR-237, `ci-learnings.md` line 471 | Nothing needed". New: the last step of slice C, as D-6536-19 first said. Why: an ADR must not describe limits that are not on yet.
+
+Original, DESIGN, "For the maintainer" point 1, and "Changed Assumptions": "awaiting the maintainer". New: option (a), D-6536-32.
+
+Nothing here changes the architecture.
+
+## Wave: DISTILL / [REF] For the maintainer
+
+Nothing here blocks DELIVER.
+
+1. **Seconds only is taken as this wave's dispatch gave it.** If you want the explicit act per feature, F-1 is the whole of it, and it can come later with nothing redone.
+2. **E2E is already over your 0.5 % upper limit: about 140 tests, about 0.6 %, not 56 and 0.25 %.** It changes no gate, since shares are reported only, and it changes no design. It does change what the pyramid says today, and the first `--pyramid` run will show it. The total is a stand-in until the backend is labelled.
+3. **Still yours from DEVOPS:** how tight the frontend limit starts (0.6 s, one file sets it), and who may set the switch. DISTILL changes neither.
+
+## Wave: DISTILL / [REF] Open for DELIVER
+
+- Field names of the ledger, the file split in Python, and how `load_allowlist` grows: the crafter's. T4's shipped tests compare its two-part return, so a new reader beside it is the cheap way.
+- `--stack` is required today, and `--pyramid` must not need it. The command is `check_budget.py --pyramid --frontend-csv <file> --backend-csv <file>`, both required, with `--source-root` as today for the connector scan and `--spec-root`, default `Lighthouse.EndToEndTests/tests/specs`.
+- `CheckWorkspace.backend_timings` writes only `Unit` and `Passed` rows. New helpers for the steady run go in a subclass in `test_check_budget_tiers.py`, which the pyramid tests import, so the shared helper file changes only for D-6536-39.
+- The new test files' titles carry no tag. Nothing in `ci*.yml` changes.
+- Slice A's local read needs a free machine, and only while T6 waits on CI, as the roadmap says.
+
+**Not verified.** No test or build ran and no CI run was read, so not one scenario has been seen red. The scan rule of D-6536-34 was checked by `grep` on today's tree only. `playwright test --list` was run once, and its 140 includes whatever projects the config defines. That T6's slice F leaves a walk the connector scan can reuse: read from T6's roadmap, not from code, as it is not written yet. All of DEVOPS's "Not verified" list stands.

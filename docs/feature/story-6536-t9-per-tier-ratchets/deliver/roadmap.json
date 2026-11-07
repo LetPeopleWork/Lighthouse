@@ -1,0 +1,369 @@
+{
+  "roadmap": {
+    "project_id": "story-6536-t9-per-tier-ratchets",
+    "created_at": "2026-11-07",
+    "total_steps": 13,
+    "wave": "DELIVER",
+    "paradigm": "object-oriented",
+    "goal": "A slow test in the fast tier fails the build on both stacks and is named. The backend Integration tier has a mean ceiling that only goes down and a total ceiling that rises only by a reviewed entry with a reason. Each run shows count, sum and mean, and the three pyramid shares can be read with one command. No ci*.yml file changes and no product file changes.",
+    "rigor": "thorough",
+    "dependencies": {
+      "slice_a": "Needs nothing from T6 #6512 or T5 #6469. It can run early, and it can go while T6 waits on CI: that is when the machine is free for its pnpm runs. Never beside a T6 test run or a dotnet build.",
+      "slice_b": "Needs T6 #6512 slice F on main, steps 06-02 to 06-05 pushed as T6's push 7. The connector scan reuses the base-chain walk of 06-02 and 06-03, both edit Scripts/test-timings/trx_to_csv.py, and until F labels the tiers there is no Integration row to count.",
+      "slice_c": "Needs T6 #6512 slice F for its first entries, one eligible plain backend run after it. The enforcing push also needs 5 distinct eligible runs after T5 #6469's last move or stop. T10 #6537 does not wait for it. T4 #6462 is already on main."
+    },
+    "notes": "Rigor profile thorough: pass model explicitly on every dispatch, the profile's agent_model for crafters and reviewer_model for reviewers. Every step is executed by a crafter, so finalize finds phase entries for each; no step is orchestrator-only. A push is not a step: the orchestrator makes it after the step named in that step's implementation_notes. Slice A can go alone and early, ahead of T6, while T6 waits on CI. Slices B and C wait for T6's slice F, as roadmap.dependencies says. No non-test product code changes and no ci*.yml edit in any slice (D-6536-1, D-6536-21); a step needing one stops and reports. Mutation N/A in every slice, because Stryker mutates the product and no product file changes; the planted breach of each limit stands in (D-6462-20). Scenario ids A-1, B-1, C-1 and the kinds W, H, E, B, P name rows of the delta only. No nWave scenario tag and none of those ids goes into any test title, comment or file. Scenario rows, the report's words, the annotations and the decisions D-6536-31 to D-6536-47 are in feature-delta.md, sections Wave: DISTILL. Python tests run with python3 -m unittest discover -s Scripts/test-timings/tests. Frontend tests sit under Lighthouse.Frontend/src/tests/timeBudget and the gates are pnpm test and pnpm build, one at a time, never beside a dotnet build. Tests of the shipped budget file assert rules, never numbers (D-6536-27). The total ceiling is seconds only; option (b) is follow-up F-1 and is in no step. Before each push, T6's window check: git diff --name-only <last green> HEAD through each connector and shared classify_*, and a grep for ^.github/workflows/ci.*\\.yml. Any true means wait for a green run or tell the maintainer. A conflict with trunk stops the step and reports; nothing is rebased. A red on trunk from a new ceiling follows DEVOPS 'A red on trunk'; LIGHTHOUSE_BUDGET_WARN_ONLY is the maintainer's to set, not an agent's. Slice C stays open and the Story stays Active while any limit is provisional; the chain moves on past it."
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice A: the frontend fast limit",
+      "description": "A second, lower limit in the Vitest reporter for every file that is not .test.tsx, then its figure from five shuffled runs. Needs nothing from T6. Mutation N/A: test tooling, no product file.",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "A logic test has its own limit, still inert",
+          "description": "limitFor picks the base limit by the file's tier, ran-far-under-budget uses the test's own tier, the reporter prints both limits, and the config gets a new constant left at 2 s, so nothing changes yet.",
+          "criteria": [
+            "Each of the delta's rows A-1 to A-8 is written in compareToAllowList.test.ts or timeBudgetReporter.test.ts and seen red for its own reason before the code changes",
+            "After the change they pass, and every existing case keeps its expected values; the shared options only gain the new field and the closing line of A-8 changes",
+            "Edge values sit off computed sums, as the delta says, because 0.6 x 3 and 0.6 + 0.31 are not exact in floating point",
+            "vitest.config.ts holds the new constant at 2, so a run's findings are as before",
+            "pnpm test and pnpm build pass with zero errors and zero warnings; git status is checked afterwards, as prebuild rewrites files"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts",
+          "scenario_name": "A slow logic test fails the run and is named, and a component test of the same length does not",
+          "files_to_modify": [
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.test.ts",
+            "Lighthouse.Frontend/vitest.config.ts"
+          ],
+          "dependencies": [],
+          "estimated_size": "S",
+          "implementation_notes": "8 scenarios. Run only while T6 waits on CI or has finished; never two test runs at once. Commit: feat(test-infra)."
+        },
+        {
+          "id": "01-02",
+          "name": "The figure from five shuffled runs",
+          "description": "Re-read the 5 latest green shuffled frontend runs, set the limit by the rule, read the slowest file's local time, and prove the limit on real Vitest with a planted test.",
+          "criteria": [
+            "The 5 latest eligible runs are read per job and attempt, D-6536-25, and their run ids, Vitest Duration and largest time in a file not ending .test.tsx are written in the delta, the slowest run seen among them",
+            "The limit is ceil(2.1 x L / 3) to 0.1 s; 0.6 s if L is still 0.726 s. If 5 eligible runs cannot be found the constant stays 2 s and the delta says so",
+            "One pnpm test:fast on a free machine: its time for layerBoundaries.enforcement.test.ts is written in the delta. If a test is over the limit there, it goes in slowTests.ts with a reason and a ceiling, and the delta names the risk that a listed test which moves between runs may retire itself",
+            "A-9: a planted .test.ts with two tests, the second past the limit, makes pnpm test:fast exit non-zero and name it; a planted .test.tsx of the same length passes under pnpm test on that file; both are removed and git status shows neither",
+            "pnpm test and pnpm build pass with zero errors and zero warnings",
+            "Before the push: git show --name-only of the slice's commits lists no .github/workflows path"
+          ],
+          "test_file": "Lighthouse.Frontend/src/tests/timeBudget/compareToAllowList.test.ts",
+          "scenario_name": "A real slow logic test fails pnpm test:fast, and the limit comes from five shuffled runs",
+          "files_to_modify": [
+            "Lighthouse.Frontend/vitest.config.ts",
+            "Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts",
+            "docs/feature/story-6536-t9-per-tier-ratchets/feature-delta.md"
+          ],
+          "dependencies": [
+            "01-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "2 scenarios. Enforced from its first push; the frontend limit has no warn stage (D-6536-23). Push after this step: slice A alone, a Lighthouse.Frontend path, so backend is skipped and no live suite runs on a clean window. It may go while T6 waits on CI, but after T6's running CI run has ended, as ci.yml has no concurrency and each push waits for the one before. Commit: feat(test-infra)."
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice B: tiers, ledgers and the report",
+      "description": "Connector classes found, tiers counted and reported, the ledger rules, the fast and ceiling judges, provisional limits, and --pyramid. Ledgers ship empty, so it reports only. Waits for T6's slice F on main. Mutation N/A: Python test tooling, no product file.",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Connector classes found from the source",
+          "description": "A scan beside discover_integration_class_names finds classes carrying one of the five connector categories, bound to the class and closed over the base chain.",
+          "criteria": [
+            "Entry: T6's slice F is on main and the delta records it; without that this step does not start. Read T6's walk first: it owns nested classes written Outer+Inner, and if it does not reach them this step adds that",
+            "Rows B-1 to B-8 are written in test_connector_classes.py, each red before the scan exists; the real-file halves of B-7 and B-8 are guards, and the planted sixth name gives B-7 its red",
+            "After the scan they pass; B-8 names real classes and asserts no count of 16",
+            "The list of five comes from one place, and B-7 compares it with the always-on clause read from ci_backend.yml",
+            "The scan reuses T6's walk of the class declarations rather than a second one; a source file it cannot read raises, and the caller turns that into no verdict (B-15, step 02-02)",
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes, and the count it prints is above the count before this step"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_connector_classes.py",
+          "scenario_name": "A live class leaves the count and the regular class in its file stays",
+          "files_to_modify": [
+            "Scripts/test-timings/trx_to_csv.py",
+            "Scripts/test-timings/tests/test_connector_classes.py"
+          ],
+          "dependencies": [],
+          "estimated_size": "S",
+          "implementation_notes": "8 scenarios. Depends on T6's slice F, as roadmap.dependencies says, not on slice A. Commit: feat(test-infra)."
+        },
+        {
+          "id": "02-02",
+          "name": "Tiers counted and reported on both stacks",
+          "description": "A pure tier count and a pure report, printed by the check on each run with the wording in the delta. Nothing is judged yet.",
+          "criteria": [
+            "Rows B-9 to B-15 are written in test_check_budget_tiers.py, driving check_budget.py as a process, each red first; B-14's real-file half is a guard, so its planted text gives the red",
+            "The report matches the delta's section The report, as worded, for both stacks, with every ceiling reading not set; the ceiling and room cells are pinned in 02-04 by B-21; a test may pin words and figures from planted runs only",
+            "Tests + Left out + Not run equal the CSV's rows in every case of B-11, at 0, 1 and many rows of each kind",
+            "A run with no Integration row and no ledger prints nothing labelled yet and exits 0, with no failure from dividing by zero",
+            "An unreadable .cs gives exit 2 naming the file, and no traceback",
+            "The module docstring states the three states of a limit: none, provisional, enforced",
+            "Every test in the folder still passes, T4's among them, and the count is above the count before this step"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_tiers.py",
+          "scenario_name": "Each run shows how many tests each tier has, how long they took and how much room is left",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_tiers.py"
+          ],
+          "dependencies": [
+            "02-01"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "7 scenarios. Rows of the report that need a limit print not set until 02-04. New helpers for the steady run go in a subclass in this test file, because CheckWorkspace.backend_timings writes only Unit and Passed rows. Whether new Python sits in check_budget.py or a sibling module is the crafter's call, kept to one entry point. Commit: feat(test-infra)."
+        },
+        {
+          "id": "02-03",
+          "name": "The report reaches the job's summary",
+          "description": "The shell appends the report to the file GITHUB_STEP_SUMMARY names, the one new side effect, and the test helpers stop inheriting that variable.",
+          "criteria": [
+            "Rows B-16 to B-20 are written, each red first",
+            "The summary keeps what was there and adds the report in a code fence with no annotation line; a second run adds a second report",
+            "Unset or empty variable: the snapshot of the folder is unchanged",
+            "A summary that cannot be written gives one warning and the same exit code",
+            "Report lines precede the first ::error:: line",
+            "CheckWorkspace.check and Workspace._run both clear GITHUB_STEP_SUMMARY, and B-20 shows the outer file unchanged",
+            "The path reaches the shell as a parameter, as warn_only_requested takes the environment",
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_tiers.py",
+          "scenario_name": "The report also lands in the job's summary, after what is there",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_tiers.py",
+            "Scripts/test-timings/tests/test_check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_time_budgets.py"
+          ],
+          "dependencies": [
+            "02-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "5 scenarios. Contract: bounded change, universe the named file, delta the appended report. Commit: feat(test-infra)."
+        },
+        {
+          "id": "02-04",
+          "name": "The ledgers and their rules",
+          "description": "Read the three ledgers from the backend section, refuse every broken one, and show the limits in the report. Shipped ledgers stay empty.",
+          "criteria": [
+            "Rows B-21 to B-28 are written, each red first",
+            "Each refusal is exit 2 with one ::error:: naming the ledger and the file, no report and no traceback",
+            "An entry is enforced with 5 or more distinct ids and provisional with 1 to 4; none is refused; a repeated id is refused, not read as fewer",
+            "An equal enforced mean or fast entry is refused; a provisional one equal to the newest enforced is accepted; on the total a provisional entry above it is accepted",
+            "T4's shipped tests still compare load_allowlist's two-part return unchanged",
+            "test-time-budget.json gains the empty block and nothing else: git diff shows no T4 line changed",
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_tiers.py",
+          "scenario_name": "A mean or fast limit that rises is refused, and the total may rise only with a reason",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/test-time-budget.json",
+            "Scripts/test-timings/tests/test_check_budget_tiers.py"
+          ],
+          "dependencies": [
+            "02-03"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "8 scenarios. Field names are the crafter's. Run ids may be numbers or text, the crafter's call, but true is no id. The rule 'an enforced entry never changes' cannot be checked without git; it is the reviewer's. Commit: feat(test-infra)."
+        },
+        {
+          "id": "02-05",
+          "name": "The fast limit on the backend",
+          "description": "A pure judge beside judge: every counted row that is not Integration against the limit, with a class allow-list reusing the stale and not-needed checks.",
+          "criteria": [
+            "Rows B-29 to B-36 are written, each red first",
+            "The message holds the test's full name, seconds to three places, the limit, fast test limit or class ceiling, and the file name",
+            "Integration, connector and not-passed rows are not judged here",
+            "A parametrised fixture's row finds its class through class_of",
+            "A stale or not-needed fast_allowlist entry fails whatever the switch says; 11 entries are refused, and so is any entry while the fast ledger has no enforced entry",
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_tiers.py",
+          "scenario_name": "A slow fast test fails the build and is named",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_tiers.py"
+          ],
+          "dependencies": [
+            "02-04"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "8 scenarios. A ceiling below the limit stays allowed and stricter, as in T4. Commit: feat(test-infra)."
+        },
+        {
+          "id": "02-06",
+          "name": "The mean and total ceilings",
+          "description": "A pure judge of the Integration tier against the newest enforced entry of each ceiling, and the switch for every new breach.",
+          "criteria": [
+            "Rows B-37 to B-44 are written, each red first",
+            "B-38: 20 and 25 rows at the same mean pass, 26 fails on the total alone, with +6 tests in the message",
+            "B-39: each exact ceiling passes, and 1 ms more breaches that ceiling alone",
+            "B-40 and B-41: a raise on 5 ids lifts the total; on 4 ids it lifts nothing",
+            "B-43: under the switch the three breaches are warnings with exit 0, the report's text equals the run without it, and a stale entry in the same run still exits 1",
+            "T4's messages and tests are unchanged",
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_tiers.py",
+          "scenario_name": "A slower integration tier fails the build, and more tests at the same mean pass until the total is reached",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_tiers.py"
+          ],
+          "dependencies": [
+            "02-05"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "8 scenarios. The total is seconds only; no count line. Commit: feat(test-infra)."
+        },
+        {
+          "id": "02-07",
+          "name": "Provisional limits, nothing to judge, and a filled file",
+          "description": "Provisional entries warn on their own number, a ledger with no Integration row exits 2, and T4's planted backend tests are rewritten so that filling the file stays a data commit.",
+          "criteria": [
+            "Rows B-45 to B-48 are written, each red first",
+            "B-45 to B-47: a provisional limit prints its progress line on every run and a breach warning only when breached; over the enforced number one error and no breach warning; between the two a breach warning and exit 0",
+            "B-48: exit 2 with an entry in any ledger, enforced or provisional, after the report, ahead of a breach, and not softened by the switch",
+            "The two backend tests of ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets carry what a filled ledger needs and keep their meaning: a class over T4's budget fails and names it, and only warns under the switch; the frontend test of that class stays as it is",
+            "B-49 trial: with a provisional entry in each shipped ledger, then an enforced entry in each and a real class in fast_allowlist, the whole folder is green with no test file touched; the JSON is restored and git diff shows it",
+            "B-50: the reader accepts the shipped file in all three states, and a grep of the tests finds none of the trial's seconds, chosen to appear nowhere else",
+            "B-51: planted cases read each limit from the shipped file; an empty ledger is said so in the test, and the planted budget covers it",
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_tiers.py",
+          "scenario_name": "Filling the budget file is a data commit",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_tiers.py",
+            "Scripts/test-timings/tests/test_check_budget_time_budgets.py"
+          ],
+          "dependencies": [
+            "02-06"
+          ],
+          "estimated_size": "M",
+          "implementation_notes": "7 scenarios. Without the rewrite slice C's first entries give exit 2 in those two tests and red Test the budget check in both jobs, which is what run 42372874167 did (D-6536-38). Commit: feat(test-infra)."
+        },
+        {
+          "id": "02-08",
+          "name": "The three shares with --pyramid",
+          "description": "A read-only mode fed the two CSVs of one commit, reusing the tier counting, with a scan of the Playwright specs.",
+          "criteria": [
+            "Rows B-52 to B-57 are written in test_check_budget_pyramid.py, each red first",
+            "The command is --pyramid --frontend-csv <file> --backend-csv <file>, both required, with --source-root as today and --spec-root defaulting to Lighthouse.EndToEndTests/tests/specs; it needs no --stack, and --stack without --pyramid behaves as before",
+            "It prints fast, integration and E2E as counts and shares beside 90, 9.5 and 0.5, exit 0 whatever they are, and writes nothing, with GITHUB_STEP_SUMMARY set",
+            "Tier counts equal those of the same CSVs through --stack",
+            "The E2E scan counts a line-start test( or testWith<Name>( in *.spec.ts only, and on the real folder the count is above zero, with no number pinned",
+            "An unreadable input exits 2, naming it",
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes",
+            "Before the push: git show --name-only of the slice's commits lists no .github/workflows path"
+          ],
+          "test_file": "Scripts/test-timings/tests/test_check_budget_pyramid.py",
+          "scenario_name": "The three shares across both stacks and Playwright are printed beside their limits",
+          "files_to_modify": [
+            "Scripts/test-timings/check_budget.py",
+            "Scripts/test-timings/tests/test_check_budget_pyramid.py"
+          ],
+          "dependencies": [
+            "02-07"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "6 scenarios. Push after this step: slice B, a Scripts/test-timings path, so backend, frontend and the tail run and no live suite on a clean window. Ledgers are empty, so it reports only, and its run is a calibration run. Commit: feat(test-infra)."
+        }
+      ]
+    },
+    {
+      "id": "03",
+      "name": "Slice C: the numbers, on real runs",
+      "description": "First entries, provisional; the three shares; the enforcing push; then the docs. Mostly a wait, and it holds nothing but the Story's closing. Mutation N/A: data and docs.",
+      "steps": [
+        {
+          "id": "03-01",
+          "name": "First entries, the calibration table and the shares",
+          "description": "From the first eligible plain run after slice F: provisional entries, the calibration table started, the three shares recorded.",
+          "criteria": [
+            "Entry: slice B is on main, and the run read meets D-6536-25, per job and attempt",
+            "The calibration table in the delta holds run id, attempt, artifact id, commit, connector answers, Failed rows, and count, sum and mean per tier",
+            "A provisional entry for fast limit, mean and total, with the reason, the run ids and the total's count at derivation, each by the rule, rounded up as D-6536-41 says; no fast_allowlist entry",
+            "The commit touches test-time-budget.json alone, and the Python tests pass with no test file changed",
+            "The next run shows the three limits and provisional, 1 of 5 warnings, and no breach fails it",
+            "--pyramid over the two CSVs of one commit is recorded in the delta, with its E2E count beside playwright test --list",
+            "When a connector or force-full run first passes after slice F, its Integration mean is compared with the plain runs' and recorded"
+          ],
+          "test_file": "Scripts/test-timings/test-time-budget.json",
+          "scenario_name": "The first plain run after the tiers are labelled gives the first limits, and the next run shows them as warnings",
+          "files_to_modify": [
+            "Scripts/test-timings/test-time-budget.json",
+            "docs/feature/story-6536-t9-per-tier-ratchets/feature-delta.md"
+          ],
+          "dependencies": [
+            "02-08"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "3 scenarios, C-1 to C-3. Rides a backend push already going where one exists (D-6536-22). Ids after this are collected in a docs commit, which starts no CI. A run is never dropped for being slow (D-6536-26). Commit: test(test-infra) for the JSON, docs(test-infra) for the delta."
+        },
+        {
+          "id": "03-02",
+          "name": "The enforcing push",
+          "description": "With 5 distinct eligible runs after T5's last move or stop, re-derive each limit, list what may be listed, and turn the limits on, on a clean window, read alone.",
+          "criteria": [
+            "Entry: 5 distinct eligible ids after T5's last move or stop, each with a calibration row, the slowest seen among them; fewer means this step does not start, and the chain goes on past it",
+            "h is each figure's largest / smallest, at least 1.13. Spread over 1.25: no enforcing push for that figure, the maintainer is asked, and no run is removed to fix it",
+            "The fast limit is at least 2.1 x L; mean and total are largest x h, rounded up as D-6536-41 says",
+            "fast_allowlist holds only classes slow in all 5 runs, at most 10, each with a reason and a ceiling; a cost that moves between classes stays in L",
+            "The push goes on a clean window with no other push running; the first verdict is read alone and recorded",
+            "The commit touches test-time-budget.json, and slowTests.ts only if listed: git show --name-only shows no test file, and Test the budget check is green",
+            "No provisional warning is left. An enforced red follows D-6536-29: read the count, one re-run, then stop; the switch stays the maintainer's",
+            "The delta records the closing figures; the Story does not close while a limit is provisional"
+          ],
+          "test_file": "Scripts/test-timings/test-time-budget.json",
+          "scenario_name": "Five eligible runs turn the limits on",
+          "files_to_modify": [
+            "Scripts/test-timings/test-time-budget.json",
+            "docs/feature/story-6536-t9-per-tier-ratchets/feature-delta.md"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "4 scenarios, C-4 to C-7. The only step that waits, and it blocks nothing but T9's closing. If T9 is still provisional at T10's end, T10 re-derives and T9 closes on that 5. Before T9 closes an agent may revert this commit to unblock trunk; afterwards that is a raise and needs the maintainer's word. Commit: test(test-infra)."
+        },
+        {
+          "id": "03-03",
+          "name": "ADR-237 and the learnings",
+          "description": "The ADR-237 amendment, the derivation recipe, and the stale backend line in docs/ci-learnings.md.",
+          "criteria": [
+            "ADR-237 holds the fast limit, the two ceilings, the ledger and provisional stage, and which runs may be read, as they shipped",
+            "docs/ci-learnings.md holds the recipe, and its line on the backend check that still only warns is corrected",
+            "The docs name the configurable terms as the seeded defaults where they name any",
+            "git show --name-only lists docs/ paths only"
+          ],
+          "test_file": "docs/ci-learnings.md",
+          "scenario_name": "The docs say what shipped",
+          "files_to_modify": [
+            "docs/product/architecture/adr-237-test-time-budget-guard.md",
+            "docs/ci-learnings.md"
+          ],
+          "dependencies": [
+            "03-02"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "1 scenario, C-8. Comes after the enforcing push, so the docs describe what is on (D-6536-19). Docs-only, so no CI starts. Commit: docs(test-infra)."
+        }
+      ]
+    }
+  ],
+  "validation": {
+    "status": "conditionally_approved",
+    "note": "DISTILL review of 2026-11-07 by nw-acceptance-designer-reviewer on Sonnet: conditionally approved, 0 blockers, 2 high, 8 medium, 10 low, addressed in the feature delta section Wave: DISTILL Review. The revision was not reviewed again. des-verify-integrity --roadmap-only covers format only. No test or build ran at DISTILL."
+  }
+}
