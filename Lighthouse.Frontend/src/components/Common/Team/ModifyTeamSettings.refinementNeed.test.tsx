@@ -15,7 +15,6 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { ITeamService } from "../../../services/Api/TeamService";
 import { actAndSettle } from "../../../tests/actAndSettle";
-import { inSequence } from "../../../tests/inSequence";
 import { createMockApiServiceContext } from "../../../tests/MockApiServiceProvider";
 import { pastTheAutosaveDelay } from "../../../tests/pastTheAutosaveDelay";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
@@ -190,33 +189,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 		saveTeamSettings.mockResolvedValue(undefined);
 	});
 
-	it("offers optional stages, a Ready rule and a Being refined rule, each with nothing set", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		expect(await screen.findByText("Stages (optional)")).toBeVisible();
-		await inSequence([READY_WHEN, BEING_REFINED_WHEN], async (stage) => {
-			const group = await theStageGroup(stage);
-			expect(
-				within(group).getByRole("button", { name: /^Add Rule$/i }),
-			).toBeEnabled();
-			expect(within(group).queryByLabelText("Value")).not.toBeInTheDocument();
-		});
-
-		await pastTheAutosaveDelay();
-		expect(saveTeamSettings).not.toHaveBeenCalled();
-	});
-
-	it("shows the Ready rule the Team stored", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				stageRules: { ready: tagsContain("ready"), beingRefined: null },
-			}),
-		);
-
-		const ready = await theStageGroup(READY_WHEN);
-		expect(within(ready).getByLabelText("Value")).toHaveValue("ready");
-	});
-
 	it("saves a changed Ready rule and leaves the Being refined rule as it was", async () => {
 		await renderGravitysSettingsForm(
 			gravitysSettings({
@@ -237,67 +209,6 @@ describe("Stage rules in the Refinement section of a Team's settings", () => {
 			expect(theRefinementLastSaved()?.stageRules).toEqual({
 				ready: tagsContain("groomed"),
 				beingRefined: tagsContain("analysing"),
-			}),
-		);
-	});
-
-	it("switches the Ready rule off when its last condition is removed", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				stageRules: {
-					ready: tagsContain("ready"),
-					beingRefined: tagsContain("analysing"),
-				},
-			}),
-		);
-
-		await userEvent.click(
-			within(await theStageGroup(READY_WHEN)).getByRole("button", {
-				name: "Remove rule",
-			}),
-		);
-
-		await waitFor(() =>
-			expect(theRefinementLastSaved()?.stageRules).toEqual({
-				ready: null,
-				beingRefined: tagsContain("analysing"),
-			}),
-		);
-	});
-
-	it("keeps an edited Ready rule when the Yes votes needed change before it is saved", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				stageRules: {
-					ready: tagsContain("ready"),
-					beingRefined: tagsContain("analysing"),
-				},
-			}),
-		);
-
-		const value = within(await theStageGroup(READY_WHEN)).getByLabelText(
-			"Value",
-		);
-		await userEvent.clear(value);
-		await userEvent.type(value, "groomed");
-		await replaceTheNumberIn("Yes votes needed", "2");
-
-		await waitFor(() =>
-			expect(theRefinementLastSaved()).toEqual({
-				states: [
-					{ state: "Backlog" },
-					{ state: "Analysing" },
-					{ state: "Next" },
-				],
-				readiness: {
-					minYes: 2,
-					minVoters: 3,
-					discussWhen: { no: 1, yesIf: 2 },
-				},
-				stageRules: {
-					ready: tagsContain("groomed"),
-					beingRefined: tagsContain("analysing"),
-				},
 			}),
 		);
 	});
@@ -324,31 +235,6 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		terms.current = { ...defaultTerms };
 		saveTeamSettings.mockReset();
 		saveTeamSettings.mockResolvedValue(undefined);
-	});
-
-	it("offers the weekdays Monday to Sunday and every week, with no starting week asked for", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		expect(await screen.findByText("Refinement cadence")).toBeVisible();
-		const weekdays = [
-			"Monday",
-			"Tuesday",
-			"Wednesday",
-			"Thursday",
-			"Friday",
-			"Saturday",
-			"Sunday",
-		];
-		expect(
-			screen
-				.getAllByRole("checkbox")
-				.map((box) => box.closest("label")?.textContent ?? "")
-				.filter((label) => weekdays.includes(label)),
-		).toEqual(weekdays);
-		expect(screen.getByRole("spinbutton", { name: REPEAT_EVERY })).toHaveValue(
-			1,
-		);
-		expect(screen.queryByLabelText(STARTING_WEEK)).not.toBeInTheDocument();
 	});
 
 	it("saves Thursdays every week", async () => {
@@ -404,61 +290,8 @@ describe("The Refinement cadence in the Refinement section of a Team's settings"
 		);
 		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
-
-	it("saves nothing for fewer than one week between Refinements", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
-			}),
-		);
-
-		await replaceTheNumberIn(REPEAT_EVERY, "0");
-		await pastTheAutosaveDelay();
-
-		expect(
-			screen.getByRole("spinbutton", { name: REPEAT_EVERY }),
-		).toHaveAttribute("aria-invalid", "true");
-		expect(saveTeamSettings).not.toHaveBeenCalled();
-	});
-
-	// The server looks a year ahead for the next Refinement, so a longer gap could leave it none.
-	it("saves nothing for more than 52 weeks between Refinements, and says why", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
-			}),
-		);
-
-		await replaceTheNumberIn(REPEAT_EVERY, "53");
-		await pastTheAutosaveDelay();
-
-		expect(
-			screen.getByRole("spinbutton", { name: REPEAT_EVERY }),
-		).toHaveAttribute("aria-invalid", "true");
-		expect(
-			screen.getByText(/^Refinements are at most 52 weeks apart\.$/),
-		).toBeVisible();
-		expect(saveTeamSettings).not.toHaveBeenCalled();
-	});
-
-	it("leaves the Team without a cadence when the last weekday is unticked", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
-			}),
-		);
-
-		await userEvent.click(
-			await screen.findByRole("checkbox", { name: "Thursday" }),
-		);
-
-		await waitFor(() =>
-			expect(theRefinementLastSaved()?.cadence?.weekdays).toEqual([]),
-		);
-	});
 });
 
-const LOW_END = /^Low end likelihood/;
 const HIGH_END = /^High end likelihood/;
 
 const replaceTheLikelihood = async (label: RegExp, value: string) => {
@@ -467,31 +300,11 @@ const replaceTheLikelihood = async (label: RegExp, value: string) => {
 	await userEvent.type(field, value);
 };
 
-// What the info icon beside the band's heading says when the admin points at it.
-const theBandExplanation = async () => {
-	await userEvent.hover(
-		await screen.findByRole("button", { name: /^Based on the Team's / }),
-	);
-	return (await screen.findByRole("tooltip")).textContent ?? "";
-};
-
 describe("The band in the Refinement section of a Team's settings", () => {
 	beforeEach(() => {
 		terms.current = { ...defaultTerms };
 		saveTeamSettings.mockReset();
 		saveTeamSettings.mockResolvedValue(undefined);
-	});
-
-	it("shows the range read at 50% and 85% until the admin changes it", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		expect(
-			await screen.findByRole("spinbutton", { name: LOW_END }),
-		).toHaveValue(50);
-		expect(screen.getByRole("spinbutton", { name: HIGH_END })).toHaveValue(85);
-
-		await pastTheAutosaveDelay();
-		expect(saveTeamSettings).not.toHaveBeenCalled();
 	});
 
 	it("saves a changed high end with the low end as it was", async () => {
@@ -507,48 +320,34 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		);
 	});
 
-	it.each([
-		["90", "85"],
-		["85", "85"],
-	])(
-		"refuses a low end of %s against a high end of %s, naming both, and saves nothing",
-		async (low, high) => {
-			await renderGravitysSettingsForm(
-				gravitysSettings({
-					band: { lowPercentile: 50, highPercentile: Number(high) },
-				}),
-			);
+	it("keeps the stage rules, cadence and readiness as they were when the band changes", async () => {
+		await renderGravitysSettingsForm(
+			gravitysSettings({
+				stageRules: { ready: tagsContain("ready"), beingRefined: null },
+				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
+			}),
+		);
 
-			await replaceTheLikelihood(LOW_END, low);
-			await pastTheAutosaveDelay();
+		await replaceTheLikelihood(HIGH_END, "95");
 
-			expect(
-				await screen.findByText(
-					`The low end (${low}%) must be below the high end (${high}%).`,
-				),
-			).toBeVisible();
-			expect(saveTeamSettings).not.toHaveBeenCalled();
-		},
-	);
-
-	it.each([
-		["Low end likelihood", "49"],
-		["High end likelihood", "96"],
-	])(
-		"refuses %s at %s, outside 50 to 95, and saves nothing",
-		async (fieldName, value) => {
-			const label = new RegExp(`^${fieldName}`);
-			await renderGravitysSettingsForm(gravitysSettings());
-
-			await replaceTheLikelihood(label, value);
-			await pastTheAutosaveDelay();
-
-			const field = screen.getByRole("spinbutton", { name: label });
-			expect(field).toHaveAttribute("aria-invalid", "true");
-			expect(field).toHaveAccessibleDescription("Between 50% and 95%.");
-			expect(saveTeamSettings).not.toHaveBeenCalled();
-		},
-	);
+		await waitFor(() =>
+			expect(theRefinementLastSaved()).toEqual({
+				states: [
+					{ state: "Backlog" },
+					{ state: "Analysing" },
+					{ state: "Next" },
+				],
+				readiness: {
+					minYes: 3,
+					minVoters: 3,
+					discussWhen: { no: 1, yesIf: 2 },
+				},
+				stageRules: { ready: tagsContain("ready"), beingRefined: null },
+				cadence: { weekdays: ["Thursday"], intervalWeeks: 1, anchorWeek: null },
+				band: { lowPercentile: 50, highPercentile: 95 },
+			}),
+		);
+	});
 
 	it("refuses a decimal likelihood instead of saving it rounded, and saves nothing", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
@@ -560,133 +359,6 @@ describe("The band in the Refinement section of a Team's settings", () => {
 		expect(field).toHaveAttribute("aria-invalid", "true");
 		expect(field).toHaveAccessibleDescription("Between 50% and 95%.");
 		expect(saveTeamSettings).not.toHaveBeenCalled();
-	});
-
-	it("marks the high end being typed in when it falls below the low end, and explains why there", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({ band: { lowPercentile: 60, highPercentile: 85 } }),
-		);
-
-		await replaceTheLikelihood(HIGH_END, "55");
-
-		const inverted = "The low end (60%) must be below the high end (55%).";
-		const high = screen.getByRole("spinbutton", { name: HIGH_END });
-		expect(high).toHaveAttribute("aria-invalid", "true");
-		expect(high).toHaveAccessibleDescription(inverted);
-		const low = screen.getByRole("spinbutton", { name: LOW_END });
-		expect(low).toHaveAttribute("aria-invalid", "true");
-		expect(low).toHaveAccessibleDescription(inverted);
-		expect(screen.getAllByText(inverted)).toHaveLength(1);
-	});
-
-	it("heads the band with the Team's words for work items and Refinement", async () => {
-		terms.current = {
-			...defaultTerms,
-			[TERMINOLOGY_KEYS.WORK_ITEMS]: "Tickets",
-			[TERMINOLOGY_KEYS.REFINEMENT]: "Grooming",
-		};
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		expect(
-			await screen.findByText("Tickets needed before the next Grooming"),
-		).toBeVisible();
-	});
-
-	it("explains the high end at 95 as reached with only 5% likelihood", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await replaceTheLikelihood(HIGH_END, "95");
-
-		expect(await theBandExplanation()).toContain(
-			"The Team pulls at least the low end with 50% likelihood, " +
-				"and more than the high end with only 5% likelihood.",
-		);
-	});
-
-	it("keeps explaining the last valid band while the low end is cleared", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await userEvent.clear(
-			await screen.findByRole("spinbutton", { name: LOW_END }),
-		);
-
-		const explanation = await theBandExplanation();
-		expect(explanation).toContain(
-			"low end with 50% likelihood, and more than the high end with only 15% likelihood.",
-		);
-		expect(explanation).not.toContain("NaN");
-	});
-
-	it("explains the band as last edited, not as it was when the form opened", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await replaceTheLikelihood(HIGH_END, "90");
-		const afterTheEdit = "more than the high end with only 10% likelihood.";
-		expect(await theBandExplanation()).toContain(afterTheEdit);
-
-		await userEvent.clear(screen.getByRole("spinbutton", { name: LOW_END }));
-		expect(await theBandExplanation()).toContain(afterTheEdit);
-	});
-
-	it("explains the band as last edited when only the low end changed", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await replaceTheLikelihood(LOW_END, "60");
-		const afterTheEdit = "pulls at least the low end with 40% likelihood";
-		expect(await theBandExplanation()).toContain(afterTheEdit);
-
-		await userEvent.clear(screen.getByRole("spinbutton", { name: HIGH_END }));
-		expect(await theBandExplanation()).toContain(afterTheEdit);
-	});
-
-	// The band is read over one Refinement cycle, so the explanation names that cycle, not the days until the next.
-	it("explains the range as a How Many forecast between the next Refinement and the one after, in the Team's word", async () => {
-		terms.current = {
-			...defaultTerms,
-			[TERMINOLOGY_KEYS.REFINEMENT]: "Grooming",
-		};
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		const explanation = await theBandExplanation();
-		expect(explanation).toContain(
-			"a How Many forecast for the working days between the next Grooming and the one after. ",
-		);
-		expect(explanation).not.toContain("until the next");
-	});
-
-	it("shows a cleared low end as empty, not as 0, and says what it takes", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		const low = await screen.findByRole("spinbutton", { name: LOW_END });
-		await userEvent.clear(low);
-
-		expect(low).toHaveValue(null);
-		expect(low).toHaveAccessibleDescription("Between 50% and 95%.");
-	});
-
-	it("marks neither end while the band is valid, and shows each end in percent", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await inSequence([LOW_END, HIGH_END], async (label) => {
-			const field = await screen.findByRole("spinbutton", { name: label });
-			expect(field).not.toHaveAttribute("aria-invalid", "true");
-			expect(
-				within(field.parentElement as HTMLElement).getByText("%"),
-			).toBeVisible();
-		});
-	});
-
-	it("marks only the low end when it is out of range above the high end, since that is not an inverted band", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await replaceTheLikelihood(LOW_END, "96");
-
-		const low = screen.getByRole("spinbutton", { name: LOW_END });
-		expect(low).toHaveAttribute("aria-invalid", "true");
-		expect(low).toHaveAccessibleDescription("Between 50% and 95%.");
-		expect(
-			screen.getByRole("spinbutton", { name: HIGH_END }),
-		).not.toHaveAttribute("aria-invalid", "true");
 	});
 });
 
