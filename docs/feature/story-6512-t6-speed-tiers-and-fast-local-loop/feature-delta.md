@@ -924,3 +924,10 @@ the amendment just above, whose "filtered run" is now exactly `A`. Sections abov
   addition. No hosted base is generic: a search for `abstract class Name<` over the test project finds none, so the chain has no `Base<T>` to read.
 - **Two real stops, both with the maintainer.** The fast filter before 02-02, the containers before 05-03. No answer means those steps wait; the
   earlier "no answer keeps them on the base" is withdrawn.
+
+## Wave: DISTILL / [REF] Maintainer decisions (2026-11-07)
+
+These answer the two stops, so 02-02 and 05-03 no longer wait for the maintainer. This section overrides earlier text.
+
+- **Fast filter:** the fast loop also leaves out the five connector categories. It cannot reach a real system, and 3 offline tests leave it. They still run in the full suite and in CI.
+- **Containers:** they sit on `IntegrationFixture`. They work with an outside system, and they are not fast: in CI run 42345830021, 139 container tests took 385 s in total, about 2.8 s each, which is 1 % of the tests and 17 % of the test time.
