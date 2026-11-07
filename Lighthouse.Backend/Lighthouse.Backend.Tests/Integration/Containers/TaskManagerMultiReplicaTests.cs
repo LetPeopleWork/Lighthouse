@@ -9,10 +9,10 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// Epic #5511 slice 02, AC-02.1's second half: the task list has to answer about work admitted by
+    /// The task list has to answer about work admitted by
     /// <em>any</em> replica, not only the pod that happened to take the request.
     ///
-    /// This is the defect the slice corrects rather than a new feature. The endpoint being replaced
+    /// This corrects a defect rather than adding a feature. The endpoint being replaced
     /// counts an in-process dictionary, so on a multi-replica instance it already under-reports — an
     /// operator asking "what is running" gets whatever the load balancer's choice of pod happens to
     /// know. There is no way to observe that from outside a single host, which is why this promise is
@@ -99,8 +99,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     }
 
     /// <summary>
-    /// Epic #5511 slice 03, AC-03.2 and AC-03.3. The admission and start moments live in a sibling hash
-    /// written outside the two Lua scripts (ADR-182), which is what lets slice 03 claim the monotonic
+    /// The admission and start moments live in a sibling hash
+    /// written outside the two Lua scripts, which is what lets us claim the monotonic
     /// advance and requeue-if-admitted guarantees are untouched. That claim has two halves, and this class
     /// is the second: <c>RedisUpdateStatusScriptFreezeTest</c> proves the scripts did not change, and these
     /// prove the guarantees still hold with a second hash being written beside them.
@@ -116,8 +116,8 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     {
         /// <summary>
         /// White-box on purpose, and the only assertion here that is. An orphaned moment is invisible from
-        /// the port — the ordinal is gone, so the key is gone from every list — and ADR-182 left "does the
-        /// moments hash need its own expiry?" open precisely because nobody could see the answer. Reading
+        /// the port — the ordinal is gone, so the key is gone from every list — and "does the
+        /// moments hash need its own expiry?" stayed open precisely because nobody could see the answer. Reading
         /// the hash directly is what turns it from an open question into a promise.
         /// </summary>
         private const string MomentsHashKey = "lighthouse:update-moments";
@@ -258,7 +258,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     }
 
     /// <summary>
-    /// Epic #5511 slice 07, AC-07A.2's other half — the half the in-process acceptance suite cannot fail.
+    /// The half of a steady task list that the in-process acceptance suite cannot fail.
     ///
     /// That suite keeps its admitted work in a dictionary, and a dictionary hands back the same sequence
     /// every time as long as nothing is added or removed, so a scenario about a list that wanders has no
@@ -365,15 +365,14 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     }
 
     /// <summary>
-    /// Epic #5511 slice 04, the cross-pod half of cancel — a DISTILL correction to ADR-183 rather than
-    /// something the ADR asked for.
+    /// The cross-pod half of cancel.
     ///
-    /// The token source lives in the process that admitted the work, and slice 02 deliberately made the
-    /// task list answer about work admitted by any replica. So the pod that takes an operator's click is
+    /// The token source lives in the process that admitted the work, and the
+    /// task list deliberately answers about work admitted by any replica. So the pod that takes an operator's click is
     /// usually not the pod that can act on it, and a cancel handled where it lands would do nothing at all
     /// for most rows on a multi-replica instance — with nothing to tell an operator which rows those were.
     ///
-    /// That is the same shape as the defect this Epic exists to remove, one slice later, which is why it is
+    /// That is the same shape as a task list that knows only its own pod, which is why it is
     /// pinned against a real Redis rather than argued about.
     /// </summary>
     [TestFixture]

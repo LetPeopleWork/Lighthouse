@@ -10,8 +10,8 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// DISTILL acceptance probe (Epic 5074) — Slice 05: the additive <c>IsPredefined</c> column on the
-    /// <c>AdditionalFieldDefinition</c> table (default false — system-owned flag, ADR-071). Proves against
+    /// Acceptance probe for the additive <c>IsPredefined</c> column on the
+    /// <c>AdditionalFieldDefinition</c> table (default false — system-owned flag). Proves against
     /// SQLite + Postgres that the generated additive migration applies cleanly and the column defaults to
     /// false for a newly-inserted field. InMemory misses migrations — real providers required (mirrors
     /// <see cref="BlockedStalenessThresholdMigrationTests"/>).

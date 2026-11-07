@@ -14,7 +14,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// Bug #5567 - DeliveryMetricSnapshot converges on a DateOnly day key.
+    /// DeliveryMetricSnapshot converges on a DateOnly day key.
     ///
     /// The honest claim under test is NOT "a second row per visual day is prevented": the shipped
     /// repository already normalised every write to midnight under a unique (DeliveryId, RecordedAt)
@@ -269,7 +269,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         /// <summary>
-        /// The R1 property this whole step exists for: the global convention attaches
+        /// The point of the day key: the global convention attaches
         /// UtcDateTimeConverter to Properties&lt;DateTime&gt;() only, so the day key cannot be
         /// shifted by a zone conversion - not on write, not on a query parameter. Asserted
         /// structurally (no converter on the property) AND behaviourally (a Kind=Local instant on

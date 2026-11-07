@@ -16,7 +16,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// ADR-068 blocked-duration capture probe. Proves against REAL relational providers
+    /// Blocked-duration capture probe. Proves against REAL relational providers
     /// (SQLite + Postgres) that the generated AddWorkItemBlockedTransition migration creates
     /// the table and that the capture/close handlers round-trip a transition through the repository.
     /// </summary>

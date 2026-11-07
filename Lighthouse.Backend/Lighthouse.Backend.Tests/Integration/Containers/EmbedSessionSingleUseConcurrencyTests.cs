@@ -19,7 +19,6 @@ using Serilog.Extensions.Logging;
 
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
-    // Epic 5146 slice 02a (#5641) — ADR-131; feature security checklist S4.
     // EF InMemory cannot model the conditional update this property rests on, so the probe needs a real provider.
     [TestFixture]
     [Category("requires-docker")]
@@ -34,13 +33,13 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private const string NonceReplayEventName = "EmbedHandshakeNonceReplayed";
 
         /// <summary>
-        /// Epic 5146 slice 01 (#5692) — ADR-137 D68. The nonce half of the same guarantee, and the
+        /// The nonce half of the same guarantee, and the
         /// reason it needs its own case: consumption is a different conditional update over different
         /// columns, and it is the one that hands out a credential rather than spending one.
         /// The row is seeded through the service rather than driven through /embed/start: the thing
         /// under test is the conditional update, not the sign-in hop, and hop 1 would need an
         /// interactive session cookie this host has no forge for.
-        /// D62/D67 rides along — every loser must be RECOGNISED as a second reader, not quietly
+        /// Every loser must also be RECOGNISED as a second reader, not quietly
         /// folded into `unknown`, or a replayed nonce is unobservable exactly when it is being raced.
         /// </summary>
         [Test]
@@ -79,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         }
 
         /// <summary>
-        /// Single use at the entry point: ADR-131's affected-row count, on the provider that can
+        /// Single use at the entry point: the affected-row count, on the provider that can
         /// actually model the conditional update.
         /// </summary>
         [Test]
@@ -120,7 +119,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                 WarmRedemptionPathAsync);
         }
 
-        // D73: the clients are built ABOVE the barrier. CreateClient starts and locks the test server
+        // The clients are built ABOVE the barrier. CreateClient starts and locks the test server
         // and costs orders of magnitude more than the request it precedes, so a barrier that also
         // gates construction staggers the callers, every loser reads the row after the winner has
         // committed, and the atomic update under test is never exercised. Structural here rather than
@@ -160,7 +159,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
             }
         }
 
-        // D73, second half: hoisting the clients is not enough on its own. The first request through
+        // Hoisting the clients is not enough on its own. The first request through
         // /embed/enter pays for JIT, the EF query compile and a physical Npgsql connection, and that
         // cost swamps the request itself. In a cold process every racer pays it at once and they
         // arrive together; once an earlier test in the fixture has warmed the process, only the
@@ -290,7 +289,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
                     services.RemoveAll<IHostedService>();
                     services.AddSingleton<IStartupFilter>(new UnservedSpaPageStartupFilter());
 
-                    // D72: writeToProviders is left false, so an ILoggerProvider added here is inert.
+                    // writeToProviders is left false, so an ILoggerProvider added here is inert.
                     // Serilog is the pipeline, so the capture has to be a Serilog sink.
                     services.RemoveAll<ILoggerFactory>();
                     services.AddSingleton<ILoggerFactory>(_ => new SerilogLoggerFactory(

@@ -10,7 +10,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
-    /// ADR-069 BlockedCountSnapshot store probe. Proves against REAL relational providers
+    /// BlockedCountSnapshot store probe. Proves against REAL relational providers
     /// (SQLite + Postgres) that the generated AddBlockedCountSnapshot migration creates
     /// the table and that rows round-trip through the repository.
     /// </summary>
