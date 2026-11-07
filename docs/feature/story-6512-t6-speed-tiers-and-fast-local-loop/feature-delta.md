@@ -2386,3 +2386,9 @@ Lighthouse.Backend.Tests.Architecture.TestSelectionClauseTest.TheFastScriptLeave
 - The `exit $LASTEXITCODE` line in `Test-Fast.ps1` is dead: under `$ErrorActionPreference = 'Stop'` the `Write-Error` above it ends the script first.
 - No run was made with Docker stopped, so `Test-Fast.ps1`'s claim that it needs no Docker has not been shown that way.
 - The `Unplaced` warning goes to stderr only, and is printed twice in CI.
+
+## Wave: DELIVER / [REF] Push 7 judged, guarantee 14 (2026-11-07)
+
+Run 42407897220 at `a4bb4163f`, the last step's push. `force_full=false`, so a plain run: 12,931 passed, 2 skipped, 12,933 in all, the count `L7` gave locally. Against push 6's CSV: 0 ids lost, 0 outcomes changed, 9 added, all in `ServicePortHarnessTest`. Every gate passed and the run stopped at deploy approval, which counts as a green base.
+
+**The column, first plain CSV after slice F.** `Unit` 9,547 rows, `Integration` 3,395, no `Unplaced`, the same as `L7`. By id, `Integration` holds the same 3,393 distinct names on both sides. `Unit` holds 9,531 on both sides, of which 7 differ in text and in nothing else: three tests in `DeliveriesControllerTest` and `ParentResolutionPlacementTest` render a date argument into their name, and the date reads `02/03/2026 00:00:00` on CI and `2/3/2026 12:00:00 AM` on this machine. That is the machine's culture, the same 7 tests on each side, one to one. CI against CI shows no such difference. So a local list and a CI CSV are compared with those 7 names matched by test, which T9 needs to know. Guarantee 14 is met.
