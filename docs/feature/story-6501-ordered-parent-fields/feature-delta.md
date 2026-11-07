@@ -12,7 +12,17 @@
 > open is listed under "Resolved and still open". Nothing is committed, nothing touched on ADO, no shared file
 > edited (ADR-270, ARCHITECTURE.md and jobs.yaml changes are *proposed* below).
 
-## AFK hold (2026-11-06, night; nothing pushed)
+## Maintainer review (2026-11-07)
+
+Pushed at d15aefc48 and reviewed by hand on a demo instance against the demo Jira: "good enough to release". The list read the demo Jira items as intended. Three copy changes taken, in 19154f70d:
+
+- The tracker's parent row reads `Parent (default)` on every tracker.
+- `Set here` reads `Override`.
+- The line under the heading is gone. The info tip did not state the rule yet, so "The first source that has a value gives the parent." moved into it.
+
+The lone link stands as accepted and documented. It applies to Jira Teams only, and an ordinary update of the changed item repairs it too, not only a full refresh. The maintainer has not ruled on it explicitly.
+
+## AFK hold (2026-11-06, night; pushed 2026-11-07)
 
 All 21 steps, the slice refactors and reviews, the final refactor and review, and mutation are done. The maintainer stopped the run here for the night. On the next word: rebase if `origin/main` moved, push, `/clean-ci`, then the maintainer reviews by hand. The demo Jira instance with 2 parent sources waits for the maintainer's word; work items on the demo Jira may be changed for it.
 
