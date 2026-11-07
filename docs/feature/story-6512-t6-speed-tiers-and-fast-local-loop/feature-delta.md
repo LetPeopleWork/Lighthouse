@@ -1294,3 +1294,11 @@ Commit `862003a96`, the move alone: 14 files, 16 insertions, 28 deletions. Not p
 `F_BE_1_GroupSnapshotInheritanceTests` and `S5_ApiKeyScopesTests` show no line: Bug 6575 changed only the bodies of their tests, so no id moved. `DeliveriesControllerTest` and `ParentResolutionPlacementTest`, the two classes with unstable names, match line by line and by count, at 79 and 25.
 
 **Before push 2.** `Lighthouse.Backend.Tests.csproj` is unchanged since the probe, so NUnit and the adapter are too.
+
+## Wave: DELIVER / [REF] Push 2 judged (2026-11-07)
+
+Push `2c1f0ae0c`, run 42379254193, force-full as expected. Against `T0`'s CSV (run 42372930241): 0 ids lost; 297 extra ids, every one in a class with a connector attribute (the live classes, with `AzureDevOpsWriteBackTest` and `JiraWriteBackTest`), in this Story's `TestSelectionClauseTest` and `IntegrationFixtureCategoryTest`, or in Bug 6575's `DeleteUnitRightsTests` and `CreateRightsControllerGuardTest`. 11 `NotExecuted` rows, as in `T0`. All live connector tests passed; no `TooManyRequests`.
+
+The run is red for two reasons outside this Story: `PortfolioUpdaterTest.ExecuteAsync_ShouldBeRefreshed_PremiumLicense_MoreThanOneProject_Refreshes` saw a second update call (a looping background service, a file this Story did not touch; timing flake suspected, not proven), and `Verify Authentication` could not pull `traefik:v3.3` from Docker Hub.
+
+**Maintainer's word (2026-11-07):** do not hold the work for this. Push 2 counts as judged on the ids, without the re-run, because a re-run would spend the shared Linear key to prove nothing about the clause. Push 3 is the first plain run and shows both jobs again.
