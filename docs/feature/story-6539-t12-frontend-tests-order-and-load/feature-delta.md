@@ -31,11 +31,11 @@ DECIDE D-6539-7 records what the Story says instead.
 
 ## Checklist
 
-- [ ] Behaviour-free: production code unchanged
-- [ ] No longer timeouts or retries as the fix
-- [ ] Ratchet in the same change: shuffle in the CI frontend run
-- [ ] Docs in the same change where a rule changes (`docs/ci-learnings.md`)
-- [ ] Mutation N/A while only test files change, accepted by the maintainer
+- [x] Behaviour-free: production code unchanged
+- [x] No longer timeouts or retries as the fix
+- [x] Ratchet in the same change: shuffle in the CI frontend run
+- [x] Docs in the same change where a rule changes (`docs/ci-learnings.md`)
+- [x] Mutation N/A while only test files change, accepted by the maintainer
 
 ## Wave: DESIGN / [REF] Scope, mode and context
 
@@ -692,3 +692,25 @@ No run named a time-budget offender, so the reporter check of 02-01 has none to 
   ("a refresh that failed keeps saying so when a forecast run finishes afterwards"; `bail 1` stopped the run). The copy was deleted, never committed.
   **Empty branch**, with `pnpm` stubbed: prints `pnpm test` only, no seed line.
 - **Offenders of the 01-04 runs:** 0 in every run (the delta records 0), and 0 in the runs of this step, so no looser limit and no further reporter change.
+
+## Step 02-02: ledger rule, replay check, load position
+
+- **Ledger:** `docs/ci-learnings.md`, Tests section: the order-dependence rule with the replay line (seed is the run id, printed as `Test order seed` and in
+  the Vitest header; `pnpm test --sequence.shuffle.tests --sequence.seed=<run id> <the red file>`; bisect a pair with `-t "A|B"`), the three signatures, the
+  time-budget kind, no longer timeout or retry as the fix, and a plain statement that a passing replay does not clear a red test (Finding A). The older
+  line on an explicit timeout for marginal tests is kept; it now says it covers load from the whole run, and that an order-dependent red is not fixed that way.
+  A second entry holds the load position.
+- **Replay check (run):** full run, `CI=true`, seed 12345678901, a temporary reporter recording each test's start time: exit 0, 618 files, 9503 tests passed.
+  `PortfolioDetail.test.tsx` then ran alone with the same seed and flags: 36 passed. Sorted by start time, the 36 tests ran in the same order in both runs
+  (0 positions differ, no two tests started in the same millisecond). So the replay reproduced the order for that file. This is one file, one seed. The
+  ledger says the replay reproduces the order only if the file's start order matches, and otherwise to replay the whole run. The results file
+  (`test-results.json`) carries no per-test start time, so it cannot be used for this comparison.
+- **Load position (recorded in the ledger, for the ADO comment):** not reproduced, no fix claimed. Watch for `Test timed out in 5000ms`, `pointer-events: none`
+  and the seed 33 teardown error (Finding B: `EnvironmentTeardownError`, every test passed, run exits 1, not reproduced in two re-runs).
+- **Still to do after the push (orchestrator):** push at the end of this step; 5 consecutive green `main` runs with distinct run ids recorded here; the ADO #6539
+  comment with the load position; the one-week review of the guard; rollback is reverting this step and the shuffle step as one commit
+  (`git revert --no-commit`, one commit); the three test fixes stay.
+- **Allowed files:** `git diff --name-only 93dc95b80 HEAD -- Lighthouse.Frontend` lists exactly the six: `ActionButton.test.tsx`, `GeneralSettingsComponent.test.tsx`,
+  `ReportPrintPage.test.tsx`, `PortfolioDetail.test.tsx`, `observedRunFromVitest.ts` and `observedRunFromVitest.test.ts`.
+- **Checklist:** ticked by the evidence above and in the earlier steps: production unchanged (file list), no longer timeouts or retries (none added), ratchet
+  (shuffle seed in the CI frontend run), docs (this step), mutation N/A while only test files change. No release notes written.

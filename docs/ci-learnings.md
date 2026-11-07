@@ -118,7 +118,35 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
 - **`Test timed out in 5000ms` in files you did not touch**: added tests shift the load on marginal
   files. Fix: prove the cause by excluding your new files, then give the marginal tests an explicit
   timeout. Do not decide from their solo runtime. Not automated because: contention depends on the
-  whole run, not on any single file.
+  whole run, not on any single file. This is the rule for load that follows from the whole run; a test
+  that goes red only after another test ran first is the next rule, and a timeout is not its fix.
+- **A test may not depend on another test's set-up, or leave shared state changed**: the CI frontend run
+  executes the tests of every file in a shuffled order, seeded by the run id, so the guard checks this
+  rule on every push. The seed is printed as `Test order seed: <run id>` and in the Vitest header
+  (`Running tests with seed`). Replay a red file with
+  `pnpm test --sequence.shuffle.tests --sequence.seed=<run id> <the red file>`, and bisect a pair of
+  tests with `-t "A|B"`. Three signatures of a new order dependence: a test that fails alone or on one
+  seed and passes on the next; a lazy route, chunk or provider that only the first test to need it pays
+  for, so the later tests pass and that one reads an absent element; a listener, timer or `document`
+  state that a test leaves behind and the next one sees (`Errors 1 error` under an all-green count
+  belongs here too). The time budget has its own kind: a test named over its limit that is first in
+  its file under one seed and not under another carries the cost of the set-up the others share, so
+  fix the shared set-up. Do not fix any of these with a longer timeout or a retry, which hides the
+  order dependence and leaves it in place. A replay that passes does not clear a red test: the same
+  file, seed and flags have passed and failed on different runs, because the failure needed the order
+  and an unlucky moment together. The replay reproduces the order only, and then only when the file
+  runs on its own with the seed of the full run; it was checked once, on one file against a full run
+  with start times compared (they matched, no millisecond ties). A results file lists tests in
+  collection order whatever the run order, so it does not show the order that ran. If the replay does
+  not go red, replay the whole run with the same seed before calling the red a fluke. Not automated
+  because: the guard finds the dependency only for the order it draws, and which shared state a test
+  should have reset is intent.
+- **Load failures that never reproduced**: `Test timed out in 5000ms` and `pointer-events: none` in
+  files nobody touched were seen on busy machines and could not be reproduced, so nothing was fixed
+  for them and no fix is claimed. Watch for those two signatures, and for a run that passes every test
+  but exits 1 with `EnvironmentTeardownError: Closing rpc while "onUserConsoleLog" was pending`
+  (seen once on one seed at a high load, not on two re-runs). Not automated because: they depend on
+  the machine and on the whole run, not on any one test.
 - **Where to test**: a test that renders a large list, walks a long `user-event` sequence or waits on a
   real timer is slow because the logic under test sits inside the component. Fix: put logic (rules,
   arithmetic, validation, paging, debounce and autosave decisions) in a function or hook and test it
