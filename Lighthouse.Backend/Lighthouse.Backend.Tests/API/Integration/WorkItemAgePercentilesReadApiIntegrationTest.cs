@@ -89,7 +89,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         public async Task GetWorkItemAgePercentiles_TeamWithInProgressItemsOfKnownAges_ReturnsExactPercentilesOfThoseAges()
         {
             // Given a team whose current WIP ages are 1,2,2,3,3,4,5,6,7,9; the reused PercentileCalculator
-            // (floor(p/100*n)-1 indexing, AS-IS per ADR-065) selects indices 4,6,7,8 => 3,5,6,7.
+            // (floor(p/100*n)-1 indexing, kept as it is) selects indices 4,6,7,8 => 3,5,6,7.
             var teamId = SeedTeamWithKnownInProgressAges();
 
             client.AsTeamAdmin(teamId);
@@ -156,7 +156,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_SameEndDateDifferentStartDate_ReturnsIdenticalPercentiles()
         {
-            // Given the same team, two requests with the SAME endDate but DIFFERENT startDate (D4 invariance)
+            // Given the same team, two requests with the SAME endDate but DIFFERENT startDate
             var teamId = SeedTeamWithKnownInProgressAges();
 
             client.AsTeamAdmin(teamId);
@@ -183,7 +183,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_TeamWithNoInProgressItems_ReturnsGracefulZeroValuedSet()
         {
-            // Given a team with zero in-progress items (D6 empty-WIP path)
+            // Given a team with zero in-progress items (the empty-WIP path)
             var teamId = SeedTeamWithNoInProgressItems();
 
             client.AsTeamAdmin(teamId);
@@ -205,7 +205,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_TeamWithSingleInProgressItem_ComputesOverThatOneValue()
         {
-            // Given a team with exactly one in-progress item aged 5 days (D6 single-item, no low-sample gate)
+            // Given a team with exactly one in-progress item aged 5 days (a single item, no low-sample gate)
             var teamId = SeedTeamWithSingleInProgressItem(ageDays: 5);
 
             client.AsTeamAdmin(teamId);
@@ -225,7 +225,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_NonPremiumCaller_StillReceivesPercentiles()
         {
-            // Given a standard (non-premium) caller with TeamRead — there is NO license gate on this read path (D3)
+            // Given a standard (non-premium) caller with TeamRead — there is NO license gate on this read path
             var teamId = SeedTeamWithKnownInProgressAges();
 
             client.AsTeamViewer(teamId);

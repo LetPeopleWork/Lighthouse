@@ -11,11 +11,10 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// Acceptance tests - feature flow-overview-named-cycle-time, Slice 02 / US-03
-    /// (Trend follows the named cycle-time selection). They pin D12/ADR-101: cycleTimePercentilesInfo
-    /// accepts a definitionId and segments its cache key by definition.
+    /// The trend follows the named cycle-time selection: cycleTimePercentilesInfo accepts a definitionId
+    /// and segments its cache key by definition.
     ///
-    /// The named-vs-default seed is the shipped Epic 5251 shape: Implementation->Done (def 1)
+    /// The named-vs-default seed: Implementation->Done (def 1)
     /// produces a named P85 that differs from the default started->finished P85 over the same
     /// window, so cache collisions are observable as an equality that should be an inequality.
     /// </summary>
@@ -85,7 +84,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             dbContext.Database.EnsureDeleted();
         }
 
-        // US-03 AC1 (regression guard): definitionId absent => the trend footer is byte-identical to today.
+        // Regression guard: definitionId absent => the trend footer is byte-identical to today.
         [Test]
         public async Task Info_DefinitionIdAbsent_ReturnsTheDefaultTrend_Unchanged()
         {
@@ -105,7 +104,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // US-03 AC2: named selection => the trend compares the definition's current period against its OWN previous period.
+        // Named selection => the trend compares the definition's current period against its OWN previous period.
         [Test]
         public async Task Info_NamedDefinition_TrendComparesTheNamedSeriesCurrentPeriodValue()
         {
@@ -125,7 +124,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // US-03 AC3 (the cache-collision trap): a named trend and a default trend for the SAME range must not collide.
+        // The cache-collision trap: a named trend and a default trend for the SAME range must not collide.
         [Test]
         public async Task Info_NamedAndDefaultTrend_SameRange_DoNotCollideInCache()
         {
@@ -150,7 +149,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // US-03 AC3 (definition-vs-definition): the key segments by definition, not merely named-vs-default.
+        // Definition against definition: the key segments by definition, not merely named-vs-default.
         [Test]
         public async Task Info_TwoDifferentNamedDefinitions_SameRange_EachReturnsItsOwnComparison()
         {
@@ -171,7 +170,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // US-03 AC4: an invalid / non-existent definitionId behaves exactly as the sibling cycleTimePercentiles named path.
+        // An invalid / non-existent definitionId behaves exactly as the sibling cycleTimePercentiles named path.
         [Test]
         public async Task Info_NonExistentDefinitionId_MirrorsTheSiblingCycleTimePercentilesNamedPath()
         {
@@ -318,7 +317,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // US-03 AC5: the Portfolio twin behaves identically to Team scope.
+        // The Portfolio twin behaves identically to Team scope.
         [Test]
         public async Task PortfolioInfo_NamedAndDefaultTrend_SameRange_DoNotCollideInCache()
         {

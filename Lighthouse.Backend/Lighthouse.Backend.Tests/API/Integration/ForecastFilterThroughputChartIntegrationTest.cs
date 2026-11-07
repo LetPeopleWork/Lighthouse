@@ -16,8 +16,8 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// DELIVER wave — drives US-05 (PBC chart ?view=raw|filtered query param per DDD-5),
-    /// invariant #1 (default Raw behaviour preserved), US-07 (premium gate downgrade).
+    /// The process behaviour chart's ?view=raw|filtered query param, Raw staying the default, and the
+    /// premium gate's downgrade.
     /// </summary>
     [TestFixture]
     public class ForecastFilterThroughputChartIntegrationTest : IntegrationFixture

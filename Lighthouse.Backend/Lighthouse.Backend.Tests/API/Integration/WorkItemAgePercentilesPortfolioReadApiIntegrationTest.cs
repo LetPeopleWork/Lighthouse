@@ -106,7 +106,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_SameEndDateDifferentStartDate_ReturnsIdenticalPercentiles()
         {
-            // Given the same portfolio, two requests with the SAME endDate but DIFFERENT startDate (D4 invariance)
+            // Given the same portfolio, two requests with the SAME endDate but DIFFERENT startDate
             var portfolioId = SeedPortfolioWithKnownInProgressAges();
 
             client.AsPortfolioAdmin(portfolioId);
@@ -133,7 +133,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetWorkItemAgePercentiles_PortfolioWithNoInProgressFeatures_ReturnsGracefulZeroValuedSet()
         {
-            // Given a portfolio with zero in-progress features (D6 empty-WIP path)
+            // Given a portfolio with zero in-progress features (the empty-WIP path)
             var portfolioId = SeedPortfolioWithNoInProgressFeatures();
 
             client.AsPortfolioAdmin(portfolioId);

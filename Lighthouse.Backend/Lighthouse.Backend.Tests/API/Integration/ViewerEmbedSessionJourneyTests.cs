@@ -11,7 +11,7 @@ using Microsoft.Extensions.Time.Testing;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// Epic 5146 slice 01 (#5692) — ADR-137. The three hops read in order: a viewer signs in at top
+    /// The three hops read in order: a viewer signs in at top
     /// level, the resolver polls the outcome back, the frame is entered as that person.
     /// </summary>
     public class ViewerEmbedSessionJourneyTests : IntegrationFixture
@@ -131,8 +131,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         /// <summary>
-        /// D59. A viewer with an explicit UserPermission passes with or without the RBAC conjunct, so
-        /// only a group-mapped one can fail. Without D59 the frame is silently empty while the same
+        /// A framed session carries no live group claims, so its groups come from the stored snapshot. A
+        /// viewer with an explicit UserPermission passes with or without the RBAC conjunct, so only a
+        /// group-mapped one can fail. Without the snapshot the frame is silently empty while the same
         /// person works perfectly in an ordinary tab.
         /// </summary>
         [Test]
@@ -187,7 +188,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         /// <summary>
-        /// The guard against D59 becoming a fail-open widening: an ordinary cookie principal has no
+        /// The guard against the stored snapshot becoming a fail-open widening: an ordinary cookie principal has no
         /// auth_method claim, so a live token that genuinely returned zero groups must keep resolving
         /// zero — even when a stale snapshot sits on the profile.
         /// </summary>
@@ -204,8 +205,8 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         /// <summary>
-        /// D49 said a viewer provisioned with nothing gets a refusal rather than an empty Lighthouse.
-        /// Reversed by the maintainer 2026-08-06: the refusal protected nothing — RBAC is enforced on
+        /// A viewer provisioned with nothing gets an empty Lighthouse rather than a refusal. A refusal
+        /// would protect nothing — RBAC is enforced on
         /// every request, so this viewer sees the same nothing either way — while turning the most
         /// ordinary onboarding shape there is into a dead end after a sign-in that worked.
         /// </summary>
@@ -257,7 +258,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         }
 
         /// <summary>
-        /// The reversal of D49/D60 rests on one claim: RBAC is enforced per request, so framing a
+        /// Letting in a viewer who holds nothing rests on one claim: RBAC is enforced per request, so framing a
         /// viewer who holds nothing exposes nothing. That claim is only worth what the weakest
         /// unguarded endpoint says, so it is asserted rather than argued — against the instance-wide
         /// surfaces, which is where a scope-less principal would do damage if it were false.

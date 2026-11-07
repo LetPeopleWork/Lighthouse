@@ -10,10 +10,8 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    // US-04 (D10): cumulativeStateTime scoped to a named window via an additive optional definitionId.
-    // The DISTILL "premium-gated cumulative read" scaffold is superseded by the ADR-062 revision (no
-    // read-side license gate — the premium gate lives on definition create/update only), mirroring the
-    // read-gate removal in 01-01.
+    // cumulativeStateTime scoped to a named window via an additive optional definitionId. This read has
+    // no license gate: the premium gate lives on definition create/update only.
     [TestFixture]
     public class NamedCycleTimeCumulativeScopeIntegrationTest : IntegrationFixture
     {

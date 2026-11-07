@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                     services.AddSingleton<ILicenseService>(permissiveLicense.Object);
                 });
 
-                // D72: an ILoggerProvider added here would be inert. Serilog is the pipeline.
+                // An ILoggerProvider added here would be inert. Serilog is the pipeline.
                 builder.ConfigureServices(services =>
                 {
                     services.RemoveAll<ILoggerFactory>();

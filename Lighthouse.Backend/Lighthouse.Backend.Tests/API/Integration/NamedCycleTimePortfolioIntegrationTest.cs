@@ -10,8 +10,8 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    // US-05 (D7): named cycle times at Portfolio scope — the twin of the Team build over the shared
-    // WorkTrackingSystemOptionsOwner. The ADR-062 revision applies here too: no read-side premium gate
+    // Named cycle times at Portfolio scope, the twin of the Team build over the shared
+    // WorkTrackingSystemOptionsOwner. There is no read-side premium gate here either
     // (the premium gate lives on definition create/update only), so a portfolio viewer reads the named
     // branch just like the Default.
     [TestFixture]

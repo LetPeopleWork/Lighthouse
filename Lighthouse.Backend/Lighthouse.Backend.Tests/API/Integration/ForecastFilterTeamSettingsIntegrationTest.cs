@@ -17,8 +17,8 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// DELIVER wave — drives US-01 (configure rule set), US-07 (premium gate + non-destructive
-    /// downgrade), cross-cutting invariant #5 (RBAC: PUT requires TeamWrite).
+    /// Configuring the rule set, the premium gate with its non-destructive downgrade, and RBAC: PUT
+    /// requires TeamWrite.
     /// </summary>
     [TestFixture]
     public class ForecastFilterTeamSettingsIntegrationTest : IntegrationFixture

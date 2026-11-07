@@ -17,7 +17,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Integration
 {
-    // Story #5574, US-01 — the walking skeleton for the ServiceNow connection.
+    // The walking skeleton for the ServiceNow connection.
     //
     // Everything the administrator's click actually traverses is real here: the HTTP endpoint,
     // the enum, both factories, the DI container, the ServiceNow connector, the auth strategy,
@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
     // is faked. The instance is simply pointed at a closed local port, which is a real
     // unreachable host and needs no external system to be deterministic.
     //
-    // Layer 5 (real stack): one representative example, traditional assertions.
+    // Real stack: one representative example, traditional assertions.
     [TestFixture]
     [Category("epic-5513-servicenow")]
     public class ServiceNowConnectionAcceptanceTest : IntegrationFixture
@@ -102,7 +102,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             rootFactory?.Dispose();
         }
 
-        // AC1. Slice 01's whole promise starts here: a ServiceNow shop can find their system in
+        // Everything starts here: a ServiceNow shop can find their system in
         // the list at all.
         [Test]
         public async Task AnAdministratorOpeningTheConnectionWizard_CanChooseServiceNow()
@@ -115,7 +115,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
                 Contains.Item(WorkTrackingSystems.ServiceNow));
         }
 
-        // AC2. The form is rendered from what this endpoint returns, so what it returns is the
+        // The form is rendered from what this endpoint returns, so what it returns is the
         // form. No bespoke React screen exists or is wanted.
         [Test]
         public async Task TheServiceNowEntryInTheWizard_CarriesTheFieldsTheFormNeedsToRender()
@@ -137,7 +137,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // The walking skeleton. AC4's first failure mode, driven the way the administrator drives
+        // The walking skeleton. An unreachable instance, driven the way the administrator drives
         // it, all the way through the production wiring.
         [Test]
         public async Task AnAdministratorValidatingAConnectionToAnInstanceThatIsNotThere_IsToldTheInstanceIsNotThere()
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // AC5. The credential the platform team handed over never comes back out of Lighthouse.
+        // The credential the platform team handed over never comes back out of Lighthouse.
         [Test]
         public async Task TheCredentialAnAdministratorEnters_IsNeverHandedBackToTheBrowser()
         {
@@ -184,11 +184,9 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // Story #5610 slice 02, AC-B1 / AC-B3 / DD-1 / DD-6, driven the way the administrator drives
-        // it. Today ServiceNow falls through the wizard's switch to a NotImplementedException, so
-        // asking a ServiceNow connection for its boards is a fault rather than an answer. It must be
-        // an answer: the instance here is a closed local port, which is a real unreachable host, and
-        // the administrator is told that rather than told Lighthouse broke.
+        // Driven the way the administrator drives it. Asking a ServiceNow connection for its boards must
+        // give an answer, not a fault: the instance here is a closed local port, which is a real
+        // unreachable host, and the administrator is told that rather than told Lighthouse broke.
         [Test]
         public async Task AnAdministratorAskingAServiceNowConnectionForItsBoards_IsToldWhyRatherThanShownAFault()
         {
@@ -209,7 +207,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             }
         }
 
-        // AC-B3 / ADR-126 decision 2. A board that could not be read is a refusal, not a pre-fill.
+        // A board that could not be read is a refusal, not a pre-fill.
         // The dialog's fallback used to turn one into an all-empty board that could still be
         // confirmed — Confirm succeeded and silently wrote nothing.
         [Test]

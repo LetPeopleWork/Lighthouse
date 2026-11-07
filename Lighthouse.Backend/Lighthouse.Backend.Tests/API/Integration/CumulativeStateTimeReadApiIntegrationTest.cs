@@ -96,7 +96,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetCumulativeStateTime_ItemEnteredStateBeforeWindow_CountsFullUnclippedDuration()
         {
-            // D5 full-duration attribution: an item that entered Review 30 days before the window
+            // Full-duration attribution: an item that entered Review 30 days before the window
             // and exited 20 days into the window contributes its FULL 50 days to the Review bar — not 20.
             var teamId = SeedTeamWithSingleStraddlingItem();
 
@@ -200,7 +200,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         public async Task GetCumulativeStateTime_StateWithZeroContributingItems_RendersPlaceholderBarWithZeroHeight()
         {
             // Review has no visits in this fixture but is part of the workflow definition,
-            // so it must still be emitted with totalDays 0 (placeholder bar, DDD-9).
+            // so it must still be emitted with totalDays 0 (a placeholder bar).
             var teamId = SeedTeamWhereReviewHasNoContribution();
 
             client.AsTeamAdmin(teamId);
@@ -226,7 +226,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetCumulativeStateTime_ItemEntirelyOutsideWindow_IsExcluded()
         {
-            // D12: an item closed before windowStart with no state-time overlap is NOT included.
+            // An item closed before windowStart with no state-time overlap is NOT included.
             var teamId = SeedTeamWhereOnlyItemIsEntirelyBeforeWindow();
 
             client.AsTeamAdmin(teamId);
@@ -244,7 +244,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetCumulativeStateTime_ItemCurrentlyInToDoWithEarlierDoingVisit_IsExcludedWhileDoneItemRemains()
         {
-            // D20: an item that bounced back into a To Do-category state is excluded entirely — even though
+            // An item that bounced back into a To Do-category state is excluded entirely — even though
             // it had a Doing visit inside the window — and contributes to no bar. An item currently in a
             // Done-category state stays included and its historical Doing time still contributes.
             var teamId = SeedTeamWithBouncedBackToDoItemAndOneDoneItem(out var doneReferenceId, out var bouncedReferenceId);
@@ -360,7 +360,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetCumulativeStateTimeItems_PerItemDaysContributed_SumsToBarTotalForThatState()
         {
-            // US-04 AC: Σ daysContributed across drill-down rows == the bar's totalDays within ±0.1d.
+            // Σ daysContributed across drill-down rows == the bar's totalDays within ±0.1d.
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
 
             client.AsTeamAdmin(teamId);
@@ -399,7 +399,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetCumulativeStateTimeCandidates_Window_ReturnsExactlyTheIncludedItemsAndExcludesOutOfWindowItem()
         {
-            // D17: candidates are exactly the D12-included items for the window. An item outside
+            // Candidates are exactly the items the window includes. An item outside
             // the window must NOT be findable in the picker.
             var teamId = SeedTeamWithKnownVisitsPlusOneOutOfWindowItem(out var outOfWindowReferenceId);
 
@@ -422,7 +422,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetCumulativeStateTimeCandidates_Window_DoesNotExposeParentReferenceId()
         {
-            // D21: parent-expand was dropped; the picker selects raw work items only, so the candidate
+            // The picker selects raw work items only, with no parent expansion, so the candidate
             // row no longer carries a parentReferenceId field.
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
 
@@ -452,7 +452,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
 
-                // The two selected items contributed 10d + 20d to Review (their FULL durations, D5).
+                // The two selected items contributed 10d + 20d to Review (their FULL durations).
                 var review = StateRow(body, Review);
                 Assert.That(review.TotalDays, Is.EqualTo(30.0).Within(DaysTolerance),
                     $"US-05/DDD-20: with itemIds=[a,b] the Review bar sums ONLY a+b full durations (10+20=30d), not the whole set's 60d. Body: {body}");
@@ -462,7 +462,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
         [Test]
         public async Task GetCumulativeStateTime_RagSourceUnaffectedByItemIds_SystemicTotalsIdenticalWithAndWithoutSelection()
         {
-            // D18: RAG reflects the whole in-scope set. The systemic (no-itemIds) response is the RAG
+            // RAG reflects the whole in-scope set. The systemic (no-itemIds) response is the RAG
             // source and must be byte-for-shape identical regardless of any selection the client makes.
             var teamId = SeedTeamWithKnownVisitsAndInFlightItems();
             var selected = TwoCompletedReviewItemDbIds(teamId);

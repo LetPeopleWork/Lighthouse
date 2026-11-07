@@ -403,7 +403,7 @@ namespace Lighthouse.Backend.Tests.API.Integration
             return team.Id;
         }
 
-        // misconfigured order [Review, In Progress, Test]: true per-state values are [Review=20, In Progress=10, Test=30] (exit-from-In-Progress age 10 < exit-from-Review age 20) → unclamped output dips at In Progress; DDD-1b clamps In Progress up to EXACTLY the previous Review value (20).
+        // misconfigured order [Review, In Progress, Test]: true per-state values are [Review=20, In Progress=10, Test=30] (exit-from-In-Progress age 10 < exit-from-Review age 20) → unclamped output dips at In Progress; the clamp lifts In Progress up to EXACTLY the previous Review value (20).
         private int SeedMisconfiguredDoingStatesOrder()
         {
             using var scope = factory.Services.CreateScope();

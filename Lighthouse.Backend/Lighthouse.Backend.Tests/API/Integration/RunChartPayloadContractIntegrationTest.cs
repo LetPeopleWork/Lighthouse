@@ -13,7 +13,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration
 {
     /// <summary>
-    /// Bug #5857: the run chart endpoints served the EF entity as their wire format, so converting
+    /// The run chart endpoints served the EF entity as their wire format, so converting
     /// CycleTime and WorkItemAge into methods removed both fields from every response without a
     /// single test noticing. These assertions read the serialised body rather than a C# object
     /// graph, because that is the only place the defect is visible.
