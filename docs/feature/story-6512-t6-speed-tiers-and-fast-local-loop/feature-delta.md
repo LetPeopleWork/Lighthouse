@@ -2144,3 +2144,88 @@ Run on `538f5e321` plus this step's change. Python only: no `dotnet test` ran, a
 - The collision test looks at classes on a chain, as DESIGN says. A class off every chain that shares its simple name with a base on one, and is itself used as a base, would still put its children in `Integration`. No real case: a probe of the tree found none.
 - A TRX class in two files of one run warns once per file, and `summarise.py` repeats the warning in the same CI step.
 
+## Wave: DELIVER / [REF] Slice F, step 06-04: the column agrees, the ids stayed, and the backend target is missed (2026-11-07)
+
+Run on `9768c4b1e`, which adds the pin to `145b561a0`. Not pushed. The real TRX files are step 05-04's `L6`, `L6-H`, `L6-F` and `L6-O`. The old script is `trx_to_csv.py` at `c8ecd06da`, the same file as `a2a88fd8a`, the last before 06-02.
+
+**The backend target is missed: a hold for the maintainer.** `Test-Fast.ps1 -NoBuild` has a median of **73.3 s** against 60 s. Guarantee 16 is not met. No test changed and no tier was added. The column and the id checks all pass.
+
+**The pin.** `TheNameColumnTests` runs `main` over a TRX holding a parametrised fixture with a word and a number argument, a nested class, a nested class with an argument, and a method whose arguments force CSV quoting. It compares the column's raw bytes, with and without a source tree.
+
+| Case | What ran | Result |
+|---|---|---|
+| Against the old script | The test file on a scratch copy of the old script, with two stub names added so the file imports; the pin uses neither | 2 tests, OK |
+| Against the new script | The same two tests | 2 tests, OK |
+| Class arguments stripped | A temporary edit of a scratch copy | Both tests fail |
+| Method arguments stripped | The same | Both tests fail |
+| `+` flattened to `.` | The same | Both tests fail |
+| Whole Python suite | `python3 -m unittest discover -s Scripts/test-timings/tests` | 155 tests, OK, exit 0, up from 153 |
+
+**The id column.** Old and new script over each file, the column cut from the raw lines, compared with `cmp`, once with `--source-root` and once without.
+
+| File | Rows | `cmp` with a tree | `cmp` without | Warnings |
+|---|---|---|---|---|
+| `L6` | 12,933 | Identical | Identical | 0 |
+| `L6-H` | 3,395 | Identical | Identical | 0 |
+| `L6-F` | 9,535 | Identical | Identical | 0 |
+| `L6-O` | 3 | Identical | Identical | 0 |
+
+`L6` holds 3,247 quoted rows and 126 rows with a fixture's arguments, so the check covers those shapes on real data. No row holds a `+`, so on real data the `+` rests on the pin alone.
+
+**The category column, both ways (guarantee 14's first half).** New script, compared as name and outcome with repeats counted. Every row of `H` reads `Integration` and every row of `F` and `O` reads `Unit`; 0 rows read otherwise, and `Unplaced` reads 0.
+
+| Compared | Only on one side |
+|---|---|
+| `Integration` of `L6` against `H` | 0 and 0 |
+| `Unit` of `L6` against `F` + `O` | 0 and 0 |
+
+The first plain CSV after slice F, the other half of guarantee 14, comes with push 7.
+
+**Medians per category, re-cut.** From `L6`'s CSV under the new script, `Passed` rows only, because a `NotExecuted` row reads 0 ms.
+
+| Category | Rows | `Passed` | Median | p90 | Sum |
+|---|---|---|---|---|---|
+| `Integration` | 3,395 | 3,392 | 237.660 ms | 838.8 ms | 1,767.5 s |
+| `Unit` | 9,538 | 9,530 | 0.688 ms | 17.5 ms | 224.9 s |
+| Before: all rows read `Unit` | 12,933 | 12,922 | 1.690 ms | | 1,992.4 s |
+
+Each tier run on its own: `F` 0.866 ms over 9,527, `H` 252.798 ms over 3,392, `O` 53.406 ms over 3, and this step's run 1, Debug, 0.899 ms over 9,536. The `Unit` sum is 224.9 s inside `L6` and 320.7 s in `L6-F`, for nearly the same tests, so a sum means something only inside its own run. Why it differs was not looked into.
+
+**The 5 warm runs.** `env -u` with the seven variables, then `pwsh Lighthouse.Backend/Test-Fast.ps1 -NoBuild`, one at a time, 30 s apart, after a warm-up that does not count. `LIGHTHOUSE_TEST_WORKERS` was unset, so 6 workers on 12 cores. The `ps` check printed 0 before each run. The TRX logger was on, through `VSTestLogger`, so a run without it may be a little shorter: 06-01 put the writing of results at 0.7 s.
+
+| Run | Load before (1 min) | Wall time | Tests, first start to last end | Summed durations | Result |
+|---|---|---|---|---|---|
+| Warm-up | 1.51 | 73.26 s, not counted | | | Exit 0, 9,536 passed |
+| 1 | 1.82 | 73.29 s | 69.0 s | 311.0 s | Exit 0, 9,536 passed |
+| 2 | 1.97 | 74.06 s | 69.7 s | 311.4 s | Exit 0, 9,536 passed |
+| 3 | 2.55 | 73.46 s | 68.9 s | 302.1 s | Exit 0, 9,536 passed |
+| 4 | 2.08 | 72.90 s | 68.6 s | 308.5 s | Exit 0, 9,536 passed |
+| 5 | 1.99 | 72.95 s | 68.6 s | 310.0 s | Exit 0, 9,536 passed |
+| **Median** | | **73.29 s** | 68.9 s | 310.0 s | |
+
+Every run: `Failed: 0, Passed: 9536, Skipped: 0, Total: 9536`, and 9,544 TRX rows, the other 8 being the `[Explicit]` `NotExecuted` rows. Build apart: `dotnet build` in `Lighthouse.Backend`, 42.0 s by MSBuild's own count, 0 warnings, 0 errors.
+
+**The count.** `L6-F` holds 9,527 `Passed`, and this tier holds 9 more. Run 1's ids against `L6-F`: 0 only in `L6-F`, 9 only in run 1, and all 9 are in `ServicePortHarnessTest`, T5's commit `145b561a0`.
+
+**This is the second series.** The first one's wrapper called `bc`, which this machine does not have, so it recorded no wall time and no seconds for the build. Its 5 runs each passed 9,536 tests with 68.0 to 70.4 s between first start and last end, and its log files' timestamps span 72 to 75 s in whole seconds. So it agrees, but it is not the measure. The build's 42.0 s comes from that first series' log, and nothing changed before the second.
+
+**Where the time goes.** A run spends 4.4 s outside the tests, close to 06-01's 5 s. The rest is 69 s of tests holding 51 s of work per worker. Median of each class's summed seconds over the 5 runs; they add up to 308.3 s over 619 classes.
+
+| # | Class | Tests | Summed | Share | Per test |
+|---|---|---|---|---|---|
+| 1 | `SecretCustodyServiceTests` | 42 | 43.8 s | 14.2 % | 1.05 s |
+| 2 | `PublishedKeySecretCountTests` | 17 | 32.7 s | 10.6 % | 1.92 s |
+| 3 | `ReferencedKeyIdsTests` | 14 | 30.0 s | 9.7 % | 2.16 s |
+| 4 | `ReadableSecretsNotOnTheActiveKeyTests` | 11 | 26.2 s | 8.5 % | 2.38 s |
+| 5 | `RefreshLogFindingsPersistenceTest` | 7 | 17.0 s | 5.5 % | 2.42 s |
+| 6 | `TestTierGuardTest` | 90 | 13.5 s | 4.4 % | 0.15 s |
+| 7 | `MigrationsAppliedHealthCheckTest` | 5 | 12.4 s | 4.0 % | 2.53 s |
+| 8 | `ForecastLaneTest` | 12 | 10.9 s | 3.5 % | 0.91 s |
+
+The per-test column is from run 1. The first four, all in `Services/Implementation/Encryption`, hold 84 tests and 43.1 % of the sum; the eight hold 60.5 %. That is T9's and T10's input. DESIGN named the architecture files as the likeliest cost. They are second: the `Architecture` namespace is 66.6 s in run 1, 21.4 % of the sum over 64 classes, none above 5.8 s but the guard, so it spreads across workers. `Services` is 192.3 s, 61.8 %, and most of that is the four Encryption classes, which do not spread because a class runs on one worker.
+
+**What a better layout could reach.** The four Encryption classes start 24 to 25 s into a run, once 28.6 s, and `SecretCustodyServiceTests` is the last class to end in every run of both series. For the last 18 to 21 s of a run, fewer than 5 tests are in flight, so workers stand idle. The summed time over 6 workers is 51.4 s, packing the classes longest first gives the same 51.4 s, and the longest class at 43.8 s fits inside it. With the 4.4 s outside the tests that is about 56 s. This is an estimate, not a run, and nothing here makes NUnit start those classes first. Lowering what the four classes cost would help whichever order they land in.
+
+**`TestTierGuardTest`.** In these runs the class took 13.3 to 13.6 s, with one run at 20.8 s, not 06-01's 16.6 s. Two tests are 95 % of it, in run 1 `EveryFixtureThatStartsAHostIsOnTheBase` 7.60 s and `NoFixtureSitsOnTheBaseWithoutAReason` 5.07 s, and the other 88 take 0.67 s. Both walk every real fixture. Alone the class ran 90 tests in 3.83 s summed, with the same two at 2.16 s and 1.25 s; the earlier 74 tests in 1.34 s did not reproduce on today's 90. So the two tests cost about 3.7 times as much beside 5 other workers as alone, and neither is the class's first test. The assembly read sits in the class's `[OneTimeSetUp]`, and the two tests share one `HostBuildingScan` built there. Some of their time may be that scan's first pass over the real fixtures, but a TRX cannot split it, so one-time set-up is a possible reason here and not a measured one.
+
+**For the maintainer to decide:** whether 73 s stands as this tier's number for now, with T9 and T10 taking the list above, or the target waits for them. What closes the Story, point 3, needs that answer.
