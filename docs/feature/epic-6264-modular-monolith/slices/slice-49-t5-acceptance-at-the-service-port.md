@@ -73,3 +73,10 @@ These override the proposals above where they differ.
   deriving from a small contract base class, so a move there is a deliberate step visible in the diff. The namespace and
   base class land with T5, with the wire-contract tests of the pilot and the top two suites; the rest move when someone
   touches them and stay on the shrinking list until then. Check against T6 whether `Contracts` is a slow-tier marker.
+
+## Changes from T6's DESIGN and DEVOPS (2026-11-07)
+
+- T6 #6512 joins T5's dependencies. T5's contract base derives from T6's `IntegrationFixture`.
+- `Contracts` is not a slow-tier marker: the base class carries the tier.
+- The guard keeps an inline list, not an exact ceiling constant; T5's DESIGN says why if it differs.
+- A suite leaving the host leaves the base in the same commit.

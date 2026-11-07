@@ -67,3 +67,11 @@ These override the proposals above where they differ.
   and a feature that adds integration tests raises it in a reviewed diff with a reason. That is overhead on purpose: more
   integration time should be an explicit, justified act. So the total is the one ceiling that may go up, and only this way.
 - **Frontend:** no total ceiling, because whole runs swing 1.62 x. T9 comes before T10.
+
+## Changes from T6's DESIGN and DEVOPS (2026-11-07)
+
+- The `category` column comes from T6's slice F, not D. `Integration` also covers container tests.
+- Both ceilings leave connector classes out, or every run that forces the live suites goes red: live tests reach the CSV only
+  when a connector's path changed, and any `ci*.yml` edit causes that.
+- `check_budget.py` can write to `GITHUB_STEP_SUMMARY` itself, so publishing needs no `ci_backend.yml` edit, which would run
+  every live suite once more.
