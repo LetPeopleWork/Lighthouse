@@ -100,8 +100,10 @@ jobs:
     - name: Compute Test Backend filter
       id: filter
       run: |
-        # Always include every non-integration test (unit, WAF, security, etc.)
-        parts=("Category!=Integration")
+        # Always include everything but the live connector tests. A live test carries Integration
+        # and a connector category. A hosted test carries Integration alone and an offline test of
+        # a mixed class a connector alone, so leaving out either category by itself would drop them.
+        parts=("Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)")
 
         # Force-full only when the diff touched a path on the shared-connector
         # whitelist (Auth/OAuth subfolders, top-level schema, interfaces,

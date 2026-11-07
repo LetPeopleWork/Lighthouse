@@ -8,7 +8,7 @@
 # Usage:
 #   Scripts/test-selection/dev-test.sh             # PR-like: only run what your diff touches
 #   Scripts/test-selection/dev-test.sh --full      # full suite (every integration category)
-#   Scripts/test-selection/dev-test.sh --unit-only # skip every integration category
+#   Scripts/test-selection/dev-test.sh --unit-only # the plain CI selection: hosted tests run, live connector tests do not
 #   Scripts/test-selection/dev-test.sh --dry-run   # print the resolved filter and exit
 #   Scripts/test-selection/dev-test.sh --help
 
@@ -45,13 +45,16 @@ fi
 diff_list="$(git diff --name-only "$diff_base"...HEAD 2>/dev/null || true)"
 
 build_filter() {
-  local parts=("Category!=Integration")
+  local parts=("Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)")
+  # The negative term is what keeps the [Explicit] probes from running: they sit in hosted classes,
+  # and NUnit may run an explicit test that a filter selects directly.
+  local guarded_integration="(Category=Integration&Category!=UsageDataCanary)"
   case "$mode" in
     unit-only)
       ( IFS='|'; echo "${parts[*]}" )
       return ;;
     full)
-      parts+=("Category=Integration")
+      parts+=("$guarded_integration")
       ( IFS='|'; echo "${parts[*]}" )
       return ;;
   esac
@@ -60,7 +63,7 @@ build_filter() {
   local shared
   shared=$(classify_shared "$diff_list")
   if [ "$shared" = "true" ]; then
-    parts+=("Category=Integration")
+    parts+=("$guarded_integration")
   else
     [ "$(classify_jira   "$diff_list")" = "true" ] && parts+=("Category=JiraIntegration")
     [ "$(classify_ado    "$diff_list")" = "true" ] && parts+=("Category=AdoIntegration")

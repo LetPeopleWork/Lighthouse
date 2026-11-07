@@ -7,7 +7,7 @@
 # Usage:
 #   Scripts/test-selection/dev-test.ps1            # PR-like: only run what your diff touches
 #   Scripts/test-selection/dev-test.ps1 -Full      # full suite (every integration category)
-#   Scripts/test-selection/dev-test.ps1 -UnitOnly  # skip every integration category
+#   Scripts/test-selection/dev-test.ps1 -UnitOnly  # the plain CI selection: hosted tests run, live connector tests do not
 #   Scripts/test-selection/dev-test.ps1 -DryRun    # print the resolved filter and exit
 
 [CmdletBinding()]
@@ -44,14 +44,17 @@ $LASTEXITCODE = 0
 $diffLines = git diff --name-only "$diffBase...HEAD"
 if (-not $diffLines) { $diffLines = @() }
 
-$parts = @('Category!=Integration')
+$parts = @('Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)')
+# The negative term is what keeps the [Explicit] probes from running: they sit in hosted classes,
+# and NUnit may run an explicit test that a filter selects directly.
+$guardedIntegration = '(Category=Integration&Category!=UsageDataCanary)'
 if ($UnitOnly) {
     # nothing to add
 } elseif ($Full) {
-    $parts += 'Category=Integration'
+    $parts += $guardedIntegration
 } else {
     if (Test-AnyMatch $diffLines $SharedRegex) {
-        $parts += 'Category=Integration'
+        $parts += $guardedIntegration
     } else {
         if (Test-AnyMatch $diffLines $JiraRegex)   { $parts += 'Category=JiraIntegration' }
         if (Test-AnyMatch $diffLines $AdoRegex)    { $parts += 'Category=AdoIntegration' }

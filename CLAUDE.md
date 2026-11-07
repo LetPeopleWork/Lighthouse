@@ -213,15 +213,18 @@ A change is **not done** until every gate below passes locally. CI enforces them
   actually changing a connector:**
 
   ```
-  dotnet test --filter "TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration"
+  dotnet test --filter "TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
   ```
 
-  Those tests talk to **real** Jira, Linear, Azure DevOps and ServiceNow instances over the network.
+  Those tests talk to **real** Jira, Linear, Azure DevOps, ServiceNow and GitHub instances over the network.
   They do **not** skip when a credential is missing — they `throw NotSupportedException`, so a bare
   `dotnet test` either makes real API calls or reports failures that look like regressions and are
   not. The Linear API key is shared with CI, so repeated local runs can rate-limit (429) the next CI
   build, and only one of the resulting failures ever names the 429. Run the connector categories
   deliberately, when the connector is what you changed.
+
+  Never narrow a run to a bare `TestCategory=Integration`. It also selects every live connector test,
+  and NUnit may run an `[Explicit]` probe it selects directly, one of which rewrites a recorded baseline.
 
   Failure signatures that are **environmental, never regressions** — but check which one you have,
   they are not interchangeable:

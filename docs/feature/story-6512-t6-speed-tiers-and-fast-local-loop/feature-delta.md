@@ -1170,3 +1170,56 @@ These override earlier text.
   `UsageDataCanary` clause.
 - **Frontend timing target.** `pnpm test:fast --changed` stays under 10 s for a typical edit; about 15 s is accepted for a heavily shared file. No node project.
 - **Evidence.** `L0.trx.gz`, `L0.csv`, the unfiltered list and later `L` lists stay on disk, out of git by `evidence/.gitignore`. Their count and `sha256` are recorded in this delta.
+
+## Wave: DELIVER / [REF] Slice B, step 02-02: the clause pin and the filters, what ran (2026-11-07)
+
+Entry held: the fast filter is answered in "Maintainer decisions (2026-11-07)". Nothing here is pushed; it rides the live push with the 14 live classes.
+
+**Re-running a failed job does not collide on the artifact names, so `overwrite` is not added.** Attempt 2 of a run shows its backend job in two ways, and only one of them is a re-run:
+a job with attempt 1's start time was carried over (41884787953, 41293660335), so it says nothing.
+
+| Run | Attempt 1 backend | Attempt 2 backend | Artifacts on the run |
+|---|---|---|---|
+| 41904560367 | Red, 20:14, timings uploaded | Re-ran at 20:35, timings uploaded | `test-timings-backend` twice, 20:31 and 20:52 |
+| 41800757772 | Red, timings uploaded | Re-ran, timings uploaded | `test-timings-backend` twice |
+| 40926989922 | Red, timings uploaded | Re-ran green, both uploaded | `test-timings-backend` twice, `sonar-report-backend` once |
+
+The log of attempt 2 of 41904560367 (`gh run view --attempt 2 --log`, job 126847765707) shows `overwrite: false`, then `Artifact test-timings-backend successfully finalized`, and no `conflict` or `already exists` anywhere.
+So two uploads of one name on one run succeed, each attempt keeping its own. 36249938078 and 35091633703 show the same from September.
+
+Not seen directly: `sonar-report-backend` uploaded in two attempts of one run. In all of these attempt 1 was red before it, and that step has no `if: always()`, so the 429 re-run this plan cares about does not upload it twice either. It is the same action at the same pin, so it should behave the same.
+
+**The pin.** `TestSelectionClauseTest` is new, on the delta's specification, and reads the clauses from the real files.
+
+| Case | What ran | Result |
+|---|---|---|
+| Red before the edit | `FullyQualifiedName~TestSelectionClauseTest`, `-c Release` | TRX total 20, passed 14, failed 6. `TheAlwaysOnClauseKeepsRegularAndHostedTests`: "A hosted test carries Integration alone", expected True, was False. `EveryPlaceHoldsTheSameText`, all 4 places: string differs at index 21. `AForceFullRunTakesEverythingButTheCanary`: the first half does not keep the canary |
+| Which scenarios were green before | The same run | The 14 are the cases the old clause also meets: live left out, offline kept, the two planted clauses, the joined strings. "What each slice must show" says "Same" for the offline case; it was green, because the old clause keeps `{JiraIntegration}` |
+| An earlier red that does not count | The first run of the class | 18 failed on `DirectoryNotFoundException`, as `Lighthouse.sln` sits in `Lighthouse.Backend/` and the idiom stopped there. The class anchors on `Lighthouse.Backend/Lighthouse.sln` instead; this red is the one above |
+| Green after | The same filter | TRX total 20, executed 20, passed 20 |
+| Named classes, last | `TestSelectionClauseTest`, `IntegrationFixtureCategoryTest`, `TestHostPerFixtureGuardTest`, `-c Release` | TRX total 40, passed 40 (20, 2, 18) |
+
+**Guarantee 3.** `H`, `-c Release`, the 5 token variables removed, each build's exit checked first.
+
+| Tree | TRX | Selected |
+|---|---|---|
+| `[Category("Integration")]` planted on `IntegrationFixtureCategoryTest`, uncommitted | total 2, passed 2 | Exactly its 2 tests, the class's count |
+| Plant removed, rebuilt, `git status` clean of it | total 0 | "No test matches the given testcase filter", exit 0. The one check where zero is right |
+
+**The other places.**
+
+| Case | What ran | Result |
+|---|---|---|
+| Shell mirror, red | `bash Scripts/test-selection/test-build-filter.sh`, new expected strings, script logic unchanged | `passed: 0`, `failed: 9` |
+| Shell mirror, green | After the script's own edit | `passed: 9`, `failed: 0` |
+| Dry runs | `dev-test.sh --dry-run` and `dev-test.ps1 -DryRun`, each in auto, unit-only and full | `A` in every mode; in full, `A\|(Category=Integration&Category!=UsageDataCanary)`. Bare `Category=Integration` is in neither file, by grep |
+| Workflow | `node --test .github/scripts/*.test.mjs` | 218 pass, 0 fail |
+| Timing scripts | `python3 -m unittest discover -s Scripts/test-timings/tests` | 125 tests, OK |
+| Guarantee 12's grep | Over the paths that exist so far | Prints nothing |
+| Builds | `dotnet build Lighthouse.Backend`, then the test project with `-c Release` | 0 warnings, 0 errors, each |
+
+- **`dev-test.ps1 -UnitOnly`** took the same wording as `dev-test.sh --unit-only`, as its old comment was just as wrong.
+- **`Test-Coverage.ps1` and `CLAUDE.md`** hold the standard filter. `GithubIntegration` is the stated addition, and both now name GitHub in their list of real systems.
+- **`CLAUDE.md` names no fast loop yet.** It holds the warning against a bare `TestCategory=Integration` and no fast filter at all, because `Test-Fast.ps1` does not exist until slice F and `F` selects the same as the standard filter until the hosted commit. Slice F owes that line.
+- **Why the comment in `dev-test.*` says "may".** It says the negative term is what keeps the `[Explicit]` probes from running, and that NUnit may run a test a filter selects directly. A filter selecting only an `[Explicit]` test is still untried, as the probe's decisions say.
+- **Not run in this step:** the whole-suite `A` list, which belongs before the push.

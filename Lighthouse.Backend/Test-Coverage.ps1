@@ -5,7 +5,7 @@ Run the backend tests with coverage collected locally and write Cobertura report
 .DESCRIPTION
 CI runs the backend tests without a coverage collector. This script is the way to get a coverage report
 when you want one. It never runs the live-connector categories by default, because those talk to real
-Jira, Linear, Azure DevOps and ServiceNow instances.
+Jira, Linear, Azure DevOps, ServiceNow and GitHub instances.
 
 .PARAMETER Filter
 The dotnet test filter. Defaults to excluding the live-connector categories. Narrow it to run a
@@ -21,7 +21,7 @@ Collect coverage for one test class.
 #>
 [CmdletBinding()]
 param(
-    [string] $Filter = 'TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration'
+    [string] $Filter = 'TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration'
 )
 
 $ErrorActionPreference = 'Stop'
