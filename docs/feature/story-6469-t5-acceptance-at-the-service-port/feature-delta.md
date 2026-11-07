@@ -66,7 +66,7 @@ Three things follow.
   2.1 x the largest fast-tier test. D-6469-9 keeps it at the host.
 
 **Honest size of the prize.** Pilot plus two suites of about 100 tests each is roughly 250 to 300 moved tests, so about 60 to 90 s summed, against
-2,253 s of summed CI backend time after T2's slice 5 (T2 delta, "CI after-measurement"). That is about 3 %, but it sets local seconds against a CI total, and CI runs the same tests slower, so **about 3 to 7 %** is the fairer estimate. **T5's value is
+2,253 s of summed CI backend time after T2's slice 5 (T2 delta, "CI after-measurement"). Corrected at review: the moves as sized at DISTILL came to about 53 to 70 s, about **2.4 to 3.1 %** of that total, and the smaller option the maintainer chose comes to about **1.2 to 1.5 %**. The earlier 3 to 7 % had no derivation behind its upper end. See "Review revision". **T5's value is
 mostly the convention and the guard**, which stop every new feature adding at 0.3 s per test instead of 1 ms, and which give T10 and T11 their
 tools. The moves prove the shape. Said so the maintainer is not surprised by a small number at the end.
 
@@ -367,10 +367,10 @@ Each leaves the suite green. No production file in any slice. A move is its own 
 | B | 1 | `WireContractTest`, `Contracts`; `Slice01` split into port, skeleton and contract; the 7 new wire rows | Id table; coverage table; deliberate break; family seconds before and after; run alone 3 times |
 | C | 1 | `TestHostUseGuardTest`, both lists from its first run; planted cases | A real planted class red under Debug and `-c Release`, named |
 | D | 0.25 | CLAUDE.md bullet, with the DISTILL sentence | Read by the review. "A new scenario lands at the port" is first tested by the next feature's DISTILL, as T11 notes; said so |
-| E | 1 | Top suite: its DESIGN note, tables, move | As B |
-| F | 1 | Second suite, the same | As B |
+| E | About 2 | Refinement, smaller option: harness composition and `NeedOverOneCycleTest`, stop and ask, then the rest | As B, plus the checkpoint in "Review revision" |
+| F | About 1.25 | Reports, smaller option: the same, first class `ReportWindowBoundaryScenarios` | As E |
 
-The maintainer decides again after F, with the numbers. **E and F are re-sized when their DESIGN notes are written.** Their coverage tables are owed: they need the timing run. A short addendum to this delta holds each table and the port it names, reviewed before the move, as the brief says.
+The maintainer decides at each first-class checkpoint of E and F, and again after F, with the numbers. E's and F's notes and coverage tables are in the ranking addendum; they are re-cut to the smaller option at the start of slice E, and reviewed before the move, as the brief says. Days are as "Review revision" states.
 
 **T10.** A suite T5 touches is closed to T10 until T5 finishes it, and T10 starts from what T5 leaves, as decided.
 
@@ -422,7 +422,7 @@ Every overlapping test suite's contract shape is read-only or bounded: a moved s
 | A move loses no business check | Rules hide in shared steps too, as the history invariant does in `ReadTheAnswer` | The shared-step table; the deliberate break, which shows one rule only |
 | Port SQLite behaves like host SQLite | A different connection set-up | The helper takes `DatabaseConfigurator.ConfigureSqlite` and `Pooling=False` from the host; a foreign-key row planted in the helper's test |
 | The port test can fail | Same as any moved assertion | The deliberate break |
-| The saving is real | Set-up may not fall if the scenario needs the seeders; the body may not shrink | `c` and `h`, measured in slice A before the top two are chosen |
+| The saving is real | Set-up may not fall if the scenario needs the seeders; the body may not shrink | `c` and `h`, measured in slice A for the helper, and on each suite's first ported class before the rest moves ("Review revision") |
 | TRX includes tear-down | Inferred, not measured directly | It only moves `body`; ranking uses `setup` and `fixed`. Checked on one fixture in slice A |
 | The timer covers a family | `Measure` sits only in harnesses that call it, and keys on the simple name | Unmeasured and merged families are listed apart |
 | `check_budget.py` stays quiet after a move | A renamed class is stale; a kept class is not judged unneeded on the backend | Classes keep their names; the entry drops on CI's number |
@@ -473,7 +473,7 @@ No L3: under five components change in any one subsystem.
 
 Decided in your absence; say if any is wrong. **Nothing here blocks the wave.**
 
-1. **The number will be small: about 3 to 7 % of summed backend time, an estimate.** The value is the convention and guard. If you wanted a big cut from moves alone, T2 already took most of it. See "What a move can actually save".
+1. **The number will be small: about 1.2 to 1.5 % of summed backend time with the smaller option, an estimate ("Review revision"; first written here as 3 to 7 %).** The value is the convention and guard. If you wanted a big cut from moves alone, T2 already took most of it. See "What a move can actually save".
 2. **The body does not leave, so the ranking is not the brief's.** It would have put `Slice07WhereTheLimitsActuallyMovedTest` first, where a move saves almost nothing and a 20 s test lands in the fast tier.
 3. **The usage-data family tops every list, and probably cannot move far.** The logic is in `UsageDataController`. Expect it to fall out at stage 2.
 4. **New scenarios go to a new folder, `Tests/Acceptance/<Feature>/`**, while moved suites stay under `API/Integration`. Reason: kept ids, and Stryker's `!~API.Integration` filters. The cost is that a moved suite's namespace says "Integration" and is no longer true.
@@ -708,7 +708,7 @@ An unexplained line stops further pushes until the test is back or the line is e
 | **T9, `Integration` mean** | Pilot rows average 510 ms against about 752 ms for the tier, using `API/Integration`, `Integration/Containers` and `API/Security` as a stand-in, as the real column does not exist yet. Moving below-mean rows **lifts** the mean: about +0.7 % for 56 rows, +3 to +4 % for 250 to 300. A suite of very cheap rows lifts it most: `Integration/UsageData` averages 97 ms, and 279 such rows would add about 9 % | Inside T9's 1.25 x headroom, so no red in either order. **But T9's brief says "T5 and T10 move the slowest, so the risk is small", and T5 does the opposite:** D-6469-9 keeps the slowest at the host. Owed line below |
 | **T9, `Integration` total** | Falls: the pilot takes about 29 s out and its 7 new rows add about 4 s, so about 25 s net of about 2,068 s. Nothing here raises it, so no reviewed raise is needed | **The fall overstates the saving.** A moved row leaves the column whole, while most of its time reappears as `Unit`. T5's number is therefore read by class, summed over the family, never from the tier column |
 | **T9, calibration** | Each T5 push shifts both figures | The chain's order already puts T9 after T5. T9's 5 runs should start after T5's last move push, as T10's brief says of its own runs. A later E or F stays inside the headroom |
-| **T6, fast tier under 60 s** (not a gate) | **The one number T5 makes worse.** Moved rows join the fast tier: about +15 s summed for the pilot, +65 to +78 s for 250 to 300 rows, at about 260 ms a row (an estimate). The tier is at most about 317 s summed on CI today, an upper bound, as hosted tests outside those three folders are still in that figure. At 6 workers that is about +2 s of wall clock for the pilot and +11 to +13 s for all of it, if the work spreads evenly | Accepted, by the maintainer's own rule that moving a test down is good. `SecretCustodyServiceTests`, at 50 s in one fixture, stays the longest class, and `Slice01...` would not replace it. Reported, not gated: T6's slice F figure is the before, one `Test-Fast.ps1 -NoBuild` median after push 1 and one after the last push are the after, with their test counts. Raised below |
+| **T6, fast tier under 60 s** (not a gate) | **The one number T5 makes worse.** Moved rows join the fast tier: about +15 s summed for the pilot, and about +43 s for the 165 rows of the pilot and the smaller option, at about 260 ms a row (an estimate). The tier is at most about 317 s summed on CI today, an upper bound, as hosted tests outside those three folders are still in that figure. At 6 workers that is about +2 s of wall clock for the pilot and about +7 s for all of it, if the work spreads evenly | Accepted, by the maintainer's own rule that moving a test down is good. `SecretCustodyServiceTests`, at 50 s in one fixture, stays the longest class, and `Slice01...` would not replace it. Reported, not gated: T6's slice F figure is the before, one `Test-Fast.ps1 -NoBuild` median after push 1 and one after the last push are the after, with their test counts. Raised below |
 
 **What is watched.**
 
@@ -727,7 +727,7 @@ Every step is a `git revert` of test commits and a plain push: no `ci*.yml`, no 
 |---|---|---|
 | F, E | Alone, its commits in reverse | A move's commit holds its base, its guard line and any T2 line, so the revert restores all three together |
 | D | Alone, at any time, starts no CI | Revert with C if the guard goes, or the text describes a guard that is not there |
-| C | After E and F, or alone | Reverting the guard reds nothing |
+| C | At any time, in the same push as D | Reverting the guard reds nothing, but the CLAUDE.md bullet names it, so D goes with it. Reverse order is not needed for C itself; it is B that must wait for C |
 | B | **Only after C.** The guard's first list leaves the pilot off, so a revert of B alone puts `Slice01...` back on a host, unlisted, and rule 1 reds | Skeleton and contract classes go with it |
 | A | Only after B, which uses the harness | |
 
@@ -861,7 +861,7 @@ Ranks 11 to 13 are each under 12 s and left out. `TaskManagerHarness` is partly 
 | Refinement | 31.0 s | 22.8 s | 0.103 s |
 | Reports | 26.8 s | 20.2 s | 0.096 s |
 
-Slice A's `c` decides this. **The risk is the seeders.** Both harnesses run all 8 `ISeeder`s per test today, and `TeamMetricsService` reads `GetTeamDataRefreshSettings()` in its constructor, so a port that keeps the seeders keeps most of the set-up. `RealityCheckQueryCountTest` already answers it with an `IAppSettingService` double. Each host fixture that goes also saves one host: about 11 for Refinement and 10 for Reports, about 3.4 s in all at this run's 164 ms a build.
+Slice A's `c` does not decide this: `Slice04` runs no seeders. The first ported class of each suite does ("Review revision"). The table above is for the whole suites; the smaller option's figures are there too. **The risk is the seeders.** Both harnesses run all 8 `ISeeder`s per test today, and `TeamMetricsService` reads `GetTeamDataRefreshSettings()` in its constructor, so a port that keeps the seeders keeps most of the set-up. `RealityCheckQueryCountTest` already answers it with an `IAppSettingService` double. Each host fixture that goes also saves one host: about 11 for Refinement and 10 for Reports, about 3.4 s in all at this run's 164 ms a build.
 
 **`FasterUpdates`: answered, and it does not rank.** Its ceiling, 22.6 s, is under second place at any `m`, so it would not be chosen even if every row could move. And it could not: `ITeamUpdater` and `IPortfolioUpdater` run through the production queue in their own scope. Following constructors and `GetRequiredService` calls from `Program.cs` gives about 98 concrete types, against about 49 for Refinement and Reports and 38 for the pilot, an over-count by text search, compared like for like. It pulls in `IHubContext`, `IHttpClientFactory`, `ForecastLane` and the Redis multiplexer. The harness also replaces about 15 services, the logger factory among them, because the quiet log is the promise under test. On top, the 47 rows of `Slice05` mostly enter through the operator's settings save, which is a controller. **So it stays on the list, and no wider port fixture is allowed** (D-6469-25): a container of that size is a second `Program.cs`, and it keeps the set-up, which is the "host's container without HTTP" DESIGN rejected. Its rows pass the "needs the host's container" boundary case, so they are host tests and not violations. The value that is left there is T10's.
 
@@ -955,10 +955,10 @@ How a row was read: its first `When` decides. "The coach opens the tab", a vote,
 | `NeedIn` | Cycle dates are given together | Wire shape of a business fact | E2; the port reads `Need.Range` |
 | `DiscussWhenIn` | Both thresholds are named | Settings read | Stays, with its rows |
 | `RefusalCodeOf` | The code named | Wire | E6, E7 and the contract rows |
-| `ThenTheVerdictCameBackInTime`, the 300 Work Items row | Within two seconds | Business budget, read over HTTP | Kept at the port: the same query with no HTTP, so it can only get easier. Said so, not hidden |
+| `ThenTheVerdictCameBackInTime`, the 300 Work Items row | Within two seconds | Business budget, read over HTTP | Kept at the port: the same query with no HTTP, so it gets easier. Lost, and accepted: nothing times the answer's trip over HTTP for 300 Work Items any more |
 | `WorkItemsStoredFor` | Work Items kept | Business | Stays with the settings rows that use it |
 
-**Universe of the read.** `Opening_the_tab_changes_nothing...` widens as the pilot's row does: the write counter over the whole database during `ForTeam`, on both the non-query and reader hooks. `Voting_changes_nothing...` is bounded: one more sizing-log entry, nothing else.
+**Universe of the read.** `Opening_the_tab_changes_nothing...` widens as the pilot's row does: the write counter during `ForTeam`, on both the non-query and reader hooks, plus the file-level check of "Review revision". `Voting_changes_nothing...` is bounded: one more sizing-log entry, nothing else.
 
 **Id table.** 193 rows keep their ids: 161 at the port, 32 in `Slice01` and `Slice07`. 107 change class and are mapped one by one: 3 band rows, 49 no-port rows, 2 skeletons, 53 contract rows. 16 are new. Anything else fails.
 
@@ -1144,13 +1144,13 @@ The whole first-pass reading, in a form that re-sums to the tables above: a clas
 | D-6469-25 | No wider port fixture. `FasterUpdates` and the update-path rows of `TaskManager` stay on the shrinking list as host tests | A container that holds the update path is a second `Program.cs`, and keeps the set-up a move exists to remove |
 | D-6469-26 | The pilot's port registers the host's premium licence mock and the real `ForecastFilterRuleService` | The licence is reached; a double of the rule service would hide the path |
 | D-6469-27 | In a mixed class, port rows keep the class and the id. If the no-port side is the larger, the class stays and the port rows go to a new class. No-port rows go to one class per harness, contract rows to one class per kind of instance | A kept id is the strongest proof where a row's text really changes, and each new fixture is a host build, which must not rise |
-| D-6469-28 | Stage 3 runs at the close of slice A, on `c` and `h`, with the stop line of 14.1 s. Under it, the suite is reported and not moved, then ask | D-6469-10; slice E must not start on a guess |
+| D-6469-28 | Amended at review. Stage 3 runs at the first-class checkpoint of E and of F, not at the close of slice A, and judges the chosen subset of both suites together against 14.1 s, net of the new host rows. At each checkpoint: stop and ask, whatever the number ("Review revision") | D-6469-10; `c` from `Slice04` has no seeders, and neither suite's subset could clear a per-suite line |
 | D-6469-29 | Every list run removes the five tracker tokens with `env -u`, and a count of `IntegrationTestToken` in the environment prints 0 first, as under "The guarantee" | The two mixed classes write to a real tracker whenever a token is set |
 | D-6469-30 | Re-sized: slice E about 3 days, slice F about 2.5 days, so the Story about 8.25 days, estimates | Each row's Given and Then change, not only its base, and the harnesses' 1,900 and 1,100 lines must become composed parts, as the pilot's did |
-| D-6469-31 | A port row's Given writes the model. One contract row per suite sends those same inputs through the real door and compares what is stored (E10, F9) | A Given that no save can produce would make a port row green for the wrong reason |
+| D-6469-31 | A port row's Given writes the model, through one named builder per suite. One contract row per suite sends every input of that builder through the real door and compares what is stored (E10, F9). Rows E12 and F10 hold the builder to being the only way in ("Review revision") | A Given that no save can produce would make a port row green for the wrong reason |
 | D-6469-32 | The new row count is the coverage table's, not a target: 7 for the pilot, 16 for Refinement, 14 for Reports | Each row takes over a pin that only shared steps held |
 | D-6469-33 | Slice D also adds a "Driving" row to `atdd-infrastructure-policy.md`: application-service port, `ServicePortHarness` | The policy is what a later DISTILL reads, and this wave may not edit it |
-| D-6469-34 | The row tables are expectations. A slice E or F starts by checking them row by row against "How each row was read", keeps the list under `evidence/`, and re-runs Stage 3 if `m` moves by more than 5 rows | They rest on reading names and steps, and stop-line arithmetic should not outlive a misread row |
+| D-6469-34 | The row tables are expectations. A slice E or F starts by checking them row by row against "How each row was read", keeps the list under `evidence/`, and re-runs Stage 3 if `m` moves by more than 5 rows, or if a measured `c` moves by more than 10 ms from the figure Stage 3 last used | They rest on reading names and steps, and stop-line arithmetic should not outlive a misread row or a stale cost: each 10 ms of `c` is about 1.1 s |
 
 ## Wave: DISTILL / [REF] What each slice must show
 
@@ -1172,9 +1172,9 @@ The whole first-pass reading, in a form that re-sums to the tables above: a clas
 
 Moved: the 5 rows of `Slice04`, same ids, on the port base. A9 is why the history invariant can be trusted on every row: the reader carries it, and this shows it can fail.
 
-Also in the slice: `c` and `h` measured on `Slice04` before and after on the same machine, and whether a TRX duration holds tear-down, read on one fixture. **Then Stage 3** (D-6469-28).
+Also in the slice: `c` and `h` measured on `Slice04` before and after on the same machine, and whether a TRX duration holds tear-down, read on one fixture. This `c` proves the helper only; Stage 3 runs at the checkpoints (D-6469-28).
 
-**Slice B: the base, and the pilot's split.** New: `WireContractTestTest` in `Contracts/`, `RealityCheckWireContractTest`, `RealityCheckSkeletonTest`.
+**Slice B: the base, and the pilot's split.** New: `WireContractTestTest` in `TestHelpers/`, `RealityCheckWireContractTest`, `RealityCheckSkeletonTest`.
 
 | # | Planned title | Given | When | Then | Kind |
 |---|---|---|---|---|---|
@@ -1190,7 +1190,7 @@ Also in the slice: `c` and `h` measured on `Slice04` before and after on the sam
 | B11 | `The_windows_of_an_off_ladder_setting_rank_nothing_on_the_wire` | As the split row | The check runs | The same walk | edge |
 | B12 | `A_check_with_no_forecast_ranks_nothing_on_the_wire` | As the split row | The check runs | The same walk | edge |
 
-Moved: 51 rows at the port (47 plus the 4 split), 14 to contracts, 1 to the skeleton, 10 stay. The no-write row widens to the whole database through the command counter, on the non-query **and** reader hooks. **Before trusting the counter,** plant a write inside the scripted forecast: the row must go red. Remove it.
+Moved: 51 rows at the port (47 plus the 4 split), 14 to contracts, 1 to the skeleton, 10 stay. The no-write row widens to the whole database through the command counter, on the non-query **and** reader hooks, plus the file-level check of "Review revision", as the counter alone sees one context. **Before trusting the counter,** plant a write inside the scripted forecast: the row must go red. Remove it.
 
 Proofs: the id table; the coverage table, row by row; the deliberate break of the five-day bar; family seconds before and after; each class run alone 3 times, as DESIGN says.
 
@@ -1230,7 +1230,7 @@ Before the planted reds go green the rule's code does not exist, so each fails i
 
 "A new scenario lands at the port" is first tested by the next feature's DISTILL, as DESIGN says.
 
-**Slice E: Refinement.** Runs only if Stage 3 clears it. New: the four contract classes, `RefinementSkeletonTest`, `Slice07BandDecidesTheNeedTest` and `RefinementSettingsSavesTest`, as named in the note.
+**Slice E: Refinement.** Smaller option: this table is re-cut at the start of the slice. Runs to its first-class checkpoint, then stops and asks (D-6469-28). New: the four contract classes, `RefinementSkeletonTest`, `Slice07BandDecidesTheNeedTest` and `RefinementSettingsSavesTest`, as named in the note.
 
 | # | Planned title | Given | When | Then | Kind |
 |---|---|---|---|---|---|
@@ -1243,12 +1243,12 @@ Before the planted reds go green the rule's code does not exist, so each fails i
 | E7 | `A_comment_that_is_empty_or_too_long_is_refused_and_names_its_code` (2 cases) | A Work Item in refinement | The comment is sent | 400 and the code | sad |
 | E8 | `A_vote_answers_with_the_row_as_it_now_stands_and_whether_it_made_it_Ready` | One Yes short of Ready | The last Yes is sent | The row, with `madeReady` true | ok |
 | E9 | `A_take_back_with_nothing_to_take_back_answers_with_the_row_as_it_stands` | A voter with no vote | They take back | 200 and the row, with nothing recorded | edge |
-| E10 | `A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up` (5 cases or more, one per kind of setting, read from the same source the port's Givens use) | Refinement states, a cadence, a band, readiness or a stage rule | They are saved through the settings form | What is stored equals what the port's Given writes | ok |
+| E10 | `A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up` (one case per input of `RefinementPortGivens.EveryInput`, the builder every port Given goes through; "same source" means that builder) | One input of the builder | It is saved through the settings form | What is stored equals what the port's Given writes | ok |
 | E11 | `A_question_answers_with_the_row_as_it_now_stands` | A Work Item in refinement | A question is sent | 200 and the row, now with a question open | ok |
 
 Moved: 164 port rows, of which 161 keep their ids; 53 to contracts, 2 to the skeleton, 49 re-homed, 32 stay. Before trusting the port's voter step, plant the raw key: `Every_voter_counts_once...` must go red. Remove it. Proofs: as slice B, with `LongestComment` as the break.
 
-**Slice F: Reports.** Runs only if Stage 3 clears it. New: the three contract classes and two skeleton classes named in the note, and the two classes for the rows that stay.
+**Slice F: Reports.** Smaller option: this table is re-cut at the start of the slice. Runs to its first-class checkpoint, then stops and asks (D-6469-28). New: the three contract classes and two skeleton classes named in the note, and the two classes for the rows that stay.
 
 | # | Planned title | Given | When | Then | Kind |
 |---|---|---|---|---|---|
@@ -1260,7 +1260,7 @@ Moved: 164 port rows, of which 161 keep their ids; 53 to contracts, 2 to the ske
 | F6 | `Each_kind_of_refusal_has_its_status_and_names_its_code` (4 cases) | A too-short Then; a Community cap reached; a type not offered; a report of another owner | Each is sent | 400, 403, 422, 404, each with its code where it has one | sad |
 | F7 | `A_Then_past_the_data_cutoff_says_the_earliest_day_in_its_refusal` | A Team that keeps 90 days | A Then before that is sent | 400, the code and `earliestStart` | sad |
 | F8 | `A_bulk_answer_names_each_owner_and_its_outcome` (2 cases: a run, a removal) | One created and one refused; one removed and one not found | It is sent | Every member, `ownerKind` as text | edge |
-| F9 | `A_report_sent_through_the_route_is_the_report_a_port_scenario_sets_up` | The report a port Given builds | The same is sent over the route | What is stored is the same | ok |
+| F9 | `A_report_sent_through_the_route_is_the_report_a_port_scenario_sets_up` (one case per input of `ReportPortGivens.EveryInput`) | One input of the builder | The same is sent over the route | What is stored is the same | ok |
 
 Moved: 132 port rows, all keeping their ids; 31 to contracts, 2 to skeletons, 22 re-homed. Before trusting the port's refusal reader, plant a wrong code in one row's expectation: it must go red by the code, not by a status. Remove it. Proofs: as slice B, with `MinimumLengthDays` as the break.
 
@@ -1286,8 +1286,8 @@ Each is a check that can fail. It holds for every slice.
 | 2 | No nWave scenario tag | The first command below | It prints a line |
 | 3 | No test lost | "Proof that no test is lost", each push's list against the last, with that slice's id table | A line is off the table |
 | 4 | No list run touches a tracker | The second command below prints 0, and the run starts with the same `env -u` list | Any other number, or the run lacks it |
-| 5 | Host builds fall as planned | `host_build_count` summed, from a list run with the timer on, at the close of each of B, E and F | Over **619** at any point, or over the slice's own figure: B no more than the fixtures of `WireContractTestTest` above the last count, E 11 below it, or 10 if the API-key rows need a fixture of their own, F 10 below it. About 598 at the end, an estimate |
-| 6 | The moved suites' seconds fall | The summed TRX seconds of the family's ids, wherever they landed, plus its new rows, same machine, before and after | They do not. A sum by harness would fall by itself, as rows leave it. Baselines: pilot 39.0 s in `L0`, Refinement 86.8 s, Reports 65.7 s in this run |
+| 5 | Host builds fall as planned | `host_build_count` summed, from a list run with the timer on, at the close of each of B, E and F | Over **619** at any point, or over the slice's own figure: B no more than the fixtures of `WireContractTestTest` above the last count; with the smaller option E and F each about 3 below it (4 classes off the host, 1 contract class on). About 613 at the end, an estimate, re-stated when E is re-cut |
+| 6 | The moved suites' seconds fall | The summed TRX seconds of the family's ids, wherever they landed, plus its new rows, same machine, before and after | They do not. A sum by harness would fall by itself, as rows leave it. The before is re-measured at the start of each slice on the same machine, on the same ids: the sums in this delta (pilot 39.0 s in `L0`, Refinement 86.8 s, Reports 65.7 s) came from runs under load and are not baselines |
 | 7 | No row is left unexplained | Each slice's table adds up to its family: 81, 300, 187 | Any table does not |
 | 8 | A push stays plain | D-6469-17's check on the push's own files | A connector answer is `true` |
 | 9 | Every restricted run states a count | The TRX's `Counters total` | It is 0 or not the stated number: `dotnet test` exits 0 on an empty filter |
@@ -1322,14 +1322,14 @@ Rules of a list run: T6's, word for word, plus D-6469-29. `P0` is the first list
 
 **15 of 15, COMPLETE**, with C5b N/A and C7a by reference. No `SPECIFICATION_AMBIGUITY`. Error and edge scenarios: 61 %, or 23 of 44, 52 %, without the guard's planted reds. Tier B: no, this is test structure. Driving adapters: every route of the two suites is on a skeleton or a contract row, by the coverage tables. Driven adapters: none new. Walking skeletons: 5, one per user flow but for the pilot's single one, each a business outcome that needs the route.
 
-**Hold.** Rigor `thorough`. DELIVER starts after T6's slice E, and T5's first push waits for T6's last. Open for DELIVER: `c` and `h`, and so Stage 3; `A_Team_finishing_one_Work_Item_every_day...`, by its rule; the first list's size; the 2 s body limit, which no moved row comes near.
+**Hold.** Rigor `thorough`. DELIVER starts after T6's slice E, and T5's first push waits for T6's last. Open for DELIVER: `c` and `h`, and so Stage 3 at each first-class checkpoint; `A_Team_finishing_one_Work_Item_every_day...`, by its rule; the first list's size; the 2 s body limit, which no moved row comes near.
 
 ## Wave: DISTILL / [REF] For the maintainer
 
 Nothing here blocks the wave. Decided in your absence; say if any is wrong.
 
 1. **Refinement and Reports, not the suites you expected.** Neither was on D1's list, so neither was in the brief or DESIGN's table. `UsageData`, `ConnectionDefaults`, `TaskManager` and `FasterUpdates` all fall out at stage 2.
-2. **E and F are about three times DESIGN's size:** 3 and 2.5 days against 1 each, for 23 to 31 s and 20 to 27 s summed. That is the honest trade, and it is why Stage 3 runs first. **A choice worth making when `c` is in:** take only the classes that are nearly all port rows (`NeedOverOneCycle`, `Slice05`, `Slice10`, `Slice12`; `ReportWindowBoundary`, `Slice04`, `Slice05`, `Slice05b`). That is 109 of the 296 rows, so about 37 % of the saving, with hardly any class to split. How much work it spares is not known until slice E has started.
+2. **E and F are about three times DESIGN's size:** 3 and 2.5 days against 1 each, for 23 to 31 s and 20 to 27 s summed. That is the honest trade, and it is why Stage 3 runs first. **A choice worth making when `c` is in:** take only the classes that are nearly all port rows (`NeedOverOneCycle`, `Slice05`, `Slice10`, `Slice12`; `ReportWindowBoundary`, `Slice04`, `Slice05`, `Slice05b`). That is 109 of the 296 rows, so about 37 % of the saving. Two of the eight classes still split (`Slice05` by 1 row, `Slice12` by 4), and the harness composition costs the same however few rows move. The maintainer took this option; "Review revision" has its figures.
 3. **The licence line in DESIGN was wrong,** and is corrected.
 4. **Moving a Given to the model is the new risk.** E10 and F9 are the new host rows that exist only to watch it.
 5. **D-6469-23 left DEVOPS to the consolidated review at the end of DISTILL.** You named one reviewer, the acceptance one, so the platform reviewer did not run. The review below read DEVOPS's proofs only as far as the scenarios lean on them.
@@ -1347,3 +1347,101 @@ Nothing here blocks the wave. Decided in your absence; say if any is wrong.
 ## Wave: DISTILL / [REF] Maintainer decisions (2026-11-07)
 
 This overrides earlier text. **Slices E and F take the smaller option:** only the near-all-port classes move, 109 of the 296 rows, for about 37 % of the estimated saving. The other classes stay at the host, on the shrinking list. Slice sizes, scenario and id tables are re-cut to that scope at the start of slice E, once slice A has measured `c` and `h`.
+
+## Wave: DISTILL / [REF] Review revision (2026-11-07)
+
+This overrides earlier text. It answers the architecture and platform review (conditionally approved: 0 critical, 2 high, 6 medium), with the maintainer's smaller option as the scope. Lines that would mislead are corrected in place. Nothing here has run; every figure below is an estimate from the timing run's data.
+
+**Is E and F worth doing: the numbers.** All summed seconds, from this run's set-up per class, `h` taken as 0.
+
+| | Rows | `c` = 0 | `c` = 50 ms | `c` = 100 ms |
+|---|---|---|---|---|
+| E: `NeedOverOneCycle`, `Slice05`, `Slice10`, `Slice12` | 73 | 13.9 | 10.3 | 6.6 |
+| F: `ReportWindowBoundary`, `Slice04`, `Slice05`, `Slice05b` | 36 | 7.2 | 5.4 | 3.6 |
+| Host builds saved, about 6 net | | 1 | 1 | 1 |
+| **E and F, gross** | **109** | **22** | **17** | **11** |
+| New host rows, about 12 at 0.29 s, an estimate until the re-cut | | −3.5 | −3.5 | −3.5 |
+| **E and F, net** | | **about 19** | **about 13** | **about 8** |
+| Net, share of the 2,144.7 s suite | | 0.9 % | 0.6 % | 0.4 % |
+
+- At the family's mean set-up the two rows are 13.8 s and 7.3 s; by each class's own they are 13.9 s and 7.2 s. Either way **each is under the 14.1 s per-suite stop line even at `c` = 0**, so D-6469-28 as written would have refused both.
+- Wall clock is about 2 to 3 s at 6 workers, if the work spreads evenly.
+- Each 10 ms of `c` costs 1.1 s. The subset clears the amended line only if `c` − `h` is at most **about 40 ms**. If the port keeps the seeders, `c` will not be that low; if it drops them, E13 has to hold.
+- **The harness composition does not shrink with the rows.** `ReportsAcceptanceTest`'s and `RefinementAcceptanceTest`'s registrations, builders and doubles cost the same for 36 rows as for 132.
+- With the pilot's 9.5 to 12.3 s, the whole Story's moves save about 26 to 34 s gross, about **1.2 to 1.6 %** of the suite here, 1.2 to 1.5 % of T2's 2,253 s CI total.
+
+**Corrected share (M2).** The moves as sized at DISTILL, 53 to 70 s over 2,253 s, are 2.35 to 3.11 %, so the review's 2.4 to 3.1 % holds. Against this run's own 2,144.7 s, the like-for-like local figure, it is 2.5 to 3.3 %. DESIGN's 7 % had no derivation.
+
+**Sizing with the smaller option, estimates.**
+
+| Slice | Before | Now | Why |
+|---|---|---|---|
+| A | 0.5 | 0.5 | |
+| B | 1 | 1.25 | B13 and the file-level write check |
+| C | 1 | 1.25 | C19, C20 |
+| D | 0.25 | 0.25 | |
+| E | 3 | About 2 | 1 day boxed to the checkpoint, then 3 classes and their contract rows |
+| F | 2.5 | About 1.25 | 0.75 day boxed to the checkpoint, then 3 small classes |
+| **Story** | **8.25** | **About 6.5** | **3.25 days without E and F; 4.25 if it stops at E's checkpoint** |
+
+**The value gate (H1).** `c` from `Slice04` has no seeders, so it says nothing about E and F.
+
+- **Checkpoint.** Each of E and F starts with its harness composition and one class only: `NeedOverOneCycleTest` for E (22 rows), `ReportWindowBoundaryScenarios` for F (15 rows). Box: 1 day and 0.75 day. A box that runs out is a stop too.
+- **Measured there:** `c` and `h` on that class, with the real registrations, both with the seeders and without them, on one machine, before and after.
+- **Stage 3 re-run:** `saving = sum over the subset of m x (setup / tests − c + h) + host builds saved − time of the new host rows`, judged on E and F **together** against 14.1 s (D-6469-28 as amended). At E's checkpoint F is projected with E's `c`; at F's, each uses its own.
+- **Stop and ask, whatever the number,** before the rest of the suite moves. Under the line, the recommendation is to stop there: the class moved so far stays moved, and the other classes stay on the list.
+- **Re-run** whenever D-6469-34 fires, `c` included.
+
+**Port Givens (H2).**
+
+- **One builder per suite.** `RefinementPortGivens` and `ReportPortGivens` hold every distinct Given input as a named member, listed by `EveryInput`. "Same source" means this builder and nothing else.
+- E10 and F9 are parametrised over `EveryInput`, so a new input is a new case with no one remembering.
+- **New rows, fast tier:** E12 `No_port_scenario_sets_up_a_Team_except_through_the_builder`, F10 `No_port_scenario_builds_a_report_except_through_the_builder`, by reading the port classes' IL as `TestHostUseGuardTest` does. Planted: a port class writing `RefinementSettings` itself goes red.
+- **E10 and F9 are host rows, in the Integration tier, so the local fast loop does not see them.** A developer who edits a builder or a Given must run them by name, with the count they expect (`dotnet test` exits 0 on an empty filter), and the builder's summary says so:
+
+```
+dotnet test --filter "FullyQualifiedName~A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up|FullyQualifiedName~A_report_sent_through_the_route_is_the_report_a_port_scenario_sets_up|FullyQualifiedName~Every_setting_a_port_scenario_is_given_is_what_a_seeded_database_holds"
+```
+
+- **The wider gap.** The port has no seeders and doubles `IAppSettingService`, so a scenario can pass on a default the database never holds. New row E13, host tier, one case per port fixture: `Every_setting_a_port_scenario_is_given_is_what_a_seeded_database_holds` asks the double and the host's real service for every setting the port reads, and compares. A row that depends on a value other than the seeded one sets it in its Given. What it does not cover: an installation whose settings were changed, which is no worse than today's seeded host.
+- If the checkpoint shows the seeders are affordable, keep them and drop the double, which closes the gap and retires E13. The checkpoint also lists which seeded tables each port reads beyond the settings; any it finds gets the same treatment.
+
+**The harness against the host (M5).** New row, slice B: B13 `Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host`, host tier, one case per port fixture. It compares the fixture's registrations with the host's by service type and lifetime, and by implementation type except for the doubles named below. Planted: a scoped service registered as a singleton goes red. E and F each add a case.
+
+**The write check's reach (M6).** The command counter sees only commands sent through a context built on the harness's options. It does not see a second context on its own connection, or a raw `SqliteConnection`. So the no-write rows also check the file: the harness holds one watcher connection open, and `PRAGMA data_version` read on it before and after must not move, because SQLite changes it when any other connection commits to that file. The watcher must not share a cache with them. The counter stays, as it names the statement. Proof: besides the planted write, plant one through a second context: the row must go red by the file check alone. If `data_version` proves unreliable here, the fallback is to compare the bytes of the database and its `-wal` file. This reaches the file only: a write to another store is outside it, and the port holds no other.
+
+**The guard (M3, M4).**
+
+- **C19.** The first list is generated under Debug and under `-c Release`, and the two are compared: they must be equal, or the step stops. Release is what CI tests, and it has read `async` edges differently.
+- **`TestHostUseGuardTest` runs again after the final merge of origin/main, before push,** by name with its count, as another Story may have added a host user.
+- **`WireContractTestTest` sits in `TestHelpers/`,** beside `ServicePortHarnessTest`, because it is not a contract test. Its planted fixtures derive from the base outside `Contracts`, so rule 4 exempts them by one named line for that type and what it nests, and rule 1 treats it as a host user only through that line.
+- **C20.** A fixture elsewhere that copies the shape is still red, so the exemption is one type wide.
+
+**Doubles at the port, each defined once (L).** All live in one class in `TestHelpers/`; a fixture takes them from there and does not write its own.
+
+| Double | Stands for | Answers | Used by |
+|---|---|---|---|
+| `IAuthModeResolver` | An instance with sign-in off | Sign-in off | Refinement |
+| `IHttpContextAccessor`, empty | No signed-in caller | No context; only read with sign-in on, which no port row has | Refinement |
+| `ILicenseService` mock | The licence | Premium, unless a scenario says Community | All |
+| `IReportOwnerWriteAccess`, allow-all | The caller's RBAC in a bulk run | Allowed | No one under the smaller option, as no bulk row moves. Defined here for whoever moves them |
+
+**No port row may assert a refusal by role.** The doubles allow everything, so such a row could only pass for the wrong reason. Those rows are contracts or stay at the host.
+
+**Accepted cost, restated (L).** The pilot and the smaller option put 165 rows in the fast tier, about +43 s summed and about +7 s at 6 workers, an estimate. Accepted by the maintainer's rule that moving a test down is good.
+
+**Lost coverage, accepted (L).** `Three_hundred_Work_Items_in_refinement...` moves with `Slice05`, so nothing times the answer's trip over HTTP for 300 Work Items any more. The query stays timed. A slow serialisation would show nowhere in this suite. Accepted, as the two seconds was set for the verdict's work.
+
+**Counts now.** A: 9 titles, 10 rows. B: 12 titles, 13 rows. C: 20 cases. D: 4 checks. E and F are re-cut at slice E, and get E12, E13, F10 and the rows the moved classes need; many of E1 to E9 and F1 to F8 may fall away, as most of each suite still pins the wire at the host. The earlier row tables stand for the whole suites.
+
+**Decisions.**
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6469-35 | Each suite has one builder for its port Givens; E12 and F10 hold it to that | A list of inputs a Given can step around proves nothing |
+| D-6469-36 | The port's settings double is compared with a seeded host (E13), or the seeders stay | A scenario must not pass on a value no database holds |
+| D-6469-37 | The no-write rows check the file as well as the commands | A counter on one context cannot see a second |
+| D-6469-38 | The guard's list must be equal under Debug and Release, and the guard runs after the last merge | CI tests Release, and the merge can add a host user |
+| D-6469-39 | `WireContractTestTest` lives in `TestHelpers/` under one named exemption | It tests the base, so it is not a contract test |
+
+**Open.** The review's L1 said only "fix the wording"; this pass fixed the stale lines it could find (the slices table, line 373, the Stage 3 lines), and any other is still open. The scratch estimate of about 12 new host rows waits for the re-cut. `data_version` under this project's connection settings is unproven.
