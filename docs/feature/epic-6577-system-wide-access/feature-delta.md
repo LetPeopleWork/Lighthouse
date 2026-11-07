@@ -118,7 +118,7 @@ answer.
 | P7 | A removed user who signs in again gets a new profile, and with the switch on sees everything | DECIDED: accept; docs say to block people in the identity provider | Slice 04 |
 | P8 | People reached only by a rule show as "Unassigned: Yes", which already holds for group-mapped people | PROPOSED: leave the column; decide the wording at the sketch review, since with the switch on it misleads | No |
 | P9 | A system-wide role for one named person, without a group | DECIDED: out of scope; a group of one, or the switch, covers it | No |
-| P10 | Existing defect: the Access tab offers Team Admins a mapping form whose save is always refused; `job-rbac-scoped-admin` claims they can | DECIDED: Bug 6576, outside this work. Admin on all does not widen it | No |
+| P10 | Existing defect: the Access tab offers Team Admins a mapping form whose save is always refused; `job-rbac-scoped-admin` claims they can | DECIDED: Bug 6576, a child of Epic 6577, done alongside slice 03 on the same tab. Add and remove are hidden from everyone but System Admins, and the list stays readable. Admin on all would otherwise meet the refused form on every unit. `job-rbac-scoped-admin` and rbac.md are corrected to match | Slice 03 |
 | P11 | Someone leaves the identity provider group: their browser session loses the rule when the token refreshes or at next sign-in, their API key only at next sign-in. Removing the rule works at once | DECIDED: accept and document; existing behaviour, wider reach | Slice 02 |
 | P12 | The word on screen: D4 says "system-wide rule", ADR-270 says "organisation-wide roles", and ADR-271 has separate areas named Organisation and System | OPEN: settle at the sketch review; this document uses "system-wide rule" | No |
 | P13 | A key limited to "Viewer on all" | DECIDED: out of scope; keys stay per unit or unlimited | No |
@@ -167,7 +167,7 @@ Notes tag sits on the Epic only.
 | 04 Everyone signed in can view, if we say so | 6581 |
 | 05 One group administers every unit, needs Bug 6575 | 6582 |
 
-Related: Bug 6575 closes the open `DELETE` and goes first. Bug 6576 is the refused mapping form, outside this work.
+Related: Bug 6575 closes the open `DELETE` and goes first. Bug 6576, a child of this Epic, hides the refused mapping form from scoped admins, alongside slice 03.
 
 ## Wave: DISCUSS / [REF] Context-Map Placement (ADR-270)
 
@@ -683,7 +683,7 @@ Scenario: The everyone switch cannot make people admins
 Technical notes: no role value says "admin of everything" today; `TeamAdmin` and `PortfolioAdmin` are per type, so how Admin on all is
 expressed is DESIGN's, within C1. Exact-key consumers: `HasTeamWritePermission`, `HasPortfolioWritePermission`,
 `GetAuthorizationSummaryAsync`, `CanSatisfyAnyScopedAdminAsync`. Check `FeatureMoveAuthorization`, the report write checks and
-`GetWritablePortfolioIdsAsync` still agree. Team Admin mapping forms stay as they are (P10). E2E: `team-admins` and
+`GetWritablePortfolioIdsAsync` still agree. Bug 6576 has already hidden the mapping form from scoped admins (P10). E2E: `team-admins` and
 `teamadmin@user.com`, as a thin step.
 
 KPI: K4.
@@ -745,7 +745,7 @@ Handoff to DEVOPS: K3's event only; no dashboard or alert. No baseline work beyo
 - A system-wide role for one named person (P9), and a key limited to "Viewer on all" (P13).
 - Hiding one unit from a system-wide rule. D2 gives one generic scope; a customer who wants Teams hidden does not opt in.
 - Creating, cloning or deleting units, connections, system settings, RBAC admin or licence details through Admin on all (P1).
-- Changing how Team Admins use the mapping form (P10), or refreshing a key's stale group snapshot (P11).
+- Letting Team Admins save mappings for their own unit: Bug 6576 hides the form instead (P10). Refreshing a key's stale group snapshot (P11).
 - Moving the page to its target surface (Epic 6473). Levels and per-level membership (Epic 6455).
 - **PROPOSED follow-up candidate, for maintainer confirmation, not locked: rights on all Teams matching a pattern.** No slice or
   story here. Why not now: there is no evidence yet that anyone needs a subset defined by a pattern. Name matching also means
