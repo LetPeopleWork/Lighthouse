@@ -1824,3 +1824,69 @@ The seven variables were removed from every run. Only named classes ran, so this
 **The comments.** Commit `36b05ea1b`, apart from the move: 8 of the touched files, comments only, 27 insertions, 28 deletions. They explained themselves through Epic, story, bug, decision and ADR ids; each now says the reason, or loses the pointer where the sentence stood without it. The scan was widened after the first pass missed ids like `F3`. It matches ids, not narration, so other comments that break the rule may remain, as at 05-01. On that commit's tree, both builds 0 warnings and 0 errors, and the 8 classes with both guards TRX total 176, passed 176, exit 0, on Debug and `-c Release`, with the diff answering as above on 8 files.
 
 Left as it is: `Start_DoesNotChallengeAMisconfiguredIdentityProvider` says `(D31)` in an assertion message. That is a string a test run can print, not a comment, so changing it does not belong in a comments-only commit.
+
+## Wave: DELIVER / [REF] Slice E, step 05-03: the containers and the end of the list, what ran (2026-11-07)
+
+The entry condition holds: "Maintainer decisions (2026-11-07)" says containers sit on `IntegrationFixture`. Three commits and this section. Not pushed.
+
+| Commit | What | Files |
+|---|---|---|
+| `bfd282779` | The move alone: 34 class lines took `: IntegrationFixture`, 5 files took the `using`, 34 list lines and the 3 reasons they used left the guard. The list stays, empty | 32 files, 40 insertions, 74 deletions |
+| `ba4812e81` | Comments only, in 6 of the touched files | 6 files, 23 insertions, 25 deletions |
+| `a09275cf0` | The deletion, `TestTierGuardTest.cs` alone | 1 file, 6 insertions, 75 deletions |
+
+**34 classes, 31 files.** `TaskManagerMultiReplicaTests.cs` holds four. None had a base or a primary constructor. A diff read shows 34 class lines, 5 `using` lines and nothing else in those 31 files. The namespace's files are 37: these 31, the 3 helpers (`SharedPostgresContainer`, `PostgresContainerFixture`, `RedisContainerFixture`), untouched, and 3 classes that were never listed because they reach the base through a parent: `BulkReportOwnerDeletedMidRunOnPostgresTests`, `CatalogueBodiesOnPostgresTests`, `LighterRoundsOnPostgresTests`. Those 3 were not touched either.
+
+**The 2 that touch no container.** `CategoryListNormalisationSeederIsolationTests` and `ParentSourcesColumnConversionTests` took the base with the others and no file changed folder. The namespace is the proxy that holds them in the tier: rule 2 allows them on the base because they sit in `Integration.Containers`, and rule 5 demands it for the same reason. Moving them out of the namespace and off the base, into the fast tier, stays a later choice. Nothing here decides it.
+
+**What the deletion removed.** The guard falls from 74 tests to 70.
+
+| Removed | Why |
+|---|---|
+| `FixturesNotYetOnTheBase` and its comment | Empty |
+| `EveryTypeOnTheListStillOwesAMoveToTheBase` | The stale check |
+| `AListedTypeNowOnTheBaseIsStale`, `AListedContainerFixtureNowOnTheBaseIsStale` | They tested the stale check |
+| `TheListExcusesAFixtureFromBeingOffTheBaseAndFromNothingElse` | Nothing is excused now |
+| The plant `ContainerOffTheBaseThatBreaksOtherRules` | Only that test read it |
+| `OwedAMoveToTheBase` and the field `hostedFixturesOffTheBase` | Only the stale check read the first; rule 1 alone read the second |
+
+Rules 1 and 5 lost their excuse: each now fails on what it finds, with no `Compare`. Their tests dropped "OrOnTheList" from their names, to `EveryFixtureThatStartsAHostIsOnTheBase` and `EveryLiveOrContainerFixtureIsOnTheBase`, because the old names would have been false. `LiveClassesWithOfflineTests` and its tests stay, and so does `Compare`, which its stale test and the host guard use. Every rule keeps its planted red and green cases. No count constant ever existed.
+
+**For step 05-04's list.** 6 ids of `TestTierGuardTest` leave and 2 arrive: the 4 removed tests, the 2 old names, the 2 new names. Everything else about the guard's ids is unchanged. Those 6 lost `Passed` ids are this step's doing and no other test left.
+
+| Case | What ran | Result |
+|---|---|---|
+| Stale, shown once | All 34 class lines moved, all 34 lines left in, `FullyQualifiedName~TestTierGuardTest`, Debug | TRX total 74, passed 73, failed 1, exit 1: `EveryTypeOnTheListStillOwesAMoveToTheBase`, naming 34 types, counted from the TRX. No other rule fired, so the IL reads every one of the 34 as on the base |
+| The list empty, the move's tree | `TestTierGuardTest` and `TestHostPerFixtureGuardTest`, Debug and `-c Release` | TRX total 92, passed 92, exit 0, each: 74 + 18 |
+| Containers, for real | Docker 29.9.3 up. `SubstrateProbeTests`, `PostgresUpdateExecutionLockTests`, `EmbedSessionSingleUseConcurrencyTests`, `ClusterSubstrateHealthCheckTests`, `TaskManagerMomentsMultiReplicaTests`, and on SQLite `CategoryListNormalisationSeederIsolationTests` and `ParentSourcesColumnConversionTests`, Debug and `-c Release` | TRX total 24, passed 24, exit 0, each |
+| The comments' tree | `EmbedSessionSingleUseConcurrencyTests`, `TaskManagerMultiReplicaTests`, `PredefinedAdditionalFieldMigrationTests` for real, with `TestTierGuardTest`, Debug and `-c Release` | TRX total 81, passed 81, exit 0, each: 7 + 74 |
+| The 34, by tier | `H` and `F`, each `&`-joined with the 34 names, `--list-tests`, `-c Release` | `H` 130 lines, `F` no match |
+| The namespace, by tier | `H` and `F`, each `&`-joined with `FullyQualifiedName~Integration.Containers.`, `--list-tests`, `-c Release` | `H` 139 lines, `F` no match. 139 is the count in the maintainer's decision |
+| `H` as a whole | `--list-tests`, `-c Release` | 3,395 lines: 05-02's 3,265 and these 130 |
+| After the deletion | `TestTierGuardTest` and `TestHostPerFixtureGuardTest`, Debug and `-c Release` | TRX total 88, passed 88, exit 0, each: 70 + 18 |
+| Real planted classes, the list gone | See below, Debug and `-c Release`, the same two classes of guard | TRX total 88, passed 86, failed 2, exit 1, each |
+| The host guard's exclusion lifted | `typeof(TestTierGuardTest).FullName!` taken out of `TypesThatHoldPlantedFixtures`, `TestHostPerFixtureGuardTest`, Debug and `-c Release` | TRX total 18, passed 17, failed 1, exit 1, each: `NoTypeStartsAnApplicationHostForEveryTestWithoutBeingOnTheList` naming `TestTierGuardTest`. Restored byte for byte |
+| The guard, final tree | `FullyQualifiedName~TestTierGuardTest`, Debug and `-c Release` | TRX total 70, passed 70, exit 0, each |
+| The other guards and the clause pin, final tree | `TestHostPerFixtureGuardTest`, `IntegrationFixtureCategoryTest`, `TestSelectionClauseTest`, `DbContextComesFromAScopeGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`, `BackendTestParallelizationGuardTest`, Debug and `-c Release` | TRX total 70, passed 70, exit 0, each: 18 + 23 + 29, the same figure as the guard by chance |
+| Builds | `dotnet build` in `Lighthouse.Backend`, and with `-c Release`, final tree | 0 warnings, 0 errors, each |
+| The diff | `git diff --name-only 9d0f46b06 HEAD`, 32 paths, through the regexes of `path-classifier.sh`, each run by `grep -Eq` from a Python script | `jira`, `ado`, `linear`, `servicenow`, `github` and `shared` answer `false`. `backend` answers `true`, 32 paths, as any file of the test project does |
+
+The seven variables were removed from every run. Only named classes ran, so this is not a list; that comes in step 05-04. 9 of the 34 ran for real; the other 25 were listed by tier only, and compiled.
+
+**The planted classes.** A temporary file in `Architecture/`, never committed, built with 0 warnings and 0 errors under both configurations. `TierGuardPlantedRealHostedFixture` has no base and starts its host in an async `[OneTimeSetUp]` after an `await`. `TierGuardPlantedRealConnectorFixture` carries `LinearIntegration` with no base. `TierGuardPlantedRealContainerFixture` sits in `Integration.Containers` with no base. Rule 1 failed in `EveryFixtureThatStartsAHostIsOnTheBase`, rule 5 in `EveryLiveOrContainerFixtureIsOnTheBase`, and no other test. The messages, the same in Debug and `-c Release`:
+
+```text
+These fixtures start an application host, so the fast test loop would run them. Each must derive from IntegrationFixture: Lighthouse.Backend.Tests.Architecture.TierGuardPlantedRealHostedFixture.
+```
+
+```text
+These live or container fixtures are off the base. Off it, the fast test loop would run a container test, and CI would run a live test against its real tracker in every build. Each must derive from IntegrationFixture: Lighthouse.Backend.Tests.Architecture.TierGuardPlantedRealConnectorFixture, Lighthouse.Backend.Tests.Integration.Containers.TierGuardPlantedRealContainerFixture.
+```
+
+The file was removed, and the final-tree runs above came after that on a fresh build. `git status --short` then listed only the guard.
+
+**The host guard's exclusion is still right.** The plants that start hosts in test bodies and per-test set-ups all stay in `TestTierGuardTest`, and the row above shows the host guard still finds them there when the exclusion is lifted, so it is still needed. The list's deletion removed no plant that starts a host. It matches by top-level type, so it covers those plants and nothing else, and its real pass stays at 18 tests.
+
+**The comments.** `ba4812e81`: 6 of the touched files, comments only. They explained themselves through Epic, slice, decision, bug and ADR ids; each now says the reason, or loses the pointer where the sentence stood without it. A diff read shows no line outside a comment. The scan matches ids, not narration, so other comments that break the rule may remain, as at 05-01 and 05-02. `[Category("slice-02")]` and its like on these classes are attributes, not comments, so they stayed.
+
+**A gap that closed.** "A class can be added to the list to dodge a rule", from the review's gaps, is gone with the list. Rules 1 and 5 now have one exception, the 2 mixed classes on their permanent named list.
