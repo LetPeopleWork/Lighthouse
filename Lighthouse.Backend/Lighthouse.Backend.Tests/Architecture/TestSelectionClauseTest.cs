@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string GuardedIntegrationClause = "(Category=Integration&Category!=UsageDataCanary)";
 
-        private static readonly string[] Connectors = ["JiraIntegration", "AdoIntegration", "LinearIntegration", "ServiceNowIntegration", "GithubIntegration"];
+        internal static readonly string[] Connectors = ["JiraIntegration", "AdoIntegration", "LinearIntegration", "ServiceNowIntegration", "GithubIntegration"];
 
         [GeneratedRegex(@"parts\s*=\s*@?\(\s*[""']([^""']+)[""']\s*\)", RegexOptions.CultureInvariant)]
         private static partial Regex FirstPartOfTheFilter();
@@ -32,6 +32,20 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [GeneratedRegex(@"parts\s*\+=\s*\(?[""']Category=(\w+)[""']", RegexOptions.CultureInvariant)]
         private static partial Regex AddsAConnectorsClause();
+
+        [GeneratedRegex(@"Category!=(\w+)", RegexOptions.CultureInvariant)]
+        private static partial Regex CategoryLeftOut();
+
+        [Test]
+        public void TheConnectorListIsWhatTheClauseInCiLeavesOut()
+        {
+            var leftOut = CategoryLeftOut().Matches(AlwaysOnClauseInCi()).Select(match => match.Groups[1].Value).Where(category => category != "Integration");
+
+            Assert.That(
+                Connectors,
+                Is.EquivalentTo(leftOut),
+                "The clause in " + CiWorkflow + " decides what a connector is, and the tier guard takes its connectors from this list. Make the list match the clause.");
+        }
 
         [Test]
         public void TheAlwaysOnClauseKeepsRegularAndHostedTests()

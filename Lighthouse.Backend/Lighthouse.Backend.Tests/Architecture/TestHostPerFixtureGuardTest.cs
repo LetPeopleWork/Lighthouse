@@ -98,6 +98,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             "NUnit.Framework.TheoryAttribute",
         ];
 
+        // Both guards plant classes that start hosts in tests and set-ups so they have something to find.
+        private static readonly HashSet<string> TypesThatHoldPlantedFixtures =
+        [
+            typeof(TestHostPerFixtureGuardTest).FullName!,
+            typeof(TestTierGuardTest).FullName!,
+        ];
+
         private ModuleDefinition module = null!;
         private HostBuildingScan scan = null!;
         private IReadOnlyCollection<string> typesFoundBuildingAHostPerTest = [];
@@ -107,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             module = IlDependencies.ReadModule(typeof(TestHostPerFixtureGuardTest).Assembly);
             scan = new HostBuildingScan(module, IsPerTestMethod);
-            typesFoundBuildingAHostPerTest = scan.OffendingRoots(root => TopLevelTypeOf(root.DeclaringType) != typeof(TestHostPerFixtureGuardTest).FullName)
+            typesFoundBuildingAHostPerTest = scan.OffendingRoots(root => !TypesThatHoldPlantedFixtures.Contains(TopLevelTypeOf(root.DeclaringType)))
                 .Select(root => TopLevelTypeOf(root.DeclaringType))
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)

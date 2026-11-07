@@ -130,14 +130,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "writes to a real Jira, but its empty-update test touches no tracker and must run in every CI build",
         };
 
-        private static readonly HashSet<string> ConnectorCategories =
-        [
-            "AdoIntegration",
-            "GithubIntegration",
-            "JiraIntegration",
-            "LinearIntegration",
-            "ServiceNowIntegration",
-        ];
+        private static readonly HashSet<string> ConnectorCategories = [.. TestSelectionClauseTest.Connectors];
 
         private static readonly HashSet<string> TestAttributes =
         [
@@ -154,6 +147,9 @@ namespace Lighthouse.Backend.Tests.Architecture
             "NUnit.Framework.SetUpAttribute",
             "NUnit.Framework.TearDownAttribute",
         ];
+
+        private static readonly string[] PiecesOfTheList = ["a", " b", "c "];
+        private static readonly string[] PiecesOfTheShortList = ["a", " b"];
 
         private ModuleDefinition module = null!;
         private HostBuildingScan scan = null!;
@@ -200,6 +196,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase(nameof(PlantedFixtures.HostInAFieldInitialiser), true)]
         [TestCase(nameof(PlantedFixtures.HostInABaseClassSetUp), true)]
         [TestCase(nameof(PlantedFixtures.HostThroughAHelper), true)]
+        [TestCase(nameof(PlantedFixtures.HostInATestBody), true)]
+        [TestCase(nameof(PlantedFixtures.HostInATestCaseBody), true)]
+        [TestCase(nameof(PlantedFixtures.HostInATestCaseSourceBody), true)]
+        [TestCase(nameof(PlantedFixtures.HostInATheoryBody), true)]
+        [TestCase(nameof(PlantedFixtures.HostInASetUp), true)]
+        [TestCase(nameof(PlantedFixtures.HostInATearDown), true)]
+        [TestCase(nameof(PlantedFixtures.HostInAOneTimeTearDown), true)]
+        [TestCase(nameof(PlantedFixtures.HostInAStaticConstructor), true)]
         [TestCase(nameof(PlantedFixtures.OnTheBaseWithAHost), false)]
         [TestCase(nameof(PlantedFixtures.RegularWithNoHost), false)]
         public void AFixtureOffTheBaseIsFoundHoweverItReachesAHost(string plantedType, bool shouldBeFound)
@@ -308,6 +312,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase(nameof(PlantedFixtures.CategoryOnTheClass), nameof(PlantedFixtures.CategoryOnTheClass), "")]
         [TestCase(nameof(PlantedFixtures.CategoryInAnotherLetterCase), nameof(PlantedFixtures.CategoryInAnotherLetterCase), "")]
+        [TestCase(nameof(PlantedFixtures.CategoryWithSpacesAround), nameof(PlantedFixtures.CategoryWithSpacesAround), "")]
         [TestCase(nameof(PlantedFixtures.ChildOfACategoryOnTheClass), nameof(PlantedFixtures.CategoryOnTheClass), "")]
         [TestCase(nameof(PlantedFixtures.CategoryOnAMethod), nameof(PlantedFixtures.CategoryOnAMethod), "::Serve")]
         [TestCase(nameof(PlantedFixtures.CategoryOnATestCase), nameof(PlantedFixtures.CategoryOnATestCase), "::Serve")]
@@ -320,6 +325,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [TestCase(nameof(PlantedFixtures.OnTheBaseWithAHost))]
         [TestCase(nameof(PlantedFixtures.LiveOnTheBase))]
+        [TestCase(nameof(PlantedFixtures.CategoryAfterACommaAndASpace))]
         public void TheCategoryOnTheBaseIsNotWrittenByHand(string plantedType)
         {
             Assert.That(PlacesThatWriteTheCategory([Planted(plantedType)]), Is.Empty);
@@ -342,10 +348,12 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase(nameof(PlantedFixtures.ConnectorOnAMethodOffTheBase), true)]
         [TestCase(nameof(PlantedFixtures.ConnectorOnATestCaseOffTheBase), true)]
         [TestCase(nameof(PlantedFixtures.ChildOfAConnectorOffTheBase), true)]
+        [TestCase(nameof(PlantedFixtures.ConnectorWithASpaceOffTheBase), true)]
         [TestCase(nameof(PlantedContainerFixtures.ContainerOnTheBaseWithNoHost), false)]
         [TestCase(nameof(PlantedFixtures.LiveOnTheBase), false)]
         [TestCase(nameof(PlantedFixtures.RegularWithNoHost), false)]
         [TestCase(nameof(PlantedFixtures.ConnectorInAnotherLetterCaseOffTheBase), false)]
+        [TestCase(nameof(PlantedFixtures.ConnectorAfterACommaAndASpaceOffTheBase), false)]
         public void ALiveOrContainerFixtureOffTheBaseIsFound(string plantedType, bool shouldBeFound)
         {
             var found = LiveOrContainerOffTheBase([Planted(plantedType)]);
@@ -379,6 +387,26 @@ namespace Lighthouse.Backend.Tests.Architecture
             var found = CanariesWithNoConnector([Planted(plantedType)]);
 
             Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
+        }
+
+        [Test]
+        public void TheGuardReadsACategoryTheWayNUnitDoes()
+        {
+            const string NameWithSpaces = " Integration ";
+            const string ListWithSpaces = "a, b,,c ";
+
+            var nameByNUnit = new CategoryAttribute(NameWithSpaces).Name;
+            var listByNUnit = new TestCaseAttribute(1) { Category = ListWithSpaces }.Properties[nameof(TestCaseAttribute.Category)];
+            var shortListByNUnit = new TestCaseAttribute(1) { Category = "a, b" }.Properties[nameof(TestCaseAttribute.Category)];
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(nameByNUnit, Is.EqualTo("Integration"));
+                Assert.That(listByNUnit, Is.EqualTo(PiecesOfTheList));
+                Assert.That(shortListByNUnit, Is.EqualTo(PiecesOfTheShortList));
+                Assert.That(CategoryNamedAlone(NameWithSpaces), Is.EqualTo(nameByNUnit));
+                Assert.That(CategoriesInAList(ListWithSpaces), Is.EqualTo(listByNUnit));
+            }
         }
 
         [Test]
@@ -556,21 +584,26 @@ namespace Lighthouse.Backend.Tests.Architecture
         // [TestCase] and [TestFixture] take categories too, as one comma-separated Category argument.
         private static IEnumerable<string> CategoriesIn(CustomAttribute attribute)
         {
-            var named = attribute.Properties
+            var listed = attribute.Properties
                 .Where(property => property.Name == nameof(TestCaseAttribute.Category))
-                .SelectMany(property => ((string)property.Argument.Value).Split(',', StringSplitOptions.TrimEntries));
+                .SelectMany(property => CategoriesInAList((string)property.Argument.Value));
 
             return attribute.AttributeType.FullName == typeof(CategoryAttribute).FullName
-                ? named.Concat(attribute.ConstructorArguments.Select(argument => (string)argument.Value))
-                : named;
+                ? listed.Concat(attribute.ConstructorArguments.Select(argument => CategoryNamedAlone((string)argument.Value)))
+                : listed;
         }
+
+        private static string CategoryNamedAlone(string name) => name.Trim();
+
+        // NUnit keeps the spaces here, so " b" in "a, b" is a category of its own that a filter on "b" does not select.
+        private static string[] CategoriesInAList(string list) => list.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
         private TypeDefinition Planted(string name)
             => allTypes.Single(type => type.Name == name && type.DeclaringType?.Name is nameof(PlantedFixtures) or nameof(PlantedContainerFixtures));
 
         // Fixtures that exist only so the rules can be pointed at something. They are abstract because NUnit runs
-        // any concrete class with a [Test] method, and the real pass looks only at concrete classes. None starts its
-        // host in a test or a per-test set-up: the guard that lists hosts started per test would read them as real.
+        // any concrete class with a [Test] method, and the real pass looks only at concrete classes. The guard that
+        // lists hosts started per test reads abstract classes too, and leaves this class out by name.
         internal static class PlantedFixtures
         {
             internal abstract class HostInOneTimeSetUp
@@ -619,6 +652,71 @@ namespace Lighthouse.Backend.Tests.Architecture
                 public void Prepare() => BuildTheHost();
 
                 private static TestWebApplicationFactory<Program> BuildTheHost() => new();
+            }
+
+            internal abstract class HostInATestBody
+            {
+                [Test]
+                public void Serve()
+                {
+                    _ = new TestWebApplicationFactory<Program>();
+                    Assert.Pass();
+                }
+            }
+
+            internal abstract class HostInATestCaseBody
+            {
+                [TestCase(1)]
+                public void Serve(int value)
+                {
+                    _ = new TestWebApplicationFactory<Program>();
+                    Assert.That(value, Is.Positive);
+                }
+            }
+
+            internal abstract class HostInATestCaseSourceBody
+            {
+                private static readonly int[] Values = [1];
+
+                [TestCaseSource(nameof(Values))]
+                public void Serve(int value)
+                {
+                    _ = new TestWebApplicationFactory<Program>();
+                    Assert.That(value, Is.Positive);
+                }
+            }
+
+            internal abstract class HostInATheoryBody
+            {
+                [Theory]
+                public void Serve(int value)
+                {
+                    _ = new TestWebApplicationFactory<Program>();
+                    Assert.That(value, Is.Positive);
+                }
+            }
+
+            internal abstract class HostInASetUp
+            {
+                [SetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+            }
+
+            internal abstract class HostInATearDown
+            {
+                [TearDown]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+            }
+
+            internal abstract class HostInAOneTimeTearDown
+            {
+                [OneTimeTearDown]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+            }
+
+            internal abstract class HostInAStaticConstructor
+            {
+                static HostInAStaticConstructor() => _ = new TestWebApplicationFactory<Program>();
             }
 
             internal abstract class OnTheBaseWithAHost : IntegrationFixture
@@ -674,6 +772,19 @@ namespace Lighthouse.Backend.Tests.Architecture
                 public void Serve() => Assert.Pass();
             }
 
+            [Category(" Integration ")]
+            internal abstract class CategoryWithSpacesAround
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class CategoryAfterACommaAndASpace
+            {
+                [TestCase(1, Category = "some-slice, Integration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
             internal abstract class CategoryOnAMethod
             {
                 [Test]
@@ -683,7 +794,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             internal abstract class CategoryOnATestCase
             {
-                [TestCase(1, Category = "some-slice, Integration")]
+                [TestCase(1, Category = "some-slice,Integration")]
                 public void Serve(int value) => Assert.That(value, Is.Positive);
             }
 
@@ -722,6 +833,19 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             internal abstract class ConnectorOnATestCaseOffTheBase
             {
+                [TestCase(1, Category = "some-slice,AdoIntegration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            [Category(" JiraIntegration")]
+            internal abstract class ConnectorWithASpaceOffTheBase
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ConnectorAfterACommaAndASpaceOffTheBase
+            {
                 [TestCase(1, Category = "some-slice, AdoIntegration")]
                 public void Serve(int value) => Assert.That(value, Is.Positive);
             }
@@ -751,7 +875,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             internal abstract class CanaryOnATestCaseWithNoConnector
             {
-                [TestCase(1, Category = "some-slice, UsageDataCanary")]
+                [TestCase(1, Category = "some-slice,UsageDataCanary")]
                 public void Serve(int value) => Assert.That(value, Is.Positive);
             }
 
