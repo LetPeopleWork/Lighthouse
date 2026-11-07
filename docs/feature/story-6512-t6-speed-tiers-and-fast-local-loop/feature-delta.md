@@ -1403,3 +1403,177 @@ In the same folder, `Slice02ParentFromLinkTest` has no base and no host, so it s
 **`L4` against `L3b`.** 0 lines only in `L3b`, 0 lines only in `L4`, and the same `sha256`, so no line needed excusing. This is the first evidence that `A` keeps real hosted tests: `H` now lists 2,079 of them, and every id still ran. `PortfolioUpdaterTest` did not fail here. The `category` column reads `Unit` on all 12,842 rows, as before slice F.
 
 **Before push 4.** `Lighthouse.Backend.Tests.csproj` is unchanged, so NUnit and the adapter are too.
+
+## Wave: DELIVER / [REF] Slice D, step 04-02: rule 1 and its list, what ran (2026-11-07)
+
+Commit `b39a18a88`: 2 files, 341 insertions, 1 deletion. Not pushed. `TestTierGuardTest.cs` did not exist before this step, although the step named it as the test file: the step wrote it. `HostBuildingScan` gains `FixtureReachesAHost` and `TypeAndItsBases`, and `DerivesFrom` becomes public. `TestHostPerFixtureGuardTest` is untouched.
+
+**The real count: 118, not about 130.** The first real output named 118 concrete classes, and Debug and `-c Release` gave the same 118 names in the same order. The design's figure was an estimate with no list behind it, so the 12 between them cannot be itemised. The list is 118 lines.
+
+| Check on the 118 | How | Result |
+|---|---|---|
+| Over-report from override following | A temporary scan, not committed, walked every class with override following on and off | 0 of 118 reach a host only through an override, so nothing was narrowed and the scan keeps following overrides |
+| Over-report from anything else | The same scan printed one path per class, and each was read | Each starts in the class's own set-up, constructor or test, in a test-host helper it creates, or in `UsageDataCollectorObservationTest`. The 15 subclasses of that root are the only inherited ones |
+| Under-report, against T2's list | T2's 53 entries looked up | 43 on this list, 6 on the base, and 4 abstract roots (`QuietWriteBackAcceptanceTest`, `SleRiskAcceptanceTest`, `StaleWorkItemsAcceptanceTest`, `TaskManagerAcceptanceTest`) that are not judged themselves |
+| Under-report, against the source | Files with tests that name a factory or host, and none of whose classes the scan found on the list or on the base | Only 5 guard classes, which read the assembly and start nothing |
+| What step 03-03 left | Read off the list | `Slice03AmbiguityRefusalTest` is listed. All 15 subclasses of `UsageDataCollectorObservationTest` are listed, as lines of their own, because the list holds concrete classes. `ParentFromIssueLinksAcceptanceTest` and `Slice01LinkTypeReferenceTest` are not, and stay regular |
+
+The same temporary scan read the 228 concrete classes on the base: 214 reach a host, and the 14 that do not are all live classes. That is an observation for rule 2, not yet a check.
+
+| Case | What ran | Result |
+|---|---|---|
+| Planted reds, before the rule | The rule stubbed to find nothing, Debug | All 6 failed on the assertion, `Expected is <System.String[1]>, actual is ... with 0 elements`: host in `[OneTimeSetUp]`, in an async `[OneTimeSetUp]` after an `await`, in a constructor, in a field initialiser, in a base class's set-up, through a helper |
+| Planted greens, before and after | Same run, and every run after it | On the base with a host, and regular with no host, both pass |
+| Stale case, tightened | It passed against the stub, so it could not fail. It gained a still-off-the-base control | With the rule, it reports only the type now on the base. It was not re-run against the stub |
+| A real unmarked class | `TierGuardPlantedHostedFixture` in the working tree, Debug and `-c Release` | 2 failed of 12 in each, this one with `Each must derive from IntegrationFixture: Lighthouse.Backend.Tests.Architecture.TierGuardPlantedHostedFixture.` |
+| Stale, shown once | `LighthouseAppContextConcurrencyTest` put on the base with its line left in, the same runs | The other failure in each: `These types are on the list but are not hosted fixtures off the base any more: Lighthouse.Backend.Tests.LighthouseAppContextConcurrencyTest.` Both plants removed; `git status` showed only this step's files |
+| The guard | `FullyQualifiedName~TestTierGuardTest`, Debug and `-c Release` | TRX total 12, passed 12, each |
+| The guards that read the same assembly | With `TestHostPerFixtureGuardTest`, `DbContextComesFromAScopeGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest` and `IntegrationFixtureCategoryTest`, Debug and `-c Release` | TRX total 59, passed 59, each; `TestHostPerFixtureGuardTest` 18 |
+| Builds | `dotnet build` in `Lighthouse.Backend`, and with `-c Release` | 0 warnings, 0 errors, each |
+
+Only named classes ran, as the step says; no whole-suite list. "On the base with no host", the second half of the working-tree check, needs rule 2, so it is shown in the step that adds it. A `[TestCaseSource]` method's body and a static constructor are in the walk's reach only as far as the root set names them: the static constructor is a root but has no planted case, and a source method is not a root.
+
+**The list, by reason.** Full names less `Lighthouse.Backend.Tests.`.
+
+Starts one host for the whole fixture (60):
+
+```text
+API.ForecastControllerCalendarDayAnchorTest
+API.Integration.AgeInStatePercentilesNonLinearFlowReadApiIntegrationTest
+API.Integration.AgeInStatePercentilesReadApiIntegrationTest
+API.Integration.ArchivedDeliveryStaleAggregateRaceIntegrationTest
+API.Integration.ArchivedDeliveryWriteRefusalIntegrationTest
+API.Integration.BlockedItems.BlockedStalenessThresholdValidationTests
+API.Integration.CategoryListsHoldRawStatesSettingsIntegrationTest
+API.Integration.CumulativeStateTimePortfolioReadApiIntegrationTest
+API.Integration.CumulativeStateTimeReadApiIntegrationTest
+API.Integration.CycleTimeDefinitionOverAMappingIntegrationTest
+API.Integration.DeliveryArchiveClosurePinIntegrationTest
+API.Integration.DeliveryFeatureSelectionScopeIntegrationTest
+API.Integration.DeliveryMetricsHistoryReadApiIntegrationTest
+API.Integration.FeatureMoveAuthOffIntegrationTest
+API.Integration.FlowEfficiencyPortfolioReadApiIntegrationTest
+API.Integration.FlowEfficiencyReadApiIntegrationTest
+API.Integration.ForecastFilterTeamSettingsIntegrationTest
+API.Integration.ForecastFilterThroughputChartIntegrationTest
+API.Integration.InstanceDayForecastWindowIntegrationTest
+API.Integration.JwtBearerAuthIntegrationTest
+API.Integration.McpInboundAuthIntegrationTest
+API.Integration.NamedCycleTimeCumulativeScopeIntegrationTest
+API.Integration.NamedCycleTimePortfolioIntegrationTest
+API.Integration.NamedCycleTimeReadApiIntegrationTest
+API.Integration.NamedCycleTimeTrendInfoApiIntegrationTest
+API.Integration.OrderedParentSources.ParentSourcesSettingsApiIntegrationTest
+API.Integration.ParentFromIssueLinks.Slice03AmbiguityRefusalTest
+API.Integration.PortfolioConcurrencyTokenIntegrationTest
+API.Integration.PortfolioOwningTeamSaveIntegrationTest
+API.Integration.RbacGroupMappingConcurrencyTokenIntegrationTest
+API.Integration.RecurringBlackoutRulesChartOverlayIntegrationTest
+API.Integration.RecurringBlackoutRulesWriteBackIntegrationTest
+API.Integration.ServiceNowConnectionAcceptanceTest
+API.Integration.TeamConcurrencyTokenIntegrationTest
+API.Integration.TeamStalenessThresholdSettingsIntegrationTest
+API.Integration.TeamThroughputHistoryValidationIntegrationTest
+API.Integration.ViewerEmbedSessionJourneyTests
+API.Integration.WorkItemAgePercentilesPortfolioReadApiIntegrationTest
+API.Integration.WorkItemAgePercentilesReadApiIntegrationTest
+API.Integration.WorkItemEstimateApiIntegrationTest
+API.Integration.WorkTrackingSystemConnectionConcurrencyTokenIntegrationTest
+API.Integration.WriteBackMappingForNewAdditionalFieldIntegrationTest
+API.Security.DeleteUnitRightsTests
+API.Security.F_BE_1_GroupSnapshotInheritanceTests
+API.Security.S13_ViewerEmbedHandshakeTests
+API.Security.S14_ViewerEmbedSubjectValidatorTests
+API.Security.S15_EmbedSurfaceOptInTests
+API.Security.S16_ValidateEndpointAccessTests
+API.Security.S17_LicenseDetailsTests
+API.Security.S18_ApiKeyCreationScopeTests
+API.Security.S2_ConnectionListPayloadShapeTests
+API.Security.S5_ApiKeyScopesTests
+API.Security.S6_RateLimitingTests
+API.Security.S8_EmbedEntryPointTests
+API.Security.S9_EmbedCookiePolicyTests
+API.Security.S9b_EmbedCookieConcurrencyTests
+Architecture.OptionalFeatureApplierSeamArchUnitTest
+LighthouseAppContextConcurrencyTest
+Services.Implementation.DomainEvents.DeliveryMetricSnapshotRecordingHandlerTest
+Services.Implementation.Repositories.FeatureListReaderRegistrationTest
+```
+
+Starts a host in its tests or its per-test set-up (38):
+
+```text
+API.Integration.AgeInStatePercentilesPortfolioReadApiIntegrationTest
+API.Integration.ArchivedDeliveryReadStabilityIntegrationTest
+API.Integration.ConnectionSecretStatePayloadTests
+API.Integration.ConnectionValidationUnreadableSecretTests
+API.Integration.CycleTimeDefinitionSettingsIntegrationTest
+API.Integration.CycleTimeDefinitionValidityIntegrationTest
+API.Integration.DependencyAwareForecasting.Slice00OneForecastPerBatchScenarios
+API.Integration.EncryptionControllerTests
+API.Integration.ForwardedHeadersIntegrationTest
+API.Integration.HealthCheckIntegrationTest
+API.Integration.MetricsEndpointIntegrationTest
+API.Integration.OAuthCallbackCsrfIntegrationTest
+API.Integration.OAuthControllerIntegrationTest
+API.Integration.OAuthProviderAbstractionIntegrationTest
+API.Integration.PortfolioDeleteSerialisationTests
+API.Integration.PortfolioStalenessThresholdSettingsIntegrationTest
+API.Integration.PortfolioTimeInStateReadApiIntegrationTest
+API.Integration.RunChartPayloadContractIntegrationTest
+API.Integration.ShutdownIntegrationTest
+API.Integration.SystemInfoAuthVisibilityCrossLayerTest
+API.Integration.SystemInfoWireFormatRegressionTests
+API.Integration.TeamDeleteSerialisationTests
+API.Integration.TimeInStateReadApiIntegrationTest
+API.Security.S1_AllowedOriginsEnvVarBindingTests
+API.Security.S1_CorsFailClosedTests
+API.Security.W1_VersionEndpointAuthorizationTests
+Health.DataProtectionKeyRingTest
+Integration.UsageData.UsageDataCollectorAddressTests
+Integration.UsageData.UsageDataConsentRateLimitTests
+Integration.UsageData.UsageDataEventCeilingTests
+Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest
+Services.Implementation.LighthouseClockTest
+Services.Implementation.OAuth.OAuthProviderRegistryTest
+Services.Implementation.OAuth.OAuthStateSecretPersistenceTest
+Startup.EncryptionBootstrapOrderTests
+Startup.RecentProblemsCapacityConfigurationTest
+Startup.ServiceProviderValidationTest
+TestClockBoundaryTest
+```
+
+Takes its host from `UsageDataCollectorObservationTest` (15):
+
+```text
+Integration.UsageData.BulkReportsUsageEventTests
+Integration.UsageData.OptionalFeatureToggledEventTests
+Integration.UsageData.ParentSourcesUsageEventTests
+Integration.UsageData.ReportPdfExportUsageEventTests
+Integration.UsageData.ReportUsageEventsTests
+Integration.UsageData.Slice04ProductEventsTests
+Integration.UsageData.Story6193EveryEventSaysItsSourceTest
+Integration.UsageData.Story6404FeaturesHeldUsageEventTests
+Integration.UsageData.TeamForecastRealityCheckRunEventTests
+Integration.UsageData.TeamRefinementNeedUsageEventsTests
+Integration.UsageData.TeamRefinementUsageEventsTests
+Integration.UsageData.TeamSizingUsageEventsTests
+Integration.UsageData.UsageDataEventPipeTests
+Integration.UsageData.UsageDataVetoEmitTests
+Integration.UsageData.WorkTrackingSystemFieldsChangedUsageEventTests
+```
+
+Runs against a Postgres or Redis container (2):
+
+```text
+Integration.Containers.EmbedSessionSingleUseConcurrencyTests
+Integration.Containers.ScalabilityTests
+```
+
+Tests how the test host starts and stops (3):
+
+```text
+Architecture.TestHostIsReleasedAfterDisposeTest
+Architecture.TestHostsRunWithoutRateLimitingByDefaultTest
+TestHelpers.TestWebApplicationFactoryTest
+```
