@@ -103,7 +103,7 @@ Under Debug and under `-c Release`, for real runs restricted with `FullyQualifie
 
 | Filter | Expected |
 |---|---|
-| `TestCategory=Integration` | The six derived fixtures, and the `[Explicit]` test (this confirms the hazard in D-6512-10) |
+| `TestCategory=Integration` | The six derived fixtures. The `[Explicit]` test may leave a `NotExecuted` row, which reads as not selected |
 | `TestCategory!=Integration` | Only the plain class |
 | CI's new always-on clause | All except the `[Explicit]` test |
 | CI's force-full clause, `(Category=Integration&Category!=UsageDataCanary)` | The six, not the `[Explicit]` test |
@@ -240,9 +240,10 @@ the live Stryker config and `mutation-testing.md` (they select by name). Old con
 leaves out every hosted test. `dev-test.*` and `test-build-filter.sh` have no ServiceNow clause; that gap is older and stays.
 
 **The `[Explicit]` probes.** 6 hosted tests are `[Explicit]`, and `SharedClockBaselineCapture` rewrites a recorded baseline. NUnit runs
-an explicit test when a positive filter names it. Once those classes carry `Integration`, a bare `Category=Integration`, which
-`dev-test` uses, would run them. A negative term in the same clause blocks that, which is why CI's dead-looking
-`Category!=UsageDataCanary` clause must stay, and why `dev-test` adopts it. Its comment should say so. The probe confirms this.
+an explicit test when it is selected directly. Once those classes carry `Integration`, a bare `Category=Integration`, which
+`dev-test` uses, might run them. The probe did not see that: beside other selected tests the `[Explicit]` test stayed `NotExecuted`
+under every filter, and a filter selecting only an `[Explicit]` test was not tried. So the hazard is unproven, not gone, which is why
+CI's dead-looking `Category!=UsageDataCanary` clause stays and `dev-test` adopts it. Its comment should say so.
 
 **Cost of the edit.** Any change to a `ci*.yml` sets every connector input and `connector_shared` to true (`ci_changes.yml` lines
 209 to 216), so the push of slice B runs all live suites once. Slice C's live-class edits run the matching connectors. Avoid
@@ -266,12 +267,12 @@ and it is the only list that includes live tests.
 |---|---|---|
 | Always-on clause, before and after | End of slices B, C and E | Diff empty |
 | Unfiltered `--list-tests`, before and after | End of slice E | Diff empty, live and `[Explicit]` tests included |
-| Force-full clause, restricted with the five connectors left out so no live test runs | End of slice E | Same ids before and after, no `[Explicit]` id |
+| Force-full clause, restricted with the five connectors left out so no live test runs | End of slice E | Same ids before and after, no `[Explicit]` id that ran; a `NotExecuted` row reads as not selected |
 | Fast run plus hosted run equal the always-on list | End of slice F | Equal, no overlap. Hosted run: `TestCategory=Integration&TestCategory!=JiraIntegration` and the other four |
 | Connector attributes | End of slice E | `git grep` of the five connector names, before and after: the same lines |
 | `Unit` rows equal the fast ids | End of slice F | Equal |
 
-`[Explicit]` tests must appear in no real run's list; `--list-tests` discovers them, the same before and after. A commit inside a slice
+`[Explicit]` tests must run in no real run, though a TRX may hold a `NotExecuted` row for them; `--list-tests` discovers them, the same before and after. A commit inside a slice
 is covered by the guard and the normal suite, not by an id diff.
 Environmental failures in CLAUDE.md change an outcome, not an id, so they do not disturb the diff.
 
@@ -582,8 +583,8 @@ Each is a check that can fail.
 | 5 | The first plain run matches `T0` | See "First plain run against `T0`" | Any difference stops the Story |
 | 6 | No id is lost at all, live and `[Explicit]` included | `dotnet test ... --list-tests` (no filter), sorted, at the parent of slice B's first commit and at the end of slice E | As 4, ids only |
 | 7 | The connector attributes stand | `git grep -E 'Category\("(Jira\|Ado\|Linear\|ServiceNow\|Github)Integration"\)' -- Lighthouse.Backend/Lighthouse.Backend.Tests \| sort` at the same two points | Any line differs |
-| 8 | `[Explicit]` tests stay out of real runs | At the end of slice E, `A`, force-full and `H`, each `&`-joined by `FullyQualifiedName~` with the 5 classes holding them and with the control class `HealthCheckIntegrationTest`. Those 5 classes hold only `[Explicit]` tests: 6 methods, 9 ids, as `RealityCheckWallClockProbe` has 4 cases. The control is there because a filter that matched nothing would also show no `[Explicit]` row | The TRX count is not exactly the control class's count in `L6`, which must be nonzero, or a row for any of the 9 ids has an outcome other than `T0`'s CSV shows (absent, unless `T0` shows otherwise) |
-| 9 | The tiers add up, with no overlap | `F`, `H`, `O` lists at the end of slice E | The three lists sorted together differ from `L6`. An overlap shows as a duplicate line `L6` does not have |
+| 8 | `[Explicit]` tests stay out of real runs | At the end of slice E, `A`, force-full and `H`, each `&`-joined by `FullyQualifiedName~` with the 5 classes holding them and with the control class `HealthCheckIntegrationTest`. Those 5 classes hold only `[Explicit]` tests: 6 methods, 9 ids, as `RealityCheckWallClockProbe` has 4 cases. The control is there because a filter that matched nothing would also run no `[Explicit]` test | The TRX's `Counters executed` is not exactly the control class's count in `L6`, which must be nonzero, or any of the 9 ids has a row with an outcome other than `NotExecuted`. A `NotExecuted` row and no row both read as not selected: `T0` holds all 9 as `NotExecuted`, the probe shows `A` and force-full give an `[Explicit]` test on the base no row and `H` gives it one. `Counters total` counts those rows, so it is not the number to read |
+| 9 | The tiers add up, with no overlap | `F`, `H`, `O` lists at the end of slice E | With every `NotExecuted` row of the 9 `[Explicit]` ids taken out of both sides, the three lists sorted together differ from `L6`. An overlap shows as a duplicate line `L6` does not have |
 | 10 | Exactly 3 offline tests sit outside fast and hosted | `O` run | Not 3 ids: 1 in `JiraWriteBackTest`, 2 in `AzureDevOpsWriteBackTest` |
 | 11 | The guard bites | Planted cases, and real planted classes under Debug and Release, "What each slice must show" | A planted red stays green, or the message omits the type |
 | 12 | The fast loop touches no real system | The `F` list holds no class with a connector attribute; `Test-Fast.ps1` holds `F` by text; `git grep -nE 'TestCategory!=Integration([^&]\|$)' -- CLAUDE.md Lighthouse.Backend/Test-Coverage.ps1 Lighthouse.Backend/Test-Fast.ps1 Scripts/test-selection docs/ci-learnings.md .claude/commands` | A connector class appears; or the grep prints a line, which catches the term in quotes, backticks or at a line's end. The one warning line of `mutation-testing.md` is the only allowed hit |
@@ -686,7 +687,7 @@ from the TRX, not the console. Results go in this delta.
 
 | Filter | Must select | Must not select |
 |---|---|---|
-| `TestCategory=Integration` | The first six, `Explicit`, `Live`, `MixedLive` (confirms the hazard of D-6512-10) | `Plain`, `MixedOffline` |
+| `TestCategory=Integration` | The first six, `Live`, `MixedLive`. `Explicit` leaves a `NotExecuted` row and does not run, so it does not confirm the hazard of D-6512-10 | `Plain`, `MixedOffline` |
 | `TestCategory!=Integration` | `Plain`, `MixedOffline` | The rest |
 | `A` | The first six, `Plain`, `MixedOffline` | `Explicit`, `Live`, `MixedLive` |
 | Force-full clause | Every fixture but `Explicit`: the first six, `Plain`, `Live`, `MixedLive`, `MixedOffline` | `Explicit` |
@@ -695,6 +696,8 @@ from the TRX, not the console. Results go in this delta.
 | `F` | `Plain` | The rest |
 | `H` | The first six | The rest |
 | `O` | `MixedOffline` | The rest |
+
+A `NotExecuted` row of an `[Explicit]` test reads as not selected, in every row of this table: it is not counted, and it is not a cell off. A filter selecting only an `[Explicit]` test was not tried.
 
 Run `--list-tests` with one filter once and write down whether it honours it. Nothing depends on that now.
 
@@ -743,7 +746,7 @@ with local lists and CI's with CI's, never across, because Docker, licence files
 **What is lost, plainly.**
 
 1. **No full list ever runs under the force-full string after the moves.** Clause logic, probe, guarantee 8 and the connector list cover it by
-   reasoning. The first force-full run after slice E, whenever it comes, is read once for `[Explicit]` ids. That is the one real gap.
+   reasoning. The first force-full run after slice E, whenever it comes, is read once for any `[Explicit]` id that ran, an outcome other than `NotExecuted`. That is the one real gap.
 2. **A list covers a push, not a commit.** A diff line names its class, so finding the commit stays easy.
 3. **Machine time.** Each run holds the machine alone for about 6 minutes, so a list run and T12's delivery take turns.
 4. **Push 3's CI run says nothing about hosted tests**, as "First plain run against `T0`" says; `L4` is the first evidence for that half.
@@ -767,10 +770,10 @@ Done by the orchestrator and recorded here, as the revision says.
 **Written down before the first commit of slice B:** `T0`, from the last green plain `main` run: the run id, its commit, the `Total:` line of
 "Test Backend", the CSV row count, the list's `sha256`. Read the commit from `gh run view`, not the run list, whose pages can be stale.
 A force-full run is not a candidate, and that includes T12's push, which edits `ci_frontend.yml`. Also written down: the `[Explicit]` ids'
-rows in that CSV, if any, so guarantee 8 reads them like for like.
+rows in that CSV: all 9 are there, `NotExecuted`.
 
 **The live push cannot judge the clause**: force-full selects everything whatever `A` says. It is judged on: green; every `T0` id present; every
-extra id in a class with a connector attribute; no `[Explicit]` id beyond `T0`'s.
+extra id in a class with a connector attribute; no `[Explicit]` id with an outcome other than `NotExecuted`.
 
 **The first plain run judges it, in part.** It is the run of the scan-move push. No class but the live ones sits on the base yet, so it can
 judge the clause **only for live and regular tests**: a hosted test with `Integration` and no connector does not exist at that point. That half
@@ -908,7 +911,7 @@ the amendment just above, whose "filtered run" is now exactly `A`. Sections abov
 - **Push 3 judges the clause only for live and regular tests.** The hosted-kept half first meets real hosted classes in `L4`, before push 4.
 - **Memory:** DEVOPS's 18 GB is corrected. T1 #6459 fixed that leak; T2 recorded about 3.6 GB and about 350 s.
 - **Counts:** every restricted run states a nonzero count read from the TRX. Guarantee 8 gains a control class, because the 5 classes hold only
-  `[Explicit]` tests and their right answer alone would be "nothing". They are 6 methods and 9 ids, not 6 tests.
+  `[Explicit]` tests and their right answer alone would be "nothing ran". They are 6 methods and 9 ids, not 6 tests.
 - **Diffs compare outcomes:** Passed ids must match. A foreign commit excuses a line only if its diff shows that exact test removed. Unstable names
   compare per-class counts.
 - **Push plan:** push 3 waits for foreign runs to end green; a re-run, or the scan's root-set commit pulled forward, is the way out; a foreign
@@ -1040,8 +1043,8 @@ is wanted, at the price of 10 files that need sorting out. Nothing was changed f
 
 ## Wave: DELIVER / [REF] Slice B, step 02-01: T0, L0 and the probe (2026-11-07)
 
-**The probe stopped the Story: a hold for the maintainer.** Two cells are off, the same two under Debug and under `-c Release`. No base was added,
-`IntegrationFixtureCategoryTest` was not written, and no filter changed. The question is below.
+**The probe stopped the Story, and the maintainer has since answered: see "Maintainer decisions (2026-11-07, probe)".** Two cells were off, the same two under
+Debug and under `-c Release`, by the rule as it stood. The step resumed under the new rule; "Slice B, step 02-01: the base" has what ran then.
 
 **`T0`.**
 
@@ -1086,9 +1089,9 @@ change between local runs is not yet known.
 | Console | `Failed: 0, Passed: 12799, Skipped: 2, Total: 12801`, 7 m 21 s, exit 0 |
 | TRX `Counters total` and CSV rows | 12,810: 12,799 `Passed`, 11 `NotExecuted` |
 | `sha256` of the sorted list | `1b08a59fca31d6f86cefca787e624e8d989d45a56692870a9c86fc3d4bdd3352` |
-| Kept in `evidence/` | `L0.csv`, and the TRX as `L0.trx.gz`, 4.3 MB. It was searched for token shapes and real hosts before going in; only test hosts turned up |
+| Kept | `L0.csv`, and the TRX as `L0.trx.gz`, 4.3 MB, on disk in `evidence/`, out of git by `evidence/.gitignore`. So are later `L` lists; this table's count and `sha256` are the record |
 
-**The two lists for guarantees 6 and 7**, in `evidence/`.
+**The two lists for guarantees 6 and 7**, in `evidence/`; the unfiltered list is on disk only.
 
 | List | Lines | `sha256` of the file |
 |---|---|---|
@@ -1132,10 +1135,38 @@ criterion ask for the TRX count, and this reading is not a licence to pass them.
 - **Guarantee 9 fails as written.** `H` would hold 9 `NotExecuted` rows that `L6` does not have, so `F`, `H` and `O` sorted together differ from `L6`.
 - **"Reading a diff" does not trip.** It guards `Passed` ids, and these rows were never `Passed`.
 
-**For the maintainer to decide.** The base's shape, as the stop rule says, or the rule itself:
+**Put to the maintainer.** The base's shape, as the stop rule says, or the rule itself. Option 1 was chosen:
 
 1. Keep the shape and count only tests that ran, reading a `NotExecuted` row of an `[Explicit]` test as not selected. Then the two cells hold, row 1's hazard needs a
    new wording, and guarantees 8 and 9 are rewritten around `NotExecuted`.
 2. Keep the rule and change the shape, so that an `[Explicit]` test on the base has no row under `H` or the standard filter. Nothing tried here does that.
 
-This step recommends 1, since no filter ran the test, but it is not this step's to decide. Nothing goes on from here until it is answered: 02-02 onwards waits.
+This step recommended 1, since no filter ran the test.
+
+## Wave: DELIVER / [REF] Slice B, step 02-01: the base (2026-11-07)
+
+Run after the maintainer's answer, on top of `d496a646a`. No probe ran again: the decision changes how its result reads, so under it every cell holds.
+
+| Case | What ran | Result |
+|---|---|---|
+| Red before the base | `IntegrationFixtureCategoryTest` alone, `dotnet build` | 1 error, `CS0246`, `IntegrationFixture` not found |
+| Sonar on an empty class | `dotnet build` with the base added | `S2094` fired once, on the test's own planted type off the base, not on `IntegrationFixture`. An empty class with an attribute passes, so no constant and no pragma; the planted type took a member |
+| Build | `dotnet build`, then `-c Release` | 0 warnings, 0 errors, each |
+| The test class | `FullyQualifiedName~IntegrationFixtureCategoryTest`, Debug and Release | TRX total 2, executed 2, passed 2, each |
+| A class that scans test types | `FullyQualifiedName~TestHostPerFixtureGuardTest`, Release | TRX total 18, passed 18 |
+| A planted fault | `[Category("Planted")]` on the base, Debug | TRX total 2, failed 1: `ATypeOnTheBaseCarriesTheIntegrationCategory`. Restored; both builds clean, class green again |
+
+Removing the attribute outright is not a usable plant: the empty class then fails the build on `S2094`, and a `--no-build` run after that reads the old binaries and passes.
+
+`IntegrationFixture` is abstract, has no members and no `TestFixture` attribute. No class derives from it yet.
+
+## Wave: DELIVER / [REF] Maintainer decisions (2026-11-07, probe)
+
+These override earlier text.
+
+- **Probe: the base's shape stays and the rule changes.** A `NotExecuted` row of an `[Explicit]` test reads as not selected. Probe row 1, guarantees 8 and 9 and the other
+  lines that said such a test has no row are rewritten to match. Under this rule every cell of the probe holds, under Debug and Release.
+- **The remaining hazard, plainly.** A filter selecting only an `[Explicit]` test was not tried, and NUnit may run a test selected directly. That is why CI keeps its
+  `UsageDataCanary` clause.
+- **Frontend timing target.** `pnpm test:fast --changed` stays under 10 s for a typical edit; about 15 s is accepted for a heavily shared file. No node project.
+- **Evidence.** `L0.trx.gz`, `L0.csv`, the unfiltered list and later `L` lists stay on disk, out of git by `evidence/.gitignore`. Their count and `sha256` are recorded in this delta.
