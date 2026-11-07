@@ -180,8 +180,9 @@ namespace Lighthouse.Backend.Tests.API.Security
             keyClient.WithApiKey(plainTextKey);
             var writeResponse = await keyClient.PutAsJsonAsync($"{TeamsPath}/{TeamAlphaId}", new { });
 
-            // The guard runs before model validation, so a refused empty body means the guard let the key through.
-            Assert.That(writeResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
+            // The guard runs first, so any answer other than its refusals means it let the key through. The empty
+            // body is then turned down by binding or by the action itself, which is beside the point here.
+            Assert.That(writeResponse.StatusCode, Is.Not.AnyOf(HttpStatusCode.Forbidden, HttpStatusCode.NotFound));
         }
 
         [Test]

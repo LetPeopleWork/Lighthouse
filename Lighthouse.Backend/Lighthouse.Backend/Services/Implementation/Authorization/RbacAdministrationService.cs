@@ -370,8 +370,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             };
         }
 
-        // Kept apart from the create rule on purpose: a rule shared between two actions is how a policy change
-        // to one of them silently misses, or drags along, the other.
+        // Deleting has its own rule so a change to who may create cannot quietly change who may delete.
         private async Task<bool> CanDeleteUnitAsync(ClaimsPrincipal principal, CancellationToken cancellationToken)
         {
             if (!await IsRbacEnforcedAsync(cancellationToken))
