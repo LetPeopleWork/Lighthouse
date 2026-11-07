@@ -1161,3 +1161,19 @@ That 34 % was the cut for all seven files, to reach the 17.5 s line. With slices
 The stop rule is otherwise unchanged: each file keeps its measured stop check. The roadmap carries these figures and has
 four steps. It was amended by the orchestrator on the maintainer's word, not re-reviewed: the only changes are these
 targets, the before-commit, step 01-04's removal, and that the full `pnpm test` is now required at the close.
+
+## Wave: DELIVER / [REF] Step 01-05 result: slice A closed (2026-11-07)
+
+Figures and proofs in `measurement/slice-A-measurement.md`.
+
+- **After figures:** `refinementNeed` 13.35 to 7.91 s, a cut of 40.8 % against the required 17 %; `readiness` 11.10 to
+  4.95 s, 55.4 % against 19.4 %. Neither file stops, so no "target not met" is recorded.
+- **Step 01-04 was dropped on the maintainer's word.** `ModifyTeamSettings.test` is unchanged in this Story; its proofs and
+  the "up to 7 of 36" loop-row figures of the change table do not apply.
+- **Proofs against `1ffe2be77`:** `check-behaviour-free.sh` exits 0; `run-touched-files.sh` ends OK (21 files, 563 of 563);
+  coverage of the Team directory 96.16 line / 86.72 branch, equal to the 01-01 reading; every deliberate break is recorded
+  with its failing test.
+- **Build and suite:** `pnpm build` clean, `git status` clean afterwards; `pnpm test` 618 files, 9498 tests, all green.
+- **Mutation testing N/A:** no production file changed.
+- **Budget stays 56 s** until the budget commit after the push (at least 5 complete plain `main` runs). Slices B and C are
+  not part of this Story and can be picked up later as their own item.

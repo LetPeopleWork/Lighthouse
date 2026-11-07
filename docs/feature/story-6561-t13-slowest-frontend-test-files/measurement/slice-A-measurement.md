@@ -329,3 +329,34 @@ the 16 that already rendered one unit) and the three section files (23), 48 test
 
 Median 13.35 to 7.91: cut **40.8 %** against the required 17 % (and the design target of 25 %). The file does not stop.
 The summed seconds count tests only; the process CPU is not lower because four files start up where one did.
+
+# Step 01-05: close slice A, after figures and every proof (2026-11-07)
+
+Code before-commit `1ffe2be77`. Step 01-04 (`ModifyTeamSettings.test`) was dropped on the maintainer's word: that file is
+unchanged in this Story, so its proofs and the "up to 7 of 36" loop-row figures of the change table do not apply.
+Mutation testing is N/A: no production file changed.
+
+## After figures (medians of the 5 alternating pairs of the stop checks, summed per-test seconds, local, 2 workers)
+
+| File | Before s | After s | Cut | Required | Result |
+|---|---|---|---|---|---|
+| `ModifyTeamSettings.refinementNeed` | 13.35 | 7.91 | 40.8 % | 17 % | target met, no file stopped |
+| `ModifyTeamSettings.readiness` | 11.10 | 4.95 | 55.4 % | 19.4 % | target met, no file stopped |
+| `ModifyTeamSettings.test` | n/a | n/a | n/a | none | step dropped, file unchanged |
+
+No file is named as "target not met". (The 01-01 before figures of 14.57 s and 12.08 s came from a single run; the
+stop-check medians above are the like-for-like pairs the cuts are computed from.)
+
+## Proofs against `1ffe2be77`
+
+| Proof | Result |
+|---|---|
+| `check-behaviour-free.sh` | exit 0. No production, end-to-end or screenshot file in the diff; `.not.` removed 17, added 7, in rows 16; removed `expect(` 34 of 34 (readiness) and 47 of 47 (refinementNeed) have rows; row text matches. No skip, only, todo, skipIf, runIf, looser matcher or longer timeout added |
+| `run-touched-files.sh` | ends OK: 21 files, 563 of 563 passed, vitest exit 0, baseline ids 558, after-run 563, missing 41 (all with rows), new 46 (all listed). No outside-seven id list changed |
+| Coverage, Team directory (`--coverage.include='src/components/Common/Team/**'`, 16 files, 245 tests) | 96.32 stmts, 86.72 branch, 89.58 funcs, 96.16 lines: equal to the 01-01 reading (96.16 line, 86.72 branch), not lower |
+| Deliberate breaks | all recorded above under steps 01-02 and 01-03, each with the failing test and the restore; the one break that no test caught (the form losing the unchanged refinement value) led to the added form test `keeps the stage rules, cadence and readiness as they were when the band changes`, which fails with the break applied |
+| `pnpm build` | exit 0; Biome checked 1303 files, no fixes applied; `tsc -b` and `vite build` clean; no `*/docs` symlink under the project; `git status` clean afterwards (no rewritten files) |
+| `pnpm test` (whole frontend, `LIGHTHOUSE_TIME_BUDGET=off`) | 618 of 618 files, 9498 of 9498 tests passed, 233.8 s |
+| Mutation testing | N/A: no production file changed (accepted by the maintainer) |
+
+The budget stays 56 s until the budget commit after the push. Slices B and C are not part of this Story.

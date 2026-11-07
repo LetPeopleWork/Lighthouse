@@ -199,3 +199,8 @@ These band-explanation assertions are the old form tests' lines moved verbatim (
 ## Checks run at close
 
 - Step 01-02 only; the close checks (A-5) run after the last step.
+
+## Closing check (step 01-05)
+
+`check-behaviour-free.sh 1ffe2be77` exits 0 over the whole slice: 34 rows for `readiness`, 47 rows for `refinementNeed`,
+every row's text found among the removed lines. `ModifyTeamSettings.test.tsx` has no rows because step 01-04 was dropped.
