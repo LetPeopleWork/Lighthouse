@@ -271,3 +271,61 @@ cut is about 52 %.
 
 Median 11.10 to 4.95: cut **55.4 %** against the required 19.4 % and the design target of 24 %. The file does not stop.
 Step 01-03 is not blocked.
+
+# Step 01-03: refinementNeed stage, cadence and band tests to the section renders (2026-11-07)
+
+Code before-commit `1ffe2be77`; the move is commit `9e3995dbe`. Measured from `Lighthouse.Frontend`,
+`LIGHTHOUSE_TEST_WORKERS=2`, `TZ=Europe/Zurich`, `test-results.json` deleted before every run.
+
+## Moves
+
+`refinementNeed` had 47 tests. 23 moved with titles unchanged: 4 stage rule tests to `StageRulesSettings.test.tsx` (one of
+them, `keeps an edited Ready rule when the Yes votes needed change before it is saved`, renders the whole Refinement section
+because it edits two of its parts), 4 cadence tests to `RefinementCadenceSettings.test.tsx` (new, beside the existing
+function test file) and 15 band tests to `RefinementBandSettings.test.tsx`. 8 wiring tests stay on the form unmodified: stage
+`saves a changed Ready rule ...` and `saves nothing while a new rule is still incomplete`; cadence `saves Thursdays every
+week`, `asks for the starting week ... and saves it`, `saves nothing while every second week names no starting week`; band
+`saves a changed high end ...` and `refuses a decimal likelihood ... saves nothing`; the picker test. The 16 tests that
+already rendered one unit or called a function are untouched. That makes one saves-nothing-while-invalid test per section
+kind on the form: stage rule, cadence, band (and readiness from 01-02). 47 `expect(` lines removed, 47 rows;
+`check-behaviour-free.sh` exits 0; the id check ends OK (23 moved ids have rows, 24 new ids listed: 23 moved plus the added
+test below). Nine band-explanation lines (`toContain`) are listed under "Accepted matcher hits": moved verbatim.
+
+## Deliberate breaks (one at a time, restored each time; production files clean after)
+
+| Break | Tests that failed |
+|---|---|
+| `refinementSettingsBlockers` returns `[]` | form: `names readiness as what keeps the settings from being saved`, stage `saves nothing while a new rule is still incomplete`, band `refuses a decimal likelihood ...`, cadence `saves nothing while every second week names no starting week ...`; `refinementNeed`'s two `What holds back the save` function tests |
+| `teamAutoSaveBlockers` returns `[]` | the same four saves-nothing tests, one per section kind (readiness, stage rule, band, cadence) |
+| band handoff to the form replaced by `onChange({})` | form: `refuses a decimal likelihood ...`, `saves a changed high end ...` |
+| stage rules handoff replaced by `onChange({})` | form: `saves a changed Ready rule ...`; section: `keeps an edited Ready rule when the Yes votes needed change ...` |
+| cadence handoff replaced by `onChange({})` | form: `saves Thursdays every week`, `asks for the starting week ... and saves it`, `saves nothing while every second week names no starting week` |
+| the form loses the unchanged part of the refinement value (`...teamSettings?.refinement` removed) | **none failed**: a finding |
+| band error mark removed (`error={false}`) | section: `marks only the low end ...`, `marks the high end being typed in ...`, both `refuses ... outside 50 to 95`; form: `refuses a decimal likelihood ...` |
+| cadence limit of 52 weeks raised to 520 | section: `saves nothing for more than 52 weeks between Refinements, and says why` |
+| stage rule spread broken (`{ [stage]: rule }`) | section: `switches the Ready rule off ...`, `keeps an edited Ready rule ...`; form: `saves a changed Ready rule ...`; the two single-Team stage tests (`saves a stage rule switched to match any condition`, `saves the first condition of an empty stage ...`) |
+| picker given no mappings | `the refinement picker offers a mapping's name, not its states` |
+
+Finding: with the form losing the unchanged part of the refinement value, no test failed. Before the move,
+`keeps an edited Ready rule when the Yes votes needed change before it is saved` caught it on the form (it saves two edits and
+compares the whole saved refinement). On the section it cannot, because the section's host merges the change itself. A form
+test was added before the commit: `keeps the stage rules, cadence and readiness as they were when the band changes`, which
+changes the band on a Team with stage rules and a cadence and compares the whole saved value. With the break applied it
+fails; the break row above is the run before the test existed.
+
+## Stop check for refinementNeed: passes with margin
+
+Summed per-test seconds (`assertionResults[].duration`), 5 alternating pairs, 5 of 5 valid (every 1-minute load-average
+sample between 1.96 and 2.62, limit 6). Before is the old file run from a copy; after is the form file (9 tests: 8 stay,
+1 added, plus the 16 that already rendered one unit, 24 in all) and the three section files (23), 47 plus 1 tests.
+
+| Pair | Order | Before s | After s | Before CPU user+sys | After CPU user+sys |
+|---|---|---|---|---|---|
+| 1 | before, after | 13.46 | 7.91 | 13.51 | 13.78 |
+| 2 | after, before | 13.45 | 7.90 | 13.33 | 13.74 |
+| 3 | before, after | 13.35 | 7.93 | 13.22 | 13.77 |
+| 4 | after, before | 13.30 | 7.91 | 13.21 | 13.79 |
+| 5 | before, after | 13.30 | 7.81 | 13.18 | 13.59 |
+
+Median 13.35 to 7.91: cut **40.8 %** against the required 17 % (and the design target of 25 %). The file does not stop.
+The summed seconds count tests only; the process CPU is not lower because four files start up where one did.
