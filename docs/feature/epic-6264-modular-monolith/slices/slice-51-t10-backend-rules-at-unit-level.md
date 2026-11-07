@@ -78,3 +78,5 @@ Direction, not a gate: about 90 % fast, 9.5 % integration, 0.5 % E2E, by test co
 - **Where it stood on 2026-11-07:** frontend 3,648 fast and 5,857 `.test.tsx` of 9,505; about 56 Playwright tests, 0.25 % of about 22,600. The backend split is known only once T6 has labelled it.
 
 T10 is the rewriting: it moves backend rules from integration tests down to unit tests.
+
+**Change from T5's DEVOPS (2026-11-07).** Read a host-to-port saving by class, not from the tier column.

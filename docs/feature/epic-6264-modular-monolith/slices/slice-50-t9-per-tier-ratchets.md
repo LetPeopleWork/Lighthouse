@@ -86,3 +86,5 @@ Direction, not a gate: about 90 % fast, 9.5 % integration, 0.5 % E2E, by test co
 - **Where it stood on 2026-11-07:** frontend 3,648 fast and 5,857 `.test.tsx` of 9,505; about 56 Playwright tests, 0.25 % of about 22,600. The backend split is known only once T6 has labelled it.
 
 T9 prints the three shares in its report, with no gate on them.
+
+**Changes from T5's DESIGN and DEVOPS (2026-11-07).** The frontend budget is now 54 s, not 56 s. T5 keeps the slowest tests at the host, so proposal 2's line that it moves them is wrong. Calibrate after T5's last move, and read a host-to-port saving by class, not from the tier column. T5 raises the fast tier's mean by an estimated 3 to 4 %, up to about 9 %.
