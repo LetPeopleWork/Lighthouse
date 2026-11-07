@@ -420,3 +420,248 @@ there is no new external call. The check is its own small hexagon, and it grows 
 | Job joining both CSVs | Rejected | A `ci*.yml` edit for a line with no gate |
 | Percentile or median as the gate | Rejected | ADR-237: the bar rises with the suite |
 | Domain events, outbox, unit of work, optimistic concurrency, value objects, JSON column | N/A | No product model or persistence changes |
+
+## Wave: DEVOPS / [REF] Platform readiness
+
+Existing platform; nothing is deployed. Written 2026-11-07 with the maintainer away, so each choice takes the recommended option and says why.
+**No test ran**, because T6 is using the machine, and no file but this one changed. Read: T9's delta, slices 50 and 51, T5's and T6's DEVOPS,
+`ci.yml`, `ci_backend.yml`, `ci_frontend.yml`, `ci_changes.yml`, `green-base-run.mjs`, `path-classifier.sh`, `check_budget.py`, the budget file,
+the reporter. Read from GitHub, read-only: job and step results of recent `main` runs, two job logs, artifact lists, and the frontend CSVs of five
+runs. Every backend figure above stays a placeholder. `environments.yaml` is not written: this wave may edit this file only, as in T5 and T6.
+
+| Topic | Answer |
+|---|---|
+| Environments | **CI, `ubuntu-latest`:** the only place the limits judge; `Verify Backend` and `Verify Frontend`, Python 3.12 or the check refuses. **Linux, local:** the Vitest limit also fires in `pnpm test` and `pnpm test:fast`, unscaled; `check_budget.py` on a downloaded CSV, and `--pyramid`, print and write nothing. No Docker is needed for any of it. Windows and macOS jobs run no test |
+| Pipeline | **No `ci*.yml` edit, no new step, no new workflow, confirmed from the files (D-6536-21).** `Check test-time budget` already passes `--stack`, `--csv`, `--source-root` and `LIGHTHOUSE_BUDGET_WARN_ONLY`; the runner sets `GITHUB_STEP_SUMMARY` itself. `Test the budget check` already runs the Python tests in both jobs, and both have the whole tree, so a test reading `ci_backend.yml` or `package.json` finds it. Both workflows' comments above the step speak only of a class or a file; that goes stale, and is fixed by whoever next edits them, not by an edit of ours |
+| Deployment strategy | None: a trunk push to `main`. Rollout is the ledger itself: report only, then provisional, then enforced. Rollback is below |
+| Branching | Trunk-based, unchanged. `ci.yml` has no `concurrency`, so each push waits for the one before to end, as in T5 |
+| Observability | The log and the step summary of each run, the `::error::` and `::warning::` annotations, and the timing CSVs. No dashboard, no alert: the red run is the alert. A CSV is kept 90 days (run 42372930241 expires 2027-02-05), so a ledger's run ids outlive their data; the calibration table below keeps the figures |
+| Mutation | N/A, because Stryker mutates the product and no product file changes. The planted breach of each limit stands in, as in DESIGN. Strategy stays `per-feature` for the project; `CLAUDE.md` is unchanged |
+| Usage-data event | **N/A, because nobody using the product reaches a CI budget check, so no event could show use.** `UsageDataEventName` and `docs/settings/usagedata.md` are unchanged (D-6536-30) |
+| Coexistence | T4's per-file and per-class budgets, the reporter's `slowTests.ts`, T5's and T6's guards, and `summarise.py` keep working as they are. `dev-test.sh` and `Test-Fast.ps1` do not read the ledger |
+| Pre-requisites | T6's slice F on `main` for any backend figure. T5's last move, or its stop, for the enforcing 5. A clean change-detection window before each push (see "What each push triggers"). Slice A needs neither |
+| Peer review | Not run: the skill's triggers do not apply (no new target, framework, stack or security change), and the review at the end of DISTILL covers this wave |
+
+**Monitoring contracts.** No `outcome-kpis.md` exists; the outcomes are the brief's.
+
+| Outcome | Instrument | Read when |
+|---|---|---|
+| A slow fast test fails the build | Reporter (frontend); fast judge (backend); the planted case on every run | Each run |
+| `Integration` mean does not creep | Report row, ledger | Each run; at T10's end |
+| `Integration` growth is visible | Report row, "since the total was set" | Each run |
+| The three shares | `check_budget.py --pyramid`, recorded here | Slice C; T10's end |
+
+## Wave: DEVOPS / [REF] What each push triggers
+
+Read from `ci.yml`, `ci_changes.yml` and `path-classifier.sh`. The tail is `version`, package, Docker, SBOM, `verifysqlite`, `verifypostgres`,
+`verifyauth`, the standalone packages and the Windows and macOS checks. Observed on 2026-11-07: backend job 13 to 20 minutes, frontend job 10 to 16.
+
+| Push | Slice | Paths | Backend | Frontend | Live suites | Then |
+|---|---|---|---|---|---|---|
+| 1 | A and B | `Lighthouse.Frontend/src/tests/timeBudget/`, `vitest.config.ts`, `Scripts/test-timings/` | Plain | Yes | None | Tail. Its run is a calibration run if it is after slice F |
+| A alone, if B is not ready | A | `Lighthouse.Frontend/` only | **Skipped** | Yes | None | Tail |
+| 2 | C, first entries | `test-time-budget.json` | Plain | **Yes**, this path starts it | None | Tail. Rides push 1 if T6's last run was plain and green, or another backend push; see D-6536-22 |
+| 3 | C, enforcing | `test-time-budget.json`, and `slowTests.ts` only if listed | Plain | Yes | None | Tail |
+| Any | Finalization | `docs/` | No run | No run | None | Nothing: the path is not in `ci.yml`'s `paths` |
+
+So **two or three code pushes in all**. A and B share a push, as DESIGN allows: a red in slice A shows in `Build Frontend (composite)`, a red in slice B in
+`Test the budget check`, so the two stay apart without a second tail.
+
+**"No live suite" holds only if the window is clean, and today it is not.** Change detection diffs from the last run that `isGreenBase` accepts, so a
+`ci*.yml`, csproj or `Program.cs` change still in the window forces every live suite, whatever the push touched. Run 42382479502 shows it: a push of a
+test scan and docs, with `connector_shared=true` and every connector `true`, because red run 42379254193 left `ci_backend.yml` in the window (base
+6dc63d981, 21 commits back). **T6's check applies to each T9 push as it stands:** `git diff --name-only <last green> HEAD`, then each connector and shared
+`classify_*`, and a grep for `^.github/workflows/ci.*\.yml`. Any `true` means wait for a green run, or tell the maintainer.
+
+**A calibration run cannot be asked for.** `workflow_dispatch` after a green base finds no change and skips the backend, and re-running a job keeps the run
+id, so it is no new id. The 5 come from real backend pushes, T9's own included.
+
+## Wave: DEVOPS / [REF] What goes ahead without 5 runs
+
+The maintainer's word: do not hold work for a 5-run limit where it blocks progress. This is the whole answer.
+
+| Step | Goes ahead on | Effect on a breach | Waits for |
+|---|---|---|---|
+| Slice A code | Nothing needed | **Fails.** The frontend limit lives in the reporter and has no warn stage | Nothing |
+| Slice A figure | **The 5 runs already exist**, see below. Re-read at DELIVER | **Fails at once**, in the test step. `LIGHTHOUSE_TIME_BUDGET=warn` softens every test, not this limit, so it is no provisional stage | Nothing. If the re-read cannot find 5, it stays 2 s, inert |
+| Slice B, all of it | Empty ledgers | **Report only**, nothing judged | Nothing; the backend rows read "nothing labelled" before slice F |
+| ADR-237, `ci-learnings.md` line 471 | Nothing needed | None; docs start no CI | Nothing. They need no number, so they do not wait for slice C's end |
+| First backend entries: fast limit, mean, total | One plain green run after slice F; **T5 need not be finished** | **Warn only**, on their own number, with "provisional, n of 5" on every run | Slice F |
+| `--pyramid`, the shares | The first plain run after slice F | Reported, never judged | Slice F |
+| T10 starting | The report and the CSVs; provisional entries are enough | None | T5 and T6, as its brief says, not T9's 5 |
+| `fast_allowlist` entries | **Not on a provisional entry.** D-6536-5 needs a class slow in every calibration run, which fewer than 5 cannot show | | The enforcing push |
+| **Enforcing push** | **5 distinct eligible ids after T5's last move or stop** | **Fails** | The only step that waits. It blocks nothing but T9's closing |
+
+So only one thing waits: T9 stays Active with slice C open while a limit is provisional (D-6536-12), and the chain moves on to T10 past it. If T5 stops late, the
+cost is a warning on every run, not a held Story.
+
+**Slice A's figure, read today (D-6536-23).** Five green shuffled frontend runs exist. In the table, "largest" is the largest test in a file not ending `.test.tsx`.
+
+| Run | Vitest Duration | Largest `.test.ts` | Rows |
+|---|---|---|---|
+| 42369233738 | 587 s | 0.622 s | 9,505 |
+| 42370581769 | 491 s | 0.475 s | 9,505 |
+| 42370793984 | 454 s | 0.449 s | 9,505 |
+| 42372930241 | 777 s | 0.664 s | 9,505 |
+| 42379254193 | 598 s | 0.726 s | 9,505 |
+
+`L` = 0.726 s, so `ceil(2.1 x L / 3)` to 0.1 s is **0.6 s, or 1.8 s on CI**, against 6 s today and DESIGN's stand-in of about 2.1 s. Run 42379254193's backend went
+red, its frontend job did not, so its frontend CSV counts ("Reading a run"). Run 42366736330 has no seed line, so the shuffle starts at 42369233738.
+
+- **One file sets it.** Every top test of every run is in `src/layerBoundaries.enforcement.test.ts`, and which one moves between runs. The next file's largest is 0.167 s. Without that file the rule gives 0.2 s, or 0.6 s on CI. Taken here: **0.6 s, nothing listed**, because the rule says so and it is the simple start. The limit only goes down, so listing that file's slow tests later costs one frontend push. See "For the maintainer", point 2.
+- **The risk is local, not CI.** The base limit is unscaled on a developer's machine, and the factor 3 is T4's assumption, not measured for this file. Two sessions at once could red `pnpm test:fast` where CI is fine. DELIVER reads that file's local time from one `pnpm test:fast` when the machine is free, before pushing.
+- The set holds one slow day at most: 777 s against 454 to 598 s. DESIGN's "about 650 or about 1,100 s" no longer describes the runs, which T12 and T13 changed, so the check that the set holds both is read as "the slowest run seen is in it".
+
+## Wave: DEVOPS / [REF] Reading a run, so the ledger does not learn a bad one
+
+Three facts make this a rule and not a habit, each read from GitHub:
+
+- **The red run's CSV exists.** `Extract` and `Upload` carry `if: always()`. In run 42379254193 `Test Backend` failed and `test-timings-backend` was still uploaded. "The step runs only after green" protects the verdict, not the derivation.
+- **One run id can hold two CSVs.** Run 41904560367 was re-run, and lists `test-timings-backend` twice, under the same id and name (artifacts 13360697176 and 13362801269). A ledger's run id alone does not say which one was read.
+- **A run's conclusion means nothing here.** Most `main` runs sit at `waiting` on the deploy gate with no conclusion, and a red `verifyauth` marks a run failed with a sound backend. Picking runs by a run-level `success` would skip them, and would reject good ones.
+
+**The rule (D-6536-25).** The unit is one job in one attempt. A CSV may enter a derivation only if, in that attempt, the test step succeeded (`Test Backend`, or `Build Frontend (composite)`), it has no `Failed` row, and, for the backend, all connector and `connector_shared` answers in Detect Changes are `false` and it is after slice F. The enforcing 5 must also be after T5's last move or stop.
+
+| What happened | Backend CSV counts? | Verdict that run | What to do |
+|---|---|---|---|
+| `PortfolioUpdaterTest` red, or any one flake, on a plain run | **No, not that attempt** | None: the budget step is skipped | Read the name, as `ci-learnings.md` says. Re-run the failed job once: no live cost, and a green re-run closes the window, as `isGreenBase` reads the latest attempt. **The green attempt counts**, under the same id, with its artifact id written down. Red twice is a real failure, handed to whoever owns the test; T9 quarantines nothing |
+| The same on a force-full run | **No, in any attempt:** it is not plain | None | Do **not** re-run for T9's sake: it spends the shared keys for an id that cannot count. Whether to re-run to close the window is the pushing Story's call |
+| `verifyauth` red because `traefik` could not be pulled from Docker Hub, backend green | **Yes.** It is another job, and it is not in `isGreenBase`, so it holds no window either | Stands | Nothing for T9. Re-run it if a Release is wanted, as a red there skips Release |
+| `verifysqlite` or `verifypostgres` red for Docker Hub, backend green | **Yes** | Stands | The window stays open, as both must succeed. Re-run the job |
+| Docker Hub fails inside `Verify Backend`: Testcontainers pulls `postgres:18-alpine` | **No:** the container fixtures go red, so `Test Backend` does | None | As a flake. Check the log for the pull error; `Integration/Containers` red with no pull error is the known rotating flake |
+| A slow pull or a slow runner, all green | **Yes. A green complete run is never dropped for being slow (D-6536-26).** It is the noise a ceiling must clear | Stands | One bad run counts twice, in the largest and in `h`, so a spread over 1.25 keeps the entry provisional and goes to the maintainer (D-6536-10), rather than being tidied by removing the run |
+| `Check test-time budget` red, tests green | **Yes**, D-6536-11 | Red | See "A red on trunk" |
+| `Test the budget check` red, tests green | **Yes**, the times are sound | None: the budget step is skipped | Fix the script or its pins |
+| A connector or force-full run, all green | **No:** not plain | **Stands.** Connector classes are left out, so the run is judged | When one first passes after slice F, compare its `Integration` mean with the plain runs'. Ceilings come from plain runs and also judge the others, and whether live suites beside them slow those rows is unknown |
+
+The frontend reads the same way, with no plain rule. Its `bail: 1` means a red run's CSV may also be short. A re-run of it keeps the seed, as the seed is the run id, so it is no new order.
+
+**The calibration table.** Slice C keeps one row per run in this file: run id, attempt, artifact id, commit, the connector answers, `Failed` rows, then count, sum and mean per tier. The same command that CI runs prints those figures from a downloaded CSV, so no new tool is needed. A docs-only commit carries it, so adding a row starts no CI. The ledger keeps run ids only, as DESIGN says.
+
+## Wave: DEVOPS / [REF] A red on trunk from a new ceiling
+
+Provisional entries cannot red on a limit, so this starts at the enforcing push.
+
+**What it does.** Observed on all three red runs read (42372874167, 42379254193, 42127795017):
+
+- **`sonar-gates`, every standalone package, the Windows and macOS checks and Release are skipped.** The image, `packageapp` and the verify jobs still run, so the cost is paid and nothing can ship. The Sonar analysis itself is sent before the budget step, but its gate is unread, and the next green inherits the batch (`ci-learnings.md`).
+- **The window stays open for everyone.** `Verify Backend` red is not a green base, so the next push by any Story diffs from the older commit. If that window holds a connector path or a `ci*.yml` edit, an unrelated push runs live suites on the keys CI shares. That is what happened to run 42382479502.
+- **Other Stories stop.** T5's rule is that a red is diagnosed before anything else is pushed, so one red holds T5, T6 and T10 for at least one backend job, 13 to 20 minutes.
+- **Their proofs survive.** A budget red comes after the tests, the CSV and the upload, so an id comparison or a host count from that run still stands. Only the verdict is red.
+- **It may name nobody's change.** A mean or total breach is on a tier, so the Story that pushed may have done nothing.
+
+**What keeps it rare (D-6536-28).** Enforcing waits for 5 runs that include the slowest seen. The enforcing push goes on a clean window with no other Story's push running, so its first verdict is read alone.
+
+**What to do (D-6536-29).** Read the report before anything else.
+
+| Report says | Cause | Action |
+|---|---|---|
+| Count up, or one class far up | The pushing Story | Its fix: move tests down, or for the total alone a fresh derivation with a reason (D-6536-11), one JSON push |
+| Count unchanged | Slow runner | Re-run the failed job once. On a plain run it costs no live quota and, once green, closes the window |
+| Count unchanged, red again | Slower fleet, or a real drift | **Stop and raise it.** `LIGHTHOUSE_BUDGET_WARN_ONLY` is a repository variable, and it also softens T4's limits, so **it is the maintainer's to set**: an agent working AFK does not change it |
+| The same, the maintainer away, trunk blocked, T9 not yet closed | | `git revert` the enforcing commit: a data-only plain push that returns the entry to warning. Recorded here. After T9 closes this is a raise, and needs the maintainer's word |
+
+## Wave: DEVOPS / [REF] The total ceiling: seconds only, and what option (b) adds
+
+Designed for **(a), seconds only**, while the maintainer's ruling is pending. Nothing above changes with it: slice C's total line stands either way, and only DISTILL's total scenarios wait.
+
+Option (b), a count line beside the total, is one field, one report row and one scenario. It needs no `ci*.yml` edit, and it can come later with nothing redone. On the platform it adds:
+
+| Effect | Seconds only | With a count line |
+|---|---|---|
+| Calibration | 5 runs, provisional first | **None.** One plain run after slice F gives the number, so it can fail from the start, with no warn stage |
+| Reading a red | Noise or growth, by the report | **Always real:** a re-run cannot help, and it names the Story that added rows |
+| JSON edits | Every so often, when the room is used | **Every feature that adds an `Integration` row.** Each such push also starts the frontend job, 10 to 16 runner minutes, though not more wall clock, as backend takes longer |
+| Reds on trunk | Rare | **More, and this is its real cost.** No local check counts rows, because `dotnet build` and `dotnet test` run no budget step. A Story that forgets learns from a red trunk, with everything in the section above |
+| Parallel Stories | Nothing | One line that two Stories edit: a merge conflict, which an agent must stop on rather than rebase. If they merge cleanly, the second push reds for tests that are both reviewed |
+| T5 and T10 | Nothing | Moves lower the count. As an at-most line it leaves silent room that the next feature uses with no edit; as an exact line every move edits it too. At most, lowered in T5's and T10's data commits, is the workable form |
+
+Unverified for (b): that the count of the two classes with unstable test names holds still from run to run. The recommendation stays (a), as DESIGN's.
+
+## Wave: DEVOPS / [REF] Rollback
+
+Every step is a `git revert` and a plain push: no `ci*.yml`, no data, no product file, so no live run on a clean window, and nothing a user sees.
+
+| Step | How | Constraint |
+|---|---|---|
+| A wrong number, right now | The maintainer sets `LIGHTHOUSE_BUDGET_WARN_ONLY=true`: no push, reaches the next run. Not a bad ledger or a stale entry, which stay red by design. Whether a re-run picks up a changed variable is not verified | Softens T4's limits too, so it is short-lived |
+| C, enforcing commit | Revert: back to provisional, warnings only. Starts backend and frontend | Before T9 closes; afterwards it counts as a raise. T10's data commit goes first if it has landed |
+| C, first entries | Revert: report only | After the enforcing commit |
+| B | Revert alone, once C is gone | The ledgers it reads must be out first |
+| A | Revert alone, at any time: a frontend-only push. Or the limit back to 2 s | Independent of B and C |
+| Finalization docs | With what they describe; no CI | |
+
+**One line on T6's rollback.** T6 says slice F reverts alone "until T9 builds on the column". That moment is T9's first ledger entry, not slice B: with an entry in the ledger and no `Integration` row the check exits 2 (D-6536-13), and a provisional entry counts as in force for that rule, because a column that reads all `Unit` is no limit to warn about. So T9's slice C goes first, then T6's F. Slice B alone only prints "nothing labelled". The reverse order of T6 and T5 stands.
+
+## Wave: DEVOPS / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6536-21 | No `ci*.yml` edit stands; the stale workflow comments wait for the next edit | Their cost is a sentence; the edit's cost is every live suite |
+| D-6536-22 | **Two ledger pushes at most: first entries, and the enforcing one. The number is re-derived at those two, not after each run.** Ids between are collected here, in a docs commit. First entries ride a push already going | Each JSON push starts backend, frontend and the tail, and creates the next run, so "each later run re-derives" never ends and costs a tail each time |
+| D-6536-23 | Slice A takes `ceil(2.1 x L / 3)` from the latest 5 green shuffled runs at DELIVER, 0.6 s today, nothing listed, enforced from its first push | The runs exist and the frontend has no warn stage to wait in |
+| D-6536-24 | `fast_allowlist` entries arrive only with the enforcing push | D-6536-5 cannot be shown with fewer than 5 runs, and a provisional limit only warns anyway |
+| D-6536-25 | Eligibility is read per job and per attempt, and each counted run has a row in the calibration table with its artifact id | A run id alone can hold two CSVs, one of them red |
+| D-6536-26 | A green complete run is never dropped for being slow | Removing the slow run is how a ceiling ends up inside the noise |
+| D-6536-27 | **Tests of the shipped budget file assert the ledger's rules, never its numbers**, and planted cases read the limit from the file. For DISTILL | Run 42372874167: a one-line budget edit without its pinned constant failed `Test the budget check` in both jobs. A data commit must stay a data commit, T10's too |
+| D-6536-28 | The enforcing push goes on a clean window, with no other push running | Its first verdict is the one most likely to be noise, and a red there spends other Stories' time |
+| D-6536-29 | An enforced red: read the count, one re-run, then stop. The switch is the maintainer's; before T9 closes an agent may revert the enforcing commit | It changes a repository setting that also softens T4's limits; a revert is a reviewed, recorded diff |
+| D-6536-30 | Usage-data event N/A | Nobody using the product reaches CI |
+
+Rejected, to keep it small: a `--derive` mode (a second job for the script, for two derivations); an attempt field in the ledger (the table holds it; the check would have nothing to do with it); a check step that refuses a CSV with a `Failed` row (the step already runs only after green); a warn stage for the frontend limit (a second switch, when the 5 runs already exist); a synthetic calibration push (a tail each, for ids real pushes bring).
+
+## Wave: DEVOPS / [REF] Changed assumptions
+
+Original, DESIGN, "How slice C fills the backend": "Each later run re-derives that entry's number with its id added". New: re-derived at the first entries and the enforcing push only (D-6536-22). Why: each edit is itself a full run.
+
+Original, DESIGN, "Slices": "Every push under `Scripts/test-timings/` runs backend, frontend and the tail, and no live suite". New: no live suite **on a clean window**. Why: run 42382479502.
+
+Original, DESIGN, "What can lie", CSV of a red run: "The step runs only after green". It holds for the verdict; the CSV is uploaded regardless, so the derivation has its own rule (D-6536-25).
+
+Original, D-6536-9: "each with seconds, CI run ids and a reason". It stands, and the id is not enough alone; the table adds attempt and artifact.
+
+Original, DESIGN, "The figures", frontend: "Unknown. At most about 2.1 s". New: 0.6 s from five runs. "Too few runs: it stays 2 s" no longer applies today.
+
+Original, DESIGN, "The figures": "about 650 s or about 1,100 s". New: 454 to 777 s across the five runs read.
+
+Original, D-6536-13: "A ledger in force and **no** counted `Integration` row". New: a provisional entry counts as in force for this rule.
+
+Nothing here changes the architecture, so no upstream change goes back to DESIGN.
+
+## Wave: DEVOPS / [REF] Owed to other briefs (not edited here)
+
+**T10 #6537.**
+
+- The lowering commit comes **after** T10's 5 runs, as DESIGN says, and it is a data commit: it starts backend, frontend and the tail, and it needs no test edit (D-6536-27).
+- Proposal 6 reads "both from T9's summary". **Read the CSVs**, with `check_budget.py` on a download: a step summary is text on a run page and exists only when the budget step ran. Proposals 1 and 6 use the eligibility rule here, attempts and artifact ids included, or T10's before and after can learn a red attempt.
+- If T9 is still provisional at T10's end, T10 re-derives the provisional entry; the same rule, and T9 closes on that 5.
+- A lower total or mean is a fresh derivation over those 5 by T9's formula and applies only if lower. Maintainer's word: the total goes down too.
+- `category` is slice F's, not slice D's, as DESIGN owes.
+
+**T8 #6514 (state Next; it splits backend unit and integration into parallel jobs and shards the frontend).**
+
+- **One job must judge all rows, or each job judges only what it holds.** As the check stands, a backend job with no `Integration` rows exits 2 once a ledger exists, and an `Integration` job holding part of them passes on a smaller sum and mean. The second is silent. T8 merges the backend CSVs before `Check test-time budget`, or changes what the step is given.
+- **It must re-derive every limit.** Fewer tests per job changes per-test times. Mean and fast limit have no raise, so if either rises, T8 stops and asks the maintainer. T4's class limits move too.
+- The frontend limit lives in the reporter, so it holds per shard; `test-timings-frontend` and `--pyramid` then need the whole set.
+- T8 is a `ci*.yml` edit in any case, so it is the moment for the per-run three shares (DESIGN's point 2) and the two stale step comments.
+
+**T6 #6512.** The rollback line above. And **now:** "Push 3 is the first plain run" does not hold. See "For the maintainer", point 1.
+
+**T5 #6469.** Nothing changes. A T9 enforced red stops its pushes under its own rule.
+
+## Wave: DEVOPS / [REF] For the maintainer
+
+Nothing here blocks DISTILL except the ruling already asked for.
+
+1. **T6's push 3 is not plain (act on this first; it is T6's, found here).** Run 42382479502 has `connector_shared=true` and every connector `true`, so it is a second run of every live suite on the shared keys, and it cannot be T6's first plain run or the comparison against `T0`. Push 2's red left `ci_backend.yml` in the window. If this run ends green the window closes and the next backend push is plain. If it goes red on the same flake, the next one is live again.
+2. **How tight the frontend limit starts.** Taken: 0.6 s, or 1.8 s on CI, with nothing listed. One file sets it. Listing that file's slow tests in `slowTests.ts` would give 0.2 s, or 0.6 s on CI, for everything else. It can follow at any time; say if you want it from the start.
+3. **Still pending from DESIGN:** seconds only, or a count line. Designed for seconds only.
+4. **The switch.** D-6536-29 keeps `LIGHTHOUSE_BUDGET_WARN_ONLY` yours. If you would rather let an agent set it in a blocked-trunk case, say so.
+
+## Wave: DEVOPS / [REF] Open for DISTILL and DELIVER
+
+- **DISTILL:** D-6536-27 for every shipped-file test; a provisional entry with no `Integration` row exits 2; the planted cases as DESIGN lists them. No nWave tags.
+- **DELIVER, slice A:** re-read the 5 runs; the local read of `layerBoundaries.enforcement.test.ts`.
+- **DELIVER, slice C:** the calibration table; the first comparison of a force-full run's mean against plain runs.
+
+**Not verified.** Any backend tier figure, as the column does not exist yet. The factor 3 for `layerBoundaries.enforcement.test.ts` on a local machine. That the reporter's per-test seconds equal the CSV's `duration_ms`. Whether a re-run picks up a changed repository variable. Whether live suites slow the `Integration` rows beside them. How `gh run download` chooses between two artifacts of one name, which is why the table holds the artifact id. That the step summary cannot be read through the API. Why a skipped `sonar-gates` skips what needs it: observed on three runs, not explained by the `if` in `ci.yml`. The cause of the `PortfolioUpdaterTest` flake, which T6 records as suspected only.
