@@ -622,7 +622,8 @@ No run named a time-budget offender, so the reporter check of 02-01 has none to 
 ### Finding A: ReportPrintPage, seed 4 (fixed, one test file, 3 of 5 extra files used)
 
 - The file alone, `--sequence.shuffle.tests --sequence.seed=4`, failed the same test (31 passed, 1 failed). Seeds 11, 1 passed.
-  So the order within the file decides it, and it is not only load.
+  Before that, the same file, seed and flags passed 32 of 32 in the orchestrator's run (`sw/rp_4.log`), so order alone does not decide
+  it either: the failure needs that order and an unlucky moment for the lazy chunk.
 - Cause as far as the evidence goes: the print route is `lazy(...)`. When this test is the first to need the page, five
   microtask turns in `aMomentLater` pass before the lazy chunk has been drawn, so `[data-render-ready]` is absent and
   `renderReadiness()` is `undefined`. Run after any test that already loaded the chunk, the page is there. That accounts for
