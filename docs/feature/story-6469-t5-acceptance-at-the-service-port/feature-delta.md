@@ -1343,3 +1343,7 @@ Nothing here blocks the wave. Decided in your absence; say if any is wrong.
 **Pass 2: approved.** All findings closed, every count re-added. Its 2 low findings are fixed.
 
 **Not reviewed or not verified.** The platform, solution and product reviewers of the consolidated gate did not run, as the dispatch named one reviewer (see "For the maintainer"). Neither pass verified the TRX and CSV figures behind the tables, the type counts for `FasterUpdates`, or the 8 seeders. Nothing here has run: `c`, `h`, the size of the first list and every red are DELIVER's.
+
+## Wave: DISTILL / [REF] Maintainer decisions (2026-11-07)
+
+This overrides earlier text. **Slices E and F take the smaller option:** only the near-all-port classes move, 109 of the 296 rows, for about 37 % of the estimated saving. The other classes stay at the host, on the shrinking list. Slice sizes, scenario and id tables are re-cut to that scope at the start of slice E, once slice A has measured `c` and `h`.
