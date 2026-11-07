@@ -334,8 +334,9 @@ test('a .github that cannot be read fails the check instead of passing it', asyn
 	await assert.rejects(findActionPinViolations(root), { code: 'ENOTDIR' });
 });
 
-// The seed is user-controlled text. Interpolated into a run: body it would be shell code, so the
-// step has to receive it through the environment and read it as a variable.
+// An input must never be interpolated into a run: body, where it would become shell code. The
+// step receives the seed through the environment and reads it as a variable, whatever value a
+// caller passes.
 const testStepOf = (action) => {
 	const start = action.indexOf('- name: Test Frontend and Sonar report');
 	assert.notEqual(start, -1, 'the test step is missing from the build-frontend action');

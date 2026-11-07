@@ -120,8 +120,8 @@ all seven full runs green before B starts, so CI does not go red at once.
 Add an optional input `shuffle-seed` (default empty) to the action. When set, its test step runs
 `pnpm test --sequence.shuffle.tests --sequence.seed=$SEED` and first prints `Test order seed: $SEED` (plus a `::notice::`).
 `ci_frontend.yml` passes `shuffle-seed: ${{ github.run_id }}`. Empty means the plain run, so a local `pnpm test` and every other
-caller are unchanged. Re-running a red job reuses the run id, so the same seed comes back: a re-run cannot hide an order
-dependence by luck, and the seed is readable from the URL. Rejected: a random seed inside Vitest (printed, but not in the
+caller are unchanged. Re-running a red job reuses the run id, so the same seed comes back: a re-run keeps the order
+but not the timing, so it replays an order dependence but not a timing one, and the seed is readable from the URL. Rejected: a random seed inside Vitest (printed, but not in the
 step title or the URL, and a re-run changes it); a config-level default (would shuffle local runs and Stryker runs, whose timings and
 budget are meaningless anyway); a second workflow run (adds a full run, 10 to 18 minutes).
 **Probe of the guard** (does it bite?): the sweep already ran this exact flag form against trunk and went red on 4 of 5 seeds;
@@ -714,3 +714,15 @@ No run named a time-budget offender, so the reporter check of 02-01 has none to 
   `ReportPrintPage.test.tsx`, `PortfolioDetail.test.tsx`, `observedRunFromVitest.ts` and `observedRunFromVitest.test.ts`.
 - **Checklist:** ticked by the evidence above and in the earlier steps: production unchanged (file list), no longer timeouts or retries (none added), ratchet
   (shuffle seed in the CI frontend run), docs (this step), mutation N/A while only test files change. No release notes written.
+
+## Review pass on slice 02
+
+- Reporter: a test with a recorded start now beats a listed-first test without one; with no start times in a file the listed order stands.
+  The new test for the first case was red before the change (1 failed of 24), and green after (`src/tests/timeBudget` 124 passed). A second test pins the
+  no-start-times file. Own commit.
+- The notice and the replay line in `docs/ci-learnings.md` now say to run from `Lighthouse.Frontend`. No action pin reads the notice text.
+- The pin comment in `action-pins.test.mjs` now says why the pin stands (an input is never interpolated into a run body).
+- `ci-learnings.md` and the design paragraph above now say a re-run keeps the seed and so the order, not the timing.
+- Ran: `node --test .github/scripts/*.test.mjs` 218 passed, 0 failed; `pnpm build` exit 0, `git status` showed only the edited files afterwards;
+  plain `pnpm test` with the time budget on: 618 files, 9505 tests passed, 0 offenders.
+- Not run: no new shuffled full run (the reporter change was checked by its unit tests; the CI line itself is unchanged apart from the notice text).

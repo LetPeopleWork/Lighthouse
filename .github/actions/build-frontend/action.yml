@@ -67,7 +67,7 @@ runs:
       run: |
         if [ -n "$SHUFFLE_SEED" ]; then
           echo "Test order seed: $SHUFFLE_SEED"
-          echo "::notice title=Test order seed::Reproduce locally with: pnpm test --sequence.shuffle.tests --sequence.seed=$SHUFFLE_SEED"
+          echo "::notice title=Test order seed::Reproduce locally from the Lighthouse.Frontend folder with: pnpm test --sequence.shuffle.tests --sequence.seed=$SHUFFLE_SEED"
           pnpm test --sequence.shuffle.tests --sequence.seed="$SHUFFLE_SEED"
         else
           pnpm test

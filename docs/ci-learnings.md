@@ -123,7 +123,8 @@ pnpm:settings-in-package-json ::: json ::: ^\s*"pnpm"\s*:\s*\{ ::: pnpm settings
 - **A test may not depend on another test's set-up, or leave shared state changed**: the CI frontend run
   executes the tests of every file in a shuffled order, seeded by the run id, so the guard checks this
   rule on every push. The seed is printed as `Test order seed: <run id>` and in the Vitest header
-  (`Running tests with seed`). Replay a red file with
+  (`Running tests with seed`). A re-run of the same CI run keeps the run id, so it keeps the seed and the
+  order but not the timing, and a timing-dependent failure can still come and go. From `Lighthouse.Frontend`, replay a red file with
   `pnpm test --sequence.shuffle.tests --sequence.seed=<run id> <the red file>`, and bisect a pair of
   tests with `-t "A|B"`. Three signatures of a new order dependence: a test that fails alone or on one
   seed and passes on the next; a lazy route, chunk or provider that only the first test to need it pays
