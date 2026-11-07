@@ -64,7 +64,7 @@ If you would rather Lighthouse owned the order than your Work Tracking System, t
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
 
 ### Parent
-The item each Feature hangs under in your work tracking system — for example an *Initiative* or *Objective* if you use OKRs or some kind of quarterly planning. The name links to the item in your work tracking system; *No Parent* means the Feature has none. To take the parent from a different field, set a [Parent Override Field](edit.html#parent-override-field).
+The item each Feature hangs under in your work tracking system — for example an *Initiative* or *Objective* if you use OKRs or some kind of quarterly planning. The name links to the item in your work tracking system; *No Parent* means the Feature has none. To take the parent from somewhere else, or from several places in order, set the [Parent sources](edit.html#parent-sources).
 
 Three further columns say something about every row:
 - **Warnings** carries one icon per Feature — a green check when there is nothing to say, an amber triangle when there is. Hover it to read every reason at once: a Feature marked done that still has open Work Items, one using the *Default Feature Size* because it isn't broken down yet, or a dependency Lighthouse can't take into account. See [Warnings](../features/features.html#warnings).

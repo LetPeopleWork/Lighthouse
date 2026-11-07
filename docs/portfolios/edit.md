@@ -261,36 +261,84 @@ A change to the connection's Estimation default does not update the Portfolio. I
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a portfolio without bothering.
 
-## Parent Override Field
-By default, Lighthouse uses the native parent-child relationships from your work tracking system to determine what each Feature hangs under — which is what the [Parent](detail.html#parent) column shows.
+<a id="parent-override-field"></a>
 
-If you need to override this behavior (for example, to group Features under a custom field instead of the native parent link), you can select a **Parent Override Field**. This field must be defined as an Additional Field on your Work Tracking System connection first.
+## Parent sources
+Lighthouse uses the parent-child relationships of your work tracking system to decide what each Feature hangs under, which is what the [Parent](detail.html#parent) column shows. If your hierarchy sits somewhere else, or in more than one place, list those places here.
+
+**Parent sources** is an ordered list of one to five sources. For each Feature, Lighthouse reads the list from the top, and the first source that yields a parent wins. The sources below it are ignored for that Feature.
+
+A source is one of two things:
+
+- **The tracker's own Parent**, the parent the tracker itself records, shown as *Parent (default)*. A list you have not changed holds this one row.
+- **An Additional Field** of the connection. On Jira it may [name an issue link type](#naming-an-issue-link-type-on-a-jira-connection) instead of a field.
+
+The tracker's own Parent is a row like any other: you can move it or remove it. It is read only when it is in the list, and only at its place in the order. Without it, Features that no other source places get no parent, and the page warns you of that below the list.
+
+For example, with this list:
+
+1. `Is caused by`, an Additional Field naming a Jira link type
+2. `Program Ref`, an Additional Field holding a key
+3. *Parent (default)*
+
+A Feature with an *is caused by* link hangs under the issue at the other end. One without such a link but with a value in `Program Ref` hangs under that value. One with neither hangs under its Jira parent. One with none of the three has no parent.
+
+What counts as yielding a parent depends on the source:
+
+- **A field** yields a parent when it holds a value. Lighthouse takes the value as it stands, even if it names nothing Lighthouse holds, and reads no further.
+- **The tracker's own Parent** yields a parent when the Feature has one.
+- **A Jira link type** yields a parent when it has a link. Unlike on a Team, the issue at the other end does not have to be a Feature, because a Feature's parent is not itself one of your Features — see [below](#when-a-features-links-name-more-than-one-issue).
+- **A source Lighthouse cannot read** yields nothing, so the next source is read and [Refresh History](../settings/systeminfo.html#refresh-history) says so. That is a reference matching no field and no link type or, on Azure DevOps, a relation type.
+
+Use **Add a source** to add the tracker's own Parent or an Additional Field not yet in the list, and the arrows on each row to change the order. A list holds at most five sources and names each of them once. The only remaining row cannot be removed, because a list needs at least one source.
 
 {: .note}
-Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.
+Go to **Settings > Connections** to define Additional Fields, then return here to add them to the list.
+
+A changed list costs one full update, see [Faster Updates](../settings/configuration.html#faster-updates).
 
 ### Connection default
 
-If the connection holds a Parent Override Field for Portfolios, the first entry in the list reads **Connection default (*field*)**, with *Set on the Jira connection* (or the Azure DevOps connection) underneath. Leave it selected and the Portfolio follows the connection, so a change to the connection's default changes this Portfolio too. Pick any other entry, **None** included, to set the Portfolio's own field. The entry is offered on Jira and Azure DevOps connections only.
+When the connection holds Parent sources for Portfolios, you choose where the list comes from:
+
+- **Connection default: *Is caused by, then Parent (default)*** names the default. Leave it selected and the Portfolio follows the connection, so a change to the default changes this Portfolio too. The rows and **Add a source** stay hidden while it follows. If the default leaves out the tracker's own Parent, the warning about it still shows.
+- **Override** gives the Portfolio its own list, starting from a copy of the default. The Portfolio keeps its list when the connection's default changes.
+
+A Portfolio that follows a connection with no default reads the tracker's own Parent.
 
 See [Defaults for Teams and Portfolios](../settings/worktrackingsystems.html#defaults-for-teams-and-portfolios) for what the connection asks when its default changes.
 
 ### Which work tracking systems read this setting
 
-| Work Tracking System | Parent Override Field |
+| Work Tracking System | Parent sources |
 |---|---|
-| **Jira** | **Read.** The Additional Field may name a field, or an issue link type — see [below](#naming-an-issue-link-type-on-a-jira-connection). |
-| **Azure DevOps** | **Read.** The field's value places the Feature when it has one; where it is empty, the native parent link still applies. |
+| **Jira** | **Read.** A source may be Jira's own Parent, a field, or an issue link type — see [below](#naming-an-issue-link-type-on-a-jira-connection). On Jira Data Center the own Parent is the parent key and, when that is empty, the instance's own parent field. |
+| **Azure DevOps** | **Read.** A source may be the native parent link, or a field holding the parent's ID. A relation type reads nothing — see [Parent sources on Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#parent-sources). |
 | **Linear** | Not read. A Feature's parent is always the Linear initiative its project belongs to. |
 | **CSV** | Not read. The parent comes from the column named on the connection — see [Parent Reference Id Column](../concepts/worktrackingsystems/csv.html#work-tracking-system-options). |
 | **ServiceNow** | Not applicable. A Portfolio cannot be pointed at a ServiceNow connection at all — see [Portfolios](../concepts/worktrackingsystems/servicenow.html#portfolios). |
 
-{: .important}
-The selector is offered on every Portfolio whatever its connection, and on Linear and CSV a selection is saved and then quietly ignored. This is long-standing behaviour rather than something a recent change broke — if you picked a field on one of those and the grouping never moved, that is the reason.
+{: .note}
+The list is shown on Jira and Azure DevOps connections only. On the others it is hidden, and the parent comes from the place the table names.
+
+### Upgrading from the Parent Override Field
+
+Earlier versions read one field here and always fell back to the tracker's own Parent. The upgrade turns what you had set into a list, so there is nothing for you to do:
+
+- A Portfolio that named a field lists that field, then the tracker's own Parent.
+- A Portfolio that had chosen no field lists the tracker's own Parent.
+- A Portfolio that followed the connection still follows it, and the connection's default became the same kind of list.
+
+The first update after the upgrade downloads everything once, for every Portfolio on a Jira connection and for every Portfolio on an Azure DevOps connection whose list holds a field.
+
+Some Features move once at that point, so Feature sizes and forecasts can change once too:
+
+- **On Jira Data Center**, a Feature of a Portfolio that named a field, with no value there and no parent key, now hangs under what the instance's own parent field holds.
+- **On Azure DevOps**, a Feature of a Portfolio that named a field, with no value there, now hangs under its native parent.
 
 ### Naming an issue link type on a Jira connection
 
-On a Jira connection the **Field Reference** of the Additional Field you pick here may name an issue link type instead of a field. Lighthouse matches the reference against the connection's fields first, and only asks Jira for its link types when no field answers to it.
+On a Jira connection the **Field Reference** of an Additional Field in the list may name an issue link type instead of a field. Lighthouse matches the reference against the connection's fields first, and only asks Jira for its link types when no field answers to it.
 
 A link type shows you three phrases — its own name, and the sentence a link reads as from each end. Type one you actually see in your Jira; capitalisation is ignored. Which one you type decides which end of the links is read. For a link type whose two ends read `Caused by` and `Results in`:
 
@@ -298,13 +346,13 @@ A link type shows you three phrases — its own name, and the sentence a link re
 - **`Results in`**, the other end's phrase, reads the opposite way round and would place each parent under its Features.
 - **The type's own name**, or a phrase both ends share (such as *relates to*), reads both ends. That is enough for a single level, and it is what to type when you do not know which end is which.
 
-Jira writes a link once and offers it from both ends, so it does not matter which issue a link was created on. With `Caused by` typed, these two set-ups are the same set-up as far as this setting is concerned:
+Jira writes a link once and offers it from both ends, so it does not matter which issue a link was created on. With `Caused by` typed, these two set-ups are the same set-up as far as this source is concerned:
 
 - **The Feature names its parent.** `LH-42` carries a link reading *Caused by* `LH-7`. `LH-42` is grouped under `LH-7`.
 - **The parent names its Features.** `LH-7` carries links reading *Results in* `LH-42` and *Results in* `LH-43`. Both Features are grouped under `LH-7`, because each of them sees the other end of the very same link.
 
 {: .note}
-A link type holds no value of its own, so once the reference resolves to one, the Additional Field shows the key it found on each Feature instead. That is the quickest way to check the setting is reading what you expected without opening Jira.
+A link type holds no value of its own, so once the reference resolves to one, the Additional Field shows the key it placed each Feature under, and stays empty on a Feature that another source placed. That is the quickest way to check the setting is reading what you expected without opening Jira.
 
 #### When a Feature's links name more than one issue
 

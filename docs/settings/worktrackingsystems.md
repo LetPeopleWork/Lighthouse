@@ -44,11 +44,11 @@ To override, simply toggle on the override button, and specify the desired timeo
 
 ## Additional Fields
 
-Additional Fields let you surface or map custom fields from your work tracking system into Lighthouse. Typical uses include selecting a *Size Estimate* field, a *Parent Override* field for feature grouping, or a *Feature Owner* field for reporting and filters.
+Additional Fields let you surface or map custom fields from your work tracking system into Lighthouse. Typical uses include selecting a *Size Estimate* field, a field for the *Parent sources* to group Features by, or a *Feature Owner* field for reporting and filters.
 
 See details for [Jira](../concepts/worktrackingsystems/jira.html) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html) in the respective sections.
 
-On a Jira connection the **Field Reference** of an Additional Field may also name an issue link type, and on an Azure DevOps connection a relation type. A Portfolio then names that field as its Dependency Field to read its waits from that link or relation type. See [Jira](../concepts/worktrackingsystems/jira.html#naming-a-different-link-type) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#naming-a-different-relation-type).
+On a Jira connection the **Field Reference** of an Additional Field may also name an issue link type, and on an Azure DevOps connection a relation type. A Portfolio then names that field as its Dependency Field to read its waits from that link or relation type. See [Jira](../concepts/worktrackingsystems/jira.html#naming-a-different-link-type) and [Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#naming-a-different-relation-type). A Jira link type can also be one of the [Parent sources](../teams/edit.html#parent-sources). An Azure DevOps relation type cannot.
 
 Additional Fields are used by the UI and reporting features and can also be targeted by Data Sync Mappings. When changing an existing connection, secret options (such as API tokens) will always need to be re-entered.
 
@@ -57,17 +57,19 @@ A new or changed field only has values once the Teams and Portfolios on the conn
 
 ## Defaults for Teams and Portfolios
 
-Some settings point at an Additional Field of this connection and are the same for every Team and Portfolio that uses it: the Parent Override Field, the Dependency Field, the Size Estimate Field, the Feature Owner Field and the Estimation. Set them once on the connection. Each Team or Portfolio then *follows* the connection's default, unless it *owns* its own choice.
+Some settings point at Additional Fields of this connection and are the same for every Team and Portfolio that uses it: the Parent sources, the Dependency Field, the Size Estimate Field, the Feature Owner Field and the Estimation. Set them once on the connection. Each Team or Portfolio then *follows* the connection's default, unless it *owns* its own choice.
 
 The section sits below Additional Fields on the connection page, under *Defaults for Teams and Portfolios*. Only the settings the connection's tracker reads are listed:
 
 | Connection type | Teams | Portfolios |
 |---|---|---|
-| Jira and Azure DevOps | Parent Override Field, Estimation | Parent Override Field, Dependency Field, Size Estimate Field, Feature Owner Field, Estimation |
+| Jira and Azure DevOps | Parent sources, Estimation | Parent sources, Dependency Field, Size Estimate Field, Feature Owner Field, Estimation |
 | CSV | Estimation | Feature Owner Field, Estimation |
 | Linear and ServiceNow | None, so the section is hidden | None |
 
 A CSV file has no parent, dependency or size field to point at, so only the Feature Owner Field and the Estimation can come from a column.
+
+The Parent sources default is the same ordered list a Team or Portfolio holds, one for the Teams and one for the Portfolios: one to five sources, the first that yields a parent wins, and the tracker's own Parent is a row you can move or remove. See [Parent sources](../teams/edit.html#parent-sources). To clear a default, leave only the tracker's own Parent in the list. A field added to the connection can be picked for the list once the connection has been saved.
 
 ![Connection defaults with the Estimation editor open](../../assets/settings/worktrackingsystems/connection-defaults.png)
 
@@ -79,20 +81,22 @@ Picking the same field as the default does not make an owner follow again. Choos
 
 An Estimation default is followed as one piece: its field, its unit and, for categories, the categories in their order.
 
+The Parent sources work differently: they offer **Override** and **Connection default: *Is caused by, then Parent (default)***, and a list is followed whole, in its order. **Override** starts from a copy of the default.
+
 ### Saving a changed default
 
 When a save changes a default that Teams or Portfolios follow, Lighthouse asks first, and counts the followers:
 
-- A changed Parent Override Field, Dependency Field, Size Estimate Field or Feature Owner Field asks **Update 3 Teams and 0 Portfolios?**. The question also says what the followers read differently, for example *Their parents change only once they have been updated.* **Save and update** saves and updates the followers now. **Save only** saves and leaves them to their next scheduled update. **Cancel** keeps your edits on the page.
+- Changed Parent sources, or a changed Dependency Field, Size Estimate Field or Feature Owner Field, ask **Update 3 Teams and 0 Portfolios?**. The question also says what the followers read differently, for example *Their parents change only once they have been updated.* **Save and update** saves and updates the followers now. **Save only** saves and leaves them to their next scheduled update. **Cancel** keeps your edits on the page.
 - A changed Estimation default asks **Change the Estimation default?**, with **Cancel** and **Save** only. Nothing is queued: the followers show the new estimation the next time their pages load.
 - When nobody follows the default you changed, there is no question, and the connection saves as it always does.
 
 ### What the log records
 
-Each changed default writes one Information entry to the [Logs](systeminfo.html#connection-default-changes). It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued:
+Each changed default writes one Information entry to the [Logs](systeminfo.html#connection-default-changes). It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued. For Parent sources it names the sources in their order, and it ends with how many Teams or Portfolios the change moved:
 
 ```
-Connection "Jira Cloud" changed the Teams' Parent Override Field default from "Caused by" to "Epic Link"; 3 Teams follow it: Payments, Platform, Checkout; 3 updates queued.
+Connection "Jira Cloud" changed the Teams' Parent sources default from "Caused by" to "Epic Link"; 3 Teams follow it: Payments, Platform, Checkout; 3 updates queued; parent sources moved 3 Teams.
 ```
 
 An Estimation change queues no update, so its entry says *no update queued*.
@@ -101,13 +105,13 @@ An Estimation change queues no update, so its entry says *no update queued*.
 
 You cannot remove an Additional Field that a default or an owner still uses. The save is refused, and nothing is saved:
 
-> "Business Value" cannot be removed. It is the Teams' Parent Override Field default, and Payments uses it as its own. Nothing was saved.
+> "Business Value" cannot be removed. It is the Teams' Parent sources default, and Payments uses it as its own. Nothing was saved.
 
-Point the default and the owners at another field before you remove it.
+This holds wherever a Parent sources list names the field, at any position. Point the default and the owners at another field before you remove it.
 
 ### Moving a Team or Portfolio to another connection
 
-A Team or Portfolio that owns a setting with a field of its current connection cannot move to a connection that lacks that field. The save is refused, with a message such as *The Parent Override Field is not an Additional Field of this Team's connection.* Pick a field of the new connection, or choose **Connection default**, in the same save.
+A Team or Portfolio that owns a setting with a field of its current connection cannot move to a connection that lacks that field. The save is refused, with a message such as *One of the Parent sources is not an Additional Field of this Team's connection.* Pick a field of the new connection, or choose **Connection default**, in the same save.
 
 ## Data Sync Mappings
 

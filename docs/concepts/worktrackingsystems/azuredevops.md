@@ -203,6 +203,16 @@ You may adjust all those values to your liking after that. For example, if the s
 {: .note}
 Please be aware that this is a one-time operation. Lighthouse does not keep your settings in sync with the selected board. If you make changes in your Azure DevOps board, you must either update them manually, or rerun the Wizard.
 
+# Parent sources
+A Team or Portfolio on an Azure DevOps connection reads its parent from its Parent sources, for [Teams](../../teams/edit.html#parent-sources) and for [Portfolios](../../portfolios/edit.html#parent-sources): an ordered list of the native parent link and any Additional Fields holding the parent's ID. The first source that yields a parent wins.
+
+A relation type cannot be one of these sources. Named in the list, it reads nothing: Lighthouse skips it, reads the next source, and [Refresh History](../../settings/systeminfo.html#refresh-history) says so.
+
+The native parent link sits in a Work Item's relations, which Lighthouse has to ask for separately. While the list holds *Parent (default)*, every update asks for the relations of each Work Item it downloads, and a full update downloads the whole query. A list without it does not ask, unless a Portfolio reads its dependencies from them.
+
+{: .note}
+Before Parent sources, naming a field meant Lighthouse did not ask for relations to find the parent. After the upgrade the list holds that field and the native parent link, so such a Team or Portfolio makes more requests to Azure DevOps than it did. If you do not need the native parent link there, remove it from the list.
+
 # Dependencies
 Lighthouse reads what a Feature is waiting on from the **Predecessor/Successor** link type (`System.LinkTypes.Dependency-Reverse`). A Feature with a *Predecessor* link to another work item is shown as depending on it.
 
@@ -221,6 +231,6 @@ Two names read nothing and are reported in the refresh history:
 - A base name without its end, such as `Contoso.DependsOn`, which covers both ends. Name one end.
 - A relation type without a direction, such as `System.LinkTypes.Related`. It cannot say which end waits, so name a relation type that has two ends.
 
-Only the Dependency Field reads a relation type. Naming one as a Parent Override, Size Estimate, Feature Owner or Estimation field reads nothing there, and Refresh History says so. See [Refresh History](../../settings/systeminfo.html#refresh-history).
+Only the Dependency Field reads a relation type. Naming one in the Parent sources, or as a Size Estimate, Feature Owner or Estimation field, reads nothing there, and Refresh History says so. See [Refresh History](../../settings/systeminfo.html#refresh-history).
 
 What you then see is described on the [Features page](../../features/features.html#dependencies).

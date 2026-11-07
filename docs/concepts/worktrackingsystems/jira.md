@@ -180,7 +180,7 @@ You can manage additional fields in the connection settings UI. When adding a fi
 - **Display Name**: A user-friendly name for the field.
 - **Field Reference**: The Jira field name or key (e.g., `Flagged`, `customfield_10011`).
 
-The Field Reference may also name an issue link type instead of a field. A Portfolio then reads its waits from that link type when it names the field as its Dependency Field, see [Naming a different link type](#naming-a-different-link-type). A Team's or Portfolio's Parent Override Field can name one too, see [Teams](../../teams/edit.html#naming-an-issue-link-type-on-a-jira-connection).
+The Field Reference may also name an issue link type instead of a field. A Portfolio then reads its waits from that link type when it names the field as its Dependency Field, see [Naming a different link type](#naming-a-different-link-type). A Team's or Portfolio's Parent sources can name one too, see [Teams](../../teams/edit.html#naming-an-issue-link-type-on-a-jira-connection) and [Portfolios](../../portfolios/edit.html#naming-an-issue-link-type-on-a-jira-connection).
 
 For help finding the correct field reference, see the [Jira custom field documentation](https://confluence.atlassian.com/jirakb/find-my-custom-field-id-number-in-jira-744522503.html). The UI provides direct links and helper text to guide you.
 

@@ -372,36 +372,85 @@ A change to the connection's Estimation default does not update the Team. Its pa
 # Advanced Configuration
 There are a few options that are optional. This means that they have an impact, but you can save a team without bothering.
 
-## Parent Override Field
-By default, Lighthouse uses the native parent-child relationships from your work tracking system to determine which Work Items belong to which Features.
+<a id="parent-override-field"></a>
 
-If you need to override this behavior (for example, to group Work Items under a custom field instead of the native parent link), you can select a **Parent Override Field**. This field must be defined as an Additional Field on your Work Tracking System connection first.
+## Parent sources
+Lighthouse uses the parent-child relationships of your work tracking system to decide which Work Items belong to which Features. If your hierarchy sits somewhere else, or in more than one place, list those places here.
+
+**Parent sources** is an ordered list of one to five sources. For each Work Item, Lighthouse reads the list from the top, and the first source that yields a parent wins. The sources below it are ignored for that Work Item.
+
+A source is one of two things:
+
+- **The tracker's own Parent**, the parent the tracker itself records, shown as *Parent (default)*. A list you have not changed holds this one row.
+- **An Additional Field** of the connection. On Jira it may [name an issue link type](#naming-an-issue-link-type-on-a-jira-connection) instead of a field.
+
+The tracker's own Parent is a row like any other: you can move it or remove it. It is read only when it is in the list, and only at its place in the order. Without it, Work Items that no other source places get no Feature, and the page warns you of that below the list.
+
+For example, with this list:
+
+1. `Is caused by`, an Additional Field naming a Jira link type
+2. `Program Ref`, an Additional Field holding a key
+3. *Parent (default)*
+
+A Work Item linked to a Feature by *is caused by* hangs under that Feature. One without such a link but with a value in `Program Ref` hangs under that value. One with neither hangs under its Jira parent. One with none of the three has no Feature.
+
+What counts as yielding a parent depends on the source:
+
+- **A field** yields a parent when it holds a value. Lighthouse takes the value as it stands, even if it names nothing Lighthouse holds, and reads no further.
+- **The tracker's own Parent** yields a parent when the Work Item has one.
+- **A Jira link type** yields a parent only when its links lead to a Feature in one of your Portfolios. Otherwise the next source is read — see [below](#when-a-work-items-links-name-more-than-one-issue).
+- **A source Lighthouse cannot read** yields nothing, so the next source is read and [Refresh History](../settings/systeminfo.html#refresh-history) says so. That is a reference matching no field and no link type or, on Azure DevOps, a relation type.
+
+Use **Add a source** to add the tracker's own Parent or an Additional Field not yet in the list, and the arrows on each row to change the order. A list holds at most five sources and names each of them once. The only remaining row cannot be removed, because a list needs at least one source.
 
 {: .note}
-Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field for parent override.
+Go to **Settings > Connections** to define Additional Fields, then return here to add them to the list.
+
+A changed list costs one full update, see [Faster Updates](../settings/configuration.html#faster-updates).
 
 ### Connection default
 
-If the connection holds a Parent Override Field for Teams, the first entry in the list reads **Connection default (*field*)**, with *Set on the Jira connection* (or the Azure DevOps connection) underneath. Leave it selected and the Team follows the connection, so a change to the connection's default changes this Team too. Pick any other entry, **None** included, to set the Team's own field. The entry is offered on Jira and Azure DevOps connections only.
+When the connection holds Parent sources for Teams, you choose where the list comes from:
+
+- **Connection default: *Is caused by, then Parent (default)*** names the default. Leave it selected and the Team follows the connection, so a change to the default changes this Team too. The rows and **Add a source** stay hidden while it follows. If the default leaves out the tracker's own Parent, the warning about it still shows.
+- **Override** gives the Team its own list, starting from a copy of the default. The Team keeps its list when the connection's default changes.
+
+A Team that follows a connection with no default reads the tracker's own Parent.
 
 See [Defaults for Teams and Portfolios](../settings/worktrackingsystems.html#defaults-for-teams-and-portfolios) for what the connection asks when its default changes.
 
 ### Which work tracking systems read this setting
 
-| Work Tracking System | Parent Override Field |
+| Work Tracking System | Parent sources |
 |---|---|
-| **Jira** | **Read.** The Additional Field may name a field, or an issue link type — see [below](#naming-an-issue-link-type-on-a-jira-connection). |
-| **Azure DevOps** | **Read.** The field's value places the Work Item when it has one; where it is empty, the native parent link still applies. |
+| **Jira** | **Read.** A source may be Jira's own Parent, a field, or an issue link type — see [below](#naming-an-issue-link-type-on-a-jira-connection). On Jira Data Center the own Parent is the parent key and, when that is empty, the instance's own parent field. |
+| **Azure DevOps** | **Read.** A source may be the native parent link, or a field holding the parent's ID. A relation type reads nothing — see [Parent sources on Azure DevOps](../concepts/worktrackingsystems/azuredevops.html#parent-sources). |
 | **Linear** | Not read. A Work Item's Feature is always the Linear project it sits in. |
 | **CSV** | Not read. The parent comes from the column named on the connection — see [Parent Reference Id Column](../concepts/worktrackingsystems/csv.html#work-tracking-system-options). |
 | **ServiceNow** | Not read. ServiceNow work is read at Team level only, so there is no Feature grouping for the setting to redirect. |
 
-{: .important}
-The selector is offered on every Team whatever its connection, and on Linear, CSV and ServiceNow a selection is saved and then quietly ignored. This is long-standing behaviour rather than something a recent change broke — if you picked a field on one of those and the grouping never moved, that is the reason.
+{: .note}
+The list is shown on Jira and Azure DevOps connections only. On the others it is hidden, and the parent comes from the place the table names.
+
+### Upgrading from the Parent Override Field
+
+Earlier versions read one field here and always fell back to the tracker's own Parent. The upgrade turns what you had set into a list, so there is nothing for you to do:
+
+- A Team that named a field lists that field, then the tracker's own Parent.
+- A Team that had chosen no field lists the tracker's own Parent.
+- A Team that followed the connection still follows it, and the connection's default became the same kind of list.
+
+The first update after the upgrade downloads everything once, for every Team on a Jira connection and for every Team on an Azure DevOps connection whose list holds a field.
+
+Some Work Items move once at that point, so Feature sizes and forecasts can change once too:
+
+- **On Jira Data Center**, a Work Item of a Team that named a field, with no value there and no parent key, now hangs under what the instance's own parent field holds.
+- **On Azure DevOps**, a Work Item of a Team that named a field, with no value there, now hangs under its native parent.
+- **On Jira**, a Work Item whose only link leads to an issue that is not a Feature used to keep that issue as its parent. Now the next source is read.
 
 ### Naming an issue link type on a Jira connection
 
-On a Jira connection the **Field Reference** of the Additional Field you pick here may name an issue link type instead of a field. Lighthouse matches the reference against the connection's fields first, and only asks Jira for its link types when no field answers to it.
+On a Jira connection the **Field Reference** of an Additional Field in the list may name an issue link type instead of a field. Lighthouse matches the reference against the connection's fields first, and only asks Jira for its link types when no field answers to it.
 
 A link type shows you three phrases — its own name, and the sentence a link reads as from each end. Type one you actually see in your Jira; capitalisation is ignored. Which one you type decides which end of the links is read. For a link type whose two ends read `Caused by` and `Results in`:
 
@@ -409,13 +458,13 @@ A link type shows you three phrases — its own name, and the sentence a link re
 - **`Results in`**, the other end's phrase, reads the opposite way round and would place each Feature under its Work Items.
 - **The type's own name**, or a phrase both ends share (such as *relates to*), reads both ends. That is enough for a single level, and it is what to type when you do not know which end is which.
 
-Jira writes a link once and offers it from both ends, so it does not matter which issue a link was created on. With `Caused by` typed, these two set-ups are the same set-up as far as this setting is concerned:
+Jira writes a link once and offers it from both ends, so it does not matter which issue a link was created on. With `Caused by` typed, these two set-ups are the same set-up as far as this source is concerned:
 
 - **The Work Item names its Feature.** `LH-101` carries a link reading *Caused by* `LH-42`. `LH-101` is placed under `LH-42`.
 - **The Feature names its Work Items.** `LH-42` carries links reading *Results in* `LH-101` and *Results in* `LH-102`. Both Work Items are placed under `LH-42`, because each of them sees the other end of the very same link.
 
 {: .note}
-A link type holds no value of its own, so once the reference resolves to one, the Additional Field shows the key it found on each Work Item instead. That is the quickest way to check the setting is reading what you expected without opening Jira.
+A link type holds no value of its own, so once the reference resolves to one, the Additional Field shows the key it placed each Work Item under, and stays empty on a Work Item that another source placed. That is the quickest way to check the setting is reading what you expected without opening Jira.
 
 #### When a Work Item's links name more than one issue
 
@@ -424,7 +473,9 @@ A Work Item hangs under one Feature, so when its links of that type name two or 
 1. **Only Features count.** Every issue that is not a Feature in one of your Portfolios is set aside first. An incident, a risk or any other issue the same link type happens to join is never taken as the parent.
 2. **One Feature left:** the Work Item is placed under it.
 3. **Several Features left:** the **oldest link** wins, the link made first according to the Work Item's history in Jira. A link whose date Jira's history does not show loses to one whose date it shows. When that does not decide, the **Feature created first** wins, and after that the **lowest key**, compared character by character (so `PAY-100` comes before `PAY-99`).
-4. **No Feature left:** the Work Item is not placed by its links. It keeps the parent Jira itself gives it, if it has one.
+4. **No Feature left:** the links yield nothing, so the next source in the list is read. When no source is left, the Work Item has no Feature.
+
+The same goes for a single link: it yields a parent only when it leads to a Feature.
 
 Every refresh that had to decide writes a warning listing what it did, for example:
 
@@ -438,3 +489,6 @@ A link is dated from the Work Item's own history. When the issue at the other en
 When the Features picked are consistently the ones above where you expected, or the issues set aside are exactly the ones with children of their own, the phrase you typed is reading the links down to the children as well. Type the phrase that points up instead.
 
 If two *different* link types both answer to the phrase you typed, Lighthouse resolves neither, for the same reason. Pick a phrase that belongs to only one of them.
+
+{: .important}
+**A link to a Feature that Lighthouse stores later.** A link is judged when the Work Item is read. If the issue at the other end becomes a Feature only afterwards, for example because a Portfolio's query now includes it, the Work Item stays where the next source placed it, because an ordinary update does not read a Work Item that did not change. It moves the next time it is read: when it changes in Jira, or on a full update. Nothing schedules a full update. To start one, save a change to a setting that changes what an update asks for, such as the Team's query or its Parent sources, and let the next update run. See [Faster Updates](../settings/configuration.html#faster-updates).

@@ -43,7 +43,7 @@ Only background updates confirm a forecast this way. Whatever you start yourself
 
 See [Periodic Refresh Settings](configuration.html#periodic-refresh-settings) for when background updates run.
 
-On a Jira connection whose parent setting names an issue link type, two more figures can appear: the most Work Items or Features a single refresh placed although their links named more than one parent, and the most it could not place. Each figure shows only when it is above zero. They are the highest count in any one refresh, not a total, because every refresh reads the same untidy records again. How such a record is placed is described for [Teams](../teams/edit.html#when-a-work-items-links-name-more-than-one-issue) and [Portfolios](../portfolios/edit.html#when-a-features-links-name-more-than-one-issue).
+On a Jira connection whose Parent sources name an issue link type, two more figures can appear: the most Work Items or Features a single refresh placed although their links named more than one parent, and the most it could not place. Each figure shows only when it is above zero. They are the highest count in any one refresh, not a total, because every refresh reads the same untidy records again. How such a record is placed is described for [Teams](../teams/edit.html#when-a-work-items-links-name-more-than-one-issue) and [Portfolios](../portfolios/edit.html#when-a-features-links-name-more-than-one-issue).
 
 Under a Portfolio's figures, Refresh History also lists what its latest full download could not read as configured in the Dependency Field. Each sentence names the setting and what to change, for example:
 
@@ -53,6 +53,13 @@ Under a Portfolio's figures, Refresh History also lists what its latest full dow
 - *The Dependency Field names "Contoso.DependsOn" without its end. Name one end: "Contoso.DependsOn-Forward" or "Contoso.DependsOn-Reverse".*
 
 The line beneath them gives the day of the full download they come from. A Portfolio that ignores dependencies shows none, and nothing is listed when the Dependency Field reads what it should.
+
+For a Team and for a Portfolio on Jira or Azure DevOps, the same place lists every one of the [Parent sources](../teams/edit.html#parent-sources) that could not be read, one sentence each:
+
+- *Parent source "Program Ref" matched no field and no link type. The next source in the list was read instead.* The second sentence is left out when that source is the last in the list.
+- *One of the Parent sources points at an Azure DevOps relation type, which only the Dependency Field reads.*
+
+Such a source is skipped, and the update carries on with the next one. A source that simply holds no value on a Work Item is ordinary and is not listed. A full download whose query returned nothing has no Work Item to report on, so it lists nothing about the Parent sources, and neither does one that could not ask the tracker for its link or relation types.
 
 While the history is loading, a spinner shows in its place. If it cannot be loaded, the section says *Could not load refresh history.*
 
@@ -65,10 +72,10 @@ For this case, you can check the *Logs*.
 If you are here because something looks wrong *right now*, the [Task Manager](taskmanager.html) in the header lists the recent warnings and errors on their own, without the rest of the log around them — and it links back to this page when you need the full picture.
 
 ### Connection default changes
-When a save changes a default that Teams or Portfolios follow, the log gets one Information entry for each changed default. It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued:
+When a save changes a default that Teams or Portfolios follow, the log gets one Information entry for each changed default. It names the connection, the default, the field before and after, the Teams or Portfolios that follow it, and how many updates the save queued. For Parent sources it names the sources in their order, and it ends with how many Teams or Portfolios the change moved:
 
 ```
-Connection "Jira Cloud" changed the Teams' Parent Override Field default from "Caused by" to "Epic Link"; 3 Teams follow it: Payments, Platform, Checkout; 3 updates queued.
+Connection "Jira Cloud" changed the Teams' Parent sources default from "Caused by" to "Epic Link"; 3 Teams follow it: Payments, Platform, Checkout; 3 updates queued; parent sources moved 3 Teams.
 ```
 
 An Estimation change queues no update, so its entry says *no update queued*. See [Defaults for Teams and Portfolios](worktrackingsystems.html#defaults-for-teams-and-portfolios).
