@@ -1357,3 +1357,7 @@ Commit `4103cadc3`, this change alone: 2 files, 26 insertions, 20 deletions. Not
 | Kept | `L3b.csv` and `L3b.trx.gz` in `evidence/`, out of git |
 
 **`L3b` against `L3`.** 0 lines only in `L3`, 0 lines only in `L3b`, and the same `sha256`, so no line needed excusing. This is the local list for the plain push.
+
+## Wave: DELIVER / [REF] Push 3 was not plain (2026-11-07)
+
+This overrides "Push 3 is the first plain run". Push 2 was judged on its ids without a re-run, so run 42379254193 stayed red and CI measured the change window from the last green run, which held `ci_backend.yml`. Push 3 (`5d1faea04`, run 42382479502) therefore came out force-full: a second run of every live suite, about 40 minutes after the first. It is the Story's own making, so guarantee 13 is not met as written, and the orchestrator's decision to skip the re-run caused it. Every gate job passed and no rate limit followed. It closes the window. The first plain run is now the push of `4103cadc3`, step 04-01 pulled forward as the Push plan names.
