@@ -141,7 +141,6 @@ describe("The print page gets ready", () => {
 			aPrintDialog();
 			openingThePrintPageDirectly(withHeld(held));
 
-			await waitFor(() => thePrintPage());
 			await aMomentLater();
 
 			// Once the report is drawn in its own faces it waits dimmed under the spinner, without the words.
