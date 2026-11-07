@@ -23,7 +23,7 @@ def breach_phrase(seconds, limit, kind="budget"):
     return f"took {seconds}s, over the {limit}s {kind}"
 
 # Limits the shipped budget file holds once it is measured on plain CI runs.
-SHIPPED_FRONTEND_BUDGET = 56
+SHIPPED_FRONTEND_BUDGET = 54
 SHIPPED_BACKEND_BUDGET = 34
 SHIPPED_BACKEND_CEILINGS = {
     "API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest": 229,
@@ -502,7 +502,7 @@ class TheShippedBudgetFileObeysItsOwnRules(unittest.TestCase):
             with self.subTest(stack=stack):
                 self.assertEqual(check_budget.unneeded_entries(stack, [], budget, ceilings), [])
 
-    def test_the_frontend_budget_is_56_seconds_and_nothing_is_allowlisted(self):
+    def test_the_frontend_budget_is_54_seconds_and_nothing_is_allowlisted(self):
         budget, ceilings = self.sections()["frontend"]
 
         self.assertEqual((budget, ceilings), (Decimal(SHIPPED_FRONTEND_BUDGET), {}))
@@ -521,12 +521,12 @@ class TheShippedBudgetFileObeysItsOwnRules(unittest.TestCase):
 
 
 class ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets(TimeBudgetTestCase):
-    def test_a_frontend_file_of_57_seconds_fails_the_build(self):
-        timings = self.workspace.frontend_timings({"src/pages/Planted.test.tsx": [57.0]})
+    def test_a_frontend_file_of_55_seconds_fails_the_build(self):
+        timings = self.workspace.frontend_timings({"src/pages/Planted.test.tsx": [55.0]})
 
         result = self.workspace.check_shipped("frontend", timings)
 
-        self.assert_fails_naming(result, "src/pages/Planted.test.tsx", breach_phrase("57.0", 56))
+        self.assert_fails_naming(result, "src/pages/Planted.test.tsx", breach_phrase("55.0", 54))
 
     def test_a_backend_class_of_35_seconds_fails_the_build(self):
         timings = self.workspace.backend_timings({"Planted.Slow.Runs": 35.0})
