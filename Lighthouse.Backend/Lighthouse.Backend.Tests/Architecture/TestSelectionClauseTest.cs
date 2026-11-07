@@ -12,6 +12,10 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string CiWorkflow = ".github/workflows/ci_backend.yml";
 
+        private const string FastScript = "Lighthouse.Backend/Test-Fast.ps1";
+
+        private const string CoverageScript = "Lighthouse.Backend/Test-Coverage.ps1";
+
         private const string AlwaysOnClause = "Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)";
 
         private const string GuardedIntegrationClause = "(Category=Integration&Category!=UsageDataCanary)";
@@ -35,6 +39,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [GeneratedRegex(@"Category!=(\w+)", RegexOptions.CultureInvariant)]
         private static partial Regex CategoryLeftOut();
+
+        [GeneratedRegex(@"\$(?:fastFilter|Filter)\s*=\s*'([^']+)'", RegexOptions.CultureInvariant)]
+        private static partial Regex FilterOfAScript();
 
         [Test]
         public void TheConnectorListIsWhatTheClauseInCiLeavesOut()
@@ -148,6 +155,41 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(connectorClauses, Is.EquivalentTo(Connectors));
                 Assert.That(BareIntegrationTerm().IsMatch(text), Is.False, "NUnit may run an explicit test a filter selects directly, so an unguarded Integration term may run the Explicit probes.");
             }
+        }
+
+        [Test]
+        public void TheFastScriptLeavesOutIntegrationAndEveryConnector()
+        {
+            var filter = FilterOf(FastScript);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Clause.Selects(filter), Is.True, "A regular test has no category.");
+                Assert.That(Clause.Selects(filter, "Integration"), Is.False, "A hosted test carries Integration alone.");
+                Assert.That(Connectors.Where(connector => Clause.Selects(filter, connector)), Is.Empty, "Connectors the fast filter would still select.");
+            }
+        }
+
+        [Test]
+        public void TheCoverageScriptLeavesOutEveryConnectorByDefault()
+        {
+            var filter = FilterOf(CoverageScript);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Clause.Selects(filter), Is.True, "A regular test has no category.");
+                Assert.That(Clause.Selects(filter, "Integration"), Is.True, "A hosted test carries Integration alone.");
+                Assert.That(Connectors.Where(connector => Clause.Selects(filter, connector)), Is.Empty, "Connectors the default coverage filter would still select.");
+            }
+        }
+
+        private static string FilterOf(string script)
+        {
+            var filter = FilterOfAScript().Match(ReadFromRepository(script));
+            Assert.That(filter.Success, Is.True, $"No filter found in {script}.");
+
+            // The scripts write TestCategory where the workflow writes Category, and the adapter takes both for a test's categories.
+            return filter.Groups[1].Value.Replace("TestCategory", "Category", StringComparison.Ordinal);
         }
 
         private static string AlwaysOnClauseInCi()
