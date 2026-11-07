@@ -178,9 +178,10 @@ namespace Lighthouse.Backend.Tests.API.Security
 
             using var keyClient = factory.CreateClient();
             keyClient.WithApiKey(plainTextKey);
-            var deleteResponse = await keyClient.DeleteAsync($"{TeamsPath}/{TeamAlphaId}");
+            var writeResponse = await keyClient.PutAsJsonAsync($"{TeamsPath}/{TeamAlphaId}", new { });
 
-            Assert.That(deleteResponse.StatusCode, Is.Not.EqualTo(HttpStatusCode.Forbidden));
+            // The guard runs before model validation, so a refused empty body means the guard let the key through.
+            Assert.That(writeResponse.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
         }
 
         [Test]
