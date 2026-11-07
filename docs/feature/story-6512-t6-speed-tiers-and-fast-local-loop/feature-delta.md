@@ -1616,3 +1616,36 @@ The working-tree and temporary-edit rows ran before the last edit, which made th
 ## Wave: DELIVER / [REF] Push 4 judged (2026-11-07)
 
 Run 42387692805 at `9825d4e5d`, the hosted commit. `force_full=false`, so a plain run: 12,831 passed, 2 skipped, 12,833 in all, the same `Total:` as the plain run 42384656167. The two `test-timings-backend` CSVs hold the same 12,824 ids with the same outcomes: 0 lost, 0 added, 0 changed. Every gate passed and the run stopped at deploy approval, which counts as a green base. So the hosted tests moved to the base and CI still runs every one of them. This is the first CI evidence for that half; `L4` was the local one.
+
+## Wave: DELIVER / [REF] Slice D, step 04-04: rules 5 and 6, what ran (2026-11-07)
+
+One file changed, `TestTierGuardTest.cs`, plus this section. Not pushed. The guard now has all six rules.
+
+**Rule 5 holds the 32 by the one list, as the design says.** "Rules 1 and 5 pass for a listed type" is in "The guard", so no second list was made. The list is renamed `FixturesNotYetOnTheBase`, since it no longer holds only hosted fixtures, and it grows from 118 to 150 lines. The stale test now asks whether a listed type still owes a move, for either rule, and is renamed to match. Slice E empties the list as planned: a moved container class with its line left in goes red.
+
+| Reason on the list | Classes |
+|---|---|
+| Runs against a Postgres or Redis container (new) | 30 |
+| Starts a host beside a container (from 04-02) | 2 |
+| Sits in the container namespace, runs on SQLite with no container (new) | 2: `CategoryListNormalisationSeederIsolationTests`, `ParentSourcesColumnConversionTests` |
+
+| Case | What ran | Result |
+|---|---|---|
+| Planted reds, before the rules | The two rules and their messages stubbed, Debug | 14 failed of 61, on the assertion: a container off the base; a connector off the base on the class, a method, a `[TestCase]` and a parent; a canary with no connector on the class, a method, a `[TestCase]`, a parent and on the base; a listed container now on the base; the list test; both messages |
+| The real pass, first time | The rules in, the list not yet grown, Debug | 1 failed of 61, rule 5 naming 32 classes, all in `Integration.Containers`. No connector class is off the base but the 2 mixed ones |
+| Real classes, in the working tree | A temporary file, Debug and `-c Release`: a container and a connector off the base, a canary with no connector, and 2 listed fixtures that break other rules. `SubstrateProbeTests` taken off the list; `ParentSourcesColumnConversionTests` put on the base with its line left in | 5 failed of 61 in each, the same five. Rule 5 named the container, the connector and `SubstrateProbeTests`. The stale test named `ParentSourcesColumnConversionTests`. Rule 6 named the canary and the listed canary; rule 3 named the listed canary's method; rule 4 named the listed hosted connector. Neither listed type was named by rule 1 or rule 5. All restored |
+| Can the greens fail? | Temporary edits, Debug: no mixed-class exception, no connector check in rule 6, the canary and the connector matched in any letter case, no base check in rule 5. All restored | 8 failed of 61, among them `ALiveClassNamedForItsOfflineTestsMayStayOffTheBase`, `CanaryWithAConnector` and both letter-case plants |
+| The guard | `FullyQualifiedName~TestTierGuardTest`, Debug and `-c Release`, on the final code | TRX total 61, passed 61, each |
+| The guards that read the same assembly, and the clause pin | With `TestHostPerFixtureGuardTest`, `DbContextComesFromAScopeGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`, `IntegrationFixtureCategoryTest` and `TestSelectionClauseTest`, Debug and `-c Release` | TRX total 128, passed 128, each |
+| Builds | `dotnet build` in `Lighthouse.Backend`, and with `-c Release` | 0 warnings, 0 errors, each |
+
+The working-tree and temporary-edit rows ran before the last edit, which only drew the sorted-name lines into one helper. Only named classes ran, as the step says.
+
+**What the real pass showed that the design did not say.**
+
+- **"The fast loop would run it" is true of a container and false of a live class.** Since the maintainer's fast filter leaves out the five connectors, `F` drops a connector class on or off the base. What a live class off the base really risks is `A`, which keeps a test whose only category is a connector, so CI would run it against the real tracker in every build. Rule 5's message says both, each of the kind it is true of.
+- **2 of the 34 touch no container.** They sit in `Integration.Containers` but run on SQLite. Rule 5 goes by the namespace, so they are owed the base, and their list reason says what they are. Slice E can move them to the base as the rule stands, or move the 2 files out of the namespace: a choice for that step, and either empties their lines.
+- **The list is 150, not "about 130".** That figure predates both real counts.
+- **Slice E's `git grep` of the connector names will not match line for line.** The planted fixtures and `ConnectorCategories` in this file, added in 04-03 and here, hold those names. That check has to leave this file out.
+
+**Limits.** Rule 6 judges the fixture, as the design has it: a canary on one method and a connector on another pass, though the canary's test would run in CI. No test carries the canary today. "No other rule passes for a listed type" reads as rules 2, 3, 4 and 6, because the design gives rule 1 the same list. Rule 2 is not in the working-tree row, as it looks only at fixtures on the base, and no rule 2 code reads the list.

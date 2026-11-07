@@ -11,21 +11,25 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// class with tests, nested ones included: anything such a class runs, in its set-up, tear-down, constructors,
     /// field initialisers or tests, on the class or on a base class, counts as the class's own. The base must also
     /// stay honest: nothing sits on it without a reason, nothing else writes its category, and a hosted fixture
-    /// carries no connector category, because CI selects live tests by that category.
+    /// carries no connector category, because CI selects live tests by that category. Live and container fixtures
+    /// belong on the base as well, and a fixture carrying the canary category also carries a connector.
     /// </summary>
     [TestFixture]
     public class TestTierGuardTest
     {
         private const string IntegrationCategory = "Integration";
+        private const string CanaryCategory = "UsageDataCanary";
         private const string ContainerNamespace = "Lighthouse.Backend.Tests.Integration.Containers";
         private const string StartsOneHostForTheFixture = "starts one host for the whole fixture and has not moved to the base yet";
         private const string StartsAHostInItsTests = "starts a host in its tests or its per-test set-up and has not moved to the base yet";
         private const string InheritsItsHostFromTheUsageDataRoot = "takes its host from UsageDataCollectorObservationTest, which has not moved to the base yet; one line on that class moves all of these";
+        private const string RunsAgainstAContainer = "runs against a Postgres or Redis container and has not moved to the base yet";
+        private const string SitsAmongTheContainerTests = "sits in the container namespace, runs on SQLite with no container, and has not moved to the base yet";
         private const string StartsAHostBesideAContainer = "runs against a Postgres or Redis container, starts a host of its own and has not moved to the base yet";
         private const string ChecksTheTestHostItself = "tests how the test host starts and stops and has not moved to the base yet";
 
         // Keys are full type names. Moving a class to the base removes its line in the same commit; nothing is added here.
-        private static readonly IReadOnlyDictionary<string, string> HostedFixturesNotYetOnTheBase = new Dictionary<string, string>
+        private static readonly IReadOnlyDictionary<string, string> FixturesNotYetOnTheBase = new Dictionary<string, string>
         {
             ["Lighthouse.Backend.Tests.API.ForecastControllerCalendarDayAnchorTest"] = StartsOneHostForTheFixture,
             ["Lighthouse.Backend.Tests.API.Integration.AgeInStatePercentilesNonLinearFlowReadApiIntegrationTest"] = StartsOneHostForTheFixture,
@@ -113,8 +117,40 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = ChecksTheTestHostItself,
             ["Lighthouse.Backend.Tests.Architecture.TestHostsRunWithoutRateLimitingByDefaultTest"] = ChecksTheTestHostItself,
             ["Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest"] = StartsAHostInItsTests,
+            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedCountSnapshotMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedDurationMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedRuleSetMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.BlockedStalenessThresholdMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.CancelAllMultiReplicaTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.CategoryListNormalisationSeederIsolationTests"] = SitsAmongTheContainerTests,
+            ["Lighthouse.Backend.Tests.Integration.Containers.CategoryListNormalisationSeederOnBothProvidersTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ClusterSubstrateHealthCheckTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ConcurrentStartupMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ConnectionDefaultsUpgradeMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.DeliveryMetricSnapshotDayKeyMigrationTests"] = RunsAgainstAContainer,
             ["Lighthouse.Backend.Tests.Integration.Containers.EmbedSessionSingleUseConcurrencyTests"] = StartsAHostBesideAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.FeatureDependencyReferenceMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.FeatureListParityOnPostgresTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ForecastInputFingerprintAcrossProvidersTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ForecastInputsCompareAndSetOnPostgresTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ForecastOnTheLaneIdentityOnPostgresTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.LongSecretRoundTripTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ParentSourcesColumnConversionTests"] = SitsAmongTheContainerTests,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ParentSourcesUpgradeMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.PercentilesOverTimeSnapshotMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.PostgresUpdateExecutionLockTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.PredefinedAdditionalFieldMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ProcessBehaviorSnapshotMigrationTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ReEncryptionCompareAndSwapProbeTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.RefreshLogSkippedColumnMigrationTests"] = RunsAgainstAContainer,
             ["Lighthouse.Backend.Tests.Integration.Containers.ScalabilityTests"] = StartsAHostBesideAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.SubstrateProbeTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerCancellationMultiReplicaTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerMomentsMultiReplicaTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerMultiReplicaTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerQueueOrderMultiReplicaTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.UpdateStatusStoreContainerTests"] = RunsAgainstAContainer,
+            ["Lighthouse.Backend.Tests.Integration.Containers.ViewerEmbedStorageGuaranteeTests"] = RunsAgainstAContainer,
             ["Lighthouse.Backend.Tests.Integration.UsageData.BulkReportsUsageEventTests"] = InheritsItsHostFromTheUsageDataRoot,
             ["Lighthouse.Backend.Tests.Integration.UsageData.OptionalFeatureToggledEventTests"] = InheritsItsHostFromTheUsageDataRoot,
             ["Lighthouse.Backend.Tests.Integration.UsageData.ParentSourcesUsageEventTests"] = InheritsItsHostFromTheUsageDataRoot,
@@ -205,20 +241,20 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void EveryFixtureThatStartsAHostIsOnTheBaseOrOnTheList()
         {
-            var newcomers = Compare(HostedFixturesNotYetOnTheBase.Keys, hostedFixturesOffTheBase).Newcomers;
+            var newcomers = Compare(FixturesNotYetOnTheBase.Keys, hostedFixturesOffTheBase).Newcomers;
 
             Assert.That(newcomers, Is.Empty, MustDeriveFromTheBase(newcomers));
         }
 
         [Test]
-        public void EveryTypeOnTheListIsStillAHostedFixtureOffTheBase()
+        public void EveryTypeOnTheListStillOwesAMoveToTheBase()
         {
-            var stale = Compare(HostedFixturesNotYetOnTheBase.Keys, hostedFixturesOffTheBase).Stale;
+            var stale = Compare(FixturesNotYetOnTheBase.Keys, OwedAMoveToTheBase(concreteFixtures)).Stale;
 
             Assert.That(
                 stale,
                 Is.Empty,
-                "These types are on the list but are not hosted fixtures off the base any more: " + string.Join(", ", stale) +
+                "These types are on the list but no longer owe a move to the base: " + string.Join(", ", stale) +
                 ". Remove them from the list, so it can only shrink.");
         }
 
@@ -245,7 +281,20 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var comparison = Compare(
                 [nowOnTheBase.FullName, stillOffTheBase.FullName],
-                HostedAndOffTheBase([nowOnTheBase, stillOffTheBase]));
+                OwedAMoveToTheBase([nowOnTheBase, stillOffTheBase]));
+
+            Assert.That(comparison.Stale, Is.EqualTo(new[] { nowOnTheBase.FullName }));
+        }
+
+        [Test]
+        public void AListedContainerFixtureNowOnTheBaseIsStale()
+        {
+            var nowOnTheBase = Planted(nameof(PlantedContainerFixtures.ContainerOnTheBaseWithNoHost));
+            var stillOffTheBase = Planted(nameof(PlantedContainerFixtures.ContainerOffTheBase));
+
+            var comparison = Compare(
+                [nowOnTheBase.FullName, stillOffTheBase.FullName],
+                OwedAMoveToTheBase([nowOnTheBase, stillOffTheBase]));
 
             Assert.That(comparison.Stale, Is.EqualTo(new[] { nowOnTheBase.FullName }));
         }
@@ -280,6 +329,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             var hosted = HostedWithAConnectorCategory(concreteFixtures);
 
             Assert.That(hosted, Is.Empty, MustDropTheConnectorCategory(hosted));
+        }
+
+        [Test]
+        public void EveryLiveOrContainerFixtureIsOnTheBaseOrOnTheList()
+        {
+            var newcomers = Compare(FixturesNotYetOnTheBase.Keys, LiveOrContainerOffTheBase(concreteFixtures)).Newcomers;
+
+            Assert.That(newcomers, Is.Empty, LiveAndContainerMustDeriveFromTheBase(newcomers));
+        }
+
+        [Test]
+        public void EveryFixtureCarryingTheCanaryCarriesAConnector()
+        {
+            var canaries = CanariesWithNoConnector(concreteFixtures);
+
+            Assert.That(canaries, Is.Empty, CanaryMustCarryAConnector(canaries));
         }
 
         [Test]
@@ -336,6 +401,65 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
         }
 
+        [TestCase(nameof(PlantedContainerFixtures.ContainerOffTheBase), true)]
+        [TestCase(nameof(PlantedFixtures.ConnectorOffTheBase), true)]
+        [TestCase(nameof(PlantedFixtures.ConnectorOnAMethodOffTheBase), true)]
+        [TestCase(nameof(PlantedFixtures.ConnectorOnATestCaseOffTheBase), true)]
+        [TestCase(nameof(PlantedFixtures.ChildOfAConnectorOffTheBase), true)]
+        [TestCase(nameof(PlantedContainerFixtures.ContainerOnTheBaseWithNoHost), false)]
+        [TestCase(nameof(PlantedFixtures.LiveOnTheBase), false)]
+        [TestCase(nameof(PlantedFixtures.RegularWithNoHost), false)]
+        [TestCase(nameof(PlantedFixtures.ConnectorInAnotherLetterCaseOffTheBase), false)]
+        public void ALiveOrContainerFixtureOffTheBaseIsFound(string plantedType, bool shouldBeFound)
+        {
+            var found = LiveOrContainerOffTheBase([Planted(plantedType)]);
+
+            Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
+        }
+
+        [Test]
+        public void ALiveClassNamedForItsOfflineTestsMayStayOffTheBase()
+        {
+            var named = allTypes.Where(type => LiveClassesWithOfflineTests.ContainsKey(type.FullName)).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(named.Select(type => type.FullName), Is.EquivalentTo(LiveClassesWithOfflineTests.Keys));
+                Assert.That(named.Where(type => !CarriesAConnectorCategory(type) || IsOnTheBase(type)), Is.Empty);
+                Assert.That(LiveOrContainerOffTheBase(named), Is.Empty);
+            }
+        }
+
+        [TestCase(nameof(PlantedFixtures.CanaryWithNoConnector), true)]
+        [TestCase(nameof(PlantedFixtures.CanaryOnAMethodWithNoConnector), true)]
+        [TestCase(nameof(PlantedFixtures.CanaryOnATestCaseWithNoConnector), true)]
+        [TestCase(nameof(PlantedFixtures.ChildOfACanaryWithNoConnector), true)]
+        [TestCase(nameof(PlantedFixtures.CanaryOnTheBaseWithNoConnector), true)]
+        [TestCase(nameof(PlantedFixtures.CanaryWithAConnector), false)]
+        [TestCase(nameof(PlantedFixtures.CanaryInAnotherLetterCase), false)]
+        [TestCase(nameof(PlantedFixtures.RegularWithNoHost), false)]
+        public void ACanaryWithNoConnectorIsFound(string plantedType, bool shouldBeFound)
+        {
+            var found = CanariesWithNoConnector([Planted(plantedType)]);
+
+            Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
+        }
+
+        [Test]
+        public void TheListExcusesAFixtureFromBeingOffTheBaseAndFromNothingElse()
+        {
+            var fixture = Planted(nameof(PlantedContainerFixtures.ContainerOffTheBaseThatBreaksOtherRules));
+            var itsName = new[] { fixture.FullName };
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(LiveOrContainerOffTheBase([fixture]), Is.EqualTo(itsName));
+                Assert.That(Compare(itsName, LiveOrContainerOffTheBase([fixture])).Newcomers, Is.Empty);
+                Assert.That(PlacesThatWriteTheCategory([fixture]), Is.EqualTo(itsName));
+                Assert.That(CanariesWithNoConnector([fixture]), Is.EqualTo(itsName));
+            }
+        }
+
         [Test]
         public void TheMessageForAStaleMarkerNamesTheTypeAndSaysItMustLeaveTheBase()
         {
@@ -362,6 +486,26 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Does.Contain("Some.Namespace.SomeFixture").And.Contain("CI would read each as live and drop it").And.Contain("Remove the connector category"));
         }
 
+        [Test]
+        public void TheMessageForALiveOrContainerFixtureSaysTheFastLoopWouldRunItAndNamesTheBase()
+        {
+            var message = LiveAndContainerMustDeriveFromTheBase(["Some.Namespace.SomeFixture"]);
+
+            Assert.That(
+                message,
+                Does.Contain("Some.Namespace.SomeFixture").And.Contain("the fast test loop would run").And.Contain("must derive from IntegrationFixture"));
+        }
+
+        [Test]
+        public void TheMessageForACanarySaysTheClauseSelectsByExclusionSoItWouldRunInCi()
+        {
+            var message = CanaryMustCarryAConnector(["Some.Namespace.SomeFixture"]);
+
+            Assert.That(
+                message,
+                Does.Contain("Some.Namespace.SomeFixture").And.Contain("selects by exclusion").And.Contain("a canary with no connector would run in CI"));
+        }
+
         private static bool RunsWhenAFixtureRuns(MethodDefinition method)
             => method.IsConstructor || HasAnAttribute(method, TestAttributes) || HasAnAttribute(method, SetUpAndTearDownAttributes);
 
@@ -385,19 +529,31 @@ namespace Lighthouse.Backend.Tests.Architecture
             => "These fixtures start an application host and carry a connector category, so CI would read each as live and " +
                 "drop it from its ordinary runs. Remove the connector category: " + string.Join(", ", typeNames) + ".";
 
+        private static string LiveAndContainerMustDeriveFromTheBase(IEnumerable<string> typeNames)
+            => "These live or container fixtures are off the base. Off it, the fast test loop would run a container test, and " +
+                "CI would run a live test against its real tracker in every build. Each must derive from " +
+                nameof(IntegrationFixture) + ": " + string.Join(", ", typeNames) + ".";
+
+        private static string CanaryMustCarryAConnector(IEnumerable<string> typeNames)
+            => "These fixtures carry " + CanaryCategory + " and no connector category. CI's clause selects by exclusion, so " +
+                "a canary with no connector would run in CI. Give each its connector category: " + string.Join(", ", typeNames) + ".";
+
         private bool IsAConcreteClassWithTests(TypeDefinition type)
             => type is { IsClass: true, IsAbstract: false }
                 && !type.Name.StartsWith('<')
                 && scan.TypeAndItsBases(type).Any(self => self.Methods.Any(method => HasAnAttribute(method, TestAttributes)));
 
+        private static List<string> SortedNames(IEnumerable<TypeDefinition> fixtures)
+            => [.. fixtures.Select(fixture => fixture.FullName).Order(StringComparer.Ordinal)];
+
         private List<string> HostedAndOffTheBase(IEnumerable<TypeDefinition> fixtures)
-            => [.. fixtures.Where(IsHostedOffTheBase).Select(fixture => fixture.FullName).Order(StringComparer.Ordinal)];
+            => SortedNames(fixtures.Where(IsHostedOffTheBase));
 
         private bool IsHostedOffTheBase(TypeDefinition fixture)
             => !IsOnTheBase(fixture) && scan.FixtureReachesAHost(fixture);
 
         private List<string> OnTheBaseForNoReason(IEnumerable<TypeDefinition> fixtures)
-            => [.. fixtures.Where(IsOnTheBaseForNoReason).Select(fixture => fixture.FullName).Order(StringComparer.Ordinal)];
+            => SortedNames(fixtures.Where(IsOnTheBaseForNoReason));
 
         private bool IsOnTheBaseForNoReason(TypeDefinition fixture)
             => IsOnTheBase(fixture) && !scan.FixtureReachesAHost(fixture) && !CarriesAConnectorCategory(fixture) && !IsAContainerFixture(fixture);
@@ -408,16 +564,33 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static bool IsAContainerFixture(TypeDefinition fixture)
             => fixture.FullName.StartsWith(ContainerNamespace + ".", StringComparison.Ordinal);
 
+        private List<string> OwedAMoveToTheBase(IReadOnlyCollection<TypeDefinition> fixtures)
+            => [.. HostedAndOffTheBase(fixtures).Union(LiveOrContainerOffTheBase(fixtures), StringComparer.Ordinal)];
+
+        private List<string> LiveOrContainerOffTheBase(IEnumerable<TypeDefinition> fixtures)
+            => SortedNames(fixtures.Where(IsLiveOrContainerOffTheBase));
+
+        private bool IsLiveOrContainerOffTheBase(TypeDefinition fixture)
+            => !IsOnTheBase(fixture)
+                && !LiveClassesWithOfflineTests.ContainsKey(fixture.FullName)
+                && (CarriesAConnectorCategory(fixture) || IsAContainerFixture(fixture));
+
+        private List<string> CanariesWithNoConnector(IEnumerable<TypeDefinition> fixtures)
+            => SortedNames(fixtures.Where(IsACanaryWithNoConnector));
+
+        private bool IsACanaryWithNoConnector(TypeDefinition fixture)
+            => CarriesACategory(fixture, category => category == CanaryCategory) && !CarriesAConnectorCategory(fixture);
+
         private List<string> HostedWithAConnectorCategory(IEnumerable<TypeDefinition> fixtures)
-            => [.. fixtures
-                .Where(fixture => scan.FixtureReachesAHost(fixture) && CarriesAConnectorCategory(fixture))
-                .Select(fixture => fixture.FullName)
-                .Order(StringComparer.Ordinal)];
+            => SortedNames(fixtures.Where(fixture => scan.FixtureReachesAHost(fixture) && CarriesAConnectorCategory(fixture)));
 
-        private bool CarriesAConnectorCategory(TypeDefinition fixture)
-            => scan.TypeAndItsBases(fixture).Any(self => WritesAConnectorCategory(self) || self.Methods.Any(WritesAConnectorCategory));
+        private bool CarriesAConnectorCategory(TypeDefinition fixture) => CarriesACategory(fixture, ConnectorCategories.Contains);
 
-        private static bool WritesAConnectorCategory(ICustomAttributeProvider place) => CategoriesWrittenOn(place).Any(ConnectorCategories.Contains);
+        private bool CarriesACategory(TypeDefinition fixture, Func<string, bool> isWanted)
+            => scan.TypeAndItsBases(fixture).SelectMany(PlacesACategoryCanBeWritten).SelectMany(CategoriesWrittenOn).Any(isWanted);
+
+        private static IEnumerable<ICustomAttributeProvider> PlacesACategoryCanBeWritten(TypeDefinition type)
+            => type.Methods.Cast<ICustomAttributeProvider>().Prepend(type);
 
         private List<string> PlacesThatWriteTheCategory(IEnumerable<TypeDefinition> fixtures)
             => [.. fixtures
@@ -594,6 +767,79 @@ namespace Lighthouse.Backend.Tests.Architecture
                 [Category("GithubIntegration")]
                 public void Serve() => Assert.Pass();
             }
+
+            [Category("LinearIntegration")]
+            internal abstract class ConnectorOffTheBase
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ChildOfAConnectorOffTheBase : ConnectorOffTheBase;
+
+            internal abstract class ConnectorOnAMethodOffTheBase
+            {
+                [Test]
+                [Category("ServiceNowIntegration")]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ConnectorOnATestCaseOffTheBase
+            {
+                [TestCase(1, Category = "some-slice, AdoIntegration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            [Category("jiraintegration")]
+            internal abstract class ConnectorInAnotherLetterCaseOffTheBase
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            [Category("UsageDataCanary")]
+            internal abstract class CanaryWithNoConnector
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ChildOfACanaryWithNoConnector : CanaryWithNoConnector;
+
+            internal abstract class CanaryOnAMethodWithNoConnector
+            {
+                [Test]
+                [Category("UsageDataCanary")]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class CanaryOnATestCaseWithNoConnector
+            {
+                [TestCase(1, Category = "some-slice, UsageDataCanary")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            [Category("UsageDataCanary")]
+            internal abstract class CanaryOnTheBaseWithNoConnector : IntegrationFixture
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            [Category("UsageDataCanary")]
+            [Category("JiraIntegration")]
+            internal abstract class CanaryWithAConnector : IntegrationFixture
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            [Category("usagedatacanary")]
+            internal abstract class CanaryInAnotherLetterCase
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
         }
     }
 }
@@ -604,6 +850,20 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
     internal static class PlantedContainerFixtures
     {
         internal abstract class ContainerOnTheBaseWithNoHost : IntegrationFixture
+        {
+            [Test]
+            public void Serve() => Assert.Pass();
+        }
+
+        internal abstract class ContainerOffTheBase
+        {
+            [Test]
+            public void Serve() => Assert.Pass();
+        }
+
+        [Category("Integration")]
+        [Category("UsageDataCanary")]
+        internal abstract class ContainerOffTheBaseThatBreaksOtherRules
         {
             [Test]
             public void Serve() => Assert.Pass();
