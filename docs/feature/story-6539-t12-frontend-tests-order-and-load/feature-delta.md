@@ -260,3 +260,38 @@ Read at DEVOPS, fresh: `.github/actions/build-frontend/action.yml`, `ci_frontend
 2. DESIGN says "7 full runs" in D-6539-3, the CI-guard order line ("all seven full runs green before B starts") and the Slices note; the Orchestrator amendment makes it 4 (seeds 1, 4, 5, 6). The amendment wins; read those lines as four.
 3. DESIGN says the budget reporter and CSV scripts "stay unchanged; verified at B1" and treats them as one question. They are two: the CSV and per-file budget are order-independent (read above), the per-test first-test allowance is order-dependent and is the open risk.
 4. DESIGN writes the seed as `$SEED` in the step; use an `env:` variable, not inline interpolation (above).
+
+## Wave: DESIGN / [REF] Review revision and maintainer word (2026-11-07)
+
+The design review returned NEEDS_REVISION. This section overrides anything above that differs, the first amendment
+included.
+
+**Maintainer, asked after the review:**
+
+- **Load:** recorded as not reproduced, no fix claimed, watched. A future 5 s or `pointer-events` red becomes a new Story with
+  its evidence. This replaces "the known load failures are fixed" in the brief.
+- **Guard:** `--sequence.shuffle.tests`, tests only, as DESIGN proposed. A deliberate change from the brief's bare flag. "Files
+  are isolated" rests on the config and is not measured.
+
+**Fixed by the orchestrator:**
+
+- **Sweep.** Full runs on seeds 11, 33, 4, 5, with `CI=true` and the flags CI will use, because `CI=true` changes `bail` and the
+  budget factor. The earlier "same flags" claim was false without it. The three files alone on the ten seeds stay. All four
+  green before the CI change.
+- **`ActionButton`, the design's fix is withdrawn.** Dropping the stub would leave `if (isMounted.current)` untested:
+  a state set from the delayed callback goes through React's own `window.event` read, so the stub is what makes the guard
+  observable, and "React 19 ignores it" was inferred. Instead, first remove that guard and see the stubbed test go red. Then
+  keep the stub and remove the stray event's source: prove which event it is as D-6539-1 says, and let it finish before the
+  stub goes on. If the stub truly cannot stay, name the coverage loss at the hold.
+- **`console.error` assertion:** not added. It accumulates across a file's tests, so it would be order-dependent itself.
+- **`PortfolioDetail`:** the helper `renderAndWaitForTheUpdateFeed` also waits for the portfolio heading, so presence tests do
+  not lean on the flush either.
+- **`GeneralSettingsComponent.test.tsx`** is at `src/components/Common/BaseSettings/`.
+- **Recognising a red:** a time-budget failure at the Vitest step, on a slow test moved out of first place, is a third kind.
+  The per-test guard's first-test allowance goes by declaration order, so B1 changes the reporter to first by start time if
+  that happens; a looser limit is not the fix.
+- **Corrections:** only seed 11 had a budget offender. The sweep used the bare flag and all five seeds went red, so B1 has to
+  show `.tests` reproduces the failures on the pre-fix commit. The busy-loop run did produce two timeouts, so "neither
+  reproduces" is overstated; that run was too saturated to judge.
+- **Mutation:** the maintainer accepted N/A on 2026-11-07 in chat, for Stories where only test files change; the reporter is
+  a test tool, and if B1 changes it, it is measured.
