@@ -256,8 +256,9 @@ describe("ActionButton component", () => {
 	});
 
 	it("leaves the page alone when its minimum wait ends after it is gone", async () => {
-		// The test before may have left a selection change queued; it would
-		// arrive while the window is gone below and fail inside React.
+		// An earlier test's button takes focus on mount (autoFocus) and can leave a
+		// selection change queued. Delivered while the window is stubbed away below,
+		// React's handler for it throws, so let it land first, in a real tick.
 		await new Promise((resolve) => setImmediate(resolve));
 		vi.useFakeTimers();
 		const rejections: unknown[] = [];

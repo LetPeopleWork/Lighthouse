@@ -141,6 +141,7 @@ describe("The print page gets ready", () => {
 			aPrintDialog();
 			openingThePrintPageDirectly(withHeld(held));
 
+			// The print route loads lazily, so the page may not be drawn yet when the render returns.
 			await waitFor(() => thePrintPage());
 			await aMomentLater();
 

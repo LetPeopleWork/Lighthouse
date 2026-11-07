@@ -968,6 +968,9 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 				expect(featuresCallback).not.toBeNull();
 			});
 			await screen.findByText("Release Codename Daniel");
+			// The Refresh button carries the failure title and needs the permission summary, so it can
+			// draw later than the heading; the absence checks below mean nothing before it is there.
+			await screen.findByRole("button", { name: "Refresh Features" });
 			return (update: IUpdateStatus) => featuresCallback?.(update);
 		};
 
@@ -1045,8 +1048,8 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 
 		// A forecast run is not a refresh. It has its own schedule and is triggered by a refresh that has
 		// just finished, so treating it as one means a forecast quietly clears the mark left by the refresh
-		// that broke - and the icon reads healthy over data that was never updated. That is the defect this
-		// whole slice exists to remove, rebuilt on the page rather than in the queue.
+		// that broke - and the icon reads healthy over data that was never updated. The queue once had this
+		// defect; this guards against the page rebuilding it.
 		it("keeps saying so when a forecast run finishes afterwards", async () => {
 			const tell = await renderAndWaitForTheUpdateFeed();
 
