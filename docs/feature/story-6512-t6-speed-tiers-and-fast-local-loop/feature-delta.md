@@ -496,3 +496,351 @@ section overrides anything above that differs.
   and per push only in that order.
 - **Containers (D-6512-11) stay on the base, as raised with the maintainer**, who has not answered; it goes past "boots the
   host", so it is a decision to revisit at slice D.
+
+## Wave: DISTILL / [REF] Scope, reconciliation and baseline (2026-11-07, maintainer away)
+
+- Shape: a change to how tests are selected, with no product behaviour. The specification is NUnit, Vitest and Python `unittest`, and
+  the acceptance scenarios for a guard are planted cases that must go red. No Gherkin, so no scaffolds, Tier B, domain-types module or
+  state-delta port. Nothing is written in this wave except this section and `deliver/roadmap.json`: the tests are written red-first in
+  DELIVER, and no test or build was run here, because a delivery is using this machine. So every "expected" below is a rule for reading a
+  run. The Pre-DELIVER "fails for the right reason" gate is met step by step: each step shows its red before its green.
+- No nWave scenario tag goes into any test title, comment or file. An untagged test is correct here; classification stays in this
+  workspace, in the tables below.
+- UI sketches: N/A, because nothing a user sees changes. Loading and failure looks: N/A, no screen is added or changed.
+- Policy: `docs/architecture/atdd-infrastructure-policy.md` exists, read as inherited; no port is added. Journey, KPI contract: none for
+  this Story; `kpi-contracts.yaml` only has two lines of wording to change. Deliverable type: application. Outcome registry: not run,
+  no typed contract is added.
+- Language: C# for the backend, TypeScript for the frontend, Python for the timing scripts.
+- Read for this wave, beyond the delta and slice-48: `ci_backend.yml`, `ci_changes.yml`, `path-classifier.sh`, `test-build-filter.sh`,
+  `dev-test.*`, `trx_to_csv.py`, `Test-Coverage.ps1`, `TestHostPerFixtureGuardTest`, `TestHostScanning`, the 16 live files' class lines.
+
+**Reconciliation: 0 hard contradictions.** Soft points, resolved as recorded:
+
+| Point | Resolved |
+|---|---|
+| DESIGN and DEVOPS: `Test-Fast.ps1` clears tokens, D-6512-12 "hides their tokens"; fast filter is `TestCategory!=Integration` | The revision wins: the fast filter leaves out the connectors and clears nothing |
+| slice-48's Maintainer decisions: "The fast loop is `TestCategory!=Integration`" | Taken as the revision has it, because a bare filter with a token set writes to a real tracker. It is stricter and costs 3 tests. **Named for the maintainer**: this is the one place the delta's last section goes past a maintainer line, not only past the brief |
+| DEVOPS "Check test selection", `check_selection.py`, `E`, `X`, "left out", the `--list-tests` reconciliation, the floor on `R` | Gone with the step. `T0`, `Total:` and the CSV remain |
+| DESIGN's "Fast run plus hosted run equal the always-on list"; "`Unit` rows equal the fast ids" | Both are false once the fast filter leaves out the connectors: the 3 offline tests of the mixed classes are in neither. See D-6512-24 |
+| Revision: hosted commit waits "or a day"; this wave's brief: it waits for one green plain run | It waits. The day existed because the plain run had to come from another Story; D-6512-23 removes that need. After a day with no green plain run the orchestrator reports; it does not push |
+| DESIGN: scan move in slice D | Moved to slice C, D-6512-23. Same commit, earlier |
+| DEVOPS "about 12 full-size runs" | Replaced, D-6512-22 |
+| Guard: five rules in DESIGN, a sixth in the revision | Six rules |
+
+## Wave: DISTILL / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6512-22 | One full-size local backend run in the whole Story, at the end of slice E; every other id list comes from CI's own `test-timings-backend` CSV or from a run that selects next to nothing | CI runs the always-on clause on every plain push anyway, and its CSV holds every id; see "Proof that every test still runs" |
+| D-6512-23 | The `refactor` scan move leaves slice D for slice C and is pushed alone after the live push, so the Story makes its own first plain run | It is a backend path and changes no category; waiting for another Story's push was the only reason for "or a day" |
+| D-6512-24 | The tiers add up as fast + hosted + 3 offline tests; the `Unit` column equals fast + those 3 | The revision's fast filter leaves those 3 out, and they carry no `Integration` |
+| D-6512-25 | The probe gains the shapes it lacked: a live class on the base, and a mixed class's live and offline methods | The always-on clause rests on those two shapes and DESIGN's list had neither; the 3 offline tests are the reason the clause has a second half |
+| D-6512-26 | A step's local check is `dotnet build` and the named test classes; the whole suite runs locally once and in CI on each push | Steps change categories and base classes, not test bodies, and a whole run is 8 minutes and up to 18 GB on a machine shared with a delivery. **It relaxes CLAUDE.md's `dotnet test` gate for slices B to D; named for the maintainer** |
+| D-6512-27 | A diff line is also accepted when it is a test this Story added, named in the delta | DESIGN allowed only foreign commits, which would fail this Story's own pin, reflection and guard tests |
+| D-6512-28 | Frontend: one full `pnpm test`, no before-run | Nothing in the config changes, which `git diff` shows; the one run is what the partition needs |
+| D-6512-29 | Before each push, the push's diff goes through `path-classifier.sh` and every connector answer must be `false` | A self-hosting class in a connector folder would start a second live run; text search finds none today, and the check costs nothing |
+
+## Wave: DISTILL / [REF] Names used below
+
+Every string is exact. All `dotnet test` commands below run from the repo root, against `Lighthouse.Backend/Lighthouse.Backend.Tests`,
+with `-c Release --no-build --logger trx` after one `dotnet build -c Release` unless a line says otherwise, and with no variable ending
+in `IntegrationTestToken` set, checked first with `env | grep -c IntegrationTestToken`, which must print 0. Release matches CI, so local
+and CI lists compare like for like.
+
+| Name | String |
+|---|---|
+| Old clause | `Category!=Integration` |
+| Always-on clause `A` | `Category!=Integration\|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)` |
+| Force-full clause | `A` joined by `\|` with `(Category=Integration&Category!=UsageDataCanary)` |
+| Standard filter | `TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration` |
+| Fast filter `F` | `TestCategory!=Integration&` followed by the standard filter |
+| Hosted filter `H` | `TestCategory=Integration&` followed by the standard filter |
+| Offline filter `O` | `(TestCategory=JiraIntegration\|TestCategory=AdoIntegration\|TestCategory=LinearIntegration\|TestCategory=ServiceNowIntegration\|TestCategory=GithubIntegration)&TestCategory!=Integration` |
+
+(`\|` is a plain `|`; the backslash only keeps this table a table.)
+
+A **plain run** is a green `main` run whose "Compute Test Backend filter" log prints `force_full=false` and `filter=` with the always-on
+clause alone (the old clause before the live push). A **list** is the sorted `fully_qualified_name` column with duplicates kept, read with
+Python's `csv` because names hold commas. A **full-size run** is any local `dotnet test` that selects the hosted tests.
+
+## Wave: DISTILL / [REF] The guarantee
+
+Each is a check that can fail.
+
+| # | Guarantee | Command | Fails when |
+|---|---|---|---|
+| 1 | No production file changes | `git show --name-only --format= <hash>` for each of this Story's commits, grepped for `^Lighthouse.Backend/Lighthouse.Backend/` and for files under `Lighthouse.Frontend/src` other than `*.test.ts(x)` | Any line prints |
+| 2 | The clause selects what it must | `dotnet test ... --filter "FullyQualifiedName~TestSelectionClauseTest"` | A synthetic category set lands on the wrong side, or a place holds a different string |
+| 3 | The new clause equals the old on today's tree | `dotnet test ... --filter "<H>"` at the end of slice B and again after the live classes move | Any test is selected: `A` differs from the old clause only for a test with `Integration` and no connector, which is what `H` selects |
+| 4 | No id is lost, run to run | List of each plain run against the list of the plain run before it | A line is neither a foreign commit's test file nor a test this Story added |
+| 5 | The first plain run matches `T0` | See "First plain run against `T0`" | Any difference stops the Story |
+| 6 | No id is lost at all, live and `[Explicit]` included | `dotnet test ... --list-tests` (no filter), sorted, at the parent of slice B's first commit and at the end of slice E | As 4 |
+| 7 | The connector attributes stand | `git grep -E 'Category\("(Jira\|Ado\|Linear\|ServiceNow\|Github)Integration"\)' -- Lighthouse.Backend/Lighthouse.Backend.Tests \| sort` at the same two points | Any line differs |
+| 8 | `[Explicit]` tests stay out of real runs | At the end of slice E, `A`, force-full and `H`, each `&`-joined with the five probe class names by `FullyQualifiedName~` | A row for any of the 6 tests has an outcome other than the one `T0`'s CSV shows for it (absent, unless `T0` shows otherwise) |
+| 9 | The tiers add up, with no overlap | `F`, `H`, `O` lists at the end of slice E | The three lists sorted together differ from the last plain run's list, own and foreign lines aside. An overlap shows as a duplicate line the plain list does not have |
+| 10 | Exactly 3 offline tests sit outside fast and hosted | `O` run | Not 3 ids: 1 in `JiraWriteBackTest`, 2 in `AzureDevOpsWriteBackTest` |
+| 11 | The guard bites | Planted cases, and real planted classes under Debug and Release, "What each slice must show" | A planted red stays green, or the message omits the type |
+| 12 | The fast loop touches no real system | The `F` list holds no class with a connector attribute; `Test-Fast.ps1` holds `F` by text | A connector class appears; a person is shown the bare filter (`git grep -nF 'TestCategory!=Integration"' CLAUDE.md Lighthouse.Backend/Test-Coverage.ps1` prints a line) |
+| 13 | Exactly one live-suite push | The filter line of each CI run of this Story's pushes | A second run has `force_full=true` or a connector clause because of this Story's files |
+| 14 | The CSV's column agrees with the filters | New `trx_to_csv.py` over the `F`, `H`, `O` TRX files, then the first plain CSV after slice F | `Unit` rows differ from `F` + `O`, either direction |
+| 15 | Frontend tiers add up | `pnpm test:fast` ids and the `.test.tsx` ids of one `pnpm test` against that run's whole list | Not equal, an overlap, or a `.stryker-tmp` id |
+| 16 | The targets hold | "Measuring the targets", 5 warm runs | A median is over target: a hold for the maintainer, not a green |
+
+Mutation is a waiver, not a check: see "What closes the Story".
+
+## Wave: DISTILL / [REF] What each slice must show (red before, green after)
+
+"Red" means non-zero or a named failure for the reason given, never a build or set-up error. Failing names and messages go in the step's
+commit body or this delta. Scenario counts are per step; none is over 8.
+
+**Slice A: `pnpm test:fast`.** From `Lighthouse.Frontend`.
+
+| Case | Before | After |
+|---|---|---|
+| The command exists | `pnpm test:fast` fails, no such script | Runs, exit 0, no `.test.tsx` in `test-results.json` |
+| A planted failing `.test.ts` | | `pnpm test:fast` red, naming it. Removed |
+| A planted failing `.test.tsx` | | `pnpm test:fast` stays green and does not list it; `pnpm test <it>` is red. Removed |
+| An edit that touches no `.test.ts` | | `pnpm test:fast --changed` exits 0 and says it ran nothing; if exit 1, add `--passWithNoTests` |
+| A subset run and the time-budget reporter | | No stale-entry or budget finding for the 3 `.tsx` entries |
+| Partition | | Guarantee 15 |
+
+**Slice B: the base, and the filters.**
+
+| Case | Before | After |
+|---|---|---|
+| The category reaches a derived type | `IntegrationFixtureCategoryTest` does not compile or is red | A nested abstract planted type on the base shows `Integration` by reflection with `inherit: true` |
+| Regular and hosted sets are kept; live is left out, for all five connectors | `TestSelectionClauseTest` red: `ci_backend.yml` still holds the old clause, which drops `{Integration}` | Green |
+| An offline test of a mixed class is kept | Same | `{JiraIntegration}` and `{AdoIntegration}` selected by `A` |
+| A planted wrong clause: the five connectors alone | | The evaluator reports `{JiraIntegration}` dropped: this test holds the wrong answer as its expectation, so the evaluator cannot go blind |
+| A planted wrong clause: the old clause after the moves | | Reports `{Integration}` dropped |
+| Force-full takes everything but the canary | | `{Integration, UsageDataCanary}` dropped by its second half, and kept by `A` if it has no connector, which is why guard rule 6 exists |
+| The joined strings | | `A\|Category=JiraIntegration` selects `{Integration, JiraIntegration}` and no other live set |
+| Every place holds the same text | Red | `ci_backend.yml`, `dev-test.sh`, `dev-test.ps1`, `test-build-filter.sh` all hold `A` |
+| `H` selects nothing on today's tree (guarantee 3) | Plant `[Category("Integration")]` on one offline class, uncommitted: `H` selects exactly it. Remove | Selects nothing |
+| The shell mirror | `bash Scripts/test-selection/test-build-filter.sh` fails on the new expected strings | `failed: 0`. CI does not run this script, so the step does |
+| The always-on list on a dry run | | `pwsh Scripts/test-selection/dev-test.ps1 -DryRun` prints the string (not Windows quoting, as DEVOPS says) |
+
+`TestSelectionClauseTest` holds a small evaluator of `=`, `!=`, `&`, `|` and parentheses over a set of categories, and reads the strings from
+the real files through the `FindRepositoryRoot` idiom of `CategoryListOwnershipGuardTest`. It says how the clause reads, not how NUnit reads
+it: the probe covers that half.
+
+**Slice C: the moves that come before the guard.**
+
+| Case | Must show |
+|---|---|
+| The 14 live classes | All 14 have no base on the class line (read here), so each takes `: IntegrationFixture`. The literal `Integration` goes, the connector stays. Guarantee 3 still selects nothing. Guarantee 7 holds, as those lines stay |
+| `JiraSuppressionRetryIntegrationTest` | Its one method-level `Integration` goes too; the class has one test, so the selection is the same |
+| The hosted commit | `IntegrationTestBase` and the 26 roots take the line. `H` restricted to one class on each kind (`FullyQualifiedName~` on one `IntegrationTestBase` class and one class under a three-deep root) selects them, and `F` restricted the same way selects nothing: red before the commit, green after |
+
+**Slice D: the guard.** Planted nested abstract fixtures, the `PlantedFixtures` way, through the scan directly.
+
+| Step | Planted red | Planted green |
+|---|---|---|
+| Rule 1 | Host in `[OneTimeSetUp]`; in an async `[OneTimeSetUp]` after an `await`; in a constructor; in a field initialiser; in a base class's set-up; through a helper | On the base with a host; regular with no host |
+| Rules 2 to 4 | On the base with no host; a hand-written category; the same in another letter case; on a method; a hosted fixture with a connector category | A live fixture on the base; a container fixture on the base with no host; an unrelated method named like a sink |
+| Rules 5 and 6 | A container fixture off the base; a connector category off the base; `UsageDataCanary` with no connector | A named mixed class; `UsageDataCanary` with a connector |
+
+Before a planted red goes green, the rule's own code does not exist, so it fails the assertion, and T2's `TestHostPerFixtureGuardTest` stays
+green unchanged throughout: same ids, same list. Also: a stale list entry goes red, as "a listed type now on the base" (the list can only
+shrink). A planted container fixture needs the `Integration.Containers` namespace: give it one in the test file, not a rule parameter.
+
+The acceptance check is stronger. A real concrete class in the working tree, under Debug and under `-c Release`: unmarked with a host, then
+on the base with no host. Each red with its full name in the message, output kept in this delta, class removed, `git status` clean.
+
+**Slice E: the list empties.** In each commit, moving a class while its entry stays turns the stale check red once; removing the entry
+turns it green. Guarantees 6 to 10 close it. Then the list and its stale check are deleted, which a guard run shows.
+
+**Slice F: the script, the column, the numbers.**
+
+| Case | Before | After |
+|---|---|---|
+| `Test-Fast.ps1 -NoBuild` | No file | Runs `F`, exit 0, list equal to the `F` list of slice E plus own and foreign lines; a failing planted regular test makes it exit non-zero; removed |
+| Class shapes in `test_trx_to_csv.py`, first step: primary constructor, base with arguments, base on the next line, interface after the base, qualified base, a base named in one part of a partial class, nested class, private nested class (`Outer+Inner`) | Each reads `Unit` | Each reads `Integration` |
+| Second step: two namespaces in a file; a chain crossing files; a parametrised fixture's arguments stripped; a TRX class with no declaration warns and is not silently `Unit`; the mixed classes' method-level path still works; the real-tree anchors; two classes sharing a simple name on a chain fail; `summarise.py`'s wording | Red | Green, and `python3 -m unittest discover -s Scripts/test-timings/tests` passes |
+| The real TRX of a parametrised fixture | Open from DESIGN | Read from slice E's `H` TRX and pinned in a test before the code changes |
+
+## Wave: DISTILL / [REF] The probe that opens slice B
+
+As DESIGN, with D-6512-25. One file, `Architecture/CategoryProbe.cs`, in the working tree only, never committed; `git status` shows it gone
+at the end of the step. It holds its own copy of the root class, since the real one lands after it. All run under Debug and under `-c Release`, each filter `&`-joined with `FullyQualifiedName~CategoryProbe`, read
+from the TRX, not the console. Results go in this delta.
+
+| Fixture | Shape |
+|---|---|
+| `Direct` | Derives from the base |
+| `Through` | Through an abstract class |
+| `Inherited` | Inherits its test from an abstract base on the base |
+| `Parametrised` | `[TestFixture(2)]` on the base |
+| `Sourced` | `[TestFixtureSource]` on the base |
+| `Nested` | Nested public class on the base, outer class off it |
+| `Plain` | Off the base |
+| `Explicit` | `[Explicit]` test on the base |
+| `Live` | On the base, `JiraIntegration` on the class |
+| `MixedLive`, `MixedOffline` | One class off the base with `JiraIntegration`; `Integration` on the first method only |
+
+| Filter | Must select | Must not select |
+|---|---|---|
+| `TestCategory=Integration` | The first six, `Explicit`, `Live`, `MixedLive` (confirms the hazard of D-6512-10) | `Plain`, `MixedOffline` |
+| `TestCategory!=Integration` | `Plain`, `MixedOffline` | The rest |
+| `A` | The first six, `Plain`, `MixedOffline` | `Explicit`, `Live`, `MixedLive` |
+| Force-full clause | All | `Explicit` |
+| `A\|Category=JiraIntegration` | The first six, `Plain`, `Live`, `MixedLive`, `MixedOffline` | `Explicit` |
+| Standard filter | The first six, `Plain` | `Explicit`, `Live`, `MixedLive`, `MixedOffline` |
+| `F` | `Plain` | The rest |
+| `H` | The first six | The rest |
+| `O` | `MixedOffline` | The rest |
+
+Run `--list-tests` with one filter once and write down whether it honours it. Nothing depends on that now.
+
+**What stops the Story.** Any cell off, under either configuration, or a filter the adapter refuses to parse. No class moves and no filter
+changes; the probe's table goes to the maintainer with the shape of the base as the question. A missing TRX or a build error is not a
+result: fix it and run the probe again.
+
+## Wave: DISTILL / [REF] Proof that every test still runs
+
+**Backend: what the 12 runs proved, and what proves it now.** CI runs the always-on clause on every plain push and uploads every id in
+`test-timings-backend` (`if: always()`, `ci_backend.yml` line 163). `A` also differs from the old clause in one way only, which a run
+selecting nothing can show.
+
+| DEVOPS's run | Proved | Now | Cost |
+|---|---|---|---|
+| 2 at slice B's parent | The before list, the unstable names | `T0`'s CSV. Unstable names: the diff of `T0`'s list against the plain run before it; a line no test-file change explains is unstable, written down, left out of later diffs | 0 |
+| 2 at slice C's parent, 2 at slice E's | Fresh before lists | The list of the plain run before each push | 0 |
+| After-list, slice B | `A` selects what the old clause did | Guarantee 3 before the push, the first plain run after it | One run selecting nothing |
+| After-list, slice C | The hosted commit lost nothing | That push's plain run | 0 |
+| After-list, slice E | The moves lost nothing | `F` + `H` + `O` before the push, its plain run after it | In the next row |
+| 1 hosted | The tiers add up | **Kept: `H`, the one full-size run**, with `F` and `O`, which are small | **1** |
+| 2 force-full | Same ids, no `[Explicit]` | Guarantee 8, restricted to the 5 classes holding the `[Explicit]` tests. The force-full set is `A` plus the `Integration` tests; `A` is proven, and the rest is the connector list (guarantees 6, 7) | Small |
+
+**About 12 full-size runs become 1**, plus 2 unfiltered `--list-tests` discoveries, which start no host, and a few runs selecting under a
+few hundred tests. If a plain run's CSV is missing or unreadable, one local `A` run replaces it, as a named second full-size run.
+
+**What is lost, plainly.**
+
+1. **The proof comes after the push for slices B, C and D**, where it came before. A wrong selection at those pushes is seen on that push's
+   plain run, not on the machine. No product code is at stake, and the next push waits for the comparison, so tests are out of CI for one
+   run at most. At slice B a loss cannot happen at all on the live push, because the force-full run selects everything.
+2. **A list covers a push, not a slice's commit.** A diff line names its class, so finding the commit stays easy.
+3. **No full list ever runs under the force-full string after the moves.** Clause logic, probe, guarantee 8 and the connector list cover it by
+   reasoning. The first force-full run after slice E, whenever it comes, is read once for `[Explicit]` ids. That is the one real gap.
+4. **The whole suite does not run locally before the pushes of slices B to D** (D-6512-26). A red there costs a plain re-run, except on the
+   live push, where it costs a second live run. That push changes no test body, so nothing in it can red an offline test that was green.
+5. **The lists depend on CI being green and plain.** A foreign red or a connector run delays the comparison, not the truth of it.
+
+**The full-size run's rules.** It belongs to the last step of slice E and to no other. Before it: nothing else runs (`ps -eo args | grep -cE
+'[t]esthost|[v]itest'` prints 0, no build going, T12's delivery finished or paused), and `dotnet build-server shutdown` has run. It is
+never repeated for a failed test: a failed test is still a row, its id counts, and the failure is read against CLAUDE.md's environmental
+list, then only that class runs again. Only a crash that leaves a short TRX justifies a second run, named in this delta. Every step's
+own check stays a class filter. No crafter runs an unfiltered or standard-filter `dotnet test`.
+
+**Frontend.** One `pnpm test` and one `pnpm test:fast`, `test-results.json` deleted before each, ids as `file :: full name` (guarantee 15). No
+before-run, because `git diff` shows the script line is the only change (D-6512-28). Not beside any other run.
+
+**What is kept.** Each list is written down in this delta by run id, commit, count and `sha256`; the artifact holds it. The diff lines are
+written in full. Only the `F`, `H`, `O` lists have no artifact: they go in `evidence/` in this workspace. A foreign line names its commit
+(DESIGN's rule); an own line names the test (D-6512-27).
+
+## Wave: DISTILL / [REF] First plain run against `T0`
+
+Done by the orchestrator and recorded here, as the revision says.
+
+**Written down before the first commit of slice B:** `T0`, from the last green plain `main` run: the run id, its commit, the `Total:` line of
+"Test Backend", the CSV row count, the list's `sha256`. Read the commit from `gh run view`, not the run list, whose pages can be stale.
+A force-full run is not a candidate, and that includes T12's push, which edits `ci_frontend.yml`. Also written down: the `[Explicit]` ids'
+rows in that CSV, if any, so guarantee 8 reads them like for like.
+
+**The live push cannot judge the clause**: force-full selects everything whatever `A` says. It is judged on: green; every `T0` id present; every
+extra id in a class with a connector attribute; no `[Explicit]` id beyond `T0`'s.
+
+**The first plain run judges it.** It is the run of the scan-move push. In order:
+
+1. It is plain: the log prints `force_full=false` and `filter=` with `A` alone. If not, it does not count; wait for the next.
+2. Ids: its list against `T0`'s. Every line is a test this Story added (named: `IntegrationFixtureCategoryTest`, `TestSelectionClauseTest`) or
+   sits in a file a foreign commit changed in the range.
+3. Count: `Total:` = `T0` + this Story's tests + foreign tests added - foreign tests removed, written out as a sum.
+4. The `category` column reads `Integration` 0 times, as before slice F.
+
+**Any difference stops the Story.** No hosted commit, no further backend push. A wrong clause can only be fixed by a `ci*.yml` edit, which
+is a second live run, so the fix goes to the maintainer first. Only then does the hosted commit go.
+
+## Wave: DISTILL / [REF] Push plan
+
+Each push waits for the one before to end, and the check of D-6512-29 runs before each, except the live one, which is meant to answer `true`.
+
+| Push | Carries | Backend run | Judged on |
+|---|---|---|---|
+| 1 | Slice A | None (frontend path) | Frontend green |
+| 2, **the one live push** | Slice B, and slice C's 14 live classes | Force-full, every connector | "First plain run against `T0`", the live paragraph |
+| 3 | The scan move, alone | Plain, the first | Against `T0` |
+| 4 | The hosted commit | Plain | Ids against push 3, guarantee 4 |
+| 5 | Slice D | Plain | Ids against push 4 |
+| 6 | Slice E, after its proof | Plain | Ids against push 5 and against `F` + `H` + `O` |
+| 7 | Slice F | Plain (`Scripts/test-timings/` is a backend path) | Ids against push 6, guarantee 14 |
+
+Before push 2, as DEVOPS: no other push on trunk until it ends, agreed with T12; no use of the Linear key for an hour before, **and that
+hour counts from the end of any other live run**. T12's last push edits `ci_frontend.yml`, which matches `ci.*\.yml`, so it runs every live
+suite too. On a red: grep the log for `TooManyRequests`; wait the hour and re-run the failed job, never push. `Lighthouse.Backend.Tests.csproj` stays
+untouched throughout: a csproj edit forces a full run. A docs-only push starts nothing and may go at any time.
+
+## Wave: DISTILL / [REF] Stop rules
+
+| Stop | Trigger | Then |
+|---|---|---|
+| The Story | A probe cell off | The maintainer decides the base's shape |
+| The Story | Any difference at the first plain run | As that section |
+| The Story | A production file in a commit | Remove it; report |
+| Pushing | Push 2 red | No push until diagnosed; a re-run of the failed job, not a new push |
+| Pushing | An unexplained line in any id diff | Nothing further pushes until it is explained or the test is back |
+| Pushing | Any `classify_*` answers `true` for a planned plain push | Split the commit or stop: never a second live run. `git diff --name-only <last green> HEAD`, then `. Scripts/test-selection/path-classifier.sh` and each `classify_*` on that list |
+| Pushing | Trunk moved and conflicts | Stop and report; nothing is rebased |
+| A run | Another run is active, or a token variable is set | Wait, or unset; a proof run never overlaps |
+| A run | A second full-size run wanted | Only for a short TRX; named in this delta first |
+| A move | A class's only base is a non-hosted class | The shared base takes the line only if every class under it hosts; otherwise stop and report |
+| The guard | A rule looks wrong for a type | The type changes or joins the list with a reason; a rule never loosens. The first output may narrow override following for this guard only, as DESIGN allows |
+| Slice D | Containers still unanswered at the guard's first output | Ask once more; no answer keeps them on the base (D-6512-11) and says so |
+| A target | A median over target | Frontend: the node project is measured, as decided. Backend: the slowest classes are listed for T9 and T10. Both go to the maintainer; neither adds a tier |
+| Any | A planted file left behind | `git status` is clean of planted files before every commit |
+
+## Wave: DISTILL / [REF] What closes the Story
+
+1. Every step done with its focused commit; moves in commits of their own. Pushes 1 to 7 made, each judged and recorded.
+2. Guarantees 1 to 16 recorded with their evidence; the DISCUSS Checklist ticked by evidence, with "ids before and after on both stacks" as
+   guarantees 4, 6, 9, 15.
+3. The maintainer has confirmed the targets from the measured medians. The frontend one after slice A, as decided.
+4. Mutation, per slice. **A:** N/A, `package.json` and docs. **B:** N/A, a test helper, tests, workflow, shell and docs. **C, D, E:** N/A, test files
+   only. **F:** N/A for Stryker, which mutates the product assembly; `Test-Fast.ps1` is shell, and the Python scripts carry their own unit
+   tests. Guarantee 1 is what makes each N/A true.
+5. `CLAUDE.md` names the fast loop, the standard filter and the warning; `Test-Coverage.ps1`, `dev-test.*` comment and help, `kpi-contracts.yaml`,
+   `trx_to_csv.py` docstring and `mutation-testing.md` match; Windows is said to be unverified.
+6. Owed, and handed over at close: the four lines of T9's brief and the three of T5's, as DEVOPS lists; the watch item of the first force-full run
+   after slice E (it does not hold the Story, and is left as an ADO comment). T9's 5 calibration runs start after this. ADO #6512 moves by the usual story rule; the Epic is the maintainer's. No release notes.
+
+## Wave: DISTILL / [REF] Completeness audit and hold
+
+15-item checklist over the planned set, items not applicable counted as passing with the reason. **15 of 15: COMPLETE**, by count; the
+check is on a plan, so DELIVER's reds are what finally prove it.
+
+| Item | Answer |
+|---|---|
+| C1a, C1b | `H` selecting nothing; empty and three-deep chains. No numeric boundary exists |
+| C2a, C2b | N/A, no state machine |
+| C3 | 0, 1 and many: no matching test, a one-test class, the chain anchors |
+| C4a, C4b | The scan and CSV are pure; moving a class twice is refused by the stale check. No inverse operation |
+| C5a, C5b | Every filter against every category shape, in the probe table; `-NoBuild` changes no selection |
+| C6a to C6c | Letter case, unparseable filter, unplaceable class (a warning), a closed list of failures per guard rule |
+| C7a | No Docker: the fast loop after slice E. No token: the check before each run |
+| C7b | A short TRX; a 429 on the live push |
+| C7c | Never two runs: the full-size rules, the push plan |
+
+Error and edge cases: the slice tables plant about 20 cases that must go red, against 7 planted greens in the guard. Tier B: no, config-shaped. Driving ports: the
+two commands and the guard's test run, each exercised directly. No new driven adapter.
+
+Hold: rigor `thorough`, recorded in the roadmap; pass `model` explicitly on every dispatch. The DESIGN and DEVOPS reviews have run; this wave's own
+review has not, and is the orchestrator's. Open for DELIVER: the 3 fixed files of the `--changed` measure, override following, the TRX shape of a
+parametrised fixture, the `.test.tsx` count. Slice A's timing waits for T12 to finish, and only that overlaps.
+
+## Wave: DISTILL / [REF] Orchestrator amendment (2026-11-07, maintainer away)
+
+- **D-6512-26 is withdrawn.** The filtered `dotnet test` runs in full before every push, as `CLAUDE.md` requires; nothing here
+  relaxes green-before-push. Steps inside a slice may check `dotnet build` and named classes, but the gate before a push of
+  slices B to E is the whole filtered run. That is one run per push, a few minutes each, and never beside a frontend run.
