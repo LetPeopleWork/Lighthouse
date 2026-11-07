@@ -226,3 +226,48 @@ Empty. Every mapping-warning sentence and each of the seven invalid scenarios is
 - The maintainer's options at the hold are: (a) stop slice A here; (b) run `readiness` alone through A-2 as its own measured
   stop check, accepting that `refinementNeed` is recorded as target not met; (c) look for a cheaper lever for
   `refinementNeed` (the form's remaining cost is the whole-form mount and the typing, not the assertions).
+
+# Step 01-02: harness, then readiness display and validation to the section render (2026-11-07)
+
+Code before-commit `1ffe2be77`. The harness is commit `342915d95` (test-only, before any move). Measured from
+`Lighthouse.Frontend`, `LIGHTHOUSE_TEST_WORKERS=2`, `TZ=Europe/Zurich`, `test-results.json` deleted before every run.
+
+## Moves
+
+`readiness` has 24 tests. 18 moved to `ReadinessSettings.test.tsx` with their titles unchanged (display, refusal messages,
+`aria-invalid`, `min`/`step`, remembered thresholds, table-driven refusals). 6 stay on the form unmodified: saves a changed
+number of Yes votes with the rest as it was, starts a Team that has never chosen refinement, keeps the chosen refinement
+states, names readiness as what keeps the settings from being saved, the toggle-memory test (the one that proves the toggle
+reaches the saved value), and saves nothing just because the form was opened. 34 `expect(` lines removed from the form file,
+34 rows. `check-behaviour-free.sh` exits 0 (`.not.` removed 5, added 1, in rows 5). `run-touched-files.sh` ends OK: 18 files,
+562 of 562 passed, baseline ids 558, after-run 562, missing 18 (all with rows), new 22 (all listed).
+
+## Deliberate breaks (one at a time, restored each time, `git status` clean of production files after)
+
+| Break | Test that failed |
+|---|---|
+| The host ignores `onChange` (helper) | helper: `shows a change the admin makes as its new value`, `builds a second edit on the first edit's result, as the form does`, `lets a test read the value the admin has now`; with `ReadinessSettings.test.tsx` the 16 moved tests that edit or read a value |
+| The readiness toggle stops remembering thresholds (`rememberOnSwitchOff` replaced by the old map) | form: `switches a rule back on at the threshold it was changed to before it was switched off` |
+| The readiness handoff from the form to the section (`RefinementSettingsSection` passes `DEFAULT_READINESS`) | form: `saves a changed number of Yes votes with the rest of readiness as it was`, `starts a Team that has never chosen refinement at the default readiness, and saves it with no states`, `keeps the chosen refinement states when readiness changes`, `switches a rule back on at the threshold it was changed to before it was switched off` |
+| The error mark on Yes votes needed (`error={false}`) | section: `marks Yes votes needed as refused and leaves Voters needed unmarked` |
+
+No break left without a failing test, so no test was added. Finding: the moved section tests start with the stored thresholds
+remembered, so only the form's toggle-memory test fails when remembering is broken; that test is one of the six that stay.
+
+## Stop check for `readiness`: passes with margin
+
+Summed per-test seconds (`assertionResults[].duration`), 5 alternating pairs, 5 of 5 valid (every 1-minute load-average
+sample between 0.89 and 2.19, limit 6). Before is the old file run from a copy; after is the form file (6 tests) plus the
+section file (18 tests), 24 tests each side. The helper's 4 tests (0.4 s) are not counted on the after side; with them the
+cut is about 52 %.
+
+| Pair | Before s | After s | Before CPU user+sys | After CPU user+sys |
+|---|---|---|---|---|
+| 1 | 11.10 | 4.92 | 10.20 | 7.85 |
+| 2 | 11.09 | 4.96 | 10.11 | 7.82 |
+| 3 | 11.11 | 4.98 | 10.14 | 7.80 |
+| 4 | 11.13 | 4.90 | 10.19 | 7.71 |
+| 5 | 11.05 | 4.95 | 10.10 | 7.78 |
+
+Median 11.10 to 4.95: cut **55.4 %** against the required 19.4 % and the design target of 24 %. The file does not stop.
+Step 01-03 is not blocked.

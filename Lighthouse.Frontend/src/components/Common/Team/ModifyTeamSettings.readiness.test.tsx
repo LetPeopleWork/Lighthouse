@@ -15,7 +15,6 @@ import { pastTheAutosaveDelay } from "../../../tests/pastTheAutosaveDelay";
 import { renderWithQueryClient as render } from "../../../tests/renderWithQueryClient";
 import { createMockTeamSettings } from "../../../tests/TestDataProvider";
 import ModifyTeamSettings from "./ModifyTeamSettings";
-import { DISCUSSION_RULE_ERROR } from "./ReadinessSettings";
 
 /**
  * Readiness in the Refinement section of a Team's settings: how many Yes votes, from how many voters,
@@ -70,9 +69,7 @@ vi.mock("../Tags/TagsComponent", () => ({
 const YES_VOTES_NEEDED = "Yes votes needed";
 const VOTERS_NEEDED = "Voters needed";
 const NO_RULE = "Send to discussion on No votes";
-const YES_IF_RULE = "Send to discussion on “Yes, if…” votes";
 const NO_THRESHOLD = "No votes that send to discussion";
-const YES_IF_THRESHOLD = "“Yes, if…” votes that send to discussion";
 
 const defaultTerms: Record<string, string> = {
 	[TERMINOLOGY_KEYS.WORK_ITEMS]: "Work Items",
@@ -97,12 +94,6 @@ const THE_DEFAULTS: IReadinessSetting = {
 	minYes: 3,
 	minVoters: 3,
 	discussWhen: { no: 1, yesIf: 2 },
-};
-
-// Readiness stored before the discussion rules existed carries none.
-const STORED_WITHOUT_DISCUSSION_RULES: IReadinessSetting = {
-	minYes: 3,
-	minVoters: 3,
 };
 
 const gravitysSettings = (
@@ -176,33 +167,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		saveTeamSettings.mockResolvedValue(undefined);
 	});
 
-	it("shows three Yes votes from three voters, and discussion at one No or two “Yes, if…”, until the admin changes them", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings(STORED_WITHOUT_DISCUSSION_RULES),
-		);
-
-		expect(
-			await screen.findByRole("spinbutton", { name: YES_VOTES_NEEDED }),
-		).toHaveValue(3);
-		expect(screen.getByRole("spinbutton", { name: VOTERS_NEEDED })).toHaveValue(
-			3,
-		);
-		expect(screen.getByText("Send to discussion when")).toBeVisible();
-		expect(screen.getByRole("checkbox", { name: NO_RULE })).toBeChecked();
-		expect(screen.getByRole("spinbutton", { name: NO_THRESHOLD })).toHaveValue(
-			1,
-		);
-		expect(screen.getByText("or more No votes")).toBeVisible();
-		expect(screen.getByRole("checkbox", { name: YES_IF_RULE })).toBeChecked();
-		expect(
-			screen.getByRole("spinbutton", { name: YES_IF_THRESHOLD }),
-		).toHaveValue(2);
-		expect(screen.getByText("or more “Yes, if…” votes")).toBeVisible();
-
-		await pastTheAutosaveDelay();
-		expect(saveTeamSettings).not.toHaveBeenCalled();
-	});
-
 	it("saves a changed number of Yes votes with the rest of readiness as it was", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -216,136 +180,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 			}),
 		);
 	});
-
-	it("refuses fewer than one Yes vote, says why and saves nothing", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await replaceTheNumberIn(YES_VOTES_NEEDED, "0");
-		await pastTheAutosaveDelay();
-
-		expect(
-			await screen.findByText("At least one Yes vote is needed"),
-		).toBeVisible();
-		expect(saveTeamSettings).not.toHaveBeenCalled();
-	});
-
-	it("refuses fewer voters than Yes votes, says why and saves nothing", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await replaceTheNumberIn(VOTERS_NEEDED, "2");
-		await pastTheAutosaveDelay();
-
-		expect(
-			await screen.findByText(
-				"Voters needed cannot be fewer than Yes votes needed",
-			),
-		).toBeVisible();
-		expect(saveTeamSettings).not.toHaveBeenCalled();
-	});
-
-	it("switches off the No rule on its own, keeping the “Yes, if…” rule", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await userEvent.click(
-			await screen.findByRole("checkbox", { name: NO_RULE }),
-		);
-
-		await waitFor(() =>
-			expect(theReadinessLastSaved()).toEqual({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: null, yesIf: 2 },
-			}),
-		);
-	});
-
-	it("saves a changed number of “Yes, if…” votes that send to discussion", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await replaceTheNumberIn(YES_IF_THRESHOLD, "3");
-
-		await waitFor(() =>
-			expect(theReadinessLastSaved()).toEqual({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: 1, yesIf: 3 },
-			}),
-		);
-	});
-
-	it("switches a rule back on at the threshold it had before", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: 4, yesIf: 2 },
-			}),
-		);
-
-		const noRule = await screen.findByRole("checkbox", { name: NO_RULE });
-		await userEvent.click(noRule);
-		await waitFor(() =>
-			expect(theReadinessLastSaved()?.discussWhen).toEqual({
-				no: null,
-				yesIf: 2,
-			}),
-		);
-		await userEvent.click(noRule);
-
-		await waitFor(() =>
-			expect(theReadinessLastSaved()).toEqual({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: 4, yesIf: 2 },
-			}),
-		);
-	});
-
-	it("switches on a rule stored as off at its default threshold", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: 1, yesIf: null },
-			}),
-		);
-
-		await userEvent.click(
-			await screen.findByRole("checkbox", { name: YES_IF_RULE }),
-		);
-
-		await waitFor(() =>
-			expect(theReadinessLastSaved()).toEqual({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: 1, yesIf: 2 },
-			}),
-		);
-	});
-
-	it.each([
-		{ field: NO_THRESHOLD, typed: "0" },
-		{ field: NO_THRESHOLD, typed: "" },
-		{ field: YES_IF_THRESHOLD, typed: "0" },
-		{ field: YES_IF_THRESHOLD, typed: "" },
-	])(
-		"refuses '$typed' in $field, says why and saves nothing",
-		async ({ field, typed }) => {
-			await renderGravitysSettingsForm(gravitysSettings());
-
-			const threshold = await screen.findByRole("spinbutton", { name: field });
-			await userEvent.clear(threshold);
-			if (typed !== "") {
-				await userEvent.type(threshold, typed);
-			}
-			await pastTheAutosaveDelay();
-
-			expect(
-				await screen.findByText("A discussion rule needs at least 1 vote"),
-			).toBeVisible();
-			expect(saveTeamSettings).not.toHaveBeenCalled();
-		},
-	);
 
 	it("starts a Team that has never chosen refinement at the default readiness, and saves it with no states", async () => {
 		await renderGravitysSettingsForm({
@@ -401,64 +235,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		).toHaveTextContent("Correct Readiness by votes");
 	});
 
-	it.each([
-		{ refused: YES_VOTES_NEEDED, typed: "0", accepted: VOTERS_NEEDED },
-		{ refused: VOTERS_NEEDED, typed: "2", accepted: YES_VOTES_NEEDED },
-	])(
-		"marks $refused as refused and leaves $accepted unmarked",
-		async ({ refused, typed, accepted }) => {
-			await renderGravitysSettingsForm(gravitysSettings());
-
-			await replaceTheNumberIn(refused, typed);
-
-			await waitFor(() =>
-				expect(
-					screen.getByRole("spinbutton", { name: refused }),
-				).toHaveAttribute("aria-invalid", "true"),
-			);
-			expect(
-				screen.getByRole("spinbutton", { name: accepted }),
-			).toHaveAttribute("aria-invalid", "false");
-		},
-	);
-
-	it.each([
-		{ refused: NO_THRESHOLD, accepted: YES_IF_THRESHOLD },
-		{ refused: YES_IF_THRESHOLD, accepted: NO_THRESHOLD },
-	])(
-		"marks $refused as refused, describes it by why, and leaves $accepted unmarked",
-		async ({ refused, accepted }) => {
-			await renderGravitysSettingsForm(gravitysSettings());
-
-			await replaceTheNumberIn(refused, "0");
-
-			const refusedField = screen.getByRole("spinbutton", { name: refused });
-			await waitFor(() =>
-				expect(refusedField).toHaveAttribute("aria-invalid", "true"),
-			);
-			expect(refusedField).toHaveAccessibleDescription(DISCUSSION_RULE_ERROR);
-			const acceptedField = screen.getByRole("spinbutton", { name: accepted });
-			expect(acceptedField).toHaveAttribute("aria-invalid", "false");
-			expect(acceptedField).not.toHaveAttribute("aria-describedby");
-		},
-	);
-
-	it("does not let any of its numbers step below one vote", async () => {
-		await renderGravitysSettingsForm(gravitysSettings());
-
-		await screen.findByRole("spinbutton", { name: YES_VOTES_NEEDED });
-		for (const name of [
-			YES_VOTES_NEEDED,
-			VOTERS_NEEDED,
-			NO_THRESHOLD,
-			YES_IF_THRESHOLD,
-		]) {
-			const field = screen.getByRole("spinbutton", { name });
-			expect(field).toHaveAttribute("min", "1");
-			expect(field).toHaveAttribute("step", "1");
-		}
-	});
-
 	it("switches a rule back on at the threshold it was changed to before it was switched off", async () => {
 		await renderGravitysSettingsForm(gravitysSettings());
 
@@ -482,65 +258,6 @@ describe("Readiness in the Refinement section of a Team's settings", () => {
 		await waitFor(() =>
 			expect(theReadinessLastSaved()?.discussWhen).toEqual({
 				no: 3,
-				yesIf: 2,
-			}),
-		);
-	});
-
-	it("switches a rule that was refused when switched off back on at its last allowed threshold", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: 4, yesIf: 2 },
-			}),
-		);
-		const noRule = await screen.findByRole("checkbox", { name: NO_RULE });
-		await userEvent.click(noRule);
-		await pastTheAutosaveDelay();
-		expect(theReadinessLastSaved()?.discussWhen).toEqual({
-			no: null,
-			yesIf: 2,
-		});
-		await userEvent.click(noRule);
-		await pastTheAutosaveDelay();
-		expect(theReadinessLastSaved()?.discussWhen).toEqual({
-			no: 4,
-			yesIf: 2,
-		});
-
-		await replaceTheNumberIn(NO_THRESHOLD, "0");
-		await userEvent.click(noRule);
-		await pastTheAutosaveDelay();
-		expect(theReadinessLastSaved()?.discussWhen).toEqual({
-			no: null,
-			yesIf: 2,
-		});
-		await userEvent.click(noRule);
-
-		await pastTheAutosaveDelay();
-		expect(theReadinessLastSaved()?.discussWhen).toEqual({
-			no: 4,
-			yesIf: 2,
-		});
-	});
-
-	it("switches on a No rule stored as off at its default threshold", async () => {
-		await renderGravitysSettingsForm(
-			gravitysSettings({
-				minYes: 3,
-				minVoters: 3,
-				discussWhen: { no: null, yesIf: 2 },
-			}),
-		);
-
-		await userEvent.click(
-			await screen.findByRole("checkbox", { name: NO_RULE }),
-		);
-
-		await waitFor(() =>
-			expect(theReadinessLastSaved()?.discussWhen).toEqual({
-				no: 1,
 				yesIf: 2,
 			}),
 		);
