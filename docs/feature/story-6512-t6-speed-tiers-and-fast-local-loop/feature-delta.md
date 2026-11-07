@@ -1257,3 +1257,40 @@ The review found no high finding, and by hand evaluation no test leaves CI. Its 
 - **The frontend target is decided:** `pnpm test:fast --changed` under 10 s for a typical edit, about 15 s accepted for a heavily shared file, no node project. See "Maintainer decisions (2026-11-07, probe)".
 - **Containers are decided:** they sit on `IntegrationFixture`. See "Maintainer decisions (2026-11-07)". Neither is an open stop any more.
 - **`L0` predates Bug 6575's merge.** The merge brought backend test changes in `API/CreateRightsControllerGuardTest.cs`, `API/Security/DeleteUnitRightsTests.cs` (new), `F_BE_1_GroupSnapshotInheritanceTests.cs` and `API/Security/S5_ApiKeyScopesTests.cs`. So `L2` against `L0` must explain those ids, and a line in those classes counts as Bug 6575's only if its commits show it.
+
+## Wave: DELIVER / [REF] Slice C, step 03-01: the 14 live classes and `L2`, what ran (2026-11-07)
+
+Commit `862003a96`, the move alone: 14 files, 16 insertions, 28 deletions. Not pushed. All 14 had no base on the class line, and no class derives from any of them. `GithubServiceTest` and `LighthouseReleaseServiceIntegrationTest` took a `using` for the base. `AzureDevOpsHistoryCutoffTest`, `AzureDevOpsStateTransitionParserTest` and `JiraHistoryCutoffTest` share a file with a moved class and stay regular: 3 rows each in `L0` and `L2`.
+
+| Case | What ran | Result |
+|---|---|---|
+| Literal `Integration` | The commit's diff | 13 class attributes and the one method of `JiraSuppressionRetryIntegrationTest` removed |
+| The mixed classes | `git diff` of `JiraWriteBackTest` and `AzureDevOpsWriteBackTest` | No change; 1 and 2 rows in `L0` and `L2` |
+| Guarantee 7 | The sorted `git grep` of the five connector attributes | 17 lines, `sha256` `f0e71fb1d464e9a62717e81a8b66c1a750028149b59bd43fe347348cd74bffde`, the same as `connector-attributes.sorted.txt` |
+| Builds | `dotnet build Lighthouse.Backend`, then the test project with `-c Release` | 0 warnings, 0 errors, each |
+| Guarantee 3 | `H`, `-c Release`, the 5 token variables removed | TRX total 0, "No test matches the given testcase filter", exit 0 |
+| Named classes | `IntegrationFixtureCategoryTest`, `TestSelectionClauseTest`, `TestHostPerFixtureGuardTest`, `-c Release` | TRX total 40, passed 40 |
+| Live tests | The 14 classes in `L2.csv` | 0 rows, so none ran. No live test ran on this machine |
+
+**`L2`.** Run on the working tree that became `862003a96`, once, with no other test process, after `dotnet build-server shutdown`, with the 5 token variables removed.
+
+| Item | Value |
+|---|---|
+| Filter | `A` |
+| Console | `Failed: 0, Passed: 12831, Skipped: 2, Total: 12833`, 6 m 33 s, exit 0 |
+| TRX `Counters` and CSV rows | total 12,842, executed 12,831, passed 12,831. CSV: 12,842 rows, 12,831 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `efff1264c406145909d8df8b37c9cb82ddb2ba4db51342b4503410d7c18ab6ff` |
+| Kept | `L2.csv` and `L2.trx.gz` in `evidence/`, out of git |
+
+**`L2` against `L0`.** 0 lines only in `L0`, so every `Passed` id stands and the 11 `NotExecuted` rows are the same. 32 lines only in `L2`, all `Passed`:
+
+| Class | Added | Why |
+|---|---|---|
+| `TestSelectionClauseTest` | 20 | This Story's |
+| `IntegrationFixtureCategoryTest` | 2 | This Story's |
+| `DeleteUnitRightsTests` | 8 | Bug 6575, foreign: the new file in `6efb2b255`, 6 `[Test]` and 2 `[TestCase]` |
+| `CreateRightsControllerGuardTest` | 2 | Bug 6575, foreign: `DeleteTeam_IsGuardedOnCanDeleteUnitWithNoScope` and `DeletePortfolio_IsGuardedOnCanDeleteUnitWithNoScope`, added in `6efb2b255` |
+
+`F_BE_1_GroupSnapshotInheritanceTests` and `S5_ApiKeyScopesTests` show no line: Bug 6575 changed only the bodies of their tests, so no id moved. `DeliveriesControllerTest` and `ParentResolutionPlacementTest`, the two classes with unstable names, match line by line and by count, at 79 and 25.
+
+**Before push 2.** `Lighthouse.Backend.Tests.csproj` is unchanged since the probe, so NUnit and the adapter are too.
