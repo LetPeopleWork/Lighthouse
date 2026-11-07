@@ -545,6 +545,82 @@ class AParametrisedFixtureTests(unittest.TestCase):
         )
 
 
+class TheNameColumnTests(unittest.TestCase):
+    # Time budgets and every comparison of two runs key on this column, so a
+    # name that changes here reads as one test lost and another one added.
+    PARAMETRISED = f"{TEST_NAMESPACE}.ParametrisedOnTheBaseTest"
+    NESTED = f"{TEST_NAMESPACE}.OuterTest+InnerTest"
+    TESTS = [
+        (f"{PARAMETRISED}(Portfolio)", "Saves"),
+        (f"{PARAMETRISED}(2)", "Saves"),
+        (
+            f"{PARAMETRISED}(Portfolio)",
+            "Names(Jira,&quot;Jira Cloud (API Token)&quot;)",
+        ),
+        (NESTED, "Runs"),
+        (f"{NESTED}(2)", "Runs(30,4)"),
+    ]
+    EXPECTED_COLUMN = (
+        b"fully_qualified_name\n"
+        b"Lighthouse.Backend.Tests.Shapes.ParametrisedOnTheBaseTest(Portfolio).Saves\n"
+        b"Lighthouse.Backend.Tests.Shapes.ParametrisedOnTheBaseTest(2).Saves\n"
+        b'"Lighthouse.Backend.Tests.Shapes.ParametrisedOnTheBaseTest(Portfolio)'
+        b'.Names(Jira,""Jira Cloud (API Token)"")"\n'
+        b"Lighthouse.Backend.Tests.Shapes.OuterTest+InnerTest.Runs\n"
+        b'"Lighthouse.Backend.Tests.Shapes.OuterTest+InnerTest(2).Runs(30,4)"\n'
+    )
+    SOURCE = in_test_namespace(
+        """
+        [TestFixture("Portfolio")]
+        [TestFixture(2)]
+        public class ParametrisedOnTheBaseTest : IntegrationTestBase
+        {
+        }
+
+        public class OuterTest
+        {
+            public class InnerTest : IntegrationTestBase
+            {
+            }
+        }
+        """
+    )
+
+    def name_column_of_a_run(self, directory, *source_root_arguments):
+        trx_path = Path(directory) / "run.trx"
+        output_path = Path(directory) / "run.csv"
+        trx_path.write_text(trx_of_tests(self.TESTS), encoding="utf-8")
+        exit_code = main(
+            ["--trx", str(trx_path), "--output", str(output_path)]
+            + list(source_root_arguments)
+        )
+        self.assertEqual(exit_code, 0)
+        return b"".join(
+            line.rsplit(b",", 3)[0] + b"\n"
+            for line in output_path.read_bytes().splitlines()
+        )
+
+    def test_each_name_reads_byte_for_byte_as_trx_wrote_it(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertEqual(
+                self.name_column_of_a_run(directory), self.EXPECTED_COLUMN
+            )
+
+    def test_reading_the_source_tree_changes_no_name(self):
+        with tempfile.TemporaryDirectory() as directory:
+            source_root = Path(directory) / "tree"
+            source_root.mkdir()
+            write_tree(
+                source_root, {"Bases.cs": SHARED_BASES, "Tests.cs": self.SOURCE}
+            )
+            self.assertEqual(
+                self.name_column_of_a_run(
+                    directory, "--source-root", str(source_root)
+                ),
+                self.EXPECTED_COLUMN,
+            )
+
+
 class NamespacesAndChainsTests(unittest.TestCase):
     def test_each_class_takes_the_namespace_it_sits_in(self):
         header = "// A licence header, as long as they come. " * 5
