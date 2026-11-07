@@ -2,6 +2,7 @@ src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Lin
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior hides WorkItemTypesComponent when schema says isWorkItemTypesRequired is false
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings Linear schema-driven behavior shows WorkItemTypesComponent when schema says isWorkItemTypesRequired is true
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings a Team following the Teams' Estimation default shows it, and picking a field of its own saves that choice
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings a Team on Jira saves its Parent sources without the old field
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings a connection read from the summary is selected and saved by its id
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings auto-refreshes dependent metrics after a valid state-mapping change and offers one-click reload on refresh failure
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings auto-saves a valid change after the debounce window
@@ -32,4 +33,4 @@ src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings ren
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings shows no Advanced Configuration, where the Parent sources sit, while the settings load or when they cannot be loaded
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings shows the could-not-load words when the settings cannot be fetched
 src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings staleness opt-in seeds the revealed field with the team default of 5 on opt-in
-src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings the Parent Override Field reads the Teams' default of the connection now chosen
+src/components/Common/Team/ModifyTeamSettings.test.tsx :: ModifyTeamSettings the Parent sources read the Teams' default of the connection now chosen

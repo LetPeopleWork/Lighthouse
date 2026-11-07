@@ -770,7 +770,7 @@ gains the two hook tests). After each commit that is not a rewrite step (a pure 
 |---|---|---|
 | `refinementNeed` | stage rule display (4), cadence display and refusal (4), band display, marks, explanations and the two `it.each` families (15) move to a section render | 23 of 47 (of the 31 tests that render the whole form; 7 wiring tests and the refinement picker test stay on it, and 16 already render one unit or call a function) |
 | `readiness` | defaults, refusals, `aria-invalid`, `min`/`step`, remembered-threshold toggles (all but 6) move to a section render | 18 of 24 |
-| `ModifyTeamSettings.test` | three of the four "holds back autosave while a mapping ..." tests removed and replaced by one new form test that names every warning kind at once (backstops in "Slices"); the seven-row invalid-field loop shrinks to the rows the function tests do not cover | 3 removed + 1 added + up to 5 loop rows removed, of 35. **The "up to 5" is fixed at A-1**, where each row is checked against `teamAutoSaveBlockers.test.ts`, and this table is edited in that step's commit |
+| `ModifyTeamSettings.test` | three of the four "holds back autosave while a mapping ..." tests removed and replaced by one new form test that names every warning kind at once (backstops in "Slices"); the seven-row invalid-field loop shrinks to the rows the function tests do not cover | 3 removed + 1 added + up to 7 loop rows removed, of 36. **Fixed at A-1 (01-01, 2026-11-07):** all seven loop rows pair with a row of the `it.each` in `teamAutoSaveBlockers.test.ts` by field, value and sentence (titles side by side in `measurement/slice-A-measurement.md`), so the check allows up to 7, not 5, and the DESIGN's "two rows not covered by a function test" does not hold. A-4 plans 5 removed and keeps 2 (Name, Work Item Types) as the form's own proof that the autosave gate is fed by `teamAutoSaveBlockers`; that is a design choice on top of the check. The one-render mapping test is possible: the form lists every reason, and all four warning kinds came out of one `mappingAutoSaveBlockers` call. The backstop list is empty. The file has 36 tests, not 35, after Story 6501 |
 | `OverviewDashboard` | the 28 tests that read no row move, titles unchanged, to `OverviewDashboard.gating.test.tsx` and render the page with `DataOverviewTable` stubbed | 28 of 51 move; 0 removed |
 | `BaseMetricsView.loading` | the 8 "adds and removes no chart once its data has arrived" rows merge into the matching "opens with every chart's frame" rows; 7 of the 8 "is asked for without retrying" rows become two hook tests; the team's Flow Metrics row stays as the seam row | 15 removed (118 left: 110 unmodified, 8 gain assertions), 2 added in `useMetricsData.test.ts`; C-1 may keep up to 3 more seam rows |
 | `ReportsPage.removal` | the confirmation, warning, reason, result, Escape, in-flight and cache tests move to dialog and hook renders | 15 of 21 |
@@ -816,8 +816,10 @@ of the "switches a rule back on ..." tests, `switches a rule back on at the thre
 the toggle memory reaches the saved value.
 
 **`ModifyTeamSettings.test` (27 or more, the form stays whole):** every test except three of the four mapping-name wirings
-and up to five rows of the invalid-field loop; one mapping-name wiring stays (`holds back autosave while a mapping is named
-after a Doing state it does not group, and saves once it is renamed`), and the two loop rows the function tests do not cover.
+and up to seven rows of the invalid-field loop (all seven pair with a function row, checked at 01-01; A-4 plans to remove
+five); one mapping-name wiring stays (`holds back autosave while a mapping is named after a Doing state it does not group,
+and saves once it is renamed`), and two loop rows (Name and Work Item Types) stay as the form's own proof of the autosave
+gate, a design choice, not because a function test is missing.
 
 **`OverviewDashboard` (23, real tables):** the 4 "Row action gating via DataOverviewTable predicates" tests; the 12 deletion
 tests ("what a deletion is reported as" 2 and "deleting a Team or Portfolio that has reports" 10, which open a real row's
@@ -1122,3 +1124,24 @@ production code changes in this run.
 - **The before-commit moves to `1ffe2be77`.** Story 6501 and the MUI 9.17 update landed after `d148c2d14` and changed
   `ModifyTeamSettings.readiness.test.tsx` and `ModifyTeamSettings.test.tsx`, so step 01-01 regenerates `baseline/` from the
   new commit and re-reads each file's required cut against today's times.
+
+## Wave: DELIVER / [REF] Step 01-01 result: the A-1 gate stops slice A (2026-11-07)
+
+Full figures, tables and method in `measurement/slice-A-measurement.md`. Code before-commit `1ffe2be77`, documents
+`b17d5bec9`.
+
+- **Baseline regenerated from HEAD.** Seven files 329 to 330 tests (`ModifyTeamSettings.test` 35 to 36, `expect(` 59 to 62;
+  Story 6501), 524 to 527 `expect(`. `baseline/outside-seven/` 215 to 228 tests and 401 to 411 `expect(` because the new
+  `ModifyTeamSettings.usageData.test.tsx` (13 tests, 10 `expect(`, parent-source usage data on the same form, not touched by
+  any move) is now in it. The "Baseline" figures above are the 2026-11-06 ones; these replace them for slice A.
+- **The gate: r = 1.52, 5 of 5 valid pairs, below 1.85.** Slice A stops at A-1: nothing moves, steps 01-02 to 01-05 are not
+  started, the run goes to the hold. `refinementNeed` projects to a cut of 25.4 % against a required 34.0 %.
+- **Required cuts re-read:** `refinementNeed` 34.0 % (unchanged); `readiness` **19.4 %** (was 24 %: 6be1e621e took about
+  1.2 s of real waiting out of it, so it is already faster; the slow CI reading is estimated 21.7 s, no CI run has the
+  change yet); `ModifyTeamSettings.test` 0.6 %, not resolvable. Local targets in seconds: 9.6 / 9.7 / no higher than 10.78.
+- **Coverage bar for A-5:** 96.16 line / 86.72 branch (Story 6501 moved the directory from the FE7 figures of 96.26 / 86.23).
+- **Move counts confirmed:** 23 of 47 (`refinementNeed`) and 18 of 24 (`readiness`).
+- **Loop rows and backstops:** the "up to 5" becomes "up to 7 allowed" (change table edited above); backstop list empty.
+- **For the maintainer at the hold:** `readiness` alone would project to 25.7 % at r = 1.52, over its 24.0 % design target
+  (a projection from a `refinementNeed` band test). Options: stop slice A here, run `readiness` alone through A-2 as its
+  own measured stop check, or look for another lever for `refinementNeed`.

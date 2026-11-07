@@ -1,0 +1,13 @@
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources counts a follower setting its own list of two
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources counts a save that leaves the page before the autosave delay is over
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources counts the same entries in another order as a changed list, since the order decides what is read first
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources does not count a save the server refused
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources does not count the same list again when a later save changes something else
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources is not sent before the server has accepted the save
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources on the settings of a Portfolio sends the event once, by name alone, when an accepted save changes the list to two entries
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources on the settings of a Team sends the event once, by name alone, when an accepted save changes the list to two entries
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources sends nothing when a follower's save carries the default's…
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources sends nothing when an unchanged list goes along with anoth…
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources sends nothing when somebody switches to follow the default
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources sends nothing when the list holds a single entry
+src/components/Common/Team/ModifyTeamSettings.usageData.test.tsx :: usage data of saving several parent sources sends nothing when the server wrote the tracker's entry wi…
