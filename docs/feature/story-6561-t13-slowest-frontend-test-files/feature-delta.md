@@ -1109,3 +1109,16 @@ production code changes in this run.
   per-feature mutation strategy, and the maintainer sees it at the hold.
 - **Before-commit.** `d148c2d14` is slice A's before-commit; the check that no test file changed since the baseline is
   recorded under "Baseline".
+
+## Wave: DELIVER / [REF] Maintainer decisions at DELIVER start (2026-11-07)
+
+- **The Story wraps up with slice A.** Slices B and C are not run in this Story; they can be picked up later if needed, as
+  their own item. Q6 and Q7 go with them, so no production file changes. T13 ends with slice A, its push, and the budget
+  commit once at least 5 complete plain `main` runs are in.
+- **Pushed at the end of the Story**, with `/clean-ci` running beside the next Story. This replaces "nothing is pushed in
+  this run" in the roadmap notes and in "Scope of this run".
+- **Rigor `standard`** (D-6561-16): sonnet crafter, haiku reviewer, on every dispatch.
+- **Mutation testing N/A**, accepted by the maintainer, because no production file changes.
+- **The before-commit moves to `1ffe2be77`.** Story 6501 and the MUI 9.17 update landed after `d148c2d14` and changed
+  `ModifyTeamSettings.readiness.test.tsx` and `ModifyTeamSettings.test.tsx`, so step 01-01 regenerates `baseline/` from the
+  new commit and re-reads each file's required cut against today's times.
