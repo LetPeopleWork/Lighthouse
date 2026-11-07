@@ -14,6 +14,7 @@ function reporterWith(overrides: Partial<TimeBudgetReporterOptions> = {}) {
 		mode: "fail",
 		runKind: "plain",
 		budgetSeconds: 2,
+		fastBudgetSeconds: 0.6,
 		firstTestAllowanceSeconds: 0.5,
 		limitFactor: 2,
 		annotation: "none",
@@ -70,11 +71,30 @@ describe("the time-budget reporter", () => {
 		expect(printed).toContain(offenderLine);
 	});
 
-	it("closes the report with a summary naming the mode and the number of offenders", () => {
+	it("fails the process on a slow logic test and names it, and leaves a component test of the same length alone", () => {
+		const quickThenSlow = (file: string) =>
+			aModule(file, [
+				aCase("starts", aSuite("Tiers"), "passed", 10),
+				aCase("takes its time", aSuite("Tiers"), "passed", 700),
+			]) as unknown as TestModule;
+
+		finish(reporterWith(), [
+			quickThenSlow("src/a.test.ts"),
+			quickThenSlow("src/a.test.tsx"),
+		]);
+
+		expect(process.exitCode).toBe(1);
+		expect(printed).toEqual([
+			"src/a.test.ts :: Tiers takes its time took 0.7 s, limit 0.6 s",
+			expect.stringContaining("1 offenders"),
+		]);
+	});
+
+	it("closes the report with a summary naming the mode, both limits and the number of offenders", () => {
 		finish(reporterWith({ runKind: "scaled" }), aRunWithOneTest(5000));
 
 		expect(printed[printed.length - 1]).toBe(
-			"Time budget: fail mode, budget 2 s, limit factor 2, first-test allowance 0.5 s, 1 offenders",
+			"Time budget: fail mode, budget 2 s, fast budget 0.6 s, limit factor 2, first-test allowance 0.5 s, 1 offenders",
 		);
 	});
 

@@ -4,8 +4,10 @@ export type RunKind = "plain" | "scaled";
 export interface TimeBudgetOptions {
 	mode: TimeBudgetMode;
 	runKind: RunKind;
-	/** Seconds a test may take on a quiet machine under a plain run. */
+	/** Seconds a component test may take on a quiet machine under a plain run. */
 	budgetSeconds: number;
+	/** The same for a test in any file that is not a component test. */
+	fastBudgetSeconds: number;
 	/** Extra seconds granted to the first test of each file. */
 	firstTestAllowanceSeconds: number;
 	/** Multiplier applied to every limit when the run is scaled. */
@@ -60,12 +62,18 @@ export interface Verdict {
 	lines: readonly string[];
 }
 
+function budgetOfFile(file: string, options: TimeBudgetOptions): number {
+	return file.endsWith(".test.tsx")
+		? options.budgetSeconds
+		: options.fastBudgetSeconds;
+}
+
 function limitFor(
 	test: ObservedTest,
 	entry: AllowListEntry | undefined,
 	options: TimeBudgetOptions,
 ): number {
-	const base = entry?.ceilingSeconds ?? options.budgetSeconds;
+	const base = entry?.ceilingSeconds ?? budgetOfFile(test.file, options);
 	const scaled =
 		options.runKind === "scaled" ? base * options.limitFactor : base;
 	return test.firstInFile ? scaled + options.firstTestAllowanceSeconds : scaled;
@@ -93,7 +101,7 @@ function staleReason(
 	// A scaled run is judged against stretched limits, so it can keep an entry but never retire it.
 	// Only a passed test can retire an entry: a failed one may simply have failed fast.
 	const retiresEntries = options.runKind === "plain" && ran.state === "passed";
-	if (retiresEntries && ran.seconds < options.budgetSeconds / 4) {
+	if (retiresEntries && ran.seconds < budgetOfFile(ran.file, options) / 4) {
 		return "ran-far-under-budget";
 	}
 	return undefined;

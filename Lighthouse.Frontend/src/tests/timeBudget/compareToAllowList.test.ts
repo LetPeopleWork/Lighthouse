@@ -12,6 +12,7 @@ const plainRun: TimeBudgetOptions = {
 	mode: "fail",
 	runKind: "plain",
 	budgetSeconds: 2,
+	fastBudgetSeconds: 0.6,
 	firstTestAllowanceSeconds: 0.5,
 	limitFactor: 2,
 };
@@ -567,6 +568,209 @@ describe("time-budget comparison", () => {
 			expect(verdict.lines).toEqual([
 				`${reportsFile} :: ${slowOne} took 5 s, limit 3.61 s`,
 			]);
+		});
+	});
+
+	describe("the two tiers of limit", () => {
+		const logicFile = "src/a.test.ts";
+		const componentFile = "src/a.test.tsx";
+		const judged = "the one judged";
+		const plain: TimeBudgetOptions = {
+			...plainRun,
+			limitFactor: 3,
+			firstTestAllowanceSeconds: 0.31,
+		};
+		const onCi: TimeBudgetOptions = { ...plain, runKind: "scaled" };
+
+		it("a slow logic test fails the run and is named, and a component test of the same length does not", () => {
+			const verdict = compareToAllowList(
+				aRun([
+					aTest({ file: logicFile, name: judged, seconds: 0.7 }),
+					aTest({ file: componentFile, name: judged, seconds: 0.7 }),
+				]),
+				[],
+				plain,
+			);
+
+			expect(verdict.failing).toBe(true);
+			expect(verdict.findings).toEqual([
+				{
+					kind: "over-budget",
+					file: logicFile,
+					name: judged,
+					seconds: 0.7,
+					limitSeconds: 0.6,
+				},
+			]);
+			expect(verdict.lines).toEqual([
+				`${logicFile} :: ${judged} took 0.7 s, limit 0.6 s`,
+			]);
+		});
+
+		it.each([
+			["plain run, at the limit", plain, false, 0.6, false],
+			["plain run, over the limit", plain, false, 0.61, true],
+			["plain run, first in file, under the limit", plain, true, 0.9, false],
+			["plain run, first in file, over the limit", plain, true, 0.92, true],
+			["on CI, under the limit", onCi, false, 1.79, false],
+			["on CI, over the limit", onCi, false, 1.81, true],
+			["on CI, first in file, under the limit", onCi, true, 2.1, false],
+			["on CI, first in file, over the limit", onCi, true, 2.12, true],
+		])(
+			"a logic test is judged at the edge of its limit: %s",
+			(_name, options, firstInFile, seconds, offends) => {
+				const verdict = compareToAllowList(
+					aRun([
+						aTest({ file: logicFile, name: judged, seconds, firstInFile }),
+					]),
+					[],
+					options,
+				);
+
+				expect(verdict.findings.map((finding) => finding.name)).toEqual(
+					offends ? [judged] : [],
+				);
+			},
+		);
+
+		it.each([
+			["at the limit it had", 2, false],
+			["just over the limit it had", 2.01, true],
+		])(
+			"a component test keeps the limit it had: %s",
+			(_name, seconds, offends) => {
+				const verdict = compareToAllowList(
+					aRun([aTest({ file: componentFile, name: judged, seconds })]),
+					[],
+					plain,
+				);
+
+				expect(verdict.findings.map((finding) => finding.name)).toEqual(
+					offends ? [judged] : [],
+				);
+			},
+		);
+
+		it.each([
+			["src/tsx/logic.test.ts", true],
+			["src/layerBoundaries.enforcement.test.ts", true],
+			["src/a.test.ts.test.tsx", false],
+		])("the tier comes from how the file name ends: %s", (file, offends) => {
+			const verdict = compareToAllowList(
+				aRun([aTest({ file, name: judged, seconds: 0.7 })]),
+				[],
+				plain,
+			);
+
+			expect(verdict.findings.map((finding) => finding.file)).toEqual(
+				offends ? [file] : [],
+			);
+		});
+
+		it("a listed logic test may run over the fast limit, up to its own ceiling", () => {
+			const verdict = compareToAllowList(
+				aRun([aTest({ file: logicFile, name: slowOne, seconds: 1.4 })]),
+				listed({ file: logicFile, ceilingSeconds: 1.5 }),
+				plain,
+			);
+
+			expect(verdict.findings).toEqual([]);
+		});
+
+		it("a listed logic test over its own ceiling is named against that ceiling", () => {
+			const verdict = compareToAllowList(
+				aRun([aTest({ file: logicFile, name: slowOne, seconds: 1.6 })]),
+				listed({ file: logicFile, ceilingSeconds: 1.5 }),
+				plain,
+			);
+
+			expect(verdict.findings).toEqual([
+				{
+					kind: "over-ceiling",
+					file: logicFile,
+					name: slowOne,
+					seconds: 1.6,
+					limitSeconds: 1.5,
+				},
+			]);
+		});
+
+		it.each([
+			[logicFile, 0.14, true],
+			[logicFile, 0.15, false],
+			[logicFile, 0.3, false],
+			[componentFile, 0.49, true],
+			[componentFile, 0.5, false],
+		])(
+			"a list entry retires against its own tier's limit: %s at %s s",
+			(file, seconds, retires) => {
+				const verdict = compareToAllowList(
+					aRun([aTest({ file, name: slowOne, seconds })]),
+					listed({ file }),
+					plain,
+				);
+
+				expect(verdict.findings).toEqual(
+					retires
+						? [
+								{
+									kind: "stale",
+									file,
+									name: slowOne,
+									why: "ran-far-under-budget",
+								},
+							]
+						: [],
+				);
+			},
+		);
+
+		describe("the switches treat both tiers alike", () => {
+			const oneSlowTestPerTier = aRun([
+				aTest({ file: logicFile, name: "slow logic", seconds: 0.7 }),
+				aTest({ file: componentFile, name: "slow component", seconds: 2.5 }),
+			]);
+
+			it("warn mode names both and does not fail", () => {
+				const verdict = compareToAllowList(oneSlowTestPerTier, [], {
+					...plain,
+					mode: "warn",
+				});
+
+				expect(verdict.failing).toBe(false);
+				expect(verdict.findings.map((finding) => finding.name)).toEqual([
+					"slow logic",
+					"slow component",
+				]);
+			});
+
+			it("off mode names neither", () => {
+				const verdict = compareToAllowList(oneSlowTestPerTier, [], {
+					...plain,
+					mode: "off",
+				});
+
+				expect(verdict.failing).toBe(false);
+				expect(verdict.findings).toEqual([]);
+				expect(verdict.lines).toEqual([]);
+			});
+
+			it("a skipped slow logic test is not judged", () => {
+				const verdict = compareToAllowList(
+					aRun([
+						aTest({
+							file: logicFile,
+							name: judged,
+							seconds: 0.7,
+							state: "skipped",
+						}),
+					]),
+					[],
+					plain,
+				);
+
+				expect(verdict.findings).toEqual([]);
+			});
 		});
 	});
 

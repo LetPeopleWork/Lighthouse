@@ -6,8 +6,10 @@ import { slowTests } from "./src/tests/timeBudget/slowTests.ts";
 import { isCiRun, resolveTimeBudgetOptions } from "./src/tests/timeBudget/timeBudgetOptions.ts";
 import { TimeBudgetReporter } from "./src/tests/timeBudget/timeBudgetReporter.ts";
 
-// Per-test budget in seconds on a quiet machine.
+// Per-test budget in seconds on a quiet machine, for a test in a .test.tsx file.
 const BUDGET_SECONDS = 2;
+// The same for a test in any other file: those render no component, so they can be held to less.
+const FAST_BUDGET_SECONDS = 2;
 // CI machines are slower than a developer's, and a run with coverage switched on is slower again, so every limit
 // is multiplied by this on CI and on any coverage run. A plain run on a developer machine keeps the limits as they are.
 const LIMIT_FACTOR = 3;
@@ -49,6 +51,7 @@ export default defineConfig({
 			new TimeBudgetReporter({
 				...budgetSwitches,
 				budgetSeconds: BUDGET_SECONDS,
+				fastBudgetSeconds: FAST_BUDGET_SECONDS,
 				limitFactor: LIMIT_FACTOR,
 				firstTestAllowanceSeconds: FIRST_TEST_ALLOWANCE_SECONDS,
 				allowList: slowTests,
