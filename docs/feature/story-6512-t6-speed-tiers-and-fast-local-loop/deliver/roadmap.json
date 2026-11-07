@@ -2,12 +2,12 @@
   "roadmap": {
     "project_id": "story-6512-t6-speed-tiers-and-fast-local-loop",
     "created_at": "2026-11-07",
-    "total_steps": 24,
+    "total_steps": 21,
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "A developer runs only the fast tier while editing and gets an answer in seconds on both stacks. Every test that boots a host, needs a container or calls a real system carries the one Integration category through a shared base class, a misplaced backend test fails the build, and CI runs exactly what it runs today.",
     "rigor": "thorough",
-    "notes": "Rigor profile thorough: pass model explicitly on every dispatch, the profile's agent_model for crafters and reviewer_model for reviewers. No production file changes in any slice (guarantee 1 of the delta). Mutation per slice: A N/A (package.json and docs); B N/A (a test helper, tests, workflow, shell, docs); C N/A (test files only); D N/A (test files only); E N/A (test files only); F N/A for Stryker, which mutates the product assembly (Test-Fast.ps1 is shell; the Python scripts carry their own unit tests). Push plan, each push waiting for the one before to end: push 1 slice A (no backend run); push 2 slice B with slice C's 14 live classes, THE ONE LIVE-SUITE PUSH, force-full with every connector; push 3 the scan move alone, the first plain run, judged against T0; push 4 the hosted commit, which waits for one green plain run with no difference from T0; push 5 slice D; push 6 slice E after its proof; push 7 slice F. Pushes 3 to 7 are plain, and before each the push's diff goes through path-classifier.sh with every connector answer false. No other push on trunk while push 2 runs, and no live run or Linear key use for an hour before it (T12's last push edits ci_frontend.yml and is a live run too). Lighthouse.Backend.Tests.csproj stays untouched. On a red push 2: grep TooManyRequests, wait the hour, re-run the failed job, never push. Full-size backend runs: ONE, in 05-04, and it never overlaps another backend or frontend run; every other step runs dotnet build and named test classes only, and no crafter runs an unfiltered or standard-filter dotnet test. Id lists come from CI's test-timings-backend CSV of plain runs. All proof commands use -c Release with no variable ending IntegrationTestToken set. A diff line is accepted only as a foreign commit's test file or a test this Story added, named in the delta. A conflict with trunk stops the step and reports; nothing is rebased. No nWave scenario tag in any test title, comment or file. The filter strings, guarantees, probe table, stop rules and closing list are in feature-delta.md, sections Wave: DISTILL. Step 03-03 carries the scan move that DESIGN placed in slice D (D-6512-23)."
+    "notes": "Rigor profile thorough: pass model explicitly on every dispatch, the profile's agent_model for crafters and reviewer_model for reviewers. Every step is executed by a crafter, so finalize finds phase entries for each; no step is orchestrator-only. A push is not a step: the orchestrator makes it after the step named in that step's implementation_notes, and the next step opens by checking the delta records that push as judged. No non-test code changes in any slice (guarantee 1 of the delta, an allow-list). Mutation per slice: A N/A (package.json and docs); B N/A (a test helper, tests, workflow, shell, docs); C N/A (test files only); D N/A (test files only); E N/A (test files only); F N/A for Stryker, which mutates the product assembly (Test-Fast.ps1 is shell; the Python scripts carry their own unit tests). The list run: before every push from push 2 on, the step before the push runs the always-on clause A locally once, keeps its TRX as that push's id list and compares it locally with the list before; a difference stops the push. It is also the whole-suite gate. 8 such runs in the Story (L0 with the old clause, L2 to L7 with A, H once), about 350 s and 3.6 GB each, one at a time, never beside any other test run, frontend or backend, no token variable set. No other step runs an unfiltered or standard-filter dotnet test. CI's CSV is a cross-check, compared CI with CI, never with a local list. Every restricted run states a nonzero count read from the TRX, because dotnet test exits 0 on no match. Diffs: Passed ids must match, so a test that starts skipping counts as lost; a foreign commit excuses a line only if its diff shows that exact test removed; a test this Story added is named in the delta; unstable names compare per-class counts. Push plan: push 1 after 01-01, no backend run; push 2 after 03-01, slice B with the 14 live classes, THE ONE LIVE-SUITE PUSH, force-full with every connector; push 3 after 03-02, the scan move alone, the first plain run, judged against T0 for live and regular tests only; push 4 after 03-03, the hosted commit, which waits for one green plain run with no difference from T0; push 5 after 04-05; push 6 after 05-04; push 7 after 06-05. Pushes 3 to 7 are plain, and before each the push's diff goes through path-classifier.sh with every connector answer false. Push 3 waits for foreign runs started since push 2 to end green; if it still runs force-full it is judged as the live push, and the way out is 04-01's commit pulled forward or a foreign backend-path push, never the hosted commit. No other push on trunk while push 2 runs, and no live run or Linear key use for an hour before it (T12's last push edits ci_frontend.yml and is a live run too). A foreign force-full run is written down and does not break the one-live-push count; a force-full run of this Story's own making does. This Story leaves Lighthouse.Backend.Tests.csproj untouched; an NUnit or adapter change on trunk re-runs the probe's Live fixture before the next push. On a red push 2: grep TooManyRequests, wait the hour, re-run the failed job, never push. Two steps wait for the maintainer and no answer means they wait: 02-02 on the fast filter, 05-03 on the containers. A conflict with trunk stops the step and reports; nothing is rebased. No nWave scenario tag in any test title, comment or file. The filter strings, guarantees, probe table, stop rules and closing list are in feature-delta.md, sections Wave: DISTILL, and its section Review revision overrides the rest. Step 03-02 carries the scan move that DESIGN placed in slice D (D-6512-23)."
   },
   "phases": [
     {
@@ -24,7 +24,7 @@
             "A planted failing .test.ts makes pnpm test:fast exit non-zero and names it; a planted failing .test.tsx leaves pnpm test:fast green and unlisted while pnpm test on that file is red; both are removed and git status shows neither",
             "After an edit that touches no .test.ts, pnpm test:fast --changed exits 0 and says it ran nothing; if it exits 1, --passWithNoTests goes in the script",
             "The time-budget reporter reports no stale entry or budget finding for the 3 .tsx slowTests entries on a pnpm test:fast run",
-            "One pnpm test and one pnpm test:fast, one at a time, test-results.json deleted before each: fast ids plus the .test.tsx ids of the full run equal the full list, no overlap, no .stryker-tmp id; the .test.tsx count is written in the delta",
+            "One pnpm test and one pnpm test:fast, one at a time, never beside another test run, test-results.json deleted before each: fast ids plus the .test.tsx ids of the full run equal the full list, no overlap, no .stryker-tmp id; the .test.tsx count is written in the delta",
             "git diff shows the script line as the only change to package.json and no vitest config change",
             "CLAUDE.md names pnpm test:fast, and pnpm test --changed for a component edit, and says neither is a gate",
             "pnpm build is clean with zero errors and zero warnings, and git status is checked afterwards"
@@ -38,7 +38,7 @@
           ],
           "dependencies": [],
           "estimated_size": "S",
-          "implementation_notes": "Script text as in the delta section Frontend command and targets. No full run beside any other run; T12 is delivering, so check first. Commit: feat(test-infra). This slice is push 1, which starts no backend run."
+          "implementation_notes": "Script text as in the delta section Frontend command and targets. T12 is delivering, so check first. Commit: feat(test-infra). After this step the orchestrator makes push 1, which starts no backend run."
         },
         {
           "id": "01-02",
@@ -68,91 +68,53 @@
     {
       "id": "02",
       "name": "Slice B: probe, base and filters",
-      "description": "Record T0, prove the category claim with a throwaway probe, add IntegrationFixture, and switch every filter before any class moves. Mutation N/A: a test helper, tests, workflow, shell and docs.",
+      "description": "Record T0 and the first list, prove the category claim with a throwaway probe, add IntegrationFixture, and switch every filter before any class moves. Mutation N/A: a test helper, tests, workflow, shell and docs.",
       "steps": [
         {
           "id": "02-01",
-          "name": "Write down T0 and the before lists",
-          "description": "From the last green plain main run record T0; derive the unstable names from it and the plain run before it; take the unfiltered list and the connector grep at the parent of the first commit of this slice.",
+          "name": "T0, the probe, and IntegrationFixture",
+          "description": "Write down what CI runs today and take the first local list, run the throwaway probe under both configurations, and only if every cell holds add the abstract root with its permanent reflection test.",
           "criteria": [
-            "T0 is recorded: run id, commit read from gh run view, Total: line of Test Backend, CSV row count and sha256 of the sorted list; the run's log prints force_full=false and filter=Category!=Integration",
-            "The list of T0 against the plain run before it is diffed; a line no test-file change explains is written down as unstable and left out of later diffs",
-            "The rows of the 6 Explicit tests in T0's CSV are recorded, absent or not",
-            "dotnet test --list-tests with no filter, sorted, is taken once under -c Release with sha256 and count recorded; it starts no host",
-            "The git grep of the five connector attributes, sorted, is recorded",
-            "No test, no build beyond dotnet build -c Release, nothing committed but the delta"
+            "T0 is recorded: run id, commit read from gh run view, Total: line of Test Backend, CSV row count and sha256 of the sorted list; the run's log prints force_full=false and filter=Category!=Integration; a force-full run, T12's included, is never T0",
+            "T0's CSV against the plain run before it gives the unstable names with their per-class counts; the rows of the 9 Explicit ids in T0's CSV are recorded, absent or not",
+            "L0 is taken at the parent of this step's first commit: one list run with the old clause under the rules of a list run, its TRX kept, with count and sha256 recorded",
+            "dotnet test --list-tests with no filter, sorted, and the sorted git grep of the five connector attributes are recorded",
+            "Every cell of the delta's probe table holds, under Debug and -c Release, read from the TRX, each filter joined to FullyQualifiedName~CategoryProbe; each filter's TRX count equals the number of fixtures the row names; the result table is in the delta and git status shows no CategoryProbe file",
+            "Any cell off, or a filter the adapter refuses, stops the Story here: no base, no filter change, and the table goes to the maintainer",
+            "IntegrationFixtureCategoryTest does not compile before the base exists; after, a nested abstract planted type on the base shows Integration by reflection with inherit: true, and one off the base shows none",
+            "IntegrationFixture is abstract, has no members and carries no TestFixture attribute; if a Sonar rule fires on an empty class the category name moves to a constant, with no pragma",
+            "dotnet build is clean with zero warnings under Debug and -c Release; dotnet test with FullyQualifiedName~IntegrationFixtureCategoryTest is green with at least 2 tests by the TRX"
           ],
-          "test_file": "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md",
-          "scenario_name": "What CI runs today is written down before anything moves",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IntegrationFixtureCategoryTest.cs",
+          "scenario_name": "A category set on a shared base reaches every kind of test class and every filter reads it",
           "files_to_modify": [
-            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/IntegrationFixture.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IntegrationFixtureCategoryTest.cs",
+            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md",
+            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/evidence/"
           ],
           "dependencies": [
             "01-01"
           ],
-          "estimated_size": "S",
-          "implementation_notes": "Orchestrator work. T12's push is force-full, so it is never T0. The run list API can serve stale pages: read the commit from the run itself. If the CSV holds no usable ids, one local always-on run replaces T0's list and is named as a second full-size run. Commit: docs(test-infra)."
+          "estimated_size": "M",
+          "implementation_notes": "3 scenarios: the probe's table and the two reflection cases. The probe file holds its own copy of the root class, is never committed and exists only inside this step. The run list API can serve stale pages: read the commit from the run itself. A missing TRX or a build error is not a probe result. Commits: docs(test-infra) for T0, L0 and the probe table; test(test-infra) for the base."
         },
         {
           "id": "02-02",
-          "name": "The category probe, in the working tree only",
-          "description": "One throwaway file with the fixtures of the probe table, run under Debug and -c Release against the nine filters, read from the TRX. Any cell off stops the Story.",
-          "criteria": [
-            "Every cell of the probe table in the delta holds, under Debug and under -c Release, read from the TRX with each filter joined to FullyQualifiedName~CategoryProbe",
-            "The Explicit fixture runs under bare TestCategory=Integration and under no other filter, which confirms the hazard and the block",
-            "MixedOffline is selected by the always-on clause and the offline filter, MixedLive by neither, and only Plain by the fast filter",
-            "Whether --list-tests honours a filter is written down; nothing depends on it",
-            "The result table is in the delta; git status shows no CategoryProbe file",
-            "Any cell off, or a filter the adapter refuses, stops the Story: no class moves, no filter changes, and the table goes to the maintainer"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/CategoryProbe.cs",
-          "scenario_name": "A category set on a shared base reaches every kind of test class and every filter reads it",
-          "files_to_modify": [
-            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md"
-          ],
-          "dependencies": [
-            "02-01"
-          ],
-          "estimated_size": "S",
-          "implementation_notes": "CategoryProbe.cs and its local copy of the root class are never committed, and the file is not created outside this step. Restricted runs, seconds each; tokens unset. A missing TRX or a build error is not a result. Commit: docs(test-infra), the delta only."
-        },
-        {
-          "id": "02-03",
-          "name": "IntegrationFixture and its reflection test",
-          "description": "The abstract root holding the category and nothing else, with a permanent test that guards NUnit upgrades.",
-          "criteria": [
-            "IntegrationFixtureCategoryTest does not compile before the base exists; after, a nested abstract planted type on the base shows Integration by reflection with inherit: true",
-            "A nested abstract planted type off the base shows no Integration",
-            "IntegrationFixture is abstract, has no members and carries no TestFixture attribute; if a Sonar rule fires on an empty class the category name moves to a constant, with no pragma",
-            "dotnet build is clean with zero warnings under Debug and -c Release",
-            "dotnet test with FullyQualifiedName~IntegrationFixtureCategoryTest is green; no whole-suite run"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IntegrationFixtureCategoryTest.cs",
-          "scenario_name": "A class on the shared base is an integration test without saying so itself",
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/IntegrationFixture.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IntegrationFixtureCategoryTest.cs"
-          ],
-          "dependencies": [
-            "02-02"
-          ],
-          "estimated_size": "S",
-          "implementation_notes": "Two scenarios. The base decides a category, not how a host starts. Commit: test(test-infra)."
-        },
-        {
-          "id": "02-04",
           "name": "The clause pin, then every filter switched",
-          "description": "TestSelectionClauseTest red first, then the always-on clause and the standard filter in every place, with the shell mirror and the wording.",
+          "description": "Waits for the maintainer's answer on the fast filter. TestSelectionClauseTest red first, then the always-on clause and the standard filter in every place, with the shell mirror and the wording.",
           "criteria": [
+            "Entry: the maintainer's answer on the fast filter is recorded in the delta; no answer means this step does not start",
+            "A past main run with an attempt above 1 is read for a name conflict on the artifact uploads; if it collides or none exists, overwrite: true goes on test-timings-backend and sonar-report-backend in this step's ci_backend.yml edit",
             "TestSelectionClauseTest is red before the edit, because ci_backend.yml holds the old clause and that drops the set {Integration}",
-            "After the edit it is green on 8 scenarios: regular and hosted kept; live left out for all five connectors; offline of a mixed class kept; the planted wrong clause of the five connectors alone drops {JiraIntegration}; the old clause drops {Integration}; force-full takes everything but the canary; the joined connector string; every place holds the same text",
-            "Planted Category(\"Integration\") on one offline class, uncommitted, makes the hosted filter select exactly it; removed, the hosted filter selects nothing on this tree (a real run, read from the console count and the TRX)",
+            "After the edit it is green with at least 8 tests by the TRX, on 8 scenarios: regular and hosted kept; live left out for all five connectors; offline of a mixed class kept; the planted wrong clause of the five connectors alone drops {JiraIntegration}; the old clause drops {Integration}; force-full takes everything but the canary; the joined connector string; every place holds the same text",
+            "Planted Category(\"Integration\") on one offline class, uncommitted, makes the hosted filter select exactly it, 1 class's count by the TRX; removed, the hosted filter selects nothing on this tree, which is the one check where zero is right",
             "bash Scripts/test-selection/test-build-filter.sh fails on the new expected strings before the script's own edit and prints failed: 0 after it",
             "pwsh Scripts/test-selection/dev-test.ps1 -DryRun and dev-test.sh print the new strings; bare Category=Integration is gone from both; the comment says the negative term is what keeps the Explicit probes from running",
             "dev-test.sh --unit-only's comment and help say it runs the plain CI selection with hosted tests",
-            "Test-Coverage.ps1 and CLAUDE.md hold the standard filter; the CLAUDE.md paragraph adds GitHub, names no bare fast filter and warns off a bare TestCategory=Integration; kpi-contracts.yaml lines 1350 and 1941 describe the new clause",
-            "The ci_backend.yml edit is that one line and its comment; the force-full and per-connector clauses keep their text; git diff shows no other workflow changed",
-            "dotnet build is clean with zero warnings; no whole-suite run"
+            "Test-Coverage.ps1 and CLAUDE.md hold the standard filter, GithubIntegration being a stated addition; the CLAUDE.md paragraph adds GitHub, names no bare fast filter and warns off a bare TestCategory=Integration; kpi-contracts.yaml lines 1350 and 1941 describe the new clause",
+            "The ci_backend.yml edit is that one line and its comment, and overwrite if needed; the force-full and per-connector clauses keep their text; git diff shows no other workflow changed",
+            "dotnet build is clean with zero warnings"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestSelectionClauseTest.cs",
           "scenario_name": "CI keeps running the same tests when hosted tests are called integration tests",
@@ -167,29 +129,30 @@
             "docs/product/kpi-contracts.yaml"
           ],
           "dependencies": [
-            "02-03"
+            "02-01"
           ],
           "estimated_size": "M",
-          "implementation_notes": "The test reads the real files through the FindRepositoryRoot idiom of CategoryListOwnershipGuardTest. It pins how the clause reads; the probe pinned how NUnit reads it. Exact strings in the delta section Names used below. Filters land before any class moves. Not pushed yet: this rides the live push with the 14 live classes. Commit: ci(test-infra)."
+          "implementation_notes": "8 scenarios. The test reads the real files through the FindRepositoryRoot idiom of CategoryListOwnershipGuardTest. It pins how the clause reads; the probe pinned how NUnit reads it. Exact strings in the delta section Names used below. Filters land before any class moves. Not pushed yet: this rides the live push with the 14 live classes. Commit: ci(test-infra)."
         }
       ]
     },
     {
       "id": "03",
       "name": "Slice C: the moves before the guard",
-      "description": "The 14 live classes, the one live push, the first plain run against T0, then the hosted commit. Mutation N/A: test files only.",
+      "description": "The 14 live classes and the one live push, the scan move and the first plain run against T0, then the hosted commit. Mutation N/A: test files only.",
       "steps": [
         {
           "id": "03-01",
-          "name": "The 14 live classes on the base",
-          "description": "Each whole-class live file takes the base, drops the literal Integration and keeps its connector category. The 2 mixed classes stay as they are.",
+          "name": "The 14 live classes on the base, and the list before the live push",
+          "description": "Each whole-class live file takes the base, drops the literal Integration and keeps its connector category. The 2 mixed classes stay as they are. L2 proves the always-on clause on the real tree.",
           "criteria": [
             "All 14 classes take : IntegrationFixture; the literal Integration attribute goes, also from the one method of JiraSuppressionRetryIntegrationTest; the connector attribute stays",
             "JiraWriteBackTest and AzureDevOpsWriteBackTest are unchanged",
             "The hosted filter still selects nothing on a real run",
             "The sorted git grep of the five connector attributes equals the record of 02-01",
-            "dotnet build is clean with zero warnings; no live test is run on this machine, and no whole-suite run",
-            "The commit holds this move only"
+            "dotnet build is clean with zero warnings; no live test is run on this machine",
+            "The commit holds this move only",
+            "L2, one list run of the always-on clause, against L0: Passed ids match, with only IntegrationFixtureCategoryTest, TestSelectionClauseTest and exempted foreign lines added or removed; TRX and list kept"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IntegrationFixtureCategoryTest.cs",
           "scenario_name": "Live connector tests stay left out of a plain run once they sit on the base",
@@ -210,82 +173,57 @@
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/ServiceNow/ServiceNowWorkTrackingConnectorIntegrationTest.cs"
           ],
           "dependencies": [
-            "02-04"
+            "02-02"
           ],
           "estimated_size": "S",
-          "implementation_notes": "All 14 have no base on the class line, read at DISTILL. These files sit on connector paths, which is why they ride the live push. Commit: test(test-infra), the move alone."
+          "implementation_notes": "All 14 have no base on the class line, read at DISTILL. These files sit on connector paths, which is why they ride the live push. Commit: test(test-infra), the move alone. After this step the orchestrator makes push 2, the one live push, under the delta's Push plan: moment agreed with T12, nothing else on trunk, the hour rested. It is judged on green, every T0 id present, every extra id in a class with a connector attribute and no Explicit id beyond T0's, and that is recorded in the delta. It cannot judge the clause, because force-full selects everything. On a red: grep TooManyRequests, wait the hour, re-run the failed job, never push."
         },
         {
           "id": "03-02",
-          "name": "The one live push, and what it must show",
-          "description": "Push slice B with the 14 live classes when nothing else is on trunk and the keys have rested, then judge the force-full run.",
+          "name": "Move the scan, and the list before the first plain run",
+          "description": "The refactor commit moves the call walker to TestHostScanning and changes nothing else, so that the Story makes its own first plain run.",
           "criteria": [
-            "Before it: the moment is agreed with T12, no other push is on trunk, and no live run ended and no Linear key use happened within the hour",
-            "The run's log shows force_full=true and the new string; every job ends green, so the ci_backend.yml edit leaves the change window",
-            "Every T0 id is in the run's list; every extra id is in a class with a connector attribute, and the 14 moved classes are among them; no Explicit id beyond T0's",
-            "On a red: grep the log for TooManyRequests, wait the hour, re-run the failed job, and do not push; no other cause is pushed over without the maintainer",
-            "Run id, Total: and the result are in the delta"
-          ],
-          "test_file": "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md",
-          "scenario_name": "The live connector suites run once and still find their tests",
-          "files_to_modify": [
-            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md"
-          ],
-          "dependencies": [
-            "03-01"
-          ],
-          "estimated_size": "S",
-          "implementation_notes": "Orchestrator work, no crafter. This push cannot judge the clause, because force-full selects everything. The budget step judges live classes too, so a slow tracker can red the run. Commit: docs(test-infra)."
-        },
-        {
-          "id": "03-03",
-          "name": "Move the scan, and let the first plain run judge the clause",
-          "description": "The refactor commit moves the call walker to TestHostScanning, changes nothing else, and is pushed alone so the Story makes its own first plain run, which is compared with T0.",
-          "criteria": [
-            "HostBuildingScan moves from TestHostPerFixtureGuardTest to TestHostScanning, with no change in behaviour; TestHostPerFixtureGuardTest is green with the same test ids and the same list under Debug and -c Release, by class filter",
+            "Entry: the delta records push 2 as judged and green, and every foreign run started since has ended, the newest green",
+            "HostBuildingScan moves from TestHostPerFixtureGuardTest to TestHostScanning, with no change in behaviour; TestHostPerFixtureGuardTest is green with exactly 18 tests by the TRX and the same list, under Debug and -c Release",
             "The commit holds the move alone, and every classify_* of path-classifier.sh answers false for the push's diff",
-            "The run prints force_full=false and filter= with the always-on clause alone; a run that does not is not counted",
-            "Its list against T0's: every line is IntegrationFixtureCategoryTest, TestSelectionClauseTest or a file a foreign commit changed, each written down",
-            "Total: equals T0 plus this Story's tests plus foreign tests added less foreign tests removed, written as a sum in the delta; the category column reads Integration 0 times",
-            "Any difference stops the Story: no hosted commit, no further backend push, and a fix to the clause goes to the maintainer first, as it is a second live run"
+            "dotnet build is clean with zero warnings",
+            "L3, one list run of the always-on clause, against L2: Passed ids match, exempted lines aside; TRX and list kept"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs",
           "scenario_name": "The first plain run after the filter change runs exactly what ran before it",
           "files_to_modify": [
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostScanning.cs",
-            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md"
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostScanning.cs"
+          ],
+          "dependencies": [
+            "03-01"
+          ],
+          "estimated_size": "S",
+          "implementation_notes": "DESIGN placed this commit in slice D; it moves here because it is a backend path that changes no category (D-6512-23). Commit: refactor(test-infra). After this step the orchestrator makes push 3 and records the first plain run against T0: the log prints force_full=false and filter= with the always-on clause alone; ids and outcomes against T0's CSV with only exempted lines; Total: written as a sum; the category column reads Integration 0 times. It judges the clause for live and regular tests only. Any difference stops the Story. If the run comes out force-full, the delta's Push plan names the way out: 04-01's commit pulled forward."
+        },
+        {
+          "id": "03-03",
+          "name": "The hosted commit: IntegrationTestBase and the 26 roots",
+          "description": "Waits for one green plain run with no difference from T0. One line on IntegrationTestBase and on each hosted root, and the list on which the hosted-kept half of the clause first meets real hosted classes.",
+          "criteria": [
+            "Entry: the delta records the first plain run as green with no difference from T0; without it this commit does not exist. A day with no green plain run is reported, not pushed through",
+            "Before the commit the hosted filter restricted to one class on IntegrationTestBase and one under a three-deep root selects nothing and the fast filter selects them, with their counts by the TRX; after it the two swap",
+            "IntegrationTestBase and each of the 26 roots take the base; UpdateServiceTestBase, the 8 *TestHost helpers and the concrete classes are untouched",
+            "A root whose only base is a non-hosted class follows the delta's stop rule",
+            "dotnet build is clean with zero warnings; every classify_* answers false for the push's diff",
+            "L4, one list run of the always-on clause, against L3: Passed ids match, exempted lines aside; this is the first evidence that the clause keeps hosted tests; TRX and list kept"
+          ],
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IntegrationFixtureCategoryTest.cs",
+          "scenario_name": "Most hosted tests become integration tests and the same ids still run",
+          "files_to_modify": [
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/IntegrationTestBase.cs",
+            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/"
           ],
           "dependencies": [
             "03-02"
           ],
-          "estimated_size": "S",
-          "implementation_notes": "DESIGN placed this commit in slice D; it moves here because it is a backend path that changes no category (D-6512-23). The comparison is the orchestrator's. Commit: refactor(test-infra), then docs(test-infra) for the numbers."
-        },
-        {
-          "id": "03-04",
-          "name": "The hosted commit: IntegrationTestBase and the 26 roots",
-          "description": "Waits for one green plain run with no difference from T0. One line on IntegrationTestBase and on each hosted root.",
-          "criteria": [
-            "03-03's comparison is recorded clean; without it this commit does not exist. A day with no green plain run is reported, not pushed through",
-            "Before the commit the hosted filter restricted to one class on IntegrationTestBase and one under a three-deep root selects nothing, and the fast filter selects them; after it the two swap",
-            "IntegrationTestBase and each of the 26 roots take the base; UpdateServiceTestBase, the 8 *TestHost helpers and the concrete classes are untouched",
-            "A root whose only base is a non-hosted class follows the delta's stop rule",
-            "dotnet build is clean with zero warnings; no whole-suite run; every classify_* answers false for the push's diff",
-            "That push's plain run: its list against the last one shows only own and foreign lines, and Total: agrees"
-          ],
-          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/IntegrationTestBase.cs",
-          "scenario_name": "Most hosted tests become integration tests and CI runs the same ids",
-          "files_to_modify": [
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/IntegrationTestBase.cs",
-            "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/",
-            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md"
-          ],
-          "dependencies": [
-            "03-03"
-          ],
           "estimated_size": "M",
-          "implementation_notes": "The 35 hosted abstract bases reduce to 26 roots, read by the design; confirm at the edit. A wrong clause and a wrong move are never judged together. Commit: test(test-infra), the move alone."
+          "implementation_notes": "The 35 hosted abstract bases reduce to 26 roots, read by the design; confirm at the edit. No hosted base is generic, by text search. A wrong clause and a wrong move are never judged together. Commit: test(test-infra), the move alone. After this step the orchestrator makes push 4; its plain CSV is cross-checked against push 3's, CI with CI, and Total: agrees."
         }
       ]
     },
@@ -300,7 +238,7 @@
           "description": "The next commit after the move: the scan takes its root set, T2's guard keeps its own.",
           "criteria": [
             "HostBuildingScan takes the root set as a parameter; T2's guard passes the set it has today",
-            "TestHostPerFixtureGuardTest is green with the same ids, planted cases and list, under Debug and -c Release, by class filter",
+            "TestHostPerFixtureGuardTest is green with exactly 18 tests by the TRX, the same planted cases and list, under Debug and -c Release",
             "A planted fixture hosting only in OneTimeSetUp stays not found under T2's set",
             "dotnet build is clean with zero warnings"
           ],
@@ -311,10 +249,10 @@
             "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostPerFixtureGuardTest.cs"
           ],
           "dependencies": [
-            "03-04"
+            "03-03"
           ],
           "estimated_size": "S",
-          "implementation_notes": "Commit: refactor(test-infra)."
+          "implementation_notes": "Commit: refactor(test-infra). This commit is the named spare: if push 3 came out force-full, it goes ahead of the hosted commit with its own list run, to make the plain run."
         },
         {
           "id": "04-02",
@@ -326,8 +264,7 @@
             "The first real output is read, the real class list is written in the delta and compared with the design's count, and any over-report from override following is narrowed for this guard only",
             "The list is one inline dictionary of full type names to reasons, with no count constant; a listed type now on the base fails as stale, shown once",
             "Rule messages name the type and say it must derive from the base",
-            "The maintainer's silence on containers is checked again at this output; no answer keeps D-6512-11 and says so in the delta",
-            "dotnet test with FullyQualifiedName~TestTierGuardTest is green under Debug and -c Release; dotnet build clean"
+            "dotnet test with FullyQualifiedName~TestTierGuardTest is green with at least 8 tests by the TRX, under Debug and -c Release; dotnet build clean"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
           "scenario_name": "A test class that starts a host off the base fails the build by name",
@@ -350,7 +287,7 @@
             "Planted green: a live fixture on the base; a container fixture on the base with no host; an unrelated method named like a sink",
             "Each message names the type or method and what to do; rule 4's says CI would read it as live and drop it",
             "The real pass is green with no baseline for these rules, the 2 mixed classes named with a reason each on their own permanent list",
-            "dotnet test with FullyQualifiedName~TestTierGuardTest is green under Debug and -c Release; dotnet build clean"
+            "dotnet test with FullyQualifiedName~TestTierGuardTest is green with at least 16 tests by the TRX, under Debug and -c Release; dotnet build clean"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
           "scenario_name": "A marker that no longer fits and a category written by hand fail the build by name",
@@ -361,7 +298,7 @@
             "04-02"
           ],
           "estimated_size": "S",
-          "implementation_notes": "8 planted scenarios. Rule 4 is the build-time stop for one of the three ways a test can be lost. Commit: test(test-infra)."
+          "implementation_notes": "8 planted scenarios. Rule 4 is the build-time stop for one of the three ways a test can be lost. The container cases follow DESIGN; a maintainer answer of keep them regular changes rules 2 and 5 first. Commit: test(test-infra)."
         },
         {
           "id": "04-04",
@@ -372,7 +309,7 @@
             "Planted green: a named mixed class; UsageDataCanary with a connector",
             "Rule 5's message says the fast loop would run the type; rule 6's says the clause selects by exclusion, so a canary with no connector would run in CI",
             "Rule 5 passes for a listed type, and no other rule does",
-            "dotnet test with FullyQualifiedName~TestTierGuardTest is green under Debug and -c Release; dotnet build clean"
+            "dotnet test with FullyQualifiedName~TestTierGuardTest is green with at least 21 tests by the TRX, under Debug and -c Release; dotnet build clean"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
           "scenario_name": "A class the fast loop must never run cannot sit off the base",
@@ -387,32 +324,33 @@
         },
         {
           "id": "04-05",
-          "name": "Real planted classes shown red, and the guard pushed",
+          "name": "Real planted classes shown red, and the list before the guard's push",
           "description": "The acceptance check: a real concrete class in the working tree, misplaced both ways, red under Debug and -c Release with its name in the message.",
           "criteria": [
             "An unmarked real class that starts a host: the guard is red under Debug and under -c Release, and the message holds its full name",
             "A real class on the base with no host: red under both, naming it",
             "The output of all four runs is kept in the delta; both classes are removed and git status is clean of them",
             "Every classify_* answers false for the push's diff",
-            "That push's plain run: its list against the last one shows only own and foreign lines, the guard's new tests named"
+            "L5, one list run of the always-on clause, against L4: Passed ids match, the guard's new tests named, exempted lines aside; TRX and list kept"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
           "scenario_name": "A misplaced test class fails the build in both build configurations",
           "files_to_modify": [
-            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md"
+            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md",
+            "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/evidence/"
           ],
           "dependencies": [
             "04-04"
           ],
           "estimated_size": "S",
-          "implementation_notes": "Release matters because the compiler builds async bodies differently there. This is push 5. Commit: docs(test-infra)."
+          "implementation_notes": "Release matters because the compiler builds async bodies differently there. Commit: docs(test-infra). After this step the orchestrator makes push 5; its plain CSV is cross-checked against push 4's."
         }
       ]
     },
     {
       "id": "05",
       "name": "Slice E: the list empties",
-      "description": "Self-hosting and container fixtures move by kind, the list is deleted, and the one full-size run proves the tiers add up before the push. Mutation N/A: test files only.",
+      "description": "Self-hosting and container fixtures move by kind, the list is deleted, and the proof before the push shows the tiers add up. Mutation N/A: test files only.",
       "steps": [
         {
           "id": "05-01",
@@ -422,7 +360,7 @@
             "One class moved and left listed makes the stale check red, once; removing the entry makes it green",
             "Every listed type under API/Integration is on the base and off the list; how each starts its host stays",
             "A class in API/Integration that starts no host stays regular, and no file moves folder",
-            "dotnet test with FullyQualifiedName~TestTierGuardTest and with FullyQualifiedName~TestHostPerFixtureGuardTest is green; dotnet build clean; no whole-suite run",
+            "dotnet test with FullyQualifiedName~TestTierGuardTest is green with at least 21 tests and with FullyQualifiedName~TestHostPerFixtureGuardTest with exactly 18, by the TRX; dotnet build clean",
             "The commit holds this move only"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
@@ -435,7 +373,7 @@
             "04-05"
           ],
           "estimated_size": "M",
-          "implementation_notes": "Commit: test(test-infra), the move alone."
+          "implementation_notes": "Commit: test(test-infra), the move alone. No push: the list run comes in 05-04."
         },
         {
           "id": "05-02",
@@ -445,7 +383,7 @@
             "Every listed type outside Integration/Containers is on the base and off the list",
             "A class whose only base is non-hosted follows the delta's stop rule",
             "No file on a connector or shared path changes: every classify_* answers false for the diff; a file that would answer true is reported before the commit",
-            "dotnet test with FullyQualifiedName~TestTierGuardTest is green; dotnet build clean; no whole-suite run",
+            "dotnet test with FullyQualifiedName~TestTierGuardTest is green with at least 21 tests by the TRX; dotnet build clean",
             "The commit holds this move only"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
@@ -463,13 +401,14 @@
         {
           "id": "05-03",
           "name": "Move the containers and delete the list",
-          "description": "The 31 container files take the base; the empty list and its stale check go.",
+          "description": "Waits for the maintainer's answer on the containers. The 31 container files take the base; the empty list and its stale check go.",
           "criteria": [
+            "Entry: the maintainer's answer on containers is recorded in the delta; no answer means this step does not start, and push 6 waits with it",
             "Every class in Integration.Containers is on the base; the 3 helpers are untouched",
             "The list is empty, then deleted with its stale check, and no count constant ever existed",
             "The named list of the 2 mixed classes stays",
             "A planted unmarked class is still red with the list gone, then removed",
-            "dotnet test with FullyQualifiedName~TestTierGuardTest is green; dotnet build clean; no whole-suite run",
+            "dotnet test with FullyQualifiedName~TestTierGuardTest is green with at least 21 tests by the TRX; dotnet build clean",
             "The move and the deletion are separate commits"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestTierGuardTest.cs",
@@ -482,23 +421,23 @@
             "05-02"
           ],
           "estimated_size": "S",
-          "implementation_notes": "Commits: test(test-infra) twice."
+          "implementation_notes": "If the answer is to keep them regular, rules 2 and 5 change first and this step moves nothing but still deletes the list. Commits: test(test-infra) twice."
         },
         {
           "id": "05-04",
-          "name": "The proof: the one full-size run, then the push",
-          "description": "Fast, hosted and offline lists prove the tiers add up before the push; small checks close Explicit, discovery and the connector list.",
+          "name": "The proof before the moves are pushed",
+          "description": "L6, then fast, offline and hosted lists show the tiers add up; small checks close Explicit, discovery and the connector list.",
           "criteria": [
-            "Before the hosted run: ps -eo args | grep -cE '[t]esthost|[v]itest' prints 0, T12 is not running, dotnet build-server shutdown has run, and env | grep -c IntegrationTestToken prints 0",
-            "The fast filter run, then the offline filter run, then the hosted filter run, one at a time, under -c Release with --logger trx; the hosted run is the only full-size run of the Story and is not repeated for a failed test, whose class alone runs again; a short TRX alone justifies a second run, named in the delta",
+            "Before each list run: ps -eo args | grep -cE '[t]esthost|[v]itest' prints 0, T12 is not running, dotnet build-server shutdown has run, and env | grep -c IntegrationTestToken prints 0",
+            "L6, one list run of the always-on clause, against L5: Passed ids match, exempted lines aside",
+            "The fast filter run, the offline filter run and the hosted filter run, one at a time, under -c Release with --logger trx; a list run is not repeated for a failed test, whose class alone runs again with its count by the TRX, and only a short TRX justifies a second, named in the delta",
             "The offline filter selects exactly 3 ids, 1 in JiraWriteBackTest and 2 in AzureDevOpsWriteBackTest",
-            "The three lists sorted together equal the last plain run's list, own and foreign lines aside, with no overlap; the fast list holds no class with a connector attribute",
-            "Always-on, force-full and hosted filters, each joined to the classes of the 6 Explicit tests, show those tests as T0's CSV showed them",
-            "The unfiltered --list-tests and the sorted connector grep equal the records of 02-01, own and foreign lines aside",
-            "The three lists go in evidence/; TRX files are kept for 06-03 and 06-04; every classify_* answers false for the push's diff",
-            "That push's plain run equals the three lists, own and foreign lines aside"
+            "The three lists sorted together equal L6, with no overlap; the fast list holds no class with a connector attribute",
+            "Always-on, force-full and hosted filters, each joined to the 5 classes of the 9 Explicit ids and to the control class HealthCheckIntegrationTest: the TRX count is exactly the control's count in L6, nonzero, and the 9 ids show as T0's CSV showed them",
+            "The unfiltered --list-tests and the sorted connector grep equal the records of 02-01, own and exempted lines aside",
+            "The lists go in evidence/; TRX files are kept for 06-03 and 06-04; every classify_* answers false for the push's diff"
           ],
-          "test_file": "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md",
+          "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestSelectionClauseTest.cs",
           "scenario_name": "Fast, hosted and offline tests together are exactly what CI runs",
           "files_to_modify": [
             "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md",
@@ -508,7 +447,7 @@
             "05-03"
           ],
           "estimated_size": "M",
-          "implementation_notes": "Orchestrator work: the run needs the machine to itself and may grow its testhost to 18 GB. Failures are read against CLAUDE.md's environmental list; a failed test still counts as an id. This is push 6. Commit: docs(test-infra)."
+          "implementation_notes": "Failures are read against CLAUDE.md's environmental list; a failed test still counts as an id, and its Passed status must come back from the class run. Docker must be up, as the always-on clause holds the container tests. Commit: docs(test-infra). After this step the orchestrator makes push 6; its plain CSV is cross-checked against push 5's."
         }
       ]
     },
@@ -522,7 +461,7 @@
           "name": "Test-Fast.ps1",
           "description": "A sibling of Test-Coverage.ps1 running the fast filter, with a -NoBuild switch.",
           "criteria": [
-            "The file does not exist before; after, pwsh Lighthouse.Backend/Test-Fast.ps1 -NoBuild runs the fast filter and exits 0, and its list equals the fast list of 05-04, own and foreign lines aside",
+            "The file does not exist before; after, pwsh Lighthouse.Backend/Test-Fast.ps1 -NoBuild runs the fast filter and exits 0, and its list equals the fast list of 05-04 by id and outcome, exempted lines aside",
             "A planted failing regular test makes it exit non-zero, then is removed",
             "It holds the fast filter by text, clears no variable and checks LASTEXITCODE as Test-Coverage.ps1 does",
             "The peak memory of one run is recorded once",
@@ -545,7 +484,7 @@
           "description": "discover_integration_class_names reads each class's first base and closes over the chain to IntegrationFixture, for the eight shapes of a class line.",
           "criteria": [
             "In test_trx_to_csv.py each reads Unit before and Integration after: primary constructor; base with arguments; base on the next line; interface after the base; qualified base; a base named in one part of a partial class; nested class; private nested class written Outer+Inner",
-            "python3 -m unittest discover -s Scripts/test-timings/tests passes"
+            "python3 -m unittest discover -s Scripts/test-timings/tests passes, and the count it prints is above the count before this step"
           ],
           "test_file": "Scripts/test-timings/tests/test_trx_to_csv.py",
           "scenario_name": "A test class on the base reads Integration however it is declared",
@@ -564,7 +503,7 @@
           "name": "The CSV: chains, warnings and the real tree",
           "description": "The remaining shapes, fixture arguments, the warning, the anchors and the collision test, and summarise.py's wording.",
           "criteria": [
-            "The TRX shape of a parametrised fixture is read from 05-04's hosted TRX and pinned before the code changes; parse_trx strips fixture arguments for the lookup",
+            "The TRX shape of a parametrised fixture is read from 05-04's hosted TRX and pinned before the code changes; parse_trx strips fixture arguments for the lookup only",
             "Red then green: two namespaces in a file; a chain crossing files; a TRX class with no declaration prints a warning and is not silently Unit; the mixed classes' method-level path still works",
             "The real tree's anchors read as they must: one class on IntegrationTestBase, one through a three-deep chain, one self-hosting, one container, one live, one regular",
             "Two classes on a chain sharing a simple name fail the test",
@@ -587,9 +526,11 @@
         },
         {
           "id": "06-04",
-          "name": "The column agrees, medians re-cut, the backend target",
-          "description": "Prove the Unit column against the filters, re-cut the medians and take 5 warm runs.",
+          "name": "The column agrees, ids unchanged, medians re-cut, the backend target",
+          "description": "Prove the Unit column against the filters, prove the id column did not move, re-cut the medians and take 5 warm runs.",
           "criteria": [
+            "A test in test_trx_to_csv.py pins the fully_qualified_name column of a fixture TRX holding a parametrised fixture and a nested class, byte for byte, as the script before this Story writes it; it is written against the old script first and stays green after",
+            "The old script (git show of the commit before 06-02) and the new one over 05-04's TRX files give fully_qualified_name columns that cmp finds byte-identical",
             "The new trx_to_csv.py over 05-04's TRX files reads every hosted row Integration and every fast and offline row Unit, both directions",
             "Backend medians per category are re-cut from a CSV and written in the delta",
             "Test-Fast.ps1 -NoBuild: median of 5 warm runs on a quiet machine at the default worker cap, with test counts, build time reported apart, target under 60 s",
@@ -599,27 +540,28 @@
           "test_file": "Scripts/test-timings/tests/test_trx_to_csv.py",
           "scenario_name": "The whole fast backend tier answers in under a minute and the timing column agrees with it",
           "files_to_modify": [
+            "Scripts/test-timings/tests/test_trx_to_csv.py",
             "docs/feature/story-6512-t6-speed-tiers-and-fast-local-loop/feature-delta.md"
           ],
           "dependencies": [
             "06-03"
           ],
           "estimated_size": "S",
-          "implementation_notes": "No other run beside a timed run. The wrapper script stays out of the repo. Commit: docs(test-infra)."
+          "implementation_notes": "T9's budgets and every id diff key on that column, so a stripped argument there would look like a lost test. No other run beside a timed run. The wrapper script stays out of the repo. Commit: test(test-infra), then docs(test-infra)."
         },
         {
           "id": "06-05",
-          "name": "Docs, the last push and the closing record",
-          "description": "CLAUDE.md names the fast loop, mutation-testing.md warns off the old term, push 7, and the closing list.",
+          "name": "Docs, the last list and the closing record",
+          "description": "CLAUDE.md names the fast loop, mutation-testing.md warns off the old term, L7, and the closing list.",
           "criteria": [
-            "CLAUDE.md prints the safe filter or the script, never the bare one: git grep -nF 'TestCategory!=Integration\"' CLAUDE.md Lighthouse.Backend/Test-Coverage.ps1 prints nothing; it names Test-Fast.ps1, says neither command is a gate, and says Windows is unverified",
+            "CLAUDE.md prints the safe filter or the script, never the bare one: git grep -nE 'TestCategory!=Integration([^&]|$)' -- CLAUDE.md Lighthouse.Backend/Test-Coverage.ps1 Lighthouse.Backend/Test-Fast.ps1 Scripts/test-selection docs/ci-learnings.md .claude/commands prints only the warning line of mutation-testing.md; CLAUDE.md names Test-Fast.ps1, says neither command is a gate, and says Windows is unverified",
             ".claude/commands/mutation-testing.md has one line not to copy TestCategory!=Integration from old configs",
             "Every classify_* answers false for the push's diff; no ci*.yml and no csproj is in it",
-            "That push's plain run: its list equals the last one, own and foreign lines aside, and its Unit rows equal the fast list plus the 3 offline ids, both directions",
-            "Across the Story exactly one run has force_full=true because of this Story's files; no commit of the Story names a production file",
+            "L7, one list run of the always-on clause, against L6: Passed ids match, exempted lines aside",
+            "The closing record holds every commit against guarantee 1's allow-list, and the count of force-full runs caused by this Story's files, which is one",
             "The DISCUSS Checklist is ticked by evidence, mutation N/A stated per slice, the watch on the first force-full run after slice E and the owed lines of T9's and T5's briefs handed over; no release notes"
           ],
-          "test_file": "CLAUDE.md",
+          "test_file": "Scripts/test-timings/tests/test_trx_to_csv.py",
           "scenario_name": "A developer finds the fast loop in the docs and CI still runs every test",
           "files_to_modify": [
             "CLAUDE.md",
@@ -630,13 +572,13 @@
             "06-04"
           ],
           "estimated_size": "S",
-          "implementation_notes": "Push 7 carries Scripts/test-timings/, a backend path, so it makes a plain run with no ci*.yml edit. ADO #6512 moves by the usual story rule; the Epic is the maintainer's. Commit: docs(test-infra)."
+          "implementation_notes": "Commit: docs(test-infra). After this step the orchestrator makes push 7, which carries Scripts/test-timings/, a backend path, so it makes a plain run with no ci*.yml edit. Its CSV is cross-checked against push 6's, and its Unit rows must equal the fast list plus the 3 offline ids, both directions; that result closes guarantee 14 and goes in the delta. ADO #6512 moves by the usual story rule; the Epic is the maintainer's."
         }
       ]
     }
   ],
   "validation": {
     "status": "approved",
-    "note": "des-verify-integrity --roadmap-only exited 0 on 2026-11-07. That check covers the roadmap's format only. The DISTILL peer review has not run and is the orchestrator's, before DELIVER; the design and DEVOPS reviews have run. Nothing in this roadmap has been executed: no test or build ran at DISTILL."
+    "note": "Approved after the DISTILL review of 2026-11-07 (NEEDS_REVISION: 0 blockers, 4 high, 6 medium, 3 low), addressed in the feature delta section DISTILL Review revision. des-verify-integrity --roadmap-only exited 0; it covers format only. No test or build ran at DISTILL. Two steps wait for the maintainer: 02-02 on the fast filter and 05-03 on the containers."
   }
 }
