@@ -12,7 +12,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// field initialisers or tests, on the class or on a base class, counts as the class's own. The base must also
     /// stay honest: nothing sits on it without a reason, nothing else writes its category, and a hosted fixture
     /// carries no connector category, because CI selects live tests by that category. Live and container fixtures
-    /// belong on the base as well, and a fixture carrying the canary category also carries a connector.
+    /// belong on the base as well, and a fixture carrying the canary category also carries a connector. A category
+    /// name has no spaces at its edges, because a spaced name in a list matches no tier or connector.
     /// </summary>
     [TestFixture]
     public class TestTierGuardTest
@@ -150,6 +151,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         [Test]
+        public void NoCategoryNameHasASpaceAtAnEdge()
+        {
+            var pieces = CategoryPiecesWithASpaceAtAnEdge(concreteFixtures);
+
+            Assert.That(pieces, Is.Empty, CategoryMustHaveNoSpaceAtAnEdge(pieces));
+        }
+
+        [Test]
         public void EveryLiveClassWithOfflineTestsStillWritesTheCategoryOnAMethod()
         {
             var writers = allTypes.Where(type => type.Methods.Any(WritesTheIntegrationCategory)).Select(type => type.FullName);
@@ -251,6 +260,36 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
         }
 
+        [TestCase(nameof(PlantedFixtures.ConnectorAfterACommaAndASpaceOffTheBase), nameof(PlantedFixtures.ConnectorAfterACommaAndASpaceOffTheBase), "::Serve", " AdoIntegration")]
+        [TestCase(nameof(PlantedFixtures.ConnectorAfterACommaAndASpaceOnTheBase), nameof(PlantedFixtures.ConnectorAfterACommaAndASpaceOnTheBase), "::Serve", " JiraIntegration")]
+        [TestCase(nameof(PlantedFixtures.CategoryAfterACommaAndASpace), nameof(PlantedFixtures.CategoryAfterACommaAndASpace), "::Serve", " Integration")]
+        [TestCase(nameof(PlantedFixtures.CanaryAfterACommaAndASpace), nameof(PlantedFixtures.CanaryAfterACommaAndASpace), "::Serve", " UsageDataCanary")]
+        [TestCase(nameof(PlantedFixtures.ConnectorBeforeASpaceAndAComma), nameof(PlantedFixtures.ConnectorBeforeASpaceAndAComma), "::Serve", "JiraIntegration ")]
+        [TestCase(nameof(PlantedFixtures.ConnectorAfterATab), nameof(PlantedFixtures.ConnectorAfterATab), "::Serve", "\tJiraIntegration")]
+        [TestCase(nameof(PlantedFixtures.SpaceInAListOnATestCaseSource), nameof(PlantedFixtures.SpaceInAListOnATestCaseSource), "::Serve", " LinearIntegration")]
+        [TestCase(nameof(PlantedFixtures.SpaceInAListOnATestFixture), nameof(PlantedFixtures.SpaceInAListOnATestFixture), "", " GithubIntegration")]
+        [TestCase(nameof(PlantedFixtures.SpaceInAListOnATestFixtureSource), nameof(PlantedFixtures.SpaceInAListOnATestFixtureSource), "", " ServiceNowIntegration")]
+        [TestCase(nameof(PlantedFixtures.ChildOfASpaceInAList), nameof(PlantedFixtures.SpaceInAListOnATestFixture), "", " GithubIntegration")]
+        [TestCase(nameof(PlantedFixtures.CategoryWithSpacesAround), nameof(PlantedFixtures.CategoryWithSpacesAround), "", " Integration ")]
+        [TestCase(nameof(PlantedFixtures.ConnectorWithASpaceOffTheBase), nameof(PlantedFixtures.ConnectorWithASpaceOffTheBase), "", " JiraIntegration")]
+        public void ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten(string plantedType, string writtenOn, string method, string piece)
+        {
+            var found = CategoryPiecesWithASpaceAtAnEdge([Planted(plantedType)]);
+
+            Assert.That(found, Is.EqualTo(new[] { Planted(writtenOn).FullName + method + " \"" + piece + "\"" }));
+        }
+
+        [TestCase(nameof(PlantedFixtures.ConnectorListedWithNoSpaceOnTheBase))]
+        [TestCase(nameof(PlantedFixtures.ConnectorOnATestCaseOffTheBase))]
+        [TestCase(nameof(PlantedFixtures.CategoryOnATestCase))]
+        [TestCase(nameof(PlantedFixtures.CategoryOnTheClass))]
+        [TestCase(nameof(PlantedFixtures.CategoryOnAMethod))]
+        [TestCase(nameof(PlantedFixtures.LiveOnTheBase))]
+        public void ACategoryWithNoSpaceAtAnEdgeIsNotFound(string plantedType)
+        {
+            Assert.That(CategoryPiecesWithASpaceAtAnEdge([Planted(plantedType)]), Is.Empty);
+        }
+
         [Test]
         public void TheGuardReadsACategoryTheWayNUnitDoes()
         {
@@ -317,6 +356,20 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Does.Contain("Some.Namespace.SomeFixture").And.Contain("selects by exclusion").And.Contain("a canary with no connector would run in CI"));
         }
 
+        [Test]
+        public void TheMessageForASpaceAtAnEdgeNamesThePlaceAndThePieceAndSaysWhatTheSpaceDoes()
+        {
+            var message = CategoryMustHaveNoSpaceAtAnEdge(["Some.Namespace.SomeFixture::SomeTest \" JiraIntegration\""]);
+
+            Assert.That(
+                message,
+                Does.Contain("Some.Namespace.SomeFixture::SomeTest \" JiraIntegration\"")
+                    .And.Contain("NUnit keeps the space")
+                    .And.Contain("matches no tier or connector")
+                    .And.Contain("may run where it should not")
+                    .And.Contain("no space after the comma"));
+        }
+
         private static bool RunsWhenAFixtureRuns(MethodDefinition method)
             => method.IsConstructor || HasAnAttribute(method, TestAttributes) || HasAnAttribute(method, SetUpAndTearDownAttributes);
 
@@ -348,6 +401,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static string CanaryMustCarryAConnector(IEnumerable<string> typeNames)
             => "These fixtures carry " + CanaryCategory + " and no connector category. CI's clause selects by exclusion, so " +
                 "a canary with no connector would run in CI. Give each its connector category: " + string.Join(", ", typeNames) + ".";
+
+        private static string CategoryMustHaveNoSpaceAtAnEdge(IEnumerable<string> pieces)
+            => "These category names have a space at an edge. In a Category list NUnit keeps the space, so the name matches " +
+                "no tier or connector and the test may run where it should not. Write each with no space after the comma: " +
+                string.Join(", ", pieces) + ".";
 
         private bool IsAConcreteClassWithTests(TypeDefinition type)
             => type is { IsClass: true, IsAbstract: false }
@@ -392,6 +450,23 @@ namespace Lighthouse.Backend.Tests.Architecture
         private List<string> HostedWithAConnectorCategory(IEnumerable<TypeDefinition> fixtures)
             => SortedNames(fixtures.Where(fixture => scan.FixtureReachesAHost(fixture) && CarriesAConnectorCategory(fixture)));
 
+        private List<string> CategoryPiecesWithASpaceAtAnEdge(IEnumerable<TypeDefinition> fixtures)
+            => [.. fixtures
+                .SelectMany(scan.TypeAndItsBases)
+                .SelectMany(PiecesWithASpaceOnTheType)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)];
+
+        private static IEnumerable<string> PiecesWithASpaceOnTheType(TypeDefinition type)
+            => PiecesWithASpaceOn(type, type.FullName)
+                .Concat(type.Methods.SelectMany(method => PiecesWithASpaceOn(method, type.FullName + "::" + method.Name)));
+
+        private static IEnumerable<string> PiecesWithASpaceOn(ICustomAttributeProvider place, string placeName)
+            => place.CustomAttributes
+                .SelectMany(CategoriesAsWrittenIn)
+                .Where(piece => piece != piece.Trim())
+                .Select(piece => placeName + " \"" + piece + "\"");
+
         private bool CarriesAConnectorCategory(TypeDefinition fixture) => CarriesACategory(fixture, ConnectorCategories.Contains);
 
         private bool CarriesACategory(TypeDefinition fixture, Func<string, bool> isWanted)
@@ -425,17 +500,23 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static IEnumerable<string> CategoriesWrittenOn(ICustomAttributeProvider place)
             => place.CustomAttributes.SelectMany(CategoriesIn);
 
-        // [TestCase] and [TestFixture] take categories too, as one comma-separated Category argument.
         private static IEnumerable<string> CategoriesIn(CustomAttribute attribute)
-        {
-            var listed = attribute.Properties
+            => CategoriesListedIn(attribute).Concat(NamesWrittenAloneIn(attribute).Select(CategoryNamedAlone));
+
+        // NUnit trims a name written alone, so a space there is harmless, but one rule for both forms is easier to keep.
+        private static IEnumerable<string> CategoriesAsWrittenIn(CustomAttribute attribute)
+            => CategoriesListedIn(attribute).Concat(NamesWrittenAloneIn(attribute));
+
+        // [TestCase] and [TestFixture] take categories too, as one comma-separated Category argument.
+        private static IEnumerable<string> CategoriesListedIn(CustomAttribute attribute)
+            => attribute.Properties
                 .Where(property => property.Name == nameof(TestCaseAttribute.Category))
                 .SelectMany(property => CategoriesInAList((string)property.Argument.Value));
 
-            return attribute.AttributeType.FullName == typeof(CategoryAttribute).FullName
-                ? listed.Concat(attribute.ConstructorArguments.Select(argument => CategoryNamedAlone((string)argument.Value)))
-                : listed;
-        }
+        private static IEnumerable<string> NamesWrittenAloneIn(CustomAttribute attribute)
+            => attribute.AttributeType.FullName == typeof(CategoryAttribute).FullName
+                ? attribute.ConstructorArguments.Select(argument => (string)argument.Value)
+                : [];
 
         private static string CategoryNamedAlone(string name) => name.Trim();
 
@@ -743,6 +824,62 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 [Test]
                 public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ConnectorAfterACommaAndASpaceOnTheBase : IntegrationFixture
+            {
+                [TestCase(1, Category = "some-slice, JiraIntegration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            internal abstract class CanaryAfterACommaAndASpace
+            {
+                [TestCase(1, Category = "some-slice, UsageDataCanary")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            internal abstract class ConnectorBeforeASpaceAndAComma
+            {
+                [TestCase(1, Category = "JiraIntegration ,some-slice")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            internal abstract class ConnectorAfterATab
+            {
+                [TestCase(1, Category = "some-slice,\tJiraIntegration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            internal abstract class SpaceInAListOnATestCaseSource
+            {
+                private static readonly int[] Values = [1];
+
+                [TestCaseSource(nameof(Values), Category = "some-slice, LinearIntegration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            [TestFixture(Category = "some-slice, GithubIntegration")]
+            internal abstract class SpaceInAListOnATestFixture
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ChildOfASpaceInAList : SpaceInAListOnATestFixture;
+
+            [TestFixtureSource(nameof(Values), Category = "some-slice, ServiceNowIntegration")]
+            internal abstract class SpaceInAListOnATestFixtureSource
+            {
+                private static readonly int[] Values = [1];
+
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ConnectorListedWithNoSpaceOnTheBase : IntegrationFixture
+            {
+                [TestCase(1, Category = "some-slice,JiraIntegration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
             }
         }
     }
