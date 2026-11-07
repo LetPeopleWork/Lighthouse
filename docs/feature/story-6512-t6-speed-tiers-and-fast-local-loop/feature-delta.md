@@ -2048,3 +2048,36 @@ The range holds 137 paths: those 136 and this delta. This section's commit adds 
 | `L6-G8-H.csv`, `.trx.gz` | 8 rows | `cbea5882b8823cacbd5a09c5e9569e8f6c7c7b0f310af28ad2b14f61d5287c9c`, `325eb071162b2e7fabc6ebc11fc07bb416c799645c6399b8fe1b7e9fa9016889` |
 | `list-tests-unfiltered-L6.sorted.txt` | 13,198 lines | `1be193412f5d284616b0fcad4d790aadf639259caa409f7f5acf042faa861972` |
 | `connector-attributes-L6.sorted.txt`, in git | 24 lines | `2fdae433029905c256948f3ef625b026022d3d1a822337c68a7622cdef7a31ed` |
+
+## Wave: DELIVER / [REF] Slice F, step 06-01: `Test-Fast.ps1`, what ran (2026-11-07)
+
+Run on `50a1d8586` plus the new script, under `pwsh` on Linux, one run at a time. Before each run the `ps` check printed 0 and the seven variables were removed with `env -u`. `LIGHTHOUSE_TEST_WORKERS` was unset, so 6 workers on 12 cores. One Debug build first, `dotnet build` in `Lighthouse.Backend`: 0 warnings, 0 errors, 48 s.
+
+**What the script does.** It runs `dotnet test` on the test project with `F` held as text, and adds `--no-build` under `-NoBuild`. It has no `-Filter` parameter, so it cannot be pointed at the live tests, it clears no variable, and it checks `$LASTEXITCODE` as `Test-Coverage.ps1` does. It names no configuration, as `Test-Coverage.ps1` does not, so `-NoBuild` uses the Debug build a plain `dotnet build` leaves. A Release pin would have run a stale build after that plain build, with no warning. The script's help says Windows is unverified.
+
+| Case | What ran | Result |
+|---|---|---|
+| No file | `pwsh Lighthouse.Backend/Test-Fast.ps1 -NoBuild` before the script | Exit 64, the path is not a script |
+| Green | `-NoBuild` | Exit 0, `Failed: 0, Passed: 9527, Skipped: 0, Total: 9527`, 1 m 11 s by the console, 75.9 s of wall time |
+| List | That TRX through `trx_to_csv.py`, sorted id and outcome, against `L6-F.csv` | 9,535 rows on both sides, 9,527 `Passed` and 8 `NotExecuted`, equal line for line. 0 lines only on one side, so no exemption was needed |
+| Planted failure | `PlantedFailureTest` in `Lighthouse.Backend.Tests/Models`, with one `Assert.Fail`, no category. Script without `-NoBuild` | Exit 1, `Failed: 1, Passed: 9527, Total: 9528`, and the one failure is `PlantedFailure`. File removed, `git status` shows only the script |
+| Clean again | Script without `-NoBuild`, after the removal | Exit 0, `Passed: 9527, Total: 9527`, list again equal to `L6-F.csv`, 102.7 s of wall time with the recompile |
+| The term guarantee 12 forbids | `grep -nE 'TestCategory!=Integration([^&]\|$)'` on the script | No line |
+
+The list is Debug and `L6-F` is Release. They hold the same ids and outcomes, so the configuration changes nothing in this selection.
+
+The script takes no logger argument, so the TRX came from the environment: `VSTestLogger=trx` and `VSTestResultsDirectory`, which `dotnet test` reads as MSBuild properties. A `;` in `VSTestLogger` splits it, so the file name cannot be chosen that way. The TRX files stayed in the scratchpad and are not kept.
+
+**Where the time goes with `-NoBuild`,** from the sampler's wall time and the TRX's timestamps, on the green run.
+
+| Part | Time |
+|---|---|
+| `pwsh`, MSBuild and the test platform starting, until the run starts | 2.2 s |
+| Test host start and discovery, until the first test starts | 1.9 s |
+| The tests, first start to last end | 71.1 s |
+| Writing the results | 0.7 s |
+| Whole script | 75.9 s |
+
+So the script itself costs about 5 s, and the tests are 94 % of it. The test durations add up to 320 s, which on 6 workers would be about 53 s if spread evenly. The slowest classes: `SecretCustodyServiceTests` 42.8 s, `PublishedKeySecretCountTests` 31.7 s, `ReferencedKeyIdsTests` 29.7 s, `ReadableSecretsNotOnTheActiveKeyTests` 26.7 s, `TestTierGuardTest` 16.6 s. Those first four are 41 % of the sum. This is one run, not the 5 warm runs of 06-04, and nothing was tuned here.
+
+**Peak memory, recorded once.** On the green `-NoBuild` run, sampled from `/proc` every 0.2 s: 3,196 MB for the test host, 3,600 MB for the script's whole process tree.
