@@ -1,0 +1,9 @@
+01-category-eq	TestCategory=Integration
+02-category-ne	TestCategory!=Integration
+03-A	Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)
+04-force-full	Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)|(Category=Integration&Category!=UsageDataCanary)
+05-A-or-jira	Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)|Category=JiraIntegration
+06-standard	TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration
+07-F	TestCategory!=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration
+08-H	TestCategory=Integration&TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration
+09-O	(TestCategory=JiraIntegration|TestCategory=AdoIntegration|TestCategory=LinearIntegration|TestCategory=ServiceNowIntegration|TestCategory=GithubIntegration)&TestCategory!=Integration

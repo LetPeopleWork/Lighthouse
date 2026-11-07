@@ -1,0 +1,88 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="86bfaa43-54f1-48d5-9550-b3b79a129b9b" name="@cachy-desktop 2026-11-07 13:45:58" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-07T13:45:58.8454644+01:00" queuing="2026-11-07T13:45:58.8454645+01:00" start="2026-11-07T13:45:57.4301002+01:00" finish="2026-11-07T13:45:58.8512751+01:00" />
+  <TestSettings name="default" id="00846674-eaa2-41ed-9e1e-123d1f83d657">
+    <Deployment runDeploymentRoot="_cachy-desktop_2026-11-07_13_45_58" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="1e8a96f3-1813-422d-9b45-42055f094840" testId="fd7ac16c-d32c-01c7-6d35-8f8c7b80dbc3" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0228190" startTime="2026-11-07T13:45:58.7037191+01:00" endTime="2026-11-07T13:45:58.7265379+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1e8a96f3-1813-422d-9b45-42055f094840" />
+    <UnitTestResult executionId="b8cd09bb-96c4-4ed3-b3a5-c675b4968064" testId="bc5bd810-b788-07d4-8920-bf112a56c4b7" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0020460" startTime="2026-11-07T13:45:58.7037222+01:00" endTime="2026-11-07T13:45:58.7056819+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="NotExecuted" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b8cd09bb-96c4-4ed3-b3a5-c675b4968064">
+      <Output>
+        <StdOut>Probe of how a filter treats an explicit test.</StdOut>
+        <ErrorInfo>
+          <Message>Probe of how a filter treats an explicit test.</Message>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="90b33c23-b882-4a62-9341-73a132200dba" testId="5ba66e0a-25b5-39cc-05ce-160c6c18342c" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0022039" startTime="2026-11-07T13:45:58.7087074+01:00" endTime="2026-11-07T13:45:58.7109118+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="90b33c23-b882-4a62-9341-73a132200dba" />
+    <UnitTestResult executionId="7e48cdd9-cc7f-4558-af67-b1731a05054b" testId="a8623480-3080-25d6-ca0c-9e0334efc82e" testName="MixedLive" computerName="cachy-desktop" duration="00:00:00.0228330" startTime="2026-11-07T13:45:58.7037222+01:00" endTime="2026-11-07T13:45:58.7265557+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7e48cdd9-cc7f-4558-af67-b1731a05054b" />
+    <UnitTestResult executionId="12918e3a-a5e8-457f-85fa-fbe047adcbb4" testId="ab3ab75d-4bb3-a3e4-81ae-c75ff748cc14" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0228250" startTime="2026-11-07T13:45:58.7037191+01:00" endTime="2026-11-07T13:45:58.7265438+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="12918e3a-a5e8-457f-85fa-fbe047adcbb4" />
+    <UnitTestResult executionId="47d31240-16a0-4fd3-ac9d-481a03f4000a" testId="557fddf7-8358-98fa-49aa-4b0bbcc9bd03" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0002240" startTime="2026-11-07T13:45:58.7110922+01:00" endTime="2026-11-07T13:45:58.7113158+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="47d31240-16a0-4fd3-ac9d-481a03f4000a" />
+    <UnitTestResult executionId="ff3d0f3e-cd5b-47b8-b3c8-1b4e7e6318d9" testId="3b1980b5-390d-1573-c933-b5d637416e1b" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0228219" startTime="2026-11-07T13:45:58.7037163+01:00" endTime="2026-11-07T13:45:58.7265379+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ff3d0f3e-cd5b-47b8-b3c8-1b4e7e6318d9" />
+    <UnitTestResult executionId="293f73ff-ba77-4c0b-88ca-1482257fdf74" testId="23e9652a-fe77-42c0-2f2f-dad0f3f87fc3" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0151040" startTime="2026-11-07T13:45:58.7114478+01:00" endTime="2026-11-07T13:45:58.7265513+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="293f73ff-ba77-4c0b-88ca-1482257fdf74" />
+    <UnitTestResult executionId="ab580fa0-81d2-4a19-805b-9dcffea288fc" testId="a0687253-2f78-33cf-cb18-f0c98cfe6744" testName="Runs" computerName="cachy-desktop" duration="00:00:00.0228149" startTime="2026-11-07T13:45:58.7037256+01:00" endTime="2026-11-07T13:45:58.7265407+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ab580fa0-81d2-4a19-805b-9dcffea288fc" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="23e9652a-fe77-42c0-2f2f-dad0f3f87fc3">
+      <Execution id="293f73ff-ba77-4c0b-88ca-1482257fdf74" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Through" name="Runs" />
+    </UnitTest>
+    <UnitTest name="MixedLive" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="a8623480-3080-25d6-ca0c-9e0334efc82e">
+      <Execution id="7e48cdd9-cc7f-4558-af67-b1731a05054b" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Mixed" name="MixedLive" />
+    </UnitTest>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="5ba66e0a-25b5-39cc-05ce-160c6c18342c">
+      <Execution id="90b33c23-b882-4a62-9341-73a132200dba" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Parametrised(2)" name="Runs" />
+    </UnitTest>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="a0687253-2f78-33cf-cb18-f0c98cfe6744">
+      <Execution id="ab580fa0-81d2-4a19-805b-9dcffea288fc" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Inherited" name="Runs" />
+    </UnitTest>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="557fddf7-8358-98fa-49aa-4b0bbcc9bd03">
+      <Execution id="47d31240-16a0-4fd3-ac9d-481a03f4000a" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Sourced(3)" name="Runs" />
+    </UnitTest>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="bc5bd810-b788-07d4-8920-bf112a56c4b7">
+      <Execution id="b8cd09bb-96c4-4ed3-b3a5-c675b4968064" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.ExplicitOnBase" name="Runs" />
+    </UnitTest>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="fd7ac16c-d32c-01c7-6d35-8f8c7b80dbc3">
+      <Execution id="1e8a96f3-1813-422d-9b45-42055f094840" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Live" name="Runs" />
+    </UnitTest>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="3b1980b5-390d-1573-c933-b5d637416e1b">
+      <Execution id="ff3d0f3e-cd5b-47b8-b3c8-1b4e7e6318d9" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Direct" name="Runs" />
+    </UnitTest>
+    <UnitTest name="Runs" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="ab3ab75d-4bb3-a3e4-81ae-c75ff748cc14">
+      <Execution id="12918e3a-a5e8-457f-85fa-fbe047adcbb4" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Outer+Nested" name="Runs" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="fd7ac16c-d32c-01c7-6d35-8f8c7b80dbc3" executionId="1e8a96f3-1813-422d-9b45-42055f094840" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bc5bd810-b788-07d4-8920-bf112a56c4b7" executionId="b8cd09bb-96c4-4ed3-b3a5-c675b4968064" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5ba66e0a-25b5-39cc-05ce-160c6c18342c" executionId="90b33c23-b882-4a62-9341-73a132200dba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a8623480-3080-25d6-ca0c-9e0334efc82e" executionId="7e48cdd9-cc7f-4558-af67-b1731a05054b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ab3ab75d-4bb3-a3e4-81ae-c75ff748cc14" executionId="12918e3a-a5e8-457f-85fa-fbe047adcbb4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="557fddf7-8358-98fa-49aa-4b0bbcc9bd03" executionId="47d31240-16a0-4fd3-ac9d-481a03f4000a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3b1980b5-390d-1573-c933-b5d637416e1b" executionId="ff3d0f3e-cd5b-47b8-b3c8-1b4e7e6318d9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="23e9652a-fe77-42c0-2f2f-dad0f3f87fc3" executionId="293f73ff-ba77-4c0b-88ca-1482257fdf74" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a0687253-2f78-33cf-cb18-f0c98cfe6744" executionId="ab580fa0-81d2-4a19-805b-9dcffea288fc" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="9" executed="8" passed="8" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>NUnit Adapter 6.3.1.0: Test execution started
+Running selected tests in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll
+   NUnit3TestExecutor discovered 8 of 9 NUnit test cases using Current Discovery mode, Non-Explicit run
+Runs: Probe of how a filter treats an explicit test.
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

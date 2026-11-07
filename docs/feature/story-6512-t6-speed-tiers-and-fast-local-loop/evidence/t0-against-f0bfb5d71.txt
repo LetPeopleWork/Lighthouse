@@ -1,0 +1,79 @@
+only in first 438 only in second 25
+  Lighthouse.Backend.Tests.API.ApiKeyControllerTest: first-only 22, second-only 0
+  Lighthouse.Backend.Tests.API.CreateRightsControllerGuardTest: first-only 2, second-only 2
+  Lighthouse.Backend.Tests.API.DTO.ConnectionDefaultsDtoTest: first-only 6, second-only 0
+  Lighthouse.Backend.Tests.API.DTO.ParentSourceEntryDtoTest: first-only 4, second-only 0
+  Lighthouse.Backend.Tests.API.DeliveriesControllerTest: first-only 2, second-only 2
+  Lighthouse.Backend.Tests.API.FeaturesControllerTest: first-only 5, second-only 0
+  Lighthouse.Backend.Tests.API.Helpers.OwnerSettingRefusalsTest: first-only 10, second-only 0
+  Lighthouse.Backend.Tests.API.Helpers.WorkTrackingSystemOptionsOwnerExtensionsParentSourcesTest: first-only 6, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice03AzureDevOpsRelationTypeAcceptedScenarios: first-only 1, second-only 1
+  Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice05bReferencedFieldsAndOlderPayloadsScenarios: first-only 1, second-only 1
+  Lighthouse.Backend.Tests.API.Integration.DeliveriesControllerIntegrationTest: first-only 1, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.DeliveryFeatureSelectionScopeIntegrationTest: first-only 9, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.FeatureMoveAuthOffIntegrationTest: first-only 2, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.ManualSorting.Slice03RelativeMovesTest: first-only 7, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.OnlyFeaturesAsParentCandidates.Slice01NarrowToFeaturesTest: first-only 2, second-only 2
+  Lighthouse.Backend.Tests.API.Integration.OrderedParentSources.AzureDevOpsParentSourcesScenarios: first-only 5, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.OrderedParentSources.ConnectionParentSourcesScenarios: first-only 7, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.OrderedParentSources.ParentSourcesRefreshScenarios: first-only 13, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.OrderedParentSources.ParentSourcesSettingsApiIntegrationTest: first-only 20, second-only 0
+  Lighthouse.Backend.Tests.API.Integration.ParentFromIssueLinks.Slice02ParentFromLinkTest: first-only 2, second-only 2
+  Lighthouse.Backend.Tests.API.LicenseControllerTest: first-only 10, second-only 0
+  Lighthouse.Backend.Tests.API.Security.S16_ValidateEndpointAccessTests: first-only 14, second-only 0
+  Lighthouse.Backend.Tests.API.Security.S17_LicenseDetailsTests: first-only 16, second-only 0
+  Lighthouse.Backend.Tests.API.Security.S18_ApiKeyCreationScopeTests: first-only 11, second-only 0
+  Lighthouse.Backend.Tests.API.Security.S2_ConnectionListPayloadShapeTests: first-only 10, second-only 0
+  Lighthouse.Backend.Tests.API.SystemInfoControllerTest: first-only 3, second-only 1
+  Lighthouse.Backend.Tests.API.WorkTrackingSystemConnectionControllerTest: first-only 7, second-only 0
+  Lighthouse.Backend.Tests.Architecture.DependencySingleDecisionArchUnitTest: first-only 5, second-only 0
+  Lighthouse.Backend.Tests.Architecture.EveryActionDeclaresItsAccessArchitectureTest: first-only 21, second-only 0
+  Lighthouse.Backend.Tests.Integration.Containers.ParentSourcesColumnConversionTests: first-only 9, second-only 0
+  Lighthouse.Backend.Tests.Integration.Containers.ParentSourcesUpgradeMigrationTests: first-only 2, second-only 0
+  Lighthouse.Backend.Tests.Integration.UsageData.ParentSourcesUsageEventTests: first-only 9, second-only 0
+  Lighthouse.Backend.Tests.Models.OwnersWhoseFetchMovedTest: first-only 2, second-only 0
+  Lighthouse.Backend.Tests.Models.ParentResolutionLoneCandidateTest: first-only 4, second-only 0
+  Lighthouse.Backend.Tests.Models.ParentResolutionPlacementTest: first-only 1, second-only 1
+  Lighthouse.Backend.Tests.Models.ParentSourceEntrySerialiserTest: first-only 4, second-only 0
+  Lighthouse.Backend.Tests.Models.ParentSourcesBridgeTest: first-only 23, second-only 0
+  Lighthouse.Backend.Tests.Models.ParentSourcesOnTheRecordAndOwnerTest: first-only 2, second-only 0
+  Lighthouse.Backend.Tests.Models.ParentSourcesOwnerWriteThroughTest: first-only 13, second-only 0
+  Lighthouse.Backend.Tests.Models.ParentSourcesTest: first-only 29, second-only 0
+  Lighthouse.Backend.Tests.Models.UsageData.UsageDataEventShapesTests: first-only 2, second-only 0
+  Lighthouse.Backend.Tests.RefreshLogFindingsPersistenceTest: first-only 2, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.Authorization.RbacAdministrationServiceTest: first-only 16, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.Connections.ConnectionSaveServiceTest: first-only 13, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.Parents.ParentPlacementReportTest: first-only 2, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.Parents.ParentSourceSelectorOrderTest: first-only 22, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.Parents.ParentSourceSelectorOwnParentTest: first-only 5, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.Parents.ParentSourceSelectorTest: first-only 2, second-only 10
+  Lighthouse.Backend.Tests.Services.Implementation.WorkItems.FetchFingerprintParentSourcesTest: first-only 6, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.WorkItems.FetchFingerprintTest: first-only 1, second-only 1
+  Lighthouse.Backend.Tests.Services.Implementation.WorkItems.JiraReadingVersionFingerprintTest: first-only 1, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.WorkItems.WorkItemServiceTest: first-only 17, second-only 2
+  Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsNamedRelationEndTest: first-only 4, second-only 0
+  Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraParentReadingsTest: first-only 23, second-only 0
+   e.g. Lighthouse.Backend.Tests.API.ApiKeyControllerTest.CreateApiKey_CallerCannotGrantOneOfTheScopes_RefusesAndCreatesNothing Passed
+   e.g. Lighthouse.Backend.Tests.API.ApiKeyControllerTest.CreateApiKey_RestrictedKeyNamesAScopeItHolds_CreatesTheKey Passed
+   e.g. Lighthouse.Backend.Tests.API.ApiKeyControllerTest.CreateApiKey_RestrictedKeyNamesNoScope_RefusesAndCreatesNothing(empty scope) Passed
+   e.g. Lighthouse.Backend.Tests.API.ApiKeyControllerTest.CreateApiKey_RestrictedKeyNamesNoScope_RefusesAndCreatesNothing(scope left out) Passed
+   e.g. Lighthouse.Backend.Tests.API.ApiKeyControllerTest.CreateApiKey_ScopeEntryMapsToNoRequirement_AnswersBadRequestAndCreatesNothing(PortfolioAdmin,Portfol Passed
+   e.g. Lighthouse.Backend.Tests.API.ApiKeyControllerTest.CreateApiKey_ScopeEntryMapsToNoRequirement_AnswersBadRequestAndCreatesNothing(PortfolioAdmin,System, Passed
+   e.g. Lighthouse.Backend.Tests.API.CreateRightsControllerGuardTest.ValidatePortfolioSettings_HasNoRbacGuardAttribute Passed
+   e.g. Lighthouse.Backend.Tests.API.CreateRightsControllerGuardTest.ValidateTeamSettings_HasNoRbacGuardAttribute Passed
+   e.g. Lighthouse.Backend.Tests.API.DeliveriesControllerTest.What_a_created_Delivery_holds_is_settled_by_how_its_Features_were_chosen(Lighthouse.Backend.API. Passed
+   e.g. Lighthouse.Backend.Tests.API.DeliveriesControllerTest.What_a_created_Delivery_holds_is_settled_by_how_its_Features_were_chosen(Lighthouse.Backend.API. Passed
+   e.g. Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice03AzureDevOpsRelationTypeAcceptedScenarios.A_Teams_Parent_Override_Field_nami Passed
+   e.g. Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection.Slice05bReferencedFieldsAndOlderPayloadsScenarios.A field only a Portfolio's Paren Passed
+not-passed rows of the first:
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.CategoryListsHoldRawStatesSettingsIntegrationTest(Portfolio).SavingAnOwnersUnchangedSettings_WhoseStoredCycle
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting.ForecastWallClockProbe.MeasureForecastWallClock
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.DependencyAwareForecasting.SharedClockBaselineCapture.RecordTheBaselineTheRestOfTheSliceIsHeldTo
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.RealityCheckWallClockProbe.MeasureRealityCheckWallClock(20000,30)
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.RealityCheckWallClockProbe.MeasureRealityCheckWallClock(5000,30)
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.RealityCheckWallClockProbe.MeasureRealityCheckWallClock(615,30)
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.RealityCheckWallClockProbe.MeasureRealityCheckWallClock(615,45)
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.RealityCheckWallClockProbe.MeasureSingleBacktestWallClock
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.ForecastedStartDates.StartForecastWallClockProbe.MeasureFiftyFeatureForecastWallClock
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.Reports.ReportCreationTimingProbe.Creating_a_365_day_report_on_a_large_Team_stays_within_ten_seconds
+   NotExecuted Lighthouse.Backend.Tests.API.Integration.TaskManager.Story6055ActivityNamesTheWorkTest.On_a_real_instance_a_triggered_forecast_does_not_name_its_own_p

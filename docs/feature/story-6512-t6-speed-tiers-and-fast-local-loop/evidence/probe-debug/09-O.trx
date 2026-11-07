@@ -1,0 +1,32 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="0b35be7f-b98e-460a-afab-519bb6096ca5" name="@cachy-desktop 2026-11-07 13:44:20" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-07T13:44:20.6563711+01:00" queuing="2026-11-07T13:44:20.6563711+01:00" start="2026-11-07T13:44:18.8562347+01:00" finish="2026-11-07T13:44:20.6931153+01:00" />
+  <TestSettings name="default" id="69af091e-e46a-49ef-b3c9-c808014e738e">
+    <Deployment runDeploymentRoot="_cachy-desktop_2026-11-07_13_44_20" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="bd159796-d0ef-4a56-a1ca-e52c3d1a3211" testId="40100b59-6873-0c54-dd76-ceaeec38b807" testName="MixedOffline" computerName="cachy-desktop" duration="00:00:00.0169340" startTime="2026-11-07T13:44:20.5639793+01:00" endTime="2026-11-07T13:44:20.5808482+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bd159796-d0ef-4a56-a1ca-e52c3d1a3211" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="MixedOffline" storage="/storage/repos/lighthouse/lighthouse.backend/lighthouse.backend.tests/bin/debug/net10.0/lighthouse.backend.tests.dll" id="40100b59-6873-0c54-dd76-ceaeec38b807">
+      <Execution id="bd159796-d0ef-4a56-a1ca-e52c3d1a3211" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Debug/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.Architecture.CategoryProbe.Mixed" name="MixedOffline" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="40100b59-6873-0c54-dd76-ceaeec38b807" executionId="bd159796-d0ef-4a56-a1ca-e52c3d1a3211" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="1" executed="1" passed="1" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>NUnit Adapter 6.3.1.0: Test execution started
+Running selected tests in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Debug/net10.0/Lighthouse.Backend.Tests.dll
+   NUnit3TestExecutor discovered 1 of 1 NUnit test cases using Current Discovery mode, Non-Explicit run
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

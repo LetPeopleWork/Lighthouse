@@ -1037,3 +1037,105 @@ slow case; most edits stay well inside.
 **For the maintainer to confirm:** whether 10 s stands for a file that 70 test files depend on, with 15 s accepted for that case, or a node project
 is wanted, at the price of 10 files that need sorting out. Nothing was changed for this: no script, no config. The wrapper stays outside the repo, and
 `git status` was clean after every series, so the comment edits left no diff.
+
+## Wave: DELIVER / [REF] Slice B, step 02-01: T0, L0 and the probe (2026-11-07)
+
+**The probe stopped the Story: a hold for the maintainer.** Two cells are off, the same two under Debug and under `-c Release`. No base was added,
+`IntegrationFixtureCategoryTest` was not written, and no filter changed. The question is below.
+
+**`T0`.**
+
+| Item | Value |
+|---|---|
+| Run, read with `gh run view` | 42372930241, commit `d852cf98e5d0e5f341c2a4eff1614122fa831709`, job 128404640395 |
+| Its log | `force_full=false`, `filter=Category!=Integration` |
+| `Total:` line of "Test Backend" | `Failed: 0, Passed: 12799, Skipped: 2, Total: 12801` |
+| CSV rows | 12,810: 12,799 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `f593897e6d867809bc656ec28b6c9163cb72c68c1d9c69526ea0a10a47d46fa1` |
+| The run itself | `waiting`, the deploy approval, with 12 jobs green, 1 skipped, none failed |
+
+Every list's `sha256` here is over its `fully_qualified_name,outcome` lines, sorted, joined by a newline, with no newline at the end.
+
+**The CSV has 9 more rows than `Total:`.** Those 9 are the `[Explicit]` ids, and they are all in `T0`'s CSV as `NotExecuted`, not absent:
+`ForecastWallClockProbe.MeasureForecastWallClock`, `SharedClockBaselineCapture.RecordTheBaselineTheRestOfTheSliceIsHeldTo`,
+`RealityCheckWallClockProbe.MeasureRealityCheckWallClock` with `(615,30)`, `(615,45)`, `(5000,30)`, `(20000,30)`,
+`RealityCheckWallClockProbe.MeasureSingleBacktestWallClock`, `StartForecastWallClockProbe.MeasureFiftyFeatureForecastWallClock` and
+`ReportCreationTimingProbe.Creating_a_365_day_report_on_a_large_Team_stays_within_ten_seconds`. The other 2 `NotExecuted` rows are the 2 skips of `Total:`:
+`Story6055ActivityNamesTheWorkTest.On_a_real_instance_a_triggered_forecast_does_not_name_its_own_portfolio`, which carries `[Ignore]`, and one case of
+`CategoryListsHoldRawStatesSettingsIntegrationTest(Portfolio)`, which calls `Assert.Ignore`.
+
+**Unstable names: none between two CI runs of the same code.**
+
+| Pair | Result |
+|---|---|
+| `T0` against 42372874167 (`37cc1a614`), the plain run just before it. `force_full=false`, Test Backend green, the same `Total:`; the run as a whole is red on a test-timings pin | Same `sha256`, 0 one-sided ids |
+| `T0` against 41852137825 (`f0bfb5d71`), the last plain run that was green as a whole. `force_full=false`, `Total: 12388`, 12,397 rows, `sha256` `573123ce0e9640315a7feed5e7756b1b12c32698b798b564c88d59afc8f9541b` | 438 ids only in `T0`, 25 only in the older run, over 54 classes. Three days of real commits separate them, so it cannot name unstable tests alone. The per-class counts are in `evidence/t0-against-f0bfb5d71.txt` |
+| `L0` against `T0`, for information only, as local and CI lists are not compared | 7 ids on each side, in two classes whose row counts match: `DeliveriesControllerTest` 4 of 79 rows, `ParentResolutionPlacementTest` 3 of 25. Both have ids that print an object or a generated value |
+
+So those two classes are the ones to compare by count, at 79 and 25, if two local lists differ there. Only one local list exists so far, so whether they
+change between local runs is not yet known.
+
+**`L0`.**
+
+| Item | Value |
+|---|---|
+| Commit | `d852cf98e`, tree clean. This was HEAD when it ran; `37cc1a614` and `d852cf98e` are inside it, and they change only `Scripts/test-timings`, its test and a delta, so no test list |
+| Commit since | `d85e3d4a5` landed after it and is the parent of this step's commit. It changes a slice brief and `roadmap.json`; `git diff --stat d852cf98e d85e3d4a5 -- Lighthouse.Backend Scripts .github` prints nothing |
+| Command | `dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Release --no-build --filter "Category!=Integration"`, after a Release build and `dotnet build-server shutdown` |
+| Rules of a list run | No test process active; Docker up; the 5 token variables were set in this shell, so each `dotnet test` ran with them removed |
+| Console | `Failed: 0, Passed: 12799, Skipped: 2, Total: 12801`, 7 m 21 s, exit 0 |
+| TRX `Counters total` and CSV rows | 12,810: 12,799 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `1b08a59fca31d6f86cefca787e624e8d989d45a56692870a9c86fc3d4bdd3352` |
+| Kept in `evidence/` | `L0.csv`, and the TRX as `L0.trx.gz`, 4.3 MB. It was searched for token shapes and real hosts before going in; only test hosts turned up |
+
+**The two lists for guarantees 6 and 7**, in `evidence/`.
+
+| List | Lines | `sha256` of the file |
+|---|---|---|
+| `list-tests-unfiltered.sorted.txt`, `--list-tests` with no filter, Release | 13,075 | `be2b83d37790e2ed0c3c3f5f133f860bce46d205624e939e3b5636c3f8611f19` |
+| `connector-attributes.sorted.txt`, the sorted `git grep` | 17 | `f0e71fb1d464e9a62717e81a8b66c1a750028149b59bd43fe347348cd74bffde` |
+
+`--list-tests` prints the test's name without its class, so it shows a count and names, not full ids. Guarantee 6 is weaker than "ids" suggests: a test
+moving between classes under the same name would not show.
+
+**The probe.** `Architecture/CategoryProbe.cs` held the fixtures of "The probe that opens slice B" and its own root. Its root is an empty abstract class with
+`[Category("Integration")]`, and it built with 0 warnings under both configurations, so no Sonar rule fired on an empty class. The filters are in
+`evidence/probe-filters.tsv`, each run as `(<filter>)&FullyQualifiedName~CategoryProbe`. Every filter parsed, every run exited 0 and left a TRX, all 18 are in
+`evidence/probe-debug/` and `evidence/probe-release/`. Each cell below is the same under Debug and Release. The count is the TRX's `Counters total`.
+
+| Filter | Expected count | TRX count | Rows, against the table | Result |
+|---|---|---|---|---|
+| `TestCategory=Integration` | 9 | 9 | As named; `Explicit`'s row is `NotExecuted` | Holds by rows; the hazard itself did not show, see below |
+| `TestCategory!=Integration` | 2 | 2 | As named | Holds |
+| `A` | 8 | 8 | As named, no `Explicit` row | Holds |
+| Force-full clause | 10 | 10 | As named, no `Explicit` row | Holds |
+| `A\|Category=JiraIntegration` | 10 | 10 | As named, no `Explicit` row | Holds |
+| Standard filter | 7 | **8** | The seven named, **plus a `NotExecuted` row for `Explicit`** | **Off** |
+| `F` | 1 | 1 | As named | Holds |
+| `H` | 6 | **7** | The six named, **plus a `NotExecuted` row for `Explicit`** | **Off** |
+| `O` | 1 | 1 | As named | Holds |
+
+The `Explicit` test ran in none of the 18 runs. Where it has a row, its outcome is `NotExecuted` with the text of its `[Explicit]` reason, and the console leaves
+it out: `H` prints `Total: 6` where the TRX says 7. So both off cells are a row in the TRX, not a test that ran. They are still off: the table and the step's
+criterion ask for the TRX count, and this reading is not a licence to pass them.
+
+`--list-tests` with `TestCategory=Integration&FullyQualifiedName~CategoryProbe` listed 9 tests, so it honours the filter.
+
+`git status` showed no probe file after it was removed, and both configurations were rebuilt without it, 0 warnings, so no later `--no-build` run can pick it up.
+
+**What the two cells reach, by reasoning from the probe, not yet seen on the real tree.**
+
+- **Row 1 does not confirm the hazard of D-6512-10.** A positive category selects the row but the test did not run. That was with other tests selected beside
+  it; a filter selecting only the `[Explicit]` test was not tried.
+- **Guarantee 8 fails as written.** `T0` shows the 9 ids as `NotExecuted`, and once their classes sit on the base `A` gives them no row at all, so the outcome differs
+  from `T0`'s. `H` would also carry a row for each, so its count would not be the control's.
+- **Guarantee 9 fails as written.** `H` would hold 9 `NotExecuted` rows that `L6` does not have, so `F`, `H` and `O` sorted together differ from `L6`.
+- **"Reading a diff" does not trip.** It guards `Passed` ids, and these rows were never `Passed`.
+
+**For the maintainer to decide.** The base's shape, as the stop rule says, or the rule itself:
+
+1. Keep the shape and count only tests that ran, reading a `NotExecuted` row of an `[Explicit]` test as not selected. Then the two cells hold, row 1's hazard needs a
+   new wording, and guarantees 8 and 9 are rewritten around `NotExecuted`.
+2. Keep the rule and change the shape, so that an `[Explicit]` test on the base has no row under `H` or the standard filter. Nothing tried here does that.
+
+This step recommends 1, since no filter ran the test, but it is not this step's to decide. Nothing goes on from here until it is answered: 02-02 onwards waits.
