@@ -763,6 +763,10 @@ Created 2026-10-22 as children of Epic #6264, all in state New. The Story ID in 
 | #6460 | T2 Backend tests build one host per fixture, and a guard keeps it that way (created 2026-10-31) |
 | #6461 | T3 Test runs leave room for parallel sessions: local worker caps (created 2026-10-31) |
 | #6462 | T4 Test-time budgets fail the build instead of warning (created 2026-10-31) |
+| #6539 | T12 Frontend tests that do not depend on order or a quiet machine, brief `slices/slice-47-t12-frontend-tests-order-and-load.md` |
+| #6512 | T6 Speed tiers from the code's structure, and a fast-only local loop, brief `slices/slice-48-t6-speed-tiers-and-fast-local-loop.md` |
+| #6469 | T5 Acceptance scenarios at the application-service port, brief `slices/slice-49-t5-acceptance-at-the-service-port.md` |
+| #6561 | T13 The slowest frontend test files run faster, brief `slices/slice-46-t13-slowest-frontend-test-files.md` |
 | #6468 | S03i Package Organisation set-up (created 2026-11-01 from ADR-270; brief `slices/slice-45-s03i-package-organisation-set-up.md`) |
 
 ## Wave: DISCUSS / [REF] Improvement log

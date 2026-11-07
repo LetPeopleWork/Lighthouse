@@ -1145,3 +1145,19 @@ Full figures, tables and method in `measurement/slice-A-measurement.md`. Code be
 - **For the maintainer at the hold:** `readiness` alone would project to 25.7 % at r = 1.52, over its 24.0 % design target
   (a projection from a `refinementNeed` band test). Options: stop slice A here, run `readiness` alone through A-2 as its
   own measured stop check, or look for another lever for `refinementNeed`.
+
+## Wave: DELIVER / [REF] The gate read 1.52, and the target moved (maintainer, 2026-11-07)
+
+A-1 measured r = 1.52 against the 1.85 floor (5 of 5 valid pairs), so `refinementNeed` projects a 25.4 % cut against 34 %.
+That 34 % was the cut for all seven files, to reach the 17.5 s line. With slices B and C out of this Story,
+`OverviewDashboard` at 22.0 s sets L, so B = 47 whatever slice A does below that. The maintainer replaced the targets:
+
+| File | Required cut | Why |
+|---|---|---|
+| `refinementNeed` | 17 % (26.5 s to under 22.0 s), projected 25.4 %, about 19.8 s | under `OverviewDashboard` |
+| `readiness` | 19.4 %, as re-read at 01-01 | unchanged by this decision |
+| `ModifyTeamSettings.test` | none, step 01-04 dropped | at 17.6 s it cannot affect the budget |
+
+The stop rule is otherwise unchanged: each file keeps its measured stop check. The roadmap carries these figures and has
+four steps. It was amended by the orchestrator on the maintainer's word, not re-reviewed: the only changes are these
+targets, the before-commit, step 01-04's removal, and that the full `pnpm test` is now required at the close.
