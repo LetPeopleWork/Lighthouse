@@ -16,7 +16,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    public class S18_ApiKeyCreationScopeTests
+    public class S18_ApiKeyCreationScopeTests : IntegrationFixture
     {
         private const string ApiKeysRoute = "/api/latest/apikeys";
         private const string TheOwner = "the-owner";

@@ -22,7 +22,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
 {
     [TestFixture]
-    public class DeliveryMetricSnapshotRecordingHandlerTest
+    public class DeliveryMetricSnapshotRecordingHandlerTest : IntegrationFixture
     {
         private static readonly int[] ExpectedWhenPercentiles = [50, 70, 85, 95];
 

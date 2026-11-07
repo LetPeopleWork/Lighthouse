@@ -7,7 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 {
     [TestFixture]
-    public class OAuthStateSecretPersistenceTest
+    public class OAuthStateSecretPersistenceTest : IntegrationFixture
     {
         private string keyStoreDir = null!;
 

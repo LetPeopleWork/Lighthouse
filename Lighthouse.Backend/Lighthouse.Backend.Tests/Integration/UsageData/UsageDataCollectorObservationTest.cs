@@ -33,7 +33,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// empty recorder inside it. Whatever a scenario handed in and never asked about is sent and
     /// forgotten at the end of it, and the update queue has to be idle by then.
     /// </summary>
-    public abstract class UsageDataCollectorObservationTest
+    public abstract class UsageDataCollectorObservationTest : IntegrationFixture
     {
         protected const string EventsRoute = "/api/latest/usagedata/events";
         protected const string ConsentRoute = "/api/latest/usagedata/consent";

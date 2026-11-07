@@ -10,7 +10,7 @@ namespace Lighthouse.Backend.Tests.API.Security
     // CookieAuthenticationOptions is resolved once and shared. Per-request mutation of it would be a
     // data race that passes every single-threaded test, so both cookies are observed together while
     // embed sign-ins are genuinely in flight.
-    public class S9b_EmbedCookieConcurrencyTests
+    public class S9b_EmbedCookieConcurrencyTests : IntegrationFixture
     {
         private const int ConcurrentSessions = 8;
 

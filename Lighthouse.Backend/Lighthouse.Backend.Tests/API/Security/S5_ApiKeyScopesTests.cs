@@ -18,7 +18,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    public class S5_ApiKeyScopesTests
+    public class S5_ApiKeyScopesTests : IntegrationFixture
     {
         private const string CreateApiKeyPath = "/api/v1/apikeys";
         private const string SummaryPath = "/api/v1/worktrackingsystemconnections/summary";

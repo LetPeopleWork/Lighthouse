@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    public class S2_ConnectionListPayloadShapeTests
+    public class S2_ConnectionListPayloadShapeTests : IntegrationFixture
     {
         private const string FullListPath = "/api/v1/worktrackingsystemconnections";
         private const string SummaryPath = "/api/v1/worktrackingsystemconnections/summary";

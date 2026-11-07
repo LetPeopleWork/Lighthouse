@@ -16,7 +16,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     [TestFixture]
-    public class S17_LicenseDetailsTests
+    public class S17_LicenseDetailsTests : IntegrationFixture
     {
         private const string LicenseRoute = "/api/latest/license";
         private const string ImportRoute = "/api/latest/license/import";

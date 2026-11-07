@@ -4,7 +4,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     [NonParallelizable]
-    public class S1_CorsFailClosedTests
+    public class S1_CorsFailClosedTests : IntegrationFixture
     {
         private const string AnonymousProbeEndpoint = "/api/latest/version/current";
         private const string ConfiguredOrigin = "https://example.org";

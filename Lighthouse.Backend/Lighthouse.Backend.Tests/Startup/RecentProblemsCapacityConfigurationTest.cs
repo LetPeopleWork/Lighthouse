@@ -25,7 +25,7 @@ namespace Lighthouse.Backend.Tests.Startup
     /// </summary>
     [Category("epic-5511-task-manager")]
     [Category("slice-06")]
-    public class RecentProblemsCapacityConfigurationTest
+    public class RecentProblemsCapacityConfigurationTest : IntegrationFixture
     {
         private const string TheCapacitySetting = "RecentProblems:Capacity";
 

@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.Startup
     /// If someone removes either arrangement, these named tests fail and say so. Without them the
     /// symptom would be the entire backend integration suite going red at once, pointing at nothing.
     /// </summary>
-    public class EncryptionBootstrapOrderTests
+    public class EncryptionBootstrapOrderTests : IntegrationFixture
     {
         private const string AMisspeltProviderName = "postgre";
 

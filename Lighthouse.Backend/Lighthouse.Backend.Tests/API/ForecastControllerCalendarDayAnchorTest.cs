@@ -24,7 +24,7 @@ namespace Lighthouse.Backend.Tests.API
     /// standalone distribution inherits the host zone and does not.
     /// </summary>
     [TestFixture]
-    public class ForecastControllerCalendarDayAnchorTest
+    public class ForecastControllerCalendarDayAnchorTest : IntegrationFixture
     {
         private const string InstanceTimeZoneId = "Europe/Zurich";
 

@@ -9,7 +9,7 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests
 {
     [TestFixture]
-    public class LighthouseAppContextConcurrencyTest
+    public class LighthouseAppContextConcurrencyTest : IntegrationFixture
     {
         private TestWebApplicationFactory<Program> factory = null!;
 

@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests
     /// or the test host loses its Zurich time zone, either of which would let such code pass again.
     /// </summary>
     [TestFixture]
-    public class TestClockBoundaryTest
+    public class TestClockBoundaryTest : IntegrationFixture
     {
         private const string InstanceTimeZoneId = "Europe/Zurich";
 

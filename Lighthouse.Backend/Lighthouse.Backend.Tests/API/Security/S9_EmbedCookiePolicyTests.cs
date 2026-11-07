@@ -7,7 +7,7 @@ using Microsoft.Extensions.Options;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     // Epic 5146 slice 02a (#5641) — ADR-130; feature security checklist S5, S6.
-    public class S9_EmbedCookiePolicyTests
+    public class S9_EmbedCookiePolicyTests : IntegrationFixture
     {
         // Spelled out rather than taken from the production constants: this fixture is what pins the
         // shipped names, and reading them from the code under test would assert nothing.

@@ -12,7 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     [NonParallelizable]
-    public class S6_RateLimitingTests
+    public class S6_RateLimitingTests : IntegrationFixture
     {
         private const string LoginPath = "/api/v1/auth/login";
         private const string VersionPath = "/api/v1/version/current";

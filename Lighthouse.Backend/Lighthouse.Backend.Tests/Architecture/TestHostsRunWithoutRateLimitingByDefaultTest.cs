@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// application's rate-limiting branch reads, so it must change together with that branch.
     /// </summary>
     [TestFixture]
-    public class TestHostsRunWithoutRateLimitingByDefaultTest
+    public class TestHostsRunWithoutRateLimitingByDefaultTest : IntegrationFixture
     {
         [Test]
         public void ADefaultTestHostLeavesRateLimitingOff()

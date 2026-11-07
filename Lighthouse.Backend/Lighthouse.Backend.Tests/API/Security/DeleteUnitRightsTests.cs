@@ -19,7 +19,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     [TestFixture]
-    public class DeleteUnitRightsTests
+    public class DeleteUnitRightsTests : IntegrationFixture
     {
         private const int TeamId = 42;
         private const int PortfolioId = 77;

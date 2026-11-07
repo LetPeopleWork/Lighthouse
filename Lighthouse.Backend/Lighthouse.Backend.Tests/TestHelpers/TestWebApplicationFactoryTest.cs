@@ -11,7 +11,7 @@ using System.Text;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
 {
-    public class TestWebApplicationFactoryTest
+    public class TestWebApplicationFactoryTest : IntegrationFixture
     {
         [Test]
         public void AFreshDatabaseNeverReusesThePathOfAnEarlierOne()

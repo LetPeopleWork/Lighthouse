@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation
     /// </summary>
     [TestFixture]
     [NonParallelizable]
-    public class LighthouseClockTest
+    public class LighthouseClockTest : IntegrationFixture
     {
         private const string InstanceTimeZoneConfigKey = "Lighthouse:TimeZone";
 

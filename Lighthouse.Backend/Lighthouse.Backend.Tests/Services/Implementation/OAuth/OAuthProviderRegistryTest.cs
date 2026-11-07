@@ -10,7 +10,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.Services.Implementation.OAuth
 {
     [TestFixture]
-    public class OAuthProviderRegistryTest
+    public class OAuthProviderRegistryTest : IntegrationFixture
     {
         private const string FakeProviderKey = "fake.oauth";
         private const string OtherProviderKey = "other.oauth";

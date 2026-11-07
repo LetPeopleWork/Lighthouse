@@ -19,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     [TestFixture]
     [NonParallelizable]
     [Category("epic-5733-opt-in-usage-data")]
-    public class UsageDataConsentRateLimitTests
+    public class UsageDataConsentRateLimitTests : IntegrationFixture
     {
         private const string ConsentRoute = "/api/latest/usagedata/consent";
         private const string ClientIp = "203.0.113.42";

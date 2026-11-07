@@ -16,7 +16,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// drifts from the registrations the moment somebody adds a setting.
     /// </summary>
     [TestFixture]
-    public class OptionalFeatureApplierSeamArchUnitTest
+    public class OptionalFeatureApplierSeamArchUnitTest : IntegrationFixture
     {
         private TestWebApplicationFactory<Program> factory = null!;
 

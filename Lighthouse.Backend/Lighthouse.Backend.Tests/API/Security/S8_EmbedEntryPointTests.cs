@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Security
 {
     // The embed entry point turns a one-time token into a session, so it must refuse a token that has
     // expired, been redeemed already or been forged, and never send the browser off to another host.
-    public class S8_EmbedEntryPointTests
+    public class S8_EmbedEntryPointTests : IntegrationFixture
     {
         private const int ShortTokenLifetimeSeconds = 1;
         private const string ForgedSecret = "forged-secret";

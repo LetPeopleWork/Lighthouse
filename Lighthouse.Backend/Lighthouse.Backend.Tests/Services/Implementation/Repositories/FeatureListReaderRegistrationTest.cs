@@ -12,7 +12,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Repositories
     [TestFixture]
     [Category("epic-6400-fast-with-many-features")]
     [Category("slice-04")]
-    public class FeatureListReaderRegistrationTest
+    public class FeatureListReaderRegistrationTest : IntegrationFixture
     {
         private TestWebApplicationFactory<Program> factory = null!;
 

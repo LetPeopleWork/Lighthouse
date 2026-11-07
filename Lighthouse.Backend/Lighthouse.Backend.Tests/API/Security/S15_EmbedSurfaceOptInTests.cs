@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Security
     // three hops, because the handshake nonce is not yet bound to whoever asked for it: anyone who
     // gets an authenticated browser to load /embed/start?nonce=N can poll N anonymously and redeem
     // a session carrying that viewer's identity.
-    public class S15_EmbedSurfaceOptInTests
+    public class S15_EmbedSurfaceOptInTests : IntegrationFixture
     {
         private ViewerEmbedTestHost host = null!;
 

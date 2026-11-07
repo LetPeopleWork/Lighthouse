@@ -8,7 +8,7 @@ namespace Lighthouse.Backend.Tests.API.Security
     /// Epic 5146 slice 01 (#5692) — ADR-137. The negatives on the sign-in hop and the handshake
     /// channel: F2 carried forward, D45's no-existence-oracle, D62's observable loss, D31/D44/DQ-7.
     /// </summary>
-    public class S13_ViewerEmbedHandshakeTests
+    public class S13_ViewerEmbedHandshakeTests : IntegrationFixture
     {
         public const string NonceReplayEventName = "EmbedHandshakeNonceReplayed";
 

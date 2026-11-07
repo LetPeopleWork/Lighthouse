@@ -18,7 +18,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     [TestFixture]
-    public class S16_ValidateEndpointAccessTests
+    public class S16_ValidateEndpointAccessTests : IntegrationFixture
     {
         private const string ValidateTeamRoute = "/api/latest/teams/validate";
         private const string ValidatePortfolioRoute = "/api/latest/portfolios/validate";

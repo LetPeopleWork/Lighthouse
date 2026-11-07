@@ -46,7 +46,7 @@ namespace Lighthouse.Backend.Tests.Integration.UsageData
     /// </summary>
     [TestFixture]
     [Category("epic-5733-opt-in-usage-data")]
-    public class UsageDataCollectorAddressTests
+    public class UsageDataCollectorAddressTests : IntegrationFixture
     {
         private const string EventsRoute = "/api/latest/usagedata/events";
         private const string ConsentRoute = "/api/latest/usagedata/consent";

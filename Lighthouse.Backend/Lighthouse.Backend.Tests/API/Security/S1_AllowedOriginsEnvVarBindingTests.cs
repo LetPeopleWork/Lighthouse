@@ -4,7 +4,7 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     [NonParallelizable]
-    public class S1_AllowedOriginsEnvVarBindingTests
+    public class S1_AllowedOriginsEnvVarBindingTests : IntegrationFixture
     {
         private const string AnonymousProbeEndpoint = "/api/latest/version/current";
         private const string SingleOrigin = "https://localhost:48332";

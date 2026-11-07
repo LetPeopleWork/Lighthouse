@@ -16,7 +16,7 @@ using Moq;
 namespace Lighthouse.Backend.Tests.API.Security
 {
     [TestFixture]
-    public class W1_VersionEndpointAuthorizationTests
+    public class W1_VersionEndpointAuthorizationTests : IntegrationFixture
     {
         private const string InstallUpdatePath = "/api/latest/version/installUpdate";
         private const string CurrentVersionPath = "/api/latest/version/current";

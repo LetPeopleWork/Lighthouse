@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// </summary>
     [TestFixture]
     [NonParallelizable]
-    public class TestHostIsReleasedAfterDisposeTest
+    public class TestHostIsReleasedAfterDisposeTest : IntegrationFixture
     {
         private static readonly TimeSpan HowLongToWaitForAHostThatMadeNoClient = TimeSpan.FromSeconds(15);
 

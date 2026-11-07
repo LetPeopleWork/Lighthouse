@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -10,7 +11,7 @@ using System.Data.Common;
 
 namespace Lighthouse.Backend.Tests.Startup
 {
-    public class ServiceProviderValidationTest
+    public class ServiceProviderValidationTest : IntegrationFixture
     {
         [Test]
         public void ServiceContainer_BuildsWithoutScopeViolations_WhenValidateScopesIsEnforced()

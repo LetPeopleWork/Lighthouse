@@ -20,39 +20,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string IntegrationCategory = "Integration";
         private const string CanaryCategory = "UsageDataCanary";
         private const string ContainerNamespace = "Lighthouse.Backend.Tests.Integration.Containers";
-        private const string StartsOneHostForTheFixture = "starts one host for the whole fixture and has not moved to the base yet";
-        private const string StartsAHostInItsTests = "starts a host in its tests or its per-test set-up and has not moved to the base yet";
-        private const string InheritsItsHostFromTheUsageDataRoot = "takes its host from UsageDataCollectorObservationTest, which has not moved to the base yet; one line on that class moves all of these";
         private const string RunsAgainstAContainer = "runs against a Postgres or Redis container and has not moved to the base yet";
         private const string SitsAmongTheContainerTests = "sits in the container namespace, runs on SQLite with no container, and has not moved to the base yet";
         private const string StartsAHostBesideAContainer = "runs against a Postgres or Redis container, starts a host of its own and has not moved to the base yet";
-        private const string ChecksTheTestHostItself = "tests how the test host starts and stops and has not moved to the base yet";
 
         // Keys are full type names. Moving a class to the base removes its line in the same commit; nothing is added here.
         private static readonly IReadOnlyDictionary<string, string> FixturesNotYetOnTheBase = new Dictionary<string, string>
         {
-            ["Lighthouse.Backend.Tests.API.ForecastControllerCalendarDayAnchorTest"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.DeleteUnitRightsTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.F_BE_1_GroupSnapshotInheritanceTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S13_ViewerEmbedHandshakeTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S14_ViewerEmbedSubjectValidatorTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S15_EmbedSurfaceOptInTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S16_ValidateEndpointAccessTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S17_LicenseDetailsTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S18_ApiKeyCreationScopeTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S1_AllowedOriginsEnvVarBindingTests"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.API.Security.S1_CorsFailClosedTests"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.API.Security.S2_ConnectionListPayloadShapeTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S5_ApiKeyScopesTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S6_RateLimitingTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S8_EmbedEntryPointTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S9_EmbedCookiePolicyTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.S9b_EmbedCookieConcurrencyTests"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.API.Security.W1_VersionEndpointAuthorizationTests"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Architecture.OptionalFeatureApplierSeamArchUnitTest"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.Architecture.TestHostIsReleasedAfterDisposeTest"] = ChecksTheTestHostItself,
-            ["Lighthouse.Backend.Tests.Architecture.TestHostsRunWithoutRateLimitingByDefaultTest"] = ChecksTheTestHostItself,
-            ["Lighthouse.Backend.Tests.Health.DataProtectionKeyRingTest"] = StartsAHostInItsTests,
             ["Lighthouse.Backend.Tests.Integration.Containers.BlockedCountSnapshotMigrationTests"] = RunsAgainstAContainer,
             ["Lighthouse.Backend.Tests.Integration.Containers.BlockedDurationMigrationTests"] = RunsAgainstAContainer,
             ["Lighthouse.Backend.Tests.Integration.Containers.BlockedRuleSetMigrationTests"] = RunsAgainstAContainer,
@@ -87,36 +61,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.Integration.Containers.TaskManagerQueueOrderMultiReplicaTests"] = RunsAgainstAContainer,
             ["Lighthouse.Backend.Tests.Integration.Containers.UpdateStatusStoreContainerTests"] = RunsAgainstAContainer,
             ["Lighthouse.Backend.Tests.Integration.Containers.ViewerEmbedStorageGuaranteeTests"] = RunsAgainstAContainer,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.BulkReportsUsageEventTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.OptionalFeatureToggledEventTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.ParentSourcesUsageEventTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.ReportPdfExportUsageEventTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.ReportUsageEventsTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.Slice04ProductEventsTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.Story6193EveryEventSaysItsSourceTest"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.Story6404FeaturesHeldUsageEventTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.TeamForecastRealityCheckRunEventTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.TeamRefinementNeedUsageEventsTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.TeamRefinementUsageEventsTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.TeamSizingUsageEventsTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataCollectorAddressTests"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataConsentRateLimitTests"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventCeilingTests"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataEventPipeTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.UsageDataVetoEmitTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.Integration.UsageData.WorkTrackingSystemFieldsChangedUsageEventTests"] = InheritsItsHostFromTheUsageDataRoot,
-            ["Lighthouse.Backend.Tests.LighthouseAppContextConcurrencyTest"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.DeliveryMetricSnapshotRecordingHandlerTest"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.Services.Implementation.DomainEvents.SnapshotRecordedDayInstanceZoneTest"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Services.Implementation.LighthouseClockTest"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthProviderRegistryTest"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Services.Implementation.OAuth.OAuthStateSecretPersistenceTest"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Services.Implementation.Repositories.FeatureListReaderRegistrationTest"] = StartsOneHostForTheFixture,
-            ["Lighthouse.Backend.Tests.Startup.EncryptionBootstrapOrderTests"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Startup.RecentProblemsCapacityConfigurationTest"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.Startup.ServiceProviderValidationTest"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.TestClockBoundaryTest"] = StartsAHostInItsTests,
-            ["Lighthouse.Backend.Tests.TestHelpers.TestWebApplicationFactoryTest"] = ChecksTheTestHostItself,
         };
 
         // A permanent list, not a baseline. Every test of these classes carries the connector category, and only the

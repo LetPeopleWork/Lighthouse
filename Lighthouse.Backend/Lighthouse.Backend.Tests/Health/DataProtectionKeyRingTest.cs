@@ -11,7 +11,7 @@ using Microsoft.Extensions.Options;
 namespace Lighthouse.Backend.Tests.Health
 {
     [TestFixture]
-    public class DataProtectionKeyRingTest
+    public class DataProtectionKeyRingTest : IntegrationFixture
     {
         private string keyStoreDirectory = string.Empty;
 

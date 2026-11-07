@@ -20,7 +20,7 @@ using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Security
 {
-    public class F_BE_1_GroupSnapshotInheritanceTests
+    public class F_BE_1_GroupSnapshotInheritanceTests : IntegrationFixture
     {
         private const string TeamsPath = "/api/v1/teams";
         private const string OwnerSubject = "owner-subject";

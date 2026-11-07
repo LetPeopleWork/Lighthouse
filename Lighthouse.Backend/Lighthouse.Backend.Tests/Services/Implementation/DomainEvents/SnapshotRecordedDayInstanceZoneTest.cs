@@ -39,7 +39,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.DomainEvents
     /// </summary>
     [TestFixture]
     [Category("bug-5567-instance-day-anchor")]
-    public class SnapshotRecordedDayInstanceZoneTest
+    public class SnapshotRecordedDayInstanceZoneTest : IntegrationFixture
     {
         /// <summary>
         /// 23:30 UTC. Europe/Zurich is UTC+1 on this date (DST starts 2026-03-29), so the instance
