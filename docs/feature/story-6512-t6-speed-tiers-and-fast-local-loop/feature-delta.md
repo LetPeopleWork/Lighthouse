@@ -470,3 +470,29 @@ Letters used: `D` tests listed, `R` tests ran, `E` tests a plain run leaves out 
 | T9's brief (owed; not edited here) | Four lines change. "T6 slice D writes the tier" is now slice F. "Covers hosted and live" is now hosted, container and live (point 2). The mean and the maintainer's total ceiling must leave connector classes out, read from their literal attributes, or every force-full run goes red, which keeps a `ci*.yml` edit in the window (point 3); doing that in the script needs no workflow edit. Proposal 5's "touches `ci_backend.yml` for the summary" is not needed: `check_budget.py` can write to `GITHUB_STEP_SUMMARY` itself, which saves a second live run (point 1). |
 | T5's brief (owed; not edited here) | Three lines change. Proposal d and the first AC drop the exact ceiling constant for a list that shrinks through stale entries, or T5's DESIGN says why not (point 4). The open `Contracts` check is answered: not a slow-tier marker, and the contract base derives from `IntegrationFixture`. T6 joins T5's dependencies, and a suite leaving the host leaves the base in the same commit (guard rule 2). Points 1 to 3 change nothing for T5: a host-to-port move stays in the always-on selection, so left out holds still. |
 | What this changes in DESIGN | "One line of `ci_backend.yml`" becomes that line plus one step, in the same push. "Slice B proves that" holds only locally until the first plain run. Slice C's commit order flips, and its live commit joins slice B's push. `--list-tests` now matters: "nothing depends on its answer" no longer holds, for the unfiltered count. The probe gains CI's joined strings, always-on `\|` force-full and always-on `\|` one connector, because it tests the clauses one at a time and CI runs them together. |
+
+## Wave: DEVOPS / [REF] Review revision: the smaller check (2026-11-07, maintainer away)
+
+The review of DESIGN and DEVOPS returned NEEDS_REVISION: the always-on clause is sound, the new CI step is not worth it. This
+section overrides anything above that differs.
+
+- **"Check test selection" is dropped, with `check_selection.py` and `test-selection.json`.** Only three things can lose a test:
+  a wrong clause (judged by the local id diffs at B, C and E, and by the first plain run against `T0`, whose `Total:` line the
+  log already prints), a hosted class gaining a connector category (guard rule 4 at build time), or an offline class given
+  `Integration` plus a connector, which is possible today. The step guarded mostly the third, and its first run would be on
+  the one push that cannot be repeated cheaply: a red there runs every live suite a second time. Its constants would also red
+  trunk when another Story adds a live test.
+- **Added, cheap:** a unit test in the existing test project that evaluates the clause string against synthetic category
+  sets, so the logic is pinned at no CI cost. The first-plain-run comparison against `T0` is done by the orchestrator and
+  recorded; a difference stops the run.
+- **The fast filter also leaves out the connectors**, not only `Integration`: `JiraWriteBackTest` and
+  `AzureDevOpsWriteBackTest` create real items in `[OneTimeSetUp]` for any selected test, so a bare `TestCategory!=Integration`
+  with a token set writes to a real tracker. Three offline tests leave the fast loop, and `Test-Fast.ps1` needs no token
+  clearing. `CLAUDE.md` prints the safe filter or the script, never the bare one.
+- **`dev-test.sh --unit-only`:** its comment and help text change, as it now runs the plain CI selection with hosted tests.
+- **A guard rule for `UsageDataCanary`:** a fixture carrying it carries a connector, because the clause selects by exclusion.
+- **Slices, updated:** B holds the probe, `IntegrationFixture` and the filters. Its push also carries slice C's 14 live classes,
+  so it is the one live push; the hosted commit waits for one green plain run, or a day. Filters before moves holds per commit,
+  and per push only in that order.
+- **Containers (D-6512-11) stay on the base, as raised with the maintainer**, who has not answered; it goes past "boots the
+  host", so it is a decision to revisit at slice D.
