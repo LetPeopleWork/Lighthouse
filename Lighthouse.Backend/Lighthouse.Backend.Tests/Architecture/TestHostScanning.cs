@@ -103,6 +103,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             public IReadOnlyList<MethodDefinition> OffendingRoots(Func<MethodDefinition, bool> pickRoots)
                 => [.. allMethods.Where(IsARoot).Where(pickRoots).Where(ReachesAHostStart)];
 
+            /// <summary>Whether a root on the type, or on a type it derives from, can reach a host start.</summary>
+            public bool FixtureReachesAHost(TypeDefinition fixture)
+                => TypeAndItsBases(fixture).SelectMany(type => type.Methods).Where(IsARoot).Any(ReachesAHostStart);
+
+            /// <summary>The type and the types above it, as far as they are written in this assembly.</summary>
+            public IEnumerable<TypeDefinition> TypeAndItsBases(TypeDefinition type)
+            {
+                for (var current = type; current is not null; current = BaseWrittenHere(current))
+                {
+                    yield return current;
+                }
+            }
+
+            private TypeDefinition? BaseWrittenHere(TypeDefinition type)
+                => type.BaseType is null ? null : typesByName.GetValueOrDefault(type.BaseType.GetElementType().FullName);
+
             private bool IsARoot(MethodDefinition method)
                 => !method.DeclaringType.Name.StartsWith('<') && isInTheRootSet(method);
 
@@ -172,7 +188,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                     && candidate.Parameters.Count == called.Parameters.Count
                     && DerivesFrom(candidate.DeclaringType, called.DeclaringType.GetElementType().FullName));
 
-            private bool DerivesFrom(TypeDefinition type, string baseTypeName)
+            public bool DerivesFrom(TypeDefinition type, string baseTypeName)
             {
                 var current = type.BaseType;
 
