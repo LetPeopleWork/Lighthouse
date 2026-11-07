@@ -966,3 +966,74 @@ lists are compared with their duplicates kept.
 
 `git diff` showed one added line in `package.json` and no Vitest config change. `pnpm build` was clean, with Biome making no fixes, and `git status`
 afterwards showed only this step's files.
+
+## Wave: DELIVER / [REF] Slice A, step 01-02: first timing (2026-11-07)
+
+**One target is missed: a hold for the maintainer.** `--changed` on the many-file case has a median of 15.25 s against 10 s. The few and median
+cases and the whole tier are inside their targets.
+
+| Measure | Target | Median | The 5 runs (s) | Files, tests | Result |
+|---|---|---|---|---|---|
+| `pnpm test:fast --changed`, few | 10 s | **1.35 s** | 1.35, 1.36, 1.51, 1.34, 1.34 | 1, 29 | Inside |
+| `pnpm test:fast --changed`, median | 10 s | **3.53 s** | 3.53, 3.37, 3.41, 3.64, 3.56 | 4, 90 | Inside |
+| `pnpm test:fast --changed`, many | 10 s | **15.25 s** | 15.23, 14.93, 15.61, 15.75, 15.25 | 70, 1,102 | **Over** |
+| `pnpm test:fast` | 60 s | **32.86 s** | 32.68, 34.20, 33.08, 32.82, 32.86 | 208, 3,648 | Inside |
+| `pnpm test --changed`, a `.tsx` edit, as information | none | 15.37 s | 15.27, 15.37, 15.18, 15.38, 15.50 | 8, 147 | Information |
+
+Every run exited 0 with every test passing, at the default 6 workers, with `LIGHTHOUSE_TEST_WORKERS`, `VITEST_MAX_WORKERS` and `CI` unset. Time is
+wall clock around the `pnpm` command. Each series opened with one more run to warm up, not counted. No `.test.tsx` ran in a `test:fast` run;
+`test-results.json` was read after each one.
+
+**The 3 fixed files.** A count of each source `.ts` file's related `.test.ts` files over the import graph, type-only imports left out, gave 247
+files with at least one, and a median of 4. The file counts in the table are what Vitest itself ran.
+
+| Case | File | Graph count | Vitest ran |
+|---|---|---|---|
+| Few | `src/components/SurveyNudge/nudgeEligibility.ts` | 1 | 1 |
+| Median | `src/utils/date/age.ts` | 4 | 4 |
+| Many | `src/models/Forecasts/WhenForecast.ts` | 71, the highest | 70 |
+
+The `.tsx` case is `src/components/Common/BaseSettings/GeneralSettingsComponent.tsx`, the file 01-01 used.
+
+**`--changed` no longer runs everything.** The first run after `package.json` was committed ran 1 file and 29 tests, not 3,648.
+
+**Before each series.** `ps -eo args | grep -cE '[t]esthost|[v]itest'` printed 0 before all of them, and the wrapper waited for a 1-minute load under
+1.5. The 5- and 15-minute figures still carry the series before.
+
+| Series | Commit | Load, 1 / 5 / 15 min |
+|---|---|---|
+| Few | `e99b6559c` | 1.03 / 4.11 / 6.47 |
+| Median | `e99b6559c` | 1.48 / 4.11 / 6.44 |
+| Many | `e99b6559c` | 1.38 / 3.64 / 6.11 |
+| `.tsx` | `fdcad7ba4` | 1.39 / 3.50 / 5.67 |
+| Whole tier, discarded | `add13df5f`, then `fcc395c1c` | 1.42 / 3.28 / 5.23 |
+| Whole tier | `fcc395c1c` | 1.40 / 4.14 / 5.23 |
+| Many, node | `fcc395c1c` | 0.33 / 1.21 / 3.20 |
+
+**The commit moved during the measuring.** `fdcad7ba4` and `add13df5f` change only slice briefs. `fcc395c1c` merged `origin/main`, which brought a
+`fallow` update in `package.json` and `pnpm-lock.yaml`. That merge landed as the third run of the first whole-tier series started: `pnpm` installed
+first, and that run took 49.99 s. The series (32.51, 35.82, 49.99, 34.37, 33.21, median 34.37 s) is discarded and the table's is a repeat on the merged
+commit. So the first run after a dependency change costs about 15 s more, and that is not the tier's speed.
+
+**The node project, measured because the many case is over.** The same file and comment, with `environment: "node"`, from a config outside the repo
+that wraps `vitest.config.ts` and adds one line defining `Element`, because `setupTests.ts` touches `Element.prototype` and all 70 files otherwise die
+in setup. Without that line the runs took about 3 s and ran no test, so that figure means nothing.
+
+| Measure | Median | The 5 runs (s) | Files | Tests |
+|---|---|---|---|---|
+| Many, in node | **9.59 s** | 9.59, 9.72, 9.64, 9.47, 9.53 | 60 passed, 10 failed | 898 passed, 204 failed |
+
+- It comes in under 10 s, by 0.41 s, and only with 10 files failing. Those would have to stay in `jsdom`, so a real split runs them too and its time
+  is not this one. This is a reading, not a working setup.
+- The 10 are hook tests and the services around them: `useMetricsData` (110 failures), `useDeliveryManagement` (39), `usageDataEvents` (14), `useRbac` (13),
+  `usageDataReporter` (8), `useRbacGate` (8), `useLicenseRestrictions` (7), `useCumulativeStateTimeChoices` (3), `LogService` and
+  `useRefinementSetUpReporter` (1 each). The usual message is `document is not defined`.
+- The cost it removes is plain in Vitest's own split: under `jsdom` the many case spends 41 % on the environment, and under node none.
+
+**How far the miss reaches.** A straight line through the median and many cases reaches 10 s near 40 related files, an estimate from 2 points. 15 of the
+247 files have 41 or more, among them shared models and API helpers such as `Feature.ts` and `ApiError.ts`. An edit to one of those is the
+slow case; most edits stay well inside.
+
+**For the maintainer to confirm:** whether 10 s stands for a file that 70 test files depend on, with 15 s accepted for that case, or a node project
+is wanted, at the price of 10 files that need sorting out. Nothing was changed for this: no script, no config. The wrapper stays outside the repo, and
+`git status` was clean after every series, so the comment edits left no diff.
