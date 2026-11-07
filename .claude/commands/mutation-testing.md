@@ -83,6 +83,7 @@ dotnet stryker --config-file ../../docs/feature/<feature>/mutation/stryker.<id>.
   reaches. Excluding them makes mutants that only an acceptance test reaches show up as
   survivors. Triage those survivors, and close each with a unit test where one is cheap.
   Typical filter tail: `&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood`.
+- **Do not copy `TestCategory!=Integration` from an old config under `docs/feature/`:** that term now leaves out every test that starts a web host or a container.
 - `solution` is relative to the **run directory**, hence `../Lighthouse.sln`.
 
 ### Reading the log — the number that matters

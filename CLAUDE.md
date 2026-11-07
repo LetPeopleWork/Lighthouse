@@ -154,6 +154,11 @@ Two standing principles worth keeping visible here because they're easy to skip 
   and what it delivers in plain words, plus each slice's step count. No test names. It tells the maintainer
   how far a status update's "step 2 of 9" is from done; if a step is later split or added, say so and post
   the updated table.
+- **Inside a DELIVER step, work on the fast loop; the full gates run later.** Red, green and refactor use
+  `pnpm test:fast --changed` (`pnpm test --changed` after a component edit) and
+  `Lighthouse.Backend/Test-Fast.ps1 -NoBuild`, plus the test the step names, whatever its tier. The full gates
+  under "Quality Gates" run once at the end of a slice and before every push. A clean fast loop never
+  replaces them.
 - **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
   deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
   no other Epic of the split ever ships. Order the slices Epic by Epic, so one Epic is completed before
@@ -240,6 +245,14 @@ A change is **not done** until every gate below passes locally. CI enforces them
   - `GetAllReleases_*` / `GetLatestVersion_*` failing with `Octokit.RateLimitExceededException`
     (`Limit: 60, Remaining: 0`) means repeated full runs exhausted the **unauthenticated** GitHub API
     quota. Another reason not to run the suite unfiltered in a loop.
+
+- `Lighthouse.Backend/Test-Fast.ps1` runs only the fast tests, the ones that start no web host and no
+  container, so it needs neither Docker nor a token and cannot reach a real tracker. `-NoBuild` skips the
+  build and runs the last Debug build. Like `pnpm test:fast`, it is for a quick answer while working: neither
+  command is a gate, and the `dotnet test` run above stays what "done" means. Its filter is fixed in the
+  script; use the script rather than cutting a filter down by hand, because `JiraWriteBackTest` and
+  `AzureDevOpsWriteBackTest` write to a real tracker in their set-up for any test selected from them.
+  Verified under `pwsh` on Linux only; Windows is unverified.
 
 ### Coverage (opt-in, both stacks)
 

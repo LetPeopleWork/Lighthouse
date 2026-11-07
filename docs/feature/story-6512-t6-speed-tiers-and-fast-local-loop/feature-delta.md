@@ -37,11 +37,11 @@ timing stay unmeasured until slice A and slice F.
 
 ## Checklist
 
-- [ ] Behaviour-free: production code unchanged
-- [ ] Ratchet in the same change: the guard that a host-building test sits on the shared base class
-- [ ] Every test still runs in the full suite, proven by comparing ids before and after on both stacks
-- [ ] `CLAUDE.md`, `Test-Coverage.ps1` and `trx_to_csv.py` updated for the one `Integration` category
-- [ ] Mutation: N/A only where test files alone change; say so per file
+- [x] Behaviour-free: production code unchanged. Guarantee 1, every commit against the allow-list, 0 outside: step 06-05
+- [x] Ratchet in the same change: the guard that a host-building test sits on the shared base class. `TestTierGuardTest`, 90 tests, its real pass bites under Debug and Release: steps 04-05 and 05-03
+- [x] Every test still runs in the full suite, proven by comparing ids before and after on both stacks. Guarantees 4, 6, 9, 15: `L0` to `L7`, step 05-04 and slice A
+- [x] `CLAUDE.md`, `Test-Coverage.ps1` and `trx_to_csv.py` updated for the one `Integration` category. Standard filter in both, the script's docstring in 06-02, the fast loop in 06-05
+- [x] Mutation: N/A only where test files alone change; say so per file. Stated per slice in step 06-05
 
 ## Wave: DESIGN / [REF] Scope, mode and context
 
@@ -2229,3 +2229,120 @@ The per-test column is from run 1. The first four, all in `Services/Implementati
 **`TestTierGuardTest`.** In these runs the class took 13.3 to 13.6 s, with one run at 20.8 s, not 06-01's 16.6 s. Two tests are 95 % of it, in run 1 `EveryFixtureThatStartsAHostIsOnTheBase` 7.60 s and `NoFixtureSitsOnTheBaseWithoutAReason` 5.07 s, and the other 88 take 0.67 s. Both walk every real fixture. Alone the class ran 90 tests in 3.83 s summed, with the same two at 2.16 s and 1.25 s; the earlier 74 tests in 1.34 s did not reproduce on today's 90. So the two tests cost about 3.7 times as much beside 5 other workers as alone, and neither is the class's first test. The assembly read sits in the class's `[OneTimeSetUp]`, and the two tests share one `HostBuildingScan` built there. Some of their time may be that scan's first pass over the real fixtures, but a TRX cannot split it, so one-time set-up is a possible reason here and not a measured one.
 
 **For the maintainer to decide:** whether 73 s stands as this tier's number for now, with T9 and T10 taking the list above, or the target waits for them. What closes the Story, point 3, needs that answer.
+
+## Wave: DELIVER / [REF] Slice F, step 06-05: the docs, `L7` and the closing record (2026-11-07)
+
+**The Story is not closed.** "What closes the Story", point 3, needs the maintainer's answer on the backend target: `Test-Fast.ps1 -NoBuild` has a median of 73.29 s against 60 s, and guarantee 16 is not met. Point 1 also needs push 7, which the orchestrator makes after this step. Everything else this step could settle is below, and two things are recorded as failed or missed, not softened: guarantee 13 and guarantee 16.
+
+**The docs.** `CLAUDE.md` gains two bullets and `.claude/commands/mutation-testing.md` one line. The first bullet of `CLAUDE.md` sits among the DELIVER rules and is the one home of the fast cycle, as the maintainer decided on 2026-11-07: red, green and refactor use `pnpm test:fast --changed`, `pnpm test --changed` for a component edit, and `Test-Fast.ps1 -NoBuild`, plus the test the step names, whatever its tier; the full gates run once at the end of a slice and before every push; a clean fast loop never replaces them. T11 points to it. The second sits in "Quality Gates", backend, and names `Test-Fast.ps1`, says neither it nor `pnpm test:fast` is a gate, and says Windows is unverified.
+
+| Case | What ran | Result |
+|---|---|---|
+| The grep of guarantee 12, before the edit | `git grep -nE 'TestCategory!=Integration([^&]\|$)' -- CLAUDE.md Lighthouse.Backend/Test-Coverage.ps1 Lighthouse.Backend/Test-Fast.ps1 Scripts/test-selection docs/ci-learnings.md .claude/commands` | Nothing, exit 1: the warning line did not exist yet |
+| The same, after | The same | One line: `.claude/commands/mutation-testing.md:86`, the warning |
+| Python suite | `python3 -m unittest discover -s Scripts/test-timings/tests` | 155 tests, OK |
+
+The term is real in old configs: `git grep` finds it in `stryker.*.backend.json` files under `docs/feature/*/mutation/`, for instance `bug-6499-jira-auth-failure-shows-no-boards`. They are history and stay.
+
+**`L7`.** Run at `ea68d965e` with this step's two docs edits in the working tree. No test reads either file. `dotnet build -c Release` in `Lighthouse.Backend` first: 0 warnings, 0 errors. A script refused the run unless each check passed: the `ps` check printed 0, a check for a running build or test printed 0, `dotnet build-server shutdown` exited 0, and the variable check under the seven-variable `env -u` prefix printed 0. Docker 29.9.3 was up. `LIGHTHOUSE_TEST_WORKERS` was unset, so 6 workers on 12 cores. Run once, not repeated.
+
+| List | Filter | Console | TRX total, executed, passed | CSV rows | Wall time, console duration | `sha256` of the sorted list |
+|---|---|---|---|---|---|---|
+| `L7` | `A` | `Failed: 0, Passed: 12931, Skipped: 2, Total: 12933`, exit 0 | 12,942, 12,931, 12,931 | 12,942: 12,931 `Passed`, 11 `NotExecuted` | 408 s, 6 m 40 s | `80482bd47ac82bcf46f1fcc526e5387ad473c08297f38a9b4c5dbb711483b482` |
+
+The same code gives `L6`'s recorded `sha256`, `ddd17f96…`, from `L6.csv`, so the two lists were read alike.
+
+**`L7` against `L6`.** 0 lines only in `L6`, so no `Passed` id was lost. 9 lines only in `L7`, all `Passed`, and 12,933 + 9 = 12,942. The 11 `NotExecuted` lines are the same in both. The 9 are the exempted lines, and there are no others: all come from T5's commit `145b561a0`, a foreign commit whose diff adds them, and neither 06-04, whose new tests are Python, nor any other commit adds an id.
+
+```text
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_finished_scenario_leaves_no_file_behind
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_row_that_breaks_a_foreign_key_is_refused_as_the_host_refuses_it
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_scenario_that_failed_with_its_scope_open_leaves_no_file_behind
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_service_no_fixture_registered_is_named_when_a_scenario_asks_for_it
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.Disposing_a_harness_twice_or_unused_does_no_harm(False,1)
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.Disposing_a_harness_twice_or_unused_does_no_harm(True,2)
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.Each_scenario_gets_a_database_of_its_own_holding_the_schema_and_nothing_else
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.Each_scenario_reads_what_is_stored_not_what_an_earlier_step_still_holds
+Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.What_a_fixture_registers_is_what_its_scenario_is_given
+```
+
+**`L7`'s column, for push 7.** The new script over `L7` with `--source-root`, as CI calls it: `Integration` 3,395 rows, `Unit` 9,547. `Integration` against `L6-H`: 0 and 0. `Unit` against `L6-F` + `L6-O`: 9 only in `Unit`, the same 9 ids, and 0 the other way. So the fast list to compare with push 7's `Unit` rows is today's, which holds those 9, not `L6-F` as it stands.
+
+| File | Size or lines | `sha256` of the file |
+|---|---|---|
+| `L7.csv`, out of git | 12,942 rows | `aee8b2c78f232700a9a416af584dd2fca28b246a94985bd8690d136e44a1b360` |
+| `L7.trx.gz`, out of git | 4.4 MB | `aa9491f3f4fc7b5b1eec9ad06e0efc10775f466a93a760c4ef32e21aaa9585b6` |
+
+**What the classifier answers for push 7.** This overrides the step's "every `classify_*` answers false", as "Pushing row reworded" does: the connector and shared answers must be false, and `classify_backend` true is right, because it starts the plain run. On `git diff --name-only 50a1d8586 HEAD`, the last green run's commit to HEAD, plus this step's three paths; each regex read from `path-classifier.sh` and run through `grep -E` by a script, since a hook refuses sourcing it, as in 04-05 and 05-04.
+
+| Function | Answer | Matching paths |
+|---|---|---|
+| `classify_backend` | `true`, as expected | 7: `ServicePortHarness.cs`, `ServicePortHarnessTest.cs`, `Test-Fast.ps1` and 4 under `Scripts/test-timings/` |
+| `classify_jira`, `classify_ado`, `classify_linear`, `classify_servicenow`, `classify_github`, `classify_shared` | `false` | None |
+
+No `ci*.yml` and no csproj is in the diff, and `Lighthouse.Backend.Tests.csproj` has not changed since push 6. So push 7 should be plain. The diff holds T5's `145b561a0`, which sits between T6's commits and cannot be left behind, as nothing is rebased. So T5's helper reaches `main` with T6's last push, a small departure from "T5's first push waits for T6's last". It changes no behaviour.
+
+**Guarantee 1, every commit against the allow-list.** `git show --name-only --format= <hash>` for each of the Story's commits from `1f83b5455` on, and each path against the list by a script. 56 commits, then this step's own: 32 `docs`, 16 `test`, 4 `feat`, 2 `ci`, 2 `refactor`. 53 name the Story in their message, and 3 do not and belong to it: `6aadc2bc5` and `042b22096`, the review's fix and rule 7, and `d85e3d4a5`, which edited the roadmap. **0 commits hold a path outside the list.** This step adds only `CLAUDE.md`, `.claude/commands/mutation-testing.md` and this delta, all on it. T5's `145b561a0` also passes. `31e0c23f9` is a merge of `origin/main`: it records no path of its own, and what it brought is foreign.
+
+**The force-full runs: two, not one.** The step's "which is one" does not hold. Guarantee 13 is **not met**. Read from the filter line and the "Detect Changes" log of every `ci.yml` run from slice A on, all at attempt 1.
+
+| Run | Commit | Filter | Base, and what the window held | Whose |
+|---|---|---|---|---|
+| 42369233738 | `82b53525f` | Force-full | `db8b295bf`, window held `ci_frontend.yml` | Foreign: T12's `0548d3253`, before push 2 |
+| 42370581769 | `c0292b875` | Force-full | `db8b295bf`, the same | Foreign, the same edit |
+| 42372874167, 42372930241, 42375494664 | `37cc1a614`, `d852cf98e`, `6dc63d981` | Plain | | Foreign |
+| **42379254193** | `2c1f0ae0c`, push 2 | **Force-full** | `6dc63d981`, window held `ci_backend.yml` | **This Story, meant** |
+| **42382479502** | `5d1faea04`, push 3 | **Force-full** | `6dc63d981`, the same | **This Story, not meant** |
+| 42384656167, 42387692805, 42393654124, 42401089668 | `d87ce32be`, `9825d4e5d`, `8fb288160`, `50a1d8586` | Plain | | The push of `4103cadc3`, then pushes 4, 5, 6 |
+
+Why two: push 2's run was red for two reasons outside this Story, and it was judged on its ids without a re-run, so no green run moved the base past `ci_backend.yml`, which is `c8b26e574`, this Story's file. Push 3's run compared with the same base and ran every live suite a second time, about 40 minutes later. Every gate passed and no rate limit followed. The first plain run was then the push of `4103cadc3`, in run 42384656167. No run of this Story carried a connector clause alone.
+
+**The 7 rules, against the 6 designed.** DESIGN's five rules became six with the `UsageDataCanary` rule of the DEVOPS revision. The maintainer added rule 7, "a category name has no whitespace at either edge", commit `042b22096`, outside the roadmap's steps. The review's fixes are part of the Story as well: `6aadc2bc5` and the fixes that went out with slice E. The guard holds 90 tests.
+
+**The guarantees.**
+
+| # | State | Evidence |
+|---|---|---|
+| 1 | Met | Above |
+| 2 | Met | 21 tests of `TestSelectionClauseTest`, "Rule 7" table, and `L7` holds them `Passed` |
+| 3 | Met | Steps 02-02 and 03-01: TRX total 0, and the planted case of slice B shows the filter can select |
+| 4 | Met locally | Every list against the one before, `L0` to `L7`. Push 7's run is the cross-check |
+| 5 | Met, a run later than planned | "First plain run judged": 0 lost, 0 changed, 32 added, all explained |
+| 6 | Met, names only | Step 05-04: 0 lines lost. `--list-tests` carries no class, as 02-01 said |
+| 7 | Met | Step 05-04: all 17 lines stand, and 7 are new plants |
+| 8 | Met | Step 05-04, under the maintainer's probe wording |
+| 9 | Met | Step 05-04: identical with nothing taken out |
+| 10 | Met | Step 05-04: 3 ids |
+| 11 | Met | Steps 04-02 to 04-05, 05-03 and "Rule 7" |
+| 12 | Met | 05-04: no connector class in `F`; 06-01: the script holds `F`; above: the grep prints only the warning |
+| 13 | **Not met** | Two runs, above |
+| 14 | First half met | Step 06-04. The second half waits for push 7 |
+| 15 | Met | Slice A: 3,648 + 5,857 = 9,505, one list |
+| 16 | **Backend not met** | 73.29 s against 60 s, with the maintainer. Frontend: answered by the maintainer's "Frontend timing target" |
+
+**Pushes.** 1 is run 42370793984 at `fcc395c1c`: backend skipped, frontend green. It was not given a section of its own, so this line records it. 2, 3 and 4 to 6 have theirs. The push of `4103cadc3` is the extra plain run. 7 is the orchestrator's.
+
+**Mutation, per slice.** Stated here as the waiver of "What closes the Story", and guarantee 1 is what makes each true.
+
+| Slice | Mutation |
+|---|---|
+| A | N/A, because it holds `package.json` and docs |
+| B | N/A, because it holds a test helper, tests, a workflow, shell and docs |
+| C, D, E | N/A, because they hold test files only |
+| F | N/A for Stryker, which mutates the product assembly. `Test-Fast.ps1` is shell, and the Python scripts carry their own unit tests, 155 in all |
+
+**Handed over at close. Nothing here edited another Story's files.**
+
+| To | What |
+|---|---|
+| T9 #6536 | The `category` column is ready with slice F, once push 7 is on `main`, and it reads the base chain. T9's 5 calibration runs start after this. The four lines of its brief stand in slice-50's "Changes from T6's DESIGN and DEVOPS": slice F not D, container tests, connector classes left out of both ceilings, and `GITHUB_STEP_SUMMARY` with no workflow edit. Nothing further is owed there |
+| T9 #6536, on rollback | Slice F reverts alone only until T9's first ledger entry, not slice B, as T9's delta says. From then on T9's slice C goes first |
+| T9 and T10 | The class table of step 06-04 is the input for the missed backend target: four `Encryption` classes hold 43.1 % of the fast tier's time |
+| T10 #6537 | Lower the ceilings only after T10's 5 runs, as T9's "Owed to other briefs" says. `category` is slice F's, not slice D's |
+| T5 #6469 | The three lines of its brief stand in slice-49's "Changes", and D-6469-5, D-6469-7 and D-6469-13 take them up. T5's rollback line is in this delta since `d17896842`. Its helper goes out with push 7 |
+| T11 #6538 | The fast cycle's home is the DELIVER bullet of `CLAUDE.md`; T11 points to it and does not repeat it |
+| Roadmap, the record of 04-02 | Its `test_file`, `TestTierGuardTest.cs`, did not exist before the step: the step wrote it. No later step depends on that |
+| ADO #6512, a comment | The watch item: the first force-full run after slice E is read once for any `[Explicit]` id with an outcome other than `NotExecuted`. No whole list has run under that string since the moves. It does not hold the Story |
+| Orchestrator | Push 7, its CSV against push 6's, its `Unit` rows against the fast list plus the 3 offline ids, both directions, which closes guarantee 14. ADO #6512 moves by the usual Story rule; the Epic is the maintainer's. No release notes |
+
+**Open.** The maintainer's answer on 73 s. Push 7 and guarantee 14's second half. Guarantee 13 stays not met: nothing can change that.
