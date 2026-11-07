@@ -85,7 +85,7 @@ says so. **The baseline T10 needs does not exist yet** (see "What T10 cannot sta
 | D-6537-5 | T10 builds no helper, script, base class or guard. It uses T5's harness, T5's guard lists, T6's category and T9's report. If a suite needs a helper T5 did not leave, T10 stops and asks | One mechanism per question; the brief says the same |
 | D-6537-6 | **One stop rule, in three places:** stop and ask after the top two suites, or when a suite's saving is under 1 % of the baseline summed `Integration` seconds (the "1 % line", about 20.7 s on T9's stand-in of 2,068 s, an estimate until the baseline exists). The check is a **prediction** at step 1 (T5's priors only) and at step 2 (the pilot class measured, the rest of the suite projected), and **measured** at the close of each suite (the by-class sum). Under the line in any of the three means stop and ask | The maintainer's decision; the saving cannot be measured before a class has moved, so the early checks are marked as predictions |
 | D-6537-7 | Success has a floor and a target, each defined in "The success number". A **provisional target `P` of 1.1 %** is written there now, from stated estimates, and replaced once at step 2 by a measured one | Time is the gate. The maintainer asked for a percentage at DESIGN |
-| D-6537-8 | The last commit applies T9's rules to lower the mean and total ceilings, from 5 plain runs after the last move push. It is a data commit made **after** the after set is read. **Where the formula would not lower a ceiling, T10 writes nothing for it. That departs from "lowers the ceilings, total included" and needs the maintainer's ruling before the data commit** ("How the ceilings are lowered") | The maintainer's decision, with a part T9's rules cannot deliver; T9 expects both lowered |
+| D-6537-8 | The last commit applies T9's rules to lower the mean and total ceilings, from five plain eligible runs whose head is after the last move commit and before the data commit (the last move push's own run is the first of them if it is eligible). It is a data commit made **after** the after set is read. **Where the formula would not lower a ceiling, T10 writes nothing for it. That departs from "lowers the ceilings, total included" and needs the maintainer's ruling before the data commit** ("How the ceilings are lowered") | The maintainer's decision, with a part T9's rules cannot deliver; T9 expects both lowered |
 | D-6537-9 | At most three pushes: suite 1, suite 2, the data commit. T5's push rules apply word for word: no `ci*.yml` edit, the path classifier answers `false` for every connector before each push, and the always-on list run before each push with the id table as its allowance | Each backend push runs the whole tail; a list run proves no test is lost |
 | D-6537-10 | No ADR, no `brief.md` change, no CLAUDE.md change. T5's bullet already says where a new scenario lands | Test structure only |
 | D-6537-11 | **Start condition: T5 finished, only.** If T5 stalls or stops short of finishing, T10 asks the maintainer and does not start | A suite T5 touches is closed to T10 until T5 finishes it; a stopped T5 leaves half-moved suites and lists |
@@ -180,7 +180,7 @@ A step is a commit. Days are estimates. Each leaves the suite green; no producti
 | 3 | 1 | The rest of suite 1 | As step 2, plus the guard lines below |
 | 4 | 1 | Suite 2, with its own checkpoint on its first class | As step 3. At the close of each suite the 1 % check is **measured**, by class |
 | 5 | wait | **Stop and ask the maintainer** with the numbers (the top two are done), or earlier by the stop rule | |
-| 6 | 0.25, after 5 runs | **In this order:** the after set (5 plain runs after the last move push), the success reading from it, then the ruling on the ceilings, then the data commit. The data commit starts runs of its own, which are not part of the after set | "The success number", "How the ceilings are lowered" |
+| 6 | 0.25, after 5 runs | **In this order:** the after set (five plain eligible runs whose head is after the last move commit and before the data commit (the last move push's own run is the first of them if it is eligible)), the success reading from it, then the ruling on the ceilings, then the data commit. The data commit starts runs of its own, which are not part of the after set | "The success number", "How the ceilings are lowered" |
 
 About 3.25 days, so M, moves only; a rewrite step, if the maintainer says yes, is added after step 4 and sized then. Steps 2 to 4 are three commits per suite at most, each with its own id table.
 
@@ -242,12 +242,12 @@ T9's rules apply as written; T10 invents no path.
 
 **A departure for the maintainer's ruling, before the data commit.** The maintainer's decision is that T10 "lowers T9's ceilings in its last commit, the total included", and T9 expects both lowered. T9's rules cannot always deliver that: the mean ledger has no raise and takes an entry only if lower, and the total takes a re-derivation only "when lower". So where the formula would not lower a ceiling, T10 writes **nothing** for it, says so in the record, and does not force a number. Item 2 says why the mean is the likely case. This is a departure from the decision's wording, and the maintainer rules on it (open item 2) before the data commit is made.
 
-1. **Sequence.** The last move push, then 5 plain runs that pass T9's reading rule (distinct run ids, green test step, no `Failed` row, connector answers `false`), then the success reading from those runs, then the ruling above, then the data commit. The five are the same runs as the after set for the success reading, so the two proofs read the same CSVs; the data commit's own runs are not among them.
+1. **Sequence.** The last move push, then five plain eligible runs whose head is after the last move commit and before the data commit (the last move push's own run is the first of them if it is eligible); eligible means, in that attempt, the test step passed, no `Failed` row, every connector and `connector_shared` answer `false`, and after T6's slice F; then the success reading from those runs, then the ruling above, then the data commit. The five are the same runs as the after set for the success reading, so the two proofs read the same CSVs; the data commit's own runs are not among them.
 2. **Mean.** Largest mean seen over the 5, times `h`, rounded up, where `h` is the measured largest over smallest of that figure with a floor of 1.13. The ledger has no raise, so the entry is written only if it is below the newest enforced one. **When the formula would not lower it, nothing is written for the mean.** That is the likely case: moved rows cost less than the tier's mean (about 0.5 s against about 0.75 s, T5's stand-in), so their leaving lifts the mean, by about 2 to 3 % for ~190 rows (T5's own figure was +0.7 % for 56 rows and +3 to +4 % for 250 to 300, scaled; an estimate), and a fresh derivation then sits above the entry from before the moves. The record says so, and the maintainer is told in the ruling above. A **mean ceiling breach during the work is not raised**: it stops and asks, as T9 says.
 3. **Total.** The same formula, written as a lowering with a reason that names the moved suites. It may only be an entry lower than the current one; the count at derivation is stored beside it. The moved rows leave the tier whole, so the total is the ceiling most likely to fall (about 190 rows at 0.5 s is about 95 s, an estimate). **When the formula would not lower it, nothing is written for the total either**, under the same ruling.
 4. **Fast limit.** Not touched: a moved-as-is row is under T5's 2 s own rule, far below T9's limit, and a rewrite is smaller still. If a moved row would exceed the limit, that row stays. N/A otherwise.
 5. **A measured spread over 1.25 is never capped:** the entry stays provisional and the maintainer is asked. **The Story does not close while a limit it lowered is provisional.**
-6. **A clean window.** The commit is a JSON-only plain push, read alone: no other Story pushing at the same time. A red on trunk is read by T9's table ("A red on trunk from a new ceiling"): count up, or one class far up, is a real cause and a fix; count unchanged is a slow runner and a re-run of the failed job; red twice stops and goes to the maintainer. T10 does not set `LIGHTHOUSE_BUDGET_WARN_ONLY`, which is the maintainer's. **Rollback is T9's:** the data commit is a plain `git revert` and goes first, before any revert of T9's enforcing commit; reverted moves go in reverse order after it, each with its guard-list lines, as T5's rollback says.
+6. **A clean window.** The commit is a JSON-only plain push, read alone: no other Story pushing at the same time. A red on trunk is read by T9's table ("A red on trunk from a new ceiling"): count up, or one class far up, is a real cause and a fix; count unchanged is a slow runner and a re-run of the failed job; red twice stops and goes to the maintainer. T10 does not set `LIGHTHOUSE_BUDGET_WARN_ONLY`, which is the maintainer's. **Rollback is T9's:** the data commit is a plain `git revert` and goes first (it removes T10's lower entries, so the newest enforced ceiling goes up: see open item 8), before any revert of T9's enforcing commit; reverted moves go in reverse order after it, each with its guard-list lines, as T5's rollback says.
 7. **Before each move push, a check by hand:** the predicted new mean and total, from the report's formula with the id table's counts and seconds taken out, against the ledger's room. A move that would breach the mean ceiling does not go in. The 5 runs must not be started while a foreign push is moving tests, or the control reading below is harder.
 
 ## Wave: DESIGN / [REF] What can lie, and what catches it
@@ -347,6 +347,7 @@ None blocks DESIGN. Each has a recommendation already applied.
 5. **Which suite, when T5's leftovers rank high.** Decided in the brief (T10 may take one). Which one waits for the ranking.
 6. **A ceiling that stays provisional.** If the measured spread is over 1.25, T10 cannot close on its own; it comes back to you.
 7. **T5 stalls.** T10 does not start and asks you.
+8. **Reverting the data commit raises the ceilings.** T9's ledger allows no raise. A revert is allowed only as T9's own rollback for a bad ceiling, and needs your ruling. Recommended: yes, that use only, each time asked.
 
 ## Wave: DESIGN / [REF] Review
 
@@ -418,3 +419,138 @@ Not confirmed from any run: every figure, T6's slice F, T9's report shape, wheth
 | In-memory SQLite or EF InMemory for the lower layer | Rejected, as T5 did | Foreign-key and file behaviour differ |
 | Count constant on a new guard list | Rejected for any new guard, as T5 and T6 did. **T2's existing `MostTypesTheListMayHold` stays and is lowered with each move** | A second line in the same commit blocks nothing, but T2's constant exists and its test fails if the number is not lowered |
 | Domain events, outbox, unit of work, value objects, JSON column, optimistic concurrency | N/A | No production model or persistence changes |
+
+## Wave: DEVOPS / [REF] Platform readiness
+
+Existing platform; nothing is deployed. Written 2026-11-07 with the maintainer away, so each choice takes the recommended option and says why. **No test ran**, and no file but this one changed. Read: this delta, T5's and T9's DEVOPS sections, `ci.yml`, `ci_backend.yml`, `ci_changes.yml`, `path-classifier.sh`, `test-time-budget.json`. `environments.yaml` is not written, as in T5 and T9.
+
+| Topic | Answer |
+|---|---|
+| Pipeline | **No `ci*.yml` edit, no new step, no new workflow.** T10 only edits test files under `Lighthouse.Backend/Lighthouse.Backend.Tests/` and, in its last commit, `Scripts/test-timings/test-time-budget.json`. The budget step, the Python tests of the budget check and the timing upload already run on every backend push |
+| Environments | **Linux, local** and **CI, `ubuntu-latest`**. Nothing is deployed: no canary, no flag, no database step. The `release` job waits for the maintainer as ever. Windows and macOS jobs run no test |
+| Branching | Trunk-based on `main`, as T5 and T9. A moved trunk means stop and report; nothing is rebased |
+| Mutation | N/A, as DESIGN says: no product file changes. The deliberate break of one production line per suite stands in. It is made in the working tree and reverted before the commit. Before each push, `git log --oneline <base>..HEAD -- Lighthouse.Backend/Lighthouse.Backend/` must list no T10 commit, `<base>` being the parent of T10's first commit |
+| Usage-data event | **N/A, because nobody using the product reaches a test or a CI budget check, so no event could show use.** `UsageDataEventName` and `docs/settings/usagedata.md` are unchanged |
+| Observability | The CI log of `Test Backend` and `Check test-time budget`, the step summary, and the `test-timings-backend` CSV. No dashboard: a red run is the alert |
+| Secrets | None added. Local runs remove seven token variables (see "Local commands") |
+| Peer review | Not run: no new target, framework, stack or security change, and the review at the end of DISTILL covers this wave |
+
+## Wave: DEVOPS / [REF] What each push triggers
+
+Read from `ci.yml`, `ci_changes.yml` and `path-classifier.sh`.
+
+- `ci.yml` starts on a push to `main` that touches `Lighthouse.Backend/**` or `Scripts/test-timings/**`. Both of T10's path sets are in that list.
+- The backend answer is `true` for a path under `Lighthouse.Backend/Lighthouse.Backend.Tests/` and for a path under `Scripts/test-timings/`.
+- **The budget JSON starts the frontend job too.** Change detection turns `frontend` on for `Scripts/test-timings/`, so that push runs backend, frontend and the tail. A test-only push leaves `frontend` off.
+- **A push is force-full only when `connector_shared` is `true`.** That happens for a `ci*.yml` edit, a csproj, `Program.cs`, the solution file, or the shared connector paths. A foreign change not yet closed by a green run can bring it.
+- **T10's own files are checked, not assumed.** The GitHub pattern also matches test files under `Services/` whose name holds `GitHubService` or `LighthouseReleaseService`, and the connector patterns match test folders under `WorkTrackingConnectors/`. Before each push, run `classify_jira`, `classify_ado`, `classify_linear`, `classify_servicenow`, `classify_github` and `classify_shared` on the names of the files the push changes, and on the window's list as below. Any `true` means that file is split out of the push or the suite stops and is reported.
+- **"Plain, backend only" covers the test stage only.** The live suites stay out, and `Verify Frontend` stays off for a test-only push. Every job after the tests still runs: Sonar gates, version, SBOM, the package and Docker build, the three Playwright verifies (`verifysqlite`, `verifypostgres`, `verifyauth`) against an unchanged product, the standalone packages and the Windows and macOS checks. The `release` job parks at the maintainer's approval.
+- Plain means the always-on clause only: everything that is not `Integration`, plus hosted `Integration` tests with no connector category. Force-full adds every live suite, on keys shared with CI.
+
+| Push | Carries | Backend tests | Frontend | Live suites | Test jobs |
+|---|---|---|---|---|---|
+| Suite 1 | Test files, guard lines, T2's count; the budget entry only if a class is gone or renamed | Plain | No; **yes** if the JSON is in it | None | `Test Backend`, `Test the budget check`, `Check test-time budget`, then the tail above |
+| Suite 2 | The same | Plain | As above | None | As above |
+| Data commit | The JSON alone | Plain | **Yes** | None | As above, plus `Verify Frontend` |
+| Baseline table, finalization | `docs/` only | **No run** | No run | None | Nothing: `docs/` is not in `ci.yml`'s `paths` |
+
+**A window is clean only if it is checked.** Before each push, as T5 and T9 say: `git diff --name-only <last green> HEAD`, then each `classify_*` from `path-classifier.sh` on that list, and a grep for `^.github/workflows/ci.*\.yml`. Any `true` means wait for a green run, or tell the maintainer. Each push also waits for the one before to end, since `ci.yml` has no `concurrency`. The data commit goes alone, with no other Story pushing, so its verdict is read by itself.
+
+**A move push is judged by the ceilings in force.** The budget step runs on every backend push. Cheap rows leaving lift the `Integration` mean. If T9's mean entry is enforced, a breach fails that push; if it is provisional, it only warns. DESIGN's hand check before each push (predicted mean and total against the ledger's room) is what keeps it from being the first sign. A mean breach during the work is never raised: stop and ask.
+
+## Wave: DEVOPS / [REF] The runs needed
+
+**Five plain runs before, five after.** Neither set can be asked for. A manual dispatch only skips the backend if no backend-path commit sits after the last green base; otherwise it runs, but for those commits and not as a fresh sample, and a re-run keeps its run id, so it is no new run. The runs come from real backend pushes, as T9 found.
+
+**An eligible run** is one where, in that attempt, `Test Backend` passed, the CSV has no `Failed` row, every connector answer and `connector_shared` in Detect Changes is `false`, and the head is after T6's slice F. A green but slow run is never dropped. A force-full run never counts.
+
+| Set | Where it comes from | Rule |
+|---|---|---|
+| Before | T9's five runs for its enforcing entries, if no test moved between them, else the five latest eligible runs after T5's last move push | **Complete before T10's first move push.** That push's own run already holds moved tests. If fewer than five exist, the first move push waits |
+| After | **Five eligible runs whose head is after the last move commit and before the data commit.** The last move push's own run is the first of them if it is eligible | T9's own push counted in its set in the same way. The data commit and its runs are **not** in the set |
+
+- **"No test moved between them", as a command.** For each of the five CSVs, `python3 -I -c 'import csv,sys; print("\n".join(sorted(r["fully_qualified_name"]+"|"+r["category"] for r in csv.DictReader(open(sys.argv[1])))))' <run>.csv > <run>.ids`, then `diff` each `.ids` file against the first. No output means the same ids with the same categories. Any line is a foreign test added, removed or moved; it is read, and the run is either explained or dropped from the set with the reason written.
+- **The before wait has no limit.** If T9 is late or fewer than five eligible runs exist, the first move push waits; it is on the maintainer's list.
+- T10 pushes nothing between the last move push and the data commit, so up to four of the five after runs depend on other Stories' pushes. With the maintainer away this may take a while. The data commit waits for them; no synthetic push is made.
+- A docs-only push starts no CI. So the baseline table, the calibration rows and the finalization docs add no run.
+- **A re-run:** a failed job re-run once that goes green counts, under the same run id. Its artifact id is written down in the table, since one id can hold two CSVs.
+
+## Wave: DEVOPS / [REF] Reading the numbers
+
+- **Eligibility, run ids and artifact ids:** the conditions above, and T9's "Reading a run, so the ledger does not learn a bad one" for the full table of cases.
+- **The table:** the baseline table of step 1 and the after table hold run id, attempt, artifact id, commit, the connector answers, `Failed` rows, then `Integration` count, sum and mean. They sit in this workspace, as T9's calibration table does.
+- **The count line:** each run's `Integration` count is checked against T9's "since the total was set" line, so a foreign test added or removed shows up. A run with a different foreign count is read, not guessed.
+- **Same method both sides:** the same CSVs, the same `check_budget.py` join, CI with CI and local with local, never across.
+- **The success number** is DESIGN's: the by-class fall over the id table, the tier median beside it with its spread, and `P`.
+- **T5's timing method applies only to `u`, `c` and `hop` at step 2.** One local run on a quiet machine, before and after the pilot on the same machine, with the command under "Local commands". It does not feed the before and after sets, which come from CI.
+
+## Wave: DEVOPS / [REF] Local commands
+
+Every run removes seven token variables, and a count of them in the environment prints 0 first. Live connector categories are never in a filter. No run starts while another test run is active.
+
+```
+# the check: must print 0
+env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken env | grep -c 'IntegrationTestToken\|LinearAPIKey\|E2ETestToken'
+```
+
+In the commands below, `U` stands for that same `env -u ... -u AzureDevOpsLighthouseE2ETestToken` prefix, written out in full when run. All run from the repository root.
+
+| When | Command |
+|---|---|
+| **While working** | A class filter with a stated count, for the moved class and its new home. `<Class>` is a placeholder: `U dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Release --filter "FullyQualifiedName~<Class>"`. `Lighthouse.Backend/Test-Fast.ps1 -NoBuild` once T6's slice F has put it in the tree (it is not there today). No unfiltered `dotnet test` |
+| **Slice end, one full run** | `dotnet build Lighthouse.Backend/Lighthouse.Backend.Tests -c Release` with zero warnings, then `U LIGHTHOUSE_TEST_WORKERS=6 dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Release --no-build --filter "Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration)" --logger "trx;LogFileName=<name>.trx" --results-directory <dir>`. The `|` sits inside double quotes, so the shell passes it on. Its TRX is the list compared with the last one. Docker must be up |
+| **Step 2 only, the timing run** | The same command with `LIGHTHOUSE_FIXTURE_TIMING=1 LIGHTHOUSE_FIXTURE_TIMING_OUT=$PWD/<dir>/fixture-setup-timings.csv` added after `LIGHTHOUSE_TEST_WORKERS=6`, and then `python3 Scripts/test-timings/trx_to_csv.py --trx <dir>/<name>.trx --output <dir>/<name>.csv` |
+| Before each push | The window check, the production check and the classify check above, and the hand check of the mean and total |
+| Coverage | From `Lighthouse.Backend/`: `pwsh ./Test-Coverage.ps1`, which leaves out the live categories unless given its own `-Filter`. Twice per Story, before the first move and after the last |
+
+A worktree shows 2 Licensing failures until the licence file is copied from the main checkout. Pass absolute paths to subagents.
+
+## Wave: DEVOPS / [REF] Rollback
+
+Every step is a `git revert` and a plain push. No `ci*.yml`, no product file, nothing a user sees. Revert in reverse order.
+
+| Commit | Revert | Constraint |
+|---|---|---|
+| Data commit (ceilings) | First, alone. A JSON-only push that starts backend, frontend and the tail. **Reverting it removes T10's lower entries, so the newest enforced ceiling goes back up.** T9's ledger forbids that in normal use: no path raises a ceiling. It is allowed only as T9's own rollback for a bad ceiling, and **it needs the maintainer's ruling** | If the data commit reds on trunk, read the report as T9's table says. T10 does not set `LIGHTHOUSE_BUDGET_WARN_ONLY`; it is the maintainer's. It goes before any revert of T9's enforcing commit |
+| Suite 2 moves | Alone, its commits in reverse | Each move commit holds the class leaving the base, its guard line, T2's list line and `MostTypesTheListMayHold`, and any budget entry. Reverting restores all of them together, so the count goes back up with the line |
+| Suite 1 moves | After suite 2, the same way. The pilot class last | Same |
+| Baseline table, finalization docs | Any time, with what they describe | Starts no CI |
+
+- A revert push takes a list run like any other push, and its diff shows the id table in reverse.
+- **Fix forward** once a later Story's test depends on a file T10 added. One red test after a push is a fix, not a rollback.
+- The deliberate break is never committed, so there is nothing of it to revert.
+
+## Wave: DEVOPS / [REF] Decisions
+
+| ID | Decision | Why (one line) |
+|---|---|---|
+| D-6537-13 | No `ci*.yml` edit, no new step | The existing steps already run the tests, time them and judge the ceilings |
+| D-6537-14 | Both move pushes are plain for the test stage; the budget JSON also starts the frontend job, so the data commit carries `Verify Frontend`. The jobs after the tests run on every push | Read from change detection and `ci.yml` |
+| D-6537-15 | The before set closes before the first move push. The after set is five eligible runs whose head is after the last move commit and before the data commit, the last move push's own run first if eligible | The first move push's run already holds moved tests; the data commit moves none |
+| D-6537-16 | No synthetic push or dispatch to make runs; the data commit waits for the rest of the after set | A push costs a whole tail, and a dispatch is no fresh sample |
+| D-6537-17 | T9's reading rule is used, with its conditions written out; T5's timing method only for `u`, `c` and `hop` | One rule per question |
+| D-6537-18 | A file or suite whose name matches a connector or shared answer is split out or not moved in T10 | Its push would turn a connector answer `true` and spend the shared keys |
+| D-6537-19 | Usage-data event N/A | Nobody using the product reaches a test |
+| D-6537-20 | Local runs remove seven token variables and run clause A for the slice-end list | A token set would write to a real tracker |
+| D-6537-21 | The production check is `git log` over the product folder since T10's base, not a diff against the last green | A diff against the last green shows other Stories' product commits |
+
+## Wave: DEVOPS / [REF] For the maintainer
+
+Nothing here blocks DISTILL.
+
+1. **Both waits have no limit.** The before set waits for T9 or enough eligible runs, so T10's first move push waits too. Four of the five after runs need other backend pushes, so the data commit waits. If the chain goes quiet, say whether T10 may close without the ceilings, or push something small.
+2. **Reverting the data commit raises the ceilings.** T9's ledger allows no raise. Using it as a rollback is T9's own rollback for a bad ceiling, and needs your ruling each time. Say if you want a standing answer.
+3. **`Test-Fast.ps1` is not in the tree yet.** Until T6's slice F lands, the working loop is a class filter. No decision needed.
+4. **Still pending from DESIGN, unchanged:** rewrite as well as move, the ruling on a ceiling the formula cannot lower, the top two by stage-3 saving, and T9's seconds-only or count-line choice.
+
+## Wave: DEVOPS / [REF] Review
+
+The first review came back NEEDS_REVISION. Changed in these DEVOPS sections and in the DESIGN lines named:
+
+- Data commit rollback now says it removes T10's lower entries and raises the newest enforced ceiling, allowed only as T9's rollback with the maintainer's ruling. Added to the DEVOPS list and DESIGN's open list.
+- The after set has one count everywhere: five eligible runs whose head is after the last move commit and before the data commit. DESIGN's decision 8, step 6 and "How the ceilings are lowered" say it, and the eligibility conditions are written out.
+- Tokens: seven variables, and a wider count check.
+- Commands are literal: the `-u` list, clause A, a timing run, and the working directory for coverage.
+- The production check is a `git log` since T10's base.
+- A push's trigger section lists the jobs after the tests and says "plain" covers the test stage only; each push's files are checked with every `classify_*`.
+- The dispatch line is qualified; the before wait is on the maintainer's list, with a command for "no test moved between them"; a green re-run attempt counts with its artifact id.
