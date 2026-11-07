@@ -667,3 +667,28 @@ No run named a time-budget offender, so the reporter check of 02-01 has none to 
   So it did not come back in two attempts; it is not explained, and two green runs do not show it cannot happen.
 - Gates after the test edits: `pnpm build` exit 0, no errors or warnings, `git status` showed only the three test files. Plain
   `pnpm test` with the time budget on: 618 files, 9500 tests passed, 0 offenders.
+
+## Step 02-01: shuffle seed in the action, workflow and reporter check
+
+- **Action and workflow:** `build-frontend/action.yml` has an optional `shuffle-seed` input (default empty). The test step reads it as
+  `SHUFFLE_SEED` from `env`, never in the run text. Empty runs `pnpm test`. Set prints `Test order seed: <seed>`, emits a notice and runs
+  `pnpm test --sequence.shuffle.tests --sequence.seed="$SHUFFLE_SEED"`. `ci_frontend.yml` passes `shuffle-seed: ${{ github.run_id }}`; nothing else changed.
+- **Pins:** four tests added to `.github/scripts/action-pins.test.mjs`. Red before the edit (3 failed of 56; the fourth, "no run body interpolates the
+  seed", passes vacuously before the input exists), green after. `node --test .github/scripts/*.test.mjs`: 214 passed before the edit, 218 passed after,
+  0 failed. The step brief said 132 before; the count on this tree was 214, so the 132 was stale. The new ones are 4.
+- **First-test check (direct):** one full run on seed 12345678901 with a temporary reporter recording, per file, the order of `allTests()` and each
+  test's `startTime`. Of 603 files with two or more timed tests, **568 had a first listed test that was not the first to start**, and in all 603 the
+  listed order differed from the start order. So the reporter did take the wrong test as the file's first under shuffle. Vitest lists tests in
+  collection order whatever the run order.
+- **Reporter change (its own commit):** `observedRunFromVitest.ts` carries `startedAtMs` and marks as first the non-skipped test with the earliest start;
+  ties on the millisecond (183 files had one) keep the listed order. Two tests for it plus one for the start time being read; `src/tests/timeBudget`
+  is 122 passed. No limit was loosened.
+- **Same seed, same order:** the full run was repeated on seed 12345678901. The listed order is identical, and for every file the order of the tests
+  with a unique start time is identical in both runs (0 files differ). Raw start order differed in 165 files, all explained by millisecond ties.
+- **CSV and budget:** `vitest_to_csv.py` on one `test-results.json` (the set-branch run) and on a copy with every file's `assertionResults` shuffled:
+  9503 rows each, equal as a set and as a multiset. `check_budget.py --stack frontend` exits 0 on both.
+- **Set branch** (the step's run text, extracted, `SHUFFLE_SEED=12345678901`, `CI=true`, time budget unset): exit 0, 618 files, 9503 tests passed, 0 offenders.
+  **Pre-fix copy** of `PortfolioDetail.test.tsx` (from the parent of 310490a9e) added as a throwaway file: exit 1, 1 test failed
+  ("a refresh that failed keeps saying so when a forecast run finishes afterwards"; `bail 1` stopped the run). The copy was deleted, never committed.
+  **Empty branch**, with `pnpm` stubbed: prints `pnpm test` only, no seed line.
+- **Offenders of the 01-04 runs:** 0 in every run (the delta records 0), and 0 in the runs of this step, so no looser limit and no further reporter change.

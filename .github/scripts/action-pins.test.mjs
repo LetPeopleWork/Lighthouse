@@ -1,5 +1,5 @@
 import { strict as assert } from 'node:assert';
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
@@ -332,4 +332,48 @@ test('a .github that cannot be read fails the check instead of passing it', asyn
 	const { root } = await tree(t, { [WORKFLOW]: null, [ACTION]: null, '.github/workflows/ci.yml': null });
 	await writeFile(join(root, '.github'), '');
 	await assert.rejects(findActionPinViolations(root), { code: 'ENOTDIR' });
+});
+
+// The seed is user-controlled text. Interpolated into a run: body it would be shell code, so the
+// step has to receive it through the environment and read it as a variable.
+const testStepOf = (action) => {
+	const start = action.indexOf('- name: Test Frontend and Sonar report');
+	assert.notEqual(start, -1, 'the test step is missing from the build-frontend action');
+	const rest = action.slice(start + 1);
+	const next = rest.search(/\n {4}- name: /);
+	return next === -1 ? rest : rest.slice(0, next);
+};
+
+const readAction = () => readFile(join(REPO_ROOT, ACTION), 'utf8');
+
+test('the test step reads the shuffle seed from its environment', async () => {
+	const step = testStepOf(await readAction());
+	assert.match(step, /\n {6}env:\n(?: {8}.*\n)*? {8}SHUFFLE_SEED: \$\{\{ inputs\.shuffle-seed \}\}/);
+	assert.match(step, /\$SHUFFLE_SEED|\$\{SHUFFLE_SEED\}|"\$SHUFFLE_SEED"/);
+});
+
+test('the shuffle seed input is optional and empty by default', async () => {
+	const action = await readAction();
+	assert.match(action, /\n {2}shuffle-seed:\n(?: {4}.*\n)*? {4}required: false\n(?: {4}.*\n)*? {4}default: ''/);
+});
+
+test('no run: body of the build-frontend action interpolates the shuffle seed', async () => {
+	const lines = (await readAction()).split('\n');
+	let runIndent = -1;
+	const offenders = [];
+	lines.forEach((line, i) => {
+		const indent = line.length - line.trimStart().length;
+		if (runIndent !== -1 && line.trim() !== '' && indent <= runIndent) runIndent = -1;
+		const key = /^(\s*)(?:- )?run:/.exec(line);
+		if (key) runIndent = key[1].length;
+		if (/inputs\.shuffle-seed/.test(line) && (key || runIndent !== -1) && !/^\s*SHUFFLE_SEED:/.test(line)) {
+			offenders.push(i + 1);
+		}
+	});
+	assert.deepEqual(offenders, []);
+});
+
+test('the frontend workflow passes the run id as the shuffle seed', async () => {
+	const workflow = await readFile(join(REPO_ROOT, WORKFLOW), 'utf8');
+	assert.match(workflow, /uses: \.\/\.github\/actions\/build-frontend\n\s+with:\n\s+run-tests: 'true'\n\s+shuffle-seed: \$\{\{ github\.run_id \}\}/);
 });

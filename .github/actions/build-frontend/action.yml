@@ -10,6 +10,10 @@ inputs:
     description: "Version string to download SBOM artifact (leave empty to skip)"
     required: false
     default: ''
+  shuffle-seed:
+    description: "Seed for a shuffled test order (leave empty to keep the default order)"
+    required: false
+    default: ''
 
 runs:
   using: "composite"
@@ -60,10 +64,18 @@ runs:
     - name: Test Frontend and Sonar report
       if: ${{ inputs.run-tests == 'true' }}
       shell: bash
-      run: pnpm test
+      run: |
+        if [ -n "$SHUFFLE_SEED" ]; then
+          echo "Test order seed: $SHUFFLE_SEED"
+          echo "::notice title=Test order seed::Reproduce locally with: pnpm test --sequence.shuffle.tests --sequence.seed=$SHUFFLE_SEED"
+          pnpm test --sequence.shuffle.tests --sequence.seed="$SHUFFLE_SEED"
+        else
+          pnpm test
+        fi
       working-directory: ./Lighthouse.Frontend
       env:
         CI: true
+        SHUFFLE_SEED: ${{ inputs.shuffle-seed }}
 
     - name: Setup Sonar cache
       if: ${{ inputs.run-tests == 'true' }}
