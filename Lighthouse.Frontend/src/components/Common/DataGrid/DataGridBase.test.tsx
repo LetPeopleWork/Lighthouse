@@ -282,7 +282,7 @@ describe("DataGridBase", () => {
 
 			// Verify sortable columns have sort buttons
 			const sortButtons = container.querySelectorAll(
-				'button[aria-label="Sort"]',
+				'button[aria-label^="Sort "]',
 			);
 			expect(sortButtons.length).toBeGreaterThan(0);
 		});
