@@ -1,3 +1,4 @@
+using Lighthouse.Backend.Tests.Integration.Containers;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Mono.Cecil;
 using static Lighthouse.Backend.Tests.Architecture.TestHostScanning;
@@ -8,11 +9,15 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// The fast test loop leaves out what sits on <see cref="IntegrationFixture"/>, so a fixture that starts an
     /// application host belongs on that base. This guard reads the compiled test assembly and judges every concrete
     /// class with tests, nested ones included: anything such a class runs, in its set-up, tear-down, constructors,
-    /// field initialisers or tests, on the class or on a base class, counts as the class's own.
+    /// field initialisers or tests, on the class or on a base class, counts as the class's own. The base must also
+    /// stay honest: nothing sits on it without a reason, nothing else writes its category, and a hosted fixture
+    /// carries no connector category, because CI selects live tests by that category.
     /// </summary>
     [TestFixture]
     public class TestTierGuardTest
     {
+        private const string IntegrationCategory = "Integration";
+        private const string ContainerNamespace = "Lighthouse.Backend.Tests.Integration.Containers";
         private const string StartsOneHostForTheFixture = "starts one host for the whole fixture and has not moved to the base yet";
         private const string StartsAHostInItsTests = "starts a host in its tests or its per-test set-up and has not moved to the base yet";
         private const string InheritsItsHostFromTheUsageDataRoot = "takes its host from UsageDataCollectorObservationTest, which has not moved to the base yet; one line on that class moves all of these";
@@ -142,6 +147,26 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.TestHelpers.TestWebApplicationFactoryTest"] = ChecksTheTestHostItself,
         };
 
+        // A permanent list, not a baseline. Every test of these classes carries the connector category, and only the
+        // tests that write to a real tracker are in the integration tier. On the base, the offline tests would count
+        // as live too, and CI would stop running them.
+        private static readonly IReadOnlyDictionary<string, string> LiveClassesWithOfflineTests = new Dictionary<string, string>
+        {
+            ["Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.AzureDevOps.AzureDevOpsWriteBackTest"] =
+                "writes to a real Azure DevOps, but its empty-update and bad-id tests touch no tracker and must run in every CI build",
+            ["Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnectors.Jira.JiraWriteBackTest"] =
+                "writes to a real Jira, but its empty-update test touches no tracker and must run in every CI build",
+        };
+
+        private static readonly HashSet<string> ConnectorCategories =
+        [
+            "AdoIntegration",
+            "GithubIntegration",
+            "JiraIntegration",
+            "LinearIntegration",
+            "ServiceNowIntegration",
+        ];
+
         private static readonly HashSet<string> TestAttributes =
         [
             "NUnit.Framework.TestAttribute",
@@ -161,6 +186,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private ModuleDefinition module = null!;
         private HostBuildingScan scan = null!;
         private List<TypeDefinition> allTypes = [];
+        private List<TypeDefinition> concreteFixtures = [];
         private IReadOnlyList<string> hostedFixturesOffTheBase = [];
 
         [OneTimeSetUp]
@@ -169,7 +195,8 @@ namespace Lighthouse.Backend.Tests.Architecture
             module = IlDependencies.ReadModule(typeof(TestTierGuardTest).Assembly);
             scan = new HostBuildingScan(module, RunsWhenAFixtureRuns);
             allTypes = [.. module.Types.SelectMany(TypeAndItsNestedTypes)];
-            hostedFixturesOffTheBase = HostedAndOffTheBase(allTypes.Where(IsAConcreteClassWithTests));
+            concreteFixtures = [.. allTypes.Where(IsAConcreteClassWithTests)];
+            hostedFixturesOffTheBase = HostedAndOffTheBase(concreteFixtures);
         }
 
         [OneTimeTearDown]
@@ -231,6 +258,110 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(message, Does.Contain("Some.Namespace.SomeFixture").And.Contain("must derive from IntegrationFixture"));
         }
 
+        [Test]
+        public void NoFixtureSitsOnTheBaseWithoutAReason()
+        {
+            var stale = OnTheBaseForNoReason(concreteFixtures);
+
+            Assert.That(stale, Is.Empty, MustLeaveTheBase(stale));
+        }
+
+        [Test]
+        public void NoFixtureWritesTheIntegrationCategoryByHand()
+        {
+            var places = PlacesThatWriteTheCategory(concreteFixtures);
+
+            Assert.That(places, Is.Empty, MustNotWriteTheCategory(places));
+        }
+
+        [Test]
+        public void NoHostedFixtureCarriesAConnectorCategory()
+        {
+            var hosted = HostedWithAConnectorCategory(concreteFixtures);
+
+            Assert.That(hosted, Is.Empty, MustDropTheConnectorCategory(hosted));
+        }
+
+        [Test]
+        public void EveryLiveClassWithOfflineTestsStillWritesTheCategoryOnAMethod()
+        {
+            var writers = allTypes.Where(type => type.Methods.Any(WritesTheIntegrationCategory)).Select(type => type.FullName);
+
+            var stale = Compare(LiveClassesWithOfflineTests.Keys, writers).Stale;
+
+            Assert.That(stale, Is.Empty, "These classes no longer write the category on a test: " + string.Join(", ", stale) + ". Remove them from the list.");
+        }
+
+        [TestCase(nameof(PlantedFixtures.OnTheBaseWithNoHost), true)]
+        [TestCase(nameof(PlantedFixtures.OnTheBaseWithAHost), false)]
+        [TestCase(nameof(PlantedFixtures.LiveOnTheBase), false)]
+        [TestCase(nameof(PlantedFixtures.LiveThatCallsAMethodNamedLikeAHostSink), false)]
+        [TestCase(nameof(PlantedContainerFixtures.ContainerOnTheBaseWithNoHost), false)]
+        [TestCase(nameof(PlantedFixtures.RegularWithNoHost), false)]
+        public void AFixtureOnTheBaseWithoutAReasonIsFound(string plantedType, bool shouldBeFound)
+        {
+            var found = OnTheBaseForNoReason([Planted(plantedType)]);
+
+            Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
+        }
+
+        [TestCase(nameof(PlantedFixtures.CategoryOnTheClass), nameof(PlantedFixtures.CategoryOnTheClass), "")]
+        [TestCase(nameof(PlantedFixtures.CategoryInAnotherLetterCase), nameof(PlantedFixtures.CategoryInAnotherLetterCase), "")]
+        [TestCase(nameof(PlantedFixtures.ChildOfACategoryOnTheClass), nameof(PlantedFixtures.CategoryOnTheClass), "")]
+        [TestCase(nameof(PlantedFixtures.CategoryOnAMethod), nameof(PlantedFixtures.CategoryOnAMethod), "::Serve")]
+        [TestCase(nameof(PlantedFixtures.CategoryOnATestCase), nameof(PlantedFixtures.CategoryOnATestCase), "::Serve")]
+        public void ACategoryWrittenByHandIsFoundWhereItIsWritten(string plantedType, string writtenOn, string method)
+        {
+            var found = PlacesThatWriteTheCategory([Planted(plantedType)]);
+
+            Assert.That(found, Is.EqualTo(new[] { Planted(writtenOn).FullName + method }));
+        }
+
+        [TestCase(nameof(PlantedFixtures.OnTheBaseWithAHost))]
+        [TestCase(nameof(PlantedFixtures.LiveOnTheBase))]
+        public void TheCategoryOnTheBaseIsNotWrittenByHand(string plantedType)
+        {
+            Assert.That(PlacesThatWriteTheCategory([Planted(plantedType)]), Is.Empty);
+        }
+
+        [TestCase(nameof(PlantedFixtures.HostedWithAConnector), true)]
+        [TestCase(nameof(PlantedFixtures.HostedWithAConnectorOnAMethod), true)]
+        [TestCase(nameof(PlantedFixtures.OnTheBaseWithAHost), false)]
+        [TestCase(nameof(PlantedFixtures.LiveOnTheBase), false)]
+        [TestCase(nameof(PlantedFixtures.LiveThatCallsAMethodNamedLikeAHostSink), false)]
+        public void AHostedFixtureWithAConnectorCategoryIsFound(string plantedType, bool shouldBeFound)
+        {
+            var found = HostedWithAConnectorCategory([Planted(plantedType)]);
+
+            Assert.That(found, shouldBeFound ? Is.EqualTo(new[] { Planted(plantedType).FullName }) : Is.Empty);
+        }
+
+        [Test]
+        public void TheMessageForAStaleMarkerNamesTheTypeAndSaysItMustLeaveTheBase()
+        {
+            var message = MustLeaveTheBase(["Some.Namespace.SomeFixture"]);
+
+            Assert.That(message, Does.Contain("Some.Namespace.SomeFixture").And.Contain("must leave IntegrationFixture"));
+        }
+
+        [Test]
+        public void TheMessageForAHandWrittenCategoryNamesThePlaceAndSaysToUseTheBase()
+        {
+            var message = MustNotWriteTheCategory(["Some.Namespace.SomeFixture::SomeTest"]);
+
+            Assert.That(message, Does.Contain("Some.Namespace.SomeFixture::SomeTest").And.Contain("derive from IntegrationFixture"));
+        }
+
+        [Test]
+        public void TheMessageForAHostedConnectorSaysCiWouldReadItAsLiveAndDropIt()
+        {
+            var message = MustDropTheConnectorCategory(["Some.Namespace.SomeFixture"]);
+
+            Assert.That(
+                message,
+                Does.Contain("Some.Namespace.SomeFixture").And.Contain("CI would read each as live and drop it").And.Contain("Remove the connector category"));
+        }
+
         private static bool RunsWhenAFixtureRuns(MethodDefinition method)
             => method.IsConstructor || HasAnAttribute(method, TestAttributes) || HasAnAttribute(method, SetUpAndTearDownAttributes);
 
@@ -241,6 +372,19 @@ namespace Lighthouse.Backend.Tests.Architecture
             => "These fixtures start an application host, so the fast test loop would run them. Each must derive from " +
                 nameof(IntegrationFixture) + ": " + string.Join(", ", typeNames) + ".";
 
+        private static string MustLeaveTheBase(IEnumerable<string> typeNames)
+            => "These fixtures start no application host, carry no connector category and are no container tests, so the " +
+                "fast test loop leaves them out for no reason. Each must leave " + nameof(IntegrationFixture) + ": " +
+                string.Join(", ", typeNames) + ".";
+
+        private static string MustNotWriteTheCategory(IEnumerable<string> places)
+            => "These write the Integration category by hand. Delete the attribute and derive from " + nameof(IntegrationFixture) +
+                " instead, so the tier comes from one place: " + string.Join(", ", places) + ".";
+
+        private static string MustDropTheConnectorCategory(IEnumerable<string> typeNames)
+            => "These fixtures start an application host and carry a connector category, so CI would read each as live and " +
+                "drop it from its ordinary runs. Remove the connector category: " + string.Join(", ", typeNames) + ".";
+
         private bool IsAConcreteClassWithTests(TypeDefinition type)
             => type is { IsClass: true, IsAbstract: false }
                 && !type.Name.StartsWith('<')
@@ -250,10 +394,70 @@ namespace Lighthouse.Backend.Tests.Architecture
             => [.. fixtures.Where(IsHostedOffTheBase).Select(fixture => fixture.FullName).Order(StringComparer.Ordinal)];
 
         private bool IsHostedOffTheBase(TypeDefinition fixture)
-            => !scan.DerivesFrom(fixture, typeof(IntegrationFixture).FullName!) && scan.FixtureReachesAHost(fixture);
+            => !IsOnTheBase(fixture) && scan.FixtureReachesAHost(fixture);
+
+        private List<string> OnTheBaseForNoReason(IEnumerable<TypeDefinition> fixtures)
+            => [.. fixtures.Where(IsOnTheBaseForNoReason).Select(fixture => fixture.FullName).Order(StringComparer.Ordinal)];
+
+        private bool IsOnTheBaseForNoReason(TypeDefinition fixture)
+            => IsOnTheBase(fixture) && !scan.FixtureReachesAHost(fixture) && !CarriesAConnectorCategory(fixture) && !IsAContainerFixture(fixture);
+
+        private bool IsOnTheBase(TypeDefinition fixture) => scan.DerivesFrom(fixture, typeof(IntegrationFixture).FullName!);
+
+        // A nested type has no namespace of its own in the assembly; its full name still starts with the outer type's.
+        private static bool IsAContainerFixture(TypeDefinition fixture)
+            => fixture.FullName.StartsWith(ContainerNamespace + ".", StringComparison.Ordinal);
+
+        private List<string> HostedWithAConnectorCategory(IEnumerable<TypeDefinition> fixtures)
+            => [.. fixtures
+                .Where(fixture => scan.FixtureReachesAHost(fixture) && CarriesAConnectorCategory(fixture))
+                .Select(fixture => fixture.FullName)
+                .Order(StringComparer.Ordinal)];
+
+        private bool CarriesAConnectorCategory(TypeDefinition fixture)
+            => scan.TypeAndItsBases(fixture).Any(self => WritesAConnectorCategory(self) || self.Methods.Any(WritesAConnectorCategory));
+
+        private static bool WritesAConnectorCategory(ICustomAttributeProvider place) => CategoriesWrittenOn(place).Any(ConnectorCategories.Contains);
+
+        private List<string> PlacesThatWriteTheCategory(IEnumerable<TypeDefinition> fixtures)
+            => [.. fixtures
+                .SelectMany(scan.TypeAndItsBases)
+                .Where(IsNeitherTheBaseNorALiveClassWithOfflineTests)
+                .SelectMany(PlacesOnTheType)
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)];
+
+        private static bool IsNeitherTheBaseNorALiveClassWithOfflineTests(TypeDefinition type)
+            => type.FullName != typeof(IntegrationFixture).FullName && !LiveClassesWithOfflineTests.ContainsKey(type.FullName);
+
+        private static IEnumerable<string> PlacesOnTheType(TypeDefinition type)
+        {
+            var methods = type.Methods.Where(WritesTheIntegrationCategory).Select(method => type.FullName + "::" + method.Name);
+
+            return WritesTheIntegrationCategory(type) ? methods.Prepend(type.FullName) : methods;
+        }
+
+        // Test selection matches a category exactly, so "integration" reads like the tier and puts the test in none.
+        private static bool WritesTheIntegrationCategory(ICustomAttributeProvider place)
+            => CategoriesWrittenOn(place).Any(category => string.Equals(category, IntegrationCategory, StringComparison.OrdinalIgnoreCase));
+
+        private static IEnumerable<string> CategoriesWrittenOn(ICustomAttributeProvider place)
+            => place.CustomAttributes.SelectMany(CategoriesIn);
+
+        // [TestCase] and [TestFixture] take categories too, as one comma-separated Category argument.
+        private static IEnumerable<string> CategoriesIn(CustomAttribute attribute)
+        {
+            var named = attribute.Properties
+                .Where(property => property.Name == nameof(TestCaseAttribute.Category))
+                .SelectMany(property => ((string)property.Argument.Value).Split(',', StringSplitOptions.TrimEntries));
+
+            return attribute.AttributeType.FullName == typeof(CategoryAttribute).FullName
+                ? named.Concat(attribute.ConstructorArguments.Select(argument => (string)argument.Value))
+                : named;
+        }
 
         private TypeDefinition Planted(string name)
-            => allTypes.Single(type => type.Name == name && type.DeclaringType?.Name == nameof(PlantedFixtures));
+            => allTypes.Single(type => type.Name == name && type.DeclaringType?.Name is nameof(PlantedFixtures) or nameof(PlantedContainerFixtures));
 
         // Fixtures that exist only so the rules can be pointed at something. They are abstract because NUnit runs
         // any concrete class with a [Test] method, and the real pass looks only at concrete classes. None starts its
@@ -319,6 +523,90 @@ namespace Lighthouse.Backend.Tests.Architecture
                 [Test]
                 public void Add() => Assert.Pass();
             }
+
+            internal abstract class OnTheBaseWithNoHost : IntegrationFixture
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            [Category("JiraIntegration")]
+            internal abstract class LiveOnTheBase : IntegrationFixture
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal static class SomethingThatIsNotAHostFactory
+            {
+                internal static void WithWebHostBuilder() => _ = 1 + 1;
+            }
+
+            [Category("JiraIntegration")]
+            internal abstract class LiveThatCallsAMethodNamedLikeAHostSink : IntegrationFixture
+            {
+                [OneTimeSetUp]
+                public void Prepare() => SomethingThatIsNotAHostFactory.WithWebHostBuilder();
+            }
+
+            [Category("Integration")]
+            internal abstract class CategoryOnTheClass
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class ChildOfACategoryOnTheClass : CategoryOnTheClass;
+
+            [Category("integration")]
+            internal abstract class CategoryInAnotherLetterCase
+            {
+                [Test]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class CategoryOnAMethod
+            {
+                [Test]
+                [Category("Integration")]
+                public void Serve() => Assert.Pass();
+            }
+
+            internal abstract class CategoryOnATestCase
+            {
+                [TestCase(1, Category = "some-slice, Integration")]
+                public void Serve(int value) => Assert.That(value, Is.Positive);
+            }
+
+            [Category("AdoIntegration")]
+            internal abstract class HostedWithAConnector : IntegrationFixture
+            {
+                [OneTimeSetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+            }
+
+            internal abstract class HostedWithAConnectorOnAMethod : IntegrationFixture
+            {
+                [OneTimeSetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+
+                [Test]
+                [Category("GithubIntegration")]
+                public void Serve() => Assert.Pass();
+            }
+        }
+    }
+}
+
+// The guard allows a container fixture on the base by its namespace, so this planted one has to live in that namespace.
+namespace Lighthouse.Backend.Tests.Integration.Containers
+{
+    internal static class PlantedContainerFixtures
+    {
+        internal abstract class ContainerOnTheBaseWithNoHost : IntegrationFixture
+        {
+            [Test]
+            public void Serve() => Assert.Pass();
         }
     }
 }
