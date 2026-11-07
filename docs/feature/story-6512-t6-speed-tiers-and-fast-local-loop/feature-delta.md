@@ -1365,3 +1365,41 @@ This overrides "Push 3 is the first plain run". Push 2 was judged on its ids wit
 ## Wave: DELIVER / [REF] First plain run judged (2026-11-07)
 
 Push `d87ce32be`, run 42384656167. The log prints `force_full=false` and `filter=` with the always-on clause alone. `Verify Backend` green: `Failed: 0, Passed: 12831, Skipped: 2, Total: 12833`, the same counts as the local `L3b`. Against `T0`'s CSV: 0 ids lost, 0 outcomes changed, 32 ids added, all explained (`TestSelectionClauseTest` 20, `IntegrationFixtureCategoryTest` 2, Bug 6575's `DeleteUnitRightsTests` 8 and `CreateRightsControllerGuardTest` 2). The `category` column reads `Integration` 0 times. This judges the clause for live and regular tests only. The entry of step 03-03 is met.
+
+## Wave: DELIVER / [REF] Slice C, step 03-03: the hosted commit and `L4`, what ran (2026-11-07)
+
+Commit `591da8ace`, the move alone: 25 files, 25 insertions, 25 deletions, each the class line. Not pushed. `IntegrationTestBase` and 24 roots took `: IntegrationFixture`. `UpdateServiceTestBase`, the `*TestHost` helpers and the concrete classes are untouched. `3352aa88a` touches only `Lighthouse.Frontend/`.
+
+**The 26 roots, read at the edit.** The design's 26 fit the 35 abstract classes of `API/Integration` less the 9 that derive from another of them; the design names no list, so this reading is inferred from the arithmetic. Two of those 26 took no edit, and one hosted root lies outside them:
+
+| Class | What it is | What happened |
+|---|---|---|
+| `ForecastedStartDateAcceptanceTest` | Already on `IntegrationTestBase` | No edit: it follows through that base |
+| `ParentFromIssueLinksAcceptanceTest` | Starts no host, and neither does its one subclass, `Slice01LinkTypeReferenceTest`. The design's count took it as hosted | Stays regular, by the stop rule: a shared base takes the line only if every class under it hosts. Reported, not a stop of the step: the other moves do not depend on it |
+| `UsageDataCollectorObservationTest` | Hosted, abstract, 15 subclasses, in `Integration/UsageData`: outside this step's files | Not moved. Slice E owes it, one line on this root rather than on its subclasses |
+
+In the same folder, `Slice02ParentFromLinkTest` has no base and no host, so it stays regular, and `Slice03AmbiguityRefusalTest` has no base and starts its own host, so it is slice E's. No hosted class met here has a non-hosted class as its only base. Every root edited starts its host in its own `[OneTimeSetUp]` or `[SetUp]`; `TaskManagerHarness` does so through its only 2 direct subclasses. That was read from the source, not checked by a tool; slice D's guard is the check that can fail.
+
+| Case | What ran | Result |
+|---|---|---|
+| Swap, before | `H` and `F`, each `&`-joined with `FullyQualifiedName~` on `JwtBearerStandaloneGateTest` (on `IntegrationTestBase`) and `BulkReportsWithoutSignInScenarios` (three deep under `ReportsAcceptanceTest`) | `H`: TRX total 0, "No test matches". `F`: TRX total 5, passed 5 (1 and 4) |
+| Swap, after | The same two filters | `H`: TRX total 5, passed 5. `F`: TRX total 0 |
+| Builds | `dotnet build` in `Lighthouse.Backend`, then the test project with `-c Release` | 0 warnings, 0 errors, each |
+| Named classes | `IntegrationFixtureCategoryTest`, `TestSelectionClauseTest`, `TestHostPerFixtureGuardTest`, `-c Release` | TRX total 40, passed 40 |
+| How many moved | `H` with `--list-tests`, which starts no host; the TRX holds no categories to count | 2,079 lines, where `H` selected nothing before |
+| Push's diff | `git diff --name-only d87ce32be HEAD` through the regexes of `path-classifier.sh`, read by a Python script | `jira`, `ado`, `linear`, `servicenow`, `github` and `connector_shared` answer `false`. `classify_backend` answers `true`, 25 files. No `ci*.yml` and no csproj in it |
+
+**`L4`.** Run on the working tree that became `591da8ace`, once, with no other test process, after `dotnet build-server shutdown`, with the 5 token variables removed and Docker up.
+
+| Item | Value |
+|---|---|
+| Filter | `A` |
+| Console | `Failed: 0, Passed: 12831, Skipped: 2, Total: 12833`, 6 m 18 s, exit 0 |
+| TRX `Counters` and CSV rows | total 12,842, executed 12,831, passed 12,831. CSV: 12,842 rows, 12,831 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `efff1264c406145909d8df8b37c9cb82ddb2ba4db51342b4503410d7c18ab6ff` |
+| `sha256` of the files | `L4.csv` `2c862df591491ecebab372d29a9317c0befe0a8521a2d1462359785c4f3ac5c2`, `L4.trx.gz` `4801e49f1ddbecaecd481a8cd4be8c2338815cc12827cdc726fbd169768794dd` |
+| Kept | `L4.csv` and `L4.trx.gz` in `evidence/`, out of git |
+
+**`L4` against `L3b`.** 0 lines only in `L3b`, 0 lines only in `L4`, and the same `sha256`, so no line needed excusing. This is the first evidence that `A` keeps real hosted tests: `H` now lists 2,079 of them, and every id still ran. `PortfolioUpdaterTest` did not fail here. The `category` column reads `Unit` on all 12,842 rows, as before slice F.
+
+**Before push 4.** `Lighthouse.Backend.Tests.csproj` is unchanged, so NUnit and the adapter are too.
