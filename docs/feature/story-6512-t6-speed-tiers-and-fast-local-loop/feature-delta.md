@@ -1789,7 +1789,7 @@ Being abstract does not hide a plant from `TestHostPerFixtureGuardTest`, because
 - **`[assembly: Category]`.** The guard reads classes and methods only. The tree has 0.
 - **Container identity is a namespace proxy.** A class counts as a container test because of the namespace it sits in, not because it starts a container. A container test outside that namespace goes unseen, and one in it that needs none counts as one, which is why `SitsAmongTheContainerTests` exists.
 - **A wrongly-cased connector or canary runs silently, by design.** Selection matches exactly, so `jiraintegration` is no connector and the rules treat it as what NUnit treats it as. The clause lets such a test through.
-- **A space after a comma now behaves the same way, and this is new.** `Category = "x, JiraIntegration"` is not that connector, for NUnit or the guard, so a live test written so would run in CI against its real tracker, and no rule says so. Before this fix the guard saw a connector NUnit did not. The tree has 0.
+- **A space after a comma now behaves the same way, and this is new. Closed by rule 7, see "Rule 7, added by the maintainer".** `Category = "x, JiraIntegration"` is not that connector, for NUnit or the guard, so a live test written so would run in CI against its real tracker, and no rule says so. Before this fix the guard saw a connector NUnit did not. The tree has 0.
 - **A class can be added to the list to dodge a rule.** The list has no count constant, on purpose: it is emptied in slice E, and the review of the diff is what stops an addition until then.
 - **Each guard reads the assembly again, and a positive answer is not cached.** Each guard reads the module and builds its own scan. The scan remembers methods that reach no host, not those that do, so a walk that finds a host is walked again for the next root. At about 3 s this is not worth a shared cache.
 
@@ -1890,3 +1890,51 @@ The file was removed, and the final-tree runs above came after that on a fresh b
 **The comments.** `ba4812e81`: 6 of the touched files, comments only. They explained themselves through Epic, slice, decision, bug and ADR ids; each now says the reason, or loses the pointer where the sentence stood without it. A diff read shows no line outside a comment. The scan matches ids, not narration, so other comments that break the rule may remain, as at 05-01 and 05-02. `[Category("slice-02")]` and its like on these classes are attributes, not comments, so they stayed.
 
 **A gap that closed.** "A class can be added to the list to dodge a rule", from the review's gaps, is gone with the list. Rules 1 and 5 now have one exception, the 2 mixed classes on their permanent named list.
+
+## Wave: DELIVER / [REF] Rule 7, added by the maintainer (2026-11-07)
+
+Commit `042b22096`, outside the roadmap's steps, on the maintainer's word: "Close the gap". Not pushed. It closes "A space after a comma now behaves the same way" from "Review of slices C and D". The guard's rule table above is history and stays as it was.
+
+**The rule.** A category name has no whitespace at either edge. `NoCategoryNameHasASpaceAtAnEdge` reads every concrete fixture, on or off the base, with no exception, together with its bases in this assembly, and reads the same places the guard reads for any category: the class and its methods. It covers the list form on `[TestCase]`, `[TestCaseSource]`, `[TestFixture]` and `[TestFixtureSource]`, and `[Category]`. A tab counts as well as a space.
+
+**`[Category]` is in.** NUnit trims there, so the meaning is safe, and the real tree holds none: the real pass is green, and a text search finds only the two plants. That leaves one plain rule. The rule reads the name as written, before the trim the other rules use. The message's "NUnit keeps the space" is worded for the list, the form where it is true.
+
+**What the rule does not read.** The gaps listed under that review apply to it too: `[assembly: Category]`, a static class with tests, `TestCaseData.SetCategory`, a class derived from `CategoryAttribute`, and a fixture whose only tests are generic `[TestCase<T>]`.
+
+**The plants.** 12 reds and 6 greens, through `ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten` and `ACategoryWithNoSpaceAtAnEdgeIsNotFound`. The reds name the place and the piece. 4 reds are existing plants, whose cases in rules 3 and 5 did not change: `CategoryAfterACommaAndASpace`, `ConnectorAfterACommaAndASpaceOffTheBase`, `CategoryWithSpacesAround`, `ConnectorWithASpaceOffTheBase`. New plants start no host, are abstract, and sit in `TestTierGuardTest`, so `TestHostPerFixtureGuardTest` still leaves them out by name. `--list-tests` on `FullyQualifiedName~PlantedFixtures` matches nothing.
+
+| Case | What ran | Result |
+|---|---|---|
+| Red, the rule a stub that finds nothing | `TestTierGuardTest`, Debug | TRX total 90, passed 77, failed 13, exit 1: the 12 reds on their assertion, and the message test |
+| The rule in place | `TestTierGuardTest`, Debug | TRX total 90, passed 90, exit 0 |
+| The 6 greens spoiled, a space written into each | `TestTierGuardTest`, Debug | TRX total 90, passed 82, failed 8, exit 1: the 6 greens, and rules 3 and 5 on the 2 plants whose list changed. Restored, checked by hash |
+| The real pass spoiled | A temporary file of concrete classes, and `[Category(" JiraIntegration")]` on `JiraWriteBackTest`, Debug and `-c Release` | TRX total 90, passed 89, failed 1, exit 1, each: `NoCategoryNameHasASpaceAtAnEdge`, naming 5 places and no other test failing. Restored, checked by hash |
+| The four classes, final tree | `TestTierGuardTest`, `TestHostPerFixtureGuardTest`, `TestSelectionClauseTest`, `IntegrationFixtureCategoryTest`, Debug and `-c Release` | TRX total 131, passed 131, exit 0, each: 90 + 18 + 21 + 2 |
+| Builds | `dotnet build` in `Lighthouse.Backend`, and with `-c Release` | 0 warnings, 0 errors, each |
+
+The real pass's 5 places: a list on a `[TestCase]` off the base, the same on the base, a list on the `[TestFixture]` of an abstract parent found through its concrete child, `[Category(" some-slice ")]`, and `JiraWriteBackTest`, which has a permanent exception from rules 3 and 5 and none from this one. The seven variables were removed from every run.
+
+**For step 05-04's list.** The guard goes from 70 tests to 90. 20 ids of `TestTierGuardTest` arrive and none leave, so the guard's 70 earlier ids stay as they were, and no other class gains an id. Some of the new ids hold a space inside their quotes, and a comparison must keep it: trimmed, ids stop matching. The tab shows as the two characters `\t`.
+
+```text
+NoCategoryNameHasASpaceAtAnEdge
+TheMessageForASpaceAtAnEdgeNamesThePlaceAndThePieceAndSaysWhatTheSpaceDoes
+ACategoryWithNoSpaceAtAnEdgeIsNotFound("CategoryOnAMethod")
+ACategoryWithNoSpaceAtAnEdgeIsNotFound("CategoryOnATestCase")
+ACategoryWithNoSpaceAtAnEdgeIsNotFound("CategoryOnTheClass")
+ACategoryWithNoSpaceAtAnEdgeIsNotFound("ConnectorListedWithNoSpaceOnTheBase")
+ACategoryWithNoSpaceAtAnEdgeIsNotFound("ConnectorOnATestCaseOffTheBase")
+ACategoryWithNoSpaceAtAnEdgeIsNotFound("LiveOnTheBase")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("CanaryAfterACommaAndASpace","CanaryAfterACommaAndASpace","::Serve"," UsageDataCanary")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("CategoryAfterACommaAndASpace","CategoryAfterACommaAndASpace","::Serve"," Integration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("CategoryWithSpacesAround","CategoryWithSpacesAround",""," Integration ")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("ChildOfASpaceInAList","SpaceInAListOnATestFixture",""," GithubIntegration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("ConnectorAfterACommaAndASpaceOffTheBase","ConnectorAfterACommaAndASpaceOffTheBase","::Serve"," AdoIntegration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("ConnectorAfterACommaAndASpaceOnTheBase","ConnectorAfterACommaAndASpaceOnTheBase","::Serve"," JiraIntegration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("ConnectorAfterATab","ConnectorAfterATab","::Serve","\tJiraIntegration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("ConnectorBeforeASpaceAndAComma","ConnectorBeforeASpaceAndAComma","::Serve","JiraIntegration ")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("ConnectorWithASpaceOffTheBase","ConnectorWithASpaceOffTheBase",""," JiraIntegration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("SpaceInAListOnATestCaseSource","SpaceInAListOnATestCaseSource","::Serve"," LinearIntegration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("SpaceInAListOnATestFixture","SpaceInAListOnATestFixture",""," GithubIntegration")
+ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("SpaceInAListOnATestFixtureSource","SpaceInAListOnATestFixtureSource",""," ServiceNowIntegration")
+```
