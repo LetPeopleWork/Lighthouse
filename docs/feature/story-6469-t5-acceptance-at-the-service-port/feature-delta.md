@@ -1445,3 +1445,41 @@ dotnet test --filter "FullyQualifiedName~A_Team_set_up_through_its_settings_hold
 | D-6469-39 | `WireContractTestTest` lives in `TestHelpers/` under one named exemption | It tests the base, so it is not a contract test |
 
 **Open.** The review's L1 said only "fix the wording"; this pass fixed the stale lines it could find (the slices table, line 373, the Stage 3 lines), and any other is still open. The scratch estimate of about 12 new host rows waits for the re-cut. `data_version` under this project's connection settings is unproven.
+
+## Wave: DELIVER / [REF] Slice A: the first list and the before readings (2026-11-07)
+
+**`P0`.** One run of clause `A`, no timer, 6 workers, on `538f5e321`, with the rules of a list run: no test process active, `dotnet build-server shutdown` first, Docker up, the seven variables removed and their count printing 0.
+
+| | |
+|---|---|
+| Console | `Failed: 0, Passed: 12922, Skipped: 2, Total: 12924`, 6 m 14 s, exit 0 |
+| TRX `Counters total` and CSV rows | 12,933: 12,922 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `ddd17f96632cd521c6e12ada55a2aeeb616a251171607c1b6a5a52f8012575de` |
+| `sha256` of the TRX | `7bbd5098dc1f556978de5f5701e7715de3dcdffba41637fb1c9bfb16b5bdb922` |
+| Against T6's `L6` | Identical: the same `sha256`, 0 lines only in `L6`, 0 only in `P0`, so no foreign line at all |
+| Kept | `evidence/P0.csv` and `evidence/P0.trx.gz`, out of git. Searched first: no token shape. The hosts it names are `dev.azure.com/letpeoplework`, `dev191338.service-now.com` and fixture names under `atlassian.net`, and the first two are already in the test sources |
+
+T6's step 06-03 (`10d691cf9`) landed on trunk after `P0` ran, so it is the parent of this slice's first commit and `538f5e321` is not. It changes `Scripts/test-timings/` and T6's delta only, and no file under `Lighthouse.Backend/`, so `P0` holds for that parent too.
+
+**Before readings.** Same machine, unchanged binaries, each class alone in its own `dotnet test`, 3 rounds, timer on. Seconds are the TRX durations summed, as guarantee 6 reads them. The after reading must be taken the same way: the same `P0` sums below show how far a loaded run moves them.
+
+| Class | Rows | Round 1 | Round 2 | Round 3 | Median | In `P0`, under load |
+|---|---|---|---|---|---|---|
+| `Slice01OneSentenceAboutYourSamplingWindowTest` | 66 | 14.869 | 14.404 | 14.705 | 14.705 | 24.863 |
+| `Slice04TheAnswerOpensInADialogTest` | 5 | 3.942 | 3.860 | 3.584 | 3.860 | 2.365 |
+| `Slice06AnOperatorSeesEveryRealityCheckTest` | 10 | 5.048 | 5.280 | 4.910 | 5.048 | 4.557 |
+| **Family** | **81** | | | | **23.613** | **31.784** |
+
+**`c` and `h`, the starting figures on `Slice04`.** The port does not exist yet, so neither can be read as such today; these are what each will be compared with. All from the median round, round 2.
+
+| Figure | Reading | How |
+|---|---|---|
+| Set-up per test at the host, the cost `c` replaces | About 230 ms (204 to 233 over the rounds) | Timer's set-up sum 2.732 s less its one host build 1.582 s, over 5 |
+| Body per test at the host, the figure `h` comes out of | About 222 ms (203 to 232) | TRX sum 3.860 s less set-up 2.732 s and tear-down 0.020 s, over 5 |
+| Tear-down per test | 4 ms | Timer |
+
+Both means hold the first test's warm-up. `h` is the host's body less the port's, so it is known only after the move. Whether a TRX duration holds tear-down is still unread: at 4 ms a test these sums cannot show it either way, and the reading above assumes it does. The TRX does hold set-up, as the one test that builds the host takes 2.7 to 2.9 s.
+
+**The helper's own tier.** `ServicePortHarnessTest` starts no host, so it sits off `IntegrationFixture`, where T6's guard would fail it as on the base for no reason. It is in the fast tier by the filter: 9,536 passed, `L6-F`'s 9,527 plus its 9 rows. The rows sum to 0.39 s once the schema template exists.
+
+**Found.** Copies of the schema template run in write-ahead-log mode, not the rollback journal `TestDatabaseTemplate`'s comment says: a write under way leaves `-wal` and `-shm` beside the file. The copy is still whole, as the template is checkpointed before it is moved into place. This bears on the file-level write check of "Review revision", where `data_version` is still unproven.
