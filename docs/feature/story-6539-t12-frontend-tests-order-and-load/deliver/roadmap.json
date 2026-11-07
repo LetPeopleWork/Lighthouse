@@ -6,7 +6,7 @@
     "wave": "DELIVER",
     "paradigm": "object-oriented",
     "goal": "Frontend tests do not depend on order: the three order-dependent test files are fixed, and a shuffled run in the CI frontend job keeps the class from coming back, with the replay rule in docs/ci-learnings.md.",
-    "notes": "Rigor profile standard (pass model explicitly on every dispatch). Mutation testing N/A while only test files, a CI input and a docs line change; accepted by the maintainer on 2026-11-07. Load: not reproduced, no fix claimed, watched; no timeout or retry is added as a fix. The guard is --sequence.shuffle.tests with seed = github.run_id. Before-commit is the trunk commit 01-01 starts from. Every run from Lighthouse.Frontend with pnpm test <file> [flags]; delete test-results.json before a run that is read for ids. No test is skipped, deleted or weakened; no production file changes (the temporary, uncommitted edit of ActionButton.tsx in 01-03 is restored). No nWave scenario tag in any test title or comment. Step ids map to DESIGN: 01-01..01-04 = A1..A4, 02-01 = B1 (action input, workflow line, reporter check), 02-02 = B2. The Story is pushed at its end, after 02-02; then 5 consecutive green main runs with distinct run ids close it. A conflict with trunk stops the step and reports; nothing is rebased."
+    "notes": "Rigor profile standard (pass model explicitly on every dispatch). Mutation testing N/A while only test files, a CI input and a docs line change; accepted by the maintainer on 2026-11-07. Load: not reproduced, no fix claimed, watched; no timeout or retry is added as a fix. The guard is --sequence.shuffle.tests with seed = github.run_id. Before-commit is 93dc95b80; git diff --name-only 93dc95b80 HEAD -- Lighthouse.Frontend may list only the three Story test files, any further test file the sweep adds (named in the delta) and, if 02-01 changes it, src/tests/timeBudget/, re-run at the end of 01-04, 02-01 and 02-02. Every order-checking run sets LIGHTHOUSE_TIME_BUDGET=warn (warn never sets a failing exit code; unset is fail mode), with budget offenders in a separate column. Every run from Lighthouse.Frontend with pnpm test <file> [flags]; delete test-results.json before a run that is read for ids. No test is skipped, deleted or weakened; no production file changes (the temporary, uncommitted edit of ActionButton.tsx in 01-03 is restored). No nWave scenario tag in any test title or comment. Step ids map to DESIGN: 01-01..01-04 = A1..A4, 02-01 = B1 (action input, workflow line, reporter check), 02-02 = B2. The Story is pushed at its end, after 02-02; then 5 consecutive green main runs with distinct run ids close it. A conflict with trunk stops the step and reports; nothing is rebased."
   },
   "phases": [
     {
@@ -23,7 +23,7 @@
             "pnpm test src/pages/Portfolios/Detail/PortfolioDetail.test.tsx -t \"a refresh that failed\" is red before the fix with 2 failed and 5 passed (portfolio-no-access-alert in the DOM) and is green with 7 passed after it",
             "With the anchors added and the defaults not yet added, the two tests that assert absence (stops saying so, leaves the button alone) go red in that run; if they stay green the anchor is fixed before going on",
             "renderAndWaitForTheUpdateFeed also waits for the portfolio heading",
-            "The update-deferral describe is run alone and on a shuffled seed; a second leak is fixed or recorded as clean",
+            "The update-deferral describe is run alone and on a shuffled seed as a read-only check with no red criterion: a second leak is fixed, a clean result is recorded as clean",
             "The whole file passes plain and with --sequence.shuffle.tests on seeds 11, 33, 1, 2, 3, 4, 5, 6, 7, 8; the test count equals the before count",
             "The diff adds no .skip, .only, .todo, skipIf, runIf, timeout option or retry and removes no expect( without the assertion living elsewhere; only PortfolioDetail.test.tsx changes under Lighthouse.Frontend",
             "pnpm build in Lighthouse.Frontend is clean with zero errors and zero warnings, git status is checked afterwards, and plain pnpm test is green"
@@ -65,8 +65,8 @@
           "name": "ActionButton: prove the stray event and let it finish before the window stub",
           "description": "Guard check first: delete the isMounted guard temporarily and show the stubbed test red. Prove which event arrives by temporary listeners. Keep the stub and remove the event's source. Repeat the guard check on the fixed test.",
           "criteria": [
-            "Before any edit, with if (isMounted.current) removed from ActionButton.tsx (uncommitted), pnpm test src/components/Common/ActionButton/ActionButton.test.tsx -t \"leaves the page alone\" is red; the file is restored with git checkout and git diff shows no production file; if it stays green the finding is written in the delta and the step stops at the hold",
-            "The stray event is named from the log of temporary capture-phase listeners (focus, focusin, selectionchange, click) on the pair -t \"takes the focus when asked to|leaves the page alone\" with --sequence.shuffle.tests --sequence.seed=1, and seed 3 logs nothing; if it is not the focus test's event the true cause is written in the delta before the fix",
+            "Before any edit, with if (isMounted.current) removed from ActionButton.tsx (uncommitted), pnpm test src/components/Common/ActionButton/ActionButton.test.tsx -t \"leaves the page alone\" is red, and the red is a rejection from the TypeError on event of undefined, failing the expect(rejections).toEqual([]) line; the file is restored with git checkout and git diff shows no production file; any other red, or a green, stops the step at the hold with the output written in the delta",
+            "The stray event is named from the log of temporary capture-phase listeners on window and on document, installed before the stub goes on (focus, focusin, selectionchange, click), with the 300 ms timer running inside the stub window and the event logged inside it; an empty log, or an event outside that window, stops at the hold; the listeners run on the pair -t \"takes the focus when asked to|leaves the page alone\" with --sequence.shuffle.tests --sequence.seed=1, and seed 3 logs nothing; if it is not the focus test's event the true cause is written in the delta before the fix",
             "The pair is red before on seeds 1, 2, 4, 5, 6 (unhandled nodeName TypeError, all tests green, exit 1) and exits 0 with no Errors line on those seeds after; the whole file exits 0 on seeds 1 and 7 after",
             "The window stub stays; no console.error assertion is added; the instrumentation is gone from the diff",
             "The guard check repeated with the fix in place still turns the test red with the guard removed, then is restored; if the stub cannot stay the coverage loss is named at the hold and nothing is deleted without its assertion living elsewhere",
@@ -89,8 +89,8 @@
           "name": "Local sweep: ten seeds per file, four full runs on the CI flags",
           "description": "Run the three files on the ten seeds and four full suite runs with CI=true and --sequence.shuffle.tests on seeds 11, 33, 4, 5; fix a local cause or pause at the cap of 5 extra files.",
           "criteria": [
-            "pnpm test <file> --sequence.shuffle.tests --sequence.seed=N exits 0 with no Errors line for each of the three files and N in 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 (30 runs)",
-            "CI=true pnpm test --sequence.shuffle.tests --sequence.seed=N exits 0 for N in 11, 33, 4, 5, with test-results.json deleted before each and 618 files with the same test count as the plain run",
+            "LIGHTHOUSE_TIME_BUDGET=warn pnpm test <file> --sequence.shuffle.tests --sequence.seed=N exits 0 with no Errors line for each of the three files and N in 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 (30 runs)",
+            "LIGHTHOUSE_TIME_BUDGET=warn CI=true pnpm test --sequence.shuffle.tests --sequence.seed=N exits 0 for N in 11, 33, 4, 5, with test-results.json deleted before each and 618 files with the same test count as the plain run",
             "The delta holds a table of file, seed, exit status, errors and load average, and names each time-budget offender of the four runs for the reporter check of 02-01",
             "A red full run is diagnosed and fixed if local, each new file counts against the cap of 5 extra files (2 used so far), and at 5 the run pauses and asks the maintainer",
             "All four full runs are green before slice 02 starts"
@@ -120,7 +120,12 @@
           "criteria": [
             "The action has an optional input shuffle-seed with default empty; the test step reads it through env SHUFFLE_SEED, never interpolated in the run text; empty runs exactly pnpm test; set prints Test order seed, emits a notice and runs pnpm test --sequence.shuffle.tests --sequence.seed with the value",
             "ci_frontend.yml passes shuffle-seed: ${{ github.run_id }} in the existing with block and nothing else changes; package-app and every other caller are unchanged",
-            "node --test .github/scripts/*.test.mjs stays at 132 of 132",
+            "A pin is added to .github/scripts/action-pins.test.mjs that the test step reads SHUFFLE_SEED from env and that inputs.shuffle-seed never appears in a run: body; it is run red before the action edit and green after",
+            "node --test .github/scripts/*.test.mjs reports 132 passed before the edit and 132 plus the new pin tests, 0 failed, after it",
+            "Direct first-test check, independent of offenders: in one shuffled run the order of file.tests as observedRunFromVitest.ts receives it and each test's start time are recorded, and the delta states whether the first in that list is the first to start; if not, the reporter change (first by start time, its own test, its own commit) is required in this step whether or not an offender appears",
+            "vitest_to_csv.py is fed one results file and a copy with assertionResults reordered, and the rows are equal as a set; check_budget.py gives the same verdict on both",
+            "The same 11-digit seed run twice gives the same test order for one file (orders recorded and compared)",
+            "git diff --name-only 93dc95b80 HEAD -- Lighthouse.Frontend lists only the allowed files (the three Story test files, sweep additions, src/tests/timeBudget/ if changed)",
             "The set branch with an 11-digit seed run locally exits 0 on the fixed tree, and exits 1 on a throwaway copy of the pre-fix PortfolioDetail test (the copy is deleted, never committed); the empty branch prints no seed line",
             "The budget offenders of the four 01-04 runs are named in the delta; if one is a test that moved out of first place, the reporter takes the first test by start time, with its own test, in its own commit, and never a looser limit; vitest_to_csv.py output and the check_budget.py verdict are the same for a shuffled run's CSV as for a plain one",
             "pnpm build is clean with zero errors and zero warnings and plain pnpm test is green"
@@ -128,6 +133,7 @@
           "test_file": ".github/scripts/action-pins.test.mjs",
           "scenario_name": "A shuffled frontend run keeps the pinned workflow files valid and prints its seed",
           "files_to_modify": [
+            ".github/scripts/action-pins.test.mjs",
             ".github/actions/build-frontend/action.yml",
             ".github/workflows/ci_frontend.yml",
             "docs/feature/story-6539-t12-frontend-tests-order-and-load/feature-delta.md"
@@ -147,6 +153,8 @@
             "The rule is present: tests may not depend on another test's set-up or leave shared state changed, and the guard checks it; the three signatures of a new order dependence and the time-budget kind are listed; no longer timeout or retry as the fix",
             "Line 118 (explicit timeout for marginal tests) is left in place and the new text says how the two relate",
             "The delta records the load position (not reproduced, no fix claimed, watch for Test timed out in 5000ms and pointer-events none) and the closing list: push at the end of this step, 5 consecutive green main runs with distinct run ids recorded, ADO 6539 comment, one-week review of the guard, rollback by reverting 02-02 and 02-01 as one commit",
+            "One test file from a 01-04 full run is replayed alone with its seed and its test order is compared with the full run's results file; the ledger line says the replay reproduces the order only if they match, otherwise it says to replay the whole run",
+            "git diff --name-only 93dc95b80 HEAD -- Lighthouse.Frontend lists only the allowed files, re-run at the end of this step",
             "The DISCUSS Checklist boxes are ticked by evidence; no release notes are written"
           ],
           "test_file": "docs/ci-learnings.md",
@@ -165,6 +173,7 @@
     }
   ],
   "validation": {
-    "status": "approved"
+    "status": "approved",
+    "note": "Approved after the DISTILL review revision of 2026-11-07 (NEEDS_REVISION, no blocker, H1-H3 and M1-M8 addressed in the feature delta section DISTILL Review revision). The design review and the DISTILL review have both run; no peer review is owed before DELIVER."
   }
 }
