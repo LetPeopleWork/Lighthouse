@@ -1577,3 +1577,38 @@ Architecture.TestHostIsReleasedAfterDisposeTest
 Architecture.TestHostsRunWithoutRateLimitingByDefaultTest
 TestHelpers.TestWebApplicationFactoryTest
 ```
+
+## Wave: DELIVER / [REF] Slice D, step 04-03: rules 2 to 4, what ran (2026-11-07)
+
+Commit `560fd37c8`: 1 file, 292 insertions, 4 deletions. Not pushed. `TestHostScanning.cs` needed no change. The rules live in `TestTierGuardTest.cs`, and the planted container fixture has a namespace of its own at the end of that file, as DISTILL said.
+
+**The real pass was green the first time, with no baseline for these rules.** The two mixed classes are on `LiveClassesWithOfflineTests`, a permanent list with a reason each:
+
+| Class | Reason on the list |
+|---|---|
+| `AzureDevOpsWriteBackTest` | writes to a real Azure DevOps, but its empty-update and bad-id tests touch no tracker and must run in every CI build |
+| `JiraWriteBackTest` | writes to a real Jira, but its empty-update test touches no tracker and must run in every CI build |
+
+A second test keeps that list true: an entry that no longer writes the category on a method fails as stale.
+
+| Case | What ran | Result |
+|---|---|---|
+| Planted reds, before the rules | The three rules stubbed to find nothing, Debug | All 9 failed on the assertion, `Expected is <System.String[1]>, actual is ...`: on the base with no host; a category on the class, in another letter case, inherited from a parent, on a method, on a `[TestCase]`; a hosted fixture with a connector on the class, in another letter case, on a method. The letter-case connector case was later removed, see below |
+| Planted greens | Every run; they pass against the stub too, so they were proved by the next row | A live fixture on the base; a container fixture on the base with no host; an unrelated method named like a sink; on the base with a host; regular with no host |
+| Can the greens fail? | Temporary edits, Debug: no container exemption, no connector exemption, no host exemption, the base not exempt from rule 3, a sink matched by name alone. All restored | 9 failed of 39, each green red for its own edit, among them `ContainerOnTheBaseWithNoHost`, `LiveOnTheBase` and `LiveThatCallsAMethodNamedLikeAHostSink` |
+| Real classes, in the working tree | A temporary file of four concrete classes, Debug and `-c Release`. Also one mixed class taken off the list, and a name that does not exist put on it | 4 failed of 39 in each, the same four. Rule 2 named `TierGuardPlantedStaleFixture`, the "second half" 04-02 left open. Rule 3 named `TierGuardPlantedHandWrittenClass`, `TierGuardPlantedHandWrittenMethod::Serve` and each write method of `JiraWriteBackTest`, so the list is what keeps it green. Rule 4 named `TierGuardPlantedHostedConnector`. The stale test named the false entry. All removed |
+| The guard | `FullyQualifiedName~TestTierGuardTest`, Debug and `-c Release`, on the committed code | TRX total 37, passed 37, each |
+| The guards that read the same assembly | With `TestHostPerFixtureGuardTest` (18), `DbContextComesFromAScopeGuardTest` (10), `SharedHostsDrainTheUpdateQueueGuardTest` (17), `IntegrationFixtureCategoryTest` (2), Debug and `-c Release` | TRX total 84, passed 84, each |
+| Builds | `dotnet build` in `Lighthouse.Backend`, and with `-c Release` | 0 warnings, 0 errors, each |
+
+The working-tree and temporary-edit rows ran before the last edit, which made the connector match exact and renamed one private method. Their messages did not change. Only named classes ran, as the step says.
+
+**What the real pass showed that the design did not say.**
+
+- **Test selection matches a category exactly.** With the tokens removed, `TestCategory=JiraIntegration` and `Category=JiraIntegration` restricted to `JiraWriteBackTest`'s empty-update test select 1 test, and `jiraintegration` selects 0, in both spellings of the filter. So a lower-case `[Category("integration")]` is not the tier: it reads like the tier and puts the test in none. Rule 3 still reports it, as the step asks, for that reason. A connector match is exact, because CI would not read a lower-case connector as live and rule 4's message would be false. A lower-case connector on the base with no host is therefore a stale marker under rule 2.
+- **No real class uses the container exception yet.** Read from a temporary census, the same in Debug and `-c Release`: 1,006 concrete classes, 228 on the base, 214 of them hosted and 14 live. The 3 container classes on the base (`BulkReportOwnerDeletedMidRunOnPostgresTests`, `CatalogueBodiesOnPostgresTests`, `LighterRoundsOnPostgresTests`) all reach a host. Only the planted case exercises the exception until slice E moves the containers.
+- **34 container classes are off the base, not 31.** The 31 is a file count: `TaskManagerMultiReplicaTests.cs` holds four classes. 2 of the 34 are on rule 1's list.
+- **Rules 3 and 4 read `Category =` on an attribute as well as `[Category]`.** The design names only the attribute, but `[TestCase(..., Category = "...")]` is in use in `ConnectionDefaultsUpgradeMigrationTests`, so a test could have entered a tier that way. Reading it needed no change to how the module is loaded, enum arguments included.
+- **Rule 4 also reads a connector on a method**, since CI would drop that test alone. No real class has one. It looks at hosted classes on and off the base; 0 real hits.
+
+**Limits, as the hand-off asked.** Neither matters for these rules today, since all 14 classes on the base with no host are live. A host reached only from a `[TestCaseSource]` body, or from another class's static constructor through a static field, is not seen. For rule 2 that errs towards red: such a fixture is told to leave the base, and someone reads why. For rule 4 it errs towards silence. A fixture's own static constructor is a root, still with no planted case. `SetCategory` on `TestCaseData` is invisible, as it runs at discovery; no test uses it.
