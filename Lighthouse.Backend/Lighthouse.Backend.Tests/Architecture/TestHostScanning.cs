@@ -71,5 +71,131 @@ namespace Lighthouse.Backend.Tests.Architecture
             var declared = method is GenericInstanceMethod generic ? generic.ElementMethod : method;
             return declared.DeclaringType.GetElementType().FullName + "::" + declared.Name + "/" + declared.Parameters.Count;
         }
+
+        /// <summary>
+        /// Walks the call tree below every set-up, test and test-case method in an assembly and answers which of
+        /// them can reach the start of an application host. Calls are followed into methods and constructors
+        /// that are written in the same assembly, into the bodies the compiler makes for lambdas, local
+        /// functions and async methods, and into overrides of a virtual method that is called.
+        /// </summary>
+        public sealed class HostBuildingScan
+        {
+            private static readonly HashSet<string> PerTestAttributes =
+            [
+                "NUnit.Framework.SetUpAttribute",
+                "NUnit.Framework.TestAttribute",
+                "NUnit.Framework.TestCaseAttribute",
+                "NUnit.Framework.TestCaseSourceAttribute",
+                "NUnit.Framework.TheoryAttribute",
+            ];
+
+            private readonly List<MethodDefinition> allMethods;
+            private readonly Dictionary<string, List<MethodDefinition>> methodsByKey;
+            private readonly Dictionary<string, TypeDefinition> typesByName;
+            private readonly HashSet<string> factoryTypeNames;
+            private readonly HashSet<MethodDefinition> knownToStartNoHost = [];
+
+            public HostBuildingScan(ModuleDefinition module)
+            {
+                var allTypes = module.Types.SelectMany(TypeAndItsNestedTypes).ToList();
+                allMethods = [.. allTypes.SelectMany(type => type.Methods)];
+                methodsByKey = allMethods.GroupBy(KeyOf).ToDictionary(group => group.Key, group => group.ToList());
+                typesByName = allTypes.ToDictionary(type => type.FullName, type => type);
+                factoryTypeNames = FactoryTypesIn(allTypes);
+            }
+
+            /// <summary>The per-test methods, among those the filter picks, from which a host start can be reached.</summary>
+            public IReadOnlyList<MethodDefinition> OffendingRoots(Func<MethodDefinition, bool> pickRoots)
+                => [.. allMethods.Where(IsPerTestMethod).Where(pickRoots).Where(ReachesAHostStart)];
+
+            private static bool IsPerTestMethod(MethodDefinition method)
+                => !method.DeclaringType.Name.StartsWith('<')
+                    && method.CustomAttributes.Any(attribute => PerTestAttributes.Contains(attribute.AttributeType.FullName));
+
+            private bool ReachesAHostStart(MethodDefinition root)
+            {
+                var visited = new HashSet<MethodDefinition>();
+                var pending = new Stack<MethodDefinition>([root]);
+
+                while (pending.Count > 0)
+                {
+                    var method = pending.Pop();
+
+                    if (!visited.Add(method) || knownToStartNoHost.Contains(method))
+                    {
+                        continue;
+                    }
+
+                    if (method.HasBody && method.Body.Instructions.Any(instruction => IsAHostStart(instruction, factoryTypeNames)))
+                    {
+                        return true;
+                    }
+
+                    foreach (var next in MethodsRunBy(method))
+                    {
+                        pending.Push(next);
+                    }
+                }
+
+                knownToStartNoHost.UnionWith(visited);
+                return false;
+            }
+
+            private IEnumerable<MethodDefinition> MethodsRunBy(MethodDefinition method)
+                => CompilerMadeBodiesOf(method).Concat(
+                    method.HasBody
+                        ? method.Body.Instructions.SelectMany(MethodsStartedBy)
+                        : []);
+
+            // An async method's own body lives in the MoveNext of a type the compiler names "<Method>d__N".
+            private static IEnumerable<MethodDefinition> CompilerMadeBodiesOf(MethodDefinition method)
+                => method.DeclaringType.NestedTypes
+                    .Where(nested => nested.Name.StartsWith("<" + method.Name + ">", StringComparison.Ordinal))
+                    .SelectMany(nested => nested.Methods);
+
+            private IEnumerable<MethodDefinition> MethodsStartedBy(Instruction instruction)
+            {
+                if (instruction.Operand is not MethodReference called
+                    || instruction.OpCode.Code is not (Code.Call or Code.Callvirt or Code.Newobj or Code.Ldftn or Code.Ldvirtftn)
+                    || NamesAFactory(called.DeclaringType)
+                    || factoryTypeNames.Contains(called.DeclaringType.GetElementType().FullName))
+                {
+                    return [];
+                }
+
+                var declared = methodsByKey.GetValueOrDefault(KeyOf(called)) ?? [];
+
+                var calledOnATypeWrittenHere = typesByName.ContainsKey(called.DeclaringType.GetElementType().FullName);
+
+                return instruction.OpCode.Code is Code.Callvirt or Code.Ldvirtftn && calledOnATypeWrittenHere
+                    ? declared.Concat(OverridesOf(called))
+                    : declared;
+            }
+
+            private IEnumerable<MethodDefinition> OverridesOf(MethodReference called)
+                => allMethods.Where(candidate => candidate.IsVirtual
+                    && candidate.Name == called.Name
+                    && candidate.Parameters.Count == called.Parameters.Count
+                    && DerivesFrom(candidate.DeclaringType, called.DeclaringType.GetElementType().FullName));
+
+            private bool DerivesFrom(TypeDefinition type, string baseTypeName)
+            {
+                var current = type.BaseType;
+
+                while (current is not null)
+                {
+                    var name = current.GetElementType().FullName;
+
+                    if (name == baseTypeName)
+                    {
+                        return true;
+                    }
+
+                    current = typesByName.GetValueOrDefault(name)?.BaseType;
+                }
+
+                return false;
+            }
+        }
     }
 }
