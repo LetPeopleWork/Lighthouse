@@ -73,30 +73,25 @@ namespace Lighthouse.Backend.Tests.Architecture
         }
 
         /// <summary>
-        /// Walks the call tree below every set-up, test and test-case method in an assembly and answers which of
-        /// them can reach the start of an application host. Calls are followed into methods and constructors
-        /// that are written in the same assembly, into the bodies the compiler makes for lambdas, local
-        /// functions and async methods, and into overrides of a virtual method that is called.
+        /// Walks the call tree below every root method in an assembly and answers which of them can reach the
+        /// start of an application host. Each guard says which methods are roots, because the guards ask
+        /// different questions. Calls are followed into methods and constructors that are written in the same
+        /// assembly, into the bodies the compiler makes for lambdas, local functions and async methods, and into
+        /// overrides of a virtual method that is called.
         /// </summary>
         public sealed class HostBuildingScan
         {
-            private static readonly HashSet<string> PerTestAttributes =
-            [
-                "NUnit.Framework.SetUpAttribute",
-                "NUnit.Framework.TestAttribute",
-                "NUnit.Framework.TestCaseAttribute",
-                "NUnit.Framework.TestCaseSourceAttribute",
-                "NUnit.Framework.TheoryAttribute",
-            ];
-
+            private readonly Func<MethodDefinition, bool> isInTheRootSet;
             private readonly List<MethodDefinition> allMethods;
             private readonly Dictionary<string, List<MethodDefinition>> methodsByKey;
             private readonly Dictionary<string, TypeDefinition> typesByName;
             private readonly HashSet<string> factoryTypeNames;
             private readonly HashSet<MethodDefinition> knownToStartNoHost = [];
 
-            public HostBuildingScan(ModuleDefinition module)
+            public HostBuildingScan(ModuleDefinition module, Func<MethodDefinition, bool> isInTheRootSet)
             {
+                this.isInTheRootSet = isInTheRootSet;
+
                 var allTypes = module.Types.SelectMany(TypeAndItsNestedTypes).ToList();
                 allMethods = [.. allTypes.SelectMany(type => type.Methods)];
                 methodsByKey = allMethods.GroupBy(KeyOf).ToDictionary(group => group.Key, group => group.ToList());
@@ -104,13 +99,12 @@ namespace Lighthouse.Backend.Tests.Architecture
                 factoryTypeNames = FactoryTypesIn(allTypes);
             }
 
-            /// <summary>The per-test methods, among those the filter picks, from which a host start can be reached.</summary>
+            /// <summary>The root methods, among those the filter picks, from which a host start can be reached.</summary>
             public IReadOnlyList<MethodDefinition> OffendingRoots(Func<MethodDefinition, bool> pickRoots)
-                => [.. allMethods.Where(IsPerTestMethod).Where(pickRoots).Where(ReachesAHostStart)];
+                => [.. allMethods.Where(IsARoot).Where(pickRoots).Where(ReachesAHostStart)];
 
-            private static bool IsPerTestMethod(MethodDefinition method)
-                => !method.DeclaringType.Name.StartsWith('<')
-                    && method.CustomAttributes.Any(attribute => PerTestAttributes.Contains(attribute.AttributeType.FullName));
+            private bool IsARoot(MethodDefinition method)
+                => !method.DeclaringType.Name.StartsWith('<') && isInTheRootSet(method);
 
             private bool ReachesAHostStart(MethodDefinition root)
             {

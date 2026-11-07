@@ -89,6 +89,15 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.TestHelpers.TestWebApplicationFactoryTest"] = ChecksTheTestHostItself,
         };
 
+        private static readonly HashSet<string> PerTestAttributes =
+        [
+            "NUnit.Framework.SetUpAttribute",
+            "NUnit.Framework.TestAttribute",
+            "NUnit.Framework.TestCaseAttribute",
+            "NUnit.Framework.TestCaseSourceAttribute",
+            "NUnit.Framework.TheoryAttribute",
+        ];
+
         private ModuleDefinition module = null!;
         private HostBuildingScan scan = null!;
         private IReadOnlyCollection<string> typesFoundBuildingAHostPerTest = [];
@@ -97,7 +106,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void ReadTheTestAssemblyOnce()
         {
             module = IlDependencies.ReadModule(typeof(TestHostPerFixtureGuardTest).Assembly);
-            scan = new HostBuildingScan(module);
+            scan = new HostBuildingScan(module, IsPerTestMethod);
             typesFoundBuildingAHostPerTest = scan.OffendingRoots(root => TopLevelTypeOf(root.DeclaringType) != typeof(TestHostPerFixtureGuardTest).FullName)
                 .Select(root => TopLevelTypeOf(root.DeclaringType))
                 .Distinct(StringComparer.Ordinal)
@@ -210,6 +219,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             Assert.That(found.Contains(plantedType), Is.EqualTo(shouldBeFound));
         }
+
+        private static bool IsPerTestMethod(MethodDefinition method)
+            => method.CustomAttributes.Any(attribute => PerTestAttributes.Contains(attribute.AttributeType.FullName));
 
         private static string[] Names(params string[] names) => names;
 
