@@ -83,7 +83,7 @@ says so. **The baseline T10 needs does not exist yet** (see "What T10 cannot sta
 | D-6537-3 | Two destinations for a **move**, lowest that can prove the rule: a **unit test of the class that computes it** (no database, same assertions, same Given content), else a **port scenario** on T5's harness, or `new` for up to three collaborators | A unit test with no database costs milliseconds; a port scenario keeps the real database and the body |
 | D-6537-4 | **Moves only is the default.** A *rewrite* (smaller input at the computing class) is an **extension beyond the brief, proposed for the maintainer's yes**. Until that yes is in this delta, no rewrite step runs. A rewrite then needs its own deliberate break and an id row per removed row | A rule that depends on a 20 s history fill cannot be moved cheaply, only restated; restating is not what the brief or the maintainer's decisions say |
 | D-6537-5 | T10 builds no helper, script, base class or guard. It uses T5's harness, T5's guard lists, T6's category and T9's report. If a suite needs a helper T5 did not leave, T10 stops and asks | One mechanism per question; the brief says the same |
-| D-6537-6 | **One stop rule, in three places:** stop and ask after the top two suites, or when a suite's saving is under 1 % of the baseline summed `Integration` seconds (the "1 % line", about 20.7 s on T9's stand-in of 2,068 s, an estimate until the baseline exists). The check is a **prediction** at step 1 (T5's priors only) and at step 2 (the pilot class measured, the rest of the suite projected), and **measured** at the close of each suite (the by-class sum). Under the line in any of the three means stop and ask | The maintainer's decision; the saving cannot be measured before a class has moved, so the early checks are marked as predictions |
+| D-6537-6 | **One stop rule, in three places:** stop and ask after the top two suites, or when a suite's saving is under 1 % of the baseline summed `Integration` seconds (the "1 % line", about 20.7 s on T9's stand-in of 2,068 s, an estimate until the baseline exists). The check is a **prediction** at step 1 (T5's priors only) and at step 2 (the pilot class measured, the rest of the suite projected), and **measured** at the close of each suite (the by-class sum). Under the line in any of the three means stop and ask. **On this delta's own arithmetic each candidate suite alone saves about 0.6 to 0.7 % (12.7 s and 14.7 s of 2,068 s, estimates), under the line, so the stop fires at step 2 for both. The target of 1.1 % is the sum of two suites that each fail the line. Whether the line applies to each suite or to the pair is the maintainer's question, first in DISTILL's "For the maintainer"** | The maintainer's decision; the saving cannot be measured before a class has moved, so the early checks are marked as predictions |
 | D-6537-7 | Success has a floor and a target, each defined in "The success number". A **provisional target `P` of 1.1 %** is written there now, from stated estimates, and replaced once at step 2 by a measured one | Time is the gate. The maintainer asked for a percentage at DESIGN |
 | D-6537-8 | The last commit applies T9's rules to lower the mean and total ceilings, from five plain eligible runs whose head is after the last move commit and before the data commit (the last move push's own run is the first of them if it is eligible). It is a data commit made **after** the after set is read. **Where the formula would not lower a ceiling, T10 writes nothing for it. That departs from "lowers the ceilings, total included" and needs the maintainer's ruling before the data commit** ("How the ceilings are lowered") | The maintainer's decision, with a part T9's rules cannot deliver; T9 expects both lowered |
 | D-6537-9 | At most three pushes: suite 1, suite 2, the data commit. T5's push rules apply word for word: no `ci*.yml` edit, the path classifier answers `false` for every connector before each push, and the always-on list run before each push with the id table as its allowance | Each backend push runs the whole tail; a list run proves no test is lost |
@@ -208,7 +208,7 @@ the CSVs; the ceiling commit waits.
 ## Wave: DESIGN / [REF] The success number
 
 **Floor.** Median of the after runs' summed `Integration` seconds below the median of the before runs'. This is the maintainer's rule. **It may not be provable on its own.** Backend totals
-swing 1.13 times from runner luck (T4), a 5-run median damps that, and the expected fall is about 1 to 2 % of the tier. T5 expected 1.2 to 1.6 % for the whole of its Story's moves (the pilot and the smaller option of its two suites). A fall
+swing 1.13 times from runner luck (T4), a 5-run median damps that, and the expected fall is about 1 to 2 % of the tier (an estimate, not a measurement). T5 expected 1.2 to 1.6 % for the whole of its Story's moves (the pilot and the smaller option of its two suites). A fall
 that size can sit inside the spread of the before set. So the floor is read with the spread printed beside it.
 
 **"Measurable", defined.** The by-class fall is measurable when it is larger than the range (largest minus smallest) of the moved ids' own summed seconds across the 5 before runs. The tier median is the maintainer's named figure, so the **pass condition** is all three together: (1) the after median is below the before median; (2) the by-class fall is measurable; (3) it reaches `P`. If (1) fails but (2) holds and the tier's before spread is larger than the expected fall, the record says "inside runner noise on the tier column" and the Story **does not pass by itself: it goes to the maintainer**, with both figures.
@@ -221,7 +221,7 @@ fall just because rows left the `Integration` column.
 
 - Rows: the likeliest top two are T5's leftovers, whose rule rows T5's addendum counts as `m` = 164 for Refinement and 132 for Reports, of which T5's smaller option takes 73 and 36. That leaves **91 and 96 rows**. This is a guess about which suites rank, and the ranking may pick others.
 - Per row, `u − c + hop` with `u` = 0.189 s (Refinement) and 0.203 s (Reports) from T5's table, `c` = 0.05 s (T5's middle figure; its range was 0 to 0.1), `hop` = 0 (T5's assumption): 91 x 0.139 = 12.7 s and 96 x 0.153 = 14.7 s, so **27.3 s**.
-- Less new host rows, T5's figure of about 12 at 0.29 s: **3.5 s**. Net **23.8 s**.
+- Less new host rows, T5's figure of about 12 at 0.29 s (borrowed from T5, an estimate): **3.5 s**. Net **23.8 s**.
 - Baseline stand-in: T9's 2,068 s. 23.8 / 2,068 = 1.15 %, rounded down to 0.1 point: **1.1 %**. At `c` = 0 the same sum is 33.2 s, 1.6 %. The figure is above the 1 % line (20.7 s), as it must be.
 - The pilot's own saving is part of this sum, because the pilot is suite 1's first class.
 - The baseline will be somewhat lower than 2,068 s once T5's moves (about 25 to 35 s, T5's own estimate) have left the column; that changes the percentage by about 0.02 point.
@@ -231,7 +231,7 @@ This `P` is a placeholder for the moves-only case. It is replaced **once**, at s
 **Measured target `P`.** `P` = the by-class saving that stage 3 predicts for the two chosen suites, from the **measured** `u`, `c` and `hop` of the pilot class, as a percentage of the baseline
 (median summed `Integration` seconds), rounded down to 0.1 point.
 
-- **How:** at step 2, once the pilot has measured `u`, `c` and `hop`, stage 3 is re-run for the two suites and the measured `P` is written into this delta, replacing the provisional one, with the baseline it was divided by. It is not edited after that; only the maintainer lowers or raises it.
+- **How:** at step 2, once the pilot has measured `u`, `c` and `hop`, stage 3 is re-run for the two suites and the measured `P` is written into this delta as a **proposal**, with the baseline it was divided by. The maintainer ratifies it, in this delta, before suite 2 starts; the provisional one stands until then. After ratification only the maintainer changes it.
 - **When:** after the baseline exists and the pilot class has moved, before suite 2 starts. The provisional one is written now only because the baseline does not exist, and T5's own estimates of `c` ranged from 0 to 100 ms, which moves a suite's saving by 40 % or more.
 - **Reading:** the pass condition above. If the floor holds and the by-class fall is under `P`, the record says so and the maintainer decides; a fall under the floor is a fail. If wall time does not fall, the record says so, as FE7's did. The pyramid shares are reported beside it, never judged.
 - **Guard against a flattering target:** `P` may not be set below the 1 % line. A suite under it is not moved, so a `P` below it would mean there is nothing to do, and the Story stops at step 2.
@@ -554,3 +554,160 @@ The first review came back NEEDS_REVISION. Changed in these DEVOPS sections and 
 - The production check is a `git log` since T10's base.
 - A push's trigger section lists the jobs after the tests and says "plain" covers the test stage only; each push's files are checked with every `classify_*`.
 - The dispatch line is qualified; the before wait is on the maintainer's list, with a command for "no test moved between them"; a green re-run attempt counts with its artifact id.
+
+## Wave: DISTILL / [REF] Scope, reconciliation and what is reused
+
+Written 2026-11-07, maintainer away. Nothing ran, and no file but this one changed.
+
+- **Specified, not scaffolded.** T10 cannot start until T5, T6 and T9's ceilings have landed, and which suites move is not known until the ranking exists. So this wave writes no test file and no production file. It names what each step must show. The "fails for the right reason" check moves to DELIVER: each step shows its red before its green.
+- **Shape.** Test structure, no product behaviour. No Gherkin, so no feature files, no Tier B, no domain-types module, no state-delta port. A scenario is a Given, When and Then with what proves it, as in T5's DISTILL.
+- **No UI, so no sketches.** Nothing a user sees changes. Loading and failure looks: N/A for the same reason. E2E is untouched.
+- **No nWave scenario tag** in any test title, comment or file. An untagged scenario is correct here. The kind of each scenario (ok, sad, edge) is a plain column in this workspace only.
+- **Rigor.** DELIVER proposes a profile to the maintainer at its start, as the project says. Not set here.
+- **Reused by name from T5's DISTILL, unchanged:** "The guarantee" (its nine checks), "Proof that no test is lost" (the list run and its rules, tokens removed first, a stated count on every restricted run), the id table, the shared-step table, the coverage table, the deliberate break, and the push rules. This wave restates only what T10 changes.
+- **How a DELIVER step works.** While working, the fast cycle: a class filter with a stated count for the moved class and its new home, and the fast-tier script once it is in the tree. At the end of each suite, one full run with the slice-end command in "Local commands". No unfiltered `dotnet test` at any other time.
+- **Limits kept.** At most three pushes (suite 1, suite 2, the data commit). No TypeScript file changes. No ADR and no `CLAUDE.md` change. T10 builds no helper, base class or guard beyond T5's.
+- **Positive case for T5's leftovers.** A class T5 left on its shrinking list that ranks in the top ten once T5 is finished is a candidate like any other, and the maintainer's decision allows it.
+- **Read:** this delta in full, the brief, and T5's DISTILL sections "Scope, reconciliation and baseline", "What each slice must show", "The guarantee" and "Completeness audit and hold". Language C#, NUnit. Deliverable type: application. No outcome registered, because no typed contract is added.
+
+**Reconciliation: 0 hard contradictions.** Soft points, resolved as recorded:
+
+| Point | Resolved |
+|---|---|
+| The brief takes the top two by the ranking; DESIGN takes them by stage-3 saving | DESIGN stands. It is already marked a deviation awaiting the maintainer |
+| The brief says "move"; a rewrite is not a decision of the maintainer's | Moves only. Rewrites appear below only as conditional scenarios |
+| DESIGN says the working loop is a class filter until the fast-tier script exists | Stands. A step uses the script as soon as it is in the tree |
+| DEVOPS says the after set is five runs from the last move push on | Stands. Scenario 6.1 reads it |
+| The maintainer's stop is "a suite under 1 %", and the arithmetic puts each suite under it | Not settled here. It is the first question in "For the maintainer" |
+
+## Wave: DISTILL / [REF] What each step must show
+
+"Red" means a named failure for the reason given, never a build or set-up error. Every figure below is an estimate until the ranking exists; the scenarios fix the rules and the shape of the evidence. **Kept** is a file under `evidence/` in this workspace, written by DELIVER. Numbers in a Given are stand-ins for the run's own.
+
+### Step 1: the ranking and its source runs
+
+| # | Given, When, Then | Proof | Kept | Fails when | Kind |
+|---|---|---|---|---|---|
+| 1.1 | **Given** five eligible plain `main` runs after T5's last move push and T6's last slice, **when** the baseline table is built, **then** each run shows run id, attempt, artifact id, commit, its connector answers, `Failed` rows, and the `Integration` count, sum and mean. Each line of the id comparison is explained, or the run is dropped with the reason written, and the median sum and the spread are printed | The id comparison command in "The runs needed" prints nothing; each count agrees with T9's count line; the sum of the rows equals the run's sum | The baseline table | Fewer than five runs exist, so the first move push waits. A line in the id comparison means a foreign test moved: it is read, and the run is explained or dropped with the reason written | ok |
+| 1.2 | **Given** the five runs, **when** classes are ranked, **then** the top ten by median seconds show family (T5's grouping by harness), run ids, and spread. The skeleton list, the wire-contract classes, connector classes, container classes and host-subject families are named in a left-out list, per class. A test name with dots in its arguments lands in one class | Class and seconds come from `class_of` and `seconds_per_unit`. The per-class sums add up to the tier sum. One ambiguous name is settled from a local TRX | The ranking and the left-out list | A left-out class appears in the top ten, a class's seconds differ from the TRX, or the sums do not add up | ok |
+| 1.3 | **Given** T5, T6 or T9's ceilings are not on `main` (T5 has no harness or guard in the tree, T6's category column does not read the base chain, T9's report shows no `Integration` tier), **when** T10 is asked to start, **then** it does nothing and asks the maintainer. A T5 that stopped short counts as not finished | Each of the four needs in "What T10 cannot start until" is checked by its named reading | A line in the table of that section | A step starts anyway. A half-moved T5 suite reaches the ranking | sad |
+
+The 1 % line is written here: **1 % of the baseline's median summed `Integration` seconds** from 1.1, which is 20.7 s on T9's stand-in of 2,068 s. Once the baseline exists, the line comes from it, not from the stand-in. **The first prediction is checked here, on T5's priors, for the two likeliest candidates, each alone:** the Refinement leftover (91 rows, about 12.7 s, about 0.6 %) and the Reports leftover (96 rows, about 14.7 s, about 0.7 %), until the ranking names the real suites. Both are under the line, so the question in "For the maintainer" is asked before step 2 starts, not found there.
+
+### Step 2: the screen, and the pilot class of suite 1
+
+| # | Given, When, Then | Proof | Kept | Fails when | Kind |
+|---|---|---|---|---|---|
+| 2.1 | **Given** the top five classes, **when** each is screened with the one question per assertion, **then** every row is a rule row or stays. A mixed row is split: the value goes down, one wiring row stays. A table lists each shared step, what it asserts, and where it goes | One table per class; rule rows plus staying rows equal the class's rows. A rule hidden in a shared step has a line | Screen tables, one per class | A row has no answer, a shared step is not read, or a rule row is counted that asserts a route, verb, status, JSON name, header or 401, 403 or RBAC 404 | ok |
+| 2.2 | **Given** rows whose Given is built through the real save route, whose body is over 2 s locally, that need the update queue, lanes or hosted services, or whose logic is in a controller or middleware, **when** the screen reads them, **then** each stays at the host and the reason is written. Controller logic with no port is listed for the improvement Epic on structure | The screen table's reason column; the host test is untouched | The screen tables | A body-bound or queue-bound row is counted as movable, so a slow test lands in the fast tier or the saving is overstated | sad |
+| 2.3 | **Given** the pilot class has moved, **when** `u`, `c` and `hop` are measured on one quiet machine, before and after (`hop` is T5's `h`, the HTTP share, renamed), **then** stage 3 is re-run for the top five and the top two are taken by saving, not by seconds. A measured target is written here as a **proposal**, with the baseline it was divided by, never below the 1 % line. The maintainer ratifies it in this delta before suite 2 starts | `u` and `c` from one timed run each, `hop` as the residual in "What is ranked"; the saving formula shown with its inputs; the id table for the pilot | The timing CSVs, the stage-3 table, the proposed target | A figure is measured under load or on two machines: stop and measure again. `m` moved by more than 5 rows and stage 3 was not re-run. The proposal is set under the line, or suite 2 starts before the maintainer's ratification is recorded, or the target is changed after it | ok |
+| 2.4 | **Given** stage 3 predicts that a suite's saving is under the 1 % line (on this delta's arithmetic both candidates are, at about 0.6 and 0.7 %, while the target of 1.1 % is their sum), **when** the pilot's checkpoint is read, **then** T10 halts, writes the note with the figures in the workspace, and returns. It resumes only on a maintainer reply recorded in this delta. It does not move the rest of the suite | The stage-3 table against the line, marked a prediction; the maintainer's answer to the first question in "For the maintainer" | The stage-3 table and the note | Work goes on past a prediction under the line without a recorded reply | sad |
+
+### Step 3: one suite's move (the pilot's class and the rest of suite 1; step 4 repeats it)
+
+| # | Given, When, Then | Proof | Kept | Fails when | Kind |
+|---|---|---|---|---|---|
+| 3.1 | **Given** a screened suite, **when** its rule rows move, **then** each lands in the lowest place that proves it: a unit test of the computing class with the same assertions and the same Given content, else a port scenario on T5's harness, or direct construction with up to three collaborators. Three tables exist: what the wire showed and what pins it now, the shared steps, and old id to new id or "stays". They add up to the suite's rows | The tables; line coverage of the production files the coverage table names, from `Test-Coverage.ps1` before the first move and after the last, live categories out, is not lower | Coverage, shared-step and id tables; both coverage reports | A removed assertion has no id row, coverage falls, or the Given of a moved row builds a state no save can produce | ok |
+| 3.2 | **Given** a moved suite, **when** one production line the rule depends on is broken in the working tree, **then** the moved row is red at its new layer and the output is kept. The line is put back and no production file is in the commit | The break compiles; the red names the moved row; `git log` on the product folder since T10's base lists no T10 commit | The red output of the moved row | The row stays green with the line broken, the break does not compile, or it is committed | sad |
+| 3.3 | **Given** a class that has moved, **when** its commit is read, **then** that one commit holds: the class off the integration base, its line off T5's shrinking list, its line off T2's list with `MostTypesTheListMayHold` lowered by the same amount, and its budget entry if the class is gone or renamed. A class that only shrinks has its entry dropped by hand, by T5's rule | The guards' stale-line rules, T2's count test and the budget check go green in that commit. No list grows | The commit and the guard output | A line is left behind and the build names it, or `MostTypesTheListMayHold` is not lowered and T2's test fails. A forgotten drop for a merely shrunk class fails nothing, so the check is explicit: for each shrunk class, its largest time over five plain runs times 2.1 is compared with 34 s, and its entry is dropped in the commit when it is at most 34 s. The check is not run, or an entry that qualifies is left | edge |
+| 3.4 | **Given** the always-on list run before a push, **when** it is compared with the last list, **then** every line that changed is on the id table. The run states its count, and the seven token variables (`AzureDevOpsLighthouseIntegrationTestToken`, `JiraLighthouseIntegrationTestToken`, `JiraLighthouseRestrictedIntegrationTestToken`, `JiraScopedTokenIntegrationTestToken`, `ServiceNowLighthouseIntegrationTestToken`, `LinearAPIKey`, `AzureDevOpsLighthouseE2ETestToken`) are removed, with the count of them printing 0 | The comparison command; the restricted count in the TRX | The two lists and their diff | A line is not explained by the table, the count is 0 or not the stated one, or a token was set | sad |
+| 3.5 | **Given** a suite's commits, **when** the files they add are listed, **then** no new helper, base class or guard beyond T5's is among them. If a suite needs one, T10 stopped and asked | `git diff --name-only <parent of T10's first commit> HEAD` over the test folder, read against T5's files | The file list | A new helper, base or guard appears and the maintainer was not asked | sad |
+
+### Step 4: suite 2
+
+| # | Given, When, Then | Proof | Kept | Fails when | Kind |
+|---|---|---|---|---|---|
+| 4.1 | **Given** suite 1 is pushed, **when** suite 2 starts, **then** its first class is a checkpoint with its own `c` and `hop`, and stage 3 is re-run. At the close of the suite the 1 % check is **measured**: the by-class fall over the id table, median over runs, against the line | Scenarios 3.1 to 3.4 hold again; the by-class sum, not the tier column | Suite 2's tables, the checkpoint and close figures | The measured saving is under the line and work goes on, or the push goes out before suite 1's run ends | ok |
+
+### Step 5: stop and ask
+
+| # | Given, When, Then | Proof | Kept | Fails when | Kind |
+|---|---|---|---|---|---|
+| 5.1 | **Given** the top two suites are done (or, on the maintainer's answer (a) or (b), step 2 has stopped), **when** step 5 is reached, **then** T10 halts, writes a note in the workspace with the by-class fall of each suite, its days against the estimate, and the classes it did not move, and returns. It resumes only on a maintainer reply recorded in this delta. It never takes a third suite | The note exists; no move commit follows it without a recorded reply | The note to the maintainer | A third suite starts without a recorded reply | ok |
+| 5.2 | **Given** a suite's predicted or measured saving is under the 1 % line, or the predicted mean after a push would pass the `Integration` mean ceiling, **when** that is found, **then** T10 stops and asks. A mean ceiling is never raised to let a move in | The hand check of the predicted mean and total against the ledger's room, before each push | The hand check and the note | A move goes in that would breach the mean, or a ceiling entry is raised | sad |
+| 5.3 | **Given** the maintainer chose to accept a stop at step 2 (answer (b)), **when** the Story closes, **then** the record says: no suite moved beyond the pilot, the target was not reached, no ceilings were lowered and none is written, and the left-over classes are listed as backlog. It does not call the Story passed | The record lists what was and was not done, with the predicted figures against the line | The closing record | The Story is called done with a target it did not reach, or a ceiling entry is written without a measured after set | edge |
+
+### Step 6: the after set, the success reading and the ceiling commit
+
+| # | Given, When, Then | Proof | Kept | Fails when | Kind |
+|---|---|---|---|---|---|
+| 6.1 | **Given** five eligible runs whose head is after the last move commit and before the data commit, **when** the success reading is made, **then** three things hold together: the after median of summed `Integration` seconds is below the before median, the by-class fall is larger than the range of the moved ids' own seconds across the before runs, and the fall reaches the target. The tier spread is printed beside it, and the pyramid shares are reported, never judged. `P` is about the expected value, so a pass on the third thing needs the measured `c` at or under about 50 ms; above that the record says the fall may sit under `P` and the maintainer decides | Same CSVs and the same join both sides; the id table maps old ids to new ones; wall time is stated, and if it did not fall the record says so | The after table and the reading | A run in the set is red, live, or the data commit's own. The two sides use different methods | ok |
+| 6.2 | **Given** the after median is not below the before median, the by-class fall is measurable, and the tier's before spread is larger than the expected fall, **when** the reading is made, **then** the record says "inside runner noise on the tier column", and the Story does not pass by itself. It goes to the maintainer with both figures | The tier spread and the by-class range printed together | The reading | The Story is closed on a tier median that sits inside the spread, or a fall under the floor is called a pass | sad |
+| 6.3 | **Given** the maintainer has ruled on the ceilings and the formula gives an entry below the newest enforced one (for example, a derived total of 1,850 s against an entry of 2,000 s, invented figures), **when** the data commit is made, **then** the JSON alone is pushed, with a reason that names the moved suites and the count at derivation stored beside the total. The fast limit is not touched | The formula run by hand: largest total or mean over the five times the measured `h` (at least 1.13), rounded as T9 rounds; the JSON diff shows lower entries only | The ledger diff and the formula inputs | An entry is written above the old one, a spread over 1.25 is capped (it stays provisional and the Story does not close), or other files ride in the commit | ok |
+| 6.4 | **Given** the formula for the mean or the total gives a figure at or above the newest enforced entry (for example, a derived mean of 0.93 s against an entry of 0.90 s, invented figures; likely for the mean, since cheap rows leaving lift it), **when** the data commit is prepared, **then** nothing is written for that ceiling, the record says so, and the maintainer's ruling is in this delta before the commit. No number is forced | The ledger has no raise path; the record states the derived and the enforced figures | The record line for each ceiling | A number is written anyway, the data commit is made before the ruling, or the ceiling stays as it was with no line in the record | edge |
+| 6.5 | **Given** the data commit is pushed alone in a clean window, **when** its run ends red, **then** the report is read by T9's table: count up, or any class's seconds up, is stop and report, because T9 gives no threshold; count unchanged is a slow runner and the failed job is re-run once; red twice stops and goes to the maintainer. T10 never sets the warn-only switch. A revert of the data commit raises the ceilings, so it needs the maintainer's ruling | The report and the case table | The run's step summary | The warn-only switch is set, a foreign push shared the window, or a revert goes in without a ruling | sad |
+
+### Rewrites: conditional on the maintainer's yes
+
+A rewrite restates a rule on a smaller input at the computing class. It is beyond the brief. **No rewrite step is added to the plan, sized or run until the maintainer's yes is written in this delta.** These two scenarios are not counted in the six steps.
+
+| # | Given, When, Then | Proof | Kept | Fails when | Kind |
+|---|---|---|---|---|---|
+| R1 | **Given** the maintainer's yes is in this delta and a screened class is slow in its fill, **when** a rule row is rewritten, **then** it has its own deliberate break (red for the same production line the old row pinned), an id row for each removed row, and the old row is removed only after the new one is shown red and green | The break output of the new row; the id table; the saving counted as the removed row's seconds less the new row's | Break output and id rows | The old row is removed first, a removed row has no id row, or the break pins a different line | ok |
+| R2 | **Given** no yes is in this delta, **when** a step would rewrite a row, **then** it does not run, and the class stays or is listed as backlog | The delta has no yes; no commit changes an assertion's input | The backlog list | A rewrite lands without the yes | sad |
+
+## Wave: DISTILL / [REF] The guarantee
+
+T5's nine checks hold for T10 unchanged in rule: no production file changes, no nWave scenario tag, no test lost, no list run reaches a tracker, a push stays plain, every restricted run states a count, and no row left unexplained. T10 changes these:
+
+| # | Check | Command or reading | Fails when |
+|---|---|---|---|
+| 1 | The production check | `git log --oneline <parent of T10's first commit>..HEAD -- Lighthouse.Backend/Lighthouse.Backend/` before each push | It lists a T10 commit |
+| 2 | The tag check | T5's diff command, against T10's first commit | It prints a line |
+| 3 | The seconds fall by class, not by tier | The by-class sum over the id table, before and after, same method | It does not fall. A tier sum would fall by itself as rows leave it |
+| 4 | Host builds do not rise | T5's host-build count, read from the list run with the timer on, at the close of each suite | The count is above the last one without a new fixture explained in the id table |
+| 5 | Each suite's table adds up | Rows in the screen table equal rows in the id table plus the rows that stay | It does not |
+
+## Wave: DISTILL / [REF] Completeness audit and hold
+
+| Item | Answer |
+|---|---|
+| C1a | Scenario 1.1 (fewer than five runs), 5.1 |
+| C1b | 6.3 and 6.4 (a figure on either side of its entry), 2.4 (a suite just under the line) |
+| C2a | The step order in "Steps per suite"; a ceiling's life from derived to written or not written, 6.3 and 6.4 |
+| C2b | 1.3, 2.4, 3.3, 3.5, 5.2, 5.3, 6.4, 6.5 |
+| C3 | 3.3 (one commit holds four lists); 1.1 (five runs, one of which must be dropped) |
+| C4a | 3.4 (the same list run twice gives the same ids) |
+| C4b | 6.5 (a run that goes red twice) |
+| C5a | Debug and Release: T5's check for a class read under both is reused for any moved class the guard reads |
+| C5b | N/A, because T10 adds no flag |
+| C6a | 3.2, 2.2 |
+| C6b | 1.3, 2.4, 5.2, 6.2, 6.4 |
+| C6c | 6.4 shows no number is forced; 3.3 shows a list line can fail alone |
+| C7a | No Docker needed beyond T5's: a move adds no new infrastructure |
+| C7b | 6.5; 3.4 (a token set) |
+| C7c | 6.5 (a foreign push in the window); T5's rule that no two list runs go together |
+
+**15 of 15, COMPLETE, with 6.4 pending a maintainer ruling** (6.4 fails if the data commit is made before it), C5b N/A and C7a by reference. No `SPECIFICATION_AMBIGUITY` that blocks the wave. Scenarios: 21, plus 2 conditional rewrites. Sad and edge: 12 of 21, 57 %. Tier B: no, this is test structure. Driving adapters: none new. Walking skeletons: none, because no user flow changes.
+
+Per step: 1: 3 (1 sad), 2: 4 (2 sad), 3: 5 (4 sad or edge), 4: 1, 5: 3 (2 sad or edge), 6: 5 (3 sad or edge).
+
+**Hold.** DELIVER starts only when T5 is finished, T6's last slice and T9's ceilings are on `main`, and five eligible runs exist for the before set. Open for DELIVER: every figure (`u`, `c`, `hop`, the rank, the first list's size), the measured target, which suites are the top two, and whether the maintainer says yes to rewriting.
+
+## Wave: DISTILL / [REF] For the maintainer
+
+Question 1 must be answered before DELIVER starts. The rest do not block the wave and are unchanged from DESIGN and DEVOPS.
+
+0. **The stop line against the estimate.** On this delta's own arithmetic each candidate suite saves about 0.6 to 0.7 % of the tier, under the 1 % line, so the stop fires at step 2 for both, and the target of 1.1 % is the sum of two suites that each fail it. Choose: **(a)** apply the line to the pair, so T10 stops only if the two together are predicted under it, each suite's saving still reported; or **(b)** accept a stop at step 2, which closes the Story with no ceilings and the target not reached (scenario 5.3). **Recommended: (a).** The figures behind 0.6 to 0.7 % are estimates, and the cost per moved row, `c`, ranges from 0 to 100 ms, which moves a suite's saving by 40 % or more; stopping on them would end the Story before anything is measured. The pilot's measured `u`, `c` and `hop` are what should settle it.
+
+Still pending from DESIGN and DEVOPS, unchanged and yours to decide:
+
+1. **Rewrite as well as move.** Scenarios R1 and R2 are specified so they are ready, and do nothing until you say yes.
+2. **A ceiling the formula cannot lower.** Scenario 6.4 writes nothing for it and waits for your ruling before the data commit. Your options are in DESIGN's open list.
+3. **The top two by stage-3 saving, not by the ranking.** Scenario 2.3 follows DESIGN. Please confirm.
+4. **Both waits have no limit.** The before set holds the first move push; four of the five after runs hold the data commit. Say if the chain goes quiet and T10 may close without the ceilings.
+5. **A revert of the data commit raises the ceilings.** Scenario 6.5 asks you each time. Say if you want a standing answer.
+6. **Review.** Not run here. The consolidated review at the end of DISTILL is yours to dispatch; this section was written without a reviewer.
+
+## Wave: DISTILL / [REF] Review
+
+The first review came back NEEDS_REVISION. Changed:
+
+- The stop line against the estimate is stated plainly in DESIGN's stop rule and in scenarios 2.4 and 5.1, and goes to the maintainer first, with a recommendation. Step 1 names the two candidates checked. Scenario 5.3 records what a stop at step 2 closes with.
+- `P` is a proposal the maintainer ratifies before suite 2 starts (2.3, and DESIGN's "How" line). The line's base is fixed in step 1.
+- Completeness reads "COMPLETE, with 6.4 pending a maintainer ruling".
+- Stops an agent can act on: halt, write the note, return, resume on a recorded reply (2.4, 5.1); any class's rise stops and reports (6.5); the 2.1 times 34 s check (3.3); measured under load means stop and measure again (2.3).
+- Borrowed and estimated figures labelled in DESIGN (T5's 12 new host rows at 0.29 s, the 1 to 2 % fall). 6.1 says `P` is about the expected value and needs `c` at or under about 50 ms. New 3.5: no helper, base or guard beyond T5's.
+- Low points: 1.1's Then; 6.2 needs both conditions; lines for the three-push limit, no TypeScript change, no ADR or `CLAUDE.md` change, and the leftover positive case; `hop` is T5's `h` (2.3); 3.4 names the seven variables.
+
+**Not settled.** Whether the line applies to a suite or to the pair. Scenario counts are now 21 plus 2 conditional, above the 15 to 20 asked for; each added row is a named review point.
