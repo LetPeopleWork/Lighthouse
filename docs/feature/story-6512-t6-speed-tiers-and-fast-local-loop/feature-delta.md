@@ -2105,3 +2105,7 @@ The first mutant run left two survivors. No test had a class after a closed clas
 - Two namespaces in a file are untouched and still read the first one.
 - No real TRX row holds a `+`, because no nested class has tests today. So `Outer+Inner` rests on DESIGN's statement and not on a real file.
 - A type other than a class does not count as an enclosing scope, so a class nested in a struct or record would lose its outer name.
+
+## Wave: DELIVER / [REF] Push 6 judged (2026-11-07)
+
+Run 42401089668 at `50a1d8586`, the moves, the review's fixes and rule 7. `force_full=false`, so a plain run: 12,922 passed, 2 skipped, 12,924 in all, the count `L6` gave locally. Against push 5's CSV: 6 ids gone, all the guard's own (4 deleted with the list, 2 renamed), 36 added (35 in `TestTierGuardTest`, 1 in `TestSelectionClauseTest`), 0 outcomes changed. That is exactly the difference `L6` showed against `L5`. Every gate passed and the run stopped at deploy approval, which counts as a green base. So every hosted, live and container fixture is on the base, and CI still runs every test it ran before.
