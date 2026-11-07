@@ -1794,3 +1794,7 @@ Being abstract does not hide a plant from `TestHostPerFixtureGuardTest`, because
 - **Each guard reads the assembly again, and a positive answer is not cached.** Each guard reads the module and builds its own scan. The scan remembers methods that reach no host, not those that do, so a walk that finds a host is walked again for the next root. At about 3 s this is not worth a shared cache.
 
 Seen while here, also not fixed, each 0 in the tree: a generic `[TestCase<T>]` has another attribute name, so it is no root; `TestCaseData.SetCategory` and a class derived from `CategoryAttribute` are not read.
+
+## Wave: DELIVER / [REF] Push 5 judged (2026-11-07)
+
+Run 42393654124 at `8fb288160`, the guard's push, with T9's slice A beside it. `force_full=false`, so a plain run: 12,892 passed, 2 skipped, 12,894 in all, the count `L5` gave locally. Against push 4's CSV: 0 ids lost, 0 outcomes changed, and 61 added, all in `TestTierGuardTest`. Every gate passed and the run stopped at deploy approval, which counts as a green base. The review's fixes came after this push and go out with slice E.
