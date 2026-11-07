@@ -316,8 +316,8 @@ fails; the break row above is the run before the test existed.
 ## Stop check for refinementNeed: passes with margin
 
 Summed per-test seconds (`assertionResults[].duration`), 5 alternating pairs, 5 of 5 valid (every 1-minute load-average
-sample between 1.96 and 2.62, limit 6). Before is the old file run from a copy; after is the form file (9 tests: 8 stay,
-1 added, plus the 16 that already rendered one unit, 24 in all) and the three section files (23), 47 plus 1 tests.
+sample between 1.96 and 2.62, limit 6). Before is the old file run from a copy; after is the form file (25 tests: 8 wiring tests, the added one,
+the 16 that already rendered one unit) and the three section files (23), 48 tests against 47.
 
 | Pair | Order | Before s | After s | Before CPU user+sys | After CPU user+sys |
 |---|---|---|---|---|---|
