@@ -2109,3 +2109,38 @@ The first mutant run left two survivors. No test had a class after a closed clas
 ## Wave: DELIVER / [REF] Push 6 judged (2026-11-07)
 
 Run 42401089668 at `50a1d8586`, the moves, the review's fixes and rule 7. `force_full=false`, so a plain run: 12,922 passed, 2 skipped, 12,924 in all, the count `L6` gave locally. Against push 5's CSV: 6 ids gone, all the guard's own (4 deleted with the list, 2 renamed), 36 added (35 in `TestTierGuardTest`, 1 in `TestSelectionClauseTest`), 0 outcomes changed. That is exactly the difference `L6` showed against `L5`. Every gate passed and the run stopped at deploy approval, which counts as a green base. So every hosted, live and container fixture is on the base, and CI still runs every test it ran before.
+
+## Wave: DELIVER / [REF] Slice F, step 06-03: the CSV's chains, warnings and the real tree, what ran (2026-11-07)
+
+Run on `538f5e321` plus this step's change. Python only: no `dotnet test` ran, and the real TRX files are step 05-04's `L6` runs. Not pushed.
+
+**What changed.** `parse_trx` looks a class up without a parametrised fixture's arguments, and `fully_qualified_name` keeps them. A class the source tree does not declare reads a new value, `Unplaced`, with one warning on stderr per class, and the run still exits 0. Each namespace of a file now names its own classes. `simple_name_collisions` reports classes on a chain that share a simple name. `summarise.py` says `hosted, container or live` where it said `integration`. `CSV_COLUMNS` did not change. With no `--source-root` every row still reads `Unit`.
+
+**The TRX shape, read from `L6-H.trx`.** The arguments sit on `className` alone: `...CategoryListsHoldRawStatesSettingsIntegrationTest(Portfolio)`, `...Scenarios(2)`. `testName` and the method's `name` carry none. 10 such class names in 4 fixtures, with word and number arguments, and none holds a `+`. The test pins two real rows, ids included.
+
+| Case | What ran | Result |
+|---|---|---|
+| Count before | `python3 -m unittest discover -s Scripts/test-timings/tests` | 136 tests, OK |
+| The pin | The new test, before the code | Green, as it should be: it pins what TRX writes, not a change |
+| Red | The new tests against stubs that do nothing | 153 tests, 10 failures, each on its assertion: two namespaces, the arguments for a class and for a method, `Unit` where `Unplaced` was due, no warning, the mixed class under `(Team)`, the planted collision, the `parametrised` anchor, and `summarise.py` twice |
+| Green when written | The chain crossing files, a namespace inside a string, two collision controls, a parametrised class found under its declaration | Passed against the stubs. Each guards behaviour the old code had or nothing yet broke. The chain test fails when the map is cut per file, and the string test when the scan reads strings |
+| Green | The same command, after the code | 153 tests, OK, exit 0 |
+| Column unchanged but for the category | Old and new `trx_to_csv.py` over `L6.trx` | 12,933 rows each; `fully_qualified_name` identical in order; `duration_ms` and `outcome` identical. A spot check: 06-04 proves it |
+| The column on `L6.trx` | New script | `Integration` 3,395, `Unit` 9,538, `Unplaced` 0. Exactly 124 rows moved, all to `Integration`, all in the 4 fixtures: 76, 24, 12 and 12 |
+| Against the tiers | New script over `L6-H`, `L6-F`, `L6-O` | `H` 3,395 `Integration`. `F` 9,535 and `O` 3, all `Unit`. 9,535 + 3 = 9,538. As ids, `Unit` of `L6` and `F` + `O` hold the same 9,522 distinct names, 0 either way; 16 rows repeat a name |
+| Warnings on the real tree | Over `L6`, `L6-H`, `L6-F`, `L6-O` | None. Every TRX class has a declaration |
+| Real-tree anchors | `TheRealTreeTests` | On `IntegrationTestBase`: `TeamDeletionIntegrationTest`. Three deep: `Slice04StopARefreshTest`, through `TaskManagerHostPerFixtureAcceptanceTest` and `TaskManagerHarness`. Self-hosting: `SystemInfoWireFormatRegressionTests`. Container: `SubstrateProbeTests`. Live: `JiraOriginalNamesLiveTest`. Parametrised: `CycleTimeDefinitionOverAMappingIntegrationTest(Team)`. All `Integration`. Regular: `AdditionalFieldDefinitionTest`, `Unit` |
+| Collision | The real tree, then a namesake of `TaskManagerHarness` planted by a mutant | 0 collisions in 426 classes on a chain; the planted one fails `test_no_two_classes_on_a_chain_share_a_simple_name` |
+| Hand mutants | 26 edits on a scratch copy, the two test modules run against the real tree, baseline unmutated before and after: OK | 26 of 26 killed. Two namespace mutants first died only on the real tree, and one, offsets shifted by the blanking, survived. The two-namespace test gained a long header and an exact list of names, and the run was repeated on the final code |
+
+**Three real files hold more than one namespace:** `KernelRulesCatchANewOffenderArchUnitTest.cs`, `RepositoryLeakRatchetArchUnitTest.cs` and `TestTierGuardTest.cs`. Their fixture classes now carry the right namespace; none of them runs as a test of its own, so the column did not move. The namespace is found with strings blanked, as a test may hold C# source in one. No real file has a namespace in a string today.
+
+**Time.** The three scans of a run share one walk of the tree, so the script on a small TRX takes 2.6 s, up from 1.4 s and down from 5.2 s without the sharing. The Python tests took 10.7 s and 16.7 s on a shared machine, up from 7.4 s, and they run in both CI workflows.
+
+**Left as it is.**
+- `Outer+Inner` still rests on DESIGN's statement: no row of any `L6` TRX holds a `+`.
+- A class nested in a struct or record loses its outer name. No real case. It costs more than a line: a positional record has no body, so counting it as a scope would wrongly nest whatever follows it, and `record` is also a common variable name.
+- A namespace nested in a namespace is read as two in a row, so the inner one loses its outer name and a class after it takes the inner name. No real case; a class it misnames warns as `Unplaced`.
+- The collision test looks at classes on a chain, as DESIGN says. A class off every chain that shares its simple name with a base on one, and is itself used as a base, would still put its children in `Integration`. No real case: a probe of the tree found none.
+- A TRX class in two files of one run warns once per file, and `summarise.py` repeats the warning in the same CI step.
+

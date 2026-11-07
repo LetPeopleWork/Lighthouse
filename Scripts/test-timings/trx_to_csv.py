@@ -1,16 +1,24 @@
-"""Extract per-test timings from a TRX file into a CSV row stream.
+"""Extract per-test timings from TRX files into a CSV row stream.
 
-NUnit's TRX adapter does not surface ``[Category("Integration")]`` in TRX
-attributes, so integration classification is derived by scanning the C#
-source tree for classes that carry the attribute or derive from
-``IntegrationFixture``, and matching against the ``className`` recorded in
-``<TestMethod>``.
+A TRX file does not carry NUnit categories, so the ``category`` column is read
+from the C# source tree, from each class's declaration, its chain of first bases
+and any ``[Category("Integration")]`` attribute. Classes are looked up by the
+``className`` in ``<TestMethod>``, less a parametrised fixture's arguments.
+
+- ``Integration``: a hosted, container or live test. Its class reaches
+  ``IntegrationFixture`` or carries the attribute, or its method carries it.
+- ``Unit``: a test of a declared class that does none of these.
+- ``Unplaced``: the tree declares no such class, and a warning names it. A row
+  like this says nothing about the test's speed, and the run does not fail.
+
+With no source tree there is nothing to read, and every row is ``Unit``.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import functools
 import re
 import sys
 import xml.etree.ElementTree as ET
@@ -73,15 +81,16 @@ def _class_name_lookup(root: ET.Element) -> dict[str, str]:
     return lookup
 
 
-def _bare_method_name(test_name: str) -> str:
-    paren = test_name.find("(")
-    return test_name if paren < 0 else test_name[:paren]
+def _without_arguments(name: str) -> str:
+    paren = name.find("(")
+    return name if paren < 0 else name[:paren]
 
 
 def parse_trx(
     xml_content: str,
     integration_class_names: set[str] | None = None,
     integration_method_fqns: set[str] | None = None,
+    declared_class_names: set[str] | None = None,
 ) -> list[dict[str, object]]:
     """Parse a TRX document into row dicts matching ``CSV_COLUMNS``."""
     integration_classes = integration_class_names or set()
@@ -90,6 +99,7 @@ def parse_trx(
     class_by_id = _class_name_lookup(root)
 
     rows: list[dict[str, object]] = []
+    unplaced_classes: set[str] = set()
     for result in root.iter(f"{TRX_NS}UnitTestResult"):
         test_id = result.get("testId")
         method_name = result.get("testName", "")
@@ -99,13 +109,15 @@ def parse_trx(
             if method_name
             else class_name
         )
-        method_fqn = f"{class_name}.{_bare_method_name(method_name)}".lstrip(".")
-        category = (
-            "Integration"
-            if class_name in integration_classes
-            or method_fqn in integration_methods
-            else "Unit"
-        )
+        declared_class = _without_arguments(class_name)
+        method_fqn = f"{declared_class}.{_without_arguments(method_name)}".lstrip(".")
+        if declared_class in integration_classes or method_fqn in integration_methods:
+            category = "Integration"
+        elif declared_class_names is None or declared_class in declared_class_names:
+            category = "Unit"
+        else:
+            category = "Unplaced"
+            unplaced_classes.add(declared_class)
         rows.append(
             {
                 "fully_qualified_name": fqn,
@@ -115,6 +127,12 @@ def parse_trx(
                 ),
                 "outcome": result.get("outcome", ""),
             }
+        )
+    for class_name in sorted(unplaced_classes):
+        print(
+            f"warning: no declaration of {class_name} in the source tree, "
+            "its tests read Unplaced",
+            file=sys.stderr,
         )
     return rows
 
@@ -126,16 +144,43 @@ def discover_integration_class_names(source_root: Path) -> set[str]:
     a chain of first bases that reaches ``IntegrationFixture``. Names read as
     TRX writes them, with ``+`` between a class and the class nested in it.
     """
-    names: set[str] = set()
+    names = {
+        f"{namespace}.{class_match.group(1)}"
+        for namespace, content in _namespaced_sources(source_root)
+        for class_match in INTEGRATION_CATEGORY_AT_CLASS_PATTERN.finditer(content)
+    }
+    return names | _classes_reaching_the_root(_base_by_class(source_root))
+
+
+def discover_declared_class_names(source_root: Path) -> set[str]:
+    """Scan a C# source tree for every class, named as TRX writes it."""
+    return set(_base_by_class(source_root))
+
+
+def simple_name_collisions(source_root: Path) -> dict[str, set[str]]:
+    """Return the simple names held by more than one class on a chain to the root.
+
+    Bases are resolved by simple name, so such a pair could put a class on the
+    wrong side of the column without anything else noticing.
+    """
+    classes_by_simple_name: dict[str, set[str]] = {}
+    for name in _classes_reaching_the_root(_base_by_class(source_root)):
+        classes_by_simple_name.setdefault(_simple_name(name), set()).add(name)
+    return {
+        simple_name: classes
+        for simple_name, classes in classes_by_simple_name.items()
+        if len(classes) > 1
+    }
+
+
+def _base_by_class(source_root: Path) -> dict[str, str | None]:
     base_by_class: dict[str, str | None] = {}
     for namespace, content in _namespaced_sources(source_root):
-        for class_match in INTEGRATION_CATEGORY_AT_CLASS_PATTERN.finditer(content):
-            names.add(f"{namespace}.{class_match.group(1)}")
         for class_name, base in _class_declarations(content):
             full_name = f"{namespace}.{class_name}"
             # Only one part of a partial class needs to name the base.
             base_by_class[full_name] = base or base_by_class.get(full_name)
-    return names | _classes_reaching_the_root(base_by_class)
+    return base_by_class
 
 
 def _class_declarations(content: str) -> Iterator[tuple[str, str | None]]:
@@ -208,14 +253,27 @@ def discover_integration_method_fqns(source_root: Path) -> set[str]:
     return fqns
 
 
-def _namespaced_sources(source_root: Path) -> Iterator[tuple[str, str]]:
-    for cs_file in source_root.rglob("*.cs"):
-        content = _read_cs_file(cs_file)
-        if content is None:
-            continue
-        namespace_match = NAMESPACE_PATTERN.search(content)
-        if namespace_match:
-            yield namespace_match.group(1), content
+# Every discovery of a run walks the same tree, and the walk is most of its time.
+@functools.cache
+def _namespaced_sources(source_root: Path) -> list[tuple[str, str]]:
+    return [
+        block
+        for cs_file in source_root.rglob("*.cs")
+        if (content := _read_cs_file(cs_file)) is not None
+        for block in _namespace_blocks(content)
+    ]
+
+
+def _namespace_blocks(content: str) -> Iterator[tuple[str, str]]:
+    """Yield each namespace of a file with the text from it to the next one."""
+    # Blanked to the same length, so a match's offsets still hold in the content.
+    code = COMMENT_OR_LITERAL_PATTERN.sub(
+        lambda literal: " " * len(literal.group()), content
+    )
+    starts = list(NAMESPACE_PATTERN.finditer(code))
+    ends = [following.start() for following in starts[1:]] + [len(content)]
+    for start, end in zip(starts, ends):
+        yield start.group(1), content[start.start() : end]
 
 
 def _read_cs_file(path: Path) -> str | None:
@@ -255,7 +313,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--source-root",
         type=Path,
         default=None,
-        help="C# source tree root used to classify Integration tests. "
+        help="C# source tree root the category column is read from. "
         "Omit to mark every test as Unit.",
     )
     parser.add_argument(
@@ -271,9 +329,11 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_arg_parser().parse_args(argv)
     integration_classes: set[str] = set()
     integration_methods: set[str] = set()
+    declared_classes: set[str] | None = None
     if args.source_root is not None:
         integration_classes = discover_integration_class_names(args.source_root)
         integration_methods = discover_integration_method_fqns(args.source_root)
+        declared_classes = discover_declared_class_names(args.source_root)
     rows: list[dict[str, object]] = []
     for trx_path in args.trx:
         if not trx_path.exists():
@@ -284,6 +344,7 @@ def main(argv: list[str] | None = None) -> int:
                 trx_path.read_text(encoding="utf-8-sig"),
                 integration_class_names=integration_classes,
                 integration_method_fqns=integration_methods,
+                declared_class_names=declared_classes,
             )
         )
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -1,3 +1,4 @@
+import contextlib
 import io
 import json
 import shutil
@@ -44,6 +45,13 @@ class GatherTests(unittest.TestCase):
             json.dumps({"name": "not-a-test-result"})
         )
         self.assertEqual(len(gather([self.tmp])), len(without))
+
+    def test_a_class_with_no_declaration_does_not_read_as_a_fast_test(self):
+        source_root = self.tmp / "empty-source-tree"
+        source_root.mkdir()
+        with contextlib.redirect_stderr(io.StringIO()):
+            rows = gather([self.tmp / "sample.trx"], source_root=source_root)
+        self.assertEqual({row["category_or_file"] for row in rows}, {"Unplaced"})
 
 
 class RenderTopNTests(unittest.TestCase):
@@ -123,6 +131,28 @@ class SummaryProfileTests(unittest.TestCase):
         )
         self.assertIn(
             "Slowest 50 frontend files : 100% of summed time (1.7s)", self.summary
+        )
+
+    def test_says_what_the_integration_column_counts(self):
+        rows = [
+            {
+                "stack": "Backend",
+                "name": "Hosted.Test",
+                "category_or_file": "Integration",
+                "duration_ms": 2000.0,
+                "outcome": "Passed",
+            },
+            {
+                "stack": "Backend",
+                "name": "Fast.Test",
+                "category_or_file": "Unit",
+                "duration_ms": 1000.0,
+                "outcome": "Passed",
+            },
+        ]
+        self.assertIn(
+            "(1 hosted, container or live, 2.00s)",
+            _render_summary(rows).splitlines()[0],
         )
 
     def test_keeps_backend_categories_out_of_the_file_shares(self):

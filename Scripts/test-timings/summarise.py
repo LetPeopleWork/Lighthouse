@@ -12,6 +12,7 @@ import sys
 from pathlib import Path
 
 from trx_to_csv import (
+    discover_declared_class_names,
     discover_integration_class_names,
     discover_integration_method_fqns,
     parse_trx,
@@ -58,9 +59,11 @@ def gather(
     trx_files, json_files = _iter_candidate_files(paths)
     integration_classes: set[str] = set()
     integration_methods: set[str] = set()
+    declared_classes: set[str] | None = None
     if source_root is not None:
         integration_classes = discover_integration_class_names(source_root)
         integration_methods = discover_integration_method_fqns(source_root)
+        declared_classes = discover_declared_class_names(source_root)
 
     rows: list[dict[str, object]] = []
     for trx_path in trx_files:
@@ -68,6 +71,7 @@ def gather(
             trx_path.read_text(encoding="utf-8-sig"),
             integration_class_names=integration_classes,
             integration_method_fqns=integration_methods,
+            declared_class_names=declared_classes,
         ):
             rows.append(
                 {
@@ -131,14 +135,14 @@ def _render_summary(rows: list[dict[str, object]]) -> str:
     frontend = [row for row in rows if row["stack"] == "Frontend"]
     backend_total_ms = sum(float(r["duration_ms"]) for r in backend)
     frontend_total_ms = sum(float(r["duration_ms"]) for r in frontend)
-    integration = [
+    slow_tier = [
         row for row in backend if row["category_or_file"] == "Integration"
     ]
-    integration_ms = sum(float(r["duration_ms"]) for r in integration)
+    slow_tier_ms = sum(float(r["duration_ms"]) for r in slow_tier)
 
     lines = [
         f"Backend  : {len(backend):>5} tests, {backend_total_ms / 1000:>8.2f}s wall-clock "
-        f"({len(integration)} integration, {integration_ms / 1000:.2f}s)",
+        f"({len(slow_tier)} hosted, container or live, {slow_tier_ms / 1000:.2f}s)",
         f"Frontend : {len(frontend):>5} tests, {frontend_total_ms / 1000:>8.2f}s wall-clock",
     ]
     lines.extend(_render_profile(rows))
@@ -187,7 +191,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         "--source-root",
         type=Path,
         default=None,
-        help="C# source tree root to classify Integration tests (e.g. Lighthouse.Backend/Lighthouse.Backend.Tests).",
+        help="C# source tree root the category is read from (e.g. Lighthouse.Backend/Lighthouse.Backend.Tests).",
     )
     parser.add_argument(
         "--top",
