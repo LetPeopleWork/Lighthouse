@@ -1938,3 +1938,113 @@ ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("SpaceInAListOnATestCaseSourc
 ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("SpaceInAListOnATestFixture","SpaceInAListOnATestFixture",""," GithubIntegration")
 ACategoryWithASpaceAtAnEdgeIsFoundWhereItIsWritten("SpaceInAListOnATestFixtureSource","SpaceInAListOnATestFixtureSource",""," ServiceNowIntegration")
 ```
+
+## Wave: DELIVER / [REF] Slice E, step 05-04: the proof before the moves are pushed, what ran (2026-11-07)
+
+Run at `0e37d8142`, with `git status` clean. Not pushed: this is the list for push 6. No code changed in this step, so this section and one small evidence file are its commit. One Release build first, `dotnet build -c Release` in `Lighthouse.Backend`: 0 warnings, 0 errors.
+
+**The rules of a list run.** A script ran them before each of the 7 runs and refused the run if one failed. Each time: the `ps` check printed 0, a second check for a running build or test command printed 0, `dotnet build-server shutdown` exited 0, and the check for the seven removed variables printed 0. Docker 29.9.3 was up, and `LIGHTHOUSE_TEST_WORKERS` was unset, so 6 workers on 12 cores. T12 was not checked by name: the evidence that it was not running is those two `ps` checks and the dispatch's word that nothing else runs in this checkout. The `lighthouse-app` container and a `dotnet Lighthouse.dll` process under another user, which looks like that container's, ran throughout; neither is a test run. The filters were read from this delta's table and `test-build-filter.sh`, and `A` and the guarded clause were confirmed in `ci_backend.yml`. `Test-Fast.ps1` does not exist yet, so it was not a source. No list run was repeated, none needed a class run, and no test failed.
+
+| List | Filter | Console | TRX total, executed, passed | CSV rows | Wall time, console duration | `sha256` of the sorted list |
+|---|---|---|---|---|---|---|
+| `L6` | `A` | `Failed: 0, Passed: 12922, Skipped: 2, Total: 12924`, exit 0 | 12,933, 12,922, 12,922 | 12,933: 12,922 `Passed`, 11 `NotExecuted` | 380 s, 6 m 12 s | `ddd17f96632cd521c6e12ada55a2aeeb616a251171607c1b6a5a52f8012575de` |
+| `L6-F` | `F` | `Failed: 0, Passed: 9527, Skipped: 0, Total: 9527`, exit 0 | 9,535, 9,527, 9,527 | 9,535: 9,527 `Passed`, 8 `NotExecuted` | 74 s, 1 m 10 s | `8d850ca3312dd70a57276b12f577d3f22784b8c47f380a833d1b0800cce4dd17` |
+| `L6-H` | `H` | `Failed: 0, Passed: 3392, Skipped: 2, Total: 3394`, exit 0 | 3,395, 3,392, 3,392 | 3,395: 3,392 `Passed`, 3 `NotExecuted` | 333 s, 5 m 29 s | `79e2e6ae00dda2bd222b5fb8e72661fa0f3e345bc6c6e9e23fb8df5797f7c5dd` |
+| `L6-O` | `O` | `Failed: 0, Passed: 3, Skipped: 0, Total: 3`, exit 0 | 3, 3, 3 | 3: 3 `Passed` | 2 s, 141 ms | `2f3f0d41685f38c2cedd0ff856c8a18a53d34d21d09176575bd7f38e1ae51973` |
+
+The `category` column of `L6` reads `Unit` on all 12,933 rows, as before slice F.
+
+**`L6` against `L5`.** 6 lines only in `L5`, 36 only in `L6`, all `Passed`, all in two classes this Story owns, so 12,903 - 6 + 36 = 12,933. The 11 `NotExecuted` lines are the same in both. No other class gained or lost an id, and nothing differs that was not expected. Ids were compared untrimmed.
+
+The 6 lost, all from `TestTierGuardTest`: 4 deleted and 2 renamed in `a09275cf0`.
+
+```text
+AListedContainerFixtureNowOnTheBaseIsStale
+AListedTypeNowOnTheBaseIsStale
+TheListExcusesAFixtureFromBeingOffTheBaseAndFromNothingElse
+EveryTypeOnTheListStillOwesAMoveToTheBase
+EveryFixtureThatStartsAHostIsOnTheBaseOrOnTheList
+EveryLiveOrContainerFixtureIsOnTheBaseOrOnTheList
+```
+
+The 36 gained: 1 in `TestSelectionClauseTest`, 20 to 21, and 35 in `TestTierGuardTest`, 61 - 6 + 35 = 90. 20 of the 35 are rule 7's, word for word the list under "Rule 7, added by the maintainer". The other 16:
+
+```text
+TestSelectionClauseTest.TheConnectorListIsWhatTheClauseInCiLeavesOut
+TestTierGuardTest.EveryFixtureThatStartsAHostIsOnTheBase
+TestTierGuardTest.EveryLiveOrContainerFixtureIsOnTheBase
+TestTierGuardTest.TheGuardReadsACategoryTheWayNUnitDoes
+TestTierGuardTest.ACategoryWrittenByHandIsFoundWhereItIsWritten("CategoryWithSpacesAround","CategoryWithSpacesAround","")
+TestTierGuardTest.TheCategoryOnTheBaseIsNotWrittenByHand("CategoryAfterACommaAndASpace")
+TestTierGuardTest.ALiveOrContainerFixtureOffTheBaseIsFound("ConnectorAfterACommaAndASpaceOffTheBase",False)
+TestTierGuardTest.ALiveOrContainerFixtureOffTheBaseIsFound("ConnectorWithASpaceOffTheBase",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInAOneTimeTearDown",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInASetUp",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInAStaticConstructor",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInATearDown",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInATestBody",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInATestCaseBody",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInATestCaseSourceBody",True)
+TestTierGuardTest.AFixtureOffTheBaseIsFoundHoweverItReachesAHost("HostInATheoryBody",True)
+```
+
+Those are the 2 new names of 05-03, and the 13 of `6aadc2bc5` that took the guard from 61 to 74, and the clause pin's one.
+
+**`L6` against `L0`, the whole Story so far.** 0 lines lost and 123 gained: 113 this Story's (`TestTierGuardTest` 90, `TestSelectionClauseTest` 21, `IntegrationFixtureCategoryTest` 2) and 10 foreign from `6efb2b255`, Bug 6575 (`DeleteUnitRightsTests` 8, `CreateRightsControllerGuardTest` 2), as "Slice C, step 03-01" named them.
+
+**The tiers add up (guarantee 9).** The three lists sorted together are identical to `L6`, id and outcome, with **nothing** taken out: 9,535 + 3,395 + 3 = 12,933 rows. The rule allows taking out the 9 `[Explicit]` rows from both sides; that also gives equality, 12,924 on each side, but it was not needed. The ids shared by any two tiers number 0 for each pair, so no overlap. The 18 repeated rows `L6` holds, 17 ids, are its own: the tiers hold them too.
+
+| Tier | Tests, of the 12,924 that are not `[Explicit]` | Share |
+|---|---|---|
+| Fast `F` | 9,527 | 73.7 % |
+| Hosted `H` | 3,394, of which 3,392 ran and 2 are the skips | 26.3 % |
+| Offline `O` | 3 | 0.02 % |
+
+**Connector classes.** Read from the sorted grep, 16 classes. `L6-F` and `L6-H` hold no row of any of them. `L6-O` holds only `JiraWriteBackTest` 1 and `AzureDevOpsWriteBackTest` 2.
+
+**Guarantee 10.** `O` selects exactly 3 ids, by `--list-tests` and by the TRX, and all 3 passed: `JiraWriteBackTest.WriteFieldsToWorkItems_EmptyUpdates_ReturnsEmptyResult`, and `AzureDevOpsWriteBackTest.WriteFieldsToWorkItems_EmptyUpdates_ReturnsEmptyResult` and `.WriteFieldsToWorkItems_NonNumericWorkItemId_ReturnsFailure`.
+
+**`[Explicit]` stays out (guarantee 8).** Each clause was `&`-joined with `FullyQualifiedName~` of `ForecastWallClockProbe`, `SharedClockBaselineCapture`, `RealityCheckWallClockProbe`, `StartForecastWallClockProbe`, `ReportCreationTimingProbe` and `HealthCheckIntegrationTest`. Force-full selects live tests in general, so each join was listed first: `(force-full)&(the six)` listed 16 names, the 9 `[Explicit]` ids and the control's 7, no connector file holds any of the six names, and the six names sit in six class lines. So no live test could run. The control has 7 rows in `L6`, all `Passed`.
+
+| Join | Listed | TRX executed | TRX total | Rows of the 9 ids | Exit | Wall time |
+|---|---|---|---|---|---|---|
+| `A` | 16 | 7 | 7 | None | 0 | 25 s |
+| Force-full | 16 | 7 | 7 | None | 0 | 26 s |
+| `H` | 8 | 7 | 8 | 1, `ReportCreationTimingProbe`, `NotExecuted` | 0 | 23 s |
+
+`git status` printed nothing after each, so `SharedClockBaselineCapture` did not rewrite its baseline.
+
+**What "as `T0` showed them" came to.** In `L6`, the whole list, all 9 are `NotExecuted`, exactly as in `T0`, and in `L6-F` 8 and `L6-H` 1 the same. In the joined runs they differ from `T0`: no row under `A` and force-full, one row under `H`. The step's wording does not cover that; guarantee 8, as the maintainer's probe decision rewrote it, does: a `NotExecuted` row and no row both read as not selected. That later rule is the one applied. None of the 9 has an outcome other than `NotExecuted` in any run here.
+
+Two things seen that no line here depends on. `ReportCreationTimingProbe` is the only one of the 5 classes in `H`, so the only one carrying `Integration`; the other 4 are in `F`. And the probe's "`A` gives an `[Explicit]` test on the base no row" holds for the joined run and not for the whole list, where that test has its row under `A`. So whether a row appears depends on the rest of the selection, which is one more reason to read outcomes and not rows. The gap named under "What is lost, plainly" stays: no whole list runs under the force-full string here.
+
+**The unfiltered list (guarantee 6).** `--list-tests`, no filter, `-c Release`, against 02-01's record, compared as raw lines: 13,075 before, 13,198 after, 0 lines only before, 123 only after. Those 123 are the same 123 as `L6` against `L0`: the 113 this Story's and the 10 of Bug 6575, each name found in `L6` under those classes. As 02-01 said, these names carry no class, so a test moving between classes under one name would not show.
+
+**The connector list (guarantee 7).** The sorted `git grep`: 17 lines before, 24 after. All 17 stand, unchanged. The 7 new lines are this Story's plants inside `Architecture/TestTierGuardTest.cs`: `JiraIntegration` 3, `AdoIntegration` 1, `LinearIntegration` 1, `GithubIntegration` 1, `ServiceNowIntegration` 1. Nothing else differs.
+
+**What the classifier answers for push 6.** On `git diff --name-only 8fb288160 HEAD`, read at `0e37d8142`, each regex read from `path-classifier.sh` and run through `grep -Eq` by a script, as 04-05 did.
+
+| Function | Answer | Matching paths |
+|---|---|---|
+| `classify_backend` | `true`, as expected | 136, all in `Lighthouse.Backend/Lighthouse.Backend.Tests` |
+| `classify_jira`, `classify_ado`, `classify_linear`, `classify_servicenow`, `classify_github`, `classify_shared` | `false` | None |
+
+The range holds 137 paths: those 136 and this delta. This section's commit adds only a path under `docs/`, which no regex reads.
+
+**Kept in `evidence/`.** The TRX files stay for steps 06-03 and 06-04. Everything but the connector list is out of git; `L*` and `list-tests-*.txt` were already in `.gitignore`, which is why the tier lists are named `L6-F` and so on, not `F`. The connector list sits in git beside its earlier sibling.
+
+| File | Size or lines | `sha256` of the file |
+|---|---|---|
+| `L6.csv` | 12,933 rows | `554754cb9ca042f7d08be0d4cdda60293516e5ff17c9ac9c2fc32a6afc49f304` |
+| `L6.trx.gz` | 4.4 MB | `01a8caea83fc16e7c0528abb8e149af4a7ee6db7a578dbb6a3e5805262fc5d35` |
+| `L6-F.csv` | 9,535 rows | `c0d4d778a721efeda5018903ff76657bc5186c4bed6661fa575438ec9cfc4e06` |
+| `L6-F.trx.gz` | 2.5 MB | `89145a7a57b90308a07a3773521770b6773d930c92ce04f2400e99db80e34c97` |
+| `L6-H.csv` | 3,395 rows | `fa28b9731944318b0fe69eb41316dec4ee95b86f331ced9227d23548dec4f403` |
+| `L6-H.trx.gz` | 1.7 MB | `1761f7f5c8bc7bafb1897aaad0b21f7d03bde8a990432f737a98064d0f232bbc` |
+| `L6-O.csv` | 3 rows | `d6e765934319391ae9b9dd0bbf6cecb9173c426c90f1d6bca992aff22f695026` |
+| `L6-O.trx.gz` | 1.5 KB | `17ca42dfa2347ae5e30726740c58c106dc469af1d39fbb86930de5cbb3cef8a7` |
+| `L6-G8-A.csv`, `.trx.gz` | 7 rows | `e2fb9c419aa837ebd681da5e9ef4bfb9e27b582329f91d193f5b8c13e76d098b`, `97042ceae1df200fe23a37dc8c7b17993022a6b5eeb6926d08db53bdef7f0f0f` |
+| `L6-G8-FF.csv`, `.trx.gz` | 7 rows | `dac754755ac9b9e54aeac8c5d3394824f5f46fe4572de3b2a3f52327905a68ff`, `7d5536a3058f550938f44408f92b1c45f8439a1e6eb47313a7b55e594e3972a2` |
+| `L6-G8-H.csv`, `.trx.gz` | 8 rows | `cbea5882b8823cacbd5a09c5e9569e8f6c7c7b0f310af28ad2b14f61d5287c9c`, `325eb071162b2e7fabc6ebc11fc07bb416c799645c6399b8fe1b7e9fa9016889` |
+| `list-tests-unfiltered-L6.sorted.txt` | 13,198 lines | `1be193412f5d284616b0fcad4d790aadf639259caa409f7f5acf042faa861972` |
+| `connector-attributes-L6.sorted.txt`, in git | 24 lines | `2fdae433029905c256948f3ef625b026022d3d1a822337c68a7622cdef7a31ed` |
