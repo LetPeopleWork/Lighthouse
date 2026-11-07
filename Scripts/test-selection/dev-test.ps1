@@ -1,4 +1,4 @@
-# Local equivalent of the CI backend test-selection logic from slice-03b / CS-H.
+# Local equivalent of the CI backend test selection.
 # Detects which connector folders the current branch's diff touches, builds
 # the matching `dotnet test --filter` string, and runs the backend test
 # project. Mirrors .github/workflows/ci_backend.yml's Compute Test Backend
@@ -22,6 +22,7 @@ $ErrorActionPreference = 'Stop'
 $JiraRegex   = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Jira/'
 $AdoRegex    = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/AzureDevOps/'
 $LinearRegex = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/Linear/'
+$ServiceNowRegex = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/ServiceNow/'
 $GithubRegex = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/(Implementation|Interfaces)/[^/]*([Gg]it[Hh]ubService|LighthouseReleaseService)[^/]*\.cs$'
 $SharedRegex = '^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/Services/Implementation/WorkTrackingConnectors/(Auth|OAuth)/|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Implementation/WorkTrackingConnectors/[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Services/Interfaces/WorkTrackingConnectors/I[^/]+\.cs$|^Lighthouse\.Backend/Lighthouse\.Backend/Models/(WorkTrackingSystemConnection|OAuth/)|^Lighthouse\.Backend/Lighthouse\.Backend/Program\.cs$|^Lighthouse\.Backend/Lighthouse\.sln$|^Lighthouse\.Backend/(Lighthouse\.Backend|Lighthouse\.Backend\.Tests)/[^/]*\.csproj$'
 
@@ -59,6 +60,7 @@ if ($UnitOnly) {
         if (Test-AnyMatch $diffLines $JiraRegex)   { $parts += 'Category=JiraIntegration' }
         if (Test-AnyMatch $diffLines $AdoRegex)    { $parts += 'Category=AdoIntegration' }
         if (Test-AnyMatch $diffLines $LinearRegex) { $parts += 'Category=LinearIntegration' }
+        if (Test-AnyMatch $diffLines $ServiceNowRegex) { $parts += 'Category=ServiceNowIntegration' }
         if (Test-AnyMatch $diffLines $GithubRegex) { $parts += 'Category=GithubIntegration' }
     }
 }

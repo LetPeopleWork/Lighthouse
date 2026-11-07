@@ -31,6 +31,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private abstract class PlantedOffTheBase
         {
+            // This type only has to exist off the base, but an empty class fails the build on Sonar S2094.
             public override string ToString() => nameof(PlantedOffTheBase);
         }
     }

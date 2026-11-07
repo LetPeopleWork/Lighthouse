@@ -16,14 +16,22 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string GuardedIntegrationClause = "(Category=Integration&Category!=UsageDataCanary)";
 
+        private static readonly string[] Connectors = ["JiraIntegration", "AdoIntegration", "LinearIntegration", "ServiceNowIntegration", "GithubIntegration"];
+
         [GeneratedRegex(@"parts\s*=\s*@?\(\s*[""']([^""']+)[""']\s*\)", RegexOptions.CultureInvariant)]
         private static partial Regex FirstPartOfTheFilter();
 
         [GeneratedRegex(@"\(Category=Integration[^""')]*\)", RegexOptions.CultureInvariant)]
         private static partial Regex ClauseThatAddsIntegrationTests();
 
-        [GeneratedRegex(@"[""']Category=Integration[""']", RegexOptions.CultureInvariant)]
+        [GeneratedRegex(@"(?:Test)?Category=Integration\b(?!&Category!=UsageDataCanary\))", RegexOptions.CultureInvariant)]
         private static partial Regex BareIntegrationTerm();
+
+        [GeneratedRegex(@"parts\s*\+=\s*\(?""?(?:\$guarded_integration|\$guardedIntegration|\(Category=Integration&Category!=UsageDataCanary\))", RegexOptions.CultureInvariant)]
+        private static partial Regex AddsTheGuardedClause();
+
+        [GeneratedRegex(@"parts\s*\+=\s*\(?[""']Category=(\w+)[""']", RegexOptions.CultureInvariant)]
+        private static partial Regex AddsAConnectorsClause();
 
         [Test]
         public void TheAlwaysOnClauseKeepsRegularAndHostedTests()
@@ -94,7 +102,6 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase("GithubIntegration")]
         public void AConnectorsClauseJoinedOnTakesThatConnectorsLiveTestsAlone(string connector)
         {
-            string[] allConnectors = ["JiraIntegration", "AdoIntegration", "LinearIntegration", "ServiceNowIntegration", "GithubIntegration"];
             var workflow = ReadFromRepository(CiWorkflow);
             var term = $"Category={connector}";
             var joined = $"{AlwaysOnClauseInCi()}|{term}";
@@ -103,23 +110,29 @@ namespace Lighthouse.Backend.Tests.Architecture
             {
                 Assert.That(workflow, Does.Contain($"parts+=(\"{term}\")"));
                 Assert.That(Clause.Selects(joined, "Integration", connector), Is.True);
-                Assert.That(allConnectors.Where(other => other != connector && Clause.Selects(joined, "Integration", other)), Is.Empty);
+                Assert.That(Connectors.Where(other => other != connector && Clause.Selects(joined, "Integration", other)), Is.Empty);
             }
         }
 
-        [TestCase(CiWorkflow)]
-        [TestCase("Scripts/test-selection/dev-test.sh")]
-        [TestCase("Scripts/test-selection/dev-test.ps1")]
-        [TestCase("Scripts/test-selection/test-build-filter.sh")]
-        public void EveryPlaceHoldsTheSameText(string place)
+        // dev-test adds the guarded clause in two modes, a full run and a shared-path change; the others in one.
+        [TestCase(CiWorkflow, 1)]
+        [TestCase("Scripts/test-selection/dev-test.sh", 2)]
+        [TestCase("Scripts/test-selection/dev-test.ps1", 2)]
+        [TestCase("Scripts/test-selection/test-build-filter.sh", 1)]
+        public void EveryPlaceHoldsTheSameText(string place, int modesThatAddIntegrationTests)
         {
             var text = ReadFromRepository(place);
+            var alwaysOnClauses = FirstPartOfTheFilter().Matches(text).Select(match => match.Groups[1].Value);
+            var integrationClauses = ClauseThatAddsIntegrationTests().Matches(text).Select(match => match.Value);
+            var connectorClauses = AddsAConnectorsClause().Matches(text).Select(match => match.Groups[1].Value);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(AlwaysOnClauseIn(text), Is.EqualTo(AlwaysOnClause));
-                Assert.That(ClauseThatAddsIntegrationTests().Match(text).Value, Is.EqualTo(GuardedIntegrationClause));
-                Assert.That(BareIntegrationTerm().IsMatch(text), Is.False, "An unguarded Integration term selects the Explicit probes too.");
+                Assert.That(alwaysOnClauses, Is.Not.Empty.And.All.EqualTo(AlwaysOnClause));
+                Assert.That(integrationClauses, Is.Not.Empty.And.All.EqualTo(GuardedIntegrationClause));
+                Assert.That(AddsTheGuardedClause().Count(text), Is.EqualTo(modesThatAddIntegrationTests), "A mode that adds Integration tests has lost the guarded clause.");
+                Assert.That(connectorClauses, Is.EquivalentTo(Connectors));
+                Assert.That(BareIntegrationTerm().IsMatch(text), Is.False, "NUnit may run an explicit test a filter selects directly, so an unguarded Integration term may run the Explicit probes.");
             }
         }
 

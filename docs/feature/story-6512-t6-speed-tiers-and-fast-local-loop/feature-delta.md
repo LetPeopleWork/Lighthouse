@@ -1223,3 +1223,37 @@ Not seen directly: `sonar-report-backend` uploaded in two attempts of one run. I
 - **`CLAUDE.md` names no fast loop yet.** It holds the warning against a bare `TestCategory=Integration` and no fast filter at all, because `Test-Fast.ps1` does not exist until slice F and `F` selects the same as the standard filter until the hosted commit. Slice F owes that line.
 - **Why the comment in `dev-test.*` says "may".** It says the negative term is what keeps the `[Explicit]` probes from running, and that NUnit may run a test a filter selects directly. A filter selecting only an `[Explicit]` test is still untried, as the probe's decisions say.
 - **Not run in this step:** the whole-suite `A` list, which belongs before the push.
+
+## Wave: DELIVER / [REF] Review pass on slices A and B (2026-11-07)
+
+The review found no high finding, and by hand evaluation no test leaves CI. Its fixes ran as slice B's refactor pass, on top of merge `31e0c23f9`. Not pushed. This section overrides "Every place that names the filter", which said the missing ServiceNow clause in `dev-test.*` and `test-build-filter.sh` stays.
+
+| Finding | Fix | What ran |
+|---|---|---|
+| Medium: `dev-test.*` auto mode never added `ServiceNowIntegration`, though CI does | Added to `dev-test.sh`, `dev-test.ps1` (with the classifier's regex, byte for byte) and the mirror | Mirror red first: `passed: 8`, `failed: 2`, on "all connectors" and the new "ServiceNow only". After: `passed: 10`, `failed: 0`. A real ServiceNow-only commit in a scratch clone printed `A\|Category=ServiceNowIntegration` from both scripts |
+| Low: the pin read only the first `parts =` and the first guarded match | `EveryPlaceHoldsTheSameText` now reads every match, and counts the modes that add the guarded clause: 2 in `dev-test.*`, 1 elsewhere | See the plants below |
+| Low: `BareIntegrationTerm` missed a term inside a longer string, and `TestCategory=Integration` | Widened; only the whole guarded clause passes | See the plants below |
+| Low: an assertion stated the `[Explicit]` hazard as fact | Now says "may", as the `dev-test` comments do | Read in the plant's failure message |
+| Low: `slice-03b / CS-H` in both `dev-test` headers | Plain words | `git grep` finds neither |
+| Low: a `ToString()` in `IntegrationFixtureCategoryTest` that only satisfies S2094 | One plain line says so; the type has no behaviour to give it | Build clean, class green |
+
+**One addition beyond the findings.** The mirror tests its own copy of the logic, so it could not see `dev-test.*` lacking a connector. `EveryPlaceHoldsTheSameText` also checks each place adds all five connector clauses. Before the script edits it was red on exactly that, in `dev-test.sh`, `dev-test.ps1` and the mirror: TRX total 20, passed 17, failed 3.
+
+**The plants**, run against the real files with `FullyQualifiedName~EveryPlaceHoldsTheSameText`, then restored and compared byte for byte.
+
+| Plant | Red on |
+|---|---|
+| `dev-test.sh`: guarded clause dropped from `--full` | The mode count, 1 against 2 |
+| `dev-test.sh`: guarded clause dropped from a shared change | The mode count |
+| `dev-test.ps1`: guarded clause dropped from a shared change | The mode count |
+| `dev-test.ps1`: `-Full` given a bare `'Category=Integration'` | The mode count, the bare term and the connector set |
+| `test-build-filter.sh`: `Category=Integration` inside a longer string | The bare term |
+| `ci_backend.yml`: `TestCategory=Integration` in a comment | The bare term |
+
+**After the pass.** `dotnet build Lighthouse.Backend`, Debug and `-c Release`: 0 warnings, 0 errors, each. `TestSelectionClauseTest`, `IntegrationFixtureCategoryTest` and `TestHostPerFixtureGuardTest`, Release: TRX total 40, passed 40 (20, 2, 18). `EveryPlaceHoldsTheSameText` took a second parameter, so its 4 ids changed; they are this Story's own tests and sit in no list yet.
+
+**Recorded for what follows.**
+
+- **The frontend target is decided:** `pnpm test:fast --changed` under 10 s for a typical edit, about 15 s accepted for a heavily shared file, no node project. See "Maintainer decisions (2026-11-07, probe)".
+- **Containers are decided:** they sit on `IntegrationFixture`. See "Maintainer decisions (2026-11-07)". Neither is an open stop any more.
+- **`L0` predates Bug 6575's merge.** The merge brought backend test changes in `API/CreateRightsControllerGuardTest.cs`, `API/Security/DeleteUnitRightsTests.cs` (new), `F_BE_1_GroupSnapshotInheritanceTests.cs` and `API/Security/S5_ApiKeyScopesTests.cs`. So `L2` against `L0` must explain those ids, and a line in those classes counts as Bug 6575's only if its commits show it.

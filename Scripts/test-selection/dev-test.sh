@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Local equivalent of the CI backend test-selection logic from slice-03b / CS-H.
+# Local equivalent of the CI backend test selection.
 # Detects which connector folders the current branch's diff touches, builds
 # the matching `dotnet test --filter` string, and runs the backend test
 # project. Mirrors `.github/workflows/ci_backend.yml`'s Compute Test Backend
@@ -68,6 +68,7 @@ build_filter() {
     [ "$(classify_jira   "$diff_list")" = "true" ] && parts+=("Category=JiraIntegration")
     [ "$(classify_ado    "$diff_list")" = "true" ] && parts+=("Category=AdoIntegration")
     [ "$(classify_linear "$diff_list")" = "true" ] && parts+=("Category=LinearIntegration")
+    [ "$(classify_servicenow "$diff_list")" = "true" ] && parts+=("Category=ServiceNowIntegration")
     [ "$(classify_github "$diff_list")" = "true" ] && parts+=("Category=GithubIntegration")
   fi
   ( IFS='|'; echo "${parts[*]}" )
