@@ -812,7 +812,7 @@ fields on their own` (6, render `RefinementCadenceSettings` alone); they are not
 **`readiness` (6):** saves a changed number of Yes votes with the rest of readiness as it was; starts a Team that has never
 chosen refinement at the default readiness, and saves it with no states; keeps the chosen refinement states when readiness
 changes; names readiness as what keeps the settings from being saved; saves nothing just because the form was opened; and one
-of the "switches a rule back on ..." tests, `switches a rule back on at the threshold it had before`, as the single proof that
+of the "switches a rule back on ..." tests, `switches a rule back on at the threshold it was changed to before it was switched off`, as the single proof that
 the toggle memory reaches the saved value.
 
 **`ModifyTeamSettings.test` (27 or more, the form stays whole):** every test except three of the four mapping-name wirings
@@ -895,8 +895,8 @@ the two new form tests marked.
 
 **`renderRefinementSection` (slice A, step A-2, in `src/tests/`, test-only).** Renders one controlled unit of the Refinement section, the section itself or one of its parts
 (`ReadinessSettings`, `RefinementBandSettings`, `RefinementCadenceSettings`, `StageRulesSettings`, `RefinementSettingsSection`)
-inside the providers the form's tests give it (the Team's terminology, the seeded default words unless the test passes its own)
-and a host that keeps the value in `useState`.
+inside no providers at all (a test that needs the Team's words mocks the terminology, as the three section test files do; without the mock
+the section shows the product's own words) and a host that keeps the value in `useState`.
 - Input: the initial value and a function from `(value, onChange)` to the section element.
 - Returns the `user` from `userEvent.setup()` and `latest()` (the value the host holds); the usual RTL queries are used from
   `screen`. There is no `changes()`: no moved test reads the sequence of changes, only the value the host holds now. A-2 adds
@@ -909,7 +909,7 @@ and a host that keeps the value in `useState`.
   is a wiring test and stays on the form.
 - It does not hide an error: a throwing section fails the test; no `try`, no `act` advance of timers.
 - One plain comment on why the value lives in state (a controlled section shows nothing new unless handed its change back).
-- Universe of the helper: `src/tests/renderRefinementSection.tsx` (new), its own test file `renderRefinementSection.test.tsx` (new), the importers `ModifyTeamSettings.refinementNeed.test.tsx` and `ModifyTeamSettings.readiness.test.tsx`, and the section test files slice A creates (`RefinementBandSettings.test.tsx`, `StageRulesSettings.test.tsx`, `ReadinessSettings.test.tsx`, a `.tsx` beside `RefinementCadenceSettings.test.ts` if needed; names confirmed at A-2). Nothing else imports it.
+- Universe of the helper: `src/tests/renderRefinementSection.tsx` (new), its own test file `renderRefinementSection.test.tsx` (new), the five importers, which are the four section test files slice A creates (`RefinementBandSettings.test.tsx`, `StageRulesSettings.test.tsx`, `ReadinessSettings.test.tsx`, `RefinementCadenceSettings.test.tsx`) and the helper's own test file. Nothing else imports it.
 - Proved by its own four tests (above) before any Refinement test moves; the surviving wiring tests prove the form hands the
   same value to the section.
 
@@ -989,7 +989,7 @@ offered" (nothing failed, or leaving the failed out would leave nothing) or the 
    | A-4 form test `says what holds back the save for a mapping of every kind of mistake at once` | `teamAutoSaveBlockers.ts`: delete `...mappingAutoSaveBlockers(s.stateMappings, s, stored)` | that test, and the kept `holds back autosave while a mapping is named after a Doing state it does not group, and saves once it is renamed` |
    | the same, the form listing every reason | `ModifyTeamSettings.tsx`: render `formInvalidReasons.slice(0, 1).map(...)` instead of `formInvalidReasons.map(...)` | that test only (it names four kinds in one render); the kept Doing test still passes |
    | the same, each kind fed through the form | `src/utils/stateMappingValidation.ts`, `stateNameClashErrors`: remove the `listClashError` call for To Do, then for Done, then `groupedElsewhereError`, one at a time | that test each time, and the function test for that kind (`names the To Do list when the shadowing sits there`, `names the Done list when the shadowing sits there`, `refuses a mapping that groups another mapping's name, with the sentence the server sends`) |
-   | readiness toggle wiring: the kept `switches a rule back on at the threshold it had before` | `ReadinessSettings.tsx`: `toggleRule` stops calling `setRememberedThresholds(rememberOnSwitchOff(...))` | that form test, and the moved `switches a rule back on at the threshold it was changed to before it was switched off` and `switches a rule that was refused when switched off back on at its last allowed threshold` in `ReadinessSettings.test.tsx` |
+   | readiness toggle wiring: the kept `switches a rule back on at the threshold it was changed to before it was switched off` | `ReadinessSettings.tsx`: `toggleRule` stops calling `setRememberedThresholds(rememberOnSwitchOff(...))` | that form test, and the moved `switches a rule back on at the threshold it had before` and `switches a rule that was refused when switched off back on at its last allowed threshold` in `ReadinessSettings.test.tsx` |
    | readiness handed from the form to the section: the kept `saves a changed number of Yes votes with the rest of readiness as it was` | `RefinementSettingsSection.tsx`: `onChange={(readiness) => onChange({ readiness })}` becomes `onChange={() => onChange({})}` | that test and the kept toggle test; the tests of `ReadinessSettings.test.tsx` stay green, because they own only the section |
    | band, stage rules and cadence handed up, one each | `RefinementSettingsSection.tsx`: `onChange({ band })`, then `onChange({ stageRules })`, then `onChange({ cadence })` becomes `onChange({})` | `saves a changed high end with the low end as it was`; `saves a changed Ready rule and leaves the Being refined rule as it was`; `saves Thursdays every week` |
    | the form keeps what a section did not change | `ModifyTeamSettings.tsx`, `changeRefinement`: replace its body with `updateSettings("refinement", { states: [], ...change })` | `keeps the chosen refinement states when readiness changes` (it asserts the whole saved refinement value) |

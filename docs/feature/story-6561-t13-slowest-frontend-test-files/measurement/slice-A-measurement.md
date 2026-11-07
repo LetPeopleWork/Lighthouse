@@ -360,3 +360,23 @@ stop-check medians above are the like-for-like pairs the cuts are computed from.
 | Mutation testing | N/A: no production file changed (accepted by the maintainer) |
 
 The budget stays 56 s until the budget commit after the push. Slices B and C are not part of this Story.
+
+# Review revision (2026-11-07): two form tests, renamed titles, corrected helper contract
+
+Two tests were added to the form files (one per file, `expect(` count +2 in the touched files, ids +2 in the added list), and
+twelve section titles that promised a save were renamed (list under `slice-A-moved-assertions.md`, Added ids). No production file changed.
+
+## Deliberate breaks (one at a time, restored each time, `git status` clean of production files after)
+
+| Break | Test that failed | Passed before the break |
+|---|---|---|
+| `changeRefinement` in `ModifyTeamSettings.tsx` spreads `...storedSettings?.refinement` instead of `...teamSettings?.refinement` | `saves an edited Ready rule together with Yes votes needed changed before the first save` (the only failure in `ModifyTeamSettings.refinementNeed.test.tsx`, 25 of 26 passed) | yes, 26 of 26 |
+| the readiness check in `refinementSettingsBlockers` (`RefinementSettingsSection.tsx`) is switched off (`readiness && false && hasReadinessErrors(readiness)`) | `saves nothing while a refused number of Yes votes is typed` (fails on "expected vi.fn() to not be called at all, but actually been called 1 times") and the existing `names readiness as what keeps the settings from being saved`; 5 of 7 passed | yes, 7 of 7 |
+
+The first break was run again after the new test's expected value was moved into a constant (to keep the check script's removed-line count exact); it failed the same test.
+
+## Checks run at the end of the revision
+
+- `run-touched-files.sh 1ffe2be77`: 21 files, 565 tests passed; baseline ids 558, after-run ids 565, 41 missing ids all with a row, 48 new ids all listed.
+- `check-behaviour-free.sh 1ffe2be77`: OK (34 rows for `readiness`, 47 for `refinementNeed`, every row found among the removed lines).
+- `pnpm build`: exit 0. `pnpm test` (`LIGHTHOUSE_TIME_BUDGET` unset): 618 files, 9500 tests passed, 0 time-budget offenders, 231.7 s.
