@@ -1361,3 +1361,7 @@ Commit `4103cadc3`, this change alone: 2 files, 26 insertions, 20 deletions. Not
 ## Wave: DELIVER / [REF] Push 3 was not plain (2026-11-07)
 
 This overrides "Push 3 is the first plain run". Push 2 was judged on its ids without a re-run, so run 42379254193 stayed red and CI measured the change window from the last green run, which held `ci_backend.yml`. Push 3 (`5d1faea04`, run 42382479502) therefore came out force-full: a second run of every live suite, about 40 minutes after the first. It is the Story's own making, so guarantee 13 is not met as written, and the orchestrator's decision to skip the re-run caused it. Every gate job passed and no rate limit followed. It closes the window. The first plain run is now the push of `4103cadc3`, step 04-01 pulled forward as the Push plan names.
+
+## Wave: DELIVER / [REF] First plain run judged (2026-11-07)
+
+Push `d87ce32be`, run 42384656167. The log prints `force_full=false` and `filter=` with the always-on clause alone. `Verify Backend` green: `Failed: 0, Passed: 12831, Skipped: 2, Total: 12833`, the same counts as the local `L3b`. Against `T0`'s CSV: 0 ids lost, 0 outcomes changed, 32 ids added, all explained (`TestSelectionClauseTest` 20, `IntegrationFixtureCategoryTest` 2, Bug 6575's `DeleteUnitRightsTests` 8 and `CreateRightsControllerGuardTest` 2). The `category` column reads `Integration` 0 times. This judges the clause for live and regular tests only. The entry of step 03-03 is met.
