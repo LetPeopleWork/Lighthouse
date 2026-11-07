@@ -559,7 +559,8 @@
             "Every classify_* answers false for the push's diff; no ci*.yml and no csproj is in it",
             "L7, one list run of the always-on clause, against L6: Passed ids match, exempted lines aside",
             "The closing record holds every commit against guarantee 1's allow-list, and the count of force-full runs caused by this Story's files, which is one",
-            "The DISCUSS Checklist is ticked by evidence, mutation N/A stated per slice, the watch on the first force-full run after slice E and the owed lines of T9's and T5's briefs handed over; no release notes"
+            "The DISCUSS Checklist is ticked by evidence, mutation N/A stated per slice, the watch on the first force-full run after slice E and the owed lines of T9's and T5's briefs handed over; no release notes",
+            "CLAUDE.md's DELIVER rules say, as the maintainer decided on 2026-11-07: red, green and refactor inside a step use the fast loop (pnpm test:fast --changed, pnpm test --changed for a component edit, Test-Fast.ps1 -NoBuild) plus the named test of the step, whatever its tier; the full gates run once at the end of a slice and before every push; a clean fast loop never replaces them"
           ],
           "test_file": "Scripts/test-timings/tests/test_trx_to_csv.py",
           "scenario_name": "A developer finds the fast loop in the docs and CI still runs every test",

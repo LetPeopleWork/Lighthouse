@@ -78,3 +78,5 @@ Direction, not a gate: about 90 % fast, 9.5 % integration, 0.5 % E2E, by test co
 T11 puts this in the test-writing guidance, so a new test lands in the lowest layer that can prove it.
 
 **Component test audit (maintainer, 2026-11-07).** T11 samples about 50 `.test.tsx` files and sorts their tests into "really logic" and "really UI", then estimates the share that could move to a `.test.ts` over an extracted function. It touches no tests. The number decides whether 9.5 % is reachable or only a direction, and it goes to the maintainer before any rewrite is planned.
+
+**Fast cycle in DELIVER (maintainer, 2026-11-07).** T6's step 06-05 puts the rule in CLAUDE.md: red, green and refactor inside a step use the fast loop plus the step's own named test, and the full gates run once at slice end and before every push. T11's skill and every DELIVER dispatch carry it. The fast loop does not see `.test.tsx` or integration tests, so a step whose behaviour lives there runs that named test too.
