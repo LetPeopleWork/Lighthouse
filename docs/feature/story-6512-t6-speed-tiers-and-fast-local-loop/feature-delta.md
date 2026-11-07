@@ -1327,3 +1327,7 @@ Commit `bf353051c`, the move alone: 2 files, 126 insertions, 127 deletions. Not 
 | Kept | `L3.csv` and `L3.trx.gz` in `evidence/`, out of git |
 
 **`L3` against `L2`.** 0 lines only in `L2`, 0 lines only in `L3`, and the same `sha256`, so no line needed excusing. `PortfolioUpdaterTest` did not fail here.
+
+## Wave: DELIVER / [REF] Pushing row reworded (2026-11-07)
+
+This overrides "every `classify_*` answers false" wherever it stands. The check is that every **connector and shared** answer is false: `jira`, `ado`, `linear`, `servicenow`, `github` and `connector_shared`. `classify_backend` must answer true on a backend push, because that is what starts the plain run; D-6512-29 already says this.
