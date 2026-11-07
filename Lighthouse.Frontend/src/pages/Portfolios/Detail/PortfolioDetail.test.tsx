@@ -173,42 +173,42 @@ const renderWithMockApiProvider = () => {
 	);
 };
 
-describe("PortfolioDetail component", () => {
-	beforeEach(() => {
-		const portfolio = new Portfolio();
-		portfolio.id = 2;
-		portfolio.name = "Release Codename Daniel";
+beforeEach(() => {
+	const portfolio = new Portfolio();
+	portfolio.id = 2;
+	portfolio.name = "Release Codename Daniel";
 
-		const feature1 = new Feature();
-		feature1.id = 0;
-		feature1.name = "Feature 1";
-		feature1.referenceId = "FTR-1";
+	const feature1 = new Feature();
+	feature1.id = 0;
+	feature1.name = "Feature 1";
+	feature1.referenceId = "FTR-1";
 
-		const feature2 = new Feature();
-		feature2.id = 1;
-		feature2.name = "Feature 2";
-		feature2.referenceId = "FTR-2";
+	const feature2 = new Feature();
+	feature2.id = 1;
+	feature2.name = "Feature 2";
+	feature2.referenceId = "FTR-2";
 
-		portfolio.features = [feature1, feature2];
+	portfolio.features = [feature1, feature2];
 
-		mockGetPortfolio.mockResolvedValue(portfolio);
-		mockGetPortfolioSettings.mockResolvedValue({
-			id: 2,
-			name: "Release Codename Daniel",
-			workItemTypes: [],
-			dataRetrievalValue: "Query",
-			usePercentileToCalculateDefaultAmountOfWorkItems: false,
-			defaultAmountOfWorkItemsPerFeature: 10,
-			defaultWorkItemPercentile: 85,
-			historicalFeaturesWorkItemQuery: "",
-			workTrackingSystemConnectionId: 0,
-			sizeEstimateField: "SizeEstimate",
-			toDoStates: ["New"],
-			doingStates: ["Active"],
-			doneStates: ["Done"],
-		});
+	mockGetPortfolio.mockResolvedValue(portfolio);
+	mockGetPortfolioSettings.mockResolvedValue({
+		id: 2,
+		name: "Release Codename Daniel",
+		workItemTypes: [],
+		dataRetrievalValue: "Query",
+		usePercentileToCalculateDefaultAmountOfWorkItems: false,
+		defaultAmountOfWorkItemsPerFeature: 10,
+		defaultWorkItemPercentile: 85,
+		historicalFeaturesWorkItemQuery: "",
+		workTrackingSystemConnectionId: 0,
+		sizeEstimateField: "SizeEstimate",
+		toDoStates: ["New"],
+		doingStates: ["Active"],
+		doneStates: ["Done"],
 	});
+});
 
+describe("PortfolioDetail component", () => {
 	it("should render portfolio details after loading", async () => {
 		renderWithMockApiProvider();
 
@@ -967,6 +967,7 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 			await waitFor(() => {
 				expect(featuresCallback).not.toBeNull();
 			});
+			await screen.findByText("Release Codename Daniel");
 			return (update: IUpdateStatus) => featuresCallback?.(update);
 		};
 
@@ -1020,6 +1021,7 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 				await tell({ status: "Completed", updateType: "Features", id: 2 });
 			});
 
+			expect(screen.getByText("Release Codename Daniel")).toBeInTheDocument();
 			expect(
 				screen.queryByTitle("Last Features refresh failed"),
 			).not.toBeInTheDocument();
@@ -1035,6 +1037,7 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 				await tell({ status: "Queued", updateType: "Features", id: 2 });
 			});
 
+			expect(screen.getByText("Release Codename Daniel")).toBeInTheDocument();
 			expect(
 				screen.queryByTitle("Last Features refresh failed"),
 			).not.toBeInTheDocument();
@@ -1066,6 +1069,7 @@ describe("PortfolioDetail - RBAC Access Tab and Write Controls Visibility", () =
 				await tell({ status: "Failed", updateType: "Team", id: 2 });
 			});
 
+			expect(screen.getByText("Release Codename Daniel")).toBeInTheDocument();
 			expect(
 				screen.queryByTitle("Last Features refresh failed"),
 			).not.toBeInTheDocument();

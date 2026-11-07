@@ -543,3 +543,35 @@ review and this review have now run, so "design peer review owed" (D-6539-11) is
   budget offender; the sweep's five bare-flag seeds all went red; the stub stays.
 - **01-01 (low).** The update-deferral check is a read-only check, with no red criterion (edited in place above).
 - **Roadmap (M8).** `validation.status` is `approved` after this revision, with the review cited in `validation.note`.
+
+## Wave: DELIVER / [REF] Step 01-01 pre-fix reproductions (2026-11-07)
+
+Tree check: `git diff --stat 93dc95b80 HEAD -- Lighthouse.Frontend` printed nothing before the first edit. All runs from
+`Lighthouse.Frontend`, `LIGHTHOUSE_TIME_BUDGET=warn`, `test-results.json` removed before each run read for ids. Every row
+reproduced with `--sequence.shuffle.tests`; no fallback to the bare flag is needed.
+
+| Pre-fix reproduction | Command (flags after the file) | Exit | Result | Budget offenders |
+|---|---|---|---|---|
+| PortfolioDetail, `-t "a refresh that failed"` | `-t "a refresh that failed"` (no shuffle) | 1 | 2 failed, 5 passed, 29 skipped: `says so on the refresh button`, `keeps saying so when a forecast run finishes afterwards`; `portfolio-no-access-alert` in the DOM | 0 |
+| PortfolioDetail seed 11 | `--sequence.shuffle.tests --sequence.seed=11` | 1 | 2 failed, 34 passed (36): the same two tests | 0 |
+| PortfolioDetail seed 33 | `--sequence.shuffle.tests --sequence.seed=33` | 1 | 2 failed, 34 passed (36): the same two tests | 0 |
+| PortfolioDetail seed 3 | `--sequence.shuffle.tests --sequence.seed=3` | 1 | 2 failed, 34 passed (36): the same two tests | 0 |
+| GeneralSettings seed 1 | `--sequence.shuffle.tests --sequence.seed=1` | 1 | 1 failed, 38 passed: `shows wizard button when selected work tracking system is CSV` | 0 |
+| GeneralSettings seed 2 | `--sequence.shuffle.tests --sequence.seed=2` | 1 | 1 failed, 38 passed: `updates all fields when CSV wizard completes with populated data` | 0 |
+| ActionButton seed 1 | `--sequence.shuffle.tests --sequence.seed=1` | 1 | 13 passed, `Errors 1 error`: unhandled `TypeError: Cannot read properties of undefined (reading 'nodeName')` | 0 |
+| Seed at run-id size | `ActionButton ... --sequence.seed=26000000000` | 0 | prints `Running tests with seed "26000000000"`, 13 passed | 0 |
+| Full run, CI flags | `LIGHTHOUSE_TIME_BUDGET=warn CI=true pnpm test --sequence.shuffle.tests --sequence.seed=11` | 1 | names `PortfolioDetail ... keeps saying so when a forecast run finishes afterwards`; `bail` under `CI=true` stopped the run at 1 failed, 109 passed, 358 skipped (526); budget line: 0 offenders | 0 |
+
+PortfolioDetail test count before: 36.
+
+### Step 01-01 results
+
+- **Anchors first.** The positive anchor (the portfolio name is on the page) went into the three absence tests (`stops saying so`
+  twice, `leaves the button alone`). With the defaults not yet added, `-t "a refresh that failed"` gave 5 failed, 2 passed: the
+  anchored absence tests went red, so they had passed vacuously. `renderAndWaitForTheUpdateFeed` now also waits for the heading.
+- **Fix.** One file-level `beforeEach` holds the portfolio and settings defaults the first describe used to set; that describe's own
+  `beforeEach` is gone because it set nothing else. `-t "a refresh that failed"` gives 7 passed.
+- **Whole file.** 36 tests (same as before): plain and `--sequence.shuffle.tests` on seeds 11, 33, 1, 2, 3, 4, 5, 6, 7, 8 all pass.
+- **Update-deferral describe (read-only check).** Alone and shuffled on seeds 11, 33, 7: 2 passed each. Clean, no second leak.
+- **Gates.** `pnpm build` exit 0, no errors or warnings, `git status` shows only the two step files. Plain `pnpm test`: 618 files,
+  9500 tests passed, 0 budget offenders.
