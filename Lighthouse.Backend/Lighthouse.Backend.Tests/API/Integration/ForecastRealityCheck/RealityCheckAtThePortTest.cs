@@ -113,13 +113,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected DatabaseWriteWatch DatabaseWrites => harness.Writes;
 
+        /// <summary>What this fixture adds to the harness, read without building or resolving any of it.</summary>
+        internal IServiceCollection WhatItRegisters
+        {
+            get
+            {
+                var services = new ServiceCollection();
+                RegisterWhatTheCheckReads(services);
+                return services;
+            }
+        }
+
         private void RegisterWhatTheCheckReads(IServiceCollection services)
         {
             var forecasts = Forecasts;
 
             services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
-            services.AddSingleton(PortDoubles.PremiumLicence());
-            services.AddSingleton(PortDoubles.SettingsAsSeeded());
+            services.AddScoped(_ => PortDoubles.PremiumLicence());
+            services.AddScoped(_ => PortDoubles.SettingsAsSeeded());
             services.AddSingleton<Cache<string, object>>();
             services.AddSingleton<IDomainEventDispatcher, DomainEventDispatcher>();
 
@@ -147,7 +158,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
 
             RegisterTheShippedEngine(services);
-            services.AddScoped(provider => forecasts.Over(provider.GetRequiredService<ForecastService>()));
+            services.AddScoped(provider => forecasts.Over(ActivatorUtilities.CreateInstance<ForecastService>(provider)));
         }
 
         /// <summary>The engine as the product builds it, with its starting number pinned and fewer runs.</summary>
@@ -164,7 +175,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             services.AddScoped<IDependencyHonourPolicy, DependencyHonourPolicy>();
             services.AddScoped<IDependencyDecision, DependencyDecision>();
             services.AddScoped<IWhatTheForecastWaitsFor, WhatTheForecastWaitsFor>();
-            services.AddScoped<ForecastService>();
         }
     }
 }
