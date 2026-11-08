@@ -158,7 +158,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesLifecycleIntegrationTest",
             "Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesWeekendsForeverIntegrationTest",
             "Lighthouse.Backend.Tests.API.Integration.RecurringBlackoutRulesWriteBackIntegrationTest",
-            "Lighthouse.Backend.Tests.API.Integration.Refinement.NeedOverOneCycleTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice01RefinementStatesTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice02RefinementListTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice03StageRulesTest",

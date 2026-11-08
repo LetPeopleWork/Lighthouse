@@ -2085,3 +2085,39 @@ Non-blocking points, settled for 05-02 to 05-04:
 **Counts.** Rows written: 1, the count 05-01 states for this class (E2 only). The class by name: 1 passed (TRX total 1). The three guards and the class together (`TestHostUseGuardTest` 34, `PortGivensGuardTest` 6, `RealityCheckWireContractTest` 26 with its B13 rows, this class 1): 67 passed. The class needs no line on either list of `TestHostUseGuardTest`, which stayed green. `Test-Fast.ps1` (builds first): 9647 passed, unchanged, as the new row is a host row outside the fast tier. `dotnet build` in `Lighthouse.Backend`: 0 warnings, 0 errors.
 
 **For Stage 3.** One new host row and one new host fixture (one host build). `NeedOverOneCycleTest`'s 22 rows are still on the host and unchanged; 05-04 may move the class now that E2 is in.
+
+## Wave: DELIVER / [REF] Slice E: `NeedOverOneCycleTest` at the port, E10 and E13 (step 05-04, 2026-11-08)
+
+**What moved.** `NeedOverOneCycleTest` derives from `RefinementAtThePortTest` now, in one commit. It keeps its `API.Integration.Refinement` namespace, its name, its 22 rows and their arguments. Its line is off `HostUsersStillToMove`. The Then steps read the `RefinementViewDto` the controller would write, built from `IRefinementViewQuery.ForTeam`, so the verdict, the reason and the days are the same text the host read from the JSON.
+
+**The ids.** The TRX of the class at the host (HEAD `d95b12f72`) and at the port list the same 22 fully qualified names; `diff` of the two sorted lists is empty.
+
+**Where each shared step went** (the re-cut table, as built):
+
+| Step at the host | At the port |
+|---|---|
+| `GravityRefinesSixWorkItems` | `RefinementAtThePortTest.GravityRefinesSixWorkItems`: `Givens.ATeam` (SLE 85 and 7, 30 days of history), the same seven Work Items on the harness's scope, then `RefinesInBacklogAnalysingAndNext` |
+| `GravityWithItsReadyRule`, `TheAdminHasSetTheCadence` | `Givens.TheTeamRefines` with `ReadyWhenTaggedReady`, `RefinesOnThursdays` or `RefinesOnMondaysAndThursdays`; E10 stands for the saves |
+| `SeedTeam("Team Zenith", …)` | `Givens.ATeam("Team Zenith", …)` and nothing else, so it stores no refinement setting at all, as at the host. It does not use the "No states chosen" input, which stands for a save with no states |
+| `TheTeamFinishedWorkEveryDay` | The same Work Items, counted back from Wednesday 7 October 2026, written through `IWorkItemRepository` |
+| `ABlackoutDayOn`, `BlackoutDaysFrom` | `IBlackoutPeriodService.Create` |
+| `WeekendsAreBlackedOut`, `ThursdaysAreBlackedOutFrom` | `IRecurringBlackoutRuleService.Create` (`AWeeklyBlackout`) |
+| `TodayIs` | The port's clock. The three no-number rows now say "today is 7 October" in their Given, the day the host's clock rested on |
+| `TheTeamIsLikelyToPull…` | The port's scripted forecast; the 4 two-weekday rows script nothing and get the shipped engine |
+| `ReadTheRefinementTab`, `NeedIn`, `CycleIn`, `CadenceFactsIn`, `ReadyCountIn` | `TheRefinementTabOf` into `RefinementViewDto`, and readers of that DTO |
+
+**The pins the class gave up**, each with the row that holds it now: both cycle ends present and null with no number, E2; the cycle ends as days, the next Refinement, `isRefinementDay`, the range, its percentiles, the working days and the ready count on the wire, `Slice09ClientNeedTest`'s first row; `NoCadence` and the null verdict and range as text, `Slice09`'s `A_client_is_told_why_there_is_no_number`; `InsufficientData` and `NoRefinementStates` as text, `Slice05`'s two rows; the blackout routes' role check, the blackout routes' own tests. No business rule left: every assertion of the 22 rows is unchanged, read from the DTO instead of the JSON.
+
+**E10**, `RefinementWithoutSignInWireContractTest.A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up`, one case per member of `EveryInput`, 5 cases. It sets up one Team through the builder and one through the Team settings save, which sends `new TeamSettingDto(team, today)` with the input's refinement section, as the form does for a Team that has not said how it refines. It then compares the two stored `RefinementSettings` as JSON. Reds seen:
+- The builder applying no input: 4 red, each naming its input and the difference: the states, `StageRules.Ready`, and `Cadence` for both cadences. "No states chosen" stayed green, because it writes the default.
+- "No states chosen" writing the Done state instead: red, `the settings save was refused: ["'Done' cannot be a refinement state: only the Team's To Do and Doing states can be chosen."]`, `Expected: OK But was: BadRequest`.
+
+Both breaks were reverted; `git status` showed `RefinementPortGivens.cs` unchanged.
+
+**E13**, `Every_setting_a_port_scenario_is_given_is_what_a_seeded_database_holds(RefinementAtThePortTest)`, 1 case. It builds the fixture's registrations, takes its `IAppSettingService` stand-in, and checks every setting the stand-in answers (read from its set-ups, so a new answer joins the check by itself) against the seeded host's real service. Today that is `GetTeamDataRefreshSettings`, the one setting the port reads, through `TeamMetricsService`. Red seen with the stand-in's interval at 61: `RefinementAtThePortTest answers service => service.GetTeamDataRefreshSettings() otherwise than a seeded database`, `Expected: "{"Interval":60,"RefreshAfter":180,"StartDelay":10}" But was: "{"Interval":61,…}"`. Reverted. What it does not see: a setting the port reads that the stand-in does not answer.
+
+**The deliberate break.** `RefinementCadenceCalendar.SearchHorizonDays` from 366 to 362, in the working tree: 1 failed, 21 passed. `A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead` failed with `the range must be the forecast over exactly the working days of the cycle Expected: (9, 14, 13) But was: (null, null, null)` and `Expected: <CycleReading { Start = 2027-09-30, End = 2027-10-14 }> But was: <CycleReading { Start = , End =  }>`. `A_year_of_blacked_out_Refinements...` stayed green. The file was reverted, and `git status` shows the calendar unchanged.
+
+**The outlier at the port.** `A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens` took 2.40, 2.49 and 2.45 s in three runs of the class (Debug, timer off). The median row took 0.040 to 0.046 s, and the class's TRX sum was 3.26 to 3.43 s. The row is slower at the port than at the host (1.43 to 1.58 s, Release). So its cost is not the host's: it is in the code the row reaches, and 05-05 names the cause.
+
+**Counts.** The class by name: 22 passed. `RefinementWithoutSignInWireContractTest`: 7 passed (E2 1, E10 5, E13 1). The three guards with both classes (`TestHostUseGuardTest` 34, `PortGivensGuardTest` 6, `RealityCheckWireContractTest` 26, the wire class 7, the moved class 22): 95 passed. `Test-Fast.ps1` (builds first): 9669 passed, 9647 plus the 22 rows now in the fast tier. `dotnet build` in `Lighthouse.Backend`: 0 warnings, 0 errors. `RefinementPortGivens` and `TestHostUseGuardTest.cs` needed no change.
