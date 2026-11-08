@@ -1,11 +1,11 @@
 ---
 name: test-writing
-description: How Lighthouse writes tests so they are fast, sit in the lowest layer that can prove them, and can fail. Load it before you write, change or plan any test, acceptance scenario text or test plan, then read the half for your stack (references/frontend.md for the frontend). Applies to DISTILL and DELIVER steps and to reviewers of their output.
+description: How Lighthouse writes tests so they are fast, sit in the lowest layer that can prove them, and can fail. Load it before you write, change or plan any test, acceptance scenario text or test plan, then read the half for your stack (references/frontend.md for the frontend, references/backend.md for the backend). Applies to DISTILL and DELIVER steps and to reviewers of their output.
 ---
 
 # Test writing
 
-Read this file in full, then the half for your stack: `references/frontend.md` for the frontend. planned: the backend half.
+Read this file in full, then the half for your stack: `references/frontend.md` for the frontend, `references/backend.md` for the backend.
 Read each file with the read tool in full mode and fresh, not as a line window. Each file ends with a line "End of <file>". Quote that last line back in
 your report, one per file. If you did not see it, you read a cut copy: read the file again in pages.
 
@@ -23,15 +23,31 @@ Tick every item before you write a test, and again before you hand it over.
 8. A new view pins its loading look and its failure look, not only the loaded one.
 9. The test can fail: you deleted or inverted the production line it claims to cover, saw it go red, put the line back, and `git diff` shows that file as it was.
 10. Names are plain words. The test says Feature and Work Item, never a tracker's word. No nWave scenario tags (see the last section).
-11. You ran the fast loop for what you touched (`pnpm test:fast --changed` for logic tests, `pnpm test --changed` after a component edit) and the test the step names.
+11. You ran the fast loop for what you touched (see "The fast cycle") and the test the step names.
+12. Backend: a new acceptance scenario starts at the application-service port (`ServicePortHarness`, or `new` for up to three collaborators) under `Tests/Acceptance/<Feature>/`.
+13. Backend: a test starts a host only as a named skeleton or as a wire contract in `Tests/Contracts/`, never as the default.
+14. Backend: the rule is pinned by a unit test or at the port, and the wiring by one host test.
+15. Backend: each fixture builds its own state; no state is shared across fixtures.
+16. Backend: time is `FakeLighthouseClock`, never the ambient clock.
+17. Backend: a feature's mutation config names `Tests.Acceptance.<Feature>`, since that folder is outside the integration filter.
+18. Improve the tests you touch: when you touch a test class, leave it better than you found it (see "Improve the tests you touch").
+19. You read this file and the half for your stack in full mode, fresh, and quoted the last line of each back.
 
-planned: the short text of the fast cycle rule.
+## The fast cycle
+
+Inside a DELIVER step, work on the fast loop; the full gates run later.
+Red, green and refactor use `pnpm test:fast --changed` (`pnpm test --changed` after a component edit) and
+`Lighthouse.Backend/Test-Fast.ps1`, which builds first,
+plus the test the step names, whatever its tier. A step whose behaviour lives in a `.test.tsx` or an integration test also runs its own named test.
+The full gates run once at the end of a slice and before every push.
+A clean fast loop never replaces them.
 
 ## Layer rule
 
 A test lands in the lowest layer that can prove it. From the bottom: a function or hook with no DOM (a `.test.ts` file); one rendered
-component with its wiring (a `.test.tsx` file); an integration test across the host; an end-to-end test with Playwright. Moving a test
-down beats adding one higher up. Time is the gate: each test has a per-test limit, and a test that cannot meet it belongs lower.
+component with its wiring (a `.test.tsx` file); an integration test across the host; an end-to-end test with Playwright. On the backend the
+lowest layer that can prove a business outcome is the application-service port, below the host (see `references/backend.md`).
+Moving a test down beats adding one higher up. Time is the gate: each test has a per-test limit, and a test that cannot meet it belongs lower.
 
 The frontend limit is read from `vitest.config.ts` (`BUDGET_SECONDS` for a `.test.tsx` test, `FAST_BUDGET_SECONDS` for any other test
 file) by the reporter `src/tests/timeBudget/timeBudgetReporter.ts`, which prints a `Time budget:` summary line ending in `offenders`.
@@ -41,6 +57,13 @@ is slow": a listed test carries a reason and a ceiling, and is the exception, no
 
 Finding: tests asserted on a function took a fraction of the time of tests proving the same kind of rule through a rendered page or dialog,
 and the slowest tests in a green main run are page and dialog tests that render long lists.
+
+## Improve the tests you touch
+
+When a change touches a test class, on either stack, it leaves the class better than it found it.
+On the backend, the rows it touches move down to the application-service port or to unit level, so a line comes off `HostUsersStillToMove`.
+On the frontend, a test moves down a layer that the frontend half allows: a rule goes onto a function or hook, a render is shared, a fixture shrinks.
+The how is in each half, as its last rule. A touched test is never made slower, and never kept as it is because it was there first.
 
 ## A check that cannot fail is not a check
 

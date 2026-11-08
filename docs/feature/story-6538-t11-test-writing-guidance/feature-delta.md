@@ -929,3 +929,47 @@ total). Row 27 was relabelled (two Mixed tests, class E1); final numbers: Low 9.
 with several expectations, rules 1, 2 and 3 state what was measured, the Stryker claim is softened, the CI limit factor and first-test allowance are named, and the audit pointer is gone.
 Re-run after the edits: patterns (nothing printed), names (all found, including `PAGE_SIZE`, `RowRangeFooter`, `LIMIT_FACTOR`, `FIRST_TEST_ALLOWANCE_SECONDS`; the known-missing name returns 0), guards (`git diff --stat HEAD` empty), the rule
 diffs (empty, 18 and 7 lines), and a full fresh read of both skill files, ending `End of SKILL.md` and `End of frontend.md`; outputs in `audit/names-output.txt` and `audit/guard-output.txt`.
+
+## Wave: DELIVER / [REF] Dispatch wording
+
+The wording the orchestrator puts into every DISTILL and DELIVER dispatch, and into every reviewer's. It names the skill and the read instruction, then carries the fast cycle rule as `CLAUDE.md` words it.
+
+```
+Before you write, change or plan any test or scenario, read with ctx_read in full mode and fresh=true the skill
+.claude/skills/test-writing/SKILL.md and the half for your stack in .claude/skills/test-writing/references/ (frontend.md or backend.md).
+Each file ends with a line "End of <file>". Quote that last line back in your report, one per file. If you did not see it, read the file again in pages.
+Inside a DELIVER step, work on the fast loop; the full gates run later.
+Red, green and refactor use `pnpm test:fast --changed` (`pnpm test --changed` after a component edit) and
+`Lighthouse.Backend/Test-Fast.ps1`, which builds first,
+plus the test the step names, whatever its tier (a step whose behaviour lives in a `.test.tsx` or an integration test also runs its own named test).
+The full gates run once at the end of a slice and before every push.
+A clean fast loop never replaces them.
+```
+
+## Wave: DELIVER / [REF] Slice B checks (2026-11-08, step 02-01, part 1)
+
+RED: SKIPPED, `NOT_APPLICABLE: guidance text; the searches in criteria 1, 3, 5, 7 and 16-18 are the proof`.
+
+**B-1 (T5 and the fast cycle rule are on `main`).** `git merge --ff-only origin/main`: "Already up to date." Each name searched with `git grep -l` outside `docs/`: `ServicePortHarness` (`CLAUDE.md`, `TestHelpers/ServicePortHarness.cs`, `TestHostUseGuardTest.cs` and others), `WireContractTest` (`Contracts/WireContractTest.cs`, the guard, 7 files), `TestHostUseGuardTest` (`Architecture/TestHostUseGuardTest.cs`, its `HostUsersStillToMove` part and `TestHostPerFixtureGuardTest.cs`), `Test-Fast.ps1` (`Lighthouse.Backend/Test-Fast.ps1`, `TestSelectionClauseTest.cs`, `CLAUDE.md`). The fast cycle rule is in `CLAUDE.md` ("Inside a DELIVER step, work on the fast loop; the full gates run later."). All found; nothing stopped.
+
+**B-3 (one home for T5's convention).** Distinctive phrase, copied before the cut: `New backend acceptance scenarios drive the application-service port.` The bullet was 9 lines (`CLAUDE.md` lines 134 to 142 before). `git grep -n --untracked` for the phrase now prints `references/backend.md:7` (rule 1's title), `CLAUDE.md:134` (the one rule line), and the archived T5 workspace (`docs/feature/story-6469-t5-acceptance-at-the-service-port/` delta line 379 and `roadmap.json`), which is history and outside this step's allowed paths, plus this section. `CLAUDE.md` keeps no long body. The three ways out are in `backend.md` word for word, and its four fragments are found at `HEAD` in `TestHostUseGuardTest.cs` by `git grep -c -F` (1 each); `git diff --stat HEAD -- Lighthouse.Backend` prints nothing.
+
+**B-4 / criterion 4 (`CLAUDE.md`, four added lines).** The diff: T5's bullet cut to its rule line (a), then three bullets: the pointer (b), the load instruction naming DISTILL, DELIVER and reviewers, in the Wave section (c), and "Improve the tests you touch" (d), per maintainer decision row 6. No fifth line changed. Number search over lines 134 to 147 (`story|slice|ADR-|#NNNN|T5|FE7`, case-insensitive): NONE.
+
+**B-6 (the fast cycle rule in three places).** Phrases chosen from `CLAUDE.md`, one line each, and counted in `CLAUDE.md`, `SKILL.md` and the "Dispatch wording" section: "work on the fast loop; the full gates run later." 1/1/1; "`pnpm test:fast --changed` (`pnpm test --changed` after a component edit)" 1/1/1; "`Lighthouse.Backend/Test-Fast.ps1`, which builds first," 1/1/1; "plus the test the step names, whatever its tier" 1/1/1; "run once at the end of a slice and before every push." 1/1/1; "A clean fast loop never" 1/1/1. **The clause** that a step whose behaviour lives in a `.test.tsx` or an integration test also runs its own named test: `CLAUDE.md` carries it as "plus the test the step names, whatever its tier" (1/1/1); `SKILL.md` and the wording add the gloss "also runs its own named test" (0 in `CLAUDE.md`, 1, 1). The existing `CLAUDE.md` bullet is not one of the four lines, so the gloss was not added there; flagged for the reviewer.
+
+**B-7 (the trial's feature).** Story 6501 (`docs/feature/story-6501-ordered-parent-fields/`) has DISTILL sections, but its scenario tables hold 21 (slice 01) + 7 (slice 02) + 8 (slice 03) = **36 scenarios** (57 test methods), more than about 20: it does not qualify. The next feature that fits: **Story 6083** (`docs/feature/story-6083-over-time-history-fill-on-by-default/`), delivered (mutation gate commit `d5bc64ab8`), with a DISTILL section "Scenario list with tags" of **11 scenarios** (8 acceptance methods, 10 cases, and 3 unit tests). Its stories are in the DISCUSS sections of its `feature-delta.md` and in `slices/`; the workspace has no `discuss/` folder (6501 has none either). Backend, so the trial reads `backend.md`.
+
+**Criterion 8.** `docs/ci-learnings.md`: the "Where to test" bullet is the one-line pointer; `git diff --stat` shows that one hunk (+1 -10), no other line.
+
+**C-1 (last lines, read fresh in full mode).** `SKILL.md` ends `End of SKILL.md`; `backend.md` ends `End of backend.md`; `frontend.md` ends `End of frontend.md`. A deliberately short read, `backend.md` `lines:60-70`, printed `backend.md 96L lines:60-70` and lines 60 to 70 with no such last line.
+
+**C-2 (names).** Found by `git grep -l -F` in `Lighthouse.Backend` and `CLAUDE.md`: `ServicePortHarness` 4, `WireContractTest` 7, `TestHostUseGuardTest` 4, `HostUsersStillToMove` 3, `SkeletonsByUserFlow` 1, `FakeLighthouseClock` 81, `RealityCheckWireContractTest` 4, `ForecastRealityCheckServiceTest` 2, `ForecastDataSufficiencyPolicy` 5, `TestDatabaseTemplate` 4, `NewScope` 6, `RegisterWhatTheCheckReads` 1, `Tests/Contracts/` 1, `Lighthouse.Backend/Test-Fast.ps1` 2, `FullyQualifiedName!~API.Integration` 1, `service-port-` 1. Known-missing `NoSuchNameXyz`: 0. The one marked name: `Tests.Acceptance.<Feature>` ("planned: the first feature to put port scenarios there", no number). The four T5 names carry no planned mark.
+
+**C-3 (guard messages at `HEAD`).** The three ways out and "Its line goes in this commit: take it off the list, which names only types that still start a host." are each found once in `Architecture/TestHostUseGuardTest.cs` by `git grep -c -F ... HEAD`; `git diff --stat HEAD -- Lighthouse.Backend` printed nothing.
+
+**C-4 (patterns).** Each list run first on a planted file (`planted.txt`): list 1 hit 2 lines, list 2 hit 1, list 3 hit 1. On the skill folder plus `CLAUDE.md` lines 134 to 147: list 2 and list 3 print nothing; list 1 prints one line, `SKILL.md:42` "The full gates run once at the end of a slice and before every push." (the word "slice" of the fast cycle rule, with no number: the pattern `slice[ -]?[0-9a-z]` also matches "slice and"; `CLAUDE.md`'s own rule has the same words).
+
+**C-5 (changed paths).** `git status --short` before the commit: the skill folder, `CLAUDE.md`, `docs/ci-learnings.md` and this delta; nothing else.
+
+**C-6.** The examples hold no token-shaped string (`gitleaks` is not on the shell allowlist here); the commit hook's own scan runs at each commit, no bypass.

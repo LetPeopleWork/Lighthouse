@@ -131,15 +131,17 @@ Two standing principles worth keeping visible here because they're easy to skip 
   classification in the feature workspace, and tell every acceptance-designer dispatch so, and every
   reviewer that an untagged scenario is correct here. The Playwright title tags the package scripts
   filter on (`@screenshot`, `@auth`, `@rbac`, `@proxyauth`) are real and stay.
-- **New backend acceptance scenarios drive the application-service port.** A test may start a host only for a
-  reason. When `TestHostUseGuardTest` names a type that starts one without a reason, do one of three things: move
-  it to the application-service port (build the service with `ServicePortHarness`, or with `new` for up to three
-  collaborators, under `Tests/Acceptance/<Feature>/`); list it as a skeleton with its user flow, if it asserts a
-  business outcome that needs the route or the wiring; or make it a wire contract on `WireContractTest` in
-  `Tests/Contracts/`. A new scenario starts at the port. A skeleton is one or two per user flow, on the list in
-  `TestHostUseGuardTest`; a wire contract covers the route, status, JSON names, headers and 401/403. A new
-  scenario in a class already on the guard's list goes in a new class at the port too. Tell every
-  acceptance-designer dispatch so.
+- **New backend acceptance scenarios drive the application-service port.** A test starts a host only as a named
+  skeleton or a wire contract; `TestHostUseGuardTest` names any other type that does, and says what to do instead.
+- **Test-writing guidance.** How Lighthouse writes tests, on both stacks, is the skill
+  `.claude/skills/test-writing/SKILL.md`, with one half per stack in its `references/` folder.
+- **DISTILL, DELIVER and reviewers load the test-writing skill first.** Every DISTILL and DELIVER dispatch, and every
+  reviewer's, tells the agent to read that skill and the half for its stack with `ctx_read` in full mode and
+  `fresh=true`, and to quote the last line of each file back. Tell every acceptance-designer dispatch so.
+- **Improve the tests you touch.** When a change touches a test class, on either stack, it leaves the class better
+  than it found it. On the backend, the rows it touches move down to the service port or to unit level, so a line
+  comes off `HostUsersStillToMove`. On the frontend, a test moves down a layer the frontend half allows. The skill
+  carries the how.
 - **DESIGN ends with an architecture summary for the maintainer.** When a DESIGN wave finishes (in AFK
   mode too, as part of the wave-done update), post a short, high-level summary in chat, so the maintainer
   can learn from it and keep up:

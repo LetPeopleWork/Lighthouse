@@ -116,4 +116,19 @@ expect(frame()).toHaveAttribute("data-widget-status", "error");
 expect(screen.getByText(COULD_NOT_LOAD_MESSAGE)).toBeInTheDocument();
 ```
 
+### 8. Improve the tests you touch
+
+**Finding.** The slowest files of a green main run are page and dialog files, and a test in one of them proves a rule through a render
+about ten times as slowly as the same rule on a function (rule 1). A file is touched one test at a time, so it gets faster the
+same way.
+
+**Example.** A test you touch that proves a rule through a render moves down to the function, and the render that is left is shared:
+
+```ts
+// before: render the page, click, read the band off the screen
+// after: the rule on its function, no render
+const rects = computePaceBandRects({ perStatePercentileValues, doingStates, xScale, yScale, axisMin, axisMax });
+expect(rects[0].x).toBe(stateIndex - STATE_BAND_HALF_WIDTH);
+```
+
 End of frontend.md
