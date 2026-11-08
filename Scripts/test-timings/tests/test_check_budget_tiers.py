@@ -447,7 +447,7 @@ class LedgerTestCase(TierReportTestCase):
         self.write_ledgers(ledgers)
         return self.workspace.check("backend", timings, *options)
 
-    def write_ledgers(self, ledgers):
+    def write_ledgers(self, ledgers, fast_allowlist=None):
         document = {
             "frontend": {"budget_seconds": PLANTED_BUDGET_SECONDS, "allowlist": []},
             "backend": {
@@ -456,6 +456,8 @@ class LedgerTestCase(TierReportTestCase):
                 "ledgers": ledgers,
             },
         }
+        if fast_allowlist is not None:
+            document["backend"]["fast_allowlist"] = list(fast_allowlist)
         self.workspace.raw_allowlist(json.dumps(document, indent=2))
 
     def accepted_report(self, ledgers):
@@ -651,6 +653,158 @@ class TheSwitchDoesNotSoftenABadLedger(LedgerTestCase):
             with mock.patch.dict(os.environ, {check_budget.WARN_ONLY_VARIABLE: "true"}):
                 result = self.check_ledgers(rising)
             self.assert_ledger_refused(result, MEAN_LEDGER, "only goes down")
+
+
+LISTED_CLASS = f"{TESTS_NAMESPACE}.ImportTest"
+OTHER_CLASS = f"{TESTS_NAMESPACE}.InvoiceTest"
+
+
+class FastTestLimitTestCase(LedgerTestCase):
+    def check_fast(self, extra_rows=(), fast_allowlist=None, ledgers=None, integration_seconds=0.4):
+        timings = self.workspace.steady_run(extra_rows, integration_seconds)
+        self.write_ledgers(planted_ledgers() if ledgers is None else ledgers, fast_allowlist)
+        return self.workspace.check("backend", timings)
+
+    def named_in(self, result, test):
+        return [line for line in result.stdout.splitlines() if line.startswith("::") and test in line]
+
+
+class ASlowFastTestFailsTheBuildAndIsNamed(FastTestLimitTestCase):
+    def test_a_slow_fast_test_fails_the_build_and_is_named(self):
+        slow = f"{FAST_CLASS}.PricesAWholeCatalogue"
+
+        result = self.check_fast([row(slow, "Unit", 3.4)])
+
+        self.assert_fails_naming(
+            result, slow, "took 3.400s", "over the 2s fast test limit", f"set in {ALLOWLIST_NAME}"
+        )
+        self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+
+    def test_a_fast_test_is_judged_at_the_edge_of_the_limit(self):
+        at_the_limit = f"{FAST_CLASS}.PricesAtTheLimit"
+        just_over = f"{FAST_CLASS}.PricesJustOver"
+
+        result = self.check_fast([row(at_the_limit, "Unit", 2), row(just_over, "Unit", 2.001)])
+
+        self.assert_fails_naming(result, just_over, "2.001s", "fast test limit")
+        self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+        self.assertEqual(self.named_in(result, at_the_limit), [], msg=self._explain(result))
+
+    def test_only_fast_tests_answer_to_this_limit(self):
+        result = self.check_fast(
+            [
+                row(f"{HOSTED_CLASS}.ServesTheWholePortfolio", "Integration", 3),
+                row(f"{CONNECTOR_CLASS}.SyncsEveryProject", "Unit", 30),
+                row(f"{FAST_CLASS}.WaitsForever", "Unit", 30, "NotExecuted"),
+            ],
+            integration_seconds=0.2,
+        )
+
+        self.assert_passes_quietly(result)
+
+    def test_every_slow_test_is_named_not_only_the_first(self):
+        slow = {
+            f"{FAST_CLASS}.PricesSlowly": 3,
+            f"{FAST_CLASS}.DiscountsSlowly": 4,
+            f"{OTHER_CLASS}.TotalsSlowly": 5,
+        }
+
+        result = self.check_fast([row(name, "Unit", seconds) for name, seconds in slow.items()])
+
+        self.assertEqual(result.returncode, 1, msg=self._explain(result))
+        self.assertEqual(len(self.annotations(result, "error")), 3, msg=self._explain(result))
+        for name, seconds in slow.items():
+            self.assert_fails_naming(result, name, f"took {seconds}.000s", "fast test limit")
+
+
+class AListedClassAnswersToItsOwnCeiling(FastTestLimitTestCase):
+    def setUp(self):
+        super().setUp()
+        self.workspace.declare_test_class("ImportTest")
+
+    def test_a_listed_class_answers_to_its_own_ceiling(self):
+        under = f"{LISTED_CLASS}.ImportsABoard"
+        over = f'{LISTED_CLASS}("Jira.Cloud").ImportsEveryBoard'
+
+        result = self.check_fast(
+            [row(under, "Unit", 3), row(over, "Unit", 6)],
+            fast_allowlist=[allowed(LISTED_CLASS, 5)],
+        )
+
+        self.assert_fails_naming(result, over, "took 6.000s", "over the 5s class ceiling")
+        self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+        self.assertEqual(self.named_in(result, under), [], msg=self._explain(result))
+
+    def test_a_listed_class_that_is_gone_fails_whatever_the_switch_says(self):
+        gone = f"{TESTS_NAMESPACE}.RetiredImportTest"
+        with mock.patch.dict(os.environ, {check_budget.WARN_ONLY_VARIABLE: "true"}):
+            result = self.check_fast(fast_allowlist=[allowed(gone, 5)])
+
+        self.assert_fails_naming(result, gone, ALLOWLIST_NAME, "no longer in the backend test source")
+
+    def test_a_listed_class_that_no_longer_earns_its_place_fails_and_a_stricter_one_stays(self):
+        with self.subTest(ceiling="equal to the limit"):
+            result = self.check_fast(fast_allowlist=[allowed(LISTED_CLASS, 2)])
+
+            self.assert_fails_naming(result, LISTED_CLASS, ALLOWLIST_NAME, "not needed")
+
+        with self.subTest(ceiling="below the limit"):
+            stricter = f"{LISTED_CLASS}.ImportsTwoBoards"
+
+            result = self.check_fast(
+                [row(stricter, "Unit", 1.8)], fast_allowlist=[allowed(LISTED_CLASS, 1.5)]
+            )
+
+            self.assert_fails_naming(result, stricter, "took 1.800s", "over the 1.5s class ceiling")
+            self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+
+
+class TheFastAllowlistStaysShortAndComplete(FastTestLimitTestCase):
+    def listed_classes(self, how_many):
+        names = [f"Import{index}Test" for index in range(how_many)]
+        for name in names:
+            self.workspace.declare_test_class(name)
+        return [allowed(f"{TESTS_NAMESPACE}.{name}", 3) for name in names]
+
+    def test_ten_listed_classes_are_accepted(self):
+        result = self.check_fast(fast_allowlist=self.listed_classes(10))
+
+        self.assert_passes_quietly(result)
+
+    def test_a_list_that_is_too_long_or_incomplete_is_refused(self):
+        no_reason = allowed(LISTED_CLASS, 3)
+        del no_reason["reason"]
+        no_ceiling = allowed(LISTED_CLASS, 3)
+        del no_ceiling["ceiling_seconds"]
+        cases = {
+            "eleven entries": (lambda: self.listed_classes(11), None, "at most 10"),
+            "no reason": (lambda: [no_reason], None, "reason"),
+            "no ceiling": (lambda: [no_ceiling], None, "ceiling"),
+            "a class listed twice": (
+                lambda: [allowed(LISTED_CLASS, 3), allowed(LISTED_CLASS, 4)],
+                None,
+                "more than once",
+            ),
+            "fast ledger empty": (
+                lambda: [allowed(LISTED_CLASS, 3)],
+                planted_ledgers(**{FAST_LEDGER: []}),
+                "no enforced entry",
+            ),
+            "fast ledger provisional only": (
+                lambda: [allowed(LISTED_CLASS, 3)],
+                planted_ledgers(**{FAST_LEDGER: [entry(2, runs=2)]}),
+                "no enforced entry",
+            ),
+        }
+        for case, (entries, ledgers, fragment) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+                self.workspace.declare_test_class("ImportTest")
+
+                result = self.check_fast(fast_allowlist=entries(), ledgers=ledgers)
+
+                self.assert_refuses_to_judge(result, ALLOWLIST_NAME, "fast_allowlist", fragment)
+                self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
 
 
 if __name__ == "__main__":

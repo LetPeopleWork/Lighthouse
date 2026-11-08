@@ -185,6 +185,39 @@ def _tier_of(stack: str, row: dict[str, str]) -> str:
     return INTEGRATION if row[BACKEND_CATEGORY_COLUMN] == INTEGRATION else FAST
 
 
+FAST_TEST_LIMIT, CLASS_CEILING = "fast test limit", "class ceiling"
+
+
+def judge_fast(
+    rows: list[dict[str, str]],
+    connector_classes: set[str],
+    limit_seconds: Decimal | None,
+    ceilings: dict[str, Decimal],
+) -> list[Finding]:
+    """Each backend test counted in the fast tier, one at a time, against the fast test limit."""
+    if limit_seconds is None:
+        return []
+    findings = []
+    for row in rows:
+        test = row[UNIT_COLUMN["backend"]]
+        unit = class_of(test)
+        if (
+            unit in connector_classes
+            or row[OUTCOME_COLUMN["backend"]] != PASSED
+            or _tier_of("backend", row) != FAST
+        ):
+            continue
+        limit, limit_kind = (
+            (ceilings[unit], CLASS_CEILING)
+            if unit in ceilings
+            else (limit_seconds, FAST_TEST_LIMIT)
+        )
+        seconds = Decimal(row[DURATION_COLUMN["backend"]]) / 1000
+        if seconds > limit:
+            findings.append(Finding(test, seconds, limit, limit_kind))
+    return findings
+
+
 RUNS_TO_ENFORCE = 5
 LEDGERS_FIELD = "ledgers"
 FAST_LEDGER, MEAN_LEDGER, TOTAL_LEDGER = "fast_test_limit", "mean_ceiling", "total_ceiling"
@@ -217,6 +250,10 @@ class Limit:
     @property
     def in_force(self) -> LedgerEntry | None:
         return self.enforced or self.provisional
+
+    @property
+    def enforced_seconds(self) -> Decimal | None:
+        return self.enforced.seconds if self.enforced else None
 
 
 @dataclass(frozen=True)
@@ -434,9 +471,9 @@ def escaped(text: str) -> str:
     return text.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
 
 
-def breach_annotation(finding: Finding, allowlist_name: str, kind: str) -> str:
+def breach_annotation(finding: Finding, allowlist_name: str, kind: str, places: int = 1) -> str:
     return (
-        f"::{kind}::{escaped(finding.unit)} took {finding.seconds:.1f}s, "
+        f"::{kind}::{escaped(finding.unit)} took {finding.seconds:.{places}f}s, "
         f"over the {finding.limit}s {finding.limit_kind} set in {allowlist_name}"
     )
 
@@ -598,30 +635,65 @@ def load_allowlist(stack: str, path: Path) -> tuple[Decimal, dict[str, Decimal]]
     budget_seconds = _positive_seconds(section.get("budget_seconds"))
     if budget_seconds is None:
         raise CannotJudge(f"{name} sets no positive budget_seconds in its {stack} section")
-    entries = section.get("allowlist", [])
-    if not isinstance(entries, list):
-        raise CannotJudge(f"{name} has a {stack} allowlist that is not a list")
-    ceilings: dict[str, Decimal] = {}
-    for entry in entries:
-        unit, ceiling_seconds = _allowlisted(entry, stack, name)
-        if unit in ceilings:
-            raise CannotJudge(
-                f"{name} allowlists {escaped(unit)} more than once in its {stack} section"
-            )
-        ceilings[unit] = ceiling_seconds
+    ceilings = _ceilings_of(
+        section.get("allowlist", []), name, f"{stack} allowlist", name, f"its {stack} section"
+    )
     return budget_seconds, ceilings
 
 
-def _allowlisted(entry: object, stack: str, name: str) -> tuple[str, Decimal]:
+FAST_ALLOWLIST_FIELD = "fast_allowlist"
+MOST_FAST_ALLOWLIST_ENTRIES = 10
+
+
+def load_fast_allowlist(path: Path, fast: Limit) -> dict[str, Decimal]:
+    """Backend classes whose tests answer to their own ceiling instead of the fast test limit."""
+    name, section = _section("backend", path)
+    ceilings = _ceilings_of(
+        section.get(FAST_ALLOWLIST_FIELD, []),
+        name,
+        FAST_ALLOWLIST_FIELD,
+        f"the {FAST_ALLOWLIST_FIELD} of {name}",
+        f"its {FAST_ALLOWLIST_FIELD}",
+    )
+    if len(ceilings) > MOST_FAST_ALLOWLIST_ENTRIES:
+        raise CannotJudge(
+            f"{name} lists {len(ceilings)} classes in its {FAST_ALLOWLIST_FIELD}, "
+            f"but at most {MOST_FAST_ALLOWLIST_ENTRIES} may be listed"
+        )
+    # A class may be listed only for being slow in every run the limit was read from, which a
+    # limit read from fewer than five runs cannot show.
+    if ceilings and fast.enforced is None:
+        raise CannotJudge(
+            f"{name} lists classes in its {FAST_ALLOWLIST_FIELD}, but its "
+            f"{LEDGER_WORDS[FAST_LEDGER]} has no enforced entry to list them against"
+        )
+    return ceilings
+
+
+def _ceilings_of(
+    entries: object, name: str, list_words: str, where: str, scope: str
+) -> dict[str, Decimal]:
+    if not isinstance(entries, list):
+        raise CannotJudge(f"{name} has a {list_words} that is not a list")
+    ceilings: dict[str, Decimal] = {}
+    for entry in entries:
+        unit, ceiling_seconds = _allowlisted(entry, name, list_words, where)
+        if unit in ceilings:
+            raise CannotJudge(f"{name} allowlists {escaped(unit)} more than once in {scope}")
+        ceilings[unit] = ceiling_seconds
+    return ceilings
+
+
+def _allowlisted(entry: object, name: str, list_words: str, where: str) -> tuple[str, Decimal]:
     if not isinstance(entry, dict) or not _is_text(entry.get("unit")):
-        raise CannotJudge(f"{name} has a {stack} allowlist entry without a unit")
+        raise CannotJudge(f"{name} has a {list_words} entry without a unit")
     unit = escaped(entry["unit"])
     if not _is_text(entry.get("reason")):
-        raise CannotJudge(f"{unit} is allowlisted in {name} without a reason")
+        raise CannotJudge(f"{unit} is allowlisted in {where} without a reason")
     ceiling_seconds = _positive_seconds(entry.get("ceiling_seconds"))
     if ceiling_seconds is None:
         raise CannotJudge(
-            f"{unit} is allowlisted in {name} without a positive number as its ceiling_seconds"
+            f"{unit} is allowlisted in {where} without a positive number as its ceiling_seconds"
         )
     return entry["unit"], ceiling_seconds
 
@@ -694,7 +766,7 @@ def _check(arguments: argparse.Namespace) -> int:
     summary = summary_file(os.environ)
     rows = load_timings(stack, arguments.csv)
     budget_seconds, ceilings = load_allowlist(stack, arguments.allowlist)
-    ledgers = load_ledgers(arguments.allowlist) if stack == "backend" else NO_LEDGERS
+    ledgers, fast_ceilings = _backend_limits(stack, arguments.allowlist)
     if stack == "backend" and not arguments.source_root.is_dir():
         raise CannotJudge(
             f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
@@ -705,20 +777,33 @@ def _check(arguments: argparse.Namespace) -> int:
     )
 
     findings = judge(stack, rows, budget_seconds, ceilings)
-    still_present = _still_present(stack, rows, arguments.source_root, ceilings)
-    stale = stale_entries(list(ceilings), still_present)
+    fast_limit = ledgers.fast.enforced_seconds
+    fast_findings = judge_fast(rows, connector_classes, fast_limit, fast_ceilings)
+    still_present = _still_present(stack, rows, arguments.source_root, ceilings or fast_ceilings)
+    stale = stale_entries([*ceilings, *fast_ceilings], still_present)
     kind = "warning" if warn_only else "error"
     if os.environ.get(WARN_ONLY_VARIABLE) == "true":
         print(f"::notice::{WARN_ONLY_VARIABLE} is true, so budget enforcement is off")
     for finding in findings:
         print(breach_annotation(finding, allowlist_name, kind))
+    for finding in fast_findings:
+        print(breach_annotation(finding, allowlist_name, kind, places=3))
     for unit in stale:
         print(stale_annotation(stack, unit, allowlist_name))
     unneeded = unneeded_entries(stack, rows, budget_seconds, ceilings)
+    if fast_ceilings:
+        unneeded += unneeded_entries(stack, rows, fast_limit, fast_ceilings)
     for unit in unneeded:
         print(unneeded_annotation(unit, allowlist_name))
-    breached = bool(findings) and not warn_only
+    breached = bool(findings or fast_findings) and not warn_only
     return 1 if breached or stale or unneeded else 0
+
+
+def _backend_limits(stack: str, allowlist: Path) -> tuple[Ledgers, dict[str, Decimal]]:
+    if stack != "backend":
+        return NO_LEDGERS, {}
+    ledgers = load_ledgers(allowlist)
+    return ledgers, load_fast_allowlist(allowlist, ledgers.fast)
 
 
 def publish_report(report: str, summary: Path | None) -> None:
