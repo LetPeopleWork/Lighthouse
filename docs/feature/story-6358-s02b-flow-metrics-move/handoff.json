@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 1,
-"F": 34,
+"E": 4,
+"F": 38,
 "P": 3,
 "S": 5
 },
@@ -729,6 +730,38 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F35"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F36"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F37"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F38"
+}
+]
+},
 "facts": {
 "F1": "Story 6358 S02 Flow metrics pilot, part B of 3 (DESIGN slices 2, 3a, 3b, 4, 5): move the 42 Flow metrics files out of Lighthouse.Backend.Services into Lighthouse.Backend.Modules.FlowMetrics.{Domain, Application, Application.Policies, Adapters.Background, Adapters.Persistence}, namespace and folder only, with no behaviour change. Design: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (Component decomposition, D-4 to D-9, R2, DEVOPS).",
 "F10": "The seven Flow metrics event handlers (three recorders, two cache invalidations, two demo backfills) live in Lighthouse.Backend.Modules.FlowMetrics.Application.Policies and still run in the pinned order",
@@ -758,6 +791,10 @@
 "F32": "No wire contract changes; the behaviour capture (docs/feature/story-6358-s02-metrics-pilot/capture) compares every metrics answer",
 "F33": "The slice oracle is itself the architectural test over the compiled assembly",
 "F34": "The slice is itself a pure move; consumer using lines change in the same move commit",
+"F35": "A user or maintainer looking at the Flow metrics module finds every Flow metrics type the design names in its declared layer namespace (Domain, Application, Application.Policies, Adapters.Background, Adapters.Persistence) under Lighthouse.Backend.Modules.FlowMetrics, and each file sits in the folder that matches its namespace.",
+"F36": "The module's Domain layer refers only to the shared kernel (Lighthouse.Backend.Models) and the .NET base library; none of its types refers to an Application, Adapters, Services, Data, EF Core or Microsoft.Extensions type.",
+"F37": "A user sees no change: every metrics API answer on the same day is identical before and after the move, with no change to the stored data model.",
+"F38": "The existing test suite, including the event-handler order check, stays green after the move, and the only edits to existing tests are using, namespace and path-string edits.",
 "F4": "The module's Domain depends only on the shared kernel (Lighthouse.Backend.Models) and the .NET base library: no Application, Adapters, Services, Data, EF Core or Microsoft.Extensions type",
 "F5": "Nothing a user sees changes: every metrics API answer is identical before and after on the same day, the event-handler order pin stays green, the EF model is unchanged, and every existing test stays green with only using, namespace and path-string edits",
 "F6": "The module dependency rules R3 to R5, deleting the old Metrics type-set rule, and relocating the unit tests (feature C); extracting a registration extension (later Story); renaming *Service roles",

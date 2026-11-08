@@ -155,7 +155,43 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>A user or maintainer looking at the Flow metrics module finds every Flow metrics type the design names in its declared layer namespace (Domain, Application, Application.Policies, Adapters.Background, Adapters.Persistence) under Lighthouse.Backend.Modules.FlowMetrics, and each file sits in the folder that matches its namespace.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>The module&#x27;s Domain layer refers only to the shared kernel (Lighthouse.Backend.Models) and the .NET base library; none of its types refers to an Application, Adapters, Services, Data, EF Core or Microsoft.Extensions type.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>A user sees no change: every metrics API answer on the same day is identical before and after the move, with no change to the stored data model.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>The existing test suite, including the event-handler order check, stays green after the move, and the only edits to existing tests are using, namespace and path-string edits.
+</code></pre>
 
 <h2>Charter</h2>
 
