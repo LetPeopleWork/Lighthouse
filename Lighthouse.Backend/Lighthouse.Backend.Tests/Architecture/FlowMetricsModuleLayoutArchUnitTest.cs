@@ -27,6 +27,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ModuleDomainFolder = "Modules/FlowMetrics/Domain";
 
+        private const string ModuleApplicationNamespace = "Lighthouse.Backend.Modules.FlowMetrics.Application";
+
+        private const string ModuleApplicationFolder = "Modules/FlowMetrics/Application";
+
         private static readonly string[] PureCalculations =
         [
             "PercentileCalculator",
@@ -43,6 +47,44 @@ namespace Lighthouse.Backend.Tests.Architecture
             "XmRCalculator.cs",
             "SleRiskCalculator.cs",
             "BaselineValidationService.cs",
+        ];
+
+        // Every type the contract files declare, the records and companion interfaces that travel with them included.
+        private static readonly string[] ContractTypes =
+        [
+            "ITeamMetricsService",
+            "ForecastThroughputStatus",
+            "CycleTimeWorkItem",
+            "IPortfolioMetricsService",
+            "CycleTimeFeature",
+            "IPercentileSnapshotWriter",
+            "PercentileFamilyReader",
+            "IProcessBehaviorSnapshotWriter",
+            "ProcessBehaviorFamilyReader",
+            "IPercentilesOverTimeSeriesQuery",
+            "IProcessBehaviorSeriesQuery",
+            "IOverTimeGapReconciler",
+            "IOverTimeHistoryFiller",
+            "IOverTimeHistoryFillActivity",
+            "OverTimeFillRequest",
+            "IBlockedCountSnapshotRepository",
+            "IPercentilesOverTimeSnapshotRepository",
+            "IProcessBehaviorSnapshotRepository",
+        ];
+
+        private static readonly string[] ContractFiles =
+        [
+            "ITeamMetricsService.cs",
+            "IPortfolioMetricsService.cs",
+            "IPercentileSnapshotWriter.cs",
+            "IProcessBehaviorSnapshotWriter.cs",
+            "IPercentilesOverTimeSeriesQuery.cs",
+            "IProcessBehaviorSeriesQuery.cs",
+            "IOverTimeGapReconciler.cs",
+            "IOverTimeHistoryFiller.cs",
+            "IBlockedCountSnapshotRepository.cs",
+            "IPercentilesOverTimeSnapshotRepository.cs",
+            "IProcessBehaviorSnapshotRepository.cs",
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
@@ -79,6 +121,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void ThePureFlowMetricsCalculationFiles_SitInTheModuleDomainFolder_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(ModuleDomainFolder, PureCalculationFiles);
+        }
+
+        [Test]
+        public void TheFlowMetricsContract_LivesInTheModuleApplication_AndNoneOfItIsLeftUnderServices()
+        {
+            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleApplicationNamespace, ContractTypes).Check();
+        }
+
+        [Test]
+        public void TheFlowMetricsContractFiles_SitInTheModuleApplicationFolder_AndNowhereElse()
+        {
+            ThenEachFileSitsOnlyIn(ModuleApplicationFolder, ContractFiles);
         }
 
         [Test]

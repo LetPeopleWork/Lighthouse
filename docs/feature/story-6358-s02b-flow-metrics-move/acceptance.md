@@ -210,6 +210,124 @@ This oracle reads layout and dependencies only; the design runs the answer captu
 
 host \(root\)\, at slice end and feature end
 
+### S2
+
+##### Covers
+
+P1
+
+```text
+Read the compiled production assembly for every type the eleven Flow metrics contract files declare, eighteen types with their records and companion interface, by name
+```
+
+```text
+Each sits in the Flow metrics module's Application namespace exactly, not in another layer, and no type of the same name is left under Services; a type that has not moved is named as missing from Application and as left behind
+```
+
+```text
+A developer finds the Flow metrics contract in the module's Application layer, nowhere else
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsModuleLayoutArchUnitTest\.TheFlowMetricsContract\_LivesInTheModuleApplication\_AndNoneOfItIsLeftUnderServices
+
+```text
+A copy of a contract type kept under a namespace other than Services, for example the API or the module's Domain, next to the moved one
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Read the production project's source folders for the eleven contract files
+```
+
+```text
+Each file sits in the module's Application folder and no file of the same name sits anywhere else in the production project
+```
+
+```text
+The folder a developer opens matches the namespace the contract declares
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsModuleLayoutArchUnitTest\.TheFlowMetricsContractFiles\_SitInTheModuleApplicationFolder\_AndNowhereElse
+
+```text
+A file in the right folder whose namespace line was not changed; the contract placement test catches that one
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Run the Architecture tests after the move, the calculation placement, the Domain rule and the event-handler order pin included
+```
+
+```text
+Every earlier layer check and the handler-order pin stay green with only using and namespace edits
+```
+
+```text
+Moving the contract changes nothing already in place, and the metrics handlers still run in the same order
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture \(FlowMetricsModuleLayoutArchUnitTest earlier tests\, DomainEventHandlerOrderPinTest\)
+
+```text
+A behaviour change in a metrics service that no architecture test reads; the existing unit and integration suites and the answer capture own that
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them
+```
+
+```text
+The two captures are identical
+```
+
+```text
+Nothing a user sees in the metrics changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+This oracle reads layout only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice
+```
+
+host \(root\)\, at slice end and feature end
+
 ## Expectations
 
 ### Rows

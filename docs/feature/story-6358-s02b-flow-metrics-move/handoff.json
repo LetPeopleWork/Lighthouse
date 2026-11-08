@@ -92,12 +92,66 @@
 "stimulus": "F63",
 "user_result": "F65"
 }
+],
+"S2": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F70",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsContract_LivesInTheModuleApplication_AndNoneOfItIsLeftUnderServices"
+},
+"expected": "F68",
+"stimulus": "F67",
+"user_result": "F69"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F74",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsContractFiles_SitInTheModuleApplicationFolder_AndNowhereElse"
+},
+"expected": "F72",
+"stimulus": "F71",
+"user_result": "F73"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F78",
+"test": "Lighthouse.Backend.Tests.Architecture (FlowMetricsModuleLayoutArchUnitTest earlier tests, DomainEventHandlerOrderPinTest)"
+},
+"expected": "F76",
+"stimulus": "F75",
+"user_result": "F77"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host (root), at slice end and feature end",
+"reason": "F79"
+},
+"expected": "F64",
+"stimulus": "F63",
+"user_result": "F65"
+}
 ]
 },
 "counters": {
 "D": 1,
 "E": 4,
-"F": 66,
+"F": 79,
 "P": 3,
 "S": 5
 },
@@ -924,7 +978,20 @@
 "F64": "The two captures are identical",
 "F65": "Nothing a user sees in the metrics changes",
 "F66": "This oracle reads layout and dependencies only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run and the handler-order pin at the end of each slice",
+"F67": "Read the compiled production assembly for every type the eleven Flow metrics contract files declare, eighteen types with their records and companion interface, by name",
+"F68": "Each sits in the Flow metrics module's Application namespace exactly, not in another layer, and no type of the same name is left under Services; a type that has not moved is named as missing from Application and as left behind",
+"F69": "A developer finds the Flow metrics contract in the module's Application layer, nowhere else",
 "F7": "The five pure Flow metrics calculators (PercentileCalculator, XmRCalculator with XmRResult, SleRiskCalculator, BaselineValidationService with BaselineValidationResult) live in Lighthouse.Backend.Modules.FlowMetrics.Domain, and that Domain reaches only the shared kernel and the base library",
+"F70": "A copy of a contract type kept under a namespace other than Services, for example the API or the module's Domain, next to the moved one",
+"F71": "Read the production project's source folders for the eleven contract files",
+"F72": "Each file sits in the module's Application folder and no file of the same name sits anywhere else in the production project",
+"F73": "The folder a developer opens matches the namespace the contract declares",
+"F74": "A file in the right folder whose namespace line was not changed; the contract placement test catches that one",
+"F75": "Run the Architecture tests after the move, the calculation placement, the Domain rule and the event-handler order pin included",
+"F76": "Every earlier layer check and the handler-order pin stay green with only using and namespace edits",
+"F77": "Moving the contract changes nothing already in place, and the metrics handlers still run in the same order",
+"F78": "A behaviour change in a metrics service that no architecture test reads; the existing unit and integration suites and the answer capture own that",
+"F79": "This oracle reads layout only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice",
 "F8": "The Flow metrics contract (the two metrics-service interfaces with their records, the snapshot writer, series query, gap reconciler, history-filler and snapshot-repository interfaces) lives in Lighthouse.Backend.Modules.FlowMetrics.Application",
 "F9": "The Flow metrics implementations (the three metrics services, cache key, percentile families, blocked-count series builder, snapshot writers, series queries, gap reconciler, reconstruction memo, retention edge, fill target) live in Lighthouse.Backend.Modules.FlowMetrics.Application"
 },

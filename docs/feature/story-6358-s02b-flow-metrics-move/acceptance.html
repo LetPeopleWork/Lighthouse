@@ -331,6 +331,108 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>host (root), at slice end and feature end</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled production assembly for every type the eleven Flow metrics contract files declare, eighteen types with their records and companion interface, by name
+</code></pre>
+
+<pre><code>Each sits in the Flow metrics module&#x27;s Application namespace exactly, not in another layer, and no type of the same name is left under Services; a type that has not moved is named as missing from Application and as left behind
+</code></pre>
+
+<pre><code>A developer finds the Flow metrics contract in the module&#x27;s Application layer, nowhere else
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsContract_LivesInTheModuleApplication_AndNoneOfItIsLeftUnderServices</p>
+
+<pre><code>A copy of a contract type kept under a namespace other than Services, for example the API or the module&#x27;s Domain, next to the moved one
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the production project&#x27;s source folders for the eleven contract files
+</code></pre>
+
+<pre><code>Each file sits in the module&#x27;s Application folder and no file of the same name sits anywhere else in the production project
+</code></pre>
+
+<pre><code>The folder a developer opens matches the namespace the contract declares
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsContractFiles_SitInTheModuleApplicationFolder_AndNowhereElse</p>
+
+<pre><code>A file in the right folder whose namespace line was not changed; the contract placement test catches that one
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the Architecture tests after the move, the calculation placement, the Domain rule and the event-handler order pin included
+</code></pre>
+
+<pre><code>Every earlier layer check and the handler-order pin stay green with only using and namespace edits
+</code></pre>
+
+<pre><code>Moving the contract changes nothing already in place, and the metrics handlers still run in the same order
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture (FlowMetricsModuleLayoutArchUnitTest earlier tests, DomainEventHandlerOrderPinTest)</p>
+
+<pre><code>A behaviour change in a metrics service that no architecture test reads; the existing unit and integration suites and the answer capture own that
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them
+</code></pre>
+
+<pre><code>The two captures are identical
+</code></pre>
+
+<pre><code>Nothing a user sees in the metrics changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>This oracle reads layout only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice
+</code></pre>
+
+<p>host (root), at slice end and feature end</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
