@@ -90,7 +90,7 @@ product docs and images and none of those change. Release notes: none at finaliz
 | D-6538-5 | **`CLAUDE.md` gets three lines:** the service-port rule (new acceptance scenarios go to the port), the pointer to the skill, the load instruction. T5's longer bullet is cut to the rule and its body moves into `references/backend.md`. **No Story, slice or ADR number appears in the three lines** | Maintainer's decision. The convention appears once. Numbers archive |
 | D-6538-6 | **The fast cycle rule is carried, not left as a pointer.** `CLAUDE.md` stays the rule's home (T6 step 06-05). A **short text** of the rule sits in `SKILL.md`, and the same short text sits in the DELIVER dispatch wording. DELIVER proves by `git grep` that the skill's text and the dispatch wording both contain the rule's distinctive phrases as `CLAUDE.md` words them | The brief says the skill and every DELIVER dispatch carry it. A copy is allowed here because a grep checks it |
 | D-6538-7 | **The pyramid goes in once, as a layer rule and a direction:** "a test lands in the lowest layer that can prove it; moving down beats the share; time is the gate". The shares are stated as the direction only. **No dated counts in the skill**; the live ones come from T9's `--pyramid` once it exists | Counts go stale the week after they are written |
-| D-6538-8 | **PENDING the maintainer, out of slice B until answered:** the "Where to test" bullet in `docs/ci-learnings.md` becomes a one-line pointer to the skill. The brief did not list that file | One home is better, but the file is the maintainer's to widen. Until then the bullet stays and the skill does not claim to replace it |
+| D-6538-8 | **YES, answered by the maintainer 2026-11-08; in slice B:** the "Where to test" bullet in `docs/ci-learnings.md` becomes a one-line pointer to the skill. The brief did not list that file | One home is better, and the maintainer widened the file's scope on 2026-11-08, so slice B makes the bullet the pointer |
 | D-6538-9 | **No new guard and no edit to an existing guard or its message.** A gap found while writing the skill goes to the list "Candidates for a tool" below | The brief's OUT list. A guard is its own Story |
 | D-6538-10 | **The audit is read-only, sampled by a fixed rule, and its verdict rule is written before the numbers** ("The audit") | A rule fixed afterwards fits the answer |
 | D-6538-11 | **Two slices.** A: audit and the frontend half. B: the backend half, `CLAUDE.md`, the trial, the record. Peer review of this design is left to the orchestrator, as T9 and T12 did | See "Slices" |
@@ -237,14 +237,14 @@ record says so.
 | DEVOPS and DISTILL of this Story | Not run | Waves go in order; nothing is skipped |
 
 Only the backend half, the cut of the bullet and the fast cycle text need T5 or T6. The audit and the frontend half need none of them. **If the maintainer wants
-slice A before T5, say so; the default stays the brief's order.**
+slice A before T5, say so; the default stays the brief's order.** Answered 2026-11-08: slice A starts now, beside T5's DELIVER, provided it touches no file T5 touches.
 
 ## Wave: DESIGN / [REF] Slices
 
 | Slice | Days (est.) | Delivers | Needs |
 |---|---|---|---|
-| A | 1 | The audit and its record; creates `.claude/skills/test-writing/` with `SKILL.md` and `references/frontend.md`; a `nw-skill-reviewer` pass | Nothing hard. T12 is soft; T5 per the brief's order |
-| B | 1 | `references/backend.md`; the fast cycle text in `SKILL.md`; the three `CLAUDE.md` lines and the cut of T5's bullet; the trial; the closing record with the deferred check open. **Not** the ledger pointer (D-6538-8) until the maintainer answers | T5 done; T6 step 06-05 done |
+| A | 1 | The audit and its record; creates `.claude/skills/test-writing/` with `SKILL.md` and `references/frontend.md`; a `nw-skill-reviewer` pass | Nothing hard. T12 is soft. Starts now, beside T5 (2026-11-08), touching no file T5 touches |
+| B | 1 | `references/backend.md`; the fast cycle text in `SKILL.md`; the three `CLAUDE.md` lines and the cut of T5's bullet; the trial; the closing record with the deferred check open. the ledger pointer (D-6538-8, yes on 2026-11-08): the "Where to test" bullet in `docs/ci-learnings.md` becomes a one-line pointer to the skill | T5 done; T6 step 06-05 done |
 
 **Proof for each.**
 
@@ -265,7 +265,7 @@ slice A before T5, say so; the default stays the brief's order.**
 | Existing | Overlap | Decision | Contract shape, universe |
 |---|---|---|---|
 | `.claude/skills/visualization/` layout | Skill with `references/` | REUSE the layout | Files only, no effect |
-| Ledger "Where to test" bullet | Same how-to | **PENDING** the maintainer (D-6538-8) | Documentation, no effect |
+| Ledger "Where to test" bullet | Same how-to | **YES**, maintainer 2026-11-08 (D-6538-8), slice B | Documentation, no effect |
 | T5's `CLAUDE.md` bullet | Same convention | MODIFY: cut to the rule, body moves | Documentation, no effect |
 | T6's fast cycle rule | The cycle | CARRY a short text in skill and dispatch; home stays `CLAUDE.md`; a search checks the three agree | Documentation, no effect |
 | `nw-skill-reviewer` | Skill structure and scope | REUSE | Read-only agent |
@@ -312,7 +312,7 @@ C4Container
 
 ## Wave: DESIGN / [REF] Open for the maintainer
 
-1. **Start of slice A before T5?** The audit and the frontend half need nothing from T5. Recommend: keep the brief's order (T5 first); say so if you want the audit earlier.
+1. **Start of slice A before T5?** (Answered yes, 2026-11-08; points 1, 2, 3 and 4 below are answered in "Maintainer decisions (2026-11-08)".) The audit and the frontend half need nothing from T5. Recommend: keep the brief's order (T5 first); say so if you want the audit earlier.
 2. **Candidate tools** (three, above). Recommend 1 and 3 as small Stories after T11; 2 only once the existing hits are counted. Candidate 3 touches your hook settings, which no agent changes unasked.
 3. **The ledger pointer (D-6538-8) is pending.** It edits `docs/ci-learnings.md`, which the brief did not list. Recommend yes, to keep one home. It stays out of slice B until you answer; with no answer the bullet stays.
 4. **The trial's feature.** Story 6501 is a candidate, not checked. Any small delivered feature with DISTILL scenarios will do.
@@ -327,7 +327,7 @@ The review came back NEEDS_REVISION. What changed:
 - **Verdict rule:** four exhaustive bands, each on the lower end of the 95 % interval of a named statistic (a test-count-weighted share).
 - **Audit frame:** recounted by area on 2026-11-07, 408 files (the review's glob said 410, left open). Groups, quotas, rounding and pick step are in a table; the Reports group uses the exact paths `pages/Common/Reports` and `pages/Reports`. Read cost is about 715 tests, not 1,000. The redundant "start at the first" term is dropped.
 - **Mutation:** N/A kept: nothing to mutate, the deliberate break standing in, the acceptance noted as recorded in the run's marker.
-- **D-6538-8** is pending and out of slice B; it is an open item.
+- **D-6538-8** was answered yes on 2026-11-08 and is in slice B.
 - **"Enforced today" table** rebuilt with a "Planned" column and a "not enforced" column: the shuffle is frontend only, timeout and retry are unenforced, `TestHostPerFixtureGuardTest` is the host-per-fixture ratchet only, fixture size has no check, the loading and failure rule is documented and not enforced, and T9's limits and `TestHostUseGuardTest` moved to "planned".
 - **Frontend fake** named: `vi.useFakeTimers({ shouldAdvanceTime: true })`, found in three test files, beside `FakeLighthouseClock`.
 - **The CSV** is the `test-timings-frontend` artifact of a named green `main` run; the record names it.
@@ -357,7 +357,7 @@ and their instructions.
 ```
 
 New: the skill (three files), the audit record, the trial record. Modified: `CLAUDE.md` (three lines, T5's bullet cut). The ledger's "Where to
-test" bullet is modified only if the maintainer says yes. Unchanged: every driving adapter, application service, port, domain Model and driven adapter, every guard, Playwright.
+test" bullet is modified in slice B (the maintainer said yes on 2026-11-08). Unchanged: every driving adapter, application service, port, domain Model and driven adapter, every guard, Playwright.
 New external call: none.
 
 **Patterns weighed.**
@@ -401,7 +401,7 @@ Read from `ci.yml`, `pages.yml` and `docs/_config.yml`, and checked against real
 | `.claude/skills/**` | **No run.** Not in the `paths` list | No run |
 | `CLAUDE.md` | **No run** | No run |
 | `docs/feature/**` (this delta, the audit record, the trial scenarios) | **No run** | **Runs**, about 40 seconds. The site excludes `feature`, so the build leaves it out, but the workflow still starts |
-| `docs/ci-learnings.md` (only if the pointer is approved) | **No run** | **Runs**, and the page is published |
+| `docs/ci-learnings.md` (the pointer was approved 2026-11-08) | **No run** | **Runs**, and the page is published |
 
 `ci.yml`'s push `paths` are the backend, backend tests, E2E and frontend folders, `ci*.yml`, `.github/actions`, `.github/scripts`,
 `Scripts/test-timings`, `examples/postgres`, `Dockerfile`, `.nvmrc`, `.dockerignore`, `LICENSE` and `NOTICE`. None of T11's paths is in it.
@@ -484,7 +484,7 @@ A wrong rule in the skill needs no revert: it is a one-line edit of a Markdown f
 
 ## Wave: DEVOPS / [REF] For the maintainer
 
-Nothing new needs you here. What is still open is DESIGN's list, unchanged: the ledger pointer, the order of slice A against T5, the three tool
+Nothing new needs you here. DESIGN's list was answered on 2026-11-08 (see "Maintainer decisions (2026-11-08)"); what follows is the list as it stood: the ledger pointer, the order of slice A against T5, the three tool
 candidates, the trial's feature, and the audit's verdict when it exists. One thing to know: a `docs/**` push redeploys the documentation site
 whether or not any page changed.
 
@@ -593,8 +593,8 @@ Ranges for C-5:
 | Range | Allowed paths | Must not appear |
 |---|---|---|
 | The audit's commits (slice A) | `docs/feature/story-6538-t11-test-writing-guidance/` only | Anything under `Lighthouse.Frontend`, `Lighthouse.Backend`, `Lighthouse.EndToEndTests` |
-| Slice A's commits | The above, `.claude/skills/test-writing/` | Any guard test, budget file, script under `Scripts/test-timings`, workflow, `docs/ci-learnings.md` |
-| Slice B's commits | Slice A's, `CLAUDE.md` | The same, `docs/ci-learnings.md` included while the maintainer has not answered |
+| Slice A's commits | The above (the audit record is `docs/feature/story-6538-t11-test-writing-guidance/audit/frontend-audit.md`), `.claude/skills/test-writing/` | Any guard test, budget file, script under `Scripts/test-timings`, workflow, `docs/ci-learnings.md` |
+| Slice B's commits | Slice A's, `CLAUDE.md`, `docs/ci-learnings.md` (the "Where to test" bullet only, answered yes 2026-11-08) | The same list as slice A's, minus those three paths |
 | The trial | `docs/feature/story-6538-t11-test-writing-guidance/trial/` | Any test project or other workspace |
 | The unpushed range | Under `docs/`, under `.claude/`, or `CLAUDE.md` | Anything else |
 
@@ -674,7 +674,7 @@ Last completed row: <id>
 | No trial feature fits (B-7) | The scenario count | Using a large one |
 | The unpushed range holds a path outside the allowed set (C-5) | The range diff | Pushing |
 | A gap in a guard or a budget is found while writing | Reading it | Editing the guard; it goes on the candidate list, and the work goes on |
-| The ledger pointer is unanswered | The maintainer's answer is absent | Touching `docs/ci-learnings.md` |
+| The ledger pointer: answered yes 2026-11-08, so this row no longer stops anything. The edit is limited to the "Where to test" bullet | `git diff` of `docs/ci-learnings.md` shows only that bullet | Editing any other line of the file |
 
 ## Wave: DISTILL / [REF] Coverage
 
@@ -697,7 +697,7 @@ No share is given for errors: seven of the 31 rows are checks whose whole job is
 | Brief: the pyramid as a direction, time the hard rule | A-11 |
 | Brief: rules per half, including the deliberate break | A-9, A-10, B-2 |
 | DESIGN "what can lie" rows | C-1 (cut file), C-2 (missing names), C-3 (changed quotes), B-6 (drift), B-9 and B-11 (primed trial), B-13 (forgotten load), A-1 to A-6 (biased sample, seconds), B-2 (Stryker config) |
-| DESIGN: no new guard; ledger pointer pending | C-5 |
+| DESIGN: no new guard; ledger pointer answered yes | C-5 |
 | DEVOPS: by-hand searches with pasted output; push check; secret scan; expiring CSV | Every search row, C-5, C-6, A-6 |
 
 **Driving ports.** The reader of the skill is a subagent with `ctx_read`: C-1, B-10. The orchestrator's dispatch: B-5, B-9. The maintainer's read of the record: A-7, B-13. Beyond files, `git`, `gh` and Vitest's listing, all read-only, there is no adapter with real I/O.
@@ -760,10 +760,10 @@ The first review came back NEEDS_REVISION. What changed:
 
 Nothing here blocks DELIVER, apart from the order the brief already sets.
 
-1. **Slice B cannot start** until T5 and T6's step 06-05 are on `main` (B-1). Slice A can start after T5, or earlier if you say so.
+1. **Slice B cannot start** until T5 and T6's step 06-05 are on `main` (B-1). Slice A starts now, beside T5's DELIVER (answered 2026-11-08).
 2. **The trial's feature is unchecked for size.** Story 6501 is a candidate; B-7 sets the limit and takes the next one if it does not fit.
 3. **The trial does not measure the tag rule.** The wording carries your no-tags sentence, so a clean tag search says nothing about the skill (B-11).
-4. **Still yours from DESIGN:** the ledger pointer, the three tool candidates, and the audit verdict when it exists.
+4. **Answered 2026-11-08:** the ledger pointer is yes (slice B); the three tool candidates stay out of T11 and become small Stories after it. **Still yours:** the audit verdict when it exists.
 
 ## Wave: DISTILL / [REF] Open for DELIVER
 
@@ -771,3 +771,17 @@ Nothing here blocks DELIVER, apart from the order the brief already sets.
 - Pick the CSV run on the day (A-6). Run 42372930241 was seen to hold it, with no expiry before 2027-02-05.
 - Choose the fast cycle rule's phrases from `CLAUDE.md` once step 06-05 has written it, and T5's phrase from its bullet before the cut; paste both first (B-3, B-6).
 - No title, comment or file carries a tag. Nothing in `ci*.yml` changes.
+
+## Wave: DELIVER / [REF] Maintainer decisions (2026-11-08)
+
+These answer DESIGN's open points and supersede any earlier line that waits on them.
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | Start slice A before T5 (DESIGN open point 1)? | **Yes.** Slice A starts now, beside T5's DELIVER. It touches no file T5 touches (T5 works under `Lighthouse.Backend/Lighthouse.Backend.Tests/`); its allowed paths are the feature workspace and `.claude/skills/test-writing/` |
+| 2 | Ledger pointer (D-6538-8)? | **Yes.** Slice B makes the "Where to test" bullet in `docs/ci-learnings.md` a one-line pointer to the skill. One home. No other line of that file changes |
+| 3 | The trial's feature? | **Story 6501** (ordered parent sources), subject to B-7's size check; the next feature that fits if it does not |
+| 4 | Candidate tools? | **Out of T11.** Small Stories after it |
+| 5 | Rigor | `standard` (agreed 2026-11-07, recorded in `.nwave/afk.json`): crafter model sonnet, reviewer model haiku |
+
+Roadmap: `deliver/roadmap.json`, two steps, one per slice.

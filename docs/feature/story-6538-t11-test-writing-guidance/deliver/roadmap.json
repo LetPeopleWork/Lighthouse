@@ -1,0 +1,121 @@
+{
+  "roadmap": {
+    "project_id": "story-6538-t11-test-writing-guidance",
+    "created_at": "2026-11-08T08:02:31Z",
+    "total_steps": 2
+  },
+  "phases": [
+    {
+      "id": "01",
+      "name": "Slice A: the audit and the frontend half of the test-writing skill",
+      "steps": [
+        {
+          "id": "01-01",
+          "name": "Audit the frontend test layer, record its verdict, and create the test-writing skill with SKILL.md and the frontend reference",
+          "description": "Read-only audit of how much of the .tsx test layer is logic (410 files by git ls-files on 2026-11-07, 50 sampled by the fixed rule, two raters, percentile bootstrap), recorded with its verdict block as the last thing in the record. Then create .claude/skills/test-writing/ with SKILL.md (checklist first, layer rule, can-it-fail rule, pyramid as a direction) and references/frontend.md (seven rules, each with a title, a measured finding in words and one example). Finish with a nw-skill-reviewer pass.",
+          "criteria": [
+            "The record holds the commit, the file count per group and quotas recomputed from the git ls-files count that add to 50; any difference between Vitest's listing and git ls-files is named file by file, and an unexplained difference stops the audit",
+            "The picks can be redone from the rule (i-th pick at position ceil(i x files / quota), sorted by path), with positions computed at DELIVER time from the Vitest listing and the 410-file git ls-files count (not hard-coded from the earlier 408): the smallest and largest group are redone by hand and match, the last pick of each group is its last file, and if pages/Settings still has 28 files with quota 3 the positions are 10, 19 and 28",
+            "Every one of the 50 sampled files has a row with tests, logic, UI and mixed counts, an extraction class and a call; the test counts add to the sample total; the record states the call is a label for the reader and plans nothing",
+            "A second rater reads the same 10 files blind; agreement is the unrounded share of tests with the same label and 0.80 or more stands (kappa reported, not gating); below 0.80 the disagreeing tests are listed, the labelling rule's wording (the section What is decided per test) is tightened with them as examples, both raters redo those 10 files and the first rater also re-reads, in the other 40 files, every test of a kind that disagreed; one round only, and a second miss marks the headline low confidence",
+            "The verdict takes the band from the lower end of a percentile-bootstrap interval (files resampled within group, 10,000 resamples, seed 6538, 2.5th and 97.5th percentiles), with N and its source and the method line printed; git diff of the verdict rule's text against the DESIGN commit 3ad54cfa0, and of the band wording against the DISTILL commit f249408df, prints nothing (only the labelling rule's wording may change after a number is seen, and only through the agreement round; the verdict rule and the band wording may not, and an edit is a STOPPED block)",
+            "The ten files with the most seconds come from the test-timings-frontend artifact of a named green main run, with the run id and ten rows pasted and none entering the estimate unless the pick rule chose it; if the file has expired another green run is named, and only if no green run holds it does the seconds line read unavailable with the headline standing on the shares",
+            "The record ends with the verdict block (counts, N, Low/Middle/High with intervals, seconds, agreement and confidence, band wording, what the maintainer decides) as its last section, and a search of the roadmap files in the slice's changed paths for the words rewrite and move prints no step to rewrite or move a test (output pasted); the verdict block is last",
+            "The folder .claude/skills/test-writing/ holds SKILL.md and references/frontend.md, and the checklist is the first section of SKILL.md",
+            "references/frontend.md holds the seven rules (logic on the function not through a render; one render per wiring; small fixtures; fake clock with vi.useFakeTimers({ shouldAdvanceTime: true }) and no sleep; no testTimeout or retry as the fix; no order dependence; a new view pins its loading look and its failure look), each with a title, a measured finding in words and one example, and the three counts are equal",
+            "SKILL.md states that a check that cannot fail is not a check, with a title, a finding and an example: delete the production line and the test must go red; a test-only change has nothing to mutate, so the deliberate break is the proof, not optional",
+            "The pyramid appears once as a direction and a layer rule (the lowest layer that can prove it; time is the gate), no share is written as a gating limit, and no dated count appears",
+            "SKILL.md and frontend.md each end with a line End of <file>, and a ctx_read in full mode with fresh=true shows that last line; a deliberately short read is pasted without it to show the check can fail",
+            "Every identifier, script, folder and tool the skill names is found by a search of the tree on the day (listed in the record, a known-missing name run to show an empty result), or its line reads planned: <role> with no number; the backend names that T5 will add are marked planned",
+            "Every guard message quoted in the skill (the frontend per-test limit, whose source is the Vitest reporter timeBudgetReporter.ts and slowTests.ts under Lighthouse.Frontend/src/tests/timeBudget/) is found by git grep in that guard's source at HEAD, and git diff --stat HEAD for that file prints nothing; otherwise the work stops",
+            "One search over the skill folder finds nothing for the three pattern lists (internal references: hash and four digits, Story, slice, ADR-, task names; nWave scenario tags; dated counts), each list first run on a file known to hold one of its items (planted-fault rule), and the skill says no nWave scenario tags in words; list 1 covers a hash with four digits, Story, slice, ADR- and task names such as FE7 and T5; list 2 covers @us-, @slice-, @kpi-, @contract-shape, @walking_skeleton, @driving_port, @real-io, @BUG-; list 3 covers the dated counts 3,648; 5,857; 9,505; 22,600",
+            "Each commit range changes only its allowed paths: the audit's commits only the feature workspace; slice A's commits also .claude/skills/test-writing/; nothing under Lighthouse.Frontend, Lighthouse.Backend, Lighthouse.EndToEndTests, no guard test, budget file, Scripts/test-timings script, workflow, docs/ci-learnings.md or CLAUDE.md; git diff --name-only and git status --short are pasted",
+            "The skill examples hold nothing token-shaped and the commit secret scan passes with no bypass",
+            "nw-skill-reviewer, told an untagged example is correct here and run on the reviewer model, leaves no critical point open after at most two rounds, with the verdict per round recorded"
+          ],
+          "test_file": "docs/feature/story-6538-t11-test-writing-guidance/feature-delta.md",
+          "scenario_name": "Slice A scenarios A-1 to A-11 and the end-of-slice checks C-1 to C-7 (C-3 for the frontend per-test limit only)",
+          "dependencies": [],
+          "files_to_modify": [
+            ".claude/skills/test-writing/SKILL.md",
+            ".claude/skills/test-writing/references/frontend.md",
+            "docs/feature/story-6538-t11-test-writing-guidance/audit/frontend-audit.md",
+            "docs/feature/story-6538-t11-test-writing-guidance/feature-delta.md"
+          ],
+          "implementation_notes": "Maintainer decision 2026-11-08: slice A starts now, beside T5's DELIVER, earlier than T5. It must not touch any file T5 touches (T5 works under Lighthouse.Backend/Lighthouse.Backend.Tests/); the allowed set is the feature workspace and .claude/skills/test-writing/ only. The audit is read-only and edits no test; the verdict rule and the band wording are fixed in DESIGN and DISTILL and are never edited after a number is seen (STOPPED block if they were). No rewrite is planned under any band. The audit record is written to docs/feature/story-6538-t11-test-writing-guidance/audit/frontend-audit.md, inside the allowed workspace path. Rigor profile standard, agreed by the maintainer 2026-11-07 (recorded in .nwave/afk.json): crafter model sonnet, reviewer model haiku, passed explicitly on every dispatch; the second rater and the skill reviewer are separate dispatches from the writer. Planted-fault rule (D-6538-21): every scenario names how it can fail, and where a check could pass by luck a planted fault is run once (a read cut short for the last-line check, a known-missing name for a names search, a known-present pattern for a search that must print nothing). Stop form (D-6538-28): one dated block only, STOPPED <date>, row <id>, then Evidence: <the output, pasted>, then Last completed row: <id>. The same row fails a second time means the same row and the same pattern after one fix of the text; the row's own search is then run again and never edited. Rules in skill text: no nWave scenario tags, and no Story, slice, ADR or D-number cited as an explanation; each rule cites its measured finding in words (a page test rendering a large list cost seconds, the same rule on the function cost milliseconds). Scenario ids (A-, B-, C-) live only in this roadmap and the delta, never in the skill. Every file ends with an End of <file> line, quoted back after a full fresh ctx_read. A gap found in a guard goes on the candidate list; no guard is edited. If the push range holds another session's code, do not push. Candidate tools stay out of T11.",
+          "estimated_size": "1 day"
+        }
+      ]
+    },
+    {
+      "id": "02",
+      "name": "Slice B: the backend half, the CLAUDE.md lines, the trial and the closing record",
+      "steps": [
+        {
+          "id": "02-01",
+          "name": "Write the backend reference and the fast cycle text, add the three CLAUDE.md lines and the ledger pointer, run the trial, and close the record with the deferred check open",
+          "description": "Add references/backend.md (six rules), the short fast cycle text in SKILL.md, the three CLAUDE.md lines (service-port rule, pointer to the skill, load instruction in the Wave section) with T5's bullet cut to the rule and its body moved into backend.md, and the ledger pointer in docs/ci-learnings.md. Write the DELIVER dispatch wording and the checklist's minimum items into the delta, run one nw-acceptance-designer trial on a small delivered feature, have a separate reviewer read it against the checklist, and write the closing record with the deferred check open.",
+          "criteria": [
+            "Before anything is written for the backend half, a search finds the four T5 names (ServicePortHarness, WireContractTest, TestHostUseGuardTest, Test-Fast.ps1) and the fast cycle rule in CLAUDE.md in the working tree (after git merge --ff-only origin/main), each with its hit; an empty hit means STOPPED and nothing is written for the backend half",
+            "references/backend.md holds six rules (a new acceptance scenario goes to the service port; a host test only as a named skeleton or in Contracts; the rule by a unit test and the wiring by one host test; no shared state across fixtures; fake clock with FakeLighthouseClock and never the ambient clock; a feature's mutation config names Tests.Acceptance.<Feature> with the reason that the folder is outside the integration filter), each with a title, a measured finding in words and one example",
+            "The distinctive phrase of T5's bullet is copied and pasted first into the record before the bullet is cut; a search for it afterwards prints references/backend.md and the one rule line of CLAUDE.md only, and CLAUDE.md keeps no long body",
+            "git diff of CLAUDE.md shows exactly three lines added (the service-port rule, the pointer to the skill, the load instruction), the load line sits in the Wave section and names DISTILL, DELIVER and reviewers, and T5's bullet is the rule line",
+            "The three CLAUDE.md lines hold no Story, slice or ADR number, shown by one search for the number patterns over CLAUDE.md",
+            "The delta gains the section Wave: DELIVER / Dispatch wording that names the skill, carries the read instruction (ctx_read in full mode, fresh, quote the last line back) and carries the fast cycle rule's distinctive phrases",
+            "The fast cycle rule's distinctive phrases, chosen from CLAUDE.md and pasted first, are all found in CLAUDE.md, SKILL.md and the dispatch wording section, including the clause that a step whose behaviour lives in a .test.tsx or an integration test also runs its own named test; the three agree",
+            "docs/ci-learnings.md has its Where to test bullet turned into a one-line pointer to the skill, so the guidance has one home, and no other line of that file changes",
+            "The trial's feature is Story 6501 (ordered parent sources) if its workspace has a DISTILL section and about 20 scenarios or fewer, with the count written; otherwise the next feature that fits, and if none fits STOPPED",
+            "The checklist's minimum items are written into the delta section Skill checklist, minimum items and committed before the trial runs (git log shows the order): at least one item for each rule of the frontend half, the deliberate break, each backend rule, the load-and-quote item and the fast cycle item",
+            "The trial wording equals the frozen wording with only the angle-bracket parts filled, is pasted unchanged into the record, and holds no phrase of any checklist item except the project's no-tags sentence, which is named and exempt",
+            "The trial is one nw-acceptance-designer dispatch on the agent model, writing scenario text only into docs/feature/story-6538-t11-test-writing-guidance/trial/ and no test or production file; its report quotes End of SKILL.md and the last line of the half it read; a missing quote voids the trial (one rerun after shortening, a second miss is a stop)",
+            "A reviewer that wrote neither the skill nor the trial, on the reviewer model, marks every checklist item followed, not followed or not applicable with a quoted line; the tag item is recorded as not measured by the trial",
+            "Each deviation is listed with the output's line and is not fixed silently; any change to the skill is a separate edit after which the searches for the last line, the names, the guard quotes and the three pattern lists run again",
+            "The closing record states the deferred check as open: the next feature's DISTILL writes skill loaded: yes/no, deviations in its feature-delta.md, the maintainer reads it after that DELIVER, status open, never passed or done",
+            "SKILL.md and backend.md each end with a line End of <file>, read with ctx_read in full mode and fresh with the last line quoted, plus one deliberately short read pasted without the line",
+            "Every name the skill gives is found by search or marked planned: <role> with no number, and the four T5 names carry no planned mark; every quoted backend guard message (TestHostPerFixtureGuardTest, TestTierGuardTest, TestHostUseGuardTest) is found by git grep at HEAD, and git diff --stat HEAD for each guard file prints nothing, otherwise the work stops",
+            "One search over the skill folder and the three CLAUDE.md lines finds nothing for the internal-reference, scenario-tag and dated-count lists, each list first run on a file known to hold one of its items",
+            "Slice B's commits change only slice A's allowed paths plus CLAUDE.md and docs/ci-learnings.md; the trial changes only the trial folder; the unpushed range holds only paths under docs/, .claude/ or CLAUDE.md, otherwise do not push",
+            "The examples hold nothing token-shaped and the commit secret scan passes with no bypass; nw-skill-reviewer on the reviewer model leaves no critical point open after at most two rounds"
+          ],
+          "test_file": "docs/feature/story-6538-t11-test-writing-guidance/feature-delta.md",
+          "scenario_name": "Slice B scenarios B-1 to B-13 and the end-of-slice checks C-1 to C-7",
+          "dependencies": [
+            "01-01",
+            "T6 step 06-05 (fast cycle rule on main)",
+            "T5 #6469 delivered and on main (ServicePortHarness, WireContractTest, TestHostUseGuardTest and the fast cycle rule in CLAUDE.md found by search before any backend text is written)"
+          ],
+          "files_to_modify": [
+            ".claude/skills/test-writing/references/backend.md",
+            ".claude/skills/test-writing/SKILL.md",
+            "CLAUDE.md",
+            "docs/ci-learnings.md",
+            "docs/feature/story-6538-t11-test-writing-guidance/feature-delta.md",
+            "docs/feature/story-6538-t11-test-writing-guidance/trial/"
+          ],
+          "implementation_notes": "This step cannot start until step 01-01 is done AND T5 (#6469) is done and on main (and T6 step 06-05, whose fast cycle rule is copied); the first act is the search for the four T5 names and the rule, and an empty hit is a STOPPED block, nothing written. Maintainer decisions 2026-11-08: the ledger pointer is a yes, so this slice edits docs/ci-learnings.md so the Where to test bullet points to the skill, keeping one home; the trial's feature is Story 6501 (ordered parent sources) subject to the size check, else the next one that fits; candidate tools stay out of T11 (small Stories after it). Rigor profile standard, agreed by the maintainer 2026-11-07: crafter model sonnet, reviewer model haiku, passed explicitly on every dispatch; the trial reviewer is never the writer or the trial agent. The trial prompt is the standard dispatch wording with no hint of the checklist and the exempt no-tags sentence; the checklist items are committed before the trial output exists. Same planted-fault rule, stop form and second-time definition as step 01-01 apply. Quote a guard message only from committed source; if the file differs from HEAD, stop. A planned name carries a role, never a number. The three CLAUDE.md lines carry no Story, slice or ADR number; the fast cycle rule stays homed in CLAUDE.md and SKILL.md carries a short text that the grep proves equal. No nWave scenario tags in code or skill text; no internal references (slice ids, D-numbers, ADR numbers) cited as an explanation; skill files end with End of <file> (C-1). Scenario ids stay in this roadmap and the delta only. No new guard and no edit to a guard or its message; gaps go on the candidate list. T11 closes on the deferred-check note, which is recorded open.",
+          "estimated_size": "1 day"
+        }
+      ]
+    }
+  ],
+  "implementation_scope": {
+    "source_directories": [
+      ".claude/skills/test-writing/",
+      "CLAUDE.md",
+      "docs/ci-learnings.md"
+    ],
+    "test_directories": [
+      "docs/feature/story-6538-t11-test-writing-guidance/"
+    ],
+    "excluded_patterns": [
+      "Lighthouse.Frontend/**",
+      "Lighthouse.Backend/**",
+      "Lighthouse.EndToEndTests/**"
+    ]
+  },
+  "validation": {
+    "status": "pending",
+    "reviewer": "orchestrator validator run",
+    "approved_at": "pending"
+  }
+}
