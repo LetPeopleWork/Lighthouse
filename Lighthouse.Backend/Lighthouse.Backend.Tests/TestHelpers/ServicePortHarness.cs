@@ -113,6 +113,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// contexts built on the harness's options: a second context on its own connection, or a bare connection, passes
     /// it by. So a watcher connection also reads SQLite's data version, which moves whenever any other connection
     /// commits to the file. The watcher shares no cache with anyone, as under a shared cache the version would not move.
+    /// An UPDATE that stores the value already there is caught by the counter only. A write rolled back changes nothing
+    /// in the file, so the file never sees it, and the counter names it only if a harness context sent it.
     /// </summary>
     public sealed partial class DatabaseWriteWatch(string databasePath) : DbCommandInterceptor, IDisposable
     {
@@ -186,8 +188,9 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             }
         }
 
-        // EF sends a batch as one command, and any statement in it may be the write.
-        [GeneratedRegex(@"(?:^|;)\s*(?:INSERT|UPDATE|DELETE|REPLACE)\b", RegexOptions.IgnoreCase)]
+        // EF sends a batch as one command, and any statement in it may be the write. A statement that opens with
+        // WITH writes when its named queries are followed by a write rather than by a SELECT.
+        [GeneratedRegex(@"(?:^|;)\s*(?:WITH\b[^;]*?\)\s*)?(?:INSERT|UPDATE|DELETE|REPLACE|CREATE|DROP|ALTER)\b", RegexOptions.IgnoreCase)]
         private static partial Regex AStatementThatWrites();
     }
 }

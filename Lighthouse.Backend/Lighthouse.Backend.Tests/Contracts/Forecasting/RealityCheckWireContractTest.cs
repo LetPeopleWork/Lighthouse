@@ -2,7 +2,9 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Models.Forecast;
+using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Implementation.Licensing;
+using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck;
@@ -353,15 +355,19 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
         }
 
         /// <summary>
-        /// This host swaps the licence for a stand-in, so a port fixture compared with the host as it runs here
-        /// would be compared with the swaps. The licence shows which of the two the comparison reads.
+        /// This host swaps the licence for a stand-in and the access check for one that reads the test caller's
+        /// claims, so a port fixture compared with the host as it runs here would be compared with the swaps. The
+        /// licence and the access check show which of the two the comparison reads.
         /// </summary>
         [Test]
         public void The_port_fixtures_are_compared_with_the_host_before_this_fixture_swapped_anything()
         {
-            var licenceBeforeTheSwaps = new PortFixtureLifetimes(hostAsItIs).OnTheHost(typeof(ILicenseService));
+            var hostBeforeTheSwaps = new PortFixtureLifetimes(hostAsItIs);
+            var licenceBeforeTheSwaps = hostBeforeTheSwaps.OnTheHost(typeof(ILicenseService));
+            var accessCheckBeforeTheSwaps = hostBeforeTheSwaps.OnTheHost(typeof(IRbacAdministrationService));
             using var scope = NewScope();
             var licenceThisHostAnswersWith = scope.ServiceProvider.GetRequiredService<ILicenseService>();
+            var accessCheckThisHostAnswersWith = scope.ServiceProvider.GetRequiredService<IRbacAdministrationService>();
 
             using (Assert.EnterMultipleScope())
             {
@@ -371,6 +377,11 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
                     "the comparison reads the product's own licence, not the stand-in");
                 Assert.That(licenceThisHostAnswersWith, Is.Not.InstanceOf<LicenseService>(),
                     "the host these scenarios run on answers with the stand-in, so the swap came after the reading");
+                Assert.That(accessCheckBeforeTheSwaps, Is.Not.Null, "the host registers an access check");
+                Assert.That(PortFixtureLifetimes.WhatIsBuilt(accessCheckBeforeTheSwaps!), Is.EqualTo(typeof(RbacAdministrationService)),
+                    "the comparison reads the product's own access check, not the one the test sign-in puts in");
+                Assert.That(accessCheckThisHostAnswersWith, Is.InstanceOf<ClaimsDrivenRbacAdministrationService>(),
+                    "the host these scenarios run on answers with the test sign-in's access check");
             }
         }
 
@@ -532,10 +543,10 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
                 Assert.That(answer.TeamId, Is.EqualTo(teamId));
                 Assert.That(answer.TeamName, Is.EqualTo("Ocean Explorer"));
 
-                // What these two say is worked out in the controller and is not pinned here, only that they are
-                // there under these names.
-                Assert.That(answer.FilterApplied, Is.True.Or.False);
-                Assert.That(answer.ExcludedSummary, Is.Null.Or.Not.Empty);
+                // Ocean Explorer is seeded with no forecast filter, so the controller reports none applied and
+                // nothing left out.
+                Assert.That(answer.FilterApplied, Is.False);
+                Assert.That(answer.ExcludedSummary, Is.Null);
 
                 Assert.That(answer.AnchorDate, Is.EqualTo(TodayDay));
                 Assert.That(answer.ConfidenceLevels, Is.EqualTo(TheConfidenceLevels));

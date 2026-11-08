@@ -11,7 +11,8 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
     /// passes on it that a real caller could never see. This compares a port fixture's registrations with the
     /// host's, by service type and lifetime, and by what is built for them. The stand-ins a port fixture puts in
     /// on purpose (the licence, the settings, the scripted forecast, the clocks and the pinned random draws) are
-    /// compared by lifetime only.
+    /// compared by lifetime only. Any other service a factory builds on both sides is reported, as what two
+    /// factories return cannot be told apart without running them.
     /// </summary>
     internal sealed class PortFixtureLifetimes(IReadOnlyList<ServiceDescriptor> hostRegistrations)
     {
@@ -54,6 +55,11 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
 
             var builtAtThePort = WhatIsBuilt(port);
             var builtOnTheHost = WhatIsBuilt(onTheHost);
+            if (builtAtThePort == null && builtOnTheHost == null)
+            {
+                return $"{port.ServiceType.Name} cannot be compared: a factory builds it on both sides";
+            }
+
             return builtAtThePort == builtOnTheHost
                 ? null
                 : $"{port.ServiceType.Name} is built as {Named(builtAtThePort)} at the port and as {Named(builtOnTheHost)} on the host";

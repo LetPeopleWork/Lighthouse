@@ -230,6 +230,8 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         [TestCase("INSERT INTO Scratch (Value) VALUES (3) RETURNING Value", true, true)]
         [TestCase("UPDATE Scratch SET Value = 4 RETURNING Value", true, false)]
         [TestCase("DELETE FROM Scratch RETURNING Value", true, true)]
+        [TestCase("CREATE TABLE Another (Value INTEGER NOT NULL)", false, false)]
+        [TestCase("WITH Next AS (SELECT 5 AS Value) UPDATE Scratch SET Value = (SELECT Value FROM Next)", false, true)]
         public async Task A_statement_that_writes_is_named_whether_it_returns_rows_or_not(string statement, bool returnsRows, bool sentAsync)
         {
             using var harness = new ServicePortHarness();
