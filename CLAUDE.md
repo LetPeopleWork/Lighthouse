@@ -81,6 +81,13 @@ and EXAMINE carry the TDD discipline, so no reviewer may approve a slice whose R
 - **Jev is refused** (`"jev": "unauthorized"` in `~/.nwave/config.json`): no code goes to the remote Jev service.
   Never pass `--jev` to override it.
 - **More than 5 slices means more than one nwdes feature.** Split along the Story boundaries in ADO.
+- **Our test rules reach the roles through `--root-context`.** In nWave 4, DISTILL is the acceptance
+  designer writing each slice's oracle inside the nwdes route, and its prompt is passed verbatim. So every
+  `nwdes prompt` for the acceptance designer, the crafter and the reviewers carries a `--root-context` that
+  says: read the test-writing skill and the half for the stack in full and quote the last line of each back;
+  scenarios drive the application-service port; no nWave scenario tags; the sketch and loading/failure
+  decisions from `feature-delta.md`; the fast loop. Where nWave's own test rules disagree (its nine-run
+  per-test timing, its PBT density), the test-writing skill wins; say so in the context.
 - Features delivered before 2026-11-08 keep their `deliver/roadmap.json`; they are history, not something
   to resume.
 
