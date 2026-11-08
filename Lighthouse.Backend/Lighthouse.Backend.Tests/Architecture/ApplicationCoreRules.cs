@@ -136,10 +136,15 @@ namespace Lighthouse.Backend.Tests.Architecture
             var subjects = subjectTypes.ToHashSet(StringComparer.Ordinal);
             var namespaces = $"^({string.Join("|", subjectTypes.Select(NamespaceOfFullName).Distinct(StringComparer.Ordinal).Select(Regex.Escape))})$";
 
+            List<string> examined = [.. IlDependencies.TypesIn(module, namespaces).Where(subjects.Contains)];
+
             return new(
-                [.. IlDependencies.TypesIn(module, namespaces).Where(subjects.Contains)],
+                examined,
                 [.. IlDependencies.DependentsIn(module, namespaces, isForbidden).Where(dependent => subjects.Contains(dependent.TypeName))],
-                $"The types {string.Join(", ", subjectTypes)} should not depend on {forbidden}, because {because}");
+                $"The types {string.Join(", ", subjectTypes)} should not depend on {forbidden}, because {because}")
+            {
+                MissingSubjects = [.. subjectTypes.Except(examined, StringComparer.Ordinal)],
+            };
         }
 
         private static string NamespaceOfFullName(string typeFullName)
