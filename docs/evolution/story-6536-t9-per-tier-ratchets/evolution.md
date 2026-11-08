@@ -48,8 +48,9 @@ number in a file also gave no reason for itself and could be raised by any edit.
 - Reviews: DESIGN and DISTILL each conditionally approved, 2 high findings each; all fixed but one low
   DISTILL finding, left on purpose. The adversarial slice B review
   found 1 high, 3 medium and 3 low; each fixed test-first, the suite going from 230 to 238 tests.
-- Mutation: N/A, because no product file changed and Stryker mutates the product assembly. The work was Python tooling,
-  data, and a small change to the Vitest time-budget reporter under `src/tests/`. A planted breach of each limit stood in.
+- Mutation: StrykerJS on the lines slice A changed in the Vitest time-budget reporter (`compareToAllowList.ts`,
+  `timeBudgetReporter.ts`), 100 % on each file, 17 of 17 killed, no survivors; see `mutation-results.md`. The Python
+  tooling and data have no Stryker run; a planted breach of each limit stood in for them.
 
 ## Finalize checklist
 
