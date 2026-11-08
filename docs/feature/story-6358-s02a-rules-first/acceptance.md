@@ -193,7 +193,7 @@ On the real code, run the API rule with its default core argument and with the S
 ```
 
 ```text
-Every type the Services-only run looks at is also looked at by the default run
+The Services-only run looks at some real types, and every type it looks at is also looked at by the default run
 ```
 
 ```text
@@ -328,6 +328,66 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ApplicationCoreRu
 
 ```text
 A rule that reads async bodies but misses a lambda closure reaching the API; the fixture uses no lambda
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Run the parent-placement rule naming one type that exists and one that has been renamed or moved away
+```
+
+```text
+The rule's check fails and its message names the missing type
+```
+
+```text
+A maintainer who renames or moves a parent-placement type is told to update the rule, instead of the rule quietly checking fewer types
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ApplicationCoreRulesReachModulesArchUnitTest\.cs\:\:ApplicationCoreRulesReachModulesArchUnitTest\.AParentPlacementKernelTypeThatIsNotThere\_FailsTheRuleAndIsNamed
+
+```text
+A rule that fails only when a missing name lies in a namespace that still holds other named types; the missing fixture name shares its namespace with an existing one
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Run the retired-Delivery read-path rule naming one type that exists and one that has been renamed or moved away
+```
+
+```text
+The rule's check fails and its message names the missing type
+```
+
+```text
+A maintainer who renames or moves a retired-Delivery view type is told to update the rule, instead of the rule quietly checking fewer types
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ApplicationCoreRulesReachModulesArchUnitTest\.cs\:\:ApplicationCoreRulesReachModulesArchUnitTest\.AnArchivedReadPathTypeThatIsNotThere\_FailsTheRuleAndIsNamed
+
+```text
+A rule that fails only when a missing name lies in a namespace that still holds other named types; the missing fixture name shares its namespace with an existing one
 ```
 
 ###### Obligations

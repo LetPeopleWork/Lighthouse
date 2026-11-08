@@ -88,7 +88,7 @@
 "still_passes_if": "F56",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.TheApiRule_LooksAtEveryRealCoreTypeItLookedAtBefore"
 },
-"expected": "F54",
+"expected": "F89",
 "stimulus": "F53",
 "user_result": "F55"
 },
@@ -143,12 +143,38 @@
 "expected": "F86",
 "stimulus": "F85",
 "user_result": "F87"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F93",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.AParentPlacementKernelTypeThatIsNotThere_FailsTheRuleAndIsNamed"
+},
+"expected": "F91",
+"stimulus": "F90",
+"user_result": "F92"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F93",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.AnArchivedReadPathTypeThatIsNotThere_FailsTheRuleAndIsNamed"
+},
+"expected": "F91",
+"stimulus": "F94",
+"user_result": "F95"
 }
 ]
 },
 "counters": {
 "E": 3,
-"F": 88,
+"F": 95,
 "P": 3,
 "S": 2
 },
@@ -380,7 +406,6 @@
 "F5": "No production behaviour changes: no production file is edited, and every existing test stays green",
 "F51": "A domain-event handler that moves into a module is still told when it does not await its save",
 "F53": "On the real code, run the API rule with its default core argument and with the Services-only pattern",
-"F54": "Every type the Services-only run looks at is also looked at by the default run",
 "F55": "Widening the rule never lets a real core type escape it",
 "F56": "Examined widened while the forbidden API target was narrowed; the existing real-code API test and the made-up offenders guard the target",
 "F57": "On the real code, run the no-service-locator handler rule with its default selection, with today's domain-events-namespace selection, and list every concrete type implementing the domain-event handler interface",
@@ -418,7 +443,14 @@
 "F86": "The rule reports the made-up type in both places, in a Release build as in a Debug build, and does not report the compliant twin",
 "F87": "A core type moved into a module is still caught when it reaches the API only inside an async method, which a Release build hides from a dependency graph",
 "F88": "A rule that reads async bodies but misses a lambda closure reaching the API; the fixture uses no lambda",
-"F9": "Run each application-core rule (ModuleBoundariesArchUnitTest ServiceLayerPattern and ParentPlacementKernel, KernelRules.TheServices, ArchivedDeliveryReadPathArchUnitTest ServiceNamespacePattern, DomainEventDispatcherSeamArchUnitTest handler rules) over made-up offender types placed under Lighthouse.Backend.Modules"
+"F89": "The Services-only run looks at some real types, and every type it looks at is also looked at by the default run",
+"F9": "Run each application-core rule (ModuleBoundariesArchUnitTest ServiceLayerPattern and ParentPlacementKernel, KernelRules.TheServices, ArchivedDeliveryReadPathArchUnitTest ServiceNamespacePattern, DomainEventDispatcherSeamArchUnitTest handler rules) over made-up offender types placed under Lighthouse.Backend.Modules",
+"F90": "Run the parent-placement rule naming one type that exists and one that has been renamed or moved away",
+"F91": "The rule's check fails and its message names the missing type",
+"F92": "A maintainer who renames or moves a parent-placement type is told to update the rule, instead of the rule quietly checking fewer types",
+"F93": "A rule that fails only when a missing name lies in a namespace that still holds other named types; the missing fixture name shares its namespace with an existing one",
+"F94": "Run the retired-Delivery read-path rule naming one type that exists and one that has been renamed or moved away",
+"F95": "A maintainer who renames or moves a retired-Delivery view type is told to update the rule, instead of the rule quietly checking fewer types"
 },
 "product": {
 "promises": [

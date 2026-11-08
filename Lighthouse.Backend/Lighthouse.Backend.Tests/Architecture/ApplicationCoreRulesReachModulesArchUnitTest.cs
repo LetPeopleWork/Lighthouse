@@ -28,6 +28,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly string TypeReachingNoCore = typeof(ATypeReachingNoCore).FullName!;
 
+        private const string ATypeThatIsNotThere = "Lighthouse.Backend.Models.CoreRulesFixtures.ReachingNoCore.ATypeRenamedOrMovedAway";
+
         private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(ApplicationCoreRulesReachModulesArchUnitTest).Assembly));
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(BaseMetricsService).Assembly));
@@ -130,7 +132,24 @@ namespace Lighthouse.Backend.Tests.Architecture
             var widened = ApplicationCoreRules.CoreDoesNotDependOnApi(ProductionModule.Value);
             var servicesOnly = ApplicationCoreRules.CoreDoesNotDependOnApi(ProductionModule.Value, KernelRules.TheServices);
 
+            Assert.That(servicesOnly.Examined, Is.Not.Empty, "The Services-only run looked at no real type. Why it matters: comparing against an empty set proves nothing. How to fix: the Services pattern must match the real Services namespaces.");
             ThenNothingDroppedOut(widened, servicesOnly.Examined, "every type in Services");
+        }
+
+        [Test]
+        public void AParentPlacementKernelTypeThatIsNotThere_FailsTheRuleAndIsNamed()
+        {
+            var verdict = ApplicationCoreRules.ParentPlacementKernelDependsOnNoCoreOrData(FixtureModule.Value, [TypeReachingNoCore, ATypeThatIsNotThere]);
+
+            ThenTheCheckFailsNaming(verdict, ATypeThatIsNotThere, "deciding under which parent a record hangs");
+        }
+
+        [Test]
+        public void AnArchivedReadPathTypeThatIsNotThere_FailsTheRuleAndIsNamed()
+        {
+            var verdict = ApplicationCoreRules.ArchivedReadPathReachesNoRecalculation(FixtureModule.Value, [TypeReachingNoCore, ATypeThatIsNotThere]);
+
+            ThenTheCheckFailsNaming(verdict, ATypeThatIsNotThere, "showing a retired Delivery");
         }
 
         [Test]
@@ -246,6 +265,22 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"The compliant type {compliantTwin} ({placement}) was reported although it breaks nothing. Why it matters: " +
                 "a rule that flags every type it looks at would bury the real offender among false ones. How to fix: " +
                 "widen what the rule looks at, not what it counts as a breach.");
+        }
+
+        private static void ThenTheCheckFailsNaming(KernelRuleVerdict verdict, string missingSubject, string job)
+        {
+            var failure = Assert.Throws<AssertionException>(
+                verdict.Check,
+                $"The rule passed although the named type {missingSubject} does not exist. Why it matters: the rule names " +
+                $"the types doing the job of {job}; when one of them is renamed or moved, the rule silently checks fewer " +
+                "types, possibly none, and stays green. How to fix: the verdict's Check() must fail when a named type is " +
+                "not found, and name that type.");
+
+            Assert.That(
+                failure!.Message,
+                Does.Contain(missingSubject),
+                $"The rule failed without naming the missing type {missingSubject}. Why it matters: the maintainer must " +
+                "see which named type to update. How to fix: put the missing type's full name in the failure message.");
         }
 
         private static void ThenNothingDroppedOut(KernelRuleVerdict widened, IEnumerable<string> mustStillBeExamined, string what)
