@@ -1,0 +1,69 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/PercentileCalculator.cs",
+      "**/Services/Implementation/XmRCalculator.cs",
+      "**/Services/Implementation/SleRiskCalculator.cs",
+      "**/Services/Implementation/BaselineValidationService.cs",
+      "**/Services/Interfaces/ITeamMetricsService.cs",
+      "**/Services/Interfaces/IPortfolioMetricsService.cs",
+      "**/Services/Implementation/BaseMetricsService.cs",
+      "**/Services/Implementation/TeamMetricsService.cs",
+      "**/Services/Implementation/PortfolioMetricsService.cs",
+      "**/Services/Implementation/MetricsCacheKey.cs",
+      "**/Services/Implementation/PercentileFamilies.cs",
+      "**/Services/Implementation/BlockedCountSeriesBuilder.cs",
+      "**/Services/Interfaces/IPercentileSnapshotWriter.cs",
+      "**/Services/Implementation/PercentileSnapshotWriter.cs",
+      "**/Services/Interfaces/IProcessBehaviorSnapshotWriter.cs",
+      "**/Services/Implementation/ProcessBehaviorSnapshotWriter.cs",
+      "**/Services/Interfaces/IPercentilesOverTimeSeriesQuery.cs",
+      "**/Services/Implementation/PercentilesOverTimeSeriesQuery.cs",
+      "**/Services/Implementation/GapAskingPercentilesOverTimeSeriesQuery.cs",
+      "**/Services/Interfaces/IProcessBehaviorSeriesQuery.cs",
+      "**/Services/Implementation/ProcessBehaviorSeriesQuery.cs",
+      "**/Services/Implementation/GapAskingProcessBehaviorSeriesQuery.cs",
+      "**/Services/Interfaces/IOverTimeGapReconciler.cs",
+      "**/Services/Implementation/OverTimeGapReconciler.cs",
+      "**/Services/Interfaces/BackgroundServices/IOverTimeHistoryFiller.cs",
+      "**/Services/Implementation/BackgroundServices/ReconstructionMemo.cs",
+      "**/Services/Implementation/BackgroundServices/RetentionEdge.cs",
+      "**/Services/Implementation/BackgroundServices/OverTimeFillTarget.cs",
+      "**/Services/Implementation/BackgroundServices/OverTimeHistoryFiller.cs",
+      "**/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandler.cs",
+      "**/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandler.cs",
+      "**/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandler.cs",
+      "**/Services/Implementation/DomainEvents/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs",
+      "**/Services/Implementation/DomainEvents/BlackoutConfigurationChangedMetricsInvalidationHandler.cs",
+      "**/Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandler.cs",
+      "**/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs",
+      "**/Services/Interfaces/Repositories/IBlockedCountSnapshotRepository.cs",
+      "**/Services/Interfaces/Repositories/IPercentilesOverTimeSnapshotRepository.cs",
+      "**/Services/Interfaces/Repositories/IProcessBehaviorSnapshotRepository.cs",
+      "**/Services/Implementation/Repositories/BlockedCountSnapshotRepository.cs",
+      "**/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepository.cs",
+      "**/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepository.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "(FullyQualifiedName~PercentileCalculatorTest|FullyQualifiedName~XmRCalculatorTest|FullyQualifiedName~SleRiskCalculatorTest|FullyQualifiedName~BaselineValidationServiceTest|FullyQualifiedName~BaseMetricsServiceTests|FullyQualifiedName~BaseMetricsServiceNamedCycleTimeTest|FullyQualifiedName~TeamMetricsServiceTests|FullyQualifiedName~TeamMetricsServiceSnapshotTests|FullyQualifiedName~PortfolioMetricsServiceTests|FullyQualifiedName~MetricsCacheKeyTest|FullyQualifiedName~BlockedCountSeriesBuilderTests|FullyQualifiedName~PercentileSnapshotWriterTest|FullyQualifiedName~ProcessBehaviorSnapshotWriterTest|FullyQualifiedName~GapAskingSeriesQueryTest|FullyQualifiedName~OverTimeGapReconcilerTest|FullyQualifiedName~ClosedInRangeCharacterisationTest|FullyQualifiedName~InstanceDayItemBucketingTest|FullyQualifiedName~MetricsAsOfGroupNameTest|FullyQualifiedName~WorkItemAgeAsOfDateTest|FullyQualifiedName~WorkItemBaseAgeOnDayTest|FullyQualifiedName~ForecastRealityCheckServiceTest|FullyQualifiedName~OverTimeFillTargetTest|FullyQualifiedName~OverTimeHistoryFillerTest|FullyQualifiedName~ReconstructionMemoTest|FullyQualifiedName~RetentionEdgeTest|FullyQualifiedName~MetricsInvalidationHandlerTest|FullyQualifiedName~BlockedCountSnapshotRecordingHandlerTests|FullyQualifiedName~DemoBlockedHistoryBackfillHandlerTests|FullyQualifiedName~DemoPercentilesBackfillHandlerTests|FullyQualifiedName~PercentilesOverTimeRecordingHandlerTests|FullyQualifiedName~ProcessBehaviorRecordingHandlerTests|FullyQualifiedName~BlockedCountSnapshotRepositoryTests|FullyQualifiedName~PercentilesOverTimeSnapshotRepositoryTests|FullyQualifiedName~ProcessBehaviorSnapshotRepositoryTests|FullyQualifiedName~Tests.API.TeamMetricsControllerTest|FullyQualifiedName~Tests.API.PortfolioMetricsControllerTests)&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Integration.Containers&TestCategory!=Integration",
+    "reporters": [
+      "progress",
+      "json",
+      "html",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
