@@ -1,0 +1,104 @@
+NeedOverOneCycleTest (at the port) and RefinementWithoutSignInWireContractTest (the new host rows), each alone, Release, timer on (LIGHTHOUSE_FIXTURE_TIMING=1), 3 rounds, on e068bd7c4, the seven tracker variables removed (count 0), dotnet build-server shutdown first. Load (1 min) about 6 at the start of set A, 5.6 at set B, against about 1 for 05-01's before readings.
+trx_s = TRX durations summed; one_time_setup_s = the timer's one_time_setup_ms; body_mean_ms = (TRX - set-up - tear-down) / rows.
+
+== Set A, the after readings used in the delta
+portA-r1 rows=22 outcomes=['Passed'] trx_s=3.288 one_time_setup_s=0.000 total_s=3.288 setup_count=22 setup_total_ms=1126.4 setup_mean_ms=51.20 teardown_total_ms=2.4 body_mean_ms=98.1 host_builds=0 host_build_ms=0.0
+   slowest 2.417 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.005; median row 0.040
+   timer fixture=NeedOverOneCycleTest,setup_count=22,setup_total_ms=1126.4,setup_mean_ms=51.20,teardown_total_ms=2.4,one_time_setup_ms=0.0,one_time_teardown_ms=0.0,host_build_count=0,host_build_total_ms=0.0
+portA-r2 rows=22 outcomes=['Passed'] trx_s=3.120 one_time_setup_s=0.000 total_s=3.120 setup_count=22 setup_total_ms=1075.9 setup_mean_ms=48.90 teardown_total_ms=2.3 body_mean_ms=92.8 host_builds=0 host_build_ms=0.0
+   slowest 2.277 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.005; median row 0.040
+   timer fixture=NeedOverOneCycleTest,setup_count=22,setup_total_ms=1075.9,setup_mean_ms=48.90,teardown_total_ms=2.3,one_time_setup_ms=0.0,one_time_teardown_ms=0.0,host_build_count=0,host_build_total_ms=0.0
+portA-r3 rows=22 outcomes=['Passed'] trx_s=3.141 one_time_setup_s=0.000 total_s=3.141 setup_count=22 setup_total_ms=1061.1 setup_mean_ms=48.23 teardown_total_ms=2.2 body_mean_ms=94.4 host_builds=0 host_build_ms=0.0
+   slowest 2.306 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.004; median row 0.040
+   timer fixture=NeedOverOneCycleTest,setup_count=22,setup_total_ms=1061.1,setup_mean_ms=48.23,teardown_total_ms=2.2,one_time_setup_ms=0.0,one_time_teardown_ms=0.0,host_build_count=0,host_build_total_ms=0.0
+wireA-r1 rows=7 outcomes=['Passed'] trx_s=1.808 one_time_setup_s=2.033 total_s=3.841 setup_count=7 setup_total_ms=3.7 setup_mean_ms=0.53 teardown_total_ms=35.3 body_mean_ms=252.8 host_builds=1 host_build_ms=2022.6
+   slowest 1.087 A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(States chosen: Backlog, Analysing, Next); fastest 0.099; median row 0.114
+   timer fixture=RefinementWithoutSignInWireContractTest,setup_count=7,setup_total_ms=3.7,setup_mean_ms=0.52,teardown_total_ms=35.3,one_time_setup_ms=2032.7,one_time_teardown_ms=4.7,host_build_count=1,host_build_total_ms=2022.6
+wireA-r2 rows=7 outcomes=['Passed'] trx_s=1.911 one_time_setup_s=1.957 total_s=3.868 setup_count=7 setup_total_ms=3.7 setup_mean_ms=0.53 teardown_total_ms=32.3 body_mean_ms=267.8 host_builds=1 host_build_ms=1946.9
+   slowest 1.195 A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(States chosen: Backlog, Analysing, Next); fastest 0.096; median row 0.112
+   timer fixture=RefinementWithoutSignInWireContractTest,setup_count=7,setup_total_ms=3.7,setup_mean_ms=0.52,teardown_total_ms=32.3,one_time_setup_ms=1957.0,one_time_teardown_ms=4.4,host_build_count=1,host_build_total_ms=1946.9
+wireA-r3 rows=7 outcomes=['Passed'] trx_s=1.781 one_time_setup_s=2.121 total_s=3.902 setup_count=7 setup_total_ms=3.8 setup_mean_ms=0.54 teardown_total_ms=31.9 body_mean_ms=249.3 host_builds=1 host_build_ms=2110.6
+   slowest 1.066 A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(States chosen: Backlog, Analysing, Next); fastest 0.101; median row 0.109
+   timer fixture=RefinementWithoutSignInWireContractTest,setup_count=7,setup_total_ms=3.8,setup_mean_ms=0.54,teardown_total_ms=31.9,one_time_setup_ms=2120.7,one_time_teardown_ms=4.5,host_build_count=1,host_build_total_ms=2110.6
+
+== Set B, the same, after the probe was reverted and the tree rebuilt (a repeat)
+port-r1 rows=22 outcomes=['Passed'] trx_s=3.323 one_time_setup_s=0.000 total_s=3.323 setup_count=22 setup_total_ms=1126.7 setup_mean_ms=51.21 teardown_total_ms=2.3 body_mean_ms=99.7 host_builds=0 host_build_ms=0.0
+   slowest 2.453 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.004; median row 0.041
+   timer fixture=NeedOverOneCycleTest,setup_count=22,setup_total_ms=1126.7,setup_mean_ms=51.21,teardown_total_ms=2.3,one_time_setup_ms=0.0,one_time_teardown_ms=0.0,host_build_count=0,host_build_total_ms=0.0
+port-r2 rows=22 outcomes=['Passed'] trx_s=3.169 one_time_setup_s=0.000 total_s=3.169 setup_count=22 setup_total_ms=1127.3 setup_mean_ms=51.24 teardown_total_ms=2.2 body_mean_ms=92.7 host_builds=0 host_build_ms=0.0
+   slowest 2.397 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.004; median row 0.036
+   timer fixture=NeedOverOneCycleTest,setup_count=22,setup_total_ms=1127.3,setup_mean_ms=51.24,teardown_total_ms=2.2,one_time_setup_ms=0.0,one_time_teardown_ms=0.0,host_build_count=0,host_build_total_ms=0.0
+port-r3 rows=22 outcomes=['Passed'] trx_s=3.378 one_time_setup_s=0.000 total_s=3.378 setup_count=22 setup_total_ms=1101.4 setup_mean_ms=50.06 teardown_total_ms=2.4 body_mean_ms=103.4 host_builds=0 host_build_ms=0.0
+   slowest 2.445 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.004; median row 0.044
+   timer fixture=NeedOverOneCycleTest,setup_count=22,setup_total_ms=1101.4,setup_mean_ms=50.06,teardown_total_ms=2.4,one_time_setup_ms=0.0,one_time_teardown_ms=0.0,host_build_count=0,host_build_total_ms=0.0
+wire-r1 rows=7 outcomes=['Passed'] trx_s=1.858 one_time_setup_s=2.107 total_s=3.965 setup_count=7 setup_total_ms=20.9 setup_mean_ms=2.99 teardown_total_ms=33.7 body_mean_ms=257.6 host_builds=1 host_build_ms=2096.7
+   slowest 1.131 A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(States chosen: Backlog, Analysing, Next); fastest 0.099; median row 0.114
+   timer fixture=RefinementWithoutSignInWireContractTest,setup_count=7,setup_total_ms=20.9,setup_mean_ms=2.98,teardown_total_ms=33.7,one_time_setup_ms=2107.0,one_time_teardown_ms=4.5,host_build_count=1,host_build_total_ms=2096.7
+wire-r2 rows=7 outcomes=['Passed'] trx_s=1.869 one_time_setup_s=2.038 total_s=3.907 setup_count=7 setup_total_ms=3.9 setup_mean_ms=0.56 teardown_total_ms=33.3 body_mean_ms=261.7 host_builds=1 host_build_ms=2027.9
+   slowest 1.154 A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(States chosen: Backlog, Analysing, Next); fastest 0.098; median row 0.113
+   timer fixture=RefinementWithoutSignInWireContractTest,setup_count=7,setup_total_ms=3.9,setup_mean_ms=0.55,teardown_total_ms=33.3,one_time_setup_ms=2038.2,one_time_teardown_ms=4.5,host_build_count=1,host_build_total_ms=2027.9
+wire-r3 rows=7 outcomes=['Passed'] trx_s=1.870 one_time_setup_s=2.112 total_s=3.982 setup_count=7 setup_total_ms=3.8 setup_mean_ms=0.54 teardown_total_ms=35.4 body_mean_ms=261.5 host_builds=1 host_build_ms=2101.3
+   slowest 1.152 A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(States chosen: Backlog, Analysing, Next); fastest 0.097; median row 0.115
+   timer fixture=RefinementWithoutSignInWireContractTest,setup_count=7,setup_total_ms=3.8,setup_mean_ms=0.54,teardown_total_ms=35.4,one_time_setup_ms=2112.0,one_time_teardown_ms=4.4,host_build_count=1,host_build_total_ms=2101.3
+
+== Per row at the port, set A, seconds in rounds 1 2 3
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(2,"2026-10-05","2026-10-08",3)	0.062	0.064	0.062	median=0.062
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(5,"2026-10-05","2026-10-08",3)	0.040	0.041	0.040	median=0.040
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(6,"2026-10-08","2026-10-12",4)	0.041	0.042	0.042	median=0.042
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(8,"2026-10-08","2026-10-12",4)	0.053	0.043	0.043	median=0.043
+A_blacked_out_Refinement_after_the_next_is_skipped_and_the_cycle_runs_to_the_one_that_happens	0.048	0.049	0.049	median=0.049
+A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens	2.417	2.277	2.306	median=2.306
+A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead	0.061	0.062	0.062	median=0.062
+A_year_of_blacked_out_Refinements_after_the_next_leaves_no_cycle_and_no_number	0.040	0.038	0.038	median=0.038
+Every_day_before_the_next_Refinement_reads_the_same_number(2)	0.039	0.040	0.040	median=0.040
+Every_day_before_the_next_Refinement_reads_the_same_number(5)	0.038	0.039	0.039	median=0.039
+Every_day_before_the_next_Refinement_reads_the_same_number(6)	0.038	0.038	0.042	median=0.038
+Every_day_before_the_next_Refinement_reads_the_same_number(7)	0.045	0.041	0.038	median=0.041
+On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement	0.039	0.037	0.037	median=0.037
+Only_a_blackout_day_inside_the_cycle_shortens_it(12,6)	0.040	0.039	0.039	median=0.039
+Only_a_blackout_day_inside_the_cycle_shortens_it(5,7)	0.039	0.039	0.039	median=0.039
+The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after	0.040	0.040	0.040	median=0.040
+Today_a_blacked_out_Refinement_day_starts_no_cycle_and_the_next_Refinement_does	0.043	0.041	0.042	median=0.042
+With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle(5)	0.040	0.039	0.040	median=0.040
+With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle(6)	0.047	0.039	0.039	median=0.039
+Without_a_number_the_need_names_no_cycle(Cadence,"NoCadence")	0.036	0.031	0.030	median=0.031
+Without_a_number_the_need_names_no_cycle(RefinementStates,"NoRefinementStates")	0.005	0.005	0.004	median=0.005
+Without_a_number_the_need_names_no_cycle(ThroughputHistory,"InsufficientData")	0.036	0.036	0.031	median=0.036
+
+== Without and with the seeders: a probe in the port base's [SetUp], in the working tree only, never committed, then reverted (git status 0 lines).
+LH_PORT_SEEDERS=1 registered the product's 8 ISeeders, the real AppSettingService (with AppSettingRepository, DefaultOptionalFeatureApplier and the applier registry, no FeatureOrderingApplier) instead of the settings stand-in, and ran every seeder after the harness was built, as the host's Init does. The probe wrote each row's set-up in ms, and timed the steps of the slowest row.
+noseed-r1 rows=22 outcomes=['Passed'] trx_s=3.240 one_time_setup_s=0.000 total_s=3.240 setup_count=22 setup_total_ms=1145.5 setup_mean_ms=52.07 teardown_total_ms=2.2 body_mean_ms=95.1 host_builds=0 host_build_ms=0.0
+   slowest 2.396 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.004; median row 0.040
+noseed-r2 rows=22 outcomes=['Passed'] trx_s=3.208 one_time_setup_s=0.000 total_s=3.208 setup_count=22 setup_total_ms=1134.7 setup_mean_ms=51.58 teardown_total_ms=2.3 body_mean_ms=94.1 host_builds=0 host_build_ms=0.0
+   slowest 2.359 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.004; median row 0.041
+noseed-r3 rows=22 outcomes=['Passed'] trx_s=3.079 one_time_setup_s=0.000 total_s=3.079 setup_count=22 setup_total_ms=1040.2 setup_mean_ms=47.28 teardown_total_ms=2.3 body_mean_ms=92.6 host_builds=0 host_build_ms=0.0
+   slowest 2.240 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.004; median row 0.040
+seed-r1 rows=22 outcomes=['Passed'] trx_s=4.219 one_time_setup_s=0.000 total_s=4.219 setup_count=22 setup_total_ms=2883.3 setup_mean_ms=131.06 teardown_total_ms=2.3 body_mean_ms=60.6 host_builds=0 host_build_ms=0.0
+   slowest 2.577 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.042; median row 0.075
+seed-r2 rows=22 outcomes=['Passed'] trx_s=4.081 one_time_setup_s=0.000 total_s=4.081 setup_count=22 setup_total_ms=2736.6 setup_mean_ms=124.39 teardown_total_ms=2.3 body_mean_ms=61.0 host_builds=0 host_build_ms=0.0
+   slowest 2.444 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.042; median row 0.075
+seed-r3 rows=22 outcomes=['Passed'] trx_s=4.469 one_time_setup_s=0.000 total_s=4.469 setup_count=22 setup_total_ms=3026.3 setup_mean_ms=137.56 teardown_total_ms=2.4 body_mean_ms=65.4 host_builds=0 host_build_ms=0.0
+   slowest 2.760 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.043; median row 0.079
+-- probe-noseed-r1.tsv
+set-up per row, in run order: 1137.42 0.41 0.32 0.32 0.35 0.33 0.32 0.33 0.33 0.31 0.33 0.32 0.30 0.30 0.30 0.31 0.34 0.39 0.31 0.29 0.30 0.29 
+steps of A_blacked_out_next_Refinement_is_skipped...: given.gravity=1039.77 given.blackout=14.08 given.script=2.40 calendar.FactsFor=16.18 metrics.GetForecastThroughputStatus=91.89 throughput.days=30 when.tab=76.60 
+-- probe-noseed-r2.tsv
+set-up per row, in run order: 1126.67 0.40 0.32 0.33 0.35 0.30 0.32 0.33 0.32 0.31 0.33 0.35 0.33 0.32 0.38 0.36 0.33 0.33 0.30 0.29 0.29 0.28 
+steps of A_blacked_out_next_Refinement_is_skipped...: given.gravity=1017.33 given.blackout=13.50 given.script=2.37 calendar.FactsFor=15.52 metrics.GetForecastThroughputStatus=91.28 throughput.days=30 when.tab=75.64 
+-- probe-noseed-r3.tsv
+set-up per row, in run order: 1032.15 0.49 0.33 0.32 0.33 0.36 0.36 0.34 0.32 0.34 0.32 0.32 0.34 0.30 0.30 0.32 0.32 0.31 0.31 0.28 0.30 0.28 
+steps of A_blacked_out_next_Refinement_is_skipped...: given.gravity=993.50 given.blackout=13.41 given.script=2.36 calendar.FactsFor=15.54 metrics.GetForecastThroughputStatus=90.60 throughput.days=30 when.tab=75.74 
+-- probe-seed-r1.tsv
+set-up per row, in run order: 2073.07 59.28 37.40 37.37 43.39 53.69 36.10 35.73 35.62 36.45 35.91 35.60 35.88 38.32 36.31 35.97 35.82 35.69 35.53 35.62 37.72 35.47 
+steps of A_blacked_out_next_Refinement_is_skipped...: given.gravity=313.33 given.blackout=13.47 given.script=2.40 calendar.FactsFor=15.62 metrics.GetForecastThroughputStatus=81.80 throughput.days=30 when.tab=60.76 
+-- probe-seed-r2.tsv
+set-up per row, in run order: 1938.77 59.24 37.43 37.90 41.56 39.22 38.12 36.24 35.87 35.81 36.22 36.07 36.24 38.02 35.72 36.21 35.69 36.75 35.50 35.72 37.50 35.33 
+steps of A_blacked_out_next_Refinement_is_skipped...: given.gravity=313.82 given.blackout=13.30 given.script=2.39 calendar.FactsFor=15.52 metrics.GetForecastThroughputStatus=82.56 throughput.days=30 when.tab=61.44 
+-- probe-seed-r3.tsv
+set-up per row, in run order: 2185.14 66.54 42.30 42.62 44.03 38.64 37.10 37.19 36.93 37.67 36.95 36.76 48.55 39.26 36.58 40.81 35.85 36.07 35.86 35.93 38.07 35.93 
+steps of A_blacked_out_next_Refinement_is_skipped...: given.gravity=357.29 given.blackout=15.35 given.script=2.67 calendar.FactsFor=17.62 metrics.GetForecastThroughputStatus=93.26 throughput.days=30 when.tab=70.16 
+
+== Run order, set A round 1 (first 3 rows)
+16:26:36.114 00:00:02.4172450 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens
+16:26:38.533 00:00:00.0481610 A_blacked_out_Refinement_after_the_next_is_skipped_and_the_cycle_runs_to_the_one_that_happ
+16:26:38.581 00:00:00.0614520 A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead

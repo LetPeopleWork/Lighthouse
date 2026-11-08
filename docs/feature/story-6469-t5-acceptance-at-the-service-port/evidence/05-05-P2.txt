@@ -1,0 +1,66 @@
+P2: clause A, timer on, Release, 6 workers, tree of e068bd7c4, git status lines: 0
+build-server shutdown exit 0
+testhosts: 0
+builds: 0
+29.9.3
+token vars left: 0
+load: 2.80 4.44 4.45 1/3697 1259884
+Passed!  - Failed:     0, Passed: 13011, Skipped:     2, Total: 13013, Duration: 6 m 34 s - Lighthouse.Backend.Tests.dll (net10.0)
+exit 0 elapsed 402s
+Filter: the always-on clause A, Category!=Integration|(Category!=JiraIntegration&Category!=AdoIntegration&Category!=LinearIntegration&Category!=ServiceNowIntegration&Category!=GithubIntegration).
+A first attempt used CLAUDE.md's filter instead of clause A and lost 3 connector-class unit rows (JiraWriteBackTest/AzureDevOpsWriteBackTest WriteFieldsToWorkItems_*); it was discarded and this run replaces it.
+
+Compared with P1 (rebuilt as PB + the 25 of 04-01-P1.txt; its sha256 matches the recorded one)
+PA 12927 PB rebuilt 12954 sha be347dee6010998d7a133eff57adc932b62e966b9eb6c8594277f663bec8ad80 match be347dee: True
+P1 rebuilt 12979 sha 377fe20674b7d33887ce4c6f8193450a351c678151a35122a0f978d5c3ad21ed match 377fe206: True
+P2 rows 13022 {'Passed': 13011, 'NotExecuted': 11} distinct 13004 sha 0f6b46b562cf6f43e4e36d6d150b6d3d5f47ff3adbde723c6e26740d6cabce1a
+ONLY P1 0
+ONLY P2 25
+  + Lighthouse.Backend.Tests.Architecture.PortGivensGuardTest.No_port_scenario_sets_up_a_Team_except_through_the_builder
+  + Lighthouse.Backend.Tests.Architecture.PortGivensGuardTest.The_guard_sees_a_port_class_that_sets_up_a_Team_itself(Lighthouse.Backend.Tests.Architecture.PlantedPortClasses+AddsABlackoutThroughTheRepository,"Add")
+  + Lighthouse.Backend.Tests.Architecture.PortGivensGuardTest.The_guard_sees_a_port_class_that_sets_up_a_Team_itself(Lighthouse.Backend.Tests.Architecture.PlantedPortClasses+AddsATeamThroughTheRepository,"Add")
+  + Lighthouse.Backend.Tests.Architecture.PortGivensGuardTest.The_guard_sees_a_port_class_that_sets_up_a_Team_itself(Lighthouse.Backend.Tests.Architecture.PlantedPortClasses+ChangesTheCadenceItHasRead,"Cadence")
+  + Lighthouse.Backend.Tests.Architecture.PortGivensGuardTest.The_guard_sees_a_port_class_that_sets_up_a_Team_itself(Lighthouse.Backend.Tests.Architecture.PlantedPortClasses+ReachesTheTeamsTableThroughTheContext,"Teams")
+  + Lighthouse.Backend.Tests.Architecture.PortGivensGuardTest.The_guard_sees_a_port_class_that_sets_up_a_Team_itself(Lighthouse.Backend.Tests.Architecture.PlantedPortClasses+WritesRefinementSettingsItself,"RefinementSettings")
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_that_only_builds_client_options_reads_as_no_host
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_that_starts_a_host_without_a_reason_is_named(Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest+PlantedFixtures+ASetUpFixtureThatStartsAHost)
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_that_starts_a_host_without_a_reason_is_named(Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest+PlantedFixtures+ReachesAHostOnlyThroughAStaticField)
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_that_starts_a_host_without_a_reason_is_named(Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest+PlantedFixtures+StartsAHostInCombinatorialTestsOnly)
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_that_starts_a_host_without_a_reason_is_named(Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest+PlantedFixtures+StartsAHostInPairwiseTestsOnly)
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_that_starts_a_host_without_a_reason_is_named(Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest+PlantedFixtures+StartsAHostInSequentialTestsOnly)
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_that_starts_a_host_without_a_reason_is_named(Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest+PlantedFixtures+StartsATestServer)
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_host_user_named_while_a_listed_entry_went_stale_gets_the_rename_hint
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_set_up_fixture_of_the_real_assembly_that_starts_no_host_is_not_named("Lighthouse.Backend.Tests.FixtureTimingReporter")
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_set_up_fixture_of_the_real_assembly_that_starts_no_host_is_not_named("Lighthouse.Backend.Tests.InstanceCulturePin")
+  + Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_test_on_the_contract_bases_own_test_itself_is_named_while_its_nested_fixtures_stay_exempt
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(RefinementAtThePortTest)
+  + Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(Cadence: Monday and Thursday, every week, no starting week)
+  + Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(Cadence: Thursday, every week, no starting week)
+  + Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(No states chosen)
+  + Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(Ready rule: tags contain ready, no Being-refined rule)
+  + Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(States chosen: Backlog, Analysing, Next)
+  + Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_Team_with_no_number_states_its_need_as_nulls_and_names_no_date
+  + Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.Every_setting_a_port_scenario_is_given_is_what_a_seeded_database_holds(RefinementAtThePortTest)
+non-passing 0
+NeedOverOneCycleTest ids in P2 22 same in P1 22 set equal True
+host_build_count P0 619 P2 624
+  +2 DeleteUnitRightsTests (P0 0, P2 2)
+  -1 NeedOverOneCycleTest (P0 1, P2 0)
+  +1 RealityCheckWireContractTest (P0 0, P2 1)
+  +1 RefinementWithoutSignInWireContractTest (P0 0, P2 1)
+  -1 Slice01OneSentenceAboutYourSamplingWindowTest (P0 1, P2 0)
+  -1 Slice04TheAnswerOpensInADialogTest (P0 1, P2 0)
+  +1 WireContractTestTest+EveryScenarioStartsAfresh (P0 0, P2 1)
+  +1 WireContractTestTest+OneHostForThreeScenarios (P0 0, P2 1)
+  +1 WireContractTestTest+SignInTurnedOnThroughTheHook (P0 0, P2 1)
+  +1 WireContractTestTest+WorkLeftOnTheQueue (P0 0, P2 1)
+P2 trx_s=2121.720 one_time_setup_s=17.472 total_s=2139.192
+
+Full run, the class and the new host rows (TRX ms from the CSV, timer rows):
+P0.csv (22, 6.678, ['500.786']) (0, 0.0)
+PA.csv (22, 6.714, ['613.646']) (0, 0.0)
+P2.csv (22, 1.611, ['126.186']) (7, 1.281)
+NeedOverOneCycleTest,22,15.3,0.70,2.6,0.0,0.0,0,0.0
+RefinementWithoutSignInWireContractTest,7,0.2,0.03,46.5,207.6,1.5,1,207.4
+P0 timer row:
+NeedOverOneCycleTest,22,4138.7,188.12,137.0,167.7,1.8,1,167.0

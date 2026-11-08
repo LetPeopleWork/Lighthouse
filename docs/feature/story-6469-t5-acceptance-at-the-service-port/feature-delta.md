@@ -2121,3 +2121,105 @@ Both breaks were reverted; `git status` showed `RefinementPortGivens.cs` unchang
 **The outlier at the port.** `A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens` took 2.40, 2.49 and 2.45 s in three runs of the class (Debug, timer off). The median row took 0.040 to 0.046 s, and the class's TRX sum was 3.26 to 3.43 s. The row is slower at the port than at the host (1.43 to 1.58 s, Release). So its cost is not the host's: it is in the code the row reaches, and 05-05 names the cause.
 
 **Counts.** The class by name: 22 passed. `RefinementWithoutSignInWireContractTest`: 7 passed (E2 1, E10 5, E13 1). The three guards with both classes (`TestHostUseGuardTest` 34, `PortGivensGuardTest` 6, `RealityCheckWireContractTest` 26, the wire class 7, the moved class 22): 95 passed. `Test-Fast.ps1` (builds first): 9669 passed, 9647 plus the 22 rows now in the fast tier. `dotnet build` in `Lighthouse.Backend`: 0 warnings, 0 errors. `RefinementPortGivens` and `TestHostUseGuardTest.cs` needed no change.
+
+## Wave: DELIVER / [REF] Slice E checkpoint: measured, Stage 3 re-run, and the question (step 05-05, 2026-11-08)
+
+Nothing moved and no code changed in this step. The box did not run out: every reading below was taken. Evidence: `evidence/05-05-after-need-over-one-cycle.txt` (the class alone, with and without the seeders, and the outlier's steps) and `evidence/05-05-P2.txt` (`P2`). **Stop here: no further step starts until the maintainer answers the question at the end.**
+
+**How it was read.** As 05-01 read the before side: one machine, each class alone in its own `dotnet test`, Release, timer on, 3 rounds, on `e068bd7c4`, the seven tracker variables removed (count 0), `dotnet build-server shutdown` first. One condition differs: the load (1 min) was about 5 to 6 at each set, against about 1 for 05-01. A repeat set, taken after the probe was reverted and the tree rebuilt, reads within 0.25 s a class (in the evidence). "With seeders" needed a code change. It was made in the working tree only: a probe in the port base's `[SetUp]` that registers the product's 8 `ISeeder`s and the real `AppSettingService` in place of the settings stand-in, runs every seeder after the harness is built, as the host's `Init` does, and writes each row's set-up time. It was reverted, and `git status` showed 0 lines.
+
+**1. `c` and `h` on this class** (medians of the rounds; ranges in the evidence).
+
+| Per row | Host, before (05-01) | Port, no seeders | Port, with seeders |
+|---|---|---|---|
+| Set-up, timer mean, class alone | 128.2 ms | 49.0 ms | 131.1 ms |
+| Set-up after the first row, alone (`c`, steady) | not readable, the timer gives sums | **0.3 ms** | **36 ms** (35.5 to 40) |
+| The first row's set-up, alone | in the mean above | 1.03 to 1.14 s: the schema template, built once per test process | 1.94 to 2.19 s: the template and the first run of the seeders |
+| Set-up, in a full run (`P0` before, `P2` after) | 188.1 ms, plus a host build of 0.167 s | **0.70 ms** | not measured |
+| Body, (TRX − set-up − tear-down) / 22, alone | 104.7 ms | 94.4 ms | 61.0 ms |
+| Body, in a full run | 109.2 ms | 72.4 ms | not measured |
+
+- **`c`, without the seeders, is 0.3 ms a row alone and 0.7 ms in a full run**, as `Slice04`'s 0.6 ms promised. **With the seeders it is about 36 ms.**
+- **`h` is 10 ms alone and 37 ms in a full run** (host body less port body). Both alone figures carry the first row's warm-up, and the full-run pair was read on two different runs, so `h` is read as 0 to 37 ms and Stage 3 below takes 0, as "Review revision" did. With the seeders the body shrinks because the seeders warm the database in set-up, so its `h` is not comparable.
+- **D-6469-34:** `c` moved from 0.6 ms to 0.7 ms (no seeders), well under 10 ms; `m` is 71, as 05-01 found. It does not fire for the no-seeder case. The seeder case would (36 ms), and is restated below as the other branch.
+
+**The seeded tables each port reads.** The 8 seeders write `AppSettings` (`AppSettingSeeder`, `InstallTimestampSeeder`), `OptionalFeatures`, the terminology table, `RefreshLogs`, API keys and user profiles, and rewrite existing `Teams` and `Portfolios` (`CategoryListNormalisationSeeder`, `ForecastInputsForgottenAtStartSeeder`). Of those, the Refinement port reads:
+- `AppSettings`, for `GetTeamDataRefreshSettings()` in `TeamMetricsService`'s constructor. The port answers it from the stand-in, and E13 compares that answer with a seeded database.
+- `OptionalFeatures`, for the Feature-ordering key, through `FeatureOrderingPolicyProvider` under `FeatureRepository`, which the shipped engine pulls in. The table is empty at the port, and an absent row reads as the tracker's own order. These 22 rows store no Feature, so no order is ever read.
+- `Teams` and `Portfolios`: the seeders only rewrite rows that already exist, and the database is empty when they run, so they change nothing.
+- The terminology table, `RefreshLogs`, API keys and user profiles: not read.
+
+**2. Stage 3, re-run for E and F together**, against the 14.1 s line, net of the new host rows, with F projected at E's `c`. Summed seconds, in a full run.
+
+| Term | No seeders (`c` 0.7 ms) | With seeders (`c` 36 ms) |
+|---|---|---|
+| E, 71 rows, at `c` = 0, `h` = 0 ("Review revision", less 2 rows, as 05-01 said) | 13.5 | 13.5 |
+| F, 36 rows, at `c` = 0, `h` = 0 | 7.2 | 7.2 |
+| `c` over the 107 rows | −0.1 | −3.9 |
+| Host builds saved, about 6 net at 0.17 s (0.167 s for this class in `P0`, 0.208 s for the wire class in `P2`) | +1.0 | +1.0 |
+| New host rows: the 7 that exist, 1.281 s of TRX plus a 0.208 s build in `P2`, so 0.18 s a row; about 8 more for E (E1, E3 to E7, E11) and about 6 for F, an estimate, plus F's contract class build | −4.2 | −4.2 |
+| **Net** | **about 17.4** | **about 13.6** |
+| Net at `h` = 10 ms (the alone figure) | about 18.5 | about 14.7 |
+
+- **Verdict without the seeders: about 17.4 s, above the 14.1 s line by about 3.3 s.** The line is not met by a projection alone: F is projected at E's `c`, and about 14 of the 21 new host rows are estimates.
+- **Verdict with the seeders: about 13.6 s, under the line.** Under the line, the recommendation is to stop.
+- **What this class did in the full run, measured, not projected.** Its 22 rows took 6.678 s of TRX and a 0.167 s host build in `P0`, and 1.611 s at the port in `P2`: **5.23 s saved**, against the 4.2 s the projection gives it. Less its 7 new host rows (1.49 s), **3.74 s net**. So the projection is on the cautious side for this class, by about 1 s, and that came from `h`.
+
+**3. Guarantee 6: not met alone. A finding, not fixed.** The 22 rows plus the 7 new host rows, as TRX plus `one_time_setup_ms` for host fixtures, each class alone, median rounds:
+
+| | Rows | TRX | One-time set-up | Total |
+|---|---|---|---|---|
+| Before, `NeedOverOneCycleTest` at the host (05-01) | 22 | 5.176 | 1.667 | **6.866** |
+| After, the class at the port, no seeders | 22 | 3.141 | 0 | 3.141 |
+| After, `RefinementWithoutSignInWireContractTest` | 7 | 1.808 | 2.033 | 3.868 |
+| **After, the sum** | 29 | 4.949 | 2.033 | **7.009** |
+| After, the sum, with seeders (port 4.219) | 29 | | | 8.087 |
+
+- **Alone, the seconds rise by 0.14 s** (0.42 s with the repeat set; 1.22 s with the seeders). Every after round sum (6.99 to 7.13 s in set A, 7.08 to 7.36 s in the repeat) is above the before median.
+- **Why, read from the timer:** run alone, each class pays its process's first-use costs once. The new wire class pays a cold host build (1.95 to 2.11 s) and a first request (its first row, 1.07 to 1.20 s). The port pays the schema template build (1.03 to 1.14 s) and the first database writes (see the outlier). Those costs are fixed per class, not per row, so 7 new host rows cost about as much as the 22 rows save.
+- **In a full run the same ids fall:** 6.845 s (`P0`) to 3.100 s (`P2`: 1.611 at the port, 1.281 plus 0.208 for the wire class), down 3.75 s. Guarantee 6 as written reads the alone runs, so this is reported as a finding and not as a pass.
+
+**4. `P2`** (`evidence/05-05-P2.txt`). Clause `A` (the always-on clause), timer on, 6 workers, Release, on `e068bd7c4` with a clean tree, the rules of a list run: no test process and no build running (both 0), `dotnet build-server shutdown` exit 0, Docker 29.9.3, the seven variables removed and the count 0.
+
+| | |
+|---|---|
+| Console | `Failed: 0, Passed: 13011, Skipped: 2, Total: 13013`, 6 m 34 s, exit 0 |
+| TRX rows | 13,022: 13,011 `Passed`, 11 `NotExecuted`, none failed |
+| `sha256` of the sorted distinct id list | `0f6b46b562cf6f43e4e36d6d150b6d3d5f47ff3adbde723c6e26740d6cabce1a` (13,004 ids) |
+| The last list | `P1`, rebuilt as `PB` plus the 25 of `04-01-P1.txt`: 12,979 ids, and the `sha256` matches the recorded `377fe206…21ed` |
+| Against `P1` | **0 only in `P1`**; 25 only in `P2`, all on the table below. No foreign line |
+| `NeedOverOneCycleTest` | Its 22 ids are in `P2` unchanged, the same set as in `P1` |
+| `host_build_count`, summed | **624**, equal to the last count (`PB`, 624). **Not above it** |
+
+| Only in `P2` | Rows | Why |
+|---|---|---|
+| `TestHostUseGuardTest` | 11 | The slice C review, `c398be39d` (34 = 23 + 11, as "Slice C review" counts) |
+| `PortGivensGuardTest` | 6 | E12, step 05-02 (1 guard row, 5 planted cases) |
+| `RealityCheckWireContractTest.Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(RefinementAtThePortTest)` | 1 | B13 for the Refinement port, step 05-02 |
+| `RefinementWithoutSignInWireContractTest` | 7 | E2 (05-03), E10's 5 cases and E13 (05-04) |
+
+Host builds against the timing run (619), by fixture: +4 `WireContractTestTest` (02-01), +1 `RealityCheckWireContractTest` (02-02), +1 `RefinementWithoutSignInWireContractTest` (05-03), −1 each for `Slice01`, `Slice04` and `NeedOverOneCycleTest`, and +2 foreign `DeleteUnitRightsTests` (`6efb2b255`). **Guarantee 5, restated:** this class alone takes one host fixture off and puts one on, so the slice's "about 3 below" does not apply yet. Slice E so far is net zero: 624 at `PB` and 624 now. That is 622 without the two foreign builds, which is under 619 + 4.
+
+A first `P2` attempt used CLAUDE.md's connector filter instead of clause `A`. It dropped 3 unit rows that sit in connector-category classes (`JiraWriteBackTest` and `AzureDevOpsWriteBackTest`, `WriteFieldsToWorkItems_*`), and was discarded; the run above replaces it.
+
+**5. The outlier, read in Release.** `A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens` takes **2.28 to 2.45 s** alone at the port (host: 1.43 to 1.58 s), and **0.126 s in the full run** (`P2`; at the host it took 0.50 s in `P0`). **The cause is not the code it reaches. It is the first row NUnit runs in the class** (the TRX start times show it first), so it pays the process's first-use costs. A step probe (reverted) split it:
+- **Set-up: 1.03 to 1.14 s.** This is the schema template build, which every later row reuses (0.3 ms each).
+- **The Given that stores Team Gravity and its 30 days of finished Work Items: 0.99 to 1.04 s.** These are the first database writes and the first EF compilation of the process. With the seeders, which warm the same paths in set-up first, it falls to 0.31 to 0.36 s.
+- **The rest is cheap:** the blackout day 14 ms, the calendar 16 ms, Throughput 91 ms (30 days) and the tab's read 76 ms. The scripted 7-day forecast is found, so the engine draws nothing.
+
+At the host the same row ran first too, and paid the host's first request. Its siblings with the same Givens (`A_blacked_out_Refinement_after_the_next…`, `Today_a_blacked_out…`) take 0.04 to 0.05 s at the port. Nothing needs fixing in product or test code. The alone-run excess is the template, which a full run pays once per test process.
+
+**6. The seeders choice, and the question for the maintainer.**
+
+The port runs without seeders: the `IAppSettingService` stand-in answers the one setting the port reads, and E13 holds that answer to a seeded database. The other seeded table the port reaches, `OptionalFeatures`, is read empty, and that cannot matter for rows that store no Feature.
+
+> **Question.** Slice E's first class is at the port. Without the seeders, Stage 3 for E and F together comes to about 17.4 s, above the 14.1 s line (about 13.6 s with the seeders, under it). Alone, the class and its 7 new host rows take 0.14 s more than before, against 3.75 s less in a full run. Which do you want?
+>
+> - **A. Stop here.** `NeedOverOneCycleTest` stays at the port; `Slice05`, `Slice10`, `Slice12` and the whole of F stay on `HostUsersStillToMove`. Push 2 carries slice E as it is.
+> - **B. Go on, without the seeders:** E's other three classes (49 rows, with E1, E3 to E7 and E11 as their classes move), then F's checkpoint (`ReportWindowBoundaryScenarios`), measured the same way, with Stage 3 re-run there on F's own `c`.
+> - **C. Go on with E only, without the seeders,** and drop F.
+> - **Seeders:** keep the port **without** them (`c` 0.7 ms; E13 guards the one setting), or run them in every port scenario, as the host does (`c` about 36 ms, about 3.9 s across E and F, and Stage 3 falls under the line).
+>
+> **Recommendation: B, without the seeders.** It clears the line by about 3.3 s on a projection, and the one class measured beat its projection by about 1 s in the full run. Against it: the whole of E and F is under 1 % of the suite, and its wall-clock gain at 6 workers is a few seconds. If you value the margin over the saving, take A: the class already moved stays moved, and nothing is lost. **With the seeders, the recommendation would be to stop (A).**
+
+**Counts.** `P2`: 13,011 passed, 0 failed. The class alone: 22 passed in each of 12 rounds (9 without the seeders, the probe set included, and 3 with). The wire class: 7 passed in each of 6 rounds. `dotnet build` of the tests in Release after the revert: 0 warnings, 0 errors. `git status` after the revert: clean.
