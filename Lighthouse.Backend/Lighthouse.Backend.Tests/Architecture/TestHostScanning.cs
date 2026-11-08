@@ -1,3 +1,6 @@
+using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -10,14 +13,24 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// </summary>
     internal static class TestHostScanning
     {
-        private static readonly string[] FactoryTypeNamePrefixes = ["TestWebApplicationFactory", "WebApplicationFactory"];
+        private static readonly HashSet<string> FactoryTypeNames = new(StringComparer.Ordinal)
+        {
+            typeof(WebApplicationFactory<>).FullName!,
+            typeof(TestWebApplicationFactory<>).FullName!,
+        };
 
+        private static readonly string TestServerTypeName = typeof(TestServer).FullName!;
+
+        // Combinatorial, Pairwise and Sequential make a method a test on their own, without [Test].
         public static readonly IReadOnlySet<string> TestAttributes = new HashSet<string>(StringComparer.Ordinal)
         {
             "NUnit.Framework.TestAttribute",
             "NUnit.Framework.TestCaseAttribute",
             "NUnit.Framework.TestCaseSourceAttribute",
             "NUnit.Framework.TheoryAttribute",
+            "NUnit.Framework.CombinatorialAttribute",
+            "NUnit.Framework.PairwiseAttribute",
+            "NUnit.Framework.SequentialAttribute",
         };
 
         public static readonly IReadOnlySet<string> SetUpAndTearDownAttributes = new HashSet<string>(StringComparer.Ordinal)
@@ -35,6 +48,10 @@ namespace Lighthouse.Backend.Tests.Architecture
         public static bool RunsWhenAFixtureRuns(MethodDefinition method)
             => method.IsConstructor || HasAnAttribute(method, TestAttributes) || HasAnAttribute(method, SetUpAndTearDownAttributes);
 
+        /// <summary>Whether NUnit runs the type once around the tests of its namespace rather than as a fixture of its own.</summary>
+        public static bool IsASetUpFixture(TypeDefinition type)
+            => type.CustomAttributes.Any(attribute => attribute.AttributeType.FullName == "NUnit.Framework.SetUpFixtureAttribute");
+
         public static bool HasAnAttribute(MethodDefinition method, IReadOnlySet<string> attributeNames)
             => method.CustomAttributes.Any(attribute => attributeNames.Contains(attribute.AttributeType.FullName));
 
@@ -49,8 +66,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         public static bool IsAConcreteClass(TypeDefinition type)
             => type is { IsClass: true, IsAbstract: false } && !type.Name.StartsWith('<');
 
+        /// <summary>Whether the type is one of the two host factories, whatever its type argument.</summary>
         public static bool NamesAFactory(TypeReference type)
-            => FactoryTypeNamePrefixes.Any(prefix => type.GetElementType().Name.StartsWith(prefix, StringComparison.Ordinal));
+            => FactoryTypeNames.Contains(type.GetElementType().FullName);
 
         /// <summary>The full names of the types that are a factory or derive from one, however deep.</summary>
         public static HashSet<string> FactoryTypesIn(List<TypeDefinition> allTypes)
@@ -75,12 +93,13 @@ namespace Lighthouse.Backend.Tests.Architecture
             return factories;
         }
 
-        /// <summary>Whether the instruction builds a host: a new factory, or a host derived from one.</summary>
+        /// <summary>Whether the instruction builds a host: a new factory, a host derived from one, or a new test server.</summary>
         public static bool IsAHostStart(Instruction instruction, HashSet<string> factoryTypeNames)
             => instruction.Operand is MethodReference called
-                && IsAFactoryType(called.DeclaringType, factoryTypeNames)
-                && (instruction.OpCode.Code == Code.Newobj
-                    || instruction.OpCode.Code is Code.Call or Code.Callvirt && called.Name is "WithWebHostBuilder" or "WithTestAuthentication");
+                && (IsAFactoryType(called.DeclaringType, factoryTypeNames)
+                        && (instruction.OpCode.Code == Code.Newobj
+                            || instruction.OpCode.Code is Code.Call or Code.Callvirt && called.Name is "WithWebHostBuilder" or "WithTestAuthentication")
+                    || instruction.OpCode.Code == Code.Newobj && called.DeclaringType.FullName == TestServerTypeName);
 
         private static bool IsAFactoryType(TypeReference type, HashSet<string> factoryTypeNames)
             => NamesAFactory(type) || factoryTypeNames.Contains(type.GetElementType().FullName);
@@ -111,8 +130,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// Walks the call tree below every root method in an assembly and answers which of them can reach the
         /// start of an application host. Each guard says which methods are roots, because the guards ask
         /// different questions. Calls are followed into methods and constructors that are written in the same
-        /// assembly, into the bodies the compiler makes for lambdas, local functions and async methods, and into
-        /// overrides of a virtual method that is called.
+        /// assembly, into the bodies the compiler makes for lambdas, local functions and async methods, into
+        /// overrides of a virtual method that is called, and into the static constructor of a type written here
+        /// whose static field is read or written or whose static method is called.
         /// </summary>
         public sealed class HostBuildingScan
         {
@@ -193,8 +213,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             private IEnumerable<MethodDefinition> MethodsRunBy(MethodDefinition method)
                 => CompilerMadeBodiesOf(method).Concat(
                     method.HasBody
-                        ? method.Body.Instructions.SelectMany(MethodsStartedBy)
+                        ? method.Body.Instructions.SelectMany(instruction => MethodsStartedBy(instruction).Concat(StaticConstructorsRunBy(instruction)))
                         : []);
+
+            private IEnumerable<MethodDefinition> StaticConstructorsRunBy(Instruction instruction)
+            {
+                var touched = instruction.Operand switch
+                {
+                    FieldReference field when instruction.OpCode.Code is Code.Ldsfld or Code.Stsfld or Code.Ldsflda => field.DeclaringType,
+                    MethodReference { HasThis: false } called when instruction.OpCode.Code == Code.Call => called.DeclaringType,
+                    _ => null,
+                };
+
+                return touched is null || IsAFactoryType(touched, factoryTypeNames)
+                    ? []
+                    : typesByName.GetValueOrDefault(touched.GetElementType().FullName)?.Methods.Where(candidate => candidate is { IsConstructor: true, IsStatic: true }) ?? [];
+            }
 
             // An async method's own body lives in the MoveNext of a type the compiler names "<Method>d__N".
             private static IEnumerable<MethodDefinition> CompilerMadeBodiesOf(MethodDefinition method)

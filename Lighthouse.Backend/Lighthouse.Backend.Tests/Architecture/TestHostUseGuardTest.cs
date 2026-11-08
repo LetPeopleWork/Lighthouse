@@ -1,5 +1,8 @@
 using Lighthouse.Backend.Tests.Contracts;
 using Lighthouse.Backend.Tests.TestHelpers;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
 using Mono.Cecil;
 using static Lighthouse.Backend.Tests.Architecture.TestHostScanning;
 
@@ -8,17 +11,17 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>
     /// A test may start an application host only for a reason: as a skeleton of a user flow, or as a wire contract
     /// on <c>WireContractTest</c>. Everything else drives the application service through its port. This guard reads
-    /// the compiled test assembly and judges every concrete class with tests, nested ones included, by what it runs
-    /// in its tests, set-ups, tear-downs and constructors, on the class or on a base class. A type sits on at most one
+    /// the compiled test assembly and judges every concrete class with tests, nested ones included, and every set-up
+    /// fixture, by what it runs in its tests, set-ups, tear-downs and constructors, on the class or on a base class. A type sits on at most one
     /// of the two lists of reasons, and only while it still starts a host; the contracts namespace and the namespaces
     /// below it hold the fixtures on the base and nothing else.
     /// </summary>
     [TestFixture]
     public partial class TestHostUseGuardTest
     {
-        // This class and the classes it nests are exempt. It tests the contract base itself rather than pinning a wire
-        // contract, so it lives beside the other test helpers, and its nested fixtures derive from the base outside the
-        // contracts namespace for that reason.
+        // The classes this class nests are exempt, the class itself is not. It tests the contract base itself rather than
+        // pinning a wire contract, so it lives beside the other test helpers, and its nested fixtures derive from the base
+        // outside the contracts namespace for that reason. Its own tests start no host and stay under every rule.
         private static readonly string TheContractBasesOwnTest = typeof(WireContractTestTest).FullName!;
 
         private static readonly string TheContractBase = typeof(WireContractTest).FullName!;
@@ -65,9 +68,73 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase(typeof(PlantedFixtures.StartsAHostInAConstructor))]
         [TestCase(typeof(PlantedFixtures.StartsAHostInAHelperTheSetUpCalls))]
         [TestCase(typeof(PlantedFixtures.StartsAHostInTestsThatCarryTestCaseOnly))]
+        [TestCase(typeof(PlantedFixtures.ReachesAHostOnlyThroughAStaticField))]
+        [TestCase(typeof(PlantedFixtures.ASetUpFixtureThatStartsAHost))]
+        [TestCase(typeof(PlantedFixtures.StartsATestServer))]
+        [TestCase(typeof(PlantedFixtures.StartsAHostInCombinatorialTestsOnly))]
+        [TestCase(typeof(PlantedFixtures.StartsAHostInPairwiseTestsOnly))]
+        [TestCase(typeof(PlantedFixtures.StartsAHostInSequentialTestsOnly))]
         public void A_fixture_that_starts_a_host_without_a_reason_is_named(Type planted)
         {
             Assert.That(HostUsersOnNeitherList(), Does.Contain(KeyOf(planted)));
+        }
+
+        [Test]
+        public void A_fixture_that_only_builds_client_options_reads_as_no_host()
+        {
+            var optionsOnly = plantedTypes.Single(type => type.FullName == KeyOf(typeof(PlantedFixtures.BuildsOnlyClientOptions)));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(Scan.FixtureReachesAHost(optionsOnly), Is.False);
+                Assert.That(HostUsersOnNeitherList(), Does.Not.Contain(optionsOnly.FullName));
+            }
+        }
+
+        [TestCase("Lighthouse.Backend.Tests.FixtureTimingReporter")]
+        [TestCase("Lighthouse.Backend.Tests.InstanceCulturePin")]
+        public void A_set_up_fixture_of_the_real_assembly_that_starts_no_host_is_not_named(string setUpFixture)
+        {
+            var itself = concreteClasses.Single(type => type.FullName == setUpFixture);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(IsASetUpFixture(itself), Is.True);
+                Assert.That(HostUsersWithoutAReason([itself], StillToMove(), NoSkeletons()), Is.Empty);
+            }
+        }
+
+        [Test]
+        public void A_test_on_the_contract_bases_own_test_itself_is_named_while_its_nested_fixtures_stay_exempt()
+        {
+            var theCopy = KeyOf(typeof(PlantedFixtures.WireContractTestTest));
+
+            var named = HostUsersWithoutAReason(plantedTypes, StillToMove(), NoSkeletons(), theCopy);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(named, Does.Contain(theCopy));
+                Assert.That(named, Does.Not.Contain(KeyOf(typeof(PlantedFixtures.WireContractTestTest.OneHostForThreeScenarios))));
+            }
+        }
+
+        [Test]
+        public void A_host_user_named_while_a_listed_entry_went_stale_gets_the_rename_hint()
+        {
+            var aRenamedFixture = KeyOf(typeof(PlantedFixtures.StartsAHostInAConstructor));
+            var itsOldName = "Lighthouse.Backend.Tests.Gone.TheOldNameOfTheFixture";
+            var listed = StillToMove(itsOldName);
+
+            var named = HostUsersWithoutAReason(plantedTypes, listed, NoSkeletons());
+            var stale = StaleEntries(plantedTypes, listed, NoSkeletons());
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(named, Does.Contain(aRenamedFixture));
+                Assert.That(stale, Is.EqualTo(new[] { itsOldName }));
+                Assert.That(HostNeedsAReason(named, stale), Does.Contain("if you renamed or moved a listed class, rename its entry"));
+                Assert.That(HostNeedsAReason(named, []), Does.Not.Contain("rename its entry"));
+            }
         }
 
         [Test]
@@ -231,7 +298,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(withoutAReason, Is.Empty, () => HostNeedsAReason(withoutAReason));
+                Assert.That(withoutAReason, Is.Empty, () => HostNeedsAReason(withoutAReason, stale));
                 Assert.That(stale, Is.Empty, () => StaleEntryMessage(stale));
                 Assert.That(onMoreThanOneList, Is.Empty, () => OnMoreThanOneListMessage(onMoreThanOneList));
                 Assert.That(contractsWithoutTheBase, Is.Empty, () => ContractsWithoutTheBaseMessage(contractsWithoutTheBase));
@@ -279,11 +346,16 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>
         /// The fixtures among the given types that can start a host and have no reason to: not a wire contract on
-        /// the base, and not the contract base's own test or a class nested in it.
+        /// the base, and not a class nested in the contract base's own test. A set-up fixture has no tests but is judged
+        /// the same way, since NUnit runs it around a whole namespace.
         /// </summary>
         private List<string> HostUsersWithoutAReason(List<TypeDefinition> types, HashSet<string> stillToMove, Dictionary<string, string> skeletons)
-            => [.. types.Where(Scan.HasTests)
-                .Where(type => !IsTheContractBasesOwnTest(type))
+            => HostUsersWithoutAReason(types, stillToMove, skeletons, TheContractBasesOwnTest);
+
+        private List<string> HostUsersWithoutAReason(
+            List<TypeDefinition> types, HashSet<string> stillToMove, Dictionary<string, string> skeletons, string contractBasesOwnTest)
+            => [.. types.Where(type => Scan.HasTests(type) || IsASetUpFixture(type))
+                .Where(type => !IsExemptAsTheContractBasesOwnTest(type, contractBasesOwnTest))
                 .Where(type => !OnTheBase(type))
                 .Where(type => !stillToMove.Contains(type.FullName) && !skeletons.ContainsKey(type.FullName))
                 .Where(Scan.FixtureReachesAHost)
@@ -318,7 +390,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// </summary>
         private List<string> ContractsWithoutTheBase(List<TypeDefinition> types)
             => [.. types.Where(Scan.HasTests)
-                .Where(type => !IsTheContractBasesOwnTest(type))
+                .Where(type => !IsExemptAsTheContractBasesOwnTest(type, TheContractBasesOwnTest))
                 .Where(type => OnTheBase(type) != InTheContractsNamespace(type))
                 .Select(type => type.FullName)
                 .Order(StringComparer.Ordinal)];
@@ -332,16 +404,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             return itsNamespace == TheContractsNamespace || itsNamespace.StartsWith(TheContractsNamespace + ".", StringComparison.Ordinal);
         }
 
-        private static bool IsTheContractBasesOwnTest(TypeDefinition type) => TopLevelTypeOf(type).FullName == TheContractBasesOwnTest;
+        private static bool IsExemptAsTheContractBasesOwnTest(TypeDefinition type, string contractBasesOwnTest)
+            => IsInside(type, contractBasesOwnTest);
 
-        private static string HostNeedsAReason(List<string> types)
+        private static string HostNeedsAReason(List<string> types) => HostNeedsAReason(types, []);
+
+        private static string HostNeedsAReason(List<string> types, List<string> staleInTheSameRun)
             => $"{types.Count} type(s) start an application host without a reason:{Environment.NewLine}"
                 + Lines(types)
                 + "A test may start a host only for a reason. For each type, do one of three things: "
                 + "move it to the application-service port (build the service with ServicePortHarness, or with new for up to three collaborators, under Tests/Acceptance/<Feature>/); "
                 + "list it as a skeleton with its user flow, if it asserts a business outcome that needs the route or the wiring; "
                 + "or make it a wire contract on WireContractTest in Tests/Contracts/. "
-                + "Fix the type; do not add it to the list of host users still to move, which only shrinks.";
+                + "Fix the type; do not add it to the list of host users still to move, which only shrinks."
+                + (staleInTheSameRun.Count > 0
+                    ? $"{Environment.NewLine}A listed type went stale in the same run: if you renamed or moved a listed class, rename its entry."
+                    : string.Empty);
 
         private static string StaleEntryMessage(List<string> types)
             => $"{types.Count} listed type(s) no longer exist or no longer start an application host:{Environment.NewLine}"
@@ -447,9 +525,78 @@ namespace Lighthouse.Backend.Tests.Architecture
                 public void Serve() => Assert.Pass();
             }
 
-            // The contract base's own test, copied by name and shape, once off the base and once on it.
-            internal static class WireContractTestTest
+            internal static class SharedHost
             {
+                internal static readonly TestWebApplicationFactory<Program> F = new();
+            }
+
+            internal abstract class ReachesAHostOnlyThroughAStaticField
+            {
+                [Test]
+                public void Serve() => Assert.That(SharedHost.F, Is.Not.Null);
+            }
+
+            [SetUpFixture]
+            internal abstract class ASetUpFixtureThatStartsAHost
+            {
+                [OneTimeSetUp]
+                public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
+            }
+
+            internal abstract class BuildsOnlyClientOptions
+            {
+                [Test]
+                public void Serve() => Assert.That(new WebApplicationFactoryClientOptions { AllowAutoRedirect = false }.AllowAutoRedirect, Is.False);
+            }
+
+            internal abstract class StartsATestServer
+            {
+                [Test]
+                public void Serve()
+                {
+                    using var services = new ServiceCollection().BuildServiceProvider();
+                    using var server = new TestServer(services);
+                    Assert.That(server, Is.Not.Null);
+                }
+            }
+
+            internal abstract class StartsAHostInCombinatorialTestsOnly
+            {
+                [Combinatorial]
+                public void Serve([Values(1)] int scenario)
+                {
+                    _ = new TestWebApplicationFactory<Program>();
+                    Assert.That(scenario, Is.Positive);
+                }
+            }
+
+            internal abstract class StartsAHostInPairwiseTestsOnly
+            {
+                [Pairwise]
+                public void Serve([Values(1)] int scenario, [Values(2)] int other)
+                {
+                    _ = new TestWebApplicationFactory<Program>();
+                    Assert.That(scenario, Is.LessThan(other));
+                }
+            }
+
+            internal abstract class StartsAHostInSequentialTestsOnly
+            {
+                [Sequential]
+                public void Serve([Values(1)] int scenario)
+                {
+                    _ = new TestWebApplicationFactory<Program>();
+                    Assert.That(scenario, Is.Positive);
+                }
+            }
+
+            // The contract base's own test, copied by name and shape: a test on the class itself that starts a host,
+            // and nested fixtures once off the base and once on it.
+            internal abstract class WireContractTestTest
+            {
+                [Test]
+                public void Serve() => Assert.That(new TestWebApplicationFactory<Program>(), Is.Not.Null);
+
                 internal abstract class OneHostOnTheBaseForThreeScenarios : WireContractTest
                 {
                     [TestCase(1)]
