@@ -1,4 +1,4 @@
-# ADR-272 (draft): An outlier is a value above a fixed multiple of the median, computed in the frontend, per chart
+# ADR-282 (draft): An outlier is a value above a fixed multiple of the median, computed in the frontend, per chart
 
 Draft written in the DESIGN wave of Story 6502, revised after the first review round. It lives in the feature
 folder; moving it to `docs/product/architecture/` and adding the ADR-270 glossary row and the `ARCHITECTURE.md`

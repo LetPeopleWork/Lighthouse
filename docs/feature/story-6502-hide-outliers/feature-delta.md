@@ -695,7 +695,7 @@ Status: **re-checked in review round 3: DoR met, with item 3 qualified.** US-01 
 Binding inputs: the maintainer decision tables and the AFK decisions above. Scope: application level, frontend only.
 Style: unchanged (React 19 + MUI 9, `utils` pure modules, `components/Common/Charts`, page-level status in
 `pages/Common/MetricsView`). Wave state: **DESIGN revised after review round 1 (NEEDS_REVISION: B1, M1 to M9 and m1 to m12 addressed; AFK-10 to AFK-14 folded in); round 2 pending.**
-Draft ADR: `adr-272-draft-outlier-is-a-per-chart-median-multiple.md` (this folder).
+Draft ADR: `adr-282-draft-outlier-is-a-per-chart-median-multiple.md` (this folder).
 
 Quality drivers, in order: (1) no number silently changes, (2) N changes in one place, (3) a second chart can adopt
 the rule without touching the first, (4) a slow connection never shows a stale count or an empty-looking plot,
@@ -849,7 +849,7 @@ percentile chip is ticked; (3) no marker box intersects the plot or the legend r
 non-interactive text after the percentile chips (`▲ 95%: 33 days  ▲ SLE: 85% @ 35 days or less`, illustrative figures, in the line
 colours, `aria-hidden`), wrapping with the row on a phone; no SVG layer, no margin, no hook. Cost: the marker is no
 longer at the plot's top edge, so the popover sentence carries more. Only `OffScaleLineMarkers`' home changes; the
-pure modules, the cap and the spec tests stay. Keeping the axis open for every line is **not** a fallback. ADR-272
+pure modules, the cap and the spec tests stay. Keeping the axis open for every line is **not** a fallback. ADR-282
 records both.
 
 **Stale named percentiles (found at DESIGN).** `namedPercentiles` keeps the previous definition's lines until the
@@ -861,7 +861,7 @@ to move up out of the chart. The earlier rationale ("the chart cannot see the ow
 and `endDate` and takes only `definitionId`. So a tag of the definition id alone is **not** complete (an answer for
 definition 7 fetched for the previous date range would match a later selection of 7). The tag therefore also carries
 the callback's identity, which changes exactly when its `useCallback` dependencies change, so it is as complete as a
-key. **Deviation from the project's keyed-query norm**, recorded in ADR-272: chosen because scoped percentiles
+key. **Deviation from the project's keyed-query norm**, recorded in ADR-282: chosen because scoped percentiles
 already live in component state (`BaseMetricsView.tsx:1475-1480`, another widget) and moving the fetch is outside
 this Story. A test covers a late answer for the old date range with the same definition id.
 
@@ -1139,7 +1139,7 @@ importing services, hooks, pages, and `components` from importing pages; `outlie
 rule needed. The constant-versus-copy test and Stryker cover the rest. Biome and `dotnet build` as per CLAUDE.md.
 
 **Shared-doc edits owed in DELIVER** (not made here): move the ADR draft to `docs/product/architecture/` as
-ADR-272; add the Outlier row to the ADR-270 Flow metrics glossary (row text in the DISCUSS context map section);
+ADR-282; add the Outlier row to the ADR-270 Flow metrics glossary (row text in the DISCUSS context map section);
 one line in `ARCHITECTURE.md` section 4; `jobs.yaml` job (AFK-4); the `metrics/flow-metrics.md` passage at
 finalize; the `docs/settings/usagedata.md` line only if DEVOPS adds an event. `brief.md` gets one paragraph under
 Application Architecture (frontend chart rule), also owed. DEVOPS: usage-data candidate "outlier popover opened"
@@ -1197,7 +1197,7 @@ ADR move, glossary. **Slices:** 01 = steps 0 to 4 and the Zenith data of 7; 02 =
 | DES-4 | Edge markers as a custom SVG text layer in the top margin | the spike shows `ChartsReferenceLine` clips correctly |
 | DES-5 | Merge slices 01 and 02 (issue 1; AFK-6, done) | maintainer wants two releases |
 | DES-6 | Popover line 1 states the cut and the median, not the axis end | |
-| DES-7 | Named percentiles tagged with the definition id and the fetch callback's identity, in the same slice (deviation from keyed queries, recorded in ADR-272) | the fetch moves up into a keyed query |
+| DES-7 | Named percentiles tagged with the definition id and the fetch callback's identity, in the same slice (deviation from keyed queries, recorded in ADR-282) | the fetch moves up into a keyed query |
 | DES-8 | Add `fast-check` (MIT) as a dev dependency (AFK-7), a release older than 24 h | |
 | DES-9 | Demo data: `TZ-301` on Team Zenith, no Parent (AFK-14); the Gravity alternative is dropped | |
 | DES-10 | `OutlierChip` is not generic yet; the calculation is | a second chart adopts the chip |
@@ -1306,7 +1306,7 @@ broken chart in the field has no telemetry in this product (no frontend error re
 - **Page:** `docs/metrics/flow-metrics.md`, section "Cycle Time Scatterplot" (from line 16): add the chip, the popover, the rule (more than 5 times the median, computed on the plotted value), the markers for lines above the axis, and that View Data and every statistic are unchanged. Cross-check `docs/metrics/widgets.md` and `docs/metrics/portfolio-features.md` (the latter links to this section) for repeated wording. Use the configured terms (Work Item, Feature), the seeded defaults.
 - **Screenshots:** `docs/assets/features/metrics/cycleScatter.png` and `cycleScatterNamedCycleTime.png` (the latter is taken in `Screenshots.spec.ts` on Zenith with "Analysis to Done"), plus the Estimation vs Cycle Time image if its figure shows Zenith. Regenerated at finalize; the scatter now shows a chip, and the dark theme shot per the E2E plan.
 - **Website:** it hot-links `docs/assets` from `@main` through jsDelivr (ADR-073; the website repo's `lighthouseAsset()`), with no reference inside this repo. I did not find `cycleScatter` referenced in `/storage/repos/website/src`, so whether a live page shows it is unconfirmed; the rule is to **overwrite the PNGs in place, never rename or delete them**, so a page that does use one keeps working and picks up the new image once it is on `main` (jsDelivr may cache `@main` for some hours). At finalize, grep the website repo for `cycleScatter` and note the result.
-- **Also owed at finalize (from DESIGN):** ADR-272 moved to `docs/product/architecture/`, ADR-270 glossary row, `ARCHITECTURE.md` section 4 line, `brief.md` paragraph, `jobs.yaml` entry, the `usagedata.md` row (section 1).
+- **Also owed at finalize (from DESIGN):** ADR-282 moved to `docs/product/architecture/`, ADR-270 glossary row, `ARCHITECTURE.md` section 4 line, `brief.md` paragraph, `jobs.yaml` entry, the `usagedata.md` row (section 1).
 
 ### Checklist answers (no silent N/A)
 
