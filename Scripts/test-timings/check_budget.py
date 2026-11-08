@@ -360,9 +360,9 @@ def refuse_an_unlabelled_run(integration: Tier, ledgers: Ledgers, allowlist_name
         )
 
 
-def _over(seconds: Decimal) -> str:
+def _over(seconds: Decimal, places: int = 3) -> str:
     # Rounded up, so a value a fraction over its ceiling never prints as equal to it.
-    return f"{seconds.quantize(Decimal('0.001'), rounding=ROUND_UP)}"
+    return f"{seconds.quantize(Decimal(1).scaleb(-places), rounding=ROUND_UP)}"
 
 
 NOTHING_LABELLED = "nothing labelled yet"
@@ -414,7 +414,12 @@ def _backend_report(count: TierCount, ledgers: Ledgers) -> str:
 
 def _integration_lines(integration: Tier, ledgers: Ledgers) -> list[str]:
     return [
-        _tier_line(INTEGRATION, integration, _ceiling_cell("mean", ledgers.mean, integration.mean)),
+        _tier_line(
+            INTEGRATION,
+            integration,
+            _ceiling_cell("mean", ledgers.mean, integration.mean),
+            ledgers.mean,
+        ),
         f"{'':<{FIGURES_WIDTH}}" + _ceiling_cell("total", ledgers.total, integration.seconds),
     ]
 
@@ -448,7 +453,11 @@ def _room(limit: Limit, value: Decimal | None) -> str:
     shown = limit.in_force
     if shown is None or value is None:
         return ""
-    return f"{(shown.seconds - value) / shown.seconds * 100:.0f} %"
+    room = (shown.seconds - value) / shown.seconds * 100
+    # A breach must never read as no room at all.
+    if -1 < room < 0:
+        return "-<1 %"
+    return f"{room:.0f} %"
 
 
 def _since_the_total_was_set(total: Limit, integration: Tier) -> list[str]:
@@ -458,10 +467,17 @@ def _since_the_total_was_set(total: Limit, integration: Tier) -> list[str]:
     return [f"Since the total was set: {integration.tests - shown.tests_when_set:+d} tests"]
 
 
-def _tier_line(name: str, tier: Tier, ceiling: str = "") -> str:
-    mean = "-" if tier.mean is None else f"{tier.mean:.3f}"
+def _tier_line(name: str, tier: Tier, ceiling: str = "", mean_limit: Limit = Limit()) -> str:
+    mean = _mean_text(tier.mean, mean_limit)
     line = f"{name:<12}{tier.tests:>7,}{tier.seconds:>10,.1f}{mean:>9}"
     return f"{line}   {ceiling}" if ceiling else line
+
+
+def _mean_text(mean: Decimal | None, limit: Limit) -> str:
+    if mean is None:
+        return "-"
+    # Over its ceiling, the mean reads as the breach annotation words it, never as the ceiling.
+    return _over(mean) if limit.breached_by(mean) else f"{mean:.3f}"
 
 
 def _aside_line(name: str, tests: int | None, note: str) -> str:
@@ -638,7 +654,7 @@ def escaped(text: str) -> str:
 
 def breach_annotation(finding: Finding, allowlist_name: str, kind: str, places: int = 1) -> str:
     return (
-        f"::{kind}::{escaped(finding.unit)} took {finding.seconds:.{places}f}s, "
+        f"::{kind}::{escaped(finding.unit)} took {_over(finding.seconds, places)}s, "
         f"over the {finding.limit}s {finding.limit_kind} set in {allowlist_name}"
     )
 
@@ -835,6 +851,85 @@ def load_fast_allowlist(path: Path, fast: Limit) -> dict[str, Decimal]:
     return ceilings
 
 
+KEPT_FIELDS = ("seconds", "runs", "reason", TESTS_WHEN_SET)
+
+
+def undone_entries(
+    previous: dict, current: dict, previous_name: str, current_name: str
+) -> list[str]:
+    """What the current backend section undoes of an earlier, already accepted one: an enforced
+    ledger entry edited, removed or moved, or a fast_allowlist class ceiling raised."""
+    return [
+        *_undone_ledger_entries(previous, current, previous_name, current_name),
+        *_raised_class_ceilings(previous, current, previous_name, current_name),
+    ]
+
+
+def _undone_ledger_entries(
+    previous: dict, current: dict, previous_name: str, current_name: str
+) -> list[str]:
+    undone = []
+    for ledger, words in LEDGER_WORDS.items():
+        before = previous.get(LEDGERS_FIELD, {}).get(ledger, [])
+        after = current.get(LEDGERS_FIELD, {}).get(ledger, [])
+        number = _first_undone(before, after)
+        if number is not None:
+            undone.append(
+                f"{current_name} edits, removes or moves entry {number} of its {words}, which "
+                f"is enforced in {previous_name}; an enforced entry stays as it is and new "
+                "entries are only appended"
+            )
+    return undone
+
+
+def _first_undone(before: list[dict], after: list[dict]) -> int | None:
+    # Only the last entry may be provisional, so the enforced ones are the leading run of the list.
+    for number, entry in enumerate(before, start=1):
+        if not _is_enforced(entry):
+            return None
+        if number > len(after) or _kept(entry) != _kept(after[number - 1]):
+            return number
+    return None
+
+
+def _is_enforced(entry: dict) -> bool:
+    return len({str(run) for run in entry["runs"]}) >= RUNS_TO_ENFORCE
+
+
+def _kept(entry: dict) -> tuple:
+    seconds = Decimal(str(entry["seconds"]))
+    return (seconds, *(entry.get(field) for field in KEPT_FIELDS[1:]))
+
+
+def _raised_class_ceilings(
+    previous: dict, current: dict, previous_name: str, current_name: str
+) -> list[str]:
+    before = _class_ceilings(previous)
+    return [
+        f"{escaped(unit)} has its class ceiling raised from {before[unit]}s to {ceiling}s in the "
+        f"{FAST_ALLOWLIST_FIELD} of {current_name}, against {previous_name}; a class ceiling "
+        "only goes down"
+        for unit, ceiling in _class_ceilings(current).items()
+        if unit in before and ceiling > before[unit]
+    ]
+
+
+def _class_ceilings(section: dict) -> dict[str, Decimal]:
+    return {
+        entry["unit"]: Decimal(str(entry["ceiling_seconds"]))
+        for entry in section.get(FAST_ALLOWLIST_FIELD, [])
+    }
+
+
+def read_undone_entries(previous: Path, current: Path) -> list[str]:
+    """Both budget files read and refused as the check refuses one, then compared."""
+    for path in (previous, current):
+        load_fast_allowlist(path, load_ledgers(path).fast)
+    previous_name, previous_section = _section("backend", previous)
+    current_name, current_section = _section("backend", current)
+    return undone_entries(previous_section, current_section, previous_name, current.name)
+
+
 def _ceilings_of(
     entries: object, name: str, list_words: str, where: str, scope: str
 ) -> dict[str, Decimal]:
@@ -920,6 +1015,13 @@ def _build_arg_parser() -> argparse.ArgumentParser:
         help="Backend test source tree an allowlisted class must still be declared in.",
     )
     parser.add_argument(
+        "--previous-budget",
+        type=Path,
+        help="An earlier budget file, such as main's: fail if this one edits, removes or moves "
+        "any of its enforced ledger entries or raises a fast_allowlist class ceiling. "
+        "Given without --stack and --csv, only this comparison runs.",
+    )
+    parser.add_argument(
         "--warn-only",
         action="store_true",
         help="Report a unit over its budget or ceiling as a warning and pass. "
@@ -931,16 +1033,39 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     parser = _build_arg_parser()
     arguments = parser.parse_args(argv)
+    compare_only = _compares_only(arguments)
     needed = ("frontend_csv", "backend_csv") if arguments.pyramid else ("stack", "csv")
     missing = [name for name in needed if getattr(arguments, name) is None]
-    if missing:
+    if missing and not compare_only:
         options = ", ".join(f"--{name.replace('_', '-')}" for name in missing)
         parser.error(f"the following arguments are required: {options}")
     try:
+        if _undoes_the_previous_budget(arguments):
+            return CANNOT_JUDGE
+        if compare_only:
+            return 0
         return _pyramid(arguments) if arguments.pyramid else _check(arguments)
     except CannotJudge as refusal:
         print(f"::error::{refusal}")
         return CANNOT_JUDGE
+
+
+def _undoes_the_previous_budget(arguments: argparse.Namespace) -> bool:
+    if arguments.previous_budget is None:
+        return False
+    undone = read_undone_entries(arguments.previous_budget, arguments.allowlist)
+    for text in undone:
+        print(f"::error::{text}")
+    return bool(undone)
+
+
+def _compares_only(arguments: argparse.Namespace) -> bool:
+    timing_options = (arguments.stack, arguments.csv, arguments.frontend_csv, arguments.backend_csv)
+    return (
+        arguments.previous_budget is not None
+        and not arguments.pyramid
+        and all(option is None for option in timing_options)
+    )
 
 
 def _check(arguments: argparse.Namespace) -> int:

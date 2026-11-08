@@ -813,7 +813,7 @@ Unless a row says otherwise: when `check_budget.py --stack backend` reads it, as
 
 | # | Scenario | Given | Then | Kind |
 |---|---|---|---|---|
-| B-21 | A limit is lowered by a new entry | The planted budget; then its mean ledger 0.5 then 0.45, both on 5 ids | First: `per test 2 s`, `mean 0.5`, `total 10`, 20 % room on each, `+0 tests`. Second: accepted, `mean 0.45`, 11 % room | H |
+| B-21 | A limit is lowered by a new entry | The planted budget; then its mean ledger 0.5 then 0.45, both on 5 ids | First: `per test 2 s` with `largest 0.010 s`, `mean 0.5` and `total 10` with 20 % room each, `+0 tests`. Second: accepted, `mean 0.45`, 11 % room | H |
 | B-22 | A mean or fast limit that rises is refused | Each ledger with an enforced entry above, then equal to, the one before | Refused, four cases | E |
 | B-23 | The total may rise, with a reason | Total 10 then 13 with a reason; then with a blank reason | First accepted, second refused | E |
 | B-24 | A provisional entry cannot sit above the mean or fast limit | Enforced 0.5 with provisional 0.6, 0.5, 0.45; the same for the fast limit; total with provisional 13 | Above refused on mean and fast limit; equal and below accepted; the total accepted | E |
@@ -857,7 +857,7 @@ Unless a row says otherwise: when `check_budget.py --stack backend` reads it, as
 | B-47 | A newer short entry cannot switch off an enforced one | Mean enforced 0.5, provisional 0.45; 16 `Integration` rows at 0.6 s, then at 0.47 s | 0.6: one error on 0.5, no breach warning on 0.45. 0.47: a breach warning on 0.45, exit 0 | E |
 | B-48 | A limit in force with no integration tests gives no verdict | All rows `Unit`; an entry in the mean ledger, enforced; then provisional; then in the fast ledger alone; then in the total ledger alone; then with a `Unit` row also over the fast limit; then with the variable `true` | Exit 2 each time, the report printed first, the "cannot be judged" line | E |
 | B-49 | Filling the budget file is a data commit | **A trial:** a provisional entry in each shipped ledger; then an enforced entry in each, with a real class in `fast_allowlist` | `python3 -m unittest discover -s Scripts/test-timings/tests` stays green in all three states, with no test file touched; the file restored | E |
-| B-50 | The shipped file obeys the ledger rules, whatever its numbers | The shipped file, empty and in B-49's states, with the trial's seconds chosen so they appear nowhere else | The reader accepts it; a search of the tests finds none of the trial's values, so a test cannot be pinning them | E |
+| B-50 | The shipped file obeys the ledger rules, whatever its numbers | The shipped file, empty and in B-49's states, with the trial's seconds chosen so they appear nowhere else | The reader accepts it. That no test pins a number is shown by B-49's trials staying green, not by a text search (dropped in the slice B review) | E |
 | B-51 | A breach planted from the shipped limits fails | Each shipped limit, read from the file, that has an enforced entry: a row or tier just over it | Exit 1, named. An empty ledger is said so in the test's name, and the planted budget covers it | H |
 
 **The pyramid (step 02-08).** Test file `test_check_budget_pyramid.py`.
@@ -1037,3 +1037,8 @@ The five latest eligible runs, each read per job, all attempt 1, all with `Build
 Both files were removed and `git status` showed neither.
 
 **The gates.** `pnpm build` passed. The first `pnpm test` overlapped another session's backend compile and failed: 2 `.test.tsx` failures, one a 5 s timeout, and 20 offenders, all `.test.tsx` at their unchanged 2 s limit. No logic test was named, even under that load. Re-run on a quiet machine, load 3.8 at the start: 9,530 tests passed, 0 offenders.
+
+## Wave: DELIVER / [REF] Slice B review
+
+- **Slice C wires the ratchet's direction into CI.** `check_budget.py --previous-budget <file>` refuses, with exit 2, a budget file that edits, removes or moves an enforced ledger entry of the earlier file or raises one of its `fast_allowlist` class ceilings. Slice C passes it `git show origin/main:Scripts/test-timings/test-time-budget.json`, written to a temporary file. No workflow changed in slice B.
+- **E2E counts 136, DISTILL's grep found 135: the tree changed, not the rule.** `git grep -E '^[[:space:]]*(test|testWith[A-Z][[:alnum:]_]*)\('` over `Lighthouse.EndToEndTests/tests/specs/*.spec.ts` gives 135 at `b26c97f46^` and 136 at `b26c97f46` (2026-11-08, after DISTILL), which adds `test("Take @screenshot of a Portfolio's Parent sources list", ...)`. The scan's regex and that grep match the same 136 lines today. The regex is unchanged.

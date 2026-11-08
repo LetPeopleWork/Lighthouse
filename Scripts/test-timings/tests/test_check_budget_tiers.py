@@ -8,6 +8,7 @@ that talks to a real tracker, one of them 30 s. The check is run as CI runs it, 
 import json
 import os
 import re
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -22,12 +23,14 @@ sys.path.insert(0, str(HERE.parent))
 from test_check_budget import (  # noqa: E402
     ALLOWLIST_NAME,
     BACKEND_COLUMNS,
+    CHECK_BUDGET,
     FRONTEND_COLUMNS,
     SUMMARY_VARIABLE,
     TESTS_NAMESPACE,
     BudgetCheckTestCase,
     CheckWorkspace,
     allowed,
+    check_environment,
 )
 
 import test_check_budget_time_budgets as time_budgets  # noqa: E402
@@ -444,6 +447,20 @@ def total_line(ceiling, room):
     return f"{'':<41}{ceiling_cell(ceiling, room)}"
 
 
+def ledger_document(ledgers, fast_allowlist=None, budget_seconds=PLANTED_BUDGET_SECONDS):
+    document = {
+        "frontend": {"budget_seconds": PLANTED_BUDGET_SECONDS, "allowlist": []},
+        "backend": {
+            "budget_seconds": budget_seconds,
+            "allowlist": [],
+            "ledgers": ledgers,
+        },
+    }
+    if fast_allowlist is not None:
+        document["backend"]["fast_allowlist"] = list(fast_allowlist)
+    return json.dumps(document, indent=2)
+
+
 class LedgerTestCase(TierReportTestCase):
     def check_ledgers(self, ledgers, *options):
         timings = self.workspace.steady_run()
@@ -451,17 +468,7 @@ class LedgerTestCase(TierReportTestCase):
         return self.workspace.check("backend", timings, *options)
 
     def write_ledgers(self, ledgers, fast_allowlist=None, budget_seconds=PLANTED_BUDGET_SECONDS):
-        document = {
-            "frontend": {"budget_seconds": PLANTED_BUDGET_SECONDS, "allowlist": []},
-            "backend": {
-                "budget_seconds": budget_seconds,
-                "allowlist": [],
-                "ledgers": ledgers,
-            },
-        }
-        if fast_allowlist is not None:
-            document["backend"]["fast_allowlist"] = list(fast_allowlist)
-        self.workspace.raw_allowlist(json.dumps(document, indent=2))
+        self.workspace.raw_allowlist(ledger_document(ledgers, fast_allowlist, budget_seconds))
 
     def accepted_report(self, ledgers):
         result = self.check_ledgers(ledgers)
@@ -705,6 +712,13 @@ class ASlowFastTestFailsTheBuildAndIsNamed(FastTestLimitTestCase):
 
         self.assert_passes_quietly(result)
 
+    def test_a_fraction_of_a_millisecond_over_the_limit_never_prints_as_the_limit(self):
+        just_over = f"{FAST_CLASS}.PricesAFractionOver"
+
+        result = self.check_fast([(just_over, "Unit", "2000.400", "Passed")])
+
+        self.assert_fails_naming(result, just_over, "took 2.001s", "over the 2s fast test limit")
+
     def test_every_slow_test_is_named_not_only_the_first(self):
         slow = {
             f"{FAST_CLASS}.PricesSlowly": 3,
@@ -760,6 +774,12 @@ class AListedClassAnswersToItsOwnCeiling(FastTestLimitTestCase):
 
             self.assert_fails_naming(result, stricter, "took 1.800s", "over the 1.5s class ceiling")
             self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+
+    def test_a_listed_class_that_no_longer_earns_its_place_fails_whatever_the_switch_says(self):
+        with mock.patch.dict(os.environ, {check_budget.WARN_ONLY_VARIABLE: "true"}):
+            result = self.check_fast(fast_allowlist=[allowed(LISTED_CLASS, 2)])
+
+        self.assert_fails_naming(result, LISTED_CLASS, ALLOWLIST_NAME, "not needed")
 
 
 class TheFastAllowlistStaysShortAndComplete(FastTestLimitTestCase):
@@ -878,6 +898,31 @@ class EachCeilingIsJudgedAtItsEdge(CeilingTestCase):
 
         self.assert_breaches_alone(
             result, "total ceiling", "took 10.001s in all over 25 tests", "over the 10s"
+        )
+
+    def test_a_mean_just_over_its_ceiling_reads_over_it_in_the_table_too(self):
+        cases = {
+            "over the ceiling, rounded up": (0.5, 0.501, "0.501"),
+            "under the ceiling, rounded to nearest": (0.4, 0.404, "0.400"),
+        }
+        for case, (seconds, last, mean) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+                one_more = row(f"{HOSTED_CLASS}.ServesALittleLonger", "Integration", last)
+
+                result = self.check_integration(seconds, 9, [one_more])
+
+                figures = self.figures_of(self.report_of(result, "Backend test time"))
+                self.assertEqual(figures["Integration"][2], mean, msg=self._explain(result))
+
+    def test_a_total_a_hair_over_its_ceiling_shows_less_than_one_percent_below_it(self):
+        one_more = row(f"{HOSTED_CLASS}.ServesOneMillisecondLonger", "Integration", 0.401)
+
+        result = self.check_integration(0.4, 24, [one_more])
+
+        self.assertIn(
+            total_line("total 10", "-<1 %"),
+            self.report_of(result, "Backend test time").splitlines(),
         )
 
 
@@ -1146,29 +1191,11 @@ class ShippedWorkspace(TierWorkspace, time_budgets.Workspace):
     """Writes rows of any category and checks them against the shipped file and test source."""
 
 
-def shipped_ledger_values():
-    backend = json.loads(check_budget.DEFAULT_ALLOWLIST.read_text(encoding="utf-8"))["backend"]
-    ledgers = backend.get("ledgers", {})
-    seconds = [item["seconds"] for entries in ledgers.values() for item in entries]
-    ceilings = [item["ceiling_seconds"] for item in backend.get("fast_allowlist", [])]
-    return [str(Decimal(str(value))) for value in seconds + ceilings]
-
-
 class TheShippedFileObeysTheLedgerRulesWhateverItsNumbers(unittest.TestCase):
     def test_the_reader_accepts_the_shipped_file(self):
         ledgers = check_budget.load_ledgers(check_budget.DEFAULT_ALLOWLIST)
 
         check_budget.load_fast_allowlist(check_budget.DEFAULT_ALLOWLIST, ledgers.fast)
-
-    def test_no_test_pins_a_number_of_the_shipped_ledgers_and_an_empty_ledger_has_none(self):
-        sources = {path.name: path.read_text(encoding="utf-8") for path in HERE.glob("*.py")}
-        for value in shipped_ledger_values():
-            with self.subTest(value=value):
-                self.assertEqual(
-                    [name for name, text in sources.items() if value in text],
-                    [],
-                    msg=f"{value}, from the shipped ledgers, is written in a test",
-                )
 
 
 class ABreachPlantedFromTheShippedLimitsFails(TierReportTestCase):
@@ -1229,6 +1256,138 @@ class ABreachPlantedFromTheShippedLimitsFails(TierReportTestCase):
                 )
 
                 self.assert_fails_naming(result, *named)
+
+
+PREVIOUS_BUDGET = "previous-test-time-budget.json"
+TWO_MEANS = [entry(0.5), entry(0.45)]
+TWO_TOTALS = [total_entry(10), total_entry(13, tests_when_set=26)]
+
+
+class AnEnforcedEntryOfTheEarlierFileIsNeverUndone(FastTestLimitTestCase):
+    """The budget file against the one it replaces, as main held it."""
+
+    def setUp(self):
+        super().setUp()
+        self.workspace.declare_test_class("ImportTest")
+
+    def check_against(self, previous, current, environment=None):
+        previous_file = self.write_previous(*previous)
+        self.write_ledgers(*current)
+        timings = self.workspace.steady_run()
+        with mock.patch.dict(os.environ, environment or {}):
+            return self.workspace.check("backend", timings, "--previous-budget", str(previous_file))
+
+    def compare_alone(self, previous, current):
+        previous_file = self.write_previous(*previous)
+        self.write_ledgers(*current)
+        command = [
+            sys.executable,
+            str(CHECK_BUDGET),
+            "--allowlist",
+            str(self.workspace.allowlist),
+            "--previous-budget",
+            str(previous_file),
+        ]
+        return subprocess.run(
+            command, capture_output=True, text=True, env=check_environment(), timeout=60
+        )
+
+    def write_previous(self, ledgers, fast_allowlist=None):
+        previous_file = self.workspace.root / PREVIOUS_BUDGET
+        previous_file.write_text(ledger_document(ledgers, fast_allowlist), encoding="utf-8")
+        return previous_file
+
+    def assert_undone(self, result, *fragments):
+        self.assertEqual(result.returncode, 2, msg=self._explain(result))
+        errors = self.annotations(result, "error")
+        self.assertEqual(len(errors), 1, msg=self._explain(result))
+        for fragment in (ALLOWLIST_NAME, PREVIOUS_BUDGET, *fragments):
+            self.assertIn(fragment, errors[0], msg=self._explain(result))
+        self.assertNotIn("Backend test time", result.stdout, msg=self._explain(result))
+        self.assertNotIn("Traceback", result.stderr, msg=self._explain(result))
+
+    def test_an_enforced_entry_edited_removed_or_moved_is_refused_whatever_the_switch_says(self):
+        cases = {
+            "seconds edited": (MEAN_LEDGER, [entry(0.5)], [entry(0.45)], "entry 1"),
+            "runs edited": (MEAN_LEDGER, [entry(0.5)], [entry(0.5, runs=RUN_IDS[1:])], "entry 1"),
+            "reason edited": (MEAN_LEDGER, [entry(0.5)], [entry(0.5, reason="read again")], "entry 1"),
+            "tests when set edited": (
+                TOTAL_LEDGER, [total_entry(10)], [total_entry(10, tests_when_set=21)], "entry 1"
+            ),
+            "first removed": (MEAN_LEDGER, TWO_MEANS, [entry(0.45)], "entry 1"),
+            "last removed": (FAST_LEDGER, [entry(2), entry(1.8)], [entry(2)], "entry 2"),
+            "reordered": (TOTAL_LEDGER, TWO_TOTALS, TWO_TOTALS[::-1], "entry 1"),
+        }
+        switch_on = {check_budget.WARN_ONLY_VARIABLE: "true"}
+        for case, (ledger, before, after, named) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+
+                result = self.check_against(
+                    (planted_ledgers(**{ledger: before}),),
+                    (planted_ledgers(**{ledger: after}),),
+                    switch_on,
+                )
+
+                self.assert_undone(result, LEDGER_WORDS[ledger], named, "enforced")
+
+    def test_a_raised_class_ceiling_is_refused_and_a_lowered_or_removed_one_is_not(self):
+        before = (planted_ledgers(), [allowed(LISTED_CLASS, 5)])
+
+        result = self.check_against(before, (planted_ledgers(), [allowed(LISTED_CLASS, 6)]))
+
+        self.assert_undone(result, LISTED_CLASS, "fast_allowlist", "from 5s to 6s")
+        for after in ([allowed(LISTED_CLASS, 4)], []):
+            with self.subTest(after=after):
+                self.workspace = self.fresh_workspace()
+                self.workspace.declare_test_class("ImportTest")
+
+                self.assert_passes_quietly(self.check_against(before, (planted_ledgers(), after)))
+
+    def test_an_appended_entry_or_an_unchanged_file_passes(self):
+        cases = {
+            "appended": (MEAN_LEDGER, [entry(0.5)], TWO_MEANS),
+            "provisional entry read again": (
+                MEAN_LEDGER, [entry(0.5), entry(0.45, runs=PROVISIONAL_RUNS)], TWO_MEANS
+            ),
+            "unchanged": (TOTAL_LEDGER, TWO_TOTALS, TWO_TOTALS),
+        }
+        for case, (ledger, before, after) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+                listed = [allowed(LISTED_CLASS, 5)]
+                self.workspace.declare_test_class("ImportTest")
+
+                result = self.check_against(
+                    (planted_ledgers(**{ledger: before}), listed),
+                    (planted_ledgers(**{ledger: after}), listed),
+                )
+
+                self.assert_passes_quietly(result)
+
+    def test_the_comparison_runs_alone_without_a_timing_file(self):
+        unchanged = self.compare_alone((planted_ledgers(),), (planted_ledgers(),))
+
+        self.assertEqual(unchanged.returncode, 0, msg=self._explain(unchanged))
+        self.assertEqual(unchanged.stdout, "", msg=self._explain(unchanged))
+
+        self.workspace = self.fresh_workspace()
+
+        edited = self.compare_alone(
+            (planted_ledgers(),), (planted_ledgers(**{MEAN_LEDGER: [entry(0.45)]}),)
+        )
+
+        self.assert_undone(edited, LEDGER_WORDS[MEAN_LEDGER], "entry 1")
+
+    def test_an_earlier_file_that_cannot_be_read_gives_no_verdict(self):
+        missing = self.workspace.root / PREVIOUS_BUDGET
+        self.write_ledgers(planted_ledgers())
+
+        result = self.workspace.check(
+            "backend", self.workspace.steady_run(), "--previous-budget", str(missing)
+        )
+
+        self.assert_refuses_to_judge(result, PREVIOUS_BUDGET, "cannot be read")
 
 
 if __name__ == "__main__":
