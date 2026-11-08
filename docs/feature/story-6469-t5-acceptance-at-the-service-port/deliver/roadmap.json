@@ -157,7 +157,7 @@
             "02-01"
           ],
           "estimated_size": "M",
-          "implementation_notes": "Fast cycle applies, but all three classes are hosted: run them by name. A move is its own commit and never mixes with an edit. The 14 are 13 from the outcome table plus Running_the_check_twice. Slice01 stays on the host until 02-05. Commit: test(test-infra)."
+          "implementation_notes": "Fast cycle applies, but all three classes are hosted: run them by name. A move is its own commit and never mixes with an edit. The 14 are 13 from the outcome table plus Running_the_check_twice. Slice01 stays on the host until 02-05. Commit: test(test-infra). Superseded by the fold in 1abfbd8b0: RealityCheckSkeletonTest.cs no longer exists; Maria's row keeps its name and runs in RealityCheckWireContractTest on that class's host."
         },
         {
           "id": "02-03",
@@ -280,7 +280,7 @@
             "02-06"
           ],
           "estimated_size": "S",
-          "implementation_notes": "Fast cycle applies to B13: by name, it is hosted. Slice end: PB. The break sits in ForecastDataSufficiencyPolicy, not ForecastRealityCheckService as the delta says; the service reads it there. It is shared, so run only the pilot's classes while it stands, and git diff on Lighthouse.Backend/Lighthouse.Backend/ prints nothing afterwards. The delta places B13 in no class; Contracts is the only route that needs no new line on the shrinking list. B13 and E13 are not really wire tests, so a reviewer may object. Commit: test(test-infra), then docs(test-infra)."
+          "implementation_notes": "Fast cycle applies to B13: by name, it is hosted. Slice end: PB. The break sits in ForecastDataSufficiencyPolicy, not ForecastRealityCheckService as the delta says; the service reads it there. It is shared, so run only the pilot's classes while it stands, and git diff on Lighthouse.Backend/Lighthouse.Backend/ prints nothing afterwards. The delta places B13 in no class; Contracts is the only route that needs no new line on the shrinking list. B13 and E13 are not really wire tests, so a reviewer may object. Commit: test(test-infra), then docs(test-infra). Superseded by the fold in 1abfbd8b0: PortFixtureLifetimesWireContractTest.cs no longer exists; B13 runs in RealityCheckWireContractTest, and the comparison lives in Contracts/PortFixtures/PortFixtureLifetimes.cs."
         }
       ]
     },
@@ -467,7 +467,7 @@
             "05-01"
           ],
           "estimated_size": "M",
-          "implementation_notes": "Fast cycle applies: the new guard by class or Test-Fast.ps1 -NoBuild; B13 by name. Only what this class reads moves into composed parts; the rest of RefinementAcceptanceTest waits for the maintainer's answer. If the shipped engine's registrations prove too wide, say so in the delta: that is a checkpoint finding. Build with an IAppSettingService double and without seeders first; 05-05 measures both. Trap: a Given can store what no save can produce, which E10 guards. Commit: test(test-infra)."
+          "implementation_notes": "Fast cycle applies: the new guard by class or Test-Fast.ps1 -NoBuild; B13 by name. Only what this class reads moves into composed parts; the rest of RefinementAcceptanceTest waits for the maintainer's answer. If the shipped engine's registrations prove too wide, say so in the delta: that is a checkpoint finding. Build with an IAppSettingService double and without seeders first; 05-05 measures both. Trap: a Given can store what no save can produce, which E10 guards. Commit: test(test-infra). Superseded by the fold in 1abfbd8b0: PortFixtureLifetimesWireContractTest.cs no longer exists; B13's port-fixture source sits in RealityCheckWireContractTest, so the Refinement port fixture is added to that class's PortFixtures list instead, or to a Refinement contract class's own."
         },
         {
           "id": "05-03",
