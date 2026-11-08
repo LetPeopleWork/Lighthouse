@@ -1127,3 +1127,18 @@ E2E counts the test declarations in the Playwright specs, not what ran. No gate.
 **A connector or force-full run (criterion 7): open.** None has run since slice F. When one passes, its `Integration` mean goes here beside the plain runs' 0.508 to 0.641 s.
 
 **The Python suite: 237 of 238 pass, with this file and with the one at `HEAD` alike.** The failure is `test_trx_to_csv.TheRealTreeTests.test_no_class_shares_a_simple_name_with_a_class_on_a_chain`, which reads the backend source tree: `c398be39d` (Story 6538) added a second nested class `OneHostForThreeScenarios`. It is not this file's. Until it is fixed, `Test the budget check` goes red on the next backend run and `Check test-time budget` is skipped, so the warnings above cannot show there.
+
+## Wave: DELIVER / [REF] Criterion 5 seen in CI (2026-11-08, run 42489988507)
+
+The first main run after the ledgers landed (`0841bed62`) reports each ledger as provisional and warns without failing. The backend job's output:
+
+```
+Fast          9,641     294.8    0.031   per test 20.0 s (provisional, 2 of 5) largest 12.055 s
+Integration   3,353   2,177.6    0.649   mean 0.81 (provisional, 2 of 5) 20 %
+                                         total 2,780 (provisional, 2 of 5) 22 %
+##[warning]the fast test limit of 20.0s is provisional, 2 of 5 runs, so it warns and does not fail
+##[warning]the Integration mean ceiling of 0.81s is provisional, 2 of 5 runs, so it warns and does not fail
+##[warning]the Integration total ceiling of 2780s is provisional, 2 of 5 runs, so it warns and does not fail
+```
+
+**Window for 03-02.** On 2026-11-08 the maintainer chose to run T5's E-box (05-01 to 05-05). Its 05-04 moves `NeedOverOneCycleTest` off the host. The 5 enforcing runs are therefore counted from T5's last move push after the E-box (or its stop), not from `ba60bf6dd`.
