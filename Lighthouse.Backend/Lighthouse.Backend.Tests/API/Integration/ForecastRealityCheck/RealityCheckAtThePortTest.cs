@@ -37,7 +37,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected RealityCheckForecastScript Forecasts { get; private set; } = null!;
 
-        protected static DateOnly TodayDay => DateOnly.FromDateTime(Today.UtcDateTime);
+        protected static DateOnly TodayDay => RealityCheckForecastScript.TodayDay;
 
         [SetUp]
         public void GiveTheScenarioItsOwnDatabase()

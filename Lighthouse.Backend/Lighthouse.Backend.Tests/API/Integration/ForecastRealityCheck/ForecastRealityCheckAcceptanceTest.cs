@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using Moq;
 using Serilog;
 using Serilog.Events;
 using Serilog.Extensions.Logging;
@@ -21,9 +20,11 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// Feature-wide acceptance harness for the Forecast Reality Check: one press replays a Team's own
+    /// Acceptance harness for the Forecast Reality Check over the web host: one press replays a Team's own
     /// forecast against its own finished work at every sampling window and every horizon, and answers
-    /// with a region of windows that behaved alike rather than a winner.
+    /// with a region of windows that behaved alike rather than a winner. Scenarios that pin only what the
+    /// check works out, not what a caller receives, run at the check's service instead
+    /// (<see cref="RealityCheckAtThePortTest"/>).
     ///
     /// The app is the production app: the real ASP.NET host over a real SQLite file, real EF, real DI,
     /// the real metrics service reading real finished Work Items. One host serves the whole fixture; every
@@ -98,7 +99,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected HttpClient Client { get; private set; } = null!;
 
-        protected static DateOnly TodayDay => DateOnly.FromDateTime(Today.UtcDateTime);
+        protected static DateOnly TodayDay => RealityCheckForecastScript.TodayDay;
 
         private RealityCheckSeedSteps Seed { get; set; } = null!;
 
@@ -120,10 +121,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                         services.RemoveAll<ILighthouseClock>();
                         services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
 
-                        var license = new Mock<ILicenseService>();
-                        license.Setup(service => service.CanUsePremiumFeatures()).Returns(true);
                         services.RemoveAll<ILicenseService>();
-                        services.AddSingleton(license.Object);
+                        services.AddSingleton(PortDoubles.PremiumLicence());
 
                         services.RemoveAll<IDrawStreamFactory>();
                         services.AddSingleton<IDrawStreamFactory>(new DrawsFromAPinnedStartingNumber(PinnedStartingNumber));

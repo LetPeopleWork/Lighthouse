@@ -76,9 +76,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         /// <summary>
         /// Reads the answer an HTTP caller received, so a check that did not answer fails on this assertion
-        /// rather than on a JSON parser choking on an empty body. It is also where every check is held to
-        /// learning from exactly its own window: no scenario here has a blackout day, so a history one day
-        /// longer or shorter than a swept window means a check read days that were not its own.
+        /// rather than on a JSON parser choking on an empty body.
         /// </summary>
         public static async Task<RealityCheckAnswer> ReadFrom(HttpResponseMessage response, RealityCheckForecastScript forecasts)
         {
@@ -88,12 +86,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             {
                 Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK),
                     $"The reality check did not answer. Body: {body}");
-                Assert.That(forecasts.HistoriesNoSweptWindowIsAsLongAs, Is.Empty,
-                    "every check learns from exactly as many days as its window holds; these history lengths match no window swept");
+                ThenEveryCheckLearnedFromExactlyItsOwnWindow(forecasts);
             }
 
             using var document = JsonDocument.Parse(body);
             return new RealityCheckAnswer(document.RootElement.Clone());
+        }
+
+        /// <summary>
+        /// Held on every answer read, at the host or at the service: no scenario has a blackout day, so a history
+        /// one day longer or shorter than every window swept means a check read days that were not its own.
+        /// </summary>
+        internal static void ThenEveryCheckLearnedFromExactlyItsOwnWindow(RealityCheckForecastScript forecasts)
+        {
+            var strayHistories = forecasts.HistoriesNoSweptWindowIsAsLongAs;
+
+            Assert.That(strayHistories, Is.Empty,
+                $"every check learns from exactly as many days as its window holds, yet a check learned from {string.Join(", ", strayHistories.Select(days => $"{days} days"))}, which is no window swept");
         }
 
         public static JsonElement Field(JsonElement element, string name)

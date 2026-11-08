@@ -35,6 +35,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         internal static readonly DateTimeOffset Today = new(2026, 9, 22, 9, 0, 0, TimeSpan.Zero);
 
+        internal static DateOnly TodayDay => DateOnly.FromDateTime(Today.UtcDateTime);
+
         /// <summary>
         /// The forecast value a level is given when the scenario wants it NOT to hold. No scenario seeds
         /// anywhere near this many finished Work Items in one period, so the Team can never reach it.

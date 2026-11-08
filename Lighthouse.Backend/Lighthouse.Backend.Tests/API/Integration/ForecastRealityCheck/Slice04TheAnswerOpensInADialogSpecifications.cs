@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
@@ -86,7 +88,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         {
             var miscounted = answer.ScoredPeriods
                 .Where(period => period.ActualCompleted != period.HorizonDays)
-                .Select(period => $"{period.HorizonDays}d: actual {period.ActualCompleted?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "missing"}")
+                .Select(period => $"{period.HorizonDays}d: actual {period.ActualCompleted?.ToString(CultureInfo.InvariantCulture) ?? "missing"}")
                 .ToList();
 
             Assert.That(miscounted, Is.Empty, "one Work Item was finished on each day, so a period of H days holds exactly H");

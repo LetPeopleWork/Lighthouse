@@ -15,16 +15,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             Converters = { new JsonStringEnumConverter() },
         };
 
-        /// <summary>
-        /// Every check is held here to learning from exactly its own window: no scenario has a blackout day, so a
-        /// history one day longer or shorter than every window swept means a check read days that were not its own.
-        /// </summary>
         public static RealityCheckAnswer ReadFrom(RealityCheckResultDto result, RealityCheckForecastScript forecasts)
         {
-            var strayHistories = forecasts.HistoriesNoSweptWindowIsAsLongAs;
-
-            Assert.That(strayHistories, Is.Empty,
-                $"every check learns from exactly as many days as its window holds, yet a check learned from {string.Join(", ", strayHistories.Select(days => $"{days} days"))}, which is no window swept");
+            RealityCheckAnswer.ThenEveryCheckLearnedFromExactlyItsOwnWindow(forecasts);
 
             return new RealityCheckAnswer(JsonSerializer.SerializeToElement(result, AsACallerReadsIt));
         }
