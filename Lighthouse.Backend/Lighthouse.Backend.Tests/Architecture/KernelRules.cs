@@ -19,8 +19,8 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string TheUpdateQueue = @"^Lighthouse\.Backend\.Services\.Implementation\.BackgroundServices\.Update(\.|$)";
 
-        /// <summary>No type in the Models reaches a type in Services.</summary>
-        public static KernelRuleVerdict ModelsDoNotDependOnServices(ModuleDefinition module, string models = TheModels, string services = TheServices)
+        /// <summary>No type in the Models reaches a type in the application core: Services, or a module.</summary>
+        public static KernelRuleVerdict ModelsDoNotDependOnServices(ModuleDefinition module, string models = TheModels, string services = ApplicationCoreRules.ApplicationCore)
             => Verdict(
                 module,
                 models,

@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
@@ -15,6 +16,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// </remarks>
     internal static class ApplicationCoreRules
     {
+        /// <summary>The application core: Services, and the modules its types move into one at a time.</summary>
+        public const string ApplicationCore = @"^Lighthouse\.Backend\.(Services|Modules)(\.|$)";
+
         public const string TheApi = @"^Lighthouse\.Backend\.API(\.|$)";
 
         public const string TheData = @"^Lighthouse\.Backend\.Data(\.|$)";
@@ -38,7 +42,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string AsyncMethodBuilderTypeFragment = "AsyncTaskMethodBuilder";
 
         /// <summary>No type in the application core reaches a type in the API.</summary>
-        public static KernelRuleVerdict CoreDoesNotDependOnApi(ModuleDefinition module, string core = KernelRules.TheServices)
+        public static KernelRuleVerdict CoreDoesNotDependOnApi(ModuleDefinition module, string core = ApplicationCore)
             => new(
                 IlDependencies.TypesIn(module, core),
                 IlDependencies.DependentsIn(module, core, type => IlDependencies.ResidesInNamespaceMatching(type, TheApi)),
@@ -47,7 +51,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "live in the Models, not in API.DTO.");
 
         /// <summary>The types that decide under which parent a record hangs reach neither the application core nor the data layer.</summary>
-        public static KernelRuleVerdict ParentPlacementKernelDependsOnNoCoreOrData(ModuleDefinition module, IReadOnlyCollection<string> kernelTypes, string core = KernelRules.TheServices)
+        public static KernelRuleVerdict ParentPlacementKernelDependsOnNoCoreOrData(ModuleDefinition module, IReadOnlyCollection<string> kernelTypes, string core = ApplicationCore)
             => VerdictAmong(
                 module,
                 kernelTypes,
@@ -58,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "change with what it happened to read, and a wrongly placed parent looks exactly like correct data.");
 
         /// <summary>The types that show a retired Delivery reach nothing its numbers could be recalculated from.</summary>
-        public static KernelRuleVerdict ArchivedReadPathReachesNoRecalculation(ModuleDefinition module, IReadOnlyCollection<string> projectionTypes, string core = KernelRules.TheServices)
+        public static KernelRuleVerdict ArchivedReadPathReachesNoRecalculation(ModuleDefinition module, IReadOnlyCollection<string> projectionTypes, string core = ApplicationCore)
             => VerdictAmong(
                 module,
                 projectionTypes,
@@ -74,7 +78,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>No domain-event handler, nor the dispatcher, resolves a collaborator through the service locator.</summary>
         public static KernelRuleVerdict HandlersUseNoServiceLocator(ModuleDefinition module)
-            => HandlersUseNoServiceLocator(module, HandlerSelection.ByDomainEventsNamespace);
+            => HandlersUseNoServiceLocator(module, HandlerSelection.DomainEventHandlersAndTheDomainEventsNamespace);
 
         public static KernelRuleVerdict HandlersUseNoServiceLocator(ModuleDefinition module, HandlerSelection handlers)
         {
@@ -100,7 +104,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         /// <summary>A domain-event handler method that saves through a repository awaits the save.</summary>
         public static KernelRuleVerdict HandlersAwaitRepositorySaves(ModuleDefinition module)
-            => HandlersAwaitRepositorySaves(module, HandlerSelection.ByDomainEventsNamespace);
+            => HandlersAwaitRepositorySaves(module, HandlerSelection.DomainEventHandlersAndTheDomainEventsNamespace);
 
         public static KernelRuleVerdict HandlersAwaitRepositorySaves(ModuleDefinition module, HandlerSelection handlers)
         {
@@ -166,10 +170,20 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// <summary>Which types the handler rules look at: the domain-event handlers, picked out of a module.</summary>
     internal sealed class HandlerSelection
     {
+        private static readonly string DomainEventHandlerInterface = typeof(IDomainEventHandler<>).FullName!;
+
         /// <summary>Every type whose full name carries the domain-events implementation namespace, with the types nested in it.</summary>
         public static readonly HandlerSelection ByDomainEventsNamespace = new(
             type => type.FullName.Contains(".Services.Implementation.DomainEvents", StringComparison.Ordinal),
             "Types in the .Services.Implementation.DomainEvents namespace");
+
+        /// <summary>
+        /// Every concrete domain-event handler, wherever its namespace, together with every type the domain-events
+        /// namespace holds, so a handler that moves out of that namespace stays checked, and so does the dispatcher.
+        /// </summary>
+        public static readonly HandlerSelection DomainEventHandlersAndTheDomainEventsNamespace = new(
+            type => ByDomainEventsNamespace.selects(type) || IsDomainEventHandler(type),
+            "Domain-event handlers, wherever they live, and the types in the .Services.Implementation.DomainEvents namespace");
 
         private readonly Func<TypeDefinition, bool> selects;
 
@@ -188,6 +202,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(selects)
                 .SelectMany(TypeAndItsNestedTypes)
                 .DistinctBy(type => type.FullName, StringComparer.Ordinal)];
+
+        private static bool IsDomainEventHandler(TypeDefinition type)
+            => type is { IsAbstract: false, IsInterface: false }
+                && type.Interfaces.Any(implemented => implemented.InterfaceType is GenericInstanceType generic
+                    && generic.ElementType.FullName == DomainEventHandlerInterface);
 
         private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
             => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
