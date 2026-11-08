@@ -491,6 +491,82 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Fill a service collection with the start-up code&#x27;s own service registrations, without starting a web host, and read the handlers of a team refresh in the order the container hands them out
+</code></pre>
+
+<pre><code>The memo of past reconstructions, the forecast trigger, the blocked-count, percentiles and process-behaviour recorders, then the two demo backfills, in that order
+</code></pre>
+
+<pre><code>After every team refresh the forecast is triggered and the history recorders run in the same order as today, so moving a type or a registration cannot change what a team refresh does without a red test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfATeamRefresh_RunInTheRegisteredOrder</p>
+
+<pre><code>a later change makes the dispatcher ignore registration order; that is pinned by the dispatcher&#x27;s own ordering test, not by this pin. A handler moved out of the start-up registration method drops out of the list and fails this pin
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Fill a service collection with the start-up code&#x27;s own service registrations, without starting a web host, and read the handlers of a portfolio refresh in the order the container hands them out
+</code></pre>
+
+<pre><code>The memo of past reconstructions, then the metrics cache drop, then the blocked-count, percentiles and process-behaviour recorders, then the two demo backfills, in that order
+</code></pre>
+
+<pre><code>After every portfolio refresh the cached metrics are dropped before the recorders read them, so the recorded history reflects the new refresh and a reordering is caught by a red test
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfAPortfolioRefresh_DropTheMetricsCacheBeforeTheRecordersRead</p>
+
+<pre><code>the dispatcher stops honouring registration order, or the cache-drop handler stays in place but no longer drops the cache; the first is pinned by the dispatcher&#x27;s own ordering test, the second by the handler&#x27;s own tests, neither by this order pin
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Add the order pin and run it, then the existing suite, with no production file edited
+</code></pre>
+
+<pre><code>No production file differs from the base commit and every existing test stays green
+</code></pre>
+
+<pre><code>Users see no change in behaviour from this slice
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>A promise about the change set, not about a behaviour: no test observes it. It is shown by an empty diff of the production project and by the full filtered backend suite at the end of the slice
+</code></pre>
+
+<p>root (slice-end gates and reviewer)</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

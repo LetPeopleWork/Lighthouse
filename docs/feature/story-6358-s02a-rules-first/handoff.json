@@ -170,11 +170,52 @@
 "stimulus": "F94",
 "user_result": "F95"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F99",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfATeamRefresh_RunInTheRegisteredOrder"
+},
+"expected": "F97",
+"stimulus": "F96",
+"user_result": "F98"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F103",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs::HandlersOfAPortfolioRefresh_DropTheMetricsCacheBeforeTheRecordersRead"
+},
+"expected": "F101",
+"stimulus": "F100",
+"user_result": "F102"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "root (slice-end gates and reviewer)",
+"reason": "F107"
+},
+"expected": "F105",
+"stimulus": "F104",
+"user_result": "F106"
+}
 ]
 },
 "counters": {
 "E": 3,
-"F": 95,
+"F": 107,
 "P": 3,
 "S": 2
 },
@@ -375,6 +416,14 @@
 "facts": {
 "F1": "Story 6358 S02 Flow metrics pilot, part A of 3 (DESIGN slice 1): before any Flow metrics type moves out of Lighthouse.Backend.Services into Lighthouse.Backend.Modules.FlowMetrics, widen the architecture rules that key on the Services namespace so a moved type stays examined, and pin the domain-event handler order. Design: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (R0, R6, E2, E3, D-8).",
 "F10": "Each rule reports the Modules offender as it reports the same offender under Lighthouse.Backend.Services; domain-event handlers are found by implementing IDomainEventHandler<>, not by namespace; each rule's examined set on the real assembly does not shrink",
+"F100": "Fill a service collection with the start-up code's own service registrations, without starting a web host, and read the handlers of a portfolio refresh in the order the container hands them out",
+"F101": "The memo of past reconstructions, then the metrics cache drop, then the blocked-count, percentiles and process-behaviour recorders, then the two demo backfills, in that order",
+"F102": "After every portfolio refresh the cached metrics are dropped before the recorders read them, so the recorded history reflects the new refresh and a reordering is caught by a red test",
+"F103": "the dispatcher stops honouring registration order, or the cache-drop handler stays in place but no longer drops the cache; the first is pinned by the dispatcher's own ordering test, the second by the handler's own tests, neither by this order pin",
+"F104": "Add the order pin and run it, then the existing suite, with no production file edited",
+"F105": "No production file differs from the base commit and every existing test stays green",
+"F106": "Users see no change in behaviour from this slice",
+"F107": "A promise about the change set, not about a behaviour: no test observes it. It is shown by an empty diff of the production project and by the full filtered backend suite at the end of the slice",
 "F11": "A rule passes while a made-up offender sits under Lighthouse.Backend.Modules, or a handler outside .Services.Implementation.DomainEvents escapes the handler rules",
 "F12": "Build the production service provider as Program.cs registers it and resolve IEnumerable<IDomainEventHandler<TeamDataRefreshed>> and IEnumerable<IDomainEventHandler<PortfolioFeaturesRefreshed>>",
 "F13": "The handler types come back in today's registration order, written out in the test as two literal lists (PortfolioFeaturesRefreshedMetricsInvalidationHandler before the three recorders; ReconstructionMemo and TeamDataRefreshedForecastTriggerHandler at their current positions)",
@@ -450,7 +499,11 @@
 "F92": "A maintainer who renames or moves a parent-placement type is told to update the rule, instead of the rule quietly checking fewer types",
 "F93": "A rule that fails only when a missing name lies in a namespace that still holds other named types; the missing fixture name shares its namespace with an existing one",
 "F94": "Run the retired-Delivery read-path rule naming one type that exists and one that has been renamed or moved away",
-"F95": "A maintainer who renames or moves a retired-Delivery view type is told to update the rule, instead of the rule quietly checking fewer types"
+"F95": "A maintainer who renames or moves a retired-Delivery view type is told to update the rule, instead of the rule quietly checking fewer types",
+"F96": "Fill a service collection with the start-up code's own service registrations, without starting a web host, and read the handlers of a team refresh in the order the container hands them out",
+"F97": "The memo of past reconstructions, the forecast trigger, the blocked-count, percentiles and process-behaviour recorders, then the two demo backfills, in that order",
+"F98": "After every team refresh the forecast is triggered and the history recorders run in the same order as today, so moving a type or a registration cannot change what a team refresh does without a red test",
+"F99": "a later change makes the dispatcher ignore registration order; that is pinned by the dispatcher's own ordering test, not by this pin. A handler moved out of the start-up registration method drops out of the list and fails this pin"
 },
 "product": {
 "promises": [

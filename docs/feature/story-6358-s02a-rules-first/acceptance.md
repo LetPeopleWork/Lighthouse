@@ -394,6 +394,94 @@ A rule that fails only when a missing name lies in a namespace that still holds 
 
 None.
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Fill a service collection with the start-up code's own service registrations, without starting a web host, and read the handlers of a team refresh in the order the container hands them out
+```
+
+```text
+The memo of past reconstructions, the forecast trigger, the blocked-count, percentiles and process-behaviour recorders, then the two demo backfills, in that order
+```
+
+```text
+After every team refresh the forecast is triggered and the history recorders run in the same order as today, so moving a type or a registration cannot change what a team refresh does without a red test
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventHandlerOrderPinTest\.cs\:\:HandlersOfATeamRefresh\_RunInTheRegisteredOrder
+
+```text
+a later change makes the dispatcher ignore registration order; that is pinned by the dispatcher's own ordering test, not by this pin. A handler moved out of the start-up registration method drops out of the list and fails this pin
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Fill a service collection with the start-up code's own service registrations, without starting a web host, and read the handlers of a portfolio refresh in the order the container hands them out
+```
+
+```text
+The memo of past reconstructions, then the metrics cache drop, then the blocked-count, percentiles and process-behaviour recorders, then the two demo backfills, in that order
+```
+
+```text
+After every portfolio refresh the cached metrics are dropped before the recorders read them, so the recorded history reflects the new refresh and a reordering is caught by a red test
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/DomainEventHandlerOrderPinTest\.cs\:\:HandlersOfAPortfolioRefresh\_DropTheMetricsCacheBeforeTheRecordersRead
+
+```text
+the dispatcher stops honouring registration order, or the cache-drop handler stays in place but no longer drops the cache; the first is pinned by the dispatcher's own ordering test, the second by the handler's own tests, neither by this order pin
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Add the order pin and run it, then the existing suite, with no production file edited
+```
+
+```text
+No production file differs from the base commit and every existing test stays green
+```
+
+```text
+Users see no change in behaviour from this slice
+```
+
+##### Disposition
+
+NotTested
+
+```text
+A promise about the change set, not about a behaviour: no test observes it. It is shown by an empty diff of the production project and by the full filtered backend suite at the end of the slice
+```
+
+root \(slice\-end gates and reviewer\)
+
 ## Expectations
 
 ### Rows
