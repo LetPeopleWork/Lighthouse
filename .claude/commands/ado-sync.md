@@ -161,7 +161,7 @@ Steps:
 
 ## Op 3 — Activate a Story (before starting work)
 
-Trigger: about to start implementing a slice (typically when DELIVER picks up the next roadmap step, or when the user types `/nw-execute`).
+Trigger: about to start implementing a slice (typically when DELIVER starts the next nwdes slice).
 
 Steps:
 

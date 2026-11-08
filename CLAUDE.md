@@ -65,7 +65,24 @@ that wave would have made to be improvised silently somewhere downstream. Run th
 
 ## DISCUSS, DEVOPS & DELIVER Waves
 
-`nw-discuss` and `nw-finalize` each carry their own checklists (RBAC impact, Lighthouse-Clients CLI/MCP versioning, website marketing surface for DISCUSS; docs prose, per-feature screenshots, demo data, website asset freshness for DELIVER). Apply those checklists in full when running those waves — see the command definitions for the current rules rather than this file, so there's one place to update them.
+The project skill `.claude/skills/feature-checklists/SKILL.md` holds Lighthouse's own checklists: one at the end of DISCUSS (RBAC impact, Lighthouse-Clients CLI/MCP, website marketing surface, context map) and one to finalize a delivered feature (docs prose, screenshots, demo data, website assets, clients, context map, usage data, mutation). nWave 4 has no finalize step, so run that checklist yourself once the candidate is accepted and before the push. Apply both in full; the skill is the one place to update them.
+
+### How DELIVER runs on nWave 4 (`nwdes`)
+
+nwave-ai is pinned at 4.3.0. DES (`des-commit`, `roadmap.json`, `execution-log.json`, `nw-execute`, `nw-finalize`) is
+gone. `/nw-deliver` and `/nw-bugfix` run the host-led `nwdes` route (skill `nw-nwdes`, `nwdes --help`): one
+`docs/feature/<feature>/handoff.json` per feature, at most 5 slices, a public oracle with an observed RED before
+any craft, a plain `git commit` of each GREEN slice with hooks on, then one whole-candidate review and one
+source-blind EXAMINE. nwdes runs no tests and enforces no RED/GREEN ledger: the crafter's fast loop, the reviewer
+and EXAMINE carry the TDD discipline, so no reviewer may approve a slice whose RED it did not see recorded.
+
+- **No lanes by default.** A single Story or bug runs in the main checkout on `main` (nwdes allows it). Open a
+  lane (`nwdes lane open`) only to run several features in parallel, e.g. an AFK chain.
+- **Jev is refused** (`"jev": "unauthorized"` in `~/.nwave/config.json`): no code goes to the remote Jev service.
+  Never pass `--jev` to override it.
+- **More than 5 slices means more than one nwdes feature.** Split along the Story boundaries in ADO.
+- Features delivered before 2026-11-08 keep their `deliver/roadmap.json`; they are history, not something
+  to resume.
 
 Two standing principles worth keeping visible here because they're easy to skip silently:
 
@@ -86,22 +103,22 @@ Two standing principles worth keeping visible here because they're easy to skip 
     cheap, and say so in the UI sketch. No big-bang reorganisation.
 
   If the feature adds a concept, a context or an edge, or changes one, update ADR-270 (map, glossary, the
-  "target only" marks) and `ARCHITECTURE.md` §4 in the same feature, not later. `nw-finalize` checks that they
-  match what shipped.
+  "target only" marks) and `ARCHITECTURE.md` §4 in the same feature, not later. The finalize checklist checks
+  that they match what shipped.
 - **DEVOPS asks which usage-data event, if any, would show the feature is used.** We are building
   the opt-in usage-data catalog (PostHog, via the backend-forwarded pipe) up one feature at a time, so
   every DEVOPS wave answers this explicitly — an event design, or "N/A, because …". Prefer a name-only
   event; add a property only when an outcome KPI cannot be counted without it, and only as a closed
   enum, never free text, ids or counts. Append to `UsageDataEventName` with the next integer, never
-  renumber. Emitting it is a DELIVER step in the slice that first makes the feature usable, and that
-  step also lists the event in `docs/settings/usagedata.md`.
+  renumber. Emitting it belongs to the slice that first makes the feature usable, and that slice also
+  lists the event in `docs/settings/usagedata.md`.
 - **Write the configurable term, not one tracker's word for it.** Everything a user can rename under Settings → Terminology (feature, work item, team, portfolio, delivery, cycle time, throughput, WIP, blocked, SLE) renders as *their* word. Docs, release notes and UI fallback defaults use the seeded default from `TerminologySeeder.cs` — `Feature`/`Features`, `Work Item`/`Work Items`, … — never "Epic", "Initiative" or "Story", which name a heading a Jira or Linear reader never sees. A literal work-tracking-system **value** (a filter matching type `Epic` in ADO) is the exception and stays as written.
 - **Anything that shows data is designed with the `visualization` skill.** A chart, widget, metric tile,
   forecast view, report page, or the help text and docs that explain one: load
   `.claude/skills/visualization/SKILL.md` before sketching, and answer its review checklist in the
   sketch. It holds what we took from Storytelling with Data, The Big Book of Dashboards and #MakeoverMonday,
   and the Lighthouse decisions that override them, such as every axis being labelled.
-- **Sketch any UI before building it, and ask.** Before a DELIVER step (or a fix) that adds or changes
+- **Sketch any UI before building it, and ask.** Before a DELIVER slice (or a fix) that adds or changes
   something a user sees, show the maintainer a sketch of it (an ASCII mock of the layout, columns, controls
   and copy) and get a yes first. This holds in AFK mode too: collect the sketches up front while the
   maintainer is there, rather than shipping UI they have not seen. Prefer reusing an existing control or
@@ -153,22 +170,26 @@ Two standing principles worth keeping visible here because they're easy to skip 
      table. Say which were chosen and which were rejected, with one line of why for each.
 
   It is a learning aid, not a replacement for `brief.md` or the ADRs.
-- **DELIVER starts by agreeing the nWave rigor profile, and every dispatch honours it.** At the start of
-  DELIVER, propose a profile (`/nw-rigor`) per slice and get the maintainer's yes. Most frontend and plain
-  backend work is `standard`, some is `thorough`, very little is `exhaustive`. Record the choice in
-  `feature-delta.md`. Then pass `model` explicitly on every agent dispatch: the profile's `agent_model` for
-  crafters and designers, its `reviewer_model` for reviewers. The session runs on Opus and most nWave agents
-  say `model: inherit`, so a dispatch without `model` quietly runs on Opus whatever the profile says. The
-  project's own gates (mutation testing per feature, the AFK reviews) run under every profile.
-- **Share the slice-and-step table once the roadmap is approved.** As soon as the DELIVER roadmap passes its
-  review (in AFK mode too), post a short table in chat: one row per step, grouped by slice, with the step id
-  and what it delivers in plain words, plus each slice's step count. No test names. It tells the maintainer
-  how far a status update's "step 2 of 9" is from done; if a step is later split or added, say so and post
-  the updated table.
-- **Inside a DELIVER step, work on the fast loop; the full gates run later.** Red, green and refactor use
+- **DELIVER starts by agreeing the rigor profile, and every dispatch honours it.** nWave 4 dropped its
+  profiles (`nw-rigor` now only records models); Lighthouse keeps its own names. At the start of DELIVER,
+  propose one per slice and get the maintainer's yes, and record it in `feature-delta.md`:
+
+  | Profile | Crafter, acceptance designer, architect | Reviewers |
+  |---|---|---|
+  | `standard` (most frontend and plain backend work) | `sonnet` | `haiku` |
+  | `thorough` | `opus` | `sonnet` |
+  | `exhaustive` (very little) | `opus` | `opus` |
+
+  Pass `model` explicitly on every agent dispatch. nWave 4's agents pin `model: claude-opus-5`, so a dispatch
+  without `model` runs on Opus whatever the profile says. EXAMINE (`nw-user-examiner`) uses the reviewer model.
+  The project's own gates (mutation testing per feature, the AFK reviews) run under every profile.
+- **Share the slice table once the slices are recorded.** As soon as the feature's slices are set in nwdes (in AFK
+  mode too), post a short table in chat: one row per slice, with its id and what it delivers in plain words. No
+  test names. If a slice is later split or added, say so and post the updated table.
+- **Inside a slice, work on the fast loop; the full gates run later.** Red, green and refactor use
   `pnpm test:fast --changed` (`pnpm test --changed` after a component edit) and
-  `Lighthouse.Backend/Test-Fast.ps1`, which builds first, plus the test the step names, whatever its tier. The full gates
-  under "Quality Gates" run once at the end of a slice and before every push. A clean fast loop never
+  `Lighthouse.Backend/Test-Fast.ps1`, which builds first, plus the slice's oracle test, whatever its tier. The full
+  gates under "Quality Gates" run once at the end of a slice and before every push. A clean fast loop never
   replaces them.
 - **Each Epic ships on its own.** When DISCUSS splits a feature into several Epics, each one must be
   deliverable and releasable alone: finished, it adds something valuable to at least some users, even if
@@ -300,3 +321,78 @@ must be a positive whole number").
   pass of a slice or fix ends with `pnpm build` (Biome + `tsc`) for the frontend and E2E projects and
   `dotnet build` for the backend, and its findings are fixed right there, before review and push.
 - If a Sonar rule conflicts with a deliberate decision, suppress narrowly at the call site with a justification, not project-wide.
+
+<!-- BEGIN nWave-beta-section (managed by nwave-ai; do not edit) -->
+
+## nWave (beta) — How to Work in This Project
+
+Three routes are open to a Request:
+- Spine waves (whole-feature default): wave gates, independent review and
+  source-blind EXAMINE where applicable; durable authorities. Evolution retains
+  lasting facts; integration closes delivered work.
+- Host-led nwdes steps: the root runs roles with generated prompts. Roles record
+  typed values with kind verbs and close. nwdes builds and
+  writes authority/run records; the host submits/retains no role reply.
+  Public oracle before code; nwdes launches no model. Details: nw-nwdes skill and nwdes --help.
+- Working directly: fastest; no gates, independent review or retained authority,
+  so nothing attests the result.
+
+The LLM chooses the route by what survives and the cost of late refusal,
+and invokes the applicable waves. The final whole-candidate review and integration happen once per Request; embedded per-slice refinement reviews provide early feedback, not final approval.
+Each Request opens with the LLM's working S/M/L assessment and why, which never decides the route.
+The LLM revises it as evidence changes and suggests the fastest route that
+keeps what must survive, naming what a faster one gives up; the user decides genuine scope and trade-offs.
+Working directly remains open when little must survive.
+Human WIP limit: 2. Finish open work before starting new work; nWave refuses
+nothing by count.
+When a review or EXAMINE rejects work, or new work is ready, the Lane flow
+of the nw-throughput skill holds what comes next.
+Whichever route this Request takes, say which one.
+
+nWave is a spine-driven delivery framework. Wave commands (`/nw-*`) carry the
+gates; skills carry on-demand knowledge; agents execute. This section is an
+INDEX.
+
+Human authority decides genuine scope/trade-offs.
+
+| User wants... | Load / run |
+|---|---|
+| Validate a problem is real | `/nw-discover` |
+| Compare solution directions | `/nw-diverge` |
+| Clarify jobs, journeys, outcomes | `/nw-discuss` |
+| Architecture, reuse, boundaries | `/nw-design` |
+| Deployment / operational constraints | `/nw-devops` |
+| Executable public oracle | `/nw-distill` |
+| Dispatch one Request | `/nw-deliver` |
+| Fix one observed defect | `/nw-bugfix` |
+| Review an artifact or diff | `/nw-review` |
+| Reduce a noisy test suite | `/nw-optimize-tests` |
+| Explicit mutation probe | `/nw-mutation-test` |
+| Resume after an interruption | Read-only: `git worktree list`, then `lanes/<feature>/docs/feature/<feature>/handoff.json` and skill `nw-nwdes` |
+| Run several lanes in parallel | skill `nw-swarm` |
+| Fuller S/M/L evidence, splitting a Request | skill `nw-auto` |
+| Anything else — methodology, routing, "what do I do" | skill `nw-buddy` |
+
+**Batch independent tool calls in one turn (one per turn is a violation); sequence only when one result feeds the next.**
+
+### Asking the User a Question
+
+Fixed shape, every time: **context** -> **recommendation** -> **options** (each
+with its consequence/risk) -> one direct question. Real section headers and
+bold labels — never a wall of text. User-facing output follows **ASD-STE100**
+(Simplified Technical English).
+
+Owner answer pending: independent ready work continues; only dependent work waits. Boundary and durable record: `nw-auto` §4.
+
+### Communication
+
+<!-- GENERATED:communication-rules START — source of truth: nwave_ai.platform.effective_config() (ADR-CFG-001 Slice 2 -- ~/.nwave/config.json + .nwave/config.json); do not hand-edit (docgen renders this region) -->
+- Communication verbosity: **standard**
+- Commit attribution: **enabled**
+<!-- GENERATED:communication-rules END -->
+
+### Privacy — Non-Negotiable
+
+nWave stores workflow data locally and collects no telemetry. Jev, a remote question service, is on by default for supported questions and sends only permitted data classes; refuse it with `--jev unauthorized` or `"jev": "unauthorized"` in `~/.nwave/config.json`. `TYPESAFE_API_KEY` is only Jev's technical prerequisite, not its authorization ([PRIVACY.md](../../PRIVACY.md)). Feedback via GitHub Issues is welcome, never required.
+
+<!-- END nWave-beta-section -->

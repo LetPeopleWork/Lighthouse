@@ -94,7 +94,7 @@ Then collect three sources and reconcile them:
    alone, marking the board "ADO not checked".
 2. **Workspaces** — item workspaces `docs/feature/story-<ado-id>-*/` and
    `docs/feature/stories-*<ado-id>*/`, plus archives in `docs/evolution/` naming the id. For an open
-   workspace, detect its wave the way `nw-continue` does.
+   workspace, detect its wave from its artifacts (`feature-delta.md` sections, `handoff.json` for DELIVER).
 3. **Git** — `git log --oneline --grep "<ado-id>"` on `main`, to catch work without a workspace and to
    tell pushed from local.
 
@@ -174,7 +174,7 @@ workspace. Everything in CLAUDE.md applies; the points that matter most for impr
   Picture Event Storming session run *together with the maintainer* (seed a draft board from the code,
   walk it in chat, publish it as a visual board), and S08 with design-level storming per context, both
   with `nw-ddd-architect`. Never run those sessions alone.
-- **DESIGN** cuts the item into ≤ 1-day carpaccio slices and the roadmap, and plans the move/edit commit
+- **DESIGN** cuts the item into ≤ 1-day carpaccio slices (at most 5 per nwdes feature), and plans the move/edit commit
   split and the ratchet. It ends with the architecture summary for the maintainer; for improvement work,
   make its "before → after" explicit (what depends on what today, and after).
 - **DEVOPS** answers the usage-data question: almost always "N/A, because it is behaviour-free",
@@ -188,7 +188,7 @@ workspace. Everything in CLAUDE.md applies; the points that matter most for impr
 
 **Holds**: stop and wait for the maintainer at each.
 
-1. After DESIGN's summary, before DEVOPS: they review slices and roadmap.
+1. After DESIGN's summary, before DEVOPS: they review the slices.
 2. At DELIVER start: rigor profile.
 3. After the last slice: they review the delivered slices before close-out.
 4. Before any push (`/ado-sync` Op 4). Never push without their go; never rebase on your own.
@@ -198,7 +198,8 @@ A run may end at any hold. The next `/continuous-improvement` finds the item in 
 ## 5. Close out and feed back
 
 After push and green CI: `/ado-sync` Op 5 (item Closed, Epic roll-up reported, Epic state untouched),
-then `nw-finalize` on the workspace (mutation results recorded, workspace archived).
+then the finalize checklist of the `feature-checklists` skill (mutation results recorded, evolution
+record written, workspace committed).
 
 Then write back to the plan. This is what makes the next pick-up better than this one. Append to a
 `## Wave: DISCUSS / [REF] Improvement log` section at the end of the Epic's `feature-delta.md`, creating

@@ -15,7 +15,7 @@ Arguments for this run: `$ARGUMENTS`
 
 - `/afk <feature-id>` — enter AFK mode for `docs/feature/<feature-id>/` and start (or resume) the run.
 - `/afk` with no id — resume the feature named in the marker; if there is none, detect the single
-  in-flight feature the way `nw-continue` does. If that is ambiguous, that is a stop (see below).
+  in-flight feature from `docs/feature/*/handoff.json` (newest open one) and its `feature-delta.md`. If that is ambiguous, that is a stop (see below).
 - `/afk status` — print the marker and the next action. Changes nothing.
 - `/afk off` — leave AFK mode (see "Leaving AFK mode").
 
@@ -80,10 +80,11 @@ are reviewed is complete.
 3. **DEVOPS** (`nw-devops`), including the project's own checklist items (e.g. the usage-data event
    question in Lighthouse's `CLAUDE.md`).
 4. **DISTILL** (`nw-distill`), including its mandatory multi-reviewer gate.
-5. **DELIVER** (`nw-deliver`): roadmap → roadmap review → every step through DES → integrity check.
-   Stop at the end of the steps — **do not** run DELIVER's own finalize or push.
-   **At the end of every slice** (the last step of a roadmap phase is committed), before the next
-   slice's first step:
+5. **DELIVER** (`nw-deliver`, the nwdes route in CLAUDE.md): feature and slices recorded in nwdes (≤ 5)
+   → per slice: oracle approved with its RED observed → craft to GREEN → plain `git commit` with hooks on.
+   No lane unless the run works on several features at once. Stop after the last slice; the
+   whole-candidate review and EXAMINE belong to step 6. **Do not** push outside the push rules below.
+   **At the end of every slice** (its GREEN commit is in), before the next slice starts:
    1. **Refactor** the slice's code (L1–L6, `nw-refactor`), scoped to what the slice touched. End it
       with the static checks (`pnpm build` for the frontend and E2E projects, `dotnet build` for the
       backend) and fix what they report before the review.
@@ -116,11 +117,13 @@ are reviewed is complete.
       - Delete or ignore the timer's notification once the window is already settled.
 6. **Final quality gates, after the last slice**, in this order:
    1. **Refactor** (L1–L6, `nw-refactor`) across the whole feature, ending with the same static checks.
-   2. **Adversarial review** of the whole feature, on the model the agreed rigor profile names for
+   2. **Adversarial review** of the whole feature — nwdes's whole-candidate review, recorded with
+      `--subject candidate` — on the model the agreed rigor profile names for
       reviewers (pass it explicitly; never pick a model of your own); demand a
       verbatim quote for every cited line and spot-check any citation before acting on it. One revision
       pass for its findings; blockers must be fixed and proven (a test that fails before the fix and
-      passes after).
+      passes after). Then the source-blind **EXAMINE** (`nw-user-examiner`, reviewer model); a rejected
+      examine finding comes back as a new oracle test, RED before the fix.
    3. **Mutation testing** (`/mutation-testing`) — ≥ 80 % kill rate on each stack the feature touched.
       Kill real survivors with tests; justify equivalent ones in writing. It runs **only here, once**, on
       frozen code: any later edit shifts the mutated line ranges and makes earlier scores stale.
@@ -176,14 +179,15 @@ answer arrives, record it and resume from `position` — still in AFK mode.
 
 ## Hard rules for the whole run
 
-- **Follow the nWave rigor profile on every dispatch.** Pass `model` explicitly: the profile's
-  `agent_model` for crafters and designers, its `reviewer_model` for every reviewer, gates included. AFK
+- **Follow the rigor profile on every dispatch** (the table in CLAUDE.md). Pass `model` explicitly: the
+  profile's crafter model for crafters and designers, its reviewer model for every reviewer and the
+  examiner, gates included. AFK
   mode never picks a stronger or weaker model of its own.
 - **Push only as the session options allow** (`push: "per-slice"`, at a slice's end with its gates
   green); otherwise never. Never `git pull --rebase`, never force anything. Say how many commits are
   ahead of origin at the hold.
-- Commit at every step boundary through the project's conventions (DES `des-commit` inside DELIVER;
-  conventional commits; the project's trailers). Write multi-line commit messages to a file and use
+- Commit every GREEN slice with a plain `git commit` (hooks on, never `--no-verify`), conventional
+  commits, the project's trailers. Write multi-line commit messages to a file and use
   `git commit -F` — inline `-m` can be rewritten by hooks.
 - **Wait for each agent's completion notification** before dispatching the next agent that touches
   the same files or runs the same build — a hand-back message is not completion. Run in parallel only
