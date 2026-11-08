@@ -1042,3 +1042,16 @@ Both files were removed and `git status` showed neither.
 
 - **Slice C wires the ratchet's direction into CI.** `check_budget.py --previous-budget <file>` refuses, with exit 2, a budget file that edits, removes or moves an enforced ledger entry of the earlier file or raises one of its `fast_allowlist` class ceilings. Slice C passes it `git show origin/main:Scripts/test-timings/test-time-budget.json`, written to a temporary file. No workflow changed in slice B.
 - **E2E counts 136, DISTILL's grep found 135: the tree changed, not the rule.** `git grep -E '^[[:space:]]*(test|testWith[A-Z][[:alnum:]_]*)\('` over `Lighthouse.EndToEndTests/tests/specs/*.spec.ts` gives 135 at `b26c97f46^` and 136 at `b26c97f46` (2026-11-08, after DISTILL), which adds `test("Take @screenshot of a Portfolio's Parent sources list", ...)`. The scan's regex and that grep match the same 136 lines today. The regex is unchanged.
+
+Each finding of the adversarial review, fixed test-first in `1ba4629aa`. Suite: 230 tests before, 238 after, all OK.
+
+| Finding | Severity | Outcome |
+|---|---|---|
+| H1: the "no test pins a shipped number" test searched every test source for each ledger value as a substring, so a real value such as 3 would red the suite on a data commit | High | The test and its helper are gone. B-49's trials already show no test pins a number; the "empty ledger" half asserted nothing beyond B-51, which still plants a breach from each empty ledger. B-50 reworded |
+| M1: an enforced ledger entry could be edited or deleted and no gate noticed | Medium | `--previous-budget <file>`: every enforced entry of the earlier file must survive unchanged (seconds, runs, reason, `tests_when_set`) in the same place, new entries only appended, and no `fast_allowlist` ceiling may rise. A violation exits 2 with one `::error::` per ledger naming it and the entry; the switch does not soften it. Tested: edits to each field, a removed first and last entry, a reorder, a raised ceiling, and as passes an appended entry, a provisional entry read again, an unchanged file, a lowered and a removed ceiling, a run without timings, an unreadable earlier file. CI wiring is slice C's |
+| M2: a fast breach rounded half to even, so 2000.452 ms read `took 2.000s, over the 2s` | Medium | Every breach annotation rounds its seconds up, as `_over()` does; 2000.4 ms reads `took 2.001s` |
+| M3: the switch was never tested on a `fast_allowlist` ceiling equal to the limit | Medium | Test added; it already exited 1, so only the test was missing |
+| L1: the table's mean read 0.500 while the annotation read `averaged 0.501s` | Low | The table rounds the Integration mean up when it is over its ceiling, and to nearest otherwise; both pinned |
+| L2: a tiny breach showed `-0 %` room | Low | Room between 0 and -1 % reads `-<1 %` |
+| L3: B-21's "20 % room on each" contradicted the fast row's `largest X s` | Low | Row corrected |
+| E2E count 136 against DISTILL's 135 | - | The tree changed (`b26c97f46`), the regex is right; see above |
