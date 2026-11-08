@@ -1,0 +1,844 @@
+{
+"counters": {
+"D": 1,
+"F": 34,
+"P": 3,
+"S": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"decisions": [
+{
+"id": "D1",
+"text": "F27"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F13",
+"falsifier": "F14",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F12"
+},
+"records": {
+"agreement": [
+{
+"contract": "HTTP routes, DTOs and serialized responses of the metrics surface",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API",
+"party": "Producer",
+"reason": "F30"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F28"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/PercentileCalculator.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/XmRCalculator.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SleRiskCalculator.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/BaselineValidationService.cs",
+"reason": "F29"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F31"
+},
+{
+"analysis": "contract_tests",
+"reason": "F32"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F33"
+},
+{
+"analysis": "prefactoring",
+"reason": "F34"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/PercentileCalculator.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/XmRCalculator.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/SleRiskCalculator.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/BaselineValidationService.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F16",
+"falsifier": "F17",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F15"
+},
+"records": {
+"agreement": [
+{
+"contract": "HTTP routes, DTOs and serialized responses of the metrics surface",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API",
+"party": "Producer",
+"reason": "F30"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F28"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ITeamMetricsService.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentileSnapshotWriter.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IProcessBehaviorSnapshotWriter.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentilesOverTimeSeriesQuery.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IProcessBehaviorSeriesQuery.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IOverTimeGapReconciler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IOverTimeHistoryFiller.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IBlockedCountSnapshotRepository.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentilesOverTimeSnapshotRepository.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IProcessBehaviorSnapshotRepository.cs",
+"reason": "F29"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F31"
+},
+{
+"analysis": "contract_tests",
+"reason": "F32"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F33"
+},
+{
+"analysis": "prefactoring",
+"reason": "F34"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ITeamMetricsService.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPortfolioMetricsService.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentileSnapshotWriter.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IProcessBehaviorSnapshotWriter.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentilesOverTimeSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IProcessBehaviorSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IOverTimeGapReconciler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IOverTimeHistoryFiller.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IBlockedCountSnapshotRepository.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IPercentilesOverTimeSnapshotRepository.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/IProcessBehaviorSnapshotRepository.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F19",
+"falsifier": "F20",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F18"
+},
+"records": {
+"agreement": [
+{
+"contract": "HTTP routes, DTOs and serialized responses of the metrics surface",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API",
+"party": "Producer",
+"reason": "F30"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F28"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/MetricsCacheKey.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileFamilies.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BlockedCountSeriesBuilder.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileSnapshotWriter.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ProcessBehaviorSnapshotWriter.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentilesOverTimeSeriesQuery.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingPercentilesOverTimeSeriesQuery.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ProcessBehaviorSeriesQuery.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingProcessBehaviorSeriesQuery.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeGapReconciler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs",
+"reason": "F29"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F31"
+},
+{
+"analysis": "contract_tests",
+"reason": "F32"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F33"
+},
+{
+"analysis": "prefactoring",
+"reason": "F34"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BaseMetricsService.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PortfolioMetricsService.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/MetricsCacheKey.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileFamilies.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/BlockedCountSeriesBuilder.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentileSnapshotWriter.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ProcessBehaviorSnapshotWriter.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/PercentilesOverTimeSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingPercentilesOverTimeSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ProcessBehaviorSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/GapAskingProcessBehaviorSeriesQuery.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeGapReconciler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ReconstructionMemo.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/RetentionEdge.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/OverTimeFillTarget.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F22",
+"falsifier": "F23",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F21"
+},
+"records": {
+"agreement": [
+{
+"contract": "HTTP routes, DTOs and serialized responses of the metrics surface",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API",
+"party": "Producer",
+"reason": "F30"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F28"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs",
+"reason": "F29"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F31"
+},
+{
+"analysis": "contract_tests",
+"reason": "F32"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F33"
+},
+{
+"analysis": "prefactoring",
+"reason": "F34"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S5": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs",
+"public_oracle": {
+"expected": "F25",
+"falsifier": "F26",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F24"
+},
+"records": {
+"agreement": [
+{
+"contract": "HTTP routes, DTOs and serialized responses of the metrics surface",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API",
+"party": "Producer",
+"reason": "F30"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F28"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/BlockedCountSnapshotRepository.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/PercentilesOverTimeSnapshotRepository.cs",
+"reason": "F29"
+},
+{
+"decision": "Migrated",
+"kind": "namespace move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/ProcessBehaviorSnapshotRepository.cs",
+"reason": "F29"
+}
+],
+"not_applicable": [
+{
+"analysis": "reuse",
+"reason": "F31"
+},
+{
+"analysis": "contract_tests",
+"reason": "F32"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F33"
+},
+{
+"analysis": "prefactoring",
+"reason": "F34"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/BlockedCountSnapshotRepository.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/PercentilesOverTimeSnapshotRepository.cs"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Persistence/ProcessBehaviorSnapshotRepository.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+}
+}
+},
+"facts": {
+"F1": "Story 6358 S02 Flow metrics pilot, part B of 3 (DESIGN slices 2, 3a, 3b, 4, 5): move the 42 Flow metrics files out of Lighthouse.Backend.Services into Lighthouse.Backend.Modules.FlowMetrics.{Domain, Application, Application.Policies, Adapters.Background, Adapters.Persistence}, namespace and folder only, with no behaviour change. Design: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (Component decomposition, D-4 to D-9, R2, DEVOPS).",
+"F10": "The seven Flow metrics event handlers (three recorders, two cache invalidations, two demo backfills) live in Lighthouse.Backend.Modules.FlowMetrics.Application.Policies and still run in the pinned order",
+"F11": "The background history filler lives in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background and the three snapshot repositories in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence, still recognised as repositories by every repository rule, with the EF model unchanged",
+"F12": "Read the compiled production assembly: the namespaces of the five calculators, and every type the Lighthouse.Backend.Modules.FlowMetrics.Domain namespace depends on, async bodies included",
+"F13": "Each of the five calculators sits in Lighthouse.Backend.Modules.FlowMetrics.Domain, none is left under Lighthouse.Backend.Services, and Domain reaches only Lighthouse.Backend.Models types and the base library; a made-up Domain type that reaches a Services, Data, EF Core or Microsoft.Extensions type is reported",
+"F14": "A calculator still sits under Services, or Domain reaches a forbidden type and the rule stays green",
+"F15": "Read the compiled production assembly: the namespaces of the eleven contract types",
+"F16": "Each of the eleven contract types sits in Lighthouse.Backend.Modules.FlowMetrics.Application and none is left under Lighthouse.Backend.Services; the earlier layer checks stay green",
+"F17": "A contract type still sits under Services, or sits in the module but under the wrong layer",
+"F18": "Read the compiled production assembly: the namespaces of the sixteen implementation types",
+"F19": "Each of the sixteen implementation types sits in Lighthouse.Backend.Modules.FlowMetrics.Application and none is left under Lighthouse.Backend.Services; the earlier layer checks stay green",
+"F2": "The Flow metrics context lives in one module folder with its layers visible, and nothing a user sees changes",
+"F20": "An implementation type still sits under Services, or sits under the wrong layer",
+"F21": "Read the compiled production assembly: the namespaces of the seven handlers; run the handler-order pin",
+"F22": "Each of the seven handlers sits in Lighthouse.Backend.Modules.FlowMetrics.Application.Policies and none is left under Lighthouse.Backend.Services; the handler-order pin and the handler rules stay green",
+"F23": "A handler still sits under Services, or the pinned handler order changes",
+"F24": "Read the compiled production assembly: the namespaces of the filler and the three repositories; run the repository rules",
+"F25": "The filler sits in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background and the three repositories in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence, none left under Lighthouse.Backend.Services; the repository-detection and GetAllByPredicate rules still treat the three as repositories",
+"F26": "A type still sits under Services, or a moved repository is no longer seen by a repository rule",
+"F27": "Flow metrics move, oracle and craft shape (design owner, 2026-11-08).\n\nPlacement oracle: one test class, Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleLayoutArchUnitTest.cs, extended by each slice's acceptance designer. It reads the compiled production assembly through IlDependencies (Mono.Cecil) and names the moved types as full-name strings (never typeof, so the test compiles before and after a move). Per slice it asserts, for each named type: it exists under its declared namespace (Lighthouse.Backend.Modules.FlowMetrics.Domain, .Application, .Application.Policies, .Adapters.Background or .Adapters.Persistence) and no type of that name is left under Lighthouse.Backend.Services. A missing type is a failure that names it. This is the placement canary the DESIGN calls R1; feature C replaces the old Metrics type-set rule with it.\n\nSlice S1 also adds the Domain rule (R2): Lighthouse.Backend.Modules.FlowMetrics.Domain depends only on Lighthouse.Backend.Models and the base library (System.*), not on Application, Adapters, Services, Data, Microsoft.EntityFrameworkCore or Microsoft.Extensions.*; rule defined once in the KernelRules shape and run on the real module and on a made-up offender in the test assembly (an async-only edge included), with a compliant twin as negative control.\n\nCraft: each move is a pure-move commit (`git mv`, namespace line, using lines in consumers, test using lines) separate from any edit commit. Files land in the folder matching their namespace (Modules/FlowMetrics/Domain, /Application, /Application/Policies, /Adapters/Background, /Adapters/Persistence). Records nested in a moved file move with it. Source-path strings in tests (OverTimeReconstructionSeamArchUnitTest, RepositoryLeakRatchetArchUnitTest allow-list, CategoryListOwnershipGuardTest) follow the move in the slice that moves the file. OverTimeFillTarget's two qualified references to Implementation.PercentileFamilies are an edit commit in S3. In S5, the repository rules (the GetAllByPredicate guard's folder exemption, repository detection, StoredRecordsPattern and PlatformPersistencePattern) widen to \"Repositories folder or a module's Adapters/Persistence\"; that is an edit commit, and `dotnet ef migrations has-pending-model-changes` (after a build, for each provider's migrations project) must report no changes. Program.cs gets using lines only; registration lines keep their place.\n\nBehaviour-free proof per slice: the Architecture namespace (oracle, handler-order pin, application-core rules) is the declared command; the fast suite and dotnet build run at the end of each slice; the full filtered dotnet test and the behaviour capture (capture-metrics.sh on the feature base and on the candidate, back to back the same day, compare.sh exit 0) run once at the end of the feature.\n",
+"F28": "Program.cs gets using lines only; registrations keep their place and order (pinned by the handler-order test)",
+"F29": "Moved here unchanged from Lighthouse.Backend.Services; namespace changes to its module layer, every consumer gets a using line, behaviour unchanged",
+"F3": "Every Flow metrics type the design names lives in its declared layer namespace under Lighthouse.Backend.Modules.FlowMetrics (Domain, Application, Application.Policies, Adapters.Background, Adapters.Persistence), in the folder that matches the namespace",
+"F30": "Controllers stay in API and are unchanged; the 366-request capture compares the answers before and after",
+"F31": "Pure move: every target is an existing file moved with git mv to its module folder unchanged (namespace and using lines only), and Program.cs gets using lines only; nothing is reused, extended or replaced",
+"F32": "No wire contract changes; the behaviour capture (docs/feature/story-6358-s02-metrics-pilot/capture) compares every metrics answer",
+"F33": "The slice oracle is itself the architectural test over the compiled assembly",
+"F34": "The slice is itself a pure move; consumer using lines change in the same move commit",
+"F4": "The module's Domain depends only on the shared kernel (Lighthouse.Backend.Models) and the .NET base library: no Application, Adapters, Services, Data, EF Core or Microsoft.Extensions type",
+"F5": "Nothing a user sees changes: every metrics API answer is identical before and after on the same day, the event-handler order pin stays green, the EF model is unchanged, and every existing test stays green with only using, namespace and path-string edits",
+"F6": "The module dependency rules R3 to R5, deleting the old Metrics type-set rule, and relocating the unit tests (feature C); extracting a registration extension (later Story); renaming *Service roles",
+"F7": "The five pure Flow metrics calculators (PercentileCalculator, XmRCalculator with XmRResult, SleRiskCalculator, BaselineValidationService with BaselineValidationResult) live in Lighthouse.Backend.Modules.FlowMetrics.Domain, and that Domain reaches only the shared kernel and the base library",
+"F8": "The Flow metrics contract (the two metrics-service interfaces with their records, the snapshot writer, series query, gap reconciler, history-filler and snapshot-repository interfaces) lives in Lighthouse.Backend.Modules.FlowMetrics.Application",
+"F9": "The Flow metrics implementations (the three metrics services, cache key, percentile families, blocked-count series builder, snapshot writers, series queries, gap reconciler, reconstruction memo, retention edge, fill target) live in Lighthouse.Backend.Modules.FlowMetrics.Application"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_out": [
+"F6"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F7",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+},
+{
+"id": "S2",
+"observation": "F8",
+"promises": [
+"P1",
+"P3"
+]
+},
+{
+"id": "S3",
+"observation": "F9",
+"promises": [
+"P1",
+"P3"
+]
+},
+{
+"id": "S4",
+"observation": "F10",
+"promises": [
+"P1",
+"P3"
+]
+},
+{
+"id": "S5",
+"observation": "F11",
+"promises": [
+"P1",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6358-s02b-flow-metrics-move",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
