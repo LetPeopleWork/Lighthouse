@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// Notices which days of a requested window carry no reading yet and asks for them. It runs on the

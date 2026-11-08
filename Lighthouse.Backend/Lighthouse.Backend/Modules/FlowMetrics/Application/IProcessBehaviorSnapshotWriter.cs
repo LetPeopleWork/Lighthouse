@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// One process-behaviour family of one owner, together with everything needed to compute it for a

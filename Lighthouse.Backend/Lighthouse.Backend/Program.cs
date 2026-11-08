@@ -75,7 +75,6 @@ using Lighthouse.Backend.Services.Implementation.Auth;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
-using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Services.Interfaces.WorkTrackingConnectors;
 using Lighthouse.Backend.Models.Auth;
@@ -83,6 +82,7 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Standalone;
 using Lighthouse.Backend.API.Swagger;
 using Lighthouse.Backend.API.Filters;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 
 namespace Lighthouse.Backend
 {

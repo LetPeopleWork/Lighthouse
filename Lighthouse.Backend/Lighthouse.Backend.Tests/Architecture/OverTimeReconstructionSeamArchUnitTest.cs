@@ -31,7 +31,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string[] FilesAllowedToDeclareTheHorizons = [TheWriter, TheDemoSynthesiser];
 
         /// <summary>The port a chart load asks through, and the thing it asks.</summary>
-        private const string TheGapReconcilerPort = "Services/Interfaces/IOverTimeGapReconciler.cs";
+        private const string TheGapReconcilerPort = "Modules/FlowMetrics/Application/IOverTimeGapReconciler.cs";
 
         /// <summary>Everything a chart load runs through on the thread the reader is waiting on.</summary>
         private static readonly string[] TheReadPath =

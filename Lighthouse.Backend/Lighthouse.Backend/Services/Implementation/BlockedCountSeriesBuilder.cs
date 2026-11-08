@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 
 namespace Lighthouse.Backend.Services.Implementation
 {

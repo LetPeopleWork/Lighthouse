@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// One percentile family of one owner, together with the chart to read it from. The reader is

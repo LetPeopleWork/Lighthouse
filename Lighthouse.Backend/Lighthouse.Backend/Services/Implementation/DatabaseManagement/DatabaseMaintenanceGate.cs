@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.Update;
 

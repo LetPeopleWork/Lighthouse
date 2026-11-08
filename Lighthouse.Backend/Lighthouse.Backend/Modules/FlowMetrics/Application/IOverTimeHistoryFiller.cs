@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces.BackgroundServices
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// One owner's run of days that carry no over-time reading yet, handed over to be worked out

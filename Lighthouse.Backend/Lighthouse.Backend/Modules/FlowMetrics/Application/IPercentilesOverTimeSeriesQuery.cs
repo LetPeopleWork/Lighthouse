@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 
-namespace Lighthouse.Backend.Services.Interfaces
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// Read-only port (Epic 5427). Serves the persisted percentiles-over-time series for an owner and

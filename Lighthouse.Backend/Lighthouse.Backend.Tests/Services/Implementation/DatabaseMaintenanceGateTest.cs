@@ -1,10 +1,10 @@
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 using Lighthouse.Backend.Services.Interfaces.DatabaseManagement;
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Tests.TestHelpers;
-using Lighthouse.Backend.Services.Interfaces.BackgroundServices;
 using Microsoft.Extensions.Time.Testing;
 using Moq;
 
