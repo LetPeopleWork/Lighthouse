@@ -45,6 +45,7 @@ HERE = Path(__file__).resolve().parent
 REPOSITORY_ROOT = HERE.parent.parent
 DEFAULT_ALLOWLIST = HERE / "test-time-budget.json"
 DEFAULT_BACKEND_SOURCE_ROOT = REPOSITORY_ROOT / "Lighthouse.Backend" / "Lighthouse.Backend.Tests"
+DEFAULT_SPEC_ROOT = REPOSITORY_ROOT / "Lighthouse.EndToEndTests" / "tests" / "specs"
 
 
 COLUMNS = {
@@ -452,6 +453,58 @@ def _shares_text(shares: str) -> str:
     return f"This stack only, not the pyramid shares: {shares}. No gate."
 
 
+PYRAMID_LIMITS = {FAST: "90 %", INTEGRATION: "9.5 %", "E2E": "0.5 %"}
+# A Playwright test is declared with a plain `test(` or with a fixture-extended `testWith<Name>(`,
+# always at the start of a line; `test.describe(` and `test.skip(` declare none.
+E2E_DECLARATION = re.compile(r"^[ \t]*(?:test|testWith[A-Z]\w*)\(", re.MULTILINE)
+SPEC_SUFFIX = ".spec.ts"
+
+
+def pyramid_report(frontend: TierCount, backend: TierCount, e2e_tests: int) -> str:
+    tests = {
+        FAST: frontend.fast.tests + backend.fast.tests,
+        INTEGRATION: frontend.integration.tests + backend.integration.tests,
+        "E2E": e2e_tests,
+    }
+    counted = sum(tests.values())
+    unlabelled = (
+        ["The backend has nothing labelled yet, so all its tests count as fast."]
+        if backend.integration.tests == 0
+        else []
+    )
+    return "\n".join(
+        [
+            "Test pyramid across both stacks and Playwright",
+            f"{'Tier':<12}{'Tests':>7}{'Share':>9}   Upper limit",
+            *(_pyramid_line(tier, count, counted) for tier, count in tests.items()),
+            _aside_line("Left out", backend.left_out, "connector classes, not counted"),
+            _aside_line(
+                "Not run", frontend.not_run + backend.not_run, "did not pass, not counted"
+            ),
+            *unlabelled,
+            "E2E counts the test declarations in the Playwright specs, not what ran. No gate.",
+        ]
+    )
+
+
+def _pyramid_line(tier: str, tests: int, counted: int) -> str:
+    share = Decimal(tests * 100) / counted if counted else Decimal(0)
+    return f"{tier:<12}{tests:>7,}{f'{share:.1f} %':>9}   {PYRAMID_LIMITS[tier]}"
+
+
+def e2e_tests(spec_root: Path) -> int:
+    if not spec_root.is_dir():
+        raise CannotJudge(
+            f"the Playwright spec folder {escaped(str(spec_root))} does not exist"
+        )
+    return sum(
+        len(E2E_DECLARATION.findall(_source_of(directory / file)))
+        for directory, _, files in spec_root.walk()
+        for file in files
+        if file.endswith(SPEC_SUFFIX)
+    )
+
+
 def stale_entries(allowlisted: list[str], still_present: set[str]) -> list[str]:
     return [unit for unit in allowlisted if unit not in still_present]
 
@@ -801,14 +854,26 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--stack",
         choices=tuple(COLUMNS),
-        required=True,
         help="Which suite the CSV came from: frontend sums per file, backend per class.",
     )
     parser.add_argument(
         "--csv",
         type=Path,
-        required=True,
         help="test-timings-frontend.csv or test-timings-backend.csv.",
+    )
+    parser.add_argument(
+        "--pyramid",
+        action="store_true",
+        help="Only print the fast, integration and E2E shares across both stacks and "
+        "Playwright beside their upper limits. Judges nothing and writes nothing.",
+    )
+    parser.add_argument("--frontend-csv", type=Path, help="With --pyramid: the frontend CSV.")
+    parser.add_argument("--backend-csv", type=Path, help="With --pyramid: the backend CSV.")
+    parser.add_argument(
+        "--spec-root",
+        type=Path,
+        default=DEFAULT_SPEC_ROOT,
+        help="With --pyramid: the Playwright spec folder the E2E tests are counted in.",
     )
     parser.add_argument(
         "--allowlist",
@@ -832,9 +897,15 @@ def _build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    arguments = _build_arg_parser().parse_args(argv)
+    parser = _build_arg_parser()
+    arguments = parser.parse_args(argv)
+    needed = ("frontend_csv", "backend_csv") if arguments.pyramid else ("stack", "csv")
+    missing = [name for name in needed if getattr(arguments, name) is None]
+    if missing:
+        options = ", ".join(f"--{name.replace('_', '-')}" for name in missing)
+        parser.error(f"the following arguments are required: {options}")
     try:
-        return _check(arguments)
+        return _pyramid(arguments) if arguments.pyramid else _check(arguments)
     except CannotJudge as refusal:
         print(f"::error::{refusal}")
         return CANNOT_JUDGE
@@ -847,10 +918,8 @@ def _check(arguments: argparse.Namespace) -> int:
     rows = load_timings(stack, arguments.csv)
     budget_seconds, ceilings = load_allowlist(stack, arguments.allowlist)
     ledgers, fast_ceilings = _backend_limits(stack, arguments.allowlist)
-    if stack == "backend" and not arguments.source_root.is_dir():
-        raise CannotJudge(
-            f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
-        )
+    if stack == "backend":
+        _require_source_root(arguments.source_root)
     connector_classes = _connector_classes(stack, arguments.source_root)
     count = count_tiers(stack, rows, connector_classes)
     publish_report(tier_report(stack, count, ledgers), summary)
@@ -878,6 +947,25 @@ def _check(arguments: argparse.Namespace) -> int:
     failing = [*findings, *fast_findings, *tier_breaches]
     breached = any(not breach.provisional for breach in failing) and not warn_only
     return 1 if breached or stale or unneeded else 0
+
+
+def _pyramid(arguments: argparse.Namespace) -> int:
+    frontend_rows = load_timings("frontend", arguments.frontend_csv)
+    backend_rows = load_timings("backend", arguments.backend_csv)
+    _require_source_root(arguments.source_root)
+    connector_classes = _connector_classes("backend", arguments.source_root)
+    e2e = e2e_tests(arguments.spec_root)
+    frontend = count_tiers("frontend", frontend_rows, set())
+    backend = count_tiers("backend", backend_rows, connector_classes)
+    print(pyramid_report(frontend, backend, e2e))
+    return 0
+
+
+def _require_source_root(source_root: Path) -> None:
+    if not source_root.is_dir():
+        raise CannotJudge(
+            f"the backend test source folder {escaped(str(source_root))} does not exist"
+        )
 
 
 def _print_tier_verdicts(
