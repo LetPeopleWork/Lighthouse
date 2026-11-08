@@ -57,6 +57,19 @@ CLASS_SCOPE_TOKEN_PATTERN = re.compile(
     r"(?:\s*:\s*(?:global::)?(?P<base>[A-Za-z_][\w.]*))?"
     r"|[{}]"
 )
+CONNECTOR_CATEGORIES = (
+    "JiraIntegration",
+    "LinearIntegration",
+    "AdoIntegration",
+    "ServiceNowIntegration",
+    "GithubIntegration",
+)
+CONNECTOR_ATTRIBUTE_PATTERN = re.compile(
+    r'\bCategory\(\s*"(?:' + "|".join(CONNECTOR_CATEGORIES) + r')"\s*\)'
+)
+ATTRIBUTES_BEFORE_DECLARATION_PATTERN = re.compile(
+    r"(?:\[[^\[\]]*\]\s*)*(?:\w+\s+)*$"
+)
 METHOD_DECLARATION_PATTERN = re.compile(
     r"^\s*(?:public\s+|internal\s+|protected\s+|private\s+|static\s+|async\s+|virtual\s+|override\s+|sealed\s+)*"
     r"(?:Task<[^>]+>|Task|void|[A-Za-z_][A-Za-z0-9_]*)\s+([A-Za-z_][A-Za-z0-9_]*)\s*\("
@@ -149,7 +162,36 @@ def discover_integration_class_names(source_root: Path) -> set[str]:
         for namespace, content in _namespaced_sources(source_root)
         for class_match in INTEGRATION_CATEGORY_AT_CLASS_PATTERN.finditer(content)
     }
-    return names | _classes_reaching_the_root(_base_by_class(source_root))
+    return names | _classes_reaching(
+        _base_by_class(source_root), {INTEGRATION_ROOT_CLASS}
+    )
+
+
+def discover_connector_class_names(source_root: Path) -> set[str]:
+    """Scan a C# source tree for classes in one of the live connector categories.
+
+    A class qualifies through the attribute written on its own declaration, or
+    through a chain of first bases reaching such a class, as NUnit inherits a
+    category. A mention in a comment does not count. Names read as TRX writes
+    them. A source file that cannot be read raises ``UnreadableSourceError``,
+    since a class missed there would be counted as if it were offline.
+    """
+    for cs_file, content in _cs_sources(source_root):
+        if content is None:
+            raise UnreadableSourceError(cs_file)
+    marked = {
+        full_name
+        for full_name, _, attributes in _class_records(source_root)
+        if CONNECTOR_ATTRIBUTE_PATTERN.search(attributes)
+    }
+    marked_simple_names = {_simple_name(name) for name in marked}
+    return marked | _classes_reaching(_base_by_class(source_root), marked_simple_names)
+
+
+class UnreadableSourceError(Exception):
+    def __init__(self, path: Path) -> None:
+        super().__init__(f"cannot read the C# source file {path}")
+        self.path = path
 
 
 def discover_declared_class_names(source_root: Path) -> set[str]:
@@ -166,7 +208,8 @@ def simple_name_collisions(source_root: Path) -> dict[str, set[str]]:
     """
     base_by_class = _base_by_class(source_root)
     names_on_chains = {INTEGRATION_ROOT_CLASS} | {
-        _simple_name(name) for name in _classes_reaching_the_root(base_by_class)
+        _simple_name(name)
+        for name in _classes_reaching(base_by_class, {INTEGRATION_ROOT_CLASS})
     }
     classes_by_simple_name: dict[str, set[str]] = {}
     for name in base_by_class:
@@ -181,19 +224,28 @@ def simple_name_collisions(source_root: Path) -> dict[str, set[str]]:
 
 def _base_by_class(source_root: Path) -> dict[str, str | None]:
     base_by_class: dict[str, str | None] = {}
-    for namespace, content in _namespaced_sources(source_root):
-        for class_name, base in _class_declarations(content):
-            full_name = f"{namespace}.{class_name}"
-            # Only one part of a partial class needs to name the base.
-            base_by_class[full_name] = base or base_by_class.get(full_name)
+    for full_name, base, _ in _class_records(source_root):
+        # Only one part of a partial class needs to name the base.
+        base_by_class[full_name] = base or base_by_class.get(full_name)
     return base_by_class
 
 
-def _class_declarations(content: str) -> Iterator[tuple[str, str | None]]:
-    """Yield each class's ``Outer+Inner`` name with its first base's simple name."""
-    code = COMMENT_OR_LITERAL_PATTERN.sub(" ", content)
+@functools.cache
+def _class_records(source_root: Path) -> list[tuple[str, str | None, str]]:
+    return [
+        (f"{namespace}.{class_name}", base, attributes)
+        for namespace, content in _namespaced_sources(source_root)
+        for class_name, base, attributes in _class_declarations(content)
+    ]
+
+
+def _class_declarations(content: str) -> Iterator[tuple[str, str | None, str]]:
+    """Yield each class's ``Outer+Inner`` name, its first base's simple name and
+    the attributes written on its declaration."""
+    code = _blanked(content, keep_literals=False)
     enclosing: list[str | None] = []
     opening_class: str | None = None
+    preceding_end = 0
     for token in CLASS_SCOPE_TOKEN_PATTERN.finditer(code):
         text = token.group()
         if text == "{":
@@ -207,11 +259,22 @@ def _class_declarations(content: str) -> Iterator[tuple[str, str | None]]:
                 [name for name in enclosing if name] + [opening_class]
             )
             base = token.group("base")
-            yield nested_name, base.rsplit(".", 1)[-1] if base else None
+            # Attribute arguments are literals, so only comments are blanked here.
+            attributes = ATTRIBUTES_BEFORE_DECLARATION_PATTERN.search(
+                _blanked(content[preceding_end : token.start()], keep_literals=True)
+            )
+            yield (
+                nested_name,
+                base.rsplit(".", 1)[-1] if base else None,
+                attributes.group() if attributes else "",
+            )
+        preceding_end = token.end()
 
 
-def _classes_reaching_the_root(base_by_class: dict[str, str | None]) -> set[str]:
-    reached_simple_names = {INTEGRATION_ROOT_CLASS}
+def _classes_reaching(
+    base_by_class: dict[str, str | None], root_simple_names: set[str]
+) -> set[str]:
+    reached_simple_names = set(root_simple_names)
     reached: set[str] = set()
     while True:
         newly_reached = {
@@ -264,18 +327,32 @@ def discover_integration_method_fqns(source_root: Path) -> set[str]:
 def _namespaced_sources(source_root: Path) -> list[tuple[str, str]]:
     return [
         block
-        for cs_file in source_root.rglob("*.cs")
-        if (content := _read_cs_file(cs_file)) is not None
+        for _, content in _cs_sources(source_root)
+        if content is not None
         for block in _namespace_blocks(content)
     ]
 
 
+@functools.cache
+def _cs_sources(source_root: Path) -> list[tuple[Path, str | None]]:
+    return [(cs_file, _read_cs_file(cs_file)) for cs_file in source_root.rglob("*.cs")]
+
+
+def _blanked(content: str, keep_literals: bool) -> str:
+    """Blank comments, and literals unless kept, to the same length, so a match's
+    offsets still hold in the content."""
+
+    def blank(match: re.Match[str]) -> str:
+        if keep_literals and match.group()[0] in "\"$@'":
+            return match.group()
+        return " " * len(match.group())
+
+    return COMMENT_OR_LITERAL_PATTERN.sub(blank, content)
+
+
 def _namespace_blocks(content: str) -> Iterator[tuple[str, str]]:
     """Yield each namespace of a file with the text from it to the next one."""
-    # Blanked to the same length, so a match's offsets still hold in the content.
-    code = COMMENT_OR_LITERAL_PATTERN.sub(
-        lambda literal: " " * len(literal.group()), content
-    )
+    code = _blanked(content, keep_literals=False)
     starts = list(NAMESPACE_PATTERN.finditer(code))
     ends = [following.start() for following in starts[1:]] + [len(content)]
     for start, end in zip(starts, ends):
