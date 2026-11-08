@@ -51,12 +51,12 @@ def row(name, category, seconds, outcome="Passed"):
     return (name, category, f"{seconds * 1000:.3f}", outcome)
 
 
-def steady_rows(integration_seconds=0.4):
+def steady_rows(integration_seconds=0.4, integration_tests=20):
     return (
         [row(f"{FAST_CLASS}.Prices{index}", "Unit", 0.01) for index in range(100)]
         + [
             row(f"{HOSTED_CLASS}.Serves{index}", "Integration", integration_seconds)
-            for index in range(20)
+            for index in range(integration_tests)
         ]
         + [row(f"{FAST_CLASS}.Waits{index}", "Unit", 0, "NotExecuted") for index in range(3)]
         + [row(f"{CONNECTOR_CLASS}.ReadsALiveTracker", "Integration", 30)]
@@ -67,9 +67,11 @@ def steady_rows(integration_seconds=0.4):
 class TierWorkspace(CheckWorkspace):
     """A workspace that writes any category and outcome, and plants the connector class."""
 
-    def steady_run(self, extra_rows=(), integration_seconds=0.4):
+    def steady_run(self, extra_rows=(), integration_seconds=0.4, integration_tests=20):
         self.plant_connector_class()
-        return self.backend_rows([*steady_rows(integration_seconds), *extra_rows])
+        return self.backend_rows(
+            [*steady_rows(integration_seconds, integration_tests), *extra_rows]
+        )
 
     def plant_connector_class(self):
         self.write_test_source("JiraConnectorTest.cs", CONNECTOR_SOURCE)
@@ -447,11 +449,11 @@ class LedgerTestCase(TierReportTestCase):
         self.write_ledgers(ledgers)
         return self.workspace.check("backend", timings, *options)
 
-    def write_ledgers(self, ledgers, fast_allowlist=None):
+    def write_ledgers(self, ledgers, fast_allowlist=None, budget_seconds=PLANTED_BUDGET_SECONDS):
         document = {
             "frontend": {"budget_seconds": PLANTED_BUDGET_SECONDS, "allowlist": []},
             "backend": {
-                "budget_seconds": PLANTED_BUDGET_SECONDS,
+                "budget_seconds": budget_seconds,
                 "allowlist": [],
                 "ledgers": ledgers,
             },
@@ -805,6 +807,176 @@ class TheFastAllowlistStaysShortAndComplete(FastTestLimitTestCase):
 
                 self.assert_refuses_to_judge(result, ALLOWLIST_NAME, "fast_allowlist", fragment)
                 self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+
+
+GONE_CLASS = f"{TESTS_NAMESPACE}.RetiredImportTest"
+
+
+class CeilingTestCase(LedgerTestCase):
+    def check_integration(self, seconds, tests, extra_rows=(), ledgers=None, **options):
+        timings = self.workspace.steady_run(extra_rows, seconds, tests)
+        self.write_ledgers(planted_ledgers() if ledgers is None else ledgers, **options)
+        return self.workspace.check("backend", timings)
+
+    def assert_breaches_alone(self, result, ceiling, *fragments):
+        self.assert_fails_naming(result, f"{ceiling} set in {ALLOWLIST_NAME}", *fragments)
+        self.assertEqual(len(self.annotations(result, "error")), 1, msg=self._explain(result))
+
+
+class ASlowerIntegrationTierFailsTheBuild(CeilingTestCase):
+    def test_a_slower_integration_tier_fails_the_build_though_no_test_is_over_any_other_limit(self):
+        result = self.check_integration(0.6, 16)
+
+        self.assert_breaches_alone(
+            result,
+            "mean ceiling",
+            "Integration tests averaged 0.600s each over 16 tests",
+            "over the 0.5s mean ceiling",
+        )
+
+    def test_more_tests_at_the_same_mean_pass_until_the_total_is_reached(self):
+        for tests in (20, 25):
+            with self.subTest(tests=tests):
+                self.workspace = self.fresh_workspace()
+
+                self.assert_passes_quietly(self.check_integration(0.4, tests))
+
+        self.workspace = self.fresh_workspace()
+
+        result = self.check_integration(0.4, 26)
+
+        self.assert_breaches_alone(
+            result,
+            "total ceiling",
+            "Integration tests took 10.400s in all over 26 tests",
+            "over the 10s total ceiling",
+            "; +6 tests since it was set",
+        )
+
+
+class EachCeilingIsJudgedAtItsEdge(CeilingTestCase):
+    def test_a_mean_of_exactly_the_ceiling_passes_and_one_millisecond_more_breaches_it_alone(self):
+        self.assert_passes_quietly(self.check_integration(0.5, 10))
+
+        self.workspace = self.fresh_workspace()
+        one_more = row(f"{HOSTED_CLASS}.ServesOneMillisecondLonger", "Integration", 0.501)
+
+        result = self.check_integration(0.5, 9, [one_more])
+
+        self.assert_breaches_alone(
+            result, "mean ceiling", "averaged 0.501s each over 10 tests", "over the 0.5s"
+        )
+
+    def test_a_total_of_exactly_the_ceiling_passes_and_one_millisecond_more_breaches_it_alone(self):
+        self.assert_passes_quietly(self.check_integration(0.4, 25))
+
+        self.workspace = self.fresh_workspace()
+        one_more = row(f"{HOSTED_CLASS}.ServesOneMillisecondLonger", "Integration", 0.401)
+
+        result = self.check_integration(0.4, 24, [one_more])
+
+        self.assert_breaches_alone(
+            result, "total ceiling", "took 10.001s in all over 25 tests", "over the 10s"
+        )
+
+
+class AReviewedRaiseGivesTheTotalRoomAgain(CeilingTestCase):
+    def raised(self, runs):
+        return planted_ledgers(
+            **{TOTAL_LEDGER: [total_entry(10), total_entry(13, tests_when_set=26, runs=runs)]}
+        )
+
+    def test_a_reviewed_raise_gives_the_total_room_again(self):
+        result = self.check_integration(0.4, 26, ledgers=self.raised(ENFORCING_RUNS))
+
+        self.assert_passes_quietly(result)
+        self.assertIn(
+            "Since the total was set: +0 tests",
+            self.report_of(result, "Backend test time").splitlines(),
+        )
+
+    def test_a_raise_on_too_few_runs_lifts_nothing(self):
+        result = self.check_integration(0.4, 26, ledgers=self.raised(4))
+
+        self.assert_breaches_alone(result, "total ceiling", "over the 10s total ceiling")
+        self.assertIn(
+            total_line("total 10, provisional 13 (4 of 5)", "-4 %"),
+            self.report_of(result, "Backend test time").splitlines(),
+        )
+
+
+class APushThatRunsTheLiveSuitesDoesNotMoveTheCeilings(CeilingTestCase):
+    def test_a_push_that_runs_the_live_suites_does_not_move_the_ceilings(self):
+        live = [
+            row(f"{CONNECTOR_CLASS}.SyncsLiveProject{index}", "Integration", 30)
+            for index in range(40)
+        ]
+
+        result = self.check_integration(0.4, 20, live)
+
+        self.assert_passes_quietly(result)
+        figures = self.figures_of(self.report_of(result, "Backend test time"))
+        self.assertEqual(figures["Integration"], (20, "8.0", "0.400"))
+
+
+class TheSwitchSoftensEveryNewBreachAndNothingElse(CeilingTestCase):
+    def check_three_breaches(self, *, switch, fast_allowlist=None):
+        self.workspace = self.fresh_workspace()
+        slow = row(f"{FAST_CLASS}.PricesAWholeCatalogue", "Unit", 3.4)
+        environment = {check_budget.WARN_ONLY_VARIABLE: "true"} if switch else {}
+        with mock.patch.dict(os.environ, environment):
+            return self.check_integration(0.6, 21, [slow], fast_allowlist=fast_allowlist)
+
+    def test_the_switch_turns_the_fast_mean_and_total_breaches_into_warnings(self):
+        softened = self.check_three_breaches(switch=True)
+        judged = self.check_three_breaches(switch=False)
+
+        self.assertEqual(softened.returncode, 0, msg=self._explain(softened))
+        self.assertEqual(self.annotations(softened, "error"), [], msg=self._explain(softened))
+        warnings = self.annotations(softened, "warning")
+        for limit in ("fast test limit", "mean ceiling", "total ceiling"):
+            with self.subTest(limit=limit):
+                named = [warning for warning in warnings if limit in warning]
+                self.assertEqual(len(named), 1, msg=self._explain(softened))
+        self.assertEqual(len(warnings), 3, msg=self._explain(softened))
+        self.assertEqual(judged.returncode, 1, msg=self._explain(judged))
+        self.assertEqual(len(self.annotations(judged, "error")), 3, msg=self._explain(judged))
+        self.assertEqual(
+            self.report_of(softened, "Backend test time"),
+            self.report_of(judged, "Backend test time"),
+        )
+
+    def test_a_stale_list_entry_in_the_same_run_still_fails(self):
+        result = self.check_three_breaches(switch=True, fast_allowlist=[allowed(GONE_CLASS, 5)])
+
+        self.assert_fails_naming(result, GONE_CLASS, "no longer in the backend test source")
+        self.assertEqual(len(self.annotations(result, "warning")), 3, msg=self._explain(result))
+
+
+class TheOlderClassBudgetStillJudgesBesideTheNewLimits(CeilingTestCase):
+    def test_a_class_over_the_class_budget_fails_with_its_message_unchanged(self):
+        result = self.check_integration(0.4, 20, budget_seconds=5)
+
+        self.assertEqual(result.returncode, 1, msg=self._explain(result))
+        self.assertIn(
+            f"::error::{HOSTED_CLASS} took 8.0s, over the 5s budget set in {ALLOWLIST_NAME}",
+            self.annotations(result, "error"),
+            msg=self._explain(result),
+        )
+        self.assertNotIn("ceiling", result.stdout.split("No gate.")[-1], msg=self._explain(result))
+
+    def test_a_breach_with_a_summary_that_cannot_be_written_fails_and_warns_once(self):
+        timings = self.workspace.steady_run(integration_seconds=0.6, integration_tests=16)
+        self.write_ledgers(planted_ledgers())
+        unwritable = self.workspace.root / "a-folder"
+        unwritable.mkdir()
+
+        result = self.workspace.check("backend", timings, summary=unwritable)
+
+        self.assert_breaches_alone(result, "mean ceiling", "averaged 0.600s")
+        warnings = self.annotations(result, "warning")
+        self.assertEqual(len(warnings), 1, msg=self._explain(result))
+        self.assertIn("summary", warnings[0], msg=self._explain(result))
 
 
 if __name__ == "__main__":

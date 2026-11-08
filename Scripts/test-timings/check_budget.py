@@ -35,7 +35,7 @@ import json
 import os
 import re
 from dataclasses import dataclass
-from decimal import Decimal, InvalidOperation
+from decimal import ROUND_UP, Decimal, InvalidOperation
 from pathlib import Path
 
 import trx_to_csv
@@ -264,6 +264,32 @@ class Ledgers:
 
 
 NO_LEDGERS = Ledgers()
+MEAN_CEILING, TOTAL_CEILING = "mean ceiling", "total ceiling"
+
+
+def judge_integration(integration: Tier, ledgers: Ledgers, allowlist_name: str) -> list[str]:
+    """The backend Integration tier as a whole against its enforced mean and total ceilings."""
+    breaches = []
+    mean, total = ledgers.mean.enforced, ledgers.total.enforced
+    if mean and integration.mean is not None and integration.mean > mean.seconds:
+        breaches.append(
+            f"{INTEGRATION} tests averaged {_over(integration.mean)}s each over "
+            f"{integration.tests:,} tests, over the {mean.seconds}s {MEAN_CEILING} "
+            f"set in {allowlist_name}"
+        )
+    if total and integration.seconds > total.seconds:
+        breaches.append(
+            f"{INTEGRATION} tests took {_over(integration.seconds)}s in all over "
+            f"{integration.tests:,} tests, over the {total.seconds}s {TOTAL_CEILING} "
+            f"set in {allowlist_name}; "
+            f"{integration.tests - total.tests_when_set:+d} tests since it was set"
+        )
+    return breaches
+
+
+def _over(seconds: Decimal) -> str:
+    # Rounded up, so a value a fraction over its ceiling never prints as equal to it.
+    return f"{seconds.quantize(Decimal('0.001'), rounding=ROUND_UP)}"
 NOTHING_LABELLED = "nothing labelled yet"
 FIGURES_WIDTH = 41
 CEILING_WIDTH = 31
@@ -772,13 +798,13 @@ def _check(arguments: argparse.Namespace) -> int:
             f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
         )
     connector_classes = _connector_classes(stack, arguments.source_root)
-    publish_report(
-        tier_report(stack, count_tiers(stack, rows, connector_classes), ledgers), summary
-    )
+    count = count_tiers(stack, rows, connector_classes)
+    publish_report(tier_report(stack, count, ledgers), summary)
 
     findings = judge(stack, rows, budget_seconds, ceilings)
     fast_limit = ledgers.fast.enforced_seconds
     fast_findings = judge_fast(rows, connector_classes, fast_limit, fast_ceilings)
+    tier_breaches = judge_integration(count.integration, ledgers, allowlist_name)
     still_present = _still_present(stack, rows, arguments.source_root, ceilings or fast_ceilings)
     stale = stale_entries([*ceilings, *fast_ceilings], still_present)
     kind = "warning" if warn_only else "error"
@@ -788,6 +814,8 @@ def _check(arguments: argparse.Namespace) -> int:
         print(breach_annotation(finding, allowlist_name, kind))
     for finding in fast_findings:
         print(breach_annotation(finding, allowlist_name, kind, places=3))
+    for breach in tier_breaches:
+        print(f"::{kind}::{breach}")
     for unit in stale:
         print(stale_annotation(stack, unit, allowlist_name))
     unneeded = unneeded_entries(stack, rows, budget_seconds, ceilings)
@@ -795,7 +823,7 @@ def _check(arguments: argparse.Namespace) -> int:
         unneeded += unneeded_entries(stack, rows, fast_limit, fast_ceilings)
     for unit in unneeded:
         print(unneeded_annotation(unit, allowlist_name))
-    breached = bool(findings or fast_findings) and not warn_only
+    breached = bool(findings or fast_findings or tier_breaches) and not warn_only
     return 1 if breached or stale or unneeded else 0
 
 
