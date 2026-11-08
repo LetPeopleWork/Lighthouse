@@ -1,7 +1,141 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F33",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.ACoreTypeThatReachesTheApi_IsReportedWhereverTheCoreTypeLives"
+},
+"expected": "F31",
+"stimulus": "F30",
+"user_result": "F32"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F37",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.AParentPlacementKernelThatReachesTheCore_IsReportedWhereverTheCoreTypeLives"
+},
+"expected": "F35",
+"stimulus": "F34",
+"user_result": "F36"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F41",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.AnArchivedReadPathTypeThatReachesTheCore_IsReportedWhereverTheCoreTypeLives"
+},
+"expected": "F39",
+"stimulus": "F38",
+"user_result": "F40"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F45",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.AModelThatReachesTheCore_IsReportedWhereverTheCoreTypeLives"
+},
+"expected": "F43",
+"stimulus": "F42",
+"user_result": "F44"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F49",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.AHandlerThatUsesTheServiceLocator_IsReportedWhereverItLives"
+},
+"expected": "F47",
+"stimulus": "F46",
+"user_result": "F48"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F52",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.AHandlerThatSavesWithoutAwaiting_IsReportedWhereverItLives"
+},
+"expected": "F47",
+"stimulus": "F50",
+"user_result": "F51"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F56",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.TheApiRule_LooksAtEveryRealCoreTypeItLookedAtBefore"
+},
+"expected": "F54",
+"stimulus": "F53",
+"user_result": "F55"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F60",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.TheServiceLocatorRule_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler"
+},
+"expected": "F58",
+"stimulus": "F57",
+"user_result": "F59"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F64",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs::ApplicationCoreRulesReachModulesArchUnitTest.TheAwaitedSaveRule_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler"
+},
+"expected": "F62",
+"stimulus": "F61",
+"user_result": "F63"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F68",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture (every test in the Lighthouse.Backend.Tests.Architecture namespace)"
+},
+"expected": "F66",
+"stimulus": "F65",
+"user_result": "F67"
+}
+]
+},
 "counters": {
 "E": 3,
-"F": 29,
+"F": 68,
 "P": 3,
 "S": 2
 },
@@ -223,9 +357,48 @@
 "F28": "No wire, DTO, route or cross-process contract is touched; the slice changes test-project rules only",
 "F29": "The slice's oracle is itself the architectural test (rules over the compiled assembly); no further architectural test is designed",
 "F3": "Every architecture rule that examines or forbids the application core (types under Lighthouse.Backend.Services) examines or forbids a type under Lighthouse.Backend.Modules in the same way, so moving a type into a module never drops it from a rule",
+"F30": "Run the rule that keeps the application core off the API over a made-up core type that uses an API type, once placed under Services and once under Modules",
+"F31": "The rule reports the made-up type in both places",
+"F32": "A maintainer who moves a core type into a module is still told when it reaches into the API",
+"F33": "The core pattern widened to Modules only for types reached through a field, since the made-up type reaches the API through a property and not inside a method body",
+"F34": "Run the parent-placement rule with a made-up placement type that uses a core type, the core type once under Services and once under Modules",
+"F35": "The rule reports the made-up placement type in both cases",
+"F36": "Deciding under which parent a record hangs stays unable to reach the application core after core types move into modules",
+"F37": "The real test passing a different kernel list than the default call uses; the oracle only proves the default core pattern, not which kernel types the real test names",
+"F38": "Run the retired-Delivery read-path rule with a made-up view type that uses a core type, the core type once under Services and once under Modules",
+"F39": "The rule reports the made-up view type in both cases",
 "F4": "The order in which domain-event handlers run for TeamDataRefreshed and PortfolioFeaturesRefreshed is pinned by a test, so a later move or registration change cannot reorder them unnoticed",
+"F40": "The view of a retired Delivery stays unable to reach anything it could recalculate from after core types move into modules",
+"F41": "The Data or forecast-model targets of the rule dropped while Modules is added; the oracle only adds the Modules target and relies on the existing real-code test for the others",
+"F42": "Run the shared-kernel rule with its default core argument over a made-up Model that uses a core type, the core type once under Services and once under Modules",
+"F43": "The rule reports the made-up Model in both cases",
+"F44": "The Models stay unable to depend on the application core after core types move into modules",
+"F45": "The update-queue rule left Services-only; it guards a namespace that is not moving in this Story and is outside this oracle",
+"F46": "Run the no-service-locator handler rule with its default selection over a made-up domain-event handler that looks up a collaborator, once in the domain-events namespace under Services and once under Modules",
+"F47": "The rule reports the made-up handler in both places",
+"F48": "A domain-event handler that moves into a module is still told when it looks up its collaborators",
+"F49": "Handlers selected by a namespace that happens to include Modules rather than by implementing the handler interface; the real-code tests below close that by requiring every real handler outside the domain-events namespace to be examined",
 "F5": "No production behaviour changes: no production file is edited, and every existing test stays green",
+"F50": "Run the awaited-save handler rule with its default selection over a made-up domain-event handler that saves through a repository without awaiting, once in the domain-events namespace under Services and once under Modules",
+"F51": "A domain-event handler that moves into a module is still told when it does not await its save",
+"F52": "Handlers selected by a namespace that happens to include Modules rather than by implementing the handler interface; the real-code tests close that",
+"F53": "On the real code, run the API rule with its default core argument and with the Services-only pattern",
+"F54": "Every type the Services-only run looks at is also looked at by the default run",
+"F55": "Widening the rule never lets a real core type escape it",
+"F56": "Examined widened while the forbidden API target was narrowed; the existing real-code API test and the made-up offenders guard the target",
+"F57": "On the real code, run the no-service-locator handler rule with its default selection, with today's domain-events-namespace selection, and list every concrete type implementing the domain-event handler interface",
+"F58": "The default run looks at every type the namespace selection looked at, the dispatcher included, and at every real handler, including the six outside the domain-events namespace",
+"F59": "Every real domain-event handler is checked, wherever it lives, and the dispatcher stays checked",
 "F6": "Moving any Flow metrics type (feature B), and the module rules R1 to R5 (feature C)",
+"F60": "A handler that implements the interface only through a base class; the oracle finds handlers by their directly declared interfaces, which is how every real handler declares it today",
+"F61": "On the real code, run the awaited-save handler rule with its default selection, with today's domain-events-namespace selection, and list every concrete type implementing the domain-event handler interface",
+"F62": "The default run looks at every type the namespace selection looked at and at every real handler, including the six outside the domain-events namespace",
+"F63": "Every real domain-event handler is checked for awaited saves, wherever it lives",
+"F64": "A handler that implements the interface only through a base class; the oracle finds handlers by their directly declared interfaces",
+"F65": "Run every existing architecture test on the real code after the rules are widened",
+"F66": "Every architecture test that passed before still passes, with any newly examined real offender named on an inline baseline with its reason",
+"F67": "The maintainer gets the same architecture guarantees as before and no production behaviour changes",
+"F68": "A production file edited in a way no architecture test sees; that part of the promise is checked by the reviewer on the diff, not by a test",
 "F7": "A made-up type under Lighthouse.Backend.Modules that breaks an application-core rule is reported by that rule, exactly as the same type under Lighthouse.Backend.Services is",
 "F8": "The resolved handler order for TeamDataRefreshed and PortfolioFeaturesRefreshed is pinned, and swapping two registrations fails the pin",
 "F9": "Run each application-core rule (ModuleBoundariesArchUnitTest ServiceLayerPattern and ParentPlacementKernel, KernelRules.TheServices, ArchivedDeliveryReadPathArchUnitTest ServiceNamespacePattern, DomainEventDispatcherSeamArchUnitTest handler rules) over made-up offender types placed under Lighthouse.Backend.Modules"
