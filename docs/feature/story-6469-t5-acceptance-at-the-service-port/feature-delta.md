@@ -1751,7 +1751,7 @@ Only in `PA`: 15 lines, the 15 moved rows. Only in `PB`: 41 = 15 + 7 + 2 + 9 + 8
 | `PortFixtureLifetimesWireContractTest` | | 1.999 (2 rows, host) |
 | **Family** | **24.409** | **26.984** |
 
-**Criterion 4 is not met: the family's seconds rise by 2.58 s** (rounds summed: 22.547, 24.567, 24.784 before; 27.648, 26.645, 26.871 after). `Slice01` falls by 9.77 s, but the slice adds three host fixtures, each paying a host build of 1.7 to 2.2 s in one-time set-up, and the 22 rows the two wire classes hold cost 9.86 s between them. Without B13 the after sum is 24.985, still above. TRX alone falls, 21.182 to 19.458, which is the reading guarantee 6 warned would mislead. All 27 runs green.
+**Criterion 4, first reading, not met (met after the fold, below): the family's seconds rise by 2.58 s** (rounds summed: 22.547, 24.567, 24.784 before; 27.648, 26.645, 26.871 after). `Slice01` falls by 9.77 s, but the slice adds three host fixtures, each paying a host build of 1.7 to 2.2 s in one-time set-up, and the 22 rows the two wire classes hold cost 9.86 s between them. Without B13 the after sum is 24.985, still above. TRX alone falls, 21.182 to 19.458, which is the reading guarantee 6 warned would mislead. All 27 runs green.
 
 **`PB`.** Clause `A`, timer on (`LIGHTHOUSE_FIXTURE_TIMING=1`), 6 workers, Release, this step's tree, the rules of a list run: no test process and no build running (both 0), `dotnet build-server shutdown` exit 0, Docker 29.9.3, the seven variables removed and the count 0.
 
@@ -1773,12 +1773,69 @@ Every line of the host-build difference, by fixture against the timing run's CSV
 | −1, −1 | `Slice01...Test`, `Slice04...Test` | left the host (02-05, slice A) |
 | +1 | `PortFixtureLifetimesWireContractTest` | B13, this step |
 
-**Criterion 5 is not met by one host build:** the limit is 619 + 4 = 623; less the 2 foreign builds `PB` reads 624. The one over is B13's own host.
+**Criterion 5, first reading, not met by one host build (met after the fold, below):** the limit is 619 + 4 = 623; less the 2 foreign builds `PB` reads 624. The one over is B13's own host.
 
 **Runs.** Guards `TestTierGuardTest`, `TestHostPerFixtureGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`: 125 passed. `Test-Fast.ps1`: 9605 passed, unchanged, as B13 is hosted. `dotnet build Lighthouse.Backend` Debug and the tests in Release: 0 warnings, 0 errors.
 
 **For review.**
-- Criteria 4 and 5 fail, as above. Both come from the host fixtures the slice adds; folding the skeleton row and B13 into `RealityCheckWireContractTest`'s host would win back about two host builds, but that host carries the reality check's own swaps, so B13 would compare against an adjusted host.
+- Criteria 4 and 5 failed at the first reading, as above; the fold below answers it, and B13 still compares against the host before any swap. Both come from the host fixtures the slice adds; folding the skeleton row and B13 into `RealityCheckWireContractTest`'s host would win back about two host builds, but that host carries the reality check's own swaps, so B13 would compare against an adjusted host.
 - B13 exempts `TimeProvider` and the pinned draws from the implementation comparison besides the named stand-ins: the host under test fakes `TimeProvider` itself, and the host's reality-check fixtures pin the draws the same way.
 - B13 compares what a port fixture adds, not the harness's own four registrations (logging, crypto, clock, database); `ServicePortHarness` does not hand its collection out.
 - B13 and the planned E13 are not wire tests, yet live under `Contracts` because that route needs no new line on the shrinking list.
+
+### After the fold (revision of 02-07, 2026-11-08)
+
+**The fold** (`1abfbd8b0`). Maria's skeleton row and B13 now run on `RealityCheckWireContractTest`'s one host. The skeleton row keeps its test name and its stored-state check, so the controller's path to the shipped engine stays covered; `RealityCheckSkeletonTest` is gone. B13's comparison moved into a plain class, `Contracts/PortFixtures/PortFixtureLifetimes.cs`, unchanged: present on the host, same lifetime, same implementation type, the same exemptions. `PortFixtureLifetimesWireContractTest` is gone. The host's registrations are read by a `ConfigureTestServices` callback layered on the unchanged factory, beneath test sign-in and the reality check's swaps; `WithTestAuthentication` now takes any `WebApplicationFactory` so the reading can sit beneath it.
+
+**The reading is taken before the swaps.** A new row, `The_port_fixtures_are_compared_with_the_host_before_this_fixture_swapped_anything`: the reading's `ILicenseService` is the product's `LicenseService`, scoped, while the host the scenarios run on answers with the stand-in. Planted the other way (`evidence/02-07-fold-snapshot-read-after-the-swaps.txt`), the reading taken after the swaps: that row red (`Expected: Scoped But was: Singleton`, `Expected: LicenseService But was: ILicenseServiceProxy`) and both B13 rows red, `ILicenseService lives as Scoped at the port and as Singleton on the host`. Restored, `cmp` clean.
+
+**B13's reds, re-planted on the fold.** Lifetime half (`evidence/02-07-fold-b13-scoped-planted-as-singleton.txt`): `ITeamMetricsService` as a singleton in `RealityCheckAtThePortTest`, both rows red, `ITeamMetricsService lives as Singleton at the port and as Scoped on the host`. Implementation half, which had no planted red before (`evidence/02-07-fold-b13-planted-as-another-implementation.txt`): `ITeamMetricsService` still scoped but registered as another implementation type, a Moq proxy, both rows red, `ITeamMetricsService is built as ITeamMetricsServiceProxy at the port and as TeamMetricsService on the host`. Each restored, `cmp` clean and `git diff` empty.
+
+**Id table, the moves of the fold.** Two rows change class and one is new; nothing is gone:
+
+| Row | Was | Now |
+|---|---|---|
+| `Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date` | `RealityCheckSkeletonTest` | `RealityCheckWireContractTest` |
+| `Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host`, both cases | `PortFixtureLifetimesWireContractTest` | `RealityCheckWireContractTest` |
+| `The_port_fixtures_are_compared_with_the_host_before_this_fixture_swapped_anything` | | `RealityCheckWireContractTest`, new |
+
+So the earlier table reads: changed class 15, all 15 to `RealityCheckWireContractTest`; B13 2, also there; one new row beside them. `RealityCheckWireContractTest` holds 25 rows: 14 moved, Maria's, 7 new wire rows, 2 of B13 and the reading's proof.
+
+**Seconds** (`evidence/02-07-fold-seconds.txt`), the 02-07 method exactly: Release, each class alone, 3 rounds, timer on, TRX plus `one_time_setup_ms`, median per class, summed; the before figure is the same 24.409.
+
+| Class | Before | First reading | After the fold |
+|---|---|---|---|
+| `Slice01...Test` | 16.686 | 6.918 | 7.532 (51 rows, port) |
+| `Slice04...Test` | 2.666 | 2.774 | 2.745 |
+| `Slice06...Test` | 5.057 | 5.429 | 5.543 |
+| `RealityCheckWireContractTest` | | 6.749 | 7.181 (25 rows, host) |
+| `RealityCheckSkeletonTest` | | 3.115 | gone |
+| `PortFixtureLifetimesWireContractTest` | | 1.999 | gone |
+| **Family** | **24.409** | **26.984** | **23.001** |
+
+**Criterion 4 is met after the fold: the family's seconds fall by 1.41 s**, 24.409 to 23.001 (rounds summed after: 22.943, 23.448, 22.627, each below the before median). The wire class pays one host build of about 2.2 s where three were paid; its four extra rows add about 0.4 s. `Slice01` reads 0.6 s slower than at the first reading on unchanged code, which is this machine's spread between sittings. TRX alone, 19.068. All 12 runs green.
+
+**`PB`, after the fold** (`evidence/02-07-fold-PB.txt`). Clause `A`, timer on, 6 workers, Release, this tree, the rules of a list run: no test process and no build running (both 0), `dotnet build-server shutdown` exit 0, Docker 29.9.3, the seven variables removed and the count 0.
+
+| | |
+|---|---|
+| Console | `Failed: 0, Passed: 12961, Skipped: 2, Total: 12963`, 6 m 33 s, exit 0 |
+| TRX rows | 12,972: 12,961 `Passed`, 11 `NotExecuted` (one more than the first reading: the reading's proof) |
+| `sha256` of the sorted distinct id list | `be347dee6010998d7a133eff57adc932b62e966b9eb6c8594277f663bec8ad80` |
+| Against `PA` | 15 only in `PA`, the 15 moved rows; 42 only in `PB`: 25 `RealityCheckWireContractTest`, 9 `ServicePortHarnessTest`, 8 `WireContractTestTest`. No foreign line |
+| `host_build_count`, summed | **624**, against 619 in the timing run (626 at the first reading) |
+
+Every line of the host-build difference, by fixture against the timing run's CSV:
+
+| Change | Fixture | Why |
+|---|---|---|
+| +4 | `WireContractTestTest` B1, B2, B3, B5 | 02-01, allowed |
+| +2 | `DeleteUnitRightsTests` | **Foreign:** `6efb2b255` (Bug 6575) added the class after the timing run |
+| +1 | `RealityCheckWireContractTest` | 02-02; now also carries the skeleton row and B13 |
+| −1, −1 | `Slice01...Test`, `Slice04...Test` | left the host (02-05, slice A) |
+
+Gone against the first reading: `RealityCheckSkeletonTest` +1 and `PortFixtureLifetimesWireContractTest` +1.
+
+**Criterion 5 is met after the fold:** the limit is 619 + 4 = 623; less the 2 foreign `DeleteUnitRightsTests` builds `PB` reads 622, one under. Read raw, 624 is over the limit by exactly those two foreign builds.
+
+**Runs after the fold.** Guards `TestTierGuardTest`, `TestHostPerFixtureGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`: 125 passed. `Test-Fast.ps1`: 9605 passed, unchanged, as everything moved is hosted. `dotnet build Lighthouse.Backend` Debug and the tests in Release: 0 warnings, 0 errors. Each family class alone 3 times: the 12 seconds runs, all green.

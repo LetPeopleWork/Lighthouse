@@ -1,0 +1,56 @@
+Planted in RealityCheckAtThePortTest: ITeamMetricsService registered as a singleton
+diff --git a/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs b/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs
+index 034a3152b..3f25c07e6 100644
+--- a/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs
++++ b/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckAtThePortTest.cs
+@@ -147,7 +147,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
+             services.AddScoped<IRuleEvaluator<WorkItem>, RuleEvaluator<WorkItem>>();
+             services.AddScoped<IRuleFieldProvider<WorkItem>, WorkItemFieldProvider>();
+             services.AddScoped<IForecastFilterRuleService, ForecastFilterRuleService>();
+-            services.AddScoped<ITeamMetricsService, TeamMetricsService>();
++            services.AddSingleton<ITeamMetricsService, TeamMetricsService>();
+ 
+             services.AddScoped<IForecastRealityCheckService, ForecastRealityCheckService>();
+ 
+    0 Error(s)
+Test run for /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2-dev (x64)
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice01OneSentenceAboutYourSamplingWindowTest) [649 ms]
+  Error Message:
+     Slice01OneSentenceAboutYourSamplingWindowTest registers services unlike the host
+Assert.That(differences, Is.Empty)
+  Expected: <empty>
+  But was:  < "ITeamMetricsService lives as Singleton at the port and as Scoped on the host" >
+  Stack Trace:
+1)    at Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(RealityCheckAtThePortTest portFixture) in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs:line 379
+  Standard Output Messages:
+ 11:53:23 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+ 11:53:23 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+ 11:53:24 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+ 11:53:24 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+ 11:53:24 - INFORMATION - TerminologySeeder: Seeding Terminology
+ 11:53:24 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+ 11:53:24 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+ 11:53:24 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+ 11:53:24 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+  Failed Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice04TheAnswerOpensInADialogTest) [60 ms]
+  Error Message:
+     Slice04TheAnswerOpensInADialogTest registers services unlike the host
+Assert.That(differences, Is.Empty)
+  Expected: <empty>
+  But was:  < "ITeamMetricsService lives as Singleton at the port and as Scoped on the host" >
+  Stack Trace:
+1)    at Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(RealityCheckAtThePortTest portFixture) in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs:line 379
+  Standard Output Messages:
+ 11:53:24 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+ 11:53:24 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+ 11:53:24 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+ 11:53:24 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+ 11:53:24 - INFORMATION - TerminologySeeder: Seeding Terminology
+ 11:53:24 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+ 11:53:24 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+ 11:53:24 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+ 11:53:24 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+Failed!  - Failed:     2, Passed:     1, Skipped:     0, Total:     3, Duration: 796 ms - Lighthouse.Backend.Tests.dll (net10.0)

@@ -1,0 +1,83 @@
+    0 Warning(s)
+    0 Error(s)
+build-server shutdown exit 0
+testhosts: 0
+builds: 0
+29.9.3
+token vars left: 0
+Passed!  - Failed:     0, Passed: 12961, Skipped:     2, Total: 12963, Duration: 6 m 33 s - Lighthouse.Backend.Tests.dll (net10.0)
+exit 0 elapsed 401s
+
+PB all r1 exit=0 rows=12972 outcomes={'Passed': 12961, 'NotExecuted': 11} trx_s=2115.565 one_time_setup_s=17.137 total_s=2132.702 host_builds=624
+
+rows=12972 outcomes={'Passed': 12961, 'NotExecuted': 11}
+PA 12927 PB 12954 sha256 PB be347dee6010998d7a133eff57adc932b62e966b9eb6c8594277f663bec8ad80
+ONLY PA 15
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.A_Team_that_does_not_exist_is_answered_as_not_found
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":")
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":1}")
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":\"yes\"}")
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Running_the_check_twice_gives_the_same_answer_twice
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":false}")
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":null}")
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":true}")
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{}")
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.The_same_check_answers_on_the_versioned_route_as_well
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.The_single_back_test_beside_the_check_still_answers_as_it_did
+  - Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer
+ONLY PB 42
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.A_Team_that_does_not_exist_is_answered_as_not_found
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.A_cell_that_cannot_be_evaluated_states_its_members_as_null_and_days_as_plain_dates
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.A_check_with_no_forecast_puts_no_negative_number_on_the_wire
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":")
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":1}")
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":\"yes\"}")
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Every_member_of_a_real_answer_has_the_name_the_browser_reads
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Every_reason_and_outcome_travels_as_its_name
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice01OneSentenceAboutYourSamplingWindowTest)
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice04TheAnswerOpensInADialogTest)
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.No_part_of_the_answer_on_the_wire_can_rank_a_window(30)
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.No_part_of_the_answer_on_the_wire_can_rank_a_window(45)
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Running_the_check_twice_gives_the_same_answer_twice
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":false}")
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":null}")
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":true}")
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{}")
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_port_fixtures_are_compared_with_the_host_before_this_fixture_swapped_anything
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_same_check_answers_on_the_versioned_route_as_well
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_single_back_test_beside_the_check_still_answers_as_it_did
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.The_windows_of_an_off_ladder_setting_rank_nothing_on_the_wire
+  + Lighthouse.Backend.Tests.Contracts.Forecasting.RealityCheckWireContractTest.Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_Team_saved_through_a_scope_is_named_by_its_insert
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_commit_from_a_connection_the_harness_never_built_is_seen_through_the_file_alone
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_statement_that_writes_is_named_whether_it_returns_rows_or_not("DELETE FROM Scratch RETURNING Value",True,True)
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_statement_that_writes_is_named_whether_it_returns_rows_or_not("DELETE FROM Scratch",False,False)
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_statement_that_writes_is_named_whether_it_returns_rows_or_not("INSERT INTO Scratch (Value) VALUES (3) RETURNING Value",True,True)
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_statement_that_writes_is_named_whether_it_returns_rows_or_not("INSERT INTO Scratch (Value) VALUES (3)",False,False)
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_statement_that_writes_is_named_whether_it_returns_rows_or_not("UPDATE Scratch SET Value = 4 RETURNING Value",True,False)
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_statement_that_writes_is_named_whether_it_returns_rows_or_not("UPDATE Scratch SET Value = 4",False,True)
+  + Lighthouse.Backend.Tests.TestHelpers.ServicePortHarnessTest.A_step_that_only_reads_is_seen_writing_nothing
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest+EveryScenarioStartsAfresh.Each_contract_scenario_starts_from_a_fresh_database_on_the_same_day(1)
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest+EveryScenarioStartsAfresh.Each_contract_scenario_starts_from_a_fresh_database_on_the_same_day(2)
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest+OneHostForThreeScenarios.A_contract_fixture_starts_one_host_however_many_scenarios_it_holds(1)
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest+OneHostForThreeScenarios.A_contract_fixture_starts_one_host_however_many_scenarios_it_holds(2)
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest+OneHostForThreeScenarios.A_contract_fixture_starts_one_host_however_many_scenarios_it_holds(3)
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest+SignInTurnedOnThroughTheHook.A_fixture_changes_the_host_through_its_one_hook
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest+WorkLeftOnTheQueue.A_contract_scenario_that_leaves_work_in_the_queue_fails_at_tear_down
+  + Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest.A_contract_fixture_is_in_the_hosted_tier_without_saying_so
+
+host_build_count: timing run 619, this run 624
++2  DeleteUnitRightsTests: 0 -> 2
++1  RealityCheckWireContractTest: 0 -> 1
+-1  Slice01OneSentenceAboutYourSamplingWindowTest: 1 -> 0
+-1  Slice04TheAnswerOpensInADialogTest: 1 -> 0
++1  WireContractTestTest+EveryScenarioStartsAfresh: 0 -> 1
++1  WireContractTestTest+OneHostForThreeScenarios: 0 -> 1
++1  WireContractTestTest+SignInTurnedOnThroughTheHook: 0 -> 1
++1  WireContractTestTest+WorkLeftOnTheQueue: 0 -> 1

@@ -1,0 +1,13 @@
+After the fold. Each class alone, Release, timer on (LIGHTHOUSE_FIXTURE_TIMING=1), 3 rounds, this tree. trx_s = TRX durations summed; one_time_setup_s = the timer's one_time_setup_ms; total_s = both. Before figures: 02-07-seconds-before-and-after.txt.
+after Slice01OneSentenceAboutYourSamplingWindowTest r1 exit=0 rows=51 outcomes={'Passed': 51} trx_s=7.532 one_time_setup_s=0.000 total_s=7.532 host_builds=0
+after Slice04TheAnswerOpensInADialogTest r1 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.745 one_time_setup_s=0.000 total_s=2.745 host_builds=0
+after Slice06AnOperatorSeesEveryRealityCheckTest r1 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.797 one_time_setup_s=1.688 total_s=5.485 host_builds=1
+after RealityCheckWireContractTest r1 exit=0 rows=25 outcomes={'Passed': 25} trx_s=4.995 one_time_setup_s=2.186 total_s=7.181 host_builds=1
+after Slice01OneSentenceAboutYourSamplingWindowTest r2 exit=0 rows=51 outcomes={'Passed': 51} trx_s=7.740 one_time_setup_s=0.000 total_s=7.740 host_builds=0
+after Slice04TheAnswerOpensInADialogTest r2 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.932 one_time_setup_s=0.000 total_s=2.932 host_builds=0
+after Slice06AnOperatorSeesEveryRealityCheckTest r2 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.796 one_time_setup_s=1.747 total_s=5.543 host_builds=1
+after RealityCheckWireContractTest r2 exit=0 rows=25 outcomes={'Passed': 25} trx_s=5.038 one_time_setup_s=2.195 total_s=7.233 host_builds=1
+after Slice01OneSentenceAboutYourSamplingWindowTest r3 exit=0 rows=51 outcomes={'Passed': 51} trx_s=7.350 one_time_setup_s=0.000 total_s=7.350 host_builds=0
+after Slice04TheAnswerOpensInADialogTest r3 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.618 one_time_setup_s=0.000 total_s=2.618 host_builds=0
+after Slice06AnOperatorSeesEveryRealityCheckTest r3 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.782 one_time_setup_s=1.770 total_s=5.552 host_builds=1
+after RealityCheckWireContractTest r3 exit=0 rows=25 outcomes={'Passed': 25} trx_s=4.932 one_time_setup_s=2.175 total_s=7.107 host_builds=1
