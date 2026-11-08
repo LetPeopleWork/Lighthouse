@@ -1876,3 +1876,35 @@ Adversarial review of slice B: NEEDS_REVISION. Code fixes in `ba9619c53`; no tes
 **Seconds.** `TestHostUseGuardTest` alone, 23 tests, three runs: 3.64, 3.52 and 3.68 s summed over its tests, about 5.3 s from the first test's start to the last one's end. The one-time read of the assembly sits in the first test. Far under the 34 s budget.
 
 **Runs.** `TestHostUseGuardTest`, `TestHostPerFixtureGuardTest`, `TestTierGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest` and `DbContextComesFromAScopeGuardTest`, by class: 158 passed under Debug and under Release. `Test-Fast.ps1`: 9630 passed. `dotnet build Lighthouse.Backend`, Debug and Release: 0 warnings. The guard and the four other guards ran once more after the last wording change to the rule 4 message.
+
+## Wave: DELIVER / [REF] Slice D: the text, and `P1` (step 04-01, 2026-11-08)
+
+**T6's text is already in.** `CLAUDE.md` carries T6's fast-cycle bullet ("Inside a DELIVER step, work on the fast loop; the full gates run later") and the `Test-Fast.ps1` paragraph under Quality Gates. T6 is closed and on main, so D-6469-22's wait is over.
+
+**D1.** The bullet sits directly after the no-tag rule, and ends with the DISTILL sentence "Tell every acceptance-designer dispatch so." It holds all of the draft: the port, `ServicePortHarness` or `new` for up to three collaborators, `Tests/Acceptance/<Feature>/`, the skeleton's limits (one or two per user flow, on the list in `TestHostUseGuardTest`), the contract's reach (route, status, JSON names, headers, 401/403), and the rule for a new scenario in a listed class. No Story, slice or ADR number.
+
+**D2: the words follow the message, not the draft.** Rule 1's message is tested and reads: "move it to the application-service port (build the service with ServicePortHarness, or with new for up to three collaborators, under Tests/Acceptance/<Feature>/); list it as a skeleton with its user flow, if it asserts a business outcome that needs the route or the wiring; or make it a wire contract on WireContractTest in Tests/Contracts/." The bullet now gives those three ways out in those words, after "do one of three things", as the message does. The draft's other facts follow in separate sentences. The draft was not more correct than the message, only worded differently ("put the test under", "as a skeleton (…)", "as a wire contract (…)"), so the message is unchanged.
+
+**D4.** `atdd-infrastructure-policy.md`'s Driving table has a row "Application-service port (backend acceptance scenarios)": `ServicePortHarness` in `TestHelpers/ServicePortHarness.cs`, or `new` for up to three collaborators, under `Tests/Acceptance/<Feature>/`, with the HTTP API row above kept for the two exceptions.
+
+**`P1`** (`evidence/04-01-P1.txt`). Clause `A`, no timer, 6 workers, Release, on `72c988271` with this step's text, the rules of a list run: no test process and no build running (both 0), `dotnet build-server shutdown` exit 0, Docker 29.9.3, the seven variables removed and the count 0.
+
+| | |
+|---|---|
+| Console | `Failed: 0, Passed: 12986, Skipped: 2, Total: 12988`, 6 m 21 s, exit 0 |
+| TRX rows | 12,997: 12,986 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted distinct id list | `377fe20674b7d33887ce4c6f8193450a351c678151a35122a0f978d5c3ad21ed` (12,979 ids) |
+| The last list | `PB` after the fold. Its TRX was not kept, so it was rebuilt from `PA.csv` less the 15 and plus the 42 of `02-07-fold-PB.txt`: 12,954 ids, and the rebuilt list's `sha256` matches the recorded `be347dee…ad80` |
+| Against `PB` | 0 only in `PB`; 25 only in `P1`, listed below. No foreign line |
+| The pilot | The 66 `Slice01` ids of `PA`: the 51 that stayed are all in `P1` unchanged; the 15 that changed class are all in `P1` under `RealityCheckWireContractTest` with their names, and none under the old class |
+
+| Only in `P1` | Why |
+|---|---|
+| `TestHostUseGuardTest`, 23 rows | The guard, slice C (03-01 to 03-04) |
+| `ServicePortHarnessTest.A_statement_that_writes_is_named_whether_it_returns_rows_or_not`, the `CREATE TABLE` and `WITH … UPDATE` cases | Slice B review, `ba9619c53` |
+
+`P1` against `PA` therefore reads as DEVOPS planned: the 66 unchanged in name or moved as mapped, the 7 new wire rows and the helper's and guard's own tests. No host user outside `HostUsersStillToMove` appeared: `Every_concrete_class_in_the_test_assembly_keeps_every_rule` passed in `P1`, and again by name afterwards.
+
+**Runs.** `TestHostUseGuardTest` by name after the edits: 23 passed. `dotnet build Lighthouse.Backend`: 0 warnings, 0 errors.
+
+**`Test-Fast.ps1 -NoBuild`, three runs (a report, not a gate).** 9630 passed each time. Test duration 1 m 14 s, 1 m 12 s, 1 m 15 s; wall 77.3, 75.6, 78.5 s. **Median: 1 m 14 s of tests, 77.3 s wall.**

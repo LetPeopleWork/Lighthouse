@@ -131,6 +131,15 @@ Two standing principles worth keeping visible here because they're easy to skip 
   classification in the feature workspace, and tell every acceptance-designer dispatch so, and every
   reviewer that an untagged scenario is correct here. The Playwright title tags the package scripts
   filter on (`@screenshot`, `@auth`, `@rbac`, `@proxyauth`) are real and stay.
+- **New backend acceptance scenarios drive the application-service port.** A test may start a host only for a
+  reason. When `TestHostUseGuardTest` names a type that starts one without a reason, do one of three things: move
+  it to the application-service port (build the service with `ServicePortHarness`, or with `new` for up to three
+  collaborators, under `Tests/Acceptance/<Feature>/`); list it as a skeleton with its user flow, if it asserts a
+  business outcome that needs the route or the wiring; or make it a wire contract on `WireContractTest` in
+  `Tests/Contracts/`. A new scenario starts at the port. A skeleton is one or two per user flow, on the list in
+  `TestHostUseGuardTest`; a wire contract covers the route, status, JSON names, headers and 401/403. A new
+  scenario in a class already on the guard's list goes in a new class at the port too. Tell every
+  acceptance-designer dispatch so.
 - **DESIGN ends with an architecture summary for the maintainer.** When a DESIGN wave finishes (in AFK
   mode too, as part of the wave-done update), post a short, high-level summary in chat, so the maintainer
   can learn from it and keep up:
