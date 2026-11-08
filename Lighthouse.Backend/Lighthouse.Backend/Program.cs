@@ -82,6 +82,8 @@ using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Standalone;
 using Lighthouse.Backend.API.Swagger;
 using Lighthouse.Backend.API.Filters;
+using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
+using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
 

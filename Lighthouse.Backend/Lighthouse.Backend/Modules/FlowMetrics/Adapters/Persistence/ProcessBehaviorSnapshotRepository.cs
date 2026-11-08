@@ -1,23 +1,23 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace Lighthouse.Backend.Services.Implementation.Repositories
+namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence
 {
-    public class PercentilesOverTimeSnapshotRepository(
+    public class ProcessBehaviorSnapshotRepository(
         LighthouseAppContext context,
-        ILogger<PercentilesOverTimeSnapshotRepository> logger)
-        : RepositoryBase<PercentilesOverTimeSnapshot>(context, (lighthouseAppContext) => lighthouseAppContext.PercentilesOverTimeSnapshots, logger),
-            IPercentilesOverTimeSnapshotRepository
+        ILogger<ProcessBehaviorSnapshotRepository> logger)
+        : RepositoryBase<ProcessBehaviorSnapshot>(context, (lighthouseAppContext) => lighthouseAppContext.ProcessBehaviorSnapshots, logger),
+            IProcessBehaviorSnapshotRepository
     {
-        public IReadOnlyList<PercentilesOverTimeSnapshot> GetSeries(int ownerId, OwnerType ownerType, MetricType metricType, int? horizon, DateOnly? from, DateOnly? to)
+        public IReadOnlyList<ProcessBehaviorSnapshot> GetSeries(int ownerId, OwnerType ownerType, ProcessBehaviorMetricType metricType, DateOnly? from, DateOnly? to)
         {
             var series = GetAllByPredicate(s =>
                 s.OwnerId == ownerId &&
                 s.OwnerType == ownerType &&
-                s.MetricType == metricType &&
-                s.Horizon == horizon);
+                s.MetricType == metricType);
 
             // Composed onto the IQueryable rather than folded into the predicate above, so an omitted
             // bound adds no SQL at all and a supplied one is applied by the database, never in memory.

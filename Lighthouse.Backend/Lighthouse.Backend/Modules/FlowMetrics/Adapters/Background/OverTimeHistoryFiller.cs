@@ -4,7 +4,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Implementation.DatabaseManagement;
 
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
+namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background
 {
     /// <summary>
     /// Works out the days a chart was missing, away from the request that noticed them. One queue, one

@@ -1,9 +1,10 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Services.Implementation.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace Lighthouse.Backend.Services.Implementation.Repositories
+namespace Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence
 {
     public class BlockedCountSnapshotRepository(
         LighthouseAppContext context,

@@ -1,6 +1,6 @@
 using System.Text;
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
+using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;

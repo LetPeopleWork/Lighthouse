@@ -5,7 +5,7 @@ using System.Text.Json.Serialization;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models.Validation;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
+using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.ServiceNow;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors;
 using Lighthouse.Backend.Services.Interfaces.Licensing;

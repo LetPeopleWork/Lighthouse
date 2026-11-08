@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation.BackgroundServices;
+using Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
