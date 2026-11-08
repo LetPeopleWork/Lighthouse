@@ -457,11 +457,20 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   `[Category("XIntegration")]`, the output in `ci_changes.yml` and the input in `ci_backend.yml`, and
   mirror it in `dev-test.{sh,ps1}`. Not automated because: it is wiring across workflow files.
 - **Test-time budget**: a test file (frontend) or test class (backend) over its budget is a failure to
-  fix. The frontend per-file check fails the build (switch: repository variable
-  `LIGHTHOUSE_BUDGET_WARN_ONLY=true`) and the per-test guard fails a single slow test (switch:
-  `LIGHTHOUSE_TIME_BUDGET=warn|off`); the backend per-file check still only warns. Whether a slow
-  test earns a bigger ceiling or a rewrite is a judgement. Not automated because: no tool can decide
-  that.
+  fix. Both per-file and per-class checks fail the build (switch for both: repository variable
+  `LIGHTHOUSE_BUDGET_WARN_ONLY=true`), and the frontend per-test guard fails a single slow test, 2 s
+  in a `.test.tsx` and 0.7 s in any other file, both times 3 on CI (switch:
+  `LIGHTHOUSE_TIME_BUDGET=warn|off`). The backend fast limit per test and the `Integration` mean and
+  total ceilings are ledgers in `test-time-budget.json`. An entry read from fewer than five runs is
+  provisional and only warns; all three are provisional today, and the commit that enforces them is
+  owed. To write or lower an entry: read only eligible runs (one job in one attempt, test step green,
+  no `Failed` row, and for the backend every connector answer in Detect Changes `false`); never drop
+  a green run for being slow; fast limit = 2.1 times the largest test, rounded up to 0.1 s; a ceiling
+  = the largest value times `h`, where `h` = largest / smallest over the same runs and at least 1.13,
+  rounded up to 0.01 s for the mean and 1 s for the total. If `h` is over 1.25, enforce nothing and
+  ask the maintainer. ADR-237's 2026-11-08 amendment has the rest. Not automated because: whether a
+  slow test earns a bigger ceiling or a rewrite, and whether a run is eligible, are judgements, and
+  the check reads only the run it is in.
 - **Installing a just-published package by exact version**: poll the registry first, never a fixed
   sleep. Not automated because: it is a race with an external registry.
 

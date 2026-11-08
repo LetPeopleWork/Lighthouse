@@ -1142,3 +1142,19 @@ Integration   3,353   2,177.6    0.649   mean 0.81 (provisional, 2 of 5) 20 %
 ```
 
 **Window for 03-02.** On 2026-11-08 the maintainer chose to run T5's E-box (05-01 to 05-05). Its 05-04 moves `NeedOverOneCycleTest` off the host. The 5 enforcing runs are therefore counted from T5's last move push after the E-box (or its stop), not from `ba60bf6dd`.
+
+## Wave: DELIVER / [REF] Closing record (2026-11-08, step 03-03)
+
+**T9 closes with its backend limits provisional, by the maintainer's decision of 2026-11-08.** That overrides D-6536-12's "the Story does not close while a limit is provisional" and the DEVOPS line that T9 stays Active with slice C open. What ships: the frontend fast limit at 0.7 s (2.1 s on CI), enforced since its first push; the backend fast test limit 20.0 s, `Integration` mean 0.81 s and `Integration` total 2,780 s at 3,353 tests, each a provisional ledger entry from 2 runs that warns "(provisional, 2 of 5)" and fails nothing. ADR-237 (amendment 2026-11-08) and `docs/ci-learnings.md` describe that state and the recipe.
+
+**Step 03-02, the enforcing push, is handed to Story 6537 (T10)** as its opening data commit. Why: T10 has to wait for the same 5 eligible runs for its own baseline, so T9 waiting for them too would hold a Story open for a data commit that T10 makes anyway. T10 inherits:
+
+- **The current ledger**, as in `Scripts/test-timings/test-time-budget.json` at this commit: the three provisional entries above, run ids 42468070284 and 42476850140, no `fast_allowlist` entry.
+- **The calibration table** in "Slice C, the first entries (step 03-01)", with its columns (run, attempt, artifact, commit, connector answers, `Failed` rows, per-tier count, sum, mean, largest). Run 42488520527 was never added, and run 42489988507 (the first after the ledgers landed, read under "Criterion 5 seen in CI") was not checked for eligibility; neither can count for enforcing, as both precede the window below.
+- **The rule for counting the 5 runs:** distinct eligible runs (D-6536-25, read per job and per attempt) made **after T5's last move push, push 5 of 2026-11-08** (the E-box, steps 05-01 to 05-05, or its stop). Earlier runs do not count, because T5's moves shift both `Integration` figures.
+- **The recipe** (D-6536-10, D-6536-11, D-6536-41): fast limit 2.1 x `L` to 0.1 s; mean and total `L` x `h`, `h` = max / min over the 5 with a floor of 1.13, rounded up to 0.01 s and 1 s; `tests_when_set` from the newest run. Over 1.25 on either ceiling: no enforcing push, ask the maintainer (D-6536-40). `fast_allowlist` entries only in that commit, a class only if slow in all 5 (D-6536-5, D-6536-24). A clean window, no other push running (D-6536-28). The red-on-trunk procedure is D-6536-29; before T10 lands its data commit, reverting the enforcing commit is a raise and needs the maintainer's word, as T9 is closed.
+- **Not wired, noted for whoever edits `ci_backend.yml` next:** `--previous-budget` exists and is tested, but no workflow passes it (Slice B review said slice C would; D-6536-1 and D-6536-21 kept slice C off `ci*.yml`). Until it is wired, an edit to an enforced entry is caught by review only.
+
+**Criterion 7, the first connector or force-full run after slice F, is handed to T10 too.** None has run since slice F. When one passes green, its `Integration` mean goes beside the plain runs' 0.508 to 0.649 s, to see whether live suites running beside the hosted tests slow them, since the ceilings come from plain runs and judge every run.
+
+**Also owed:** T4 planned an ADR-237 amendment for the backend per-class budget failing (D-6462-12) that never landed; the 2026-11-08 amendment now states that state as shipped. The Python suite's red from `c398be39d` (Story 6538) is gone: 238 of 238 pass locally at this commit, and run 42489988507 reached the budget step. A red `Test the budget check` skips that step, so check it is green on each of the 5 runs.
