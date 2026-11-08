@@ -22,6 +22,18 @@ Craft: each move is a pure-move commit (`git mv`, namespace line, using lines in
 Behaviour-free proof per slice: the Architecture namespace (oracle, handler-order pin, application-core rules) is the declared command; the fast suite and dotnet build run at the end of each slice; the full filtered dotnet test and the behaviour capture (capture-metrics.sh on the feature base and on the candidate, back to back the same day, compare.sh exit 0) run once at the end of the feature.
 ```
 
+#### D2
+
+```text
+S5 design correction (design owner, 2026-11-08), after the acceptance designer's BLOCKED-BY.
+
+Repository recognition moves to one place. Several architecture rules recognise a repository, a repository contract or the stored-records types by namespace or folder, through private constants: ModuleBoundariesArchUnitTest (StoredRecordsPattern, PlatformPersistencePattern), RepositoryLeakRatchetArchUnitTest (RepositoriesFolder, ConcreteRepositoriesNamespace, IsRepository), DependencySingleDecisionArchUnitTest (the same stored-records regex inline), and the contract rules RealityCheckReadOnlyArchUnitTest, RefinementModuleArchUnitTest, RecurringBlackoutEventsSeamArchUnitTest and BlackoutForecastShiftSeamArchUnitTest (Services.Interfaces.Repositories). The oracle step extracts them, behaviour-free, into one test support, Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs, as internal members the rules read; the rules keep their verdicts (each rule's tests stay green after the extraction, run before the oracle is added).
+
+The oracle then asserts recognition at the target places, by name strings: the three snapshot repositories under Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence (and their files under Modules/FlowMetrics/Adapters/Persistence/) are recognised as concrete repositories and stored-records types; the three I...SnapshotRepository contracts under Lighthouse.Backend.Modules.FlowMetrics.Application are recognised as repository contracts. RED today, because the patterns only know Services. The contract half closes a gap S2 opened when those contracts left Services.Interfaces.Repositories.
+
+The crafter's edit commit (separate from the move commit) widens RepositoryRecognition to "the Services repositories namespace or folder, or a module's Adapters.Persistence" for implementations and "the Services repository-contracts namespace, or an I...Repository type in a module's Application layer" for contracts. Every rule then sees the moved types through the one support.
+```
+
 ### Constraints
 
 None.
@@ -1496,6 +1508,16 @@ Migrated
 
 ```text
 Moved here unchanged from Lighthouse.Backend.Services; namespace changes to its module layer, every consumer gets a using line, behaviour unchanged
+```
+
+rule widening
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/RepositoryRecognition\.cs
+
+Migrated
+
+```text
+Repository recognition, extracted from the rules in the oracle step, widens to a module's Adapters.Persistence and Application repository contracts so every rule still sees the moved repositories
 ```
 
 ##### Agreement
