@@ -3,14 +3,17 @@ using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Services.Implementation.Licensing;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck;
+using Lighthouse.Backend.Tests.Contracts.PortFixtures;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
@@ -22,6 +25,9 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
     /// What a caller of the Forecast Reality Check sees on the wire: both routes, the request body it accepts
     /// and refuses, who is answered and who is told the Team was not found, and the single back test that
     /// sits beside it. What the check works out is asserted at the check's service instead.
+    ///
+    /// The same host also carries the one scenario that runs the shipped engine end to end, and the check that
+    /// the check's port fixtures register their services as the host does, so the three share one host start.
     /// </summary>
     public class RealityCheckWireContractTest : WireContractTest
     {
@@ -67,12 +73,17 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
 
         private RealityCheckSeedSteps Seed { get; set; } = null!;
 
+        /// <summary>The host's registrations as the product and the test host make them, before this fixture changes any.</summary>
+        private List<ServiceDescriptor> hostAsItIs = [];
+
         protected override WebApplicationFactory<Program> AdjustTheHost(TestWebApplicationFactory<Program> unchanged)
         {
             var script = Forecasts;
+            var readBeforeAnyChange = unchanged.WithWebHostBuilder(builder =>
+                builder.ConfigureTestServices(services => hostAsItIs = [.. services]));
 
             return TestWebApplicationFactory<Program>
-                .WithTestAuthentication(unchanged)
+                .WithTestAuthentication(readBeforeAnyChange)
                 .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
                 {
                     services.RemoveAll<ILighthouseClock>();
@@ -170,6 +181,30 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
             var answer = await ReadTheAnswer(await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(oceanExplorer, ARequestCarryingDatesFromLastYear));
 
             ThenEveryCheckEndsToday(answer);
+        }
+
+        /// <summary>
+        /// The one scenario that runs the shipped forecast engine end to end. Everything else scripts the
+        /// forecast so it can say which levels held; this one proves the real engine's answer is read the
+        /// same way.
+        /// </summary>
+        [Test]
+        public async Task Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date()
+        {
+            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
+            Forecasts.RunAsShipped();
+            var storedBefore = Seed.WhatIsStoredFor(oceanExplorer);
+
+            var answer = await ReadTheAnswer(await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(oceanExplorer));
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenEveryCheckEndsToday(answer);
+                ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
+                ThenEachLevelHeldExactlyWhenTheTeamDeliveredAtLeastItsForecast(answer);
+                ThenTheDenominatorCountsWhatWasEvaluated(answer);
+                ThenNothingAboutTheTeamChanged(oceanExplorer, storedBefore);
+            }
         }
 
         // --- Who may ask ---
@@ -327,6 +362,47 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
             await ThenTheBackTestAnswersWithFourLevelsAndWhatTheTeamDelivered(response);
         }
 
+        // --- The port fixtures register their services as the host does ---
+
+        private static IEnumerable<TestCaseData> PortFixtures()
+        {
+            yield return PortFixture<Slice01OneSentenceAboutYourSamplingWindowTest>();
+            yield return PortFixture<Slice04TheAnswerOpensInADialogTest>();
+        }
+
+        private static TestCaseData PortFixture<TFixture>() where TFixture : RealityCheckAtThePortTest, new()
+            => new TestCaseData(new TFixture()).SetArgDisplayNames(typeof(TFixture).Name);
+
+        [TestCaseSource(nameof(PortFixtures))]
+        public void Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(RealityCheckAtThePortTest portFixture)
+        {
+            var differences = new PortFixtureLifetimes(hostAsItIs).HowItDiffersFromTheHost(portFixture.WhatItRegisters);
+
+            Assert.That(differences, Is.Empty, $"{portFixture.GetType().Name} registers services unlike the host");
+        }
+
+        /// <summary>
+        /// This host swaps the licence for a stand-in, so a port fixture compared with the host as it runs here
+        /// would be compared with the swaps. The licence shows which of the two the comparison reads.
+        /// </summary>
+        [Test]
+        public void The_port_fixtures_are_compared_with_the_host_before_this_fixture_swapped_anything()
+        {
+            var licenceBeforeTheSwaps = new PortFixtureLifetimes(hostAsItIs).OnTheHost(typeof(ILicenseService));
+            using var scope = NewScope();
+            var licenceThisHostAnswersWith = scope.ServiceProvider.GetRequiredService<ILicenseService>();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(licenceBeforeTheSwaps, Is.Not.Null, "the host registers a licence");
+                Assert.That(licenceBeforeTheSwaps!.Lifetime, Is.EqualTo(ServiceLifetime.Scoped));
+                Assert.That(PortFixtureLifetimes.WhatIsBuilt(licenceBeforeTheSwaps), Is.EqualTo(typeof(LicenseService)),
+                    "the comparison reads the product's own licence, not the stand-in");
+                Assert.That(licenceThisHostAnswersWith, Is.Not.InstanceOf<LicenseService>(),
+                    "the host these scenarios run on answers with the stand-in, so the swap came after the reading");
+            }
+        }
+
         // --- Given ---
 
         private int GivenOceanExplorerFinishingWorkEveryDay()
@@ -427,6 +503,53 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
                     "this Team finishes work every day, so every check has plenty of history");
                 Assert.That(answer.RunsEvaluated, Is.EqualTo(16));
             }
+        }
+
+        private static void ThenTheDenominatorCountsWhatWasEvaluated(RealityCheckAnswer answer)
+        {
+            var evaluable = answer.Cells.Count(cell => cell.IsSufficient);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.RunsAttempted, Is.EqualTo(answer.Cells.Count));
+                Assert.That(answer.RunsEvaluated, Is.EqualTo(evaluable));
+                Assert.That(answer.LevelsPerRun, Is.EqualTo(LevelsPerCheck));
+                Assert.That(answer.ScoresEvaluated, Is.EqualTo(answer.RunsEvaluated * answer.LevelsPerRun),
+                    "the scores the answer claims are the ones actually evaluated, not the ones attempted");
+            }
+        }
+
+        private static void ThenEachLevelHeldExactlyWhenTheTeamDeliveredAtLeastItsForecast(RealityCheckAnswer answer)
+        {
+            var disagreements = new List<string>();
+
+            foreach (var cell in answer.Cells.Where(cell => cell.IsSufficient))
+            {
+                if (cell.ForecastByLevel.Count != LevelsPerCheck || cell.ActualCompleted is null)
+                {
+                    disagreements.Add($"{cell.SamplingWindowDays}d/{cell.HorizonDays}d carries no complete forecast or no actual");
+                    continue;
+                }
+
+                var byLevel = cell.ForecastByLevel;
+                if (!(byLevel[95] <= byLevel[85] && byLevel[85] <= byLevel[70] && byLevel[70] <= byLevel[50]))
+                {
+                    disagreements.Add($"{cell.SamplingWindowDays}d/{cell.HorizonDays}d reads its levels out of order");
+                }
+
+                disagreements.AddRange(TheConfidenceLevels
+                    .Where(level => cell.HeldByLevel.GetValueOrDefault(level) != (cell.ActualCompleted >= byLevel[level]))
+                    .Select(level => $"{cell.SamplingWindowDays}d/{cell.HorizonDays}d at {level}%: forecast {byLevel[level]}, actual {cell.ActualCompleted}"));
+            }
+
+            Assert.That(disagreements, Is.Empty,
+                "a level held exactly when the Team delivered at least what that level forecast");
+        }
+
+        private void ThenNothingAboutTheTeamChanged(int teamId, RealityCheckSeedSteps.TeamAsStored before)
+        {
+            Assert.That(Seed.WhatIsStoredFor(teamId), Is.EqualTo(before),
+                "the check reads; it never writes a Team setting, a Work Item or anything else");
         }
 
         private static void ThenEveryMemberIsReadByItsName(RealityCheckAnswer answer, int teamId)

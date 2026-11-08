@@ -256,7 +256,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             }
         }
 
-        public static WebApplicationFactory<T> WithTestAuthentication(TestWebApplicationFactory<T> root)
+        public static WebApplicationFactory<T> WithTestAuthentication(WebApplicationFactory<T> root)
         {
             return root.WithWebHostBuilder(builder =>
             {
