@@ -1055,3 +1055,75 @@ Each finding of the adversarial review, fixed test-first in `1ba4629aa`. Suite: 
 | L2: a tiny breach showed `-0 %` room | Low | Room between 0 and -1 % reads `-<1 %` |
 | L3: B-21's "20 % room on each" contradicted the fast row's `largest X s` | Low | Row corrected |
 | E2E count 136 against DISTILL's 135 | - | The tree changed (`b26c97f46`), the regex is right; see above |
+
+## Wave: DELIVER / [REF] Slice C, the first entries (step 03-01)
+
+**Three provisional entries, from 2 runs: fast test limit 20.0 s, `Integration` mean 0.81 s, `Integration` total 2,780 s at 3,353 tests.** Each warns, "2 of 5", and fails nothing. No `fast_allowlist` entry.
+
+**Which runs count.** Each read per job and per attempt, by D-6536-25. T6's slice F (`a4bb4163f`) is an ancestor of all three.
+
+| Run | Commit | Attempt | `Test Backend` | Detect Changes | `Failed` rows | Counts? |
+|---|---|---|---|---|---|---|
+| 42468070284 | 38a665ecc | 1 | success | all five connectors and `connector_shared` false | 0 | **Yes**, the first plain run with slice B on main |
+| 42476850140 | d64b00d93 | 1 | success | all false | 0 | **Yes** |
+| 42488520527 | ba60bf6dd | 1 | still running when read | all false | not read | Not yet. Goes in the table, in a docs commit, once its backend job is green |
+
+**The calibration table.** Figures are `check_budget.py --stack backend` on the downloaded CSV, with `--source-root` the run's own commit.
+
+| Run | Attempt | Artifact | Commit | Connectors | `Failed` | Fast count | Fast s | Fast mean s | Fast largest s | Integration count | Integration s | Integration mean s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 42468070284 | 1 | 13612796785 | 38a665ecc | all false | 0 | 9,545 | 259.9 | 0.027 | 5.129 | 3,394 | 2,175.0 | 0.641 |
+| 42476850140 | 1 | 13616008614 | d64b00d93 | all false | 0 | 9,607 | 266.9 | 0.028 | 9.488 | 3,353 | 1,702.3 | 0.508 |
+
+Both runs: 3 rows left out (connector classes), 11 not run (`NotExecuted`).
+
+**The derivation.** `h` is largest / smallest of the figure over these runs, floor 1.13 (D-6536-10); rounding up as D-6536-41.
+
+| Limit | Rule | Figures | Entry |
+|---|---|---|---|
+| Fast test limit | 2.1 x `L` | `L` = 9.488 s, `DomainEventDispatcherSeamArchUnitTest` in 42476850140; 2.1 x 9.488 = 19.92 | **20.0 s** |
+| `Integration` mean | largest x `h` | 0.64085 x (0.64085 / 0.50769 = 1.262) = 0.809 | **0.81 s** |
+| `Integration` total | largest x `h` | 2,175.05 x (2,175.05 / 1,702.29 = 1.278) = 2,779.1 | **2,780 s**, `tests_when_set` 3,353, the newer run's count |
+
+- **Both spreads are over 1.25.** Mean 1.262, total 1.278. As provisional entries they only warn, so they stand. At the enforcing push D-6536-40 applies: if the 5 runs after T5's last move still spread over 1.25, there is no enforcing push and the maintainer is asked. No run was dropped (D-6536-26). The two runs sit either side of T5's moves in d64b00d93's push: the `Integration` count fell by 41 and the mean by a fifth, so the spread here is T5's work as much as runner noise, which is why the enforcing 5 come after its last move.
+- **One test sets the fast limit, and it moves.** The largest fast test is an architecture test in both runs (`TestTierGuardTest` 5.129 s, `DomainEventDispatcherSeamArchUnitTest` 9.488 s); the next are `ForecastLaneTest`'s two at about 5.0 to 5.2 s in both. Whether a class is slow in every run is D-6536-5's question, read at the enforcing push.
+
+**What `check_budget` printed** on 42476850140's CSV with the new file and `--previous-budget` the file at `HEAD`, exit 0:
+
+```
+Backend test time
+Tier          Tests   Seconds   Mean s   Ceiling                         Room
+Fast          9,607     266.9    0.028   per test 20.0 s (provisional, 2 of 5) largest 9.488 s
+Integration   3,353   1,702.3    0.508   mean 0.81 (provisional, 2 of 5) 37 %
+                                         total 2,780 (provisional, 2 of 5) 39 %
+Left out          3   connector classes, not judged
+Not run          11   did not pass, not counted
+Since the total was set: +0 tests
+This stack only, not the pyramid shares: 74.1 % fast, 25.9 % integration. No gate.
+::warning::the fast test limit of 20.0s is provisional, 2 of 5 runs, so it warns and does not fail
+::warning::the Integration mean ceiling of 0.81s is provisional, 2 of 5 runs, so it warns and does not fail
+::warning::the Integration total ceiling of 2780s is provisional, 2 of 5 runs, so it warns and does not fail
+```
+
+On 42468070284's CSV the same, with room 21 % and 22 %, `largest 5.129 s` and `+41 tests`, exit 0.
+
+**The next run after this file lands** should print the three limits with `(provisional, 2 of 5)`, three `::warning::` progress lines, and exit 0 from `Check test-time budget` whatever its figures. A breach would show as a `::warning::` reading `provisional ...`, never an `::error::`. The scenario's "1 of 5" reads "2 of 5" here, as two runs were available.
+
+**The three shares (C-3).** `check_budget.py --pyramid` over the two CSVs of 38a665ecc, run 42468070284 (frontend artifact 13613370106, backend 13612796785), exit 0:
+
+```
+Test pyramid across both stacks and Playwright
+Tier          Tests    Share   Upper limit
+Fast         13,218   58.5 %   90 %
+Integration   9,251   40.9 %   9.5 %
+E2E             136    0.6 %   0.5 %
+Left out          3   connector classes, not counted
+Not run          11   did not pass, not counted
+E2E counts the test declarations in the Playwright specs, not what ran. No gate.
+```
+
+`pnpm exec playwright test --list` on the same specs (unchanged since 38a665ecc): **141 tests in 53 files**, against the scan's 136. DISTILL read 140 against 135; both moved by the one test of `b26c97f46`.
+
+**A connector or force-full run (criterion 7): open.** None has run since slice F. When one passes, its `Integration` mean goes here beside the plain runs' 0.508 to 0.641 s.
+
+**The Python suite: 237 of 238 pass, with this file and with the one at `HEAD` alike.** The failure is `test_trx_to_csv.TheRealTreeTests.test_no_class_shares_a_simple_name_with_a_class_on_a_chain`, which reads the backend source tree: `c398be39d` (Story 6538) added a second nested class `OneHostForThreeScenarios`. It is not this file's. Until it is fixed, `Test the budget check` goes red on the next backend run and `Check test-time budget` is skipped, so the warnings above cannot show there.
