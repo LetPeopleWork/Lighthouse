@@ -703,7 +703,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         // --- Then: read-only ---
 
-        private void ThenNothingAboutTheTeamChanged(int teamId, TeamAsStored before)
+        private void ThenNothingAboutTheTeamChanged(int teamId, RealityCheckSeedSteps.TeamAsStored before)
         {
             Assert.That(WhatIsStoredFor(teamId), Is.EqualTo(before),
                 "the check reads; it never writes a Team setting, a Work Item or anything else");
@@ -765,8 +765,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(Field(result, "percentiles").GetArrayLength(), Is.EqualTo(LevelsPerCheck));
-                Assert.That(Field(result, "actualThroughput").GetInt32(), Is.GreaterThan(0),
+                Assert.That(RealityCheckAnswer.Field(result, "percentiles").GetArrayLength(), Is.EqualTo(LevelsPerCheck));
+                Assert.That(RealityCheckAnswer.Field(result, "actualThroughput").GetInt32(), Is.GreaterThan(0),
                     "the Team finished work every day of the four weeks it was back-tested over");
             }
         }
