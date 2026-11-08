@@ -3,7 +3,8 @@ using Lighthouse.Backend.Tests.TestHelpers;
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// Step definitions for slice 01 - the facts the verdict sentence is composed from, read off the answer.
+    /// Step definitions for the sampling-window scenarios: the facts the verdict sentence is composed from, read
+    /// off the answer.
     ///
     /// The Teams are the ones the stories name. Ocean Explorer finishes work every day and sits at 30
     /// days; Deep Current sits at 14; Coastal Survey finishes work in bursts, one day in five, which

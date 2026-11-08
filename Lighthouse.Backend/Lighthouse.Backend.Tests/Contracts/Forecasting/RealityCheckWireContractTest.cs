@@ -2,20 +2,15 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Licensing;
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck;
 using Lighthouse.Backend.Tests.Contracts.PortFixtures;
-using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using static Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.RealityCheckAnswer;
 
@@ -40,11 +35,6 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
         private const int LevelsPerCheck = 4;
 
         private const int ANumberNoTeamWasEverGiven = 987_654;
-
-        /// <summary>Far fewer runs than production's ten thousand; a scenario needs a spread, not precision.</summary>
-        private const int SimulatedRunsWhenTheEngineRuns = 1_000;
-
-        private const long PinnedStartingNumber = 4172;
 
         private const string ARequestCarryingDatesFromLastYear =
             "{\"startDate\":\"2025-06-01\",\"endDate\":\"2025-07-01\",\"historicalStartDate\":\"2025-03-01\",\"historicalEndDate\":\"2025-06-01\"}";
@@ -84,26 +74,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
 
             return TestWebApplicationFactory<Program>
                 .WithTestAuthentication(readBeforeAnyChange)
-                .WithWebHostBuilder(builder => builder.ConfigureServices(services =>
-                {
-                    services.RemoveAll<ILighthouseClock>();
-                    services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(RealityCheckForecastScript.Today));
-
-                    services.RemoveAll<ILicenseService>();
-                    services.AddSingleton(PortDoubles.PremiumLicence());
-
-                    services.RemoveAll<IDrawStreamFactory>();
-                    services.AddSingleton<IDrawStreamFactory>(new DrawsFromAPinnedStartingNumber(PinnedStartingNumber));
-                    services.RemoveAll<ForecastSimulationLimits>();
-                    services.AddSingleton(new ForecastSimulationLimits(
-                        SimulatedRunsWhenTheEngineRuns,
-                        ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover));
-
-                    services.RemoveAll<IForecastService>();
-                    services.AddScoped<ForecastService>();
-                    services.AddScoped<IForecastService>(provider =>
-                        script.Over(provider.GetRequiredService<ForecastService>()));
-                }));
+                .WithWebHostBuilder(builder => builder.ConfigureServices(services => services.PinWhatTheCheckDependsOn(script)));
         }
 
         [OneTimeSetUp]

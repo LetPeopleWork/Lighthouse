@@ -25,10 +25,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// <summary>
     /// Runs the Forecast Reality Check by calling its service, with no web host: each scenario gets a database of
     /// its own, the real services the check reads through, and the scripted forecast. The clock is pinned to the
-    /// same day the host's scenarios use, and the licence is premium, as it is there.
+    /// same day the scenarios on a web host use, and the licence is premium, as it is there.
     ///
-    /// What a caller over HTTP receives (the route, the status, the names and formats of the answer) is pinned at
-    /// the host; scenarios here pin what the check works out.
+    /// What a caller over HTTP receives (the route, the status, the names and formats of the answer) is pinned by
+    /// RealityCheckWireContractTest; scenarios here pin what the check works out.
     /// </summary>
     public abstract class RealityCheckAtThePortTest
     {
@@ -41,11 +41,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         protected static readonly int[] HorizonDays = RealityCheckForecastScript.HorizonDays;
 
         protected static readonly int[] ConfidenceLevels = [50, 70, 85, 95];
-
-        /// <summary>Far fewer runs than production's ten thousand; a scenario needs a spread, not precision.</summary>
-        private const int SimulatedRunsWhenTheEngineRuns = 1_000;
-
-        private const long PinnedStartingNumber = 4172;
 
         private ServicePortHarness harness = null!;
 
@@ -166,9 +161,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         {
             services.AddSingleton(TimeProvider.System);
             services.AddSingleton<IRandomNumberService, RandomNumberService>();
-            services.AddSingleton<IDrawStreamFactory>(new DrawsFromAPinnedStartingNumber(PinnedStartingNumber));
+            services.AddSingleton<IDrawStreamFactory>(new DrawsFromAPinnedStartingNumber(RealityCheckForecastScript.PinnedStartingNumber));
             services.AddSingleton(new ForecastSimulationLimits(
-                SimulatedRunsWhenTheEngineRuns,
+                RealityCheckForecastScript.SimulatedRunsWhenTheEngineRuns,
                 ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover));
             services.AddSingleton<ForecastSimulation>();
             services.AddScoped<IPortfolioRepository, PortfolioRepository>();

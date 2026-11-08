@@ -38,6 +38,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         internal static DateOnly TodayDay => DateOnly.FromDateTime(Today.UtcDateTime);
 
         /// <summary>
+        /// Where the shipped engine starts drawing whenever a scenario runs it, so that scenario gets the same
+        /// answer on every run.
+        /// </summary>
+        internal const long PinnedStartingNumber = 4172;
+
+        /// <summary>Far fewer runs than production's ten thousand; a scenario needs a spread, not precision.</summary>
+        internal const int SimulatedRunsWhenTheEngineRuns = 1_000;
+
+        /// <summary>
         /// The forecast value a level is given when the scenario wants it NOT to hold. No scenario seeds
         /// anywhere near this many finished Work Items in one period, so the Team can never reach it.
         /// </summary>

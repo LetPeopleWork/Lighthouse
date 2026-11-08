@@ -1,7 +1,7 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// DISTILL acceptance scenarios for slice 01 of the Forecast Reality Check - one press on a Team's
+    /// Acceptance scenarios for the Forecast Reality Check: one press on a Team's
     /// Forecast tab answers whether the sampling window behind every forecast it publishes would have got
     /// the last few periods right, and which of the four confidence levels held up.
     ///
@@ -475,8 +475,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         /// <summary>
         /// A check can clear the bar and still come back from the engine with nothing a level can be read
-        /// off. That is a second reason a check cannot be evaluated, not a second bar; and the engine's
-        /// "no reading" marker must never reach a count, a band or a cell.
+        /// off. That is a second reason a check cannot be evaluated, not a second bar, and the check is left out
+        /// of the count of checks that could be. That the engine's "no reading" marker never reaches the answer
+        /// as a negative number is checked on the serialised answer by RealityCheckWireContractTest.
         /// </summary>
         [Test]
         public void A_check_whose_forecast_could_not_be_worked_out_is_named_for_that_reason_and_counts_for_nothing()
@@ -533,7 +534,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        // --- Read-only, end to end ---
+        // --- Read-only ---
 
         [Test]
         public void Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items()

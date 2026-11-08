@@ -1,13 +1,7 @@
 using System.Text;
 using Lighthouse.Backend.Data;
-using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices;
-using Lighthouse.Backend.Services.Implementation.Forecast;
-using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
-using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
-using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,28 +14,20 @@ using Serilog.Extensions.Logging;
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// Acceptance harness for the Forecast Reality Check over the web host: one press replays a Team's own
-    /// forecast against its own finished work at every sampling window and every horizon, and answers
-    /// with a region of windows that behaved alike rather than a winner. Scenarios that pin only what the
-    /// check works out, not what a caller receives, run at the check's service instead
-    /// (<see cref="RealityCheckAtThePortTest"/>).
+    /// Acceptance harness for the Forecast Reality Check over the web host, for what only the running host
+    /// shows: the line the check writes to the log an operator reads. What the check works out is pinned at
+    /// its service (<see cref="RealityCheckAtThePortTest"/>), and what a caller receives on the wire by
+    /// RealityCheckWireContractTest.
     ///
     /// The app is the production app: the real ASP.NET host over a real SQLite file, real EF, real DI,
     /// the real metrics service reading real finished Work Items. One host serves the whole fixture; every
     /// scenario gets its own database, clock reading, scripted forecast and log capture inside it, and ends
-    /// by leaving the host idle. The clock is pinned, because every
-    /// check ends today and a drifting today would move every date these scenarios name. The licence is
-    /// granted, because it is external.
-    ///
-    /// The forecast is the one thing a scenario usually scripts, and it is scripted per check rather than
-    /// replaced wholesale. A scenario about which levels held has to choose the forecast a check produced,
-    /// or it is asserting sampling noise; and the simulation is also the one cost that grows several times
-    /// over when the suite runs under coverage. Where a scenario is about the check running end to end, it asks
-    /// for the shipped engine instead, with its starting number pinned and fewer runs than production uses.
+    /// by leaving the host idle. The day, the licence, the engine and the forecast script are replaced as on
+    /// every web host that runs the check (<see cref="RealityCheckOnAWebHost"/>).
     ///
     /// Nothing here names a type of the check's own code. Every scenario talks to the check over the wire
-    /// and reads the answer as JSON, so the scenarios pin what a caller receives, and a change that breaks
-    /// that fails on the answer rather than on the build.
+    /// and reads the answer as JSON, so a change that breaks what a caller receives fails on the answer
+    /// rather than on the build.
     /// </summary>
     public abstract class ForecastRealityCheckAcceptanceTest : IntegrationFixture
     {
@@ -51,42 +37,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected const string NoOptions = "{}";
 
-        /// <summary>The Team has no rolling window for the check to test, so its setting sits neither inside nor outside anything.</summary>
-        protected const string NotTested = "NotTested";
-
-        /// <summary>A level's reading when no check could be evaluated at all.</summary>
-        protected const string NotEvaluated = "NotEvaluated";
-
-        /// <summary>Why a setting was not tested: the Team forecasts from a fixed pair of dates. Wins when both reasons apply.</summary>
-        protected const string UsesFixedDates = "UsesFixedDates";
-
-        /// <summary>Why a setting was not tested: the stored window is zero days or fewer.</summary>
-        protected const string NotAPositiveLength = "NotAPositiveLength";
-
-        /// <summary>
-        /// The sampling windows every Team is checked against, whatever its own setting is.
-        /// </summary>
-        protected static readonly int[] StandardWindowDays = RealityCheckForecastScript.StandardWindowDays;
-
-        /// <summary>One, two, four and eight weeks, each ending today.</summary>
-        protected static readonly int[] HorizonDays = RealityCheckForecastScript.HorizonDays;
-
-        protected static readonly int[] ConfidenceLevels = [50, 70, 85, 95];
-
-        protected static readonly DateTimeOffset Today = RealityCheckForecastScript.Today;
-
-        /// <summary>Far fewer runs than production's ten thousand; a scenario needs a spread, not precision.</summary>
-        private const int SimulatedRunsWhenTheEngineRuns = 1_000;
-
-        private const long PinnedStartingNumber = 4172;
-
         private TestWebApplicationFactory<Program> rootFactory = null!;
 
         /// <summary>
         /// The host's forecast service reads this one script for the life of the host, so each scenario
         /// starts by putting it back to what a new one says.
         /// </summary>
-        protected RealityCheckForecastScript Forecasts { get; } = new();
+        private RealityCheckForecastScript Forecasts { get; } = new();
 
         /// <summary>
         /// What the host logged at the level an operator sees by default, and above. The host's logger
@@ -95,11 +52,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         protected CapturedLogMessages CapturedLogs { get; } = new();
 
-        protected WebApplicationFactory<Program> Factory { get; private set; } = null!;
+        private WebApplicationFactory<Program> Factory { get; set; } = null!;
 
-        protected HttpClient Client { get; private set; } = null!;
-
-        protected static DateOnly TodayDay => RealityCheckForecastScript.TodayDay;
+        private HttpClient Client { get; set; } = null!;
 
         private RealityCheckSeedSteps Seed { get; set; } = null!;
 
@@ -118,23 +73,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 {
                     builder.ConfigureServices(services =>
                     {
-                        services.RemoveAll<ILighthouseClock>();
-                        services.AddSingleton<ILighthouseClock>(new FakeLighthouseClock(Today));
-
-                        services.RemoveAll<ILicenseService>();
-                        services.AddSingleton(PortDoubles.PremiumLicence());
-
-                        services.RemoveAll<IDrawStreamFactory>();
-                        services.AddSingleton<IDrawStreamFactory>(new DrawsFromAPinnedStartingNumber(PinnedStartingNumber));
-                        services.RemoveAll<ForecastSimulationLimits>();
-                        services.AddSingleton(new ForecastSimulationLimits(
-                            SimulatedRunsWhenTheEngineRuns,
-                            ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover));
-
-                        services.RemoveAll<IForecastService>();
-                        services.AddScoped<ForecastService>();
-                        services.AddScoped<IForecastService>(provider =>
-                            script.Over(provider.GetRequiredService<ForecastService>()));
+                        services.PinWhatTheCheckDependsOn(script);
 
                         // Serilog is the host's logging pipeline, so a logging provider added here would never
                         // see a line; replacing the factory is what makes the host's own log readable. The
@@ -151,7 +90,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                     });
                 });
 
-            Seed = new RealityCheckSeedSteps(Factory.Services, Forecasts, TodayDay);
+            Seed = new RealityCheckSeedSteps(Factory.Services, Forecasts, RealityCheckForecastScript.TodayDay);
         }
 
         [SetUp]
@@ -219,16 +158,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected int GivenATeam(string name, int samplingWindowDays) => Seed.GivenATeam(name, samplingWindowDays);
 
-        protected int GivenATeamForecastingFromFixedDates(string name, int inertSamplingWindowDays)
-            => Seed.GivenATeamForecastingFromFixedDates(name, inertSamplingWindowDays);
-
         protected int GivenAnotherTeam(string name) => Seed.GivenAnotherTeam(name);
 
         protected void GivenTheTeamFinishedAWorkItemEveryDay(int teamId) => Seed.GivenTheTeamFinishedAWorkItemEveryDay(teamId);
-
-        protected void GivenTheTeamFinishedAWorkItemEvery(int teamId, int days) => Seed.GivenTheTeamFinishedAWorkItemEvery(teamId, days);
-
-        protected void GivenTheTeamFinishedWorkItemsOn(int teamId, List<DateOnly> days) => Seed.GivenTheTeamFinishedWorkItemsOn(teamId, days);
 
         // --- Asking ---
 
@@ -239,19 +171,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             return await Client.PostAsync($"{route}{teamId}", content);
         }
 
-        protected Task<HttpResponseMessage> WhenSomebodyWhoCanReadTheTeamRunsTheCheck(int teamId, string body = NoOptions, string route = LatestRoute)
-            => WhenTheCheckIsRunBy(client => client.AsTeamViewer(teamId, "maria-santos"), teamId, body, route);
-
-        protected async Task<RealityCheckAnswer> TheAnswerTo(int teamId)
-        {
-            using var response = await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(teamId);
-            return await ReadTheAnswer(response);
-        }
-
         protected Task<RealityCheckAnswer> ReadTheAnswer(HttpResponseMessage response) => RealityCheckAnswer.ReadFrom(response, Forecasts);
-
-        // --- Reading what is stored ---
-
-        protected RealityCheckSeedSteps.TeamAsStored WhatIsStoredFor(int teamId) => Seed.WhatIsStoredFor(teamId);
     }
 }
