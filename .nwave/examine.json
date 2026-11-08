@@ -1,5 +1,6 @@
 {
   "commands": [
-    { "name": "architecture-rules", "path": "Scripts/examine/architecture-rules" }
-  ]
+    { "name": "architecture-rules", "path": "Scripts/examine/bin/architecture-rules" }
+  ],
+  "build": "Scripts/examine/build-examine-commands"
 }
