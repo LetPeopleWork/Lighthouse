@@ -115,8 +115,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             module = IlDependencies.ReadModule(typeof(TestHostPerFixtureGuardTest).Assembly);
             scan = new HostBuildingScan(module, IsPerTestMethod);
-            typesFoundBuildingAHostPerTest = scan.OffendingRoots(root => !TypesThatHoldPlantedFixtures.Contains(TopLevelTypeOf(root.DeclaringType)))
-                .Select(root => TopLevelTypeOf(root.DeclaringType))
+            typesFoundBuildingAHostPerTest = scan.OffendingRoots(root => !TypesThatHoldPlantedFixtures.Contains(TopLevelTypeOf(root.DeclaringType).FullName))
+                .Select(root => TopLevelTypeOf(root.DeclaringType).FullName)
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
                 .ToList();
@@ -232,9 +232,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             => method.CustomAttributes.Any(attribute => PerTestAttributes.Contains(attribute.AttributeType.FullName));
 
         private static string[] Names(params string[] names) => names;
-
-        private static string TopLevelTypeOf(TypeDefinition type)
-            => type.DeclaringType is null ? type.FullName : TopLevelTypeOf(type.DeclaringType);
 
         // Fixtures that exist only so the scan can be pointed at something. They are abstract because NUnit runs
         // any class with a [Test] method, and these have nothing to run; the scan skips them when it reads the

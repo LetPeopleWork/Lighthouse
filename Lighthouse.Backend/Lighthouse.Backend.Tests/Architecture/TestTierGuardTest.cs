@@ -385,10 +385,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 "no tier or connector and the test may run where it should not. Write each with no space after the comma: " +
                 string.Join(", ", pieces) + ".";
 
-        private bool IsAConcreteClassWithTests(TypeDefinition type)
-            => type is { IsClass: true, IsAbstract: false }
-                && !type.Name.StartsWith('<')
-                && scan.TypeAndItsBases(type).Any(self => self.Methods.Any(method => HasAnAttribute(method, TestAttributes)));
+        private bool IsAConcreteClassWithTests(TypeDefinition type) => IsAConcreteClass(type) && scan.HasTests(type);
 
         private static List<string> SortedNames(IEnumerable<TypeDefinition> fixtures)
             => [.. fixtures.Select(fixture => fixture.FullName).Order(StringComparer.Ordinal)];

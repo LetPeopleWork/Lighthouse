@@ -4,8 +4,9 @@ using Mono.Cecil.Cil;
 namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
-    /// What the guards that read the compiled test assembly share: which types are test-host factories,
-    /// how to walk a type with the types nested in it, and how a call is matched to the method it runs.
+    /// What the guards that read the compiled test assembly share: which types are test-host factories, which are
+    /// classes NUnit runs, how to walk a type with the types nested in it or up to the type it is nested in, and how
+    /// a call is matched to the method it runs.
     /// </summary>
     internal static class TestHostScanning
     {
@@ -39,6 +40,14 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
             => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
+
+        /// <summary>The outermost type the type is nested in, or the type itself when it is not nested.</summary>
+        public static TypeDefinition TopLevelTypeOf(TypeDefinition type)
+            => type.DeclaringType is null ? type : TopLevelTypeOf(type.DeclaringType);
+
+        /// <summary>Whether NUnit could make an instance of the type: a class that is not abstract and that the compiler did not make.</summary>
+        public static bool IsAConcreteClass(TypeDefinition type)
+            => type is { IsClass: true, IsAbstract: false } && !type.Name.StartsWith('<');
 
         public static bool NamesAFactory(TypeReference type)
             => FactoryTypeNamePrefixes.Any(prefix => type.GetElementType().Name.StartsWith(prefix, StringComparison.Ordinal));
@@ -132,6 +141,10 @@ namespace Lighthouse.Backend.Tests.Architecture
             /// <summary>Whether a root on the type, or on a type it derives from, can reach a host start.</summary>
             public bool FixtureReachesAHost(TypeDefinition fixture)
                 => TypeAndItsBases(fixture).SelectMany(type => type.Methods).Where(IsARoot).Any(ReachesAHostStart);
+
+            /// <summary>Whether the type, or a type it derives from, has a test method.</summary>
+            public bool HasTests(TypeDefinition type)
+                => TypeAndItsBases(type).SelectMany(each => each.Methods).Any(method => HasAnAttribute(method, TestAttributes));
 
             /// <summary>The type and the types above it, as far as they are written in this assembly.</summary>
             public IEnumerable<TypeDefinition> TypeAndItsBases(TypeDefinition type)
