@@ -6,9 +6,28 @@
   "backend": {
     "budget_seconds": 34,
     "ledgers": {
-      "fast_test_limit": [],
-      "mean_ceiling": [],
-      "total_ceiling": []
+      "fast_test_limit": [
+        {
+          "seconds": 20.0,
+          "runs": [42468070284, 42476850140],
+          "reason": "first entry: 2.1 times the slowest fast test of the plain runs since the tier column, 9.488 s, rounded up to 0.1 s"
+        }
+      ],
+      "mean_ceiling": [
+        {
+          "seconds": 0.81,
+          "runs": [42468070284, 42476850140],
+          "reason": "first entry: the largest Integration mean of the plain runs since the tier column, 0.641 s, times their spread of 1.262, rounded up to 0.01 s"
+        }
+      ],
+      "total_ceiling": [
+        {
+          "seconds": 2780,
+          "runs": [42468070284, 42476850140],
+          "reason": "first entry: the largest Integration total of the plain runs since the tier column, 2,175.0 s, times their spread of 1.278, rounded up to 1 s",
+          "tests_when_set": 3353
+        }
+      ]
     },
     "allowlist": [
       {
