@@ -1,0 +1,68 @@
+- pick 5, test 4: first U, second M | WorkItemAgingChart.test.tsx | renders percentile chips with correct labels
+- pick 5, test 9: first M, second U | WorkItemAgingChart.test.tsx | groups items correctly by state and age
+- pick 5, test 13: first M, second U | WorkItemAgingChart.test.tsx | handles items with missing state gracefully
+- pick 5, test 14: first M, second U | WorkItemAgingChart.test.tsx | handles items with states not in doingStates list
+- pick 5, test 15: first M, second U | WorkItemAgingChart.test.tsx | correctly extracts age from work items
+- pick 5, test 16: first M, second U | WorkItemAgingChart.test.tsx | renders blocked items with red color
+- pick 5, test 18: first M, second U | WorkItemAgingChart.test.tsx | groups blocked and regular items correctly
+- pick 5, test 19: first M, second U | WorkItemAgingChart.test.tsx | marks group as blocked if any item in group is blocked
+- pick 5, test 21: first M, second U | WorkItemAgingChart.test.tsx | matches states regardless of casing
+- pick 5, test 22: first M, second U | WorkItemAgingChart.test.tsx | handles mixed casing in doingStates configuration
+- pick 5, test 28: first U, second M | WorkItemAgingChart.test.tsx | uses explicit axis IDs and x-axis height for stable tick rendering
+- pick 5, test 29: first U, second M | WorkItemAgingChart.test.tsx | renders no pace-band rects by default even when perStatePercentileValues is provided
+- pick 5, test 31: first U, second M | WorkItemAgingChart.test.tsx | turns the pace bands on and off through the background control
+- pick 5, test 32: first U, second M | WorkItemAgingChart.test.tsx | keeps the work item type chips and percentile chips untouched by the choice
+- pick 5, test 40: first U, second M | WorkItemAgingChart.test.tsx | collects all pace-band rects into a single svg group so the overlay is one z-layer
+- pick 5, test 50: first U, second M | WorkItemAgingChart.test.tsx | renders pace bands at a readable fill opacity
+- pick 5, test 54: first U, second M | WorkItemAgingChart.test.tsx | draws the cycle time reference lines by default and no work item age lines
+- pick 5, test 55: first U, second M | WorkItemAgingChart.test.tsx | swaps to work item age lines and removes the cycle time lines, then round-trips back to cycle time
+- pick 5, test 56: first U, second M | WorkItemAgingChart.test.tsx | leaves the pace-band overlay untouched when swapping the reference-line source
+- pick 5, test 59: first U, second M | WorkItemAgingChart.test.tsx | keeps the pace bands unchanged when swapping the reference-line source to work item age
+- pick 5, test 60: first M, second U | WorkItemAgingChart.test.tsx | renders only the highest percentile line when work item age percentiles collapse to one value
+- pick 5, test 61: first M, second U | WorkItemAgingChart.test.tsx | keeps the highest percentile per distinct value when some collapse and others do not
+- pick 5, test 62: first M, second U | WorkItemAgingChart.test.tsx | lets the next-highest work item age percentile at a shared value show when the highest is toggled off
+- pick 5, test 69: first U, second M | WorkItemAgingChart.test.tsx | plots exactly the same dots it plotted before the band existed
+- pick 5, test 72: first U, second M | WorkItemAgingChart.test.tsx | shows no risk column for a team that published no target
+- pick 10, test 3: first U, second M | FeatureGrid.test.tsx | should call onChange when checkbox is clicked
+- pick 10, test 4: first U, second M | FeatureGrid.test.tsx | should remove feature from selection when unchecked
+- pick 20, test 5: first U, second M | WorkItemsDialog.test.tsx | calls onClose when close button is clicked
+- pick 20, test 6: first U, second M | WorkItemsDialog.test.tsx | renders links for items with URLs
+- pick 20, test 10: first U, second M | WorkItemsDialog.test.tsx | renders without styling when no SLE is provided
+- pick 20, test 19: first U, second M | WorkItemsDialog.test.tsx | displays blocked icon next to time value for blocked items
+- pick 20, test 20: first U, second M | WorkItemsDialog.test.tsx | blocked icons have correct tooltip
+- pick 20, test 21: first U, second M | WorkItemsDialog.test.tsx | does not display blocked icon for non-blocked items
+- pick 20, test 22: first U, second M | WorkItemsDialog.test.tsx | displays blocked icon with correct styling
+- pick 20, test 23: first U, second M | WorkItemsDialog.test.tsx | blocked icon appears in time column, not dedicated column
+- pick 20, test 25: first U, second M | WorkItemsDialog.test.tsx | blocked icon works with different time metrics
+- pick 20, test 28: first U, second M | WorkItemsDialog.test.tsx | does not display blocked-duration tooltip when blockedSince is absent on blocked item
+- pick 20, test 33: first U, second M | WorkItemsDialog.test.tsx | renders a 'Time in State' column with badges when timeInStateColumn provided
+- pick 20, test 36: first U, second M | WorkItemsDialog.test.tsx | a row Lighthouse says is not stale shows no stale badge, however long it has sat
+- pick 20, test 37: first U, second M | WorkItemsDialog.test.tsx | displays 'Owned by' column for Features with owning teams
+- pick 20, test 41: first U, second M | WorkItemsDialog.test.tsx | heads the column with the configured term and shows a band on every row
+- pick 20, test 45: first U, second M | WorkItemsDialog.test.tsx | shows the band whether or not the chart's coloured zones are switched on
+- pick 20, test 47: first U, second M | WorkItemsDialog.test.tsx | sits beside the age it qualifies when nothing has been rearranged
+- pick 20, test 48: first U, second M | WorkItemsDialog.test.tsx | shows no band column at all for a team with no finished history
+- pick 20, test 57: first U, second M | WorkItemsDialog.test.tsx | keeps copying and exporting behind a licence while ordering stays free
+- pick 20, test 62: first U, second M | WorkItemsDialog.test.tsx | leaves the cell empty for an item the answer never mentioned
+- pick 20, test 65: first U, second M | WorkItemsDialog.test.tsx | shows no risk column at all for a team that published no target
+- pick 20, test 67: first U, second M | WorkItemsDialog.test.tsx | arrives after the columns a saved arrangement already names
+- pick 20, test 68: first U, second M | WorkItemsDialog.test.tsx | tells a reader what the number rests on without putting it in the cell
+- pick 20, test 69: first U, second M | WorkItemsDialog.test.tsx | carries no name of its own for a row that makes no claim
+- pick 20, test 70: first U, second M | WorkItemsDialog.test.tsx | sits beside the band it belongs with when both are offered
+- pick 20, test 80: first U, second M | WorkItemsDialog.test.tsx | carries whatever the caller found worth warning about
+- pick 20, test 81: first U, second M | WorkItemsDialog.test.tsx | is absent entirely from a dialog nobody wired it into
+- pick 30, test 1: first U, second M | PortfolioDetail.reportsTab.test.tsx | sits between Metrics and Settings
+- pick 40, test 1: first U, second M | VoteControl.test.tsx | casts '%s' as %s
+- pick 40, test 2: first U, second M | VoteControl.test.tsx | casts nothing when the voter clicks the answer they already gave
+- pick 40, test 3: first U, second M | VoteControl.test.tsx | takes back the '%s' the voter clicks again, naming it
+- pick 45, test 1: first U, second M | LighthouseVersion.test.tsx | renders version button with fetched version number
+- pick 45, test 12: first U, second M | LighthouseVersion.test.tsx | offers the in-app update only to a system admin (admin: %s)
+- pick 50, test 5: first U, second M | scatterMarkerUtils.test.tsx | should render circle with correct attributes
+- pick 50, test 6: first U, second M | scatterMarkerUtils.test.tsx | should apply highlight styling when isHighlighted is true
+- pick 50, test 7: first U, second M | scatterMarkerUtils.test.tsx | should not apply stroke when not highlighted
+- pick 50, test 8: first U, second M | scatterMarkerUtils.test.tsx | should include title element for tooltip
+- pick 50, test 10: first U, second M | scatterMarkerUtils.test.tsx | should call onClick when button is clicked
+- pick 50, test 11: first U, second M | scatterMarkerUtils.test.tsx | should have transparent background and cursor pointer
+- pick 50, test 17: first U, second M | scatterMarkerUtils.test.tsx | should render circle and button with default styling
+- pick 50, test 18: first U, second M | scatterMarkerUtils.test.tsx | should use providedColor when specified
+- pick 50, test 19: first U, second M | scatterMarkerUtils.test.tsx | should include title with fallback text

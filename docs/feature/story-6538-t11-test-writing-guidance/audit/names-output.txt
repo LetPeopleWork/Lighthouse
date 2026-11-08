@@ -1,0 +1,33 @@
+pnpm test:fast                                               9 files
+vitest.config.ts                                             50 files
+BUDGET_SECONDS                                               3 files
+FAST_BUDGET_SECONDS                                          1 files
+timeBudgetReporter.ts                                        8 files
+slowTests.ts                                                 24 files
+src/tests/timeBudget                                         35 files
+computePaceBandRects                                         16 files
+STATE_BAND_HALF_WIDTH                                        5 files
+WorkItemAgingChart.tsx                                       46 files
+getBubbleSize                                                6 files
+scatterMarkerUtils.tsx                                       3 files
+SaveStateIndicator                                           24 files
+generateWorkItem                                             10 files
+waitPastTheDebounce                                          5 files
+pastTheAutosaveDelay                                         15 files
+mockSaveTeamSettings                                         5 files
+mockGetTeamSettings                                          1 files
+COULD_NOT_LOAD_MESSAGE                                       12 files
+WidgetShell                                                  134 files
+data-widget-status="ready"                                   19 files
+vi.useFakeTimers({ shouldAdvanceTime: true })                29 files
+Stryker                                                      669 files
+Playwright                                                   300 files
+pnpm test                                                    276 files
+CLAUDE.md                                                    293 files
+@screenshot                                                  149 files
+@auth                                                        42 files
+@rbac                                                        48 files
+@proxyauth                                                   12 files
+src/tests/timeBudget/slowTests.ts                            15 files
+NoSuchNameInTheTreeXyz                                       0 files
+paths tracked: yes

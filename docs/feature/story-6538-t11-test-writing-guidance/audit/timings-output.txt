@@ -1,0 +1,26 @@
+rows: 9530  files: 618  tsx files: 410
+total seconds, all tests: 548.0; .test.tsx tests: 521.6
+
+ten files with the most seconds (sum of their tests' durations):
+| Rank | File | Tests | Seconds |
+|---|---|---|---|
+| 1 | src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx | 133 | 10.73 |
+| 2 | src/components/Common/Team/ModifyTeamSettings.test.tsx | 36 | 10.60 |
+| 3 | src/pages/Reports/ReportsPage.combinedPdf.test.tsx | 18 | 9.95 |
+| 4 | src/pages/Overview/OverviewDashboard.test.tsx | 51 | 9.84 |
+| 5 | src/pages/Reports/ReportsPage.removal.test.tsx | 21 | 9.71 |
+| 6 | src/pages/Connections/Edit/EditConnection.fieldChange.test.tsx | 31 | 9.65 |
+| 7 | src/components/Common/DataGrid/DataGridBase.paging.test.tsx | 28 | 9.18 |
+| 8 | src/pages/Common/Reports/ReportsTab.createWizard.test.tsx | 64 | 8.86 |
+| 9 | src/components/Common/ProjectSettings/ModifyProjectSettings.test.tsx | 35 | 8.38 |
+| 10 | src/pages/Common/Reports/ReportsTab.test.tsx | 47 | 8.20 |
+
+sample seconds matched by name: 666 of 682 tests (unmatched: parametrised or renamed titles, 16)
+sample seconds, matched tests: 61.27
+  logic: 1.15 s over 85 matched tests
+  mixed: 33.37 s over 213 matched tests
+  UI: 26.76 s over 368 matched tests
+seconds in the Low tests (logic in E0 files): 1.13 s (1.9 % of the sample's matched seconds)
+seconds in the Middle tests (logic in E0 and E1 files): 1.15 s (1.9 %)
+seconds in the High tests (logic plus mixed): 34.52 s (56.3 %)
+top-ten files that the pick rule also chose: ['components/Common/Team/ModifyTeamSettings.test.tsx']

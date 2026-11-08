@@ -1,0 +1,51 @@
+# pick<TAB>labels (one letter per test, in listing order: L logic, U UI, M mixed)<TAB>E class (E0, E1, E2, - none)<TAB>call<TAB>note
+1	UUUUULLL	E1	keep	the scope reset after an invalid pick is an effect; a pure validity check could come out
+2	LLLML	E1	keep	series and tooltip wording are built inside the component; the render sits in beforeEach
+3	M	E1	keep	one click on a mocked chart, then the age shown in the dialog
+4	UUUULLU	E1	keep	series building (offset, sort) checked through the mocked chart's props
+5	UUUUUUUUMUUUMMLMLMLUMMMLLLMUUUUULLLLLLLULLLLLLLLLUMMLUUUMLUMMMLLLLLLULLL	E1	keep	computePaceBandRects is exported from the component file and has no own .test.ts of its own; paceBands.ts and sleRisk.ts do
+6	M	E1	keep	ordering rule proved through a click on one render
+7	LLM	E1	keep	postMessage and close are an effect on window.opener; the fallback text needs the DOM
+8	UM	E1	keep	the reorder is computed in the component
+9	UUMUUMM	E1	keep	which window matches the dates is a rule; it is proved through the chips
+10	UUUUUUUUUUUUML	E1	keep	filter and sort of the features happen inside the grid component
+11	LU	E1	keep	the beyond-the-horizon wording comes out of createForecastedStartColumn
+12	UUUUUU	-	keep	input wiring and keyboard listeners only
+13	UUUUUUUUUUUUUUUUUUUU	-	keep	a MUI select wrapper: options, layout props, helper text
+14	MMM	E1	keep	which step blames the licence check is a rule shown as text
+15	MMMMMM	E2	keep	the commit-on-leave rule sits in a component with the autosave and rbac contexts
+16	MMUUUUMMMMUUUUUMMUUMMMMMMMUUU	E1	keep	validation and tooltip qualifier wording come out as pure functions
+17	UUUUUUUUUUUUMMMMU	E1	keep	the option-filter rules sit in the editor
+18	MUUUUUUUUMMMMMUMMMMMMMMMMMMMUM	E2	keep	form-level autosave and mapping validation sit in the component with contexts
+19	UUUU	-	keep	copy per save state
+20	UUMMUUUUUUMMMMMMMMUUUUUMUMMMMMMUULMMUUUUUMMMUUUUUMMMMUUUUUMMMMUUUUUUMMMUUUUUMUUUUM	E1	keep	row colouring, ordering and tooltip rules sit in the dialog; paceBands.ts and sleRisk.ts have their own .test.ts
+21	UUUUMUUUUUUMU	E1	keep	date formatting and the committed-window fallback sit in the header
+22	LLLULLUUL	E2	keep	the fetch-and-status flow is a hook with a query client; assertions are on calls and status, not on the DOM
+23	UMULU	E1	keep	one-decimal average is formatted in the widget
+24	LLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLLL	E0	keep	a hook driven with renderHook and no DOM query; only the .tsx suffix and a router wrapper keep it here
+25	MMLLLLLMLMLLMLMML	E2	keep	counts of asks per opening are a loading flow in a dialog with licence and terminology contexts
+26	UUUMMMM	E1	keep	deliveryArchivedRefusal.ts exists and has no .test.ts of its own
+27	UUUUUU	-	keep	overdue word, colour and tooltip
+28	UUUMUU	E1	keep	the picker's narrowing rule sits in the tab
+29	UU	-	keep	mount smoke
+30	UUUU	-	keep	tab order and routing
+31	UUUULLUUUU	E1	keep	the settings loaded into the form (stored or a copy of a clone source) are prepared in the page
+32	UUUUMUUUUUUUUU	E1	keep	row actions, focus and print frame wiring
+33	UUUUUUUUUUUUUUUUUUUU	-	keep	wrappers over window, iframe, style sheets and fonts: they need the DOM, although the file holds no JSX
+34	UMMUMUUMUMUMMMUUUUUMMMMMMUUMUUMUMMMMU	E1	keep	who may press, the 50 limit and the name fallbacks are rules inside the wizard
+35	LMMMMMMMMM	E2	keep	which usage event is sent sits in the page with its contexts
+36	UUUUUUUU	-	keep	titles, alerts, confirm dialog
+37	UUUUUUUU	-	keep	feature toggles and sections
+38	UMMMMMMUMM	E1	keep	reading SPDX and CycloneDX data into rows, filtering by scope and building npm links sit in the section
+39	MMMMMMMMMMUUUUUU	E1	keep	how many rows are needed and where the line falls is a rule inside the view
+40	UUUUU	-	keep	vote buttons and a hint
+41	UUUUU	-	keep	tab order and routing
+42	LLLLLM	E1	keep	the grade shade and the percentage wording come out of the view as a function
+43	UUUUUUUUUUUUUUMMMMMMU	E1	keep	the rule-set JSON round-trip is a serialise and parse pair inside the component
+44	UUUUUUUUUUUUU	-	keep	header controls
+45	UMMUUUUUUUMMM	E1	keep	the update-available and admin-only decisions sit in the component
+46	MMU	E1	keep	the two-week eligibility rule sits in the component
+47	LLL	E2	keep	a context provider: sharing one answer between parts of the screen needs the provider
+48	LLLLLLLLLLLLLLLLLLLLL	E0	keep	a hook driven with renderHook and no DOM query; only the .tsx suffix keeps it here
+49	UUUUUUUUUUUUUUU	-	keep	page wiring to services, titles and the RBAC guard
+50	LLLLUUUUUUULLLLLUUU	E0	keep	getBubbleSize and getMarkerColor are pure functions already tested directly; the render helpers need the DOM

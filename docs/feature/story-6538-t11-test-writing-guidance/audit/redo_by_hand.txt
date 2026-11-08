@@ -1,0 +1,6 @@
+pages/Settings: 28 files, quota 3
+1 @10 pages/Settings/DemoData/DemoDataSettings.test.tsx
+2 @19 pages/Settings/System/SystemSettingsTab.test.tsx
+3 @28 pages/Settings/SystemInfo/ThirdPartyPackagesSection.test.tsx
+components/Common without Charts: 125 files, quota 15
+1 @9 components/Common/Connection/ModifyConnectionSettings.parentSources.test.tsx

@@ -1,0 +1,8 @@
+HEAD: 703cf4cec8311c264b6734ac38d99b1454202ddc
+HEAD:Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.ts:32:			`Time budget: ${mode} mode, ${runKind} run, ${workers ?? "default"} workers, ${availableParallelism()} processors`,
+HEAD:Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.ts:55:			`Time budget: ${options.mode} mode, budget ${options.budgetSeconds} s, fast budget ${options.fastBudgetSeconds} s, limit factor ${options.runKind === "scaled" ? options.limitFactor : 1}, first-test allowance ${options.firstTestAllowanceSeconds} s, ${verdict.findings.length} offenders`,
+HEAD:Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts:1:// A test over its budget is listed here with why it is slow and a ceiling in seconds on a quiet machine.
+HEAD:Lighthouse.Frontend/vitest.config.ts:10:const BUDGET_SECONDS = 2;
+HEAD:Lighthouse.Frontend/vitest.config.ts:12:const FAST_BUDGET_SECONDS = 0.7;
+--- git diff --stat HEAD (nothing below means no difference)
+--- end

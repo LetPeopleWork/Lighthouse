@@ -1,0 +1,79 @@
+git ls-files .test.tsx: 410
+vitest listing files .test.tsx: 410
+vitest listing files total: 617  tests total: 7970
+tsx tests in listing: 5392
+in git ls-files, not in listing: []
+in listing, not in git ls-files: []
+
+| Group | Files | Tests | 50*n/N | Quota | design quota |
+| components/Common/Charts | 37 | 591 | 4.51 | 5 | 5 |
+| components/Common (without Charts) | 125 | 1673 | 15.24 | 15 | 15 |
+| pages/Common/MetricsView | 31 | 507 | 3.78 | 4 | 4 |
+| pages/Portfolios | 54 | 542 | 6.59 | 7 | 7 |
+| pages/Common/Reports + pages/Reports | 36 | 511 | 4.39 | 4 | 4 |
+| pages/Settings | 28 | 350 | 3.41 | 3 | 3 |
+| pages/Teams | 45 | 573 | 5.49 | 5 | 6 |
+| the rest | 54 | 645 | 6.59 | 7 | 6 |
+| Total | 410 | 5392 | | 50 | 50 |
+rounding correction to largest group: 0 components/Common (without Charts)
+
+picks (group, i, position, file, tests):
+components/Common/Charts: files=37 quota=5 positions=[8, 15, 23, 30, 37]
+   1 @  8 components/Common/Charts/CumulativeStateTimeScopeControl.test.tsx (8)
+   2 @ 15 components/Common/Charts/DeliveryPredictabilityChart.beyondTheHorizon.test.tsx (5)
+   3 @ 23 components/Common/Charts/LineRunChart.dialog.test.tsx (1)
+   4 @ 30 components/Common/Charts/StackedAreaChart.test.tsx (7)
+   5 @ 37 components/Common/Charts/WorkItemAgingChart.test.tsx (72)
+components/Common (without Charts): files=125 quota=15 positions=[9, 17, 25, 34, 42, 50, 59, 67, 75, 84, 92, 100, 109, 117, 125]
+   1 @  9 components/Common/Connection/ModifyConnectionSettings.parentSources.test.tsx (1)
+   2 @ 17 components/Common/Connections/OAuthPopupComplete.test.tsx (3)
+   3 @ 25 components/Common/DataGrid/ColumnOrderDialog.test.tsx (2)
+   4 @ 34 components/Common/DateRangeSelector/DateRangePresets.test.tsx (7)
+   5 @ 42 components/Common/FeatureGrid/FeatureGrid.test.tsx (14)
+   6 @ 50 components/Common/FeatureListDataGrid/columns.forecastedStart.beyondTheHorizon.test.tsx (2)
+   7 @ 59 components/Common/FilterBar/FilterBar.test.tsx (6)
+   8 @ 67 components/Common/FormSelectField/FormSelectField.test.tsx (20)
+   9 @ 75 components/Common/OnboardingStepper/OnboardingStepper.licenseCheck.test.tsx (3)
+  10 @ 84 components/Common/ProjectSettings/ModifyProjectSettings.queryCommit.test.tsx (6)
+  11 @ 92 components/Common/QuickSettings/ThroughputQuickSetting.test.tsx (29)
+  12 @100 components/Common/StateMappings/StateMappingsEditor.test.tsx (17)
+  13 @109 components/Common/Team/ModifyTeamSettings.test.tsx (30)
+  14 @117 components/Common/ValidationActions/SaveStateIndicator.test.tsx (4)
+  15 @125 components/Common/WorkItemsDialog/WorkItemsDialog.test.tsx (82)
+pages/Common/MetricsView: files=31 quota=4 positions=[8, 16, 24, 31]
+   1 @  8 pages/Common/MetricsView/DashboardHeader.test.tsx (13)
+   2 @ 16 pages/Common/MetricsView/PredictabilityScoreDetailsWidget.loading.test.tsx (9)
+   3 @ 24 pages/Common/MetricsView/TotalThroughputWidget.test.tsx (5)
+   4 @ 31 pages/Common/MetricsView/useDateRange.test.tsx (37)
+pages/Portfolios: files=54 quota=7 positions=[8, 16, 24, 31, 39, 47, 54]
+   1 @  8 pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx (17)
+   2 @ 16 pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryNotesPanel.archived.test.tsx (7)
+   3 @ 24 pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.overdue.test.tsx (6)
+   4 @ 31 pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.picker.test.tsx (6)
+   5 @ 39 pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryGanttChart.test.tsx (2)
+   6 @ 47 pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx (4)
+   7 @ 54 pages/Portfolios/Edit/EditPortfolio.test.tsx (10)
+pages/Common/Reports + pages/Reports: files=36 quota=4 positions=[9, 18, 27, 36]
+   1 @  9 pages/Common/Reports/ReportsTab.exportPdf.test.tsx (14)
+   2 @ 18 pages/Common/Reports/print/browserPrintEffects.test.tsx (20)
+   3 @ 27 pages/Reports/BulkReportWizard.test.tsx (37)
+   4 @ 36 pages/Reports/ReportsPage.usageData.test.tsx (10)
+pages/Settings: files=28 quota=3 positions=[10, 19, 28]
+   1 @ 10 pages/Settings/DemoData/DemoDataSettings.test.tsx (8)
+   2 @ 19 pages/Settings/System/SystemSettingsTab.test.tsx (8)
+   3 @ 28 pages/Settings/SystemInfo/ThirdPartyPackagesSection.test.tsx (10)
+pages/Teams: files=45 quota=5 positions=[9, 18, 27, 36, 45]
+   1 @  9 pages/Teams/Detail/Refinement/RefinementView.enoughFor.test.tsx (16)
+   2 @ 18 pages/Teams/Detail/Refinement/VoteControl.test.tsx (5)
+   3 @ 27 pages/Teams/Detail/TeamDetail.reportsTab.test.tsx (5)
+   4 @ 36 pages/Teams/Detail/TeamForecastView.realityCheck.grading.test.tsx (6)
+   5 @ 45 pages/Teams/Edit/ForecastSettingsComponent.test.tsx (21)
+the rest: files=54 quota=7 positions=[8, 16, 24, 31, 39, 47, 54]
+   1 @  8 components/App/Header/Header.test.tsx (13)
+   2 @ 16 components/App/LetPeopleWork/LighthouseVersion.test.tsx (13)
+   3 @ 24 components/SurveyNudge/SurveyNudge.test.tsx (3)
+   4 @ 31 hooks/UsageDataConsentProvider.test.tsx (3)
+   5 @ 39 hooks/useUsageDataConsent.test.tsx (21)
+   6 @ 47 pages/Connections/Edit/EditConnection.test.tsx (15)
+   7 @ 54 utils/charts/scatterMarkerUtils.test.tsx (19)
+sample files: 50  sample tests: 682

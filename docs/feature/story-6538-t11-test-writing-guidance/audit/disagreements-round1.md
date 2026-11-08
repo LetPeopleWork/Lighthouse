@@ -1,0 +1,63 @@
+- pick 5, test 9: first M, second U | WorkItemAgingChart.test.tsx | groups items correctly by state and age
+- pick 5, test 13: first M, second U | WorkItemAgingChart.test.tsx | handles items with missing state gracefully
+- pick 5, test 14: first M, second U | WorkItemAgingChart.test.tsx | handles items with states not in doingStates list
+- pick 5, test 15: first L, second U | WorkItemAgingChart.test.tsx | correctly extracts age from work items
+- pick 5, test 16: first M, second U | WorkItemAgingChart.test.tsx | renders blocked items with red color
+- pick 5, test 17: first L, second M | WorkItemAgingChart.test.tsx | should color groups using the legend type color mapping
+- pick 5, test 18: first M, second U | WorkItemAgingChart.test.tsx | groups blocked and regular items correctly
+- pick 5, test 19: first L, second U | WorkItemAgingChart.test.tsx | marks group as blocked if any item in group is blocked
+- pick 5, test 21: first M, second U | WorkItemAgingChart.test.tsx | matches states regardless of casing
+- pick 5, test 22: first M, second U | WorkItemAgingChart.test.tsx | handles mixed casing in doingStates configuration
+- pick 5, test 24: first L, second M | WorkItemAgingChart.test.tsx | reds the dot of a Work Item Lighthouse marks stale, however recently it moved
+- pick 5, test 25: first L, second M | WorkItemAgingChart.test.tsx | does not red the dot of a Work Item Lighthouse says is not stale, however long it has sat
+- pick 5, test 26: first L, second M | WorkItemAgingChart.test.tsx | does not red the dot of a Work Item an older Lighthouse said nothing about
+- pick 5, test 51: first M, second U | WorkItemAgingChart.test.tsx | labels work item age reference lines with the percentage alone (AC1)
+- pick 5, test 52: first M, second U | WorkItemAgingChart.test.tsx | leaves the cycle time labels exactly as they are today (AC2)
+- pick 5, test 53: first L, second U | WorkItemAgingChart.test.tsx | labels both sources identically, so switching changes only the values (AC1 + AC2)
+- pick 5, test 57: first M, second U | WorkItemAgingChart.test.tsx | renders no work item age lines when in-progress work item age percentiles are all zero
+- pick 5, test 58: first L, second M | WorkItemAgingChart.test.tsx | keeps the y-axis anchored to cycle time when work item age with smaller percentiles is selected
+- pick 5, test 60: first M, second U | WorkItemAgingChart.test.tsx | renders only the highest percentile line when work item age percentiles collapse to one value
+- pick 5, test 61: first M, second U | WorkItemAgingChart.test.tsx | keeps the highest percentile per distinct value when some collapse and others do not
+- pick 5, test 62: first M, second U | WorkItemAgingChart.test.tsx | lets the next-highest work item age percentile at a shared value show when the highest is toggled off
+- pick 5, test 63: first L, second M | WorkItemAgingChart.test.tsx | hands the dialog behind a dot the same band column the list dialog gets
+- pick 5, test 64: first L, second M | WorkItemAgingChart.test.tsx | reads a dot's items against the state that dot belongs to
+- pick 5, test 65: first L, second M | WorkItemAgingChart.test.tsx | gives every item behind one dot the same band, because one dot is one state at one age
+- pick 5, test 66: first L, second M | WorkItemAgingChart.test.tsx | says no history for a dot in a state nothing finished has ever left
+- pick 5, test 67: first L, second M | WorkItemAgingChart.test.tsx | offers no band column at all when the team has no finished history
+- pick 5, test 68: first L, second M | WorkItemAgingChart.test.tsx | re-reads the bands when the team or the date range behind them changes
+- pick 5, test 69: first U, second M | WorkItemAgingChart.test.tsx | plots exactly the same dots it plotted before the band existed
+- pick 5, test 71: first L, second M | WorkItemAgingChart.test.tsx | shows the risk on the items behind a bubble
+- pick 5, test 72: first L, second M | WorkItemAgingChart.test.tsx | shows no risk column for a team that published no target
+- pick 10, test 14: first L, second M | FeatureGrid.test.tsx | should sort Done features to the bottom
+- pick 20, test 10: first U, second M | WorkItemsDialog.test.tsx | renders without styling when no SLE is provided
+- pick 20, test 26: first M, second U | WorkItemsDialog.test.tsx | blocked icon appears with SLE coloring
+- pick 20, test 34: first L, second M | WorkItemsDialog.test.tsx | the %s list showing Time in State is sorted by Age, oldest first
+- pick 20, test 42: first M, second U | WorkItemsDialog.test.tsx | names each item's band in the words a flow coach reads out
+- pick 20, test 55: first U, second M | WorkItemsDialog.test.tsx | writes the band into the exported file in words, not as a number
+- pick 20, test 56: first U, second M | WorkItemsDialog.test.tsx | carries every in-flight item into the file, not only what is left on screen
+- pick 20, test 57: first U, second M | WorkItemsDialog.test.tsx | keeps copying and exporting behind a licence while ordering stays free
+- pick 20, test 58: first U, second M | WorkItemsDialog.test.tsx | keeps a band name the offered list never carried at the far end, not ahead of everything
+- pick 20, test 60: first M, second U | WorkItemsDialog.test.tsx | does not take over which column the dialog opens sorted by
+- pick 20, test 61: first M, second U | WorkItemsDialog.test.tsx | heads the column with the configured term and shows a whole-number percentage on every row
+- pick 20, test 62: first M, second U | WorkItemsDialog.test.tsx | leaves the cell empty for an item the answer never mentioned
+- pick 20, test 63: first U, second M | WorkItemsDialog.test.tsx | paints the worst risks in the same colour the chart paints its worst zone
+- pick 20, test 64: first U, second M | WorkItemsDialog.test.tsx | leaves an item with no answer muted and unpainted
+- pick 20, test 69: first M, second U | WorkItemsDialog.test.tsx | carries no name of its own for a row that makes no claim
+- pick 20, test 70: first M, second U | WorkItemsDialog.test.tsx | sits beside the band it belongs with when both are offered
+- pick 20, test 72: first U, second M | WorkItemsDialog.test.tsx | never lets an item with no answer head a worst-first list
+- pick 20, test 73: first U, second M | WorkItemsDialog.test.tsx | carries the percentage into the export, not the number behind it
+- pick 20, test 78: first U, second M | WorkItemsDialog.test.tsx | opens anyway when the browser will not remember anything
+- pick 25, test 3: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | closing and opening it again still asks nothing more
+- pick 25, test 4: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | with editing allowed only after the page's answer arrived, as with sign-in on, the sources are asked once more then and never on opening
+- pick 25, test 5: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | after the page's answer failed, opening the dialog asks again and offers the Jira Release tab
+- pick 25, test 6: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | while the server keeps failing, each opening asks exactly once more and never in a loop
+- pick 25, test 7: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | with the licence premium, the Jira Releases are asked for while Lena is still on the Manual tab
+- pick 25, test 9: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | with the licence not known yet, nothing is asked until it answers premium, and then once
+- pick 25, test 11: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | closing and opening the dialog again asks exactly once more, on opening
+- pick 25, test 12: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | a visit to the Deliveries page without opening the dialog asks for no Release list
+- pick 25, test 14: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | a Value Stream whose connection offers no source asks for no Release list
+- pick 25, test 17: first L, second M | DeliveryCreateModal.loadsOnce.test.tsx | a failed answer for an opening Lena closed is not what the next opening shows
+- pick 35, test 1: first L, second M | ReportsPage.usageData.test.tsx | showing the page is told once, by name alone
+- pick 45, test 2: first M, second U | LighthouseVersion.test.tsx | renders update button if newer version available
+- pick 45, test 3: first M, second U | LighthouseVersion.test.tsx | does not render update button if no newer version available
+- pick 45, test 11: first M, second U | LighthouseVersion.test.tsx | does not render update button for standalone (tauri) distributions

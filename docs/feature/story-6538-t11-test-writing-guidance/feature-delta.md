@@ -170,6 +170,20 @@ DOM?
 - **UI**: needs the DOM. Role or name, focus, click wiring, layout, copy in place, a MUI control's behaviour, a view's loading or failure look, routing.
 - **Mixed**: one render checks both. Counted apart.
 
+**Tightened after the first agreement round (2026-11-08; the only edit of this rule, made through the round).** The first agreement on ten files was
+0.7397, below 0.80. The raters split on three kinds of test, so the rule now says how each is read:
+
+- **A test that mounts a component to get its output is never Logic**, even when the assertion reads a prop handed to a mocked chart, a call count on a service
+  or a colour value. Logic is a test that calls a function or a hook (with `renderHook`, no component rendered) and asserts its return. Disagreeing examples:
+  `WorkItemAgingChart.test.tsx` "reds the dot of a Work Item Lighthouse marks stale, however recently it moved" and the asks-once tests of `DeliveryCreateModal.loadsOnce.test.tsx` (first rater
+  Logic, second rater Mixed): both mount the tree, so they are Mixed.
+- **Mixed or UI is decided by what the assertion states.** If it states a value a rule decided (a number, an order, a wording, a colour, a count of calls),
+  it is Mixed. If it states only that something is present, shown, hidden, enabled, focused, dimmed or wired to a click, it is UI. Disagreeing examples:
+  `WorkItemsDialog.test.tsx` "blocked icon works with different time metrics" (presence only, UI) against "orders worst band first however old the items
+  themselves are" (an order a rule decided, Mixed); `LighthouseVersion.test.tsx` "renders update button if newer version available" (presence of a button, UI).
+- **A rule proved only through the DOM's text still counts as Mixed when the text is the rule's result** ("says 'More than 5 years'"), and as UI when the text is
+  fixed copy.
+
 **One example of each**, judged from the test title and to be confirmed on reading, so the rater sees the rule applied:
 
 | Class | Example | Why |
