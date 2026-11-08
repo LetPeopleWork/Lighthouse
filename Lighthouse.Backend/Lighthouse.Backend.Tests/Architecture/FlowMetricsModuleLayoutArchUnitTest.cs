@@ -31,6 +31,10 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ModuleApplicationFolder = "Modules/FlowMetrics/Application";
 
+        private const string ModulePoliciesNamespace = "Lighthouse.Backend.Modules.FlowMetrics.Application.Policies";
+
+        private const string ModulePoliciesFolder = "Modules/FlowMetrics/Application/Policies";
+
         private static readonly string[] PureCalculations =
         [
             "PercentileCalculator",
@@ -108,6 +112,18 @@ namespace Lighthouse.Backend.Tests.Architecture
             "OverTimeFillTarget",
         ];
 
+        // The module's reactions to domain events. Each file declares exactly one handler, named like the file.
+        private static readonly string[] Policies =
+        [
+            "BlockedCountSnapshotRecordingHandler",
+            "PercentilesOverTimeRecordingHandler",
+            "ProcessBehaviorRecordingHandler",
+            "PortfolioFeaturesRefreshedMetricsInvalidationHandler",
+            "BlackoutConfigurationChangedMetricsInvalidationHandler",
+            "DemoBlockedHistoryBackfillHandler",
+            "DemoPercentilesBackfillHandler",
+        ];
+
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
 
         private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(FlowMetricsModuleLayoutArchUnitTest).Assembly));
@@ -166,6 +182,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheFlowMetricsImplementationFiles_SitInTheModuleApplicationFolder_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(ModuleApplicationFolder, [.. Implementations.Select(name => $"{name}.cs")]);
+        }
+
+        [Test]
+        public void TheFlowMetricsEventHandlers_LiveInTheModulePolicies_AndNoneIsLeftUnderServices()
+        {
+            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModulePoliciesNamespace, Policies).Check();
+        }
+
+        [Test]
+        public void TheFlowMetricsEventHandlerFiles_SitInTheModulePoliciesFolder_AndNowhereElse()
+        {
+            ThenEachFileSitsOnlyIn(ModulePoliciesFolder, [.. Policies.Select(name => $"{name}.cs")]);
         }
 
         [Test]

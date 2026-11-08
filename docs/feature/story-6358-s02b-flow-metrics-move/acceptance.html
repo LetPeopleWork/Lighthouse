@@ -535,6 +535,134 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>host (root), at slice end and feature end</p>
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled production assembly for the seven Flow metrics event handlers, by name
+</code></pre>
+
+<pre><code>Each sits in the Flow metrics module&#x27;s Application.Policies namespace exactly, not in another layer, and no type of the same name is left under Services; a handler that has not moved is named as missing from Policies and as left behind
+</code></pre>
+
+<pre><code>A developer finds how the Flow metrics module reacts to events in the module&#x27;s Policies layer, nowhere else
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsEventHandlers_LiveInTheModulePolicies_AndNoneIsLeftUnderServices</p>
+
+<pre><code>A copy of a handler kept under a namespace other than Services, for example the module&#x27;s Application root, next to the moved one
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the production project&#x27;s source folders for the seven handler files
+</code></pre>
+
+<pre><code>Each file sits in the module&#x27;s Application/Policies folder and no file of the same name sits anywhere else in the production project
+</code></pre>
+
+<pre><code>The folder a developer opens matches the namespace the handler declares
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsEventHandlerFiles_SitInTheModulePoliciesFolder_AndNowhereElse</p>
+
+<pre><code>A file in the right folder whose namespace line was not changed; the handler placement test catches that one
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>After the move, ask the start-up registrations for the handlers of a team refresh and of a portfolio refresh, in the order they are handed out
+</code></pre>
+
+<pre><code>Both orders are the pinned ones, the metrics cache still dropped before the three recorders read
+</code></pre>
+
+<pre><code>After every refresh the metrics are recorded from fresh data, as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest</p>
+
+<pre><code>Two handlers swapped to new types that keep the same simple names, since the pin compares simple names
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>After the move, run the two handler rules on the real code and compare what they examine with every real type that implements the domain-event handler interface
+</code></pre>
+
+<pre><code>Both rules still examine every real handler, the seven moved ones included, wherever they live, and both stay green
+</code></pre>
+
+<pre><code>A moved handler stays under the same no-service-locator and awaited-save rules
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ApplicationCoreRulesReachModulesArchUnitTest (TheServiceLocatorRule_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler, TheAwaitedSaveRule_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler)</p>
+
+<pre><code>A handler registered without implementing the handler interface directly, which neither the rules nor the comparison would find
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them
+</code></pre>
+
+<pre><code>The two captures are identical
+</code></pre>
+
+<pre><code>Nothing a user sees in the metrics changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>This oracle reads layout only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice
+</code></pre>
+
+<p>host (root), at slice end and feature end</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

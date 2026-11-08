@@ -200,12 +200,79 @@
 "stimulus": "F63",
 "user_result": "F65"
 }
+],
+"S4": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F92",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsEventHandlers_LiveInTheModulePolicies_AndNoneIsLeftUnderServices"
+},
+"expected": "F90",
+"stimulus": "F89",
+"user_result": "F91"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F96",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsEventHandlerFiles_SitInTheModulePoliciesFolder_AndNowhereElse"
+},
+"expected": "F94",
+"stimulus": "F93",
+"user_result": "F95"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F100",
+"test": "Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest"
+},
+"expected": "F98",
+"stimulus": "F97",
+"user_result": "F99"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F104",
+"test": "Lighthouse.Backend.Tests.Architecture.ApplicationCoreRulesReachModulesArchUnitTest (TheServiceLocatorRule_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler, TheAwaitedSaveRule_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler)"
+},
+"expected": "F102",
+"stimulus": "F101",
+"user_result": "F103"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host (root), at slice end and feature end",
+"reason": "F79"
+},
+"expected": "F64",
+"stimulus": "F63",
+"user_result": "F65"
+}
 ]
 },
 "counters": {
 "D": 1,
 "E": 4,
-"F": 88,
+"F": 104,
 "P": 3,
 "S": 5
 },
@@ -971,6 +1038,11 @@
 "facts": {
 "F1": "Story 6358 S02 Flow metrics pilot, part B of 3 (DESIGN slices 2, 3a, 3b, 4, 5): move the 42 Flow metrics files out of Lighthouse.Backend.Services into Lighthouse.Backend.Modules.FlowMetrics.{Domain, Application, Application.Policies, Adapters.Background, Adapters.Persistence}, namespace and folder only, with no behaviour change. Design: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (Component decomposition, D-4 to D-9, R2, DEVOPS).",
 "F10": "The seven Flow metrics event handlers (three recorders, two cache invalidations, two demo backfills) live in Lighthouse.Backend.Modules.FlowMetrics.Application.Policies and still run in the pinned order",
+"F100": "Two handlers swapped to new types that keep the same simple names, since the pin compares simple names",
+"F101": "After the move, run the two handler rules on the real code and compare what they examine with every real type that implements the domain-event handler interface",
+"F102": "Both rules still examine every real handler, the seven moved ones included, wherever they live, and both stay green",
+"F103": "A moved handler stays under the same no-service-locator and awaited-save rules",
+"F104": "A handler registered without implementing the handler interface directly, which neither the rules nor the comparison would find",
 "F11": "The background history filler lives in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background and the three snapshot repositories in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence, still recognised as repositories by every repository rule, with the EF model unchanged",
 "F12": "Read the compiled production assembly: the namespaces of the five calculators, and every type the Lighthouse.Backend.Modules.FlowMetrics.Domain namespace depends on, async bodies included",
 "F13": "Each of the five calculators sits in Lighthouse.Backend.Modules.FlowMetrics.Domain, none is left under Lighthouse.Backend.Services, and Domain reaches only Lighthouse.Backend.Models types and the base library; a made-up Domain type that reaches a Services, Data, EF Core or Microsoft.Extensions type is reported",
@@ -1056,7 +1128,18 @@
 "F86": "Run the Architecture tests after the move, the earlier placement checks, the Domain rule, the application-core rules and the event-handler order pin included",
 "F87": "Every earlier check and the handler-order pin stay green with only using, namespace and path-string edits",
 "F88": "Moving the implementations changes nothing already in place, and the metrics handlers still run in the same order",
-"F9": "The Flow metrics implementations (the three metrics services, cache key, percentile families, blocked-count series builder, snapshot writers, series queries, gap reconciler, reconstruction memo, retention edge, fill target) live in Lighthouse.Backend.Modules.FlowMetrics.Application"
+"F89": "Read the compiled production assembly for the seven Flow metrics event handlers, by name",
+"F9": "The Flow metrics implementations (the three metrics services, cache key, percentile families, blocked-count series builder, snapshot writers, series queries, gap reconciler, reconstruction memo, retention edge, fill target) live in Lighthouse.Backend.Modules.FlowMetrics.Application",
+"F90": "Each sits in the Flow metrics module's Application.Policies namespace exactly, not in another layer, and no type of the same name is left under Services; a handler that has not moved is named as missing from Policies and as left behind",
+"F91": "A developer finds how the Flow metrics module reacts to events in the module's Policies layer, nowhere else",
+"F92": "A copy of a handler kept under a namespace other than Services, for example the module's Application root, next to the moved one",
+"F93": "Read the production project's source folders for the seven handler files",
+"F94": "Each file sits in the module's Application/Policies folder and no file of the same name sits anywhere else in the production project",
+"F95": "The folder a developer opens matches the namespace the handler declares",
+"F96": "A file in the right folder whose namespace line was not changed; the handler placement test catches that one",
+"F97": "After the move, ask the start-up registrations for the handlers of a team refresh and of a portfolio refresh, in the order they are handed out",
+"F98": "Both orders are the pinned ones, the metrics cache still dropped before the three recorders read",
+"F99": "After every refresh the metrics are recorded from fresh data, as before"
 },
 "product": {
 "promises": [

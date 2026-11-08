@@ -446,6 +446,154 @@ This oracle reads layout only; the design runs the answer capture and comparison
 
 host \(root\)\, at slice end and feature end
 
+### S4
+
+##### Covers
+
+P1
+
+```text
+Read the compiled production assembly for the seven Flow metrics event handlers, by name
+```
+
+```text
+Each sits in the Flow metrics module's Application.Policies namespace exactly, not in another layer, and no type of the same name is left under Services; a handler that has not moved is named as missing from Policies and as left behind
+```
+
+```text
+A developer finds how the Flow metrics module reacts to events in the module's Policies layer, nowhere else
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsModuleLayoutArchUnitTest\.TheFlowMetricsEventHandlers\_LiveInTheModulePolicies\_AndNoneIsLeftUnderServices
+
+```text
+A copy of a handler kept under a namespace other than Services, for example the module's Application root, next to the moved one
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Read the production project's source folders for the seven handler files
+```
+
+```text
+Each file sits in the module's Application/Policies folder and no file of the same name sits anywhere else in the production project
+```
+
+```text
+The folder a developer opens matches the namespace the handler declares
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsModuleLayoutArchUnitTest\.TheFlowMetricsEventHandlerFiles\_SitInTheModulePoliciesFolder\_AndNowhereElse
+
+```text
+A file in the right folder whose namespace line was not changed; the handler placement test catches that one
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+After the move, ask the start-up registrations for the handlers of a team refresh and of a portfolio refresh, in the order they are handed out
+```
+
+```text
+Both orders are the pinned ones, the metrics cache still dropped before the three recorders read
+```
+
+```text
+After every refresh the metrics are recorded from fresh data, as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.DomainEventHandlerOrderPinTest
+
+```text
+Two handlers swapped to new types that keep the same simple names, since the pin compares simple names
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+After the move, run the two handler rules on the real code and compare what they examine with every real type that implements the domain-event handler interface
+```
+
+```text
+Both rules still examine every real handler, the seven moved ones included, wherever they live, and both stay green
+```
+
+```text
+A moved handler stays under the same no-service-locator and awaited-save rules
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.ApplicationCoreRulesReachModulesArchUnitTest \(TheServiceLocatorRule\_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler\, TheAwaitedSaveRule\_LooksAtEveryRealTypeItLookedAtBeforeAndAtEveryRealHandler\)
+
+```text
+A handler registered without implementing the handler interface directly, which neither the rules nor the comparison would find
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them
+```
+
+```text
+The two captures are identical
+```
+
+```text
+Nothing a user sees in the metrics changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+This oracle reads layout only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice
+```
+
+host \(root\)\, at slice end and feature end
+
 ## Expectations
 
 ### Rows
