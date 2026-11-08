@@ -35,22 +35,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static readonly HashSet<string> ConnectorCategories = [.. TestSelectionClauseTest.Connectors];
 
-        private static readonly HashSet<string> TestAttributes =
-        [
-            "NUnit.Framework.TestAttribute",
-            "NUnit.Framework.TestCaseAttribute",
-            "NUnit.Framework.TestCaseSourceAttribute",
-            "NUnit.Framework.TheoryAttribute",
-        ];
-
-        private static readonly HashSet<string> SetUpAndTearDownAttributes =
-        [
-            "NUnit.Framework.OneTimeSetUpAttribute",
-            "NUnit.Framework.OneTimeTearDownAttribute",
-            "NUnit.Framework.SetUpAttribute",
-            "NUnit.Framework.TearDownAttribute",
-        ];
-
         private static readonly string[] PiecesOfTheList = ["a", " b", "c "];
         private static readonly string[] PiecesOfTheShortList = ["a", " b"];
 
@@ -369,12 +353,6 @@ namespace Lighthouse.Backend.Tests.Architecture
                     .And.Contain("may run where it should not")
                     .And.Contain("no space after the comma"));
         }
-
-        private static bool RunsWhenAFixtureRuns(MethodDefinition method)
-            => method.IsConstructor || HasAnAttribute(method, TestAttributes) || HasAnAttribute(method, SetUpAndTearDownAttributes);
-
-        private static bool HasAnAttribute(MethodDefinition method, HashSet<string> attributeNames)
-            => method.CustomAttributes.Any(attribute => attributeNames.Contains(attribute.AttributeType.FullName));
 
         private static string MustDeriveFromTheBase(IEnumerable<string> typeNames)
             => "These fixtures start an application host, so the fast test loop would run them. Each must derive from " +

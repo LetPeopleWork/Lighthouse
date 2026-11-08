@@ -11,6 +11,32 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private static readonly string[] FactoryTypeNamePrefixes = ["TestWebApplicationFactory", "WebApplicationFactory"];
 
+        public static readonly IReadOnlySet<string> TestAttributes = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "NUnit.Framework.TestAttribute",
+            "NUnit.Framework.TestCaseAttribute",
+            "NUnit.Framework.TestCaseSourceAttribute",
+            "NUnit.Framework.TheoryAttribute",
+        };
+
+        public static readonly IReadOnlySet<string> SetUpAndTearDownAttributes = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "NUnit.Framework.OneTimeSetUpAttribute",
+            "NUnit.Framework.OneTimeTearDownAttribute",
+            "NUnit.Framework.SetUpAttribute",
+            "NUnit.Framework.TearDownAttribute",
+        };
+
+        /// <summary>
+        /// Whether NUnit runs the method when it runs a fixture: a constructor, a test, or a set-up or tear-down,
+        /// one-time or per test. Anything such a method starts counts as the fixture's own.
+        /// </summary>
+        public static bool RunsWhenAFixtureRuns(MethodDefinition method)
+            => method.IsConstructor || HasAnAttribute(method, TestAttributes) || HasAnAttribute(method, SetUpAndTearDownAttributes);
+
+        public static bool HasAnAttribute(MethodDefinition method, IReadOnlySet<string> attributeNames)
+            => method.CustomAttributes.Any(attribute => attributeNames.Contains(attribute.AttributeType.FullName));
+
         public static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
             => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
 

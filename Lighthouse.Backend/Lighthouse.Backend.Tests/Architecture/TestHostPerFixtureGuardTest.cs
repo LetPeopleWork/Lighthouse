@@ -98,11 +98,12 @@ namespace Lighthouse.Backend.Tests.Architecture
             "NUnit.Framework.TheoryAttribute",
         ];
 
-        // Both guards plant classes that start hosts in tests and set-ups so they have something to find.
+        // The guards plant classes that start hosts in tests and set-ups so they have something to find.
         private static readonly HashSet<string> TypesThatHoldPlantedFixtures =
         [
             typeof(TestHostPerFixtureGuardTest).FullName!,
             typeof(TestTierGuardTest).FullName!,
+            typeof(TestHostUseGuardTest).FullName!,
         ];
 
         private ModuleDefinition module = null!;
