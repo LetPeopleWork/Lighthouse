@@ -1611,3 +1611,39 @@ The test names of the whole family, before and after, are the same list; the cla
 **The hook, broken.** `AdjustTheHost` returning the host without test sign-in: `Somebody_who_cannot_read_the_Team...` red, `Expected: NotFound But was: OK`. Tom's row and the missing Team's row stay green, as they would on the old host: with sign-in off everybody may read, and a Team nobody created is not found either way. Restored byte for byte.
 
 **For review.** The host set-up in `AdjustTheHost` repeats the host base's service swaps; one shared place for both is left to 02-05, when `Slice01` leaves that base, since the host base is not in this step's files. The contract's `[TearDown]` forgets the seeded Teams before the base's queue wait rather than after it, as the host base does; no contract row starts a refresh, so nothing can write notes back in between.
+
+## Wave: DELIVER / [REF] Slice B: seven new wire rows (step 02-03, 2026-11-08)
+
+**What landed.** `RealityCheckAnswer` reads every member of `RealityCheckResultDto`: `TeamId`, `TeamName`, `FilterApplied`, `ExcludedSummary` on the answer, and `ForecastValueByLevel` (from `levelOutcomes[].forecastValue`) on `CellReading`, added last so no caller changes. Both paths read through it as before and still call `ThenEveryCheckLearnedFromExactlyItsOwnWindow`. `RealityCheckWireContractTest` gains B6 to B12; the three JSON walkers are copied into it word for word. The four `Slice01` rows keep their walk until 02-04 splits them, so no wire pin is lost in between.
+
+**Rows** (class `Contracts.Forecasting.RealityCheckWireContractTest`):
+
+| Row | Test name |
+|---|---|
+| B6 | `Every_member_of_a_real_answer_has_the_name_the_browser_reads` (shipped engine) |
+| B7 | `A_cell_that_cannot_be_evaluated_states_its_members_as_null_and_days_as_plain_dates` (Coastal Survey) |
+| B8 | `Every_reason_and_outcome_travels_as_its_name` (the MVC `JsonOptions` the host serialises with) |
+| B9, B10 | `No_part_of_the_answer_on_the_wire_can_rank_a_window(30)`, `(45)`: the rank walk and the no-sentence walk |
+| B11 | `The_windows_of_an_off_ladder_setting_rank_nothing_on_the_wire`: the rank walk |
+| B12 | `A_check_with_no_forecast_puts_no_negative_number_on_the_wire`: the negative-number walk |
+
+**B12's title differs from the plan.** The plan's `A_check_with_no_forecast_ranks_nothing_on_the_wire` says "the same walk", but the row it is split from, `A_check_whose_forecast_could_not_be_worked_out...`, holds the negative-number walk, not the rank walk. The title names the walk the row holds. 02-04 drops `ThenNoNegativeNumberReachesTheAnswer` from that row.
+
+**Red, each by a deliberate break,** run together, then restored byte for byte (`cmp`):
+
+| Row | Break | Red |
+|---|---|---|
+| B6 | The reader asks for `forecastvalue` | `The answer carries no 'forecastvalue' where the contract puts one: {"confidenceLevel":50,"forecastValue":7,"held":true}` |
+| B7, null | Expects `Number` where null is stated | `Expected: <empty> But was: < "14d/7d forecast", "14d/7d actualCompleted", "14d/7d outcome", "14d/7d levelOutcomes", ...` |
+| B7, days | Pattern `yyyy/MM/dd` | `Expected: all items String matching "^\d{4}/\d{2}/\d{2}$" But was: < "2026-09-22", ...` |
+| B8 | Expects the lower-cased name | `Determination.AllWindowsAlike goes out as "AllWindowsAlike"`, and every other member |
+| B9, B10, rank | `Days` added to the words that name a winner | `$.standardWindowDays`, `$.sampledWindowDays`, ... |
+| B9, B10, sentence | Looks for `Sufficient` instead of `Brown` | `But was: < "Sufficient", ...` |
+| B11 | The same rank break | `$.standardWindowDays`, ... |
+| B12 | Collects numbers `>= 0` | `$.teamId = 1`, `$.standardWindowDays[0] = 14`, ... |
+
+**TRX, by class name:** 21 rows, all passed, summed durations 4.43 s (budget 34 s). B7 is the slowest at 1.08 s.
+
+**Runs.** Family filter (`ForecastRealityCheck|RealityCheckWireContractTest`): 132 passed. `Test-Fast.ps1`: 9545 passed. `dotnet build Lighthouse.Backend`: 0 warnings.
+
+**Known gap, unchanged.** B6 pins the names `filterApplied` and `excludedSummary` and that they read as a boolean and as null or text; their values come from the controller and stay unpinned, recorded for #6508.

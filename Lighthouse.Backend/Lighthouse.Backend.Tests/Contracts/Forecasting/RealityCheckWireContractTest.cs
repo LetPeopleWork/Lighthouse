@@ -13,6 +13,8 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Options;
+using static Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.RealityCheckAnswer;
 
 namespace Lighthouse.Backend.Tests.Contracts.Forecasting
 {
@@ -40,6 +42,20 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
 
         private const string ARequestCarryingDatesFromLastYear =
             "{\"startDate\":\"2025-06-01\",\"endDate\":\"2025-07-01\",\"historicalStartDate\":\"2025-03-01\",\"historicalEndDate\":\"2025-06-01\"}";
+
+        private static readonly int[] TheConfidenceLevels = [50, 70, 85, 95];
+
+        private static readonly string[] TheMembersAnUnevaluatedCellLeavesEmpty = ["forecast", "actualCompleted", "outcome", "levelOutcomes"];
+
+        private static readonly Type[] TheEnumsOnTheAnswer =
+            [typeof(Determination), typeof(CurrentSettingStanding), typeof(NotTestedReason), typeof(SufficiencyReason), typeof(CellOutcome), typeof(LevelReading)];
+
+        /// <summary>
+        /// Words whose presence in a property name would mean the answer names, orders or bounds a
+        /// winner - or ships a rendered clause in one instance's vocabulary.
+        /// </summary>
+        private static readonly string[] WordsThatWouldNameAWinner =
+            ["recommend", "best", "rank", "winner", "bound", "windowScore", "sentence", "clause"];
 
         private static DateOnly TodayDay => RealityCheckForecastScript.TodayDay;
 
@@ -208,6 +224,92 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
             ThenTheTwoAnswersAreTheSame(first, second);
         }
 
+        // --- Every member, by the name the browser reads ---
+
+        [Test]
+        public async Task Every_member_of_a_real_answer_has_the_name_the_browser_reads()
+        {
+            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
+            Forecasts.RunAsShipped();
+
+            var answer = await TheAnswerTo(oceanExplorer);
+
+            ThenEveryMemberIsReadByItsName(answer, oceanExplorer);
+        }
+
+        [Test]
+        public async Task A_cell_that_cannot_be_evaluated_states_its_members_as_null_and_days_as_plain_dates()
+        {
+            var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
+
+            var answer = await TheAnswerTo(coastalSurvey);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenEveryUnevaluatedCellStatesItsEmptyMembersAsNull(answer);
+                ThenEveryDayIsAPlainDate(answer);
+            }
+        }
+
+        [Test]
+        public void Every_reason_and_outcome_travels_as_its_name()
+        {
+            var theHostsOptions = Services.GetRequiredService<IOptions<Microsoft.AspNetCore.Mvc.JsonOptions>>().Value.JsonSerializerOptions;
+
+            var everyMember = TheEnumsOnTheAnswer.SelectMany(type => Enum.GetValues(type).Cast<Enum>()).ToList();
+            var notByName = everyMember
+                .Select(member => (Member: member, Wire: JsonSerializer.Serialize(member, member.GetType(), theHostsOptions)))
+                .Where(sent => sent.Wire != $"\"{sent.Member}\"")
+                .Select(sent => $"{sent.Member.GetType().Name}.{sent.Member} goes out as {sent.Wire}")
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(notByName, Is.Empty, "the browser compares these by their names, so a number reads as none of them");
+                Assert.That(everyMember, Has.Count.GreaterThan(TheEnumsOnTheAnswer.Length), "each of the six has members to send");
+            }
+        }
+
+        // --- Nothing on the wire can rank a window ---
+
+        [TestCase(30)]
+        [TestCase(45)]
+        public async Task No_part_of_the_answer_on_the_wire_can_rank_a_window(int samplingWindowDays)
+        {
+            var team = GivenATeamFinishingWorkEveryDaySetTo(samplingWindowDays);
+            GivenTheWindowsBehaveDifferently(samplingWindowDays);
+
+            var answer = await TheAnswerTo(team);
+
+            using (Assert.EnterMultipleScope())
+            {
+                ThenNothingInTheAnswerCarriesANumberPerWindow(answer);
+                ThenTheAnswerCarriesFactsAndNoSentence(answer);
+            }
+        }
+
+        [Test]
+        public async Task The_windows_of_an_off_ladder_setting_rank_nothing_on_the_wire()
+        {
+            var team = GivenATeamFinishingWorkEveryDaySetTo(45);
+            Forecasts.EveryCheckOf(45, HeldUpTo.NoLevel);
+
+            var answer = await TheAnswerTo(team);
+
+            ThenNothingInTheAnswerCarriesANumberPerWindow(answer);
+        }
+
+        [Test]
+        public async Task A_check_with_no_forecast_puts_no_negative_number_on_the_wire()
+        {
+            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
+            Forecasts.CannotBeWorkedOutFor(30, 28);
+
+            var answer = await TheAnswerTo(oceanExplorer);
+
+            ThenNoNegativeNumberReachesTheAnswer(answer);
+        }
+
         // --- What must keep working beside it ---
 
         /// <summary>
@@ -239,6 +341,23 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
             var team = Seed.GivenATeam("Coastal Survey", 30);
             Seed.GivenTheTeamFinishedAWorkItemEvery(team, 5);
             return team;
+        }
+
+        private int GivenATeamFinishingWorkEveryDaySetTo(int samplingWindowDays)
+        {
+            var team = Seed.GivenATeam($"Team at {samplingWindowDays} days", samplingWindowDays);
+            Seed.GivenTheTeamFinishedAWorkItemEveryDay(team);
+            return team;
+        }
+
+        /// <summary>
+        /// One window over-forecasts every time, so the windows that hold up are a proper subset and there is
+        /// something an answer that ranked windows would have ranked.
+        /// </summary>
+        private void GivenTheWindowsBehaveDifferently(int samplingWindowDays)
+        {
+            var theOddOneOut = samplingWindowDays == 60 ? 90 : 60;
+            Forecasts.EveryCheckOf(theOddOneOut, HeldUpTo.NoLevel);
         }
 
         private async Task GivenTheCheckAnswersForATeamThatExists(int teamId) => await TheAnswerTo(teamId);
@@ -310,6 +429,109 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
             }
         }
 
+        private static void ThenEveryMemberIsReadByItsName(RealityCheckAnswer answer, int teamId)
+        {
+            var evaluated = answer.Cells.Where(cell => cell.IsSufficient).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(answer.TeamId, Is.EqualTo(teamId));
+                Assert.That(answer.TeamName, Is.EqualTo("Ocean Explorer"));
+
+                // What these two say is worked out in the controller and is not pinned here, only that they are
+                // there under these names.
+                Assert.That(answer.FilterApplied, Is.True.Or.False);
+                Assert.That(answer.ExcludedSummary, Is.Null.Or.Not.Empty);
+
+                Assert.That(answer.AnchorDate, Is.EqualTo(TodayDay));
+                Assert.That(answer.ConfidenceLevels, Is.EqualTo(TheConfidenceLevels));
+                Assert.That(answer.StandardWindowDays, Is.SubsetOf(answer.SampledWindowDays));
+                Assert.That(answer.MinimumActiveDays, Is.Positive);
+                Assert.That(answer.RunsAttempted, Is.EqualTo(answer.Cells.Count));
+                Assert.That(answer.RunsEvaluated, Is.EqualTo(evaluated.Count));
+                Assert.That(answer.LevelsPerRun, Is.EqualTo(LevelsPerCheck));
+                Assert.That(answer.ScoresEvaluated, Is.EqualTo(evaluated.Count * LevelsPerCheck));
+                Assert.That(answer.SoundWindowDays.Concat(answer.UnevaluatedWindowDays), Is.SubsetOf(answer.SampledWindowDays));
+                Assert.That(answer.Determination, Is.Not.Empty);
+                Assert.That(answer.CurrentSettingDays, Is.EqualTo(30));
+                Assert.That(answer.CurrentSettingWasTested, Is.True);
+                Assert.That(answer.CurrentSettingNotTestedReason, Is.Null);
+                Assert.That(answer.CurrentSettingStanding, Is.Not.Empty);
+                Assert.That(TheConfidenceLevels.Select(level => answer.Coverage(level).Reading), Has.None.Empty);
+                Assert.That(answer.ScoredPeriods.Select(period => period.HorizonDays), Is.EqualTo(answer.SampledHorizonDays));
+
+                Assert.That(evaluated, Has.Count.EqualTo(16), "this Team finishes work every day, so the shipped engine evaluates every check");
+                Assert.That(evaluated.Where(cell => !cell.HeldByLevel.Keys.Order().SequenceEqual(TheConfidenceLevels)), Is.Empty,
+                    "every evaluated check says for each level whether it held");
+                Assert.That(evaluated.Where(cell => !ScoresTheForecastItShows(cell)), Is.Empty,
+                    "each level's outcome names the forecast it was scored against, the one the check shows at that level");
+            }
+        }
+
+        private static bool ScoresTheForecastItShows(CellReading cell)
+            => cell.ForecastByLevel.Count == cell.ForecastValueByLevel.Count
+               && cell.ForecastByLevel.All(level => cell.ForecastValueByLevel.TryGetValue(level.Key, out var scored) && scored == level.Value);
+
+        private static void ThenEveryUnevaluatedCellStatesItsEmptyMembersAsNull(RealityCheckAnswer answer)
+        {
+            var unevaluated = Field(answer.Root, "cells").EnumerateArray()
+                .Where(cell => !Field(Field(cell, "sufficiency"), "isSufficient").GetBoolean())
+                .ToList();
+
+            var notNull = unevaluated
+                .SelectMany(cell => TheMembersAnUnevaluatedCellLeavesEmpty
+                    .Where(name => Field(cell, name).ValueKind != JsonValueKind.Null)
+                    .Select(name => $"{Text(Field(cell, "samplingWindowDays"))}d/{Text(Field(cell, "horizonDays"))}d {name}"))
+                .ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(unevaluated, Is.Not.Empty, "this Team's two-week windows are too thin, so some checks cannot be evaluated");
+                Assert.That(notNull, Is.Empty,
+                    "a member left out and a member stated as null read differently in the browser, and the contract states these as null");
+            }
+        }
+
+        private static void ThenEveryDayIsAPlainDate(RealityCheckAnswer answer)
+        {
+            string[] daysOfACell = ["scoredPeriodStart", "scoredPeriodEnd", "historyWindowStart", "historyWindowEnd"];
+            string[] daysOfAPeriod = ["scoredPeriodStart", "scoredPeriodEnd"];
+
+            var days = new List<string> { Text(Field(answer.Root, "anchorDate")) };
+            days.AddRange(Field(answer.Root, "cells").EnumerateArray().SelectMany(cell => daysOfACell.Select(name => Text(Field(cell, name)))));
+            days.AddRange(Field(answer.Root, "scoredPeriods").EnumerateArray().SelectMany(period => daysOfAPeriod.Select(name => Text(Field(period, name)))));
+
+            Assert.That(days, Has.All.Match(@"^\d{4}-\d{2}-\d{2}$"),
+                "the browser reads every day as a calendar day, so a time or an offset on one would move it");
+        }
+
+        private static void ThenNothingInTheAnswerCarriesANumberPerWindow(RealityCheckAnswer answer)
+        {
+            var findings = new List<string>();
+            InspectForAnythingThatCouldRankAWindow(answer.Root, "$", findings);
+
+            Assert.That(findings, Is.Empty,
+                "no part of the answer may carry a number per sampling window: with nothing to sort by, no ranking is representable");
+        }
+
+        private static void ThenTheAnswerCarriesFactsAndNoSentence(RealityCheckAnswer answer)
+        {
+            var credited = new List<string>();
+            CollectTextMentioning(answer.Root, "Brown", credited);
+
+            Assert.That(credited, Is.Empty,
+                "the answer carries facts; any mention of the source method belongs beside a statement of where this check departs from it, which is copy the browser composes");
+        }
+
+        private static void ThenNoNegativeNumberReachesTheAnswer(RealityCheckAnswer answer)
+        {
+            var negatives = new List<string>();
+            CollectNegativeNumbers(answer.Root, "$", negatives);
+
+            Assert.That(negatives, Is.Empty,
+                "the engine's 'no reading' marker is minus one, and it must never reach a count, a band or a cell");
+        }
+
         private static void ThenTheTwoAnswersAreTheSame(RealityCheckAnswer first, RealityCheckAnswer second)
         {
             Assert.That(second.Root.GetRawText(), Is.EqualTo(first.Root.GetRawText()),
@@ -357,6 +579,96 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
                 Assert.That(RealityCheckAnswer.Field(result, "percentiles").GetArrayLength(), Is.EqualTo(LevelsPerCheck));
                 Assert.That(RealityCheckAnswer.Field(result, "actualThroughput").GetInt32(), Is.GreaterThan(0),
                     "the Team finished work every day of the four weeks it was back-tested over");
+            }
+        }
+
+        // --- Walking the answer ---
+
+        private static void InspectForAnythingThatCouldRankAWindow(JsonElement element, string path, List<string> findings)
+        {
+            if (element.ValueKind == JsonValueKind.Array)
+            {
+                var index = 0;
+                foreach (var item in element.EnumerateArray())
+                {
+                    InspectForAnythingThatCouldRankAWindow(item, $"{path}[{index++}]", findings);
+                }
+
+                return;
+            }
+
+            if (element.ValueKind != JsonValueKind.Object)
+            {
+                return;
+            }
+
+            var names = element.EnumerateObject().Select(property => property.Name).ToList();
+
+            if (names.Contains("samplingWindowDays") && !names.Contains("horizonDays"))
+            {
+                findings.Add($"{path} is about one sampling window rather than one check");
+            }
+
+            findings.AddRange(names
+                .Where(name => int.TryParse(name, out _))
+                .Select(name => $"{path}.{name} keys something by a number"));
+
+            findings.AddRange(names
+                .Where(name => WordsThatWouldNameAWinner.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)))
+                .Select(name => $"{path}.{name}"));
+
+            foreach (var property in element.EnumerateObject())
+            {
+                InspectForAnythingThatCouldRankAWindow(property.Value, $"{path}.{property.Name}", findings);
+            }
+        }
+
+        private static void CollectTextMentioning(JsonElement element, string word, List<string> found)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.String when (element.GetString() ?? string.Empty).Contains(word, StringComparison.OrdinalIgnoreCase):
+                    found.Add(element.GetString()!);
+                    break;
+                case JsonValueKind.Array:
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        CollectTextMentioning(item, word, found);
+                    }
+
+                    break;
+                case JsonValueKind.Object:
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        CollectTextMentioning(property.Value, word, found);
+                    }
+
+                    break;
+            }
+        }
+
+        private static void CollectNegativeNumbers(JsonElement element, string path, List<string> found)
+        {
+            switch (element.ValueKind)
+            {
+                case JsonValueKind.Number when element.GetDouble() < 0:
+                    found.Add($"{path} = {element.GetRawText()}");
+                    break;
+                case JsonValueKind.Array:
+                    var index = 0;
+                    foreach (var item in element.EnumerateArray())
+                    {
+                        CollectNegativeNumbers(item, $"{path}[{index++}]", found);
+                    }
+
+                    break;
+                case JsonValueKind.Object:
+                    foreach (var property in element.EnumerateObject())
+                    {
+                        CollectNegativeNumbers(property.Value, $"{path}.{property.Name}", found);
+                    }
+
+                    break;
             }
         }
     }

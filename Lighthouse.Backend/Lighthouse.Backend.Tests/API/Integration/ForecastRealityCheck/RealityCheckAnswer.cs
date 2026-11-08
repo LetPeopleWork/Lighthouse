@@ -14,6 +14,21 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     {
         public JsonElement Root { get; } = root;
 
+        public int TeamId => Field(Root, "teamId").GetInt32();
+
+        public string TeamName => Text(Field(Root, "teamName"));
+
+        public bool FilterApplied => Field(Root, "filterApplied").GetBoolean();
+
+        public string? ExcludedSummary
+        {
+            get
+            {
+                var summary = Field(Root, "excludedSummary");
+                return summary.ValueKind == JsonValueKind.Null ? null : Text(summary);
+            }
+        }
+
         public DateOnly AnchorDate => AsDay(Field(Root, "anchorDate"));
 
         public List<int> StandardWindowDays => Numbers(Field(Root, "standardWindowDays"));
@@ -171,7 +186,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         Dictionary<int, int> ForecastByLevel,
         int? ActualCompleted,
         string? Outcome,
-        Dictionary<int, bool> HeldByLevel)
+        Dictionary<int, bool> HeldByLevel,
+        Dictionary<int, int> ForecastValueByLevel)
     {
         public static CellReading From(JsonElement cell)
         {
@@ -202,6 +218,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                     ? levelOutcomes.EnumerateArray().ToDictionary(
                         level => Field(level, "confidenceLevel").GetInt32(),
                         level => Field(level, "held").GetBoolean())
+                    : [],
+                levelOutcomes.ValueKind == JsonValueKind.Array
+                    ? levelOutcomes.EnumerateArray().ToDictionary(
+                        level => Field(level, "confidenceLevel").GetInt32(),
+                        level => Field(level, "forecastValue").GetInt32())
                     : []);
         }
     }
