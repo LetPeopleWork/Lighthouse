@@ -799,3 +799,122 @@ These answer DESIGN's open points and supersede any earlier line that waits on t
 | 5 | Rigor | `standard` (agreed 2026-11-07, recorded in `.nwave/afk.json`): crafter model sonnet, reviewer model haiku |
 
 Roadmap: `deliver/roadmap.json`, two steps, one per slice.
+
+## Wave: DELIVER / [REF] Slice A checks (2026-11-08, step 01-01)
+
+Every output below was run on the day against the tree. Scripts are in `audit/` (`names_check.sh`, `guard_check.sh`, `skill_patterns.sh`, `rule_diff.sh`).
+**Audit result:** band 4, low confidence (agreement 0.719008 after the one round); see `audit/frontend-audit.md`, whose last section is the verdict block.
+
+**A-8, A-9, A-10, A-11 (read).** Folder: `.claude/skills/test-writing/SKILL.md` and `references/frontend.md` (listing printed by `ls -R`). The first section of `SKILL.md` after its title is `## Checklist`
+(line 12). `frontend.md` holds seven rules: `grep` counts titles 7, findings 7, examples 7 (equal), one example per rule, none shared. `SKILL.md` has the section "A check that cannot fail is not a check"
+with a finding ("stays green after the production line is deleted"), an example (`getBubbleSize`) and "the deliberate break is the proof, not an option". The pyramid appears once, as "a target picture, not a
+measurement ... a direction and gates nothing ... What gates is time", with the layer rule "A test lands in the lowest layer that can prove it"; no share is written as a limit and no dated count appears.
+
+**C-1 (last line, read with `ctx_read` mode full, fresh).** `SKILL.md` ends `End of SKILL.md`; `frontend.md` ends `End of frontend.md`. Planted fault, a deliberately short read
+(`ctx_read` mode `lines:1-20`, fresh) of `SKILL.md`: it returned `SKILL.md 70L lines:1-20` and stopped at line 20, with no `End of` line. The check can fail.
+
+**C-2 (names).** Output of `names_check.sh` (files holding each name, outside the feature workspace and the skill; `git grep -F`):
+
+```
+pnpm test:fast                                               9 files
+vitest.config.ts                                             50 files
+BUDGET_SECONDS                                               3 files
+FAST_BUDGET_SECONDS                                          1 files
+timeBudgetReporter.ts                                        8 files
+slowTests.ts                                                 24 files
+src/tests/timeBudget                                         35 files
+computePaceBandRects                                         16 files
+STATE_BAND_HALF_WIDTH                                        5 files
+WorkItemAgingChart.tsx                                       46 files
+getBubbleSize                                                6 files
+scatterMarkerUtils.tsx                                       3 files
+SaveStateIndicator                                           24 files
+generateWorkItem                                             10 files
+waitPastTheDebounce                                          5 files
+pastTheAutosaveDelay                                         15 files
+mockSaveTeamSettings                                         5 files
+mockGetTeamSettings                                          1 files
+COULD_NOT_LOAD_MESSAGE                                       12 files
+WidgetShell                                                  134 files
+data-widget-status="ready"                                   19 files
+vi.useFakeTimers({ shouldAdvanceTime: true })                29 files
+Stryker                                                      669 files
+Playwright                                                   300 files
+pnpm test                                                    276 files
+CLAUDE.md                                                    293 files
+@screenshot                                                  149 files
+@auth                                                        42 files
+@rbac                                                        48 files
+@proxyauth                                                   12 files
+src/tests/timeBudget/slowTests.ts                            15 files
+NoSuchNameInTheTreeXyz                                       0 files
+paths tracked: yes
+```
+
+All names are found. The known-missing name `NoSuchNameInTheTreeXyz` returns 0 files (the planted fault). The backend half and the fast cycle rule's short text are marked `planned:` with a role and no number.
+The four backend names that T5 will add are not named in the skill.
+
+**C-3 (guard messages and limits).** Output of `guard_check.sh` (`git grep` at `HEAD`, and `git diff --stat HEAD` for the three files, empty):
+
+```
+HEAD: 703cf4cec8311c264b6734ac38d99b1454202ddc
+HEAD:Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.ts:32:			`Time budget: ${mode} mode, ${runKind} run, ${workers ?? "default"} workers, ${availableParallelism()} processors`,
+HEAD:Lighthouse.Frontend/src/tests/timeBudget/timeBudgetReporter.ts:55:			`Time budget: ${options.mode} mode, budget ${options.budgetSeconds} s, fast budget ${options.fastBudgetSeconds} s, limit factor ${options.runKind === "scaled" ? options.limitFactor : 1}, first-test allowance ${options.firstTestAllowanceSeconds} s, ${verdict.findings.length} offenders`,
+HEAD:Lighthouse.Frontend/src/tests/timeBudget/slowTests.ts:1:// A test over its budget is listed here with why it is slow and a ceiling in seconds on a quiet machine.
+HEAD:Lighthouse.Frontend/vitest.config.ts:10:const BUDGET_SECONDS = 2;
+HEAD:Lighthouse.Frontend/vitest.config.ts:12:const FAST_BUDGET_SECONDS = 0.7;
+--- git diff --stat HEAD (nothing below means no difference)
+--- end
+```
+
+Quoted from `timeBudgetReporter.ts`: `Time budget:` and `offenders`; from `slowTests.ts`: "listed here with why it is slow"; from `vitest.config.ts`: `BUDGET_SECONDS`, `FAST_BUDGET_SECONDS`.
+
+**C-4 (three pattern lists).** `skill_patterns.sh`. Planted fault first, a file holding one item of each list:
+
+```
+--- list 1: internal references
+planted.md:1:see #6538 and Story 12 and a slice, ADR-270, FE7, T5
+--- list 2: nWave scenario tags
+planted.md:2:@us-02b @kpi-OUT-1
+--- list 3: dated counts
+planted.md:3:5,857 tests
+```
+
+Then the skill folder, nothing under any list:
+
+```
+--- list 1: internal references
+--- list 2: nWave scenario tags
+--- list 3: dated counts
+```
+
+The skill says "Write no nWave scenario tags" in words, and does not hold the tags it lists.
+
+**C-5 (changed paths).** Audit commit `07eaab7d9`: `git diff --name-only 07eaab7d9^ 07eaab7d9` holds 51 paths, all under `docs/feature/story-6538-t11-test-writing-guidance/` (the feature delta,
+40 files in `audit/`, 10 in `audit/parts/`); the count of paths outside the workspace is 0. Nothing under `Lighthouse.Frontend`, `Lighthouse.Backend` or `Lighthouse.EndToEndTests`. The skill commit holds
+only `.claude/skills/test-writing/` and this section of the feature delta. `git status --short` before the skill commit, with the files that are **not this step's** named:
+
+```
+ M Lighthouse.Backend/.../ForecastRealityCheck/ForecastRealityCheckAcceptanceTest.cs     (not mine: parallel agent, backend tests)
+ M Lighthouse.Backend/.../ForecastRealityCheck/RealityCheckForecastScript.cs             (not mine)
+ M Lighthouse.Backend/.../ForecastRealityCheck/Slice04TheAnswerOpensInADialogScenarios.cs (not mine)
+ M Lighthouse.Backend/.../ForecastRealityCheck/Slice04TheAnswerOpensInADialogSpecifications.cs (not mine)
+ M Scripts/test-timings/check_budget.py                                                  (not mine: parallel agent)
+ M Scripts/test-timings/trx_to_csv.py                                                    (not mine)
+?? .claude/skills/test-writing/                                                          (mine, committed next)
+?? Lighthouse.Backend/.../ForecastRealityCheck/RealityCheckAtThePortTest.cs              (not mine)
+?? Lighthouse.Backend/.../TestHelpers/PortDoubles.cs                                     (not mine)
+?? Scripts/test-timings/tests/test_check_budget_tiers.py                                 (not mine)
+```
+
+None of those files is staged or committed by this step; no guard test, budget file, `Scripts/test-timings` script, workflow, `docs/ci-learnings.md` or `CLAUDE.md` is touched by it.
+
+**C-6 (secret scan).** The examples hold no token-shaped string. `gitleaks detect --no-git` on the skill folder: "no leaks found". The commit hook's own scan runs at each commit with no bypass.
+
+**C-7 (skill review, `nw-skill-reviewer`, model `haiku` = the profile's `reviewer_model`, told that an untagged example is correct here).**
+
+- Round 1: NEEDS_REVISION, no critical point. One high (checklist item 11 named `pnpm test:fast`, which skips `.test.tsx`; now `pnpm test:fast --changed` for logic tests and `pnpm test --changed` after a component edit), several medium and low
+  (fake-clock restore added in rule 4, an empty example body in rule 5 given a real line, a cleanup added to rule 6, the dimmed state asserted in rule 7, item 9 now requires `git diff` to show the file restored, the read mode spelled out, the planned line moved out of the tick list).
+- Round 2: NEEDS_REVISION, no critical point. One high (the tag rule would have led an agent to strip the Playwright title tags the package scripts filter on: the rule now names them as real and kept) and four low (rule 7 source label, item 5 wording
+  with `shouldAdvanceTime`, the full path of `slowTests.ts`, the pyramid figures marked "a target picture, not a measurement"). All five were applied after round 2; the rule allows no third round, and no critical point was open in either round.
+  The pyramid sections and the tag section carry no example of their own, left as they are: the checklist and the layer rule carry them.
