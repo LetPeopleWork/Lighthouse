@@ -442,3 +442,25 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - Persistence adapters moving with the module: chosen; every later context has repositories, so the pilot prices it.
 - Test relocation as a pure-move slice: chosen; module-named test folders serve later per-module test selection.
 - Extra patterns not needed: events and outbox (no new cross-context reaction), unit of work, value objects, optimistic concurrency (no data change), strategy (no new variation).
+
+## Wave: DEVOPS / [REF] Platform lens (AFK, 2026-11-08)
+
+Platform risk is low: S02 moves code between namespaces and changes no route, schema, configuration, environment or
+deployment. The lens is applied item by item so nothing is skipped silently; no platform-architect dispatch or
+operational review was run, because nothing below needs a design decision.
+
+| Item | Answer |
+|---|---|
+| Environments and toolchain | Unchanged: .NET 10 SDK, the existing `Lighthouse.Backend.Tests` project, no new package. The new folder `Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/` (and `Lighthouse.Backend.Tests/Modules/FlowMetrics/`) matches `BACKEND_REGEX` in `Scripts/test-selection/path-classifier.sh`, so CI's backend selection sees every moved file. It matches no connector regex, as intended. |
+| Deployment and rollback | No migration, no `appsettings` key, no Docker or installer change. The three snapshot entities stay in `Models` and only their repositories move, so the EF model does not change. Slice 5 checks that with `dotnet ef migrations has-pending-model-changes` (after a build, per the migration-DLL build order) and records "no changes". Rollback is a plain revert of the commit range. |
+| Observability | Log categories follow the type's full name, so log lines from the moved services, the filler and the repositories carry `Lighthouse.Backend.Modules.FlowMetrics.*` instead of `Lighthouse.Backend.Services.*`. No `Logging:LogLevel` key in `appsettings*.json` names a moved type (only `…Auth.DisabledAuthenticationHandler`, which stays), and no code, script or workflow names a Flow-metrics namespace as a string. Accepted as the one visible change: it is log text, not behaviour. It goes into the gate's lessons. |
+| Recovery and failure modes | Unchanged: the hosted `OverTimeHistoryFiller` keeps its registration, start order and failure handling, only its namespace moves. The handler-order pin (R6) proves the two refresh events keep their order. |
+| CI cost | Slices 4 and 5 edit `Program.cs`. That file is on `SHARED_REGEX`, so the push that carries them runs the whole backend suite, live connectors included. Nothing is pushed in this AFK run (`push: never`), so this lands once, on the maintainer's push. Expect the longer job and check the known live-connector flakes in `docs/ci-learnings.md` before reading a red run as a regression. |
+| Release-build rules | CI runs `dotnet test -c Release`. The new rules (R1 to R5) use `IlDependencies`, which sees async edges in Release. Slice 6 runs the Architecture tests once with `-c Release` and includes an async-only offender fixture. |
+| Test-time budgets and test lists | `Scripts/test-timings/test-time-budget.json` lists no Flow-metrics class, and `TestHostUseGuardTest.HostUsersStillToMove` names none of the unit tests slice 7 relocates (it lists only `API.Integration.*` metrics tests, which stay, and the `DeliveryMetric*` tests, which stay per D-5). So slice 7 edits neither list. If a relocated class turns out to be on either list, its key moves with it in the same commit. |
+| Mutation (slices 0 and 8) | Stryker.NET with whole-file `mutate` entries, never line spans. A `test-case-filter` that names the metrics unit tests and excludes `API.Integration` and `Integration.Containers`, and `coverageAnalysis: perTest` with incremental mode for cheap re-runs. Slice 0 runs on the old paths and slice 8 on `Modules/FlowMetrics/**`, so the per-file comparison maps old path to new path by type name. Prove the scope from `reports/mutation-report.json`, not from the created-count. Long runs go through `nohup`, not a 60-minute background cap. |
+| Usage-data event | N/A, because no feature becomes usable or used differently (same as the DESIGN cross-cutting row). |
+| Verification commands | `Lighthouse.Backend/Test-Fast.ps1` (fast loop); `dotnet build` (zero warnings); the filtered `dotnet test` from CLAUDE.md (gate); `dotnet test -c Release --filter FullyQualifiedName~Architecture` (rules in CI's configuration); `dotnet ef migrations has-pending-model-changes` (slice 5). No frontend command: no frontend file changes. |
+
+DEVOPS hands DISTILL no new constraint beyond the Release-build rule check, the EF no-change check, and the
+old-path to new-path mapping of the mutation comparison.
