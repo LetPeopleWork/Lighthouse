@@ -106,9 +106,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         /// <summary>
-        /// The feature's central discipline, held at the wire rather than in review: the windows that
-        /// behaved alike come back as a set in the ladder's own order, and nothing in the answer carries a
-        /// number per window that anything could be sorted by.
+        /// The feature's central discipline: the windows that behaved alike come back as a set in the
+        /// ladder's own order. That nothing on the wire carries a number per window, or a sentence, is
+        /// checked on the serialised answer by RealityCheckWireContractTest.
         /// </summary>
         [TestCase(30)]
         [TestCase(45)]
@@ -119,12 +119,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
             var answer = await TheAnswerTo(team);
 
-            using (Assert.EnterMultipleScope())
-            {
-                ThenTheWindowsThatBehavedAlikeComeBackInTheLaddersOwnOrder(answer);
-                ThenNothingInTheAnswerCarriesANumberPerWindow(answer);
-                ThenTheAnswerCarriesFactsAndNoSentence(answer);
-            }
+            ThenTheWindowsThatBehavedAlikeComeBackInTheLaddersOwnOrder(answer);
         }
 
         [Test]
@@ -189,7 +184,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             {
                 ThenTheRegionIs(answer, StandardWindowDays, SomeWindowsSound);
                 ThenTheTeamsSettingIs(answer, 45, Outside);
-                ThenNothingInTheAnswerCarriesANumberPerWindow(answer);
             }
         }
 
@@ -495,7 +489,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             {
                 ThenTheCheckCouldNotBeEvaluatedBecause(answer.Cell(30, 28), DegenerateForecast);
                 ThenThisManyChecksCouldBeEvaluated(answer, 15);
-                ThenNoNegativeNumberReachesTheAnswer(answer);
             }
         }
 

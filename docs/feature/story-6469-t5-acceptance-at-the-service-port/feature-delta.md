@@ -1647,3 +1647,20 @@ The test names of the whole family, before and after, are the same list; the cla
 **Runs.** Family filter (`ForecastRealityCheck|RealityCheckWireContractTest`): 132 passed. `Test-Fast.ps1`: 9545 passed. `dotnet build Lighthouse.Backend`: 0 warnings.
 
 **Known gap, unchanged.** B6 pins the names `filterApplied` and `excludedSummary` and that they read as a boolean and as null or text; their values come from the controller and stay unpinned, recorded for #6508.
+
+## Wave: DELIVER / [REF] Slice B: four rows give up their walks (step 02-04, 2026-11-08)
+
+**What changed.** The four `Slice01` rows split in 02-03 drop the JSON walks `RealityCheckWireContractTest` now holds and keep their ids and their business values. `Slice01` stays on the host base. The three steps that only walked (`ThenNothingInTheAnswerCarriesANumberPerWindow`, `ThenTheAnswerCarriesFactsAndNoSentence`, `ThenNoNegativeNumberReachesTheAnswer`), the three walkers and `WordsThatWouldNameAWinner` had no other caller in `Slice01` and are removed from its specifications; the contract class is untouched.
+
+**Id table for this step.** Class `API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest` for every row; contract rows in `Contracts.Forecasting.RealityCheckWireContractTest`.
+
+| Slice01 row (id kept) | Business values kept | Walk given up | Held by |
+|---|---|---|---|
+| `No_part_of_the_answer_can_rank_one_sampling_window_above_another(30)` | the ladder order | rank walk, no-sentence ("Brown") walk | B9 `No_part_of_the_answer_on_the_wire_can_rank_a_window(30)`, passed |
+| `No_part_of_the_answer_can_rank_one_sampling_window_above_another(45)` | the ladder order | rank walk, no-sentence ("Brown") walk | B10 `No_part_of_the_answer_on_the_wire_can_rank_a_window(45)`, passed |
+| `The_windows_either_side_of_an_off_ladder_setting_can_hold_up_when_the_setting_itself_does_not` | the region (`StandardWindowDays`, some sound), the setting (45, outside) | rank walk | B11 `The_windows_of_an_off_ladder_setting_rank_nothing_on_the_wire`, passed |
+| `A_check_whose_forecast_could_not_be_worked_out_is_named_for_that_reason_and_counts_for_nothing` | `DegenerateForecast` on 30d/28d, 15 evaluated | negative-number walk | B12 `A_check_with_no_forecast_puts_no_negative_number_on_the_wire`, passed |
+
+**Red, re-run before the removal,** the three 02-03 breaks applied together to the contract class, then restored (`cmp` clean): `Days` among the winner words reds B9, B10 and B11 (`$.standardWindowDays`, `$.sampledWindowDays`, ...); `Sufficient` for `Brown` reds B9 and B10 (the second failure in their scope, "the answer carries facts; ..."); numbers `>= 0` reds B12 (`$.teamId = 1`, `$.standardWindowDays[0] = 14`, ...). 4 failed, 17 passed.
+
+**TRX, by class name:** `Slice01...Test` 51 rows, all passed; `RealityCheckWireContractTest` 21 rows, all passed. `Test-Fast.ps1`: 9545 passed. `dotnet build Lighthouse.Backend`: 0 warnings. The diff touches the four rows and the specifications' now-unused members only (4 insertions, 138 deletions); the other 47 rows are unchanged.

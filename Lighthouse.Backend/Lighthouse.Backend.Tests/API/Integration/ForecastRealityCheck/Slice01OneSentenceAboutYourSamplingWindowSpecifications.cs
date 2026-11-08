@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
@@ -45,14 +43,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         private static readonly string[] EveryReasonACheckCanGive = [Sufficient, TooFewActiveDays, DegenerateForecast];
 
         private static readonly string[] EveryWayACheckCanLand = [OverForecast, WithinBand, UnderForecast];
-
-        /// <summary>
-        /// Words whose presence in a property name would mean the answer names, orders or bounds a
-        /// winner - or ships a rendered clause in one instance's vocabulary.
-        /// </summary>
-        private static readonly string[] WordsThatWouldNameAWinner =
-            ["recommend", "best", "rank", "winner", "bound", "windowScore", "sentence", "clause"];
-
         // --- Given ---
 
         private int GivenOceanExplorerFinishingWorkEveryDay() => GivenATeamFinishingWorkEveryDay("Ocean Explorer", 30);
@@ -389,24 +379,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        private static void ThenNothingInTheAnswerCarriesANumberPerWindow(RealityCheckAnswer answer)
-        {
-            var findings = new List<string>();
-            InspectForAnythingThatCouldRankAWindow(answer.Root, "$", findings);
-
-            Assert.That(findings, Is.Empty,
-                "no part of the answer may carry a number per sampling window: with nothing to sort by, no ranking is representable");
-        }
-
-        private static void ThenTheAnswerCarriesFactsAndNoSentence(RealityCheckAnswer answer)
-        {
-            var credited = new List<string>();
-            CollectTextMentioning(answer.Root, "Brown", credited);
-
-            Assert.That(credited, Is.Empty,
-                "the answer carries facts; any mention of the source method belongs beside a statement of where this check departs from it, which is copy the browser composes");
-        }
-
         // --- Then: which levels held ---
 
         private static void ThenEveryCheckScoredOneWorkItemForEachDayOfItsHorizon(RealityCheckAnswer answer)
@@ -570,15 +542,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        private static void ThenNoNegativeNumberReachesTheAnswer(RealityCheckAnswer answer)
-        {
-            var negatives = new List<string>();
-            CollectNegativeNumbers(answer.Root, "$", negatives);
-
-            Assert.That(negatives, Is.Empty,
-                "the engine's 'no reading' marker is minus one, and it must never reach a count, a band or a cell");
-        }
-
         // --- Then: Teams without a rolling window ---
 
         private static void ThenTheOwnSettingIsReportedAsNotTested(RealityCheckAnswer answer, string reason)
@@ -660,96 +623,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 Assert.That(answer.Cells.Where(cell => cell.Outcome is not null).Select(cell => cell.Outcome), Is.All.AnyOf(EveryWayACheckCanLand));
                 Assert.That(answer.Cells.Where(cell => !cell.IsSufficient), Is.Not.Empty,
                     "this Team's two-week windows are too thin, so the closed set is exercised on both sides");
-            }
-        }
-
-        // --- Walking the answer ---
-
-        private static void InspectForAnythingThatCouldRankAWindow(JsonElement element, string path, List<string> findings)
-        {
-            if (element.ValueKind == JsonValueKind.Array)
-            {
-                var index = 0;
-                foreach (var item in element.EnumerateArray())
-                {
-                    InspectForAnythingThatCouldRankAWindow(item, $"{path}[{index++}]", findings);
-                }
-
-                return;
-            }
-
-            if (element.ValueKind != JsonValueKind.Object)
-            {
-                return;
-            }
-
-            var names = element.EnumerateObject().Select(property => property.Name).ToList();
-
-            if (names.Contains("samplingWindowDays") && !names.Contains("horizonDays"))
-            {
-                findings.Add($"{path} is about one sampling window rather than one check");
-            }
-
-            findings.AddRange(names
-                .Where(name => int.TryParse(name, out _))
-                .Select(name => $"{path}.{name} keys something by a number"));
-
-            findings.AddRange(names
-                .Where(name => WordsThatWouldNameAWinner.Any(word => name.Contains(word, StringComparison.OrdinalIgnoreCase)))
-                .Select(name => $"{path}.{name}"));
-
-            foreach (var property in element.EnumerateObject())
-            {
-                InspectForAnythingThatCouldRankAWindow(property.Value, $"{path}.{property.Name}", findings);
-            }
-        }
-
-        private static void CollectTextMentioning(JsonElement element, string word, List<string> found)
-        {
-            switch (element.ValueKind)
-            {
-                case JsonValueKind.String when (element.GetString() ?? string.Empty).Contains(word, StringComparison.OrdinalIgnoreCase):
-                    found.Add(element.GetString()!);
-                    break;
-                case JsonValueKind.Array:
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        CollectTextMentioning(item, word, found);
-                    }
-
-                    break;
-                case JsonValueKind.Object:
-                    foreach (var property in element.EnumerateObject())
-                    {
-                        CollectTextMentioning(property.Value, word, found);
-                    }
-
-                    break;
-            }
-        }
-
-        private static void CollectNegativeNumbers(JsonElement element, string path, List<string> found)
-        {
-            switch (element.ValueKind)
-            {
-                case JsonValueKind.Number when element.GetDouble() < 0:
-                    found.Add($"{path} = {element.GetRawText()}");
-                    break;
-                case JsonValueKind.Array:
-                    var index = 0;
-                    foreach (var item in element.EnumerateArray())
-                    {
-                        CollectNegativeNumbers(item, $"{path}[{index++}]", found);
-                    }
-
-                    break;
-                case JsonValueKind.Object:
-                    foreach (var property in element.EnumerateObject())
-                    {
-                        CollectNegativeNumbers(property.Value, $"{path}.{property.Name}", found);
-                    }
-
-                    break;
             }
         }
     }
