@@ -1,4 +1,4 @@
-﻿namespace Lighthouse.Backend.Services.Implementation
+﻿namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 {
     /// <summary>
     /// Of every item that was still open at a given age, the share that went on to take longer than

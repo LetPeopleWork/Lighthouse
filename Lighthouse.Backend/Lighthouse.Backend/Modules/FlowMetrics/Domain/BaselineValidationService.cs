@@ -1,4 +1,4 @@
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 {
     public record BaselineValidationResult(bool IsValid, string ErrorMessage = "");
 

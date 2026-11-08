@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Tests.TestDoubles;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation

@@ -7,7 +7,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.Reports;
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.FlowMetrics.Domain;
 using Lighthouse.Backend.Services.Implementation.Reports;
 using Lighthouse.Backend.Services.Implementation.Reports.Metrics;
 using Lighthouse.Backend.Services.Implementation.Authorization;

@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models.Metrics;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.FlowMetrics.Domain
 {
     public record XmRResult(
         int Average,
