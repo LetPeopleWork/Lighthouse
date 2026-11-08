@@ -54,6 +54,8 @@ COLUMNS = {
 }
 UNIT_COLUMN = {stack: columns[0] for stack, columns in COLUMNS.items()}
 DURATION_COLUMN = {stack: columns[2] for stack, columns in COLUMNS.items()}
+OUTCOME_COLUMN = {stack: columns[3] for stack, columns in COLUMNS.items()}
+BACKEND_CATEGORY_COLUMN = trx_to_csv.CSV_COLUMNS[1]
 
 
 @dataclass(frozen=True)
@@ -116,8 +118,12 @@ def seconds_per_unit(stack: str, rows: list[dict[str, str]]) -> dict[str, Decima
     totals: dict[str, Decimal] = {}
     for row in rows:
         unit = unit_of(stack, row[UNIT_COLUMN[stack]])
-        totals[unit] = totals.get(unit, Decimal(0)) + Decimal(row[DURATION_COLUMN[stack]]) / 1000
+        totals[unit] = totals.get(unit, Decimal(0)) + _seconds_of(stack, row)
     return totals
+
+
+def _seconds_of(stack: str, row: dict[str, str]) -> Decimal:
+    return Decimal(row[DURATION_COLUMN[stack]]) / 1000
 
 
 def judge(
@@ -136,11 +142,10 @@ def judge(
     return findings
 
 
-FAST, INTEGRATION = "Fast", "Integration"
+FAST, INTEGRATION, E2E = "Fast", "Integration", "E2E"
+LEFT_OUT, NOT_RUN = "Left out", "Not run"
 COMPONENT_TEST_SUFFIX = ".test.tsx"
 PASSED = "Passed"
-OUTCOME_COLUMN = {stack: columns[3] for stack, columns in COLUMNS.items()}
-BACKEND_CATEGORY_COLUMN = trx_to_csv.CSV_COLUMNS[1]
 
 
 @dataclass(frozen=True)
@@ -169,16 +174,23 @@ def count_tiers(
     stack: str, rows: list[dict[str, str]], connector_classes: set[str]
 ) -> TierCount:
     tiers = {FAST: Tier(), INTEGRATION: Tier()}
-    left_out = not_run = 0
+    set_aside = {LEFT_OUT: 0, NOT_RUN: 0}
     for row in rows:
-        if stack == "backend" and class_of(row[UNIT_COLUMN[stack]]) in connector_classes:
-            left_out += 1
-        elif row[OUTCOME_COLUMN[stack]] != PASSED:
-            not_run += 1
+        place = _place_of(stack, row, connector_classes)
+        if place in tiers:
+            tiers[place] = tiers[place].adding(_seconds_of(stack, row))
         else:
-            tier = _tier_of(stack, row)
-            tiers[tier] = tiers[tier].adding(Decimal(row[DURATION_COLUMN[stack]]) / 1000)
-    return TierCount(tiers[FAST], tiers[INTEGRATION], left_out, not_run)
+            set_aside[place] += 1
+    return TierCount(tiers[FAST], tiers[INTEGRATION], set_aside[LEFT_OUT], set_aside[NOT_RUN])
+
+
+def _place_of(stack: str, row: dict[str, str], connector_classes: set[str]) -> str:
+    """The tier a test counts in, or why it counts in none."""
+    if stack == "backend" and class_of(row[UNIT_COLUMN[stack]]) in connector_classes:
+        return LEFT_OUT
+    if row[OUTCOME_COLUMN[stack]] != PASSED:
+        return NOT_RUN
+    return _tier_of(stack, row)
 
 
 def _tier_of(stack: str, row: dict[str, str]) -> str:
@@ -201,24 +213,30 @@ def judge_fast(
         return []
     findings = []
     for row in rows:
+        if _place_of("backend", row, connector_classes) != FAST:
+            continue
         test = row[UNIT_COLUMN["backend"]]
-        unit = class_of(test)
-        if (
-            unit in connector_classes
-            or row[OUTCOME_COLUMN["backend"]] != PASSED
-            or _tier_of("backend", row) != FAST
-        ):
-            continue
-        seconds = Decimal(row[DURATION_COLUMN["backend"]]) / 1000
-        if unit in ceilings:
-            if seconds > ceilings[unit]:
-                findings.append(Finding(test, seconds, ceilings[unit], CLASS_CEILING))
-            continue
-        breached = limit.breached_by(seconds)
-        if breached:
-            kind = _kind(FAST_TEST_LIMIT, breached)
-            findings.append(Finding(test, seconds, breached.seconds, kind, not breached.enforced))
+        finding = _fast_finding(
+            test, _seconds_of("backend", row), limit, ceilings.get(class_of(test))
+        )
+        if finding:
+            findings.append(finding)
     return findings
+
+
+def _fast_finding(
+    test: str, seconds: Decimal, limit: Limit, class_ceiling: Decimal | None
+) -> Finding | None:
+    # A listed class answers to its own ceiling alone, never to the fast test limit as well.
+    if class_ceiling is not None:
+        if seconds > class_ceiling:
+            return Finding(test, seconds, class_ceiling, CLASS_CEILING)
+        return None
+    breached = limit.breached_by(seconds)
+    if breached is None:
+        return None
+    kind = _kind(FAST_TEST_LIMIT, breached)
+    return Finding(test, seconds, breached.seconds, kind, not breached.enforced)
 
 
 def _kind(limit_kind: str, entry: LedgerEntry) -> str:
@@ -345,51 +363,60 @@ def refuse_an_unlabelled_run(integration: Tier, ledgers: Ledgers, allowlist_name
 def _over(seconds: Decimal) -> str:
     # Rounded up, so a value a fraction over its ceiling never prints as equal to it.
     return f"{seconds.quantize(Decimal('0.001'), rounding=ROUND_UP)}"
+
+
 NOTHING_LABELLED = "nothing labelled yet"
 FIGURES_WIDTH = 41
 CEILING_WIDTH = 31
+TIER_HEADER = f"{'Tier':<12}{'Tests':>7}{'Seconds':>10}{'Mean s':>9}"
 
 
 def tier_report(stack: str, count: TierCount, ledgers: Ledgers = NO_LEDGERS) -> str:
     if stack == "frontend":
-        return "\n".join(
-            [
-                "Frontend test time",
-                f"{'Tier':<12}{'Tests':>7}{'Seconds':>10}{'Mean s':>9}",
-                _tier_line(FAST, count.fast),
-                _tier_line(INTEGRATION, count.integration),
-                _aside_line("Not run", count.not_run, "did not pass, not counted"),
-                "The seconds do not compare across runs: the runner sets them.",
-                _shares_line(count),
-            ]
-        )
-    labelled = count.integration.tests > 0
-    integration = count.integration
-    integration_lines = (
+        return _frontend_report(count)
+    return _backend_report(count, ledgers)
+
+
+def _frontend_report(count: TierCount) -> str:
+    return "\n".join(
         [
-            _tier_line(
-                INTEGRATION,
-                integration,
-                _ceiling_cell("mean", "", ledgers.mean, integration.mean),
-            ),
-            f"{'':<{FIGURES_WIDTH}}"
-            + _ceiling_cell("total", "", ledgers.total, integration.seconds),
+            "Frontend test time",
+            TIER_HEADER,
+            _tier_line(FAST, count.fast),
+            _tier_line(INTEGRATION, count.integration),
+            _not_run_line(count.not_run),
+            "The seconds do not compare across runs: the runner sets them.",
+            _shares_line(count),
         ]
-        if labelled
-        else [_aside_line(INTEGRATION, None, NOTHING_LABELLED)]
     )
+
+
+def _backend_report(count: TierCount, ledgers: Ledgers) -> str:
+    integration = count.integration
+    labelled = integration.tests > 0
     return "\n".join(
         [
             "Backend test time",
-            f"{'Tier':<12}{'Tests':>7}{'Seconds':>10}{'Mean s':>9}   {'Ceiling':<32}Room",
+            f"{TIER_HEADER}   {'Ceiling':<32}Room",
             _tier_line(FAST, count.fast, _fast_cell(ledgers.fast, count.fast)),
-            *integration_lines,
-            _aside_line("Left out", count.left_out, "connector classes, not judged"),
-            _aside_line("Not run", count.not_run, "did not pass, not counted"),
+            *(
+                _integration_lines(integration, ledgers)
+                if labelled
+                else [_aside_line(INTEGRATION, None, NOTHING_LABELLED)]
+            ),
+            _aside_line(LEFT_OUT, count.left_out, "connector classes, not judged"),
+            _not_run_line(count.not_run),
             *_since_the_total_was_set(ledgers.total, integration),
             _shares_line(count) if labelled else _shares_text(NOTHING_LABELLED),
         ]
     )
+
+
+def _integration_lines(integration: Tier, ledgers: Ledgers) -> list[str]:
+    return [
+        _tier_line(INTEGRATION, integration, _ceiling_cell("mean", ledgers.mean, integration.mean)),
+        f"{'':<{FIGURES_WIDTH}}" + _ceiling_cell("total", ledgers.total, integration.seconds),
+    ]
 
 
 def _fast_cell(limit: Limit, fast: Tier) -> str:
@@ -397,8 +424,8 @@ def _fast_cell(limit: Limit, fast: Tier) -> str:
     return _cell(_limit_text("per test", " s", limit), room)
 
 
-def _ceiling_cell(label: str, unit: str, limit: Limit, value: Decimal | None) -> str:
-    return _cell(_limit_text(label, unit, limit), _room(limit, value))
+def _ceiling_cell(label: str, limit: Limit, value: Decimal | None) -> str:
+    return _cell(_limit_text(label, "", limit), _room(limit, value))
 
 
 def _cell(limit_text: str, room: str) -> str:
@@ -442,9 +469,17 @@ def _aside_line(name: str, tests: int | None, note: str) -> str:
     return f"{name:<12}{figure:>7}   {note}"
 
 
+def _not_run_line(tests: int) -> str:
+    return _aside_line(NOT_RUN, tests, "did not pass, not counted")
+
+
+def _share(tests: int, counted: int) -> Decimal:
+    return Decimal(tests * 100) / counted if counted else Decimal(0)
+
+
 def _shares_line(count: TierCount) -> str:
     counted = count.fast.tests + count.integration.tests
-    fast_share = Decimal(count.fast.tests * 100) / counted if counted else Decimal(0)
+    fast_share = _share(count.fast.tests, counted)
     integration_share = Decimal(100) - fast_share if counted else Decimal(0)
     return _shares_text(f"{fast_share:.1f} % fast, {integration_share:.1f} % integration")
 
@@ -453,7 +488,7 @@ def _shares_text(shares: str) -> str:
     return f"This stack only, not the pyramid shares: {shares}. No gate."
 
 
-PYRAMID_LIMITS = {FAST: "90 %", INTEGRATION: "9.5 %", "E2E": "0.5 %"}
+PYRAMID_LIMITS = {FAST: "90 %", INTEGRATION: "9.5 %", E2E: "0.5 %"}
 # A Playwright test is declared with a plain `test(` or with a fixture-extended `testWith<Name>(`,
 # always at the start of a line; `test.describe(` and `test.skip(` declare none.
 E2E_DECLARATION = re.compile(r"^[ \t]*(?:test|testWith[A-Z]\w*)\(", re.MULTILINE)
@@ -464,7 +499,7 @@ def pyramid_report(frontend: TierCount, backend: TierCount, e2e_tests: int) -> s
     tests = {
         FAST: frontend.fast.tests + backend.fast.tests,
         INTEGRATION: frontend.integration.tests + backend.integration.tests,
-        "E2E": e2e_tests,
+        E2E: e2e_tests,
     }
     counted = sum(tests.values())
     unlabelled = (
@@ -477,10 +512,8 @@ def pyramid_report(frontend: TierCount, backend: TierCount, e2e_tests: int) -> s
             "Test pyramid across both stacks and Playwright",
             f"{'Tier':<12}{'Tests':>7}{'Share':>9}   Upper limit",
             *(_pyramid_line(tier, count, counted) for tier, count in tests.items()),
-            _aside_line("Left out", backend.left_out, "connector classes, not counted"),
-            _aside_line(
-                "Not run", frontend.not_run + backend.not_run, "did not pass, not counted"
-            ),
+            _aside_line(LEFT_OUT, backend.left_out, "connector classes, not counted"),
+            _not_run_line(frontend.not_run + backend.not_run),
             *unlabelled,
             "E2E counts the test declarations in the Playwright specs, not what ran. No gate.",
         ]
@@ -488,8 +521,7 @@ def pyramid_report(frontend: TierCount, backend: TierCount, e2e_tests: int) -> s
 
 
 def _pyramid_line(tier: str, tests: int, counted: int) -> str:
-    share = Decimal(tests * 100) / counted if counted else Decimal(0)
-    return f"{tier:<12}{tests:>7,}{f'{share:.1f} %':>9}   {PYRAMID_LIMITS[tier]}"
+    return f"{tier:<12}{tests:>7,}{f'{_share(tests, counted):.1f} %':>9}   {PYRAMID_LIMITS[tier]}"
 
 
 def e2e_tests(spec_root: Path) -> int:

@@ -92,7 +92,7 @@ class TierWorkspace(CheckWorkspace):
 
 
 REPORT_LINE = re.compile(
-    r"^(?P<tier>Fast|Integration|Left out|Not run)\s+(?P<tests>[\d,]+)"
+    r"^(?P<tier>Fast|Integration|E2E|Left out|Not run)\s+(?P<tests>[\d,]+)"
     r"(?:\s+(?P<seconds>[\d,]+\.\d)\s+(?P<mean>\d+\.\d{3}))?"
 )
 

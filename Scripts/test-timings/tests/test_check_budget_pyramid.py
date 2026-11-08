@@ -95,8 +95,7 @@ class PyramidTestCase(TierReportTestCase):
         return "\n".join(lines[start : lines.index(NO_GATE, start) + 1])
 
     def e2e_of(self, report):
-        line = next(line for line in report.splitlines() if line.startswith("E2E "))
-        return int(line.split()[1].replace(",", ""))
+        return self.figures_of(report)["E2E"][0]
 
     def steady_pyramid(self):
         frontend = self.workspace.frontend_of(fast_tests=2, component_tests=1)
