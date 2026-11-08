@@ -1,7 +1,12 @@
+using System.Collections.Concurrent;
+using System.Data.Common;
+using System.Text.RegularExpressions;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Tests.TestDoubles;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
@@ -23,11 +28,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public ServicePortHarness(Action<IServiceCollection>? registerWhatThePortNeeds = null)
         {
             DatabasePath = Path.Combine(Path.GetTempPath(), $"service-port-{Guid.NewGuid():N}.db");
+            Writes = new DatabaseWriteWatch(DatabasePath);
             services = ComposeTheContainer(registerWhatThePortNeeds);
             TestDatabaseTemplate.CopyTo(DatabasePath);
+            Writes.StartWatchingTheFile();
         }
 
         public string DatabasePath { get; }
+
+        /// <summary>Sees what is written to this database: by its own contexts, and by any other connection.</summary>
+        public DatabaseWriteWatch Writes { get; }
 
         /// <summary>One step of a scenario. Each scope has its own context, so a step reads what is stored.</summary>
         public IServiceScope NewScope()
@@ -50,6 +60,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             // cannot be deleted on Windows.
             scopesHandedOut.ForEach(scope => scope.Dispose());
             services.Dispose();
+            Writes.Dispose();
 
             foreach (var file in new[] { DatabasePath, $"{DatabasePath}-wal", $"{DatabasePath}-shm", $"{DatabasePath}-journal" })
             {
@@ -66,7 +77,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             collection.AddDbContext<LighthouseAppContext>(options =>
             {
                 options.UseSqlite($"DataSource={DatabasePath};Pooling=False", DatabaseConfigurator.ConfigureSqlite);
-                options.AddInterceptors(NoWaitingForTheDisk.Instance);
+                options.AddInterceptors(NoWaitingForTheDisk.Instance, Writes);
             });
             registerWhatThePortNeeds?.Invoke(collection);
 
@@ -92,5 +103,91 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 }
             }
         }
+    }
+
+    /// <summary>What was written while a step ran.</summary>
+    public sealed record WritesSeen(IReadOnlyList<string> StatementsThatWrote, bool TheFileChanged);
+
+    /// <summary>
+    /// Two views of what a step writes. The command counter names each statement that writes, but it sees only the
+    /// contexts built on the harness's options: a second context on its own connection, or a bare connection, passes
+    /// it by. So a watcher connection also reads SQLite's data version, which moves whenever any other connection
+    /// commits to the file. The watcher shares no cache with anyone, as under a shared cache the version would not move.
+    /// </summary>
+    public sealed partial class DatabaseWriteWatch(string databasePath) : DbCommandInterceptor, IDisposable
+    {
+        private readonly ConcurrentQueue<string> statementsThatWrote = new();
+
+        private readonly SqliteConnection watcher = new($"Data Source={databasePath};Pooling=False;Cache=Private");
+
+        public WritesSeen During(Action step)
+        {
+            var versionBefore = StartAfresh();
+            step();
+            return WhatWasWrittenSince(versionBefore);
+        }
+
+        public async Task<WritesSeen> DuringAsync(Func<Task> step)
+        {
+            var versionBefore = StartAfresh();
+            await step();
+            return WhatWasWrittenSince(versionBefore);
+        }
+
+        public override InterceptionResult<int> NonQueryExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<int> result)
+        {
+            NoteItIfItWrites(command);
+            return result;
+        }
+
+        public override ValueTask<InterceptionResult<int>> NonQueryExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<int> result, CancellationToken cancellationToken = default)
+        {
+            NoteItIfItWrites(command);
+            return ValueTask.FromResult(result);
+        }
+
+        public override InterceptionResult<DbDataReader> ReaderExecuting(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result)
+        {
+            NoteItIfItWrites(command);
+            return result;
+        }
+
+        public override ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(DbCommand command, CommandEventData eventData, InterceptionResult<DbDataReader> result, CancellationToken cancellationToken = default)
+        {
+            NoteItIfItWrites(command);
+            return ValueTask.FromResult(result);
+        }
+
+        public void Dispose() => watcher.Dispose();
+
+        internal void StartWatchingTheFile() => watcher.Open();
+
+        private long StartAfresh()
+        {
+            statementsThatWrote.Clear();
+            return DataVersion();
+        }
+
+        private WritesSeen WhatWasWrittenSince(long versionBefore)
+            => new([.. statementsThatWrote], DataVersion() != versionBefore);
+
+        private long DataVersion()
+        {
+            using var pragma = watcher.CreateCommand();
+            pragma.CommandText = "PRAGMA data_version;";
+            return (long)pragma.ExecuteScalar()!;
+        }
+
+        private void NoteItIfItWrites(DbCommand command)
+        {
+            if (AStatementThatWrites().IsMatch(command.CommandText))
+            {
+                statementsThatWrote.Enqueue(command.CommandText);
+            }
+        }
+
+        // EF sends a batch as one command, and any statement in it may be the write.
+        [GeneratedRegex(@"(?:^|;)\s*(?:INSERT|UPDATE|DELETE|REPLACE)\b", RegexOptions.IgnoreCase)]
+        private static partial Regex AStatementThatWrites();
     }
 }

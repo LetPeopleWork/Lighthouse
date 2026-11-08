@@ -4,6 +4,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -164,6 +165,109 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             var failure = Assert.Throws<InvalidOperationException>(() => scope.ServiceProvider.GetRequiredService<PortThatReadsTheLicence>());
 
             Assert.That(failure.Message, Does.Contain(nameof(ILicenseService)));
+        }
+
+        [Test]
+        public void A_commit_from_a_connection_the_harness_never_built_is_seen_through_the_file_alone()
+        {
+            using var harness = new ServicePortHarness();
+            AScratchTableIn(harness);
+
+            var writes = harness.Writes.During(() =>
+            {
+                using var stranger = new SqliteConnection($"Data Source={harness.DatabasePath};Pooling=False");
+                stranger.Open();
+                using var command = stranger.CreateCommand();
+                command.CommandText = "UPDATE Scratch SET Value = 2";
+                command.ExecuteNonQuery();
+            });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writes.TheFileChanged, Is.True, "the data version did not move on a commit from another connection");
+                Assert.That(writes.StatementsThatWrote, Is.Empty, "the counter sees only the contexts the harness builds");
+            }
+        }
+
+        [Test]
+        public void A_step_that_only_reads_is_seen_writing_nothing()
+        {
+            using var harness = new ServicePortHarness();
+            ATeamIsSavedThrough(harness);
+
+            var writes = harness.Writes.During(() =>
+            {
+                using var scope = harness.NewScope();
+                var context = ContextOf(scope);
+                _ = context.Teams.ToList();
+                context.Database.ExecuteSqlRaw("SELECT 1");
+            });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writes.TheFileChanged, Is.False);
+                Assert.That(writes.StatementsThatWrote, Is.Empty);
+            }
+        }
+
+        [Test]
+        public void A_Team_saved_through_a_scope_is_named_by_its_insert()
+        {
+            using var harness = new ServicePortHarness();
+
+            var writes = harness.Writes.During(() => ATeamIsSavedThrough(harness));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writes.StatementsThatWrote, Has.Some.Contains("INSERT INTO \"Teams\""));
+                Assert.That(writes.TheFileChanged, Is.True);
+            }
+        }
+
+        [TestCase("INSERT INTO Scratch (Value) VALUES (3)", false, false)]
+        [TestCase("UPDATE Scratch SET Value = 4", false, true)]
+        [TestCase("DELETE FROM Scratch", false, false)]
+        [TestCase("INSERT INTO Scratch (Value) VALUES (3) RETURNING Value", true, true)]
+        [TestCase("UPDATE Scratch SET Value = 4 RETURNING Value", true, false)]
+        [TestCase("DELETE FROM Scratch RETURNING Value", true, true)]
+        public async Task A_statement_that_writes_is_named_whether_it_returns_rows_or_not(string statement, bool returnsRows, bool sentAsync)
+        {
+            using var harness = new ServicePortHarness();
+            AScratchTableIn(harness);
+            using var scope = harness.NewScope();
+            var database = ContextOf(scope).Database;
+
+            var writes = await harness.Writes.DuringAsync(async () =>
+            {
+                switch (returnsRows, sentAsync)
+                {
+                    case (false, false):
+                        database.ExecuteSqlRaw(statement);
+                        break;
+                    case (false, true):
+                        await database.ExecuteSqlRawAsync(statement);
+                        break;
+                    case (true, false):
+                        _ = database.SqlQueryRaw<int>(statement).ToList();
+                        break;
+                    case (true, true):
+                        _ = await database.SqlQueryRaw<int>(statement).ToListAsync();
+                        break;
+                }
+            });
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writes.StatementsThatWrote, Has.Count.EqualTo(1));
+                Assert.That(writes.StatementsThatWrote, Has.All.Contains(statement));
+                Assert.That(writes.TheFileChanged, Is.True);
+            }
+        }
+
+        private static void AScratchTableIn(ServicePortHarness harness)
+        {
+            using var scope = harness.NewScope();
+            ContextOf(scope).Database.ExecuteSqlRaw("CREATE TABLE Scratch (Value INTEGER NOT NULL); INSERT INTO Scratch (Value) VALUES (1);");
         }
 
         private static LighthouseAppContext ContextOf(IServiceScope scope)

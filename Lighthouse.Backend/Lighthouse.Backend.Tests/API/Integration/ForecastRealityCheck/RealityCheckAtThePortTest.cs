@@ -111,6 +111,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected RealityCheckSeedSteps.TeamAsStored WhatIsStoredFor(int teamId) => seed.WhatIsStoredFor(teamId);
 
+        protected DatabaseWriteWatch DatabaseWrites => harness.Writes;
+
         private void RegisterWhatTheCheckReads(IServiceCollection services)
         {
             var forecasts = Forecasts;

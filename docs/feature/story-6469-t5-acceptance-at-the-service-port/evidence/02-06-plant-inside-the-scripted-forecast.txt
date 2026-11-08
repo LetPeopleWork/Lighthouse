@@ -1,0 +1,21 @@
+Plant: the scripted forecast's registration, resolved during Run, sends UPDATE Teams SET Name = Name through the scope's own LighthouseAppContext (the harness's options, so the counter sees it).
+
+  Failed Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items [2 s]
+  Error Message:
+     the check sent a statement that writes
+Assert.That(writes.StatementsThatWrote, Is.Empty)
+  Expected: <empty>
+  But was:  < "UPDATE Teams SET Name = Name" >
+
+  Stack Trace:
+     at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs:line 552
+   at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs:line 540
+
+1)    at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.ThenNothingWasWrittenToTheDatabase(WritesSeen writes) in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs:line 646
+   at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs:line 551
+
+
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+
+The file check stayed quiet here: an UPDATE to the same value rewrites no byte, so nothing committed changed the file. Today's check (WhatIsStoredFor) stayed green too; only the counter named it.

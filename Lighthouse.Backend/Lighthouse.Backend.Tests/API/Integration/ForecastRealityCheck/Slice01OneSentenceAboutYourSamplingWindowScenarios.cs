@@ -542,12 +542,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             GivenTheFourteenDayWindowOverForecastInThreeOfItsFourChecks();
             var storedBefore = WhatIsStoredFor(deepCurrent);
 
-            var answer = TheAnswerTo(deepCurrent);
+            var (answer, writes) = TheAnswerWatchingEveryWriteTo(deepCurrent);
 
             using (Assert.EnterMultipleScope())
             {
                 ThenTheTeamsSettingIs(answer, 14, Outside);
                 ThenNothingAboutTheTeamChanged(deepCurrent, storedBefore);
+                ThenNothingWasWrittenToTheDatabase(writes);
             }
         }
     }

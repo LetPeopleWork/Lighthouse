@@ -1,0 +1,21 @@
+Plant: a second LighthouseAppContext on its own connection (Data Source=<harness file>;Pooling=False), built in the scripted forecast's registration, runs: CREATE TABLE Planted (Value INTEGER); INSERT INTO Planted (Value) VALUES (1);
+
+  Failed Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items [2 s]
+  Error Message:
+     the database file changed while the check ran, so something wrote through a connection the counter cannot see
+Assert.That(writes.TheFileChanged, Is.False)
+  Expected: False
+  But was:  True
+
+  Stack Trace:
+     at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs:line 552
+   at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs:line 540
+
+1)    at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.ThenNothingWasWrittenToTheDatabase(WritesSeen writes) in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs:line 647
+   at Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest.Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/Slice01OneSentenceAboutYourSamplingWindowScenarios.cs:line 551
+
+
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+
+Earlier attempt, same place: UPDATE Teams SET Name = Name through the second context. The row stayed green (Passed: 1): SQLite rewrote no byte for an unchanged value, so no commit changed the file and data_version rightly stayed put. The counter could not see that context either.

@@ -1692,3 +1692,24 @@ The test names of the whole family, before and after, are the same list; the cla
 - `ForecastRealityCheckAcceptanceTest` now serves `Slice06` and the skeleton only, and still carries members no subclass reads: `NotTested`, `NotEvaluated`, `UsesFixedDates`, `NotAPositiveLength`, `StandardWindowDays`, `GivenATeamForecastingFromFixedDates`, `GivenTheTeamFinishedAWorkItemEvery`, `GivenTheTeamFinishedWorkItemsOn`. The file is outside this step's list; trimming them is a follow-up.
 - The pinned starting number and the run count now sit in both bases. Moving them into `RealityCheckForecastScript` beside `Today` would make one place; that file is outside this step's list.
 - `RealityCheckWireContractTest.AdjustTheHost` still repeats the host base's service swaps; not unified here.
+
+## Wave: DELIVER / [REF] Slice B: the no-write row sees the whole database (step 02-06, 2026-11-08)
+
+**What changed.** `ServicePortHarness` now carries a `DatabaseWriteWatch` (`harness.Writes`), registered as an interceptor on every context the harness builds, beside `NoWaitingForTheDisk`. `During(step)` / `DuringAsync(step)` return `WritesSeen`: the statements that wrote (INSERT, UPDATE, DELETE or REPLACE at the start of any statement in the command, on the non-query and reader hooks, sync and async), and whether `PRAGMA data_version` moved on a watcher connection of its own (`Pooling=False;Cache=Private`, opened after the template copy, closed before the files are deleted). The no-write row keeps today's check (`WhatIsStoredFor`) and adds both: it asks through `TheAnswerWatchingEveryWriteTo` and ends with `ThenNothingWasWrittenToTheDatabase`. The row's id is unchanged.
+
+**`data_version` under these settings: proven, no fallback.** `ServicePortHarnessTest.A_commit_from_a_connection_the_harness_never_built_is_seen_through_the_file_alone`: a bare `SqliteConnection` the harness never built runs `UPDATE Scratch SET Value = 2`; the file check sees it, the counter sees nothing. With the comparison forced to `false` that row and the seven write rows went red (8 of 18); restored. The byte-compare fallback was not needed.
+
+**Counter rows** (`ServicePortHarnessTest`): `A_statement_that_writes_is_named_whether_it_returns_rows_or_not`, six rows, INSERT, UPDATE and DELETE each once without rows returned (`ExecuteSqlRaw[Async]`, the non-query hook) and once with `RETURNING Value` (`SqlQueryRaw<int>`, the reader hook), sync and async alternating so all four overrides are hit; each names its statement and moves the file. `A_Team_saved_through_a_scope_is_named_by_its_insert` (EF's own `SaveChanges`). `A_step_that_only_reads_is_seen_writing_nothing` (a LINQ read and a `SELECT 1` through the non-query hook). With `UPDATE` dropped from the pattern, exactly the two UPDATE rows went red; restored.
+
+**Plants** (in `RealityCheckAtThePortTest`'s shipped-engine registration of the scripted forecast, resolved during Run; removed, the file is as committed). Output in `evidence/02-06-plant-*.txt`.
+- Inside the scripted forecast, through the scope's own context, `UPDATE Teams SET Name = Name`: red by the counter, `But was: < "UPDATE Teams SET Name = Name" >`. Today's check stayed green, and so did the file check: SQLite rewrites no byte for an unchanged value.
+- Through a second `LighthouseAppContext` on its own connection, `CREATE TABLE Planted ...; INSERT INTO Planted ...`: red by the file check alone, `Assert.That(writes.TheFileChanged, Is.False) But was: True`. The same-value `UPDATE` through that context stayed green, for the same reason as above: a write that changes nothing in the file is outside what the file check can see, and harmless.
+
+**Reach.** The file check sees any commit to this file from any connection. It does not see a write rolled back before commit, a write that changes no byte, or a write to another store; the port holds no other.
+
+**Runs** (after the refactor of `During`). Every class matching `RealityCheck` or `Slice0`: 1577 passed. `Slice01` + `ServicePortHarnessTest` by class, TRX (`evidence/02-06.trx`, local only): 69 passed (51 + 18). Guards `TestTierGuardTest`, `TestHostPerFixtureGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`: 125 passed. `Test-Fast.ps1`: 9605 passed (9596 + 9). `dotnet build Lighthouse.Backend`: 0 warnings, 0 errors.
+
+**For review.**
+- `RealityCheckAtThePortTest` gained one line, `protected DatabaseWriteWatch DatabaseWrites => harness.Writes;`. It was outside this step's file list, but the harness is private to the port base and the specifications cannot reach it otherwise.
+- `Slice04` has no no-write row; the watch is there for any port row that wants it.
+- The counter stays always on; `During` clears what it holds, so the seed's writes before the step are not counted.

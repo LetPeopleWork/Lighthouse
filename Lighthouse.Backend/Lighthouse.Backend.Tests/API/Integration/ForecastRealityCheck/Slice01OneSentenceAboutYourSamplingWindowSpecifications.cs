@@ -1,3 +1,5 @@
+using Lighthouse.Backend.Tests.TestHelpers;
+
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
@@ -627,6 +629,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         {
             Assert.That(WhatIsStoredFor(teamId), Is.EqualTo(before),
                 "the check reads; it never writes a Team setting, a Work Item or anything else");
+        }
+
+        private (RealityCheckAnswer Answer, WritesSeen Writes) TheAnswerWatchingEveryWriteTo(int teamId)
+        {
+            RealityCheckAnswer? answer = null;
+            var writes = DatabaseWrites.During(() => answer = TheAnswerTo(teamId));
+
+            return (answer!, writes);
+        }
+
+        private static void ThenNothingWasWrittenToTheDatabase(WritesSeen writes)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writes.StatementsThatWrote, Is.Empty, "the check sent a statement that writes");
+                Assert.That(writes.TheFileChanged, Is.False,
+                    "the database file changed while the check ran, so something wrote through a connection the counter cannot see");
+            }
         }
 
         private static void ThenEveryReasonAndOutcomeComesFromItsClosedSet(RealityCheckAnswer answer)
