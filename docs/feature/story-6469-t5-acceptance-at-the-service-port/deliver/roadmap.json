@@ -265,7 +265,7 @@
             "B13 is seen red on a scoped service planted as a singleton, then green; the named doubles are exempt from the implementation-type comparison only",
             "Id table: 66 ids kept, 15 changed class as mapped, 7 new wire rows and B13 named; the family's table adds up to 81",
             "Deliberate break: ForecastDataSufficiencyPolicy.MinimumActiveDays off by one turns Five_days_with_finished_work_is_enough_to_check_and_four_is_not red at the port; output kept; reverted",
-            "The family's summed TRX seconds, wherever rows landed and with new rows, fall against 01-01's; each class run alone 3 times stays green",
+            "The family's summed seconds (TRX plus the timer's one_time_setup_ms for every host fixture, on both sides), wherever rows landed and with new rows, fall against the post-ced6e04ac re-baseline taken the same way; each class run alone 3 times stays green",
             "PB, clause A with LIGHTHOUSE_FIXTURE_TIMING=1: every line explained, and summed host_build_count no more than 619 plus WireContractTestTest's fixtures"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesWireContractTest.cs",
@@ -429,7 +429,7 @@
             "Each of E1 to E11 is recorded as needed or not, with a reason: every pin this class holds through the tab's JSON (cycleStart, cycleEnd, nextRefinementDate, range, no-number reasons) names the host row that keeps it, or a needed row that takes it over",
             "The tables say how E10's inputs cover cadence, ready rule and each kind of blackout day",
             "A new deliberate break is named, as LongestComment and the voter-key plant belong to classes that do not move",
-            "Before readings by TRX on one machine: the 22 rows' seconds, and set-up per test; then the review of the re-cut is recorded in the delta"
+            "Before readings on one machine: the 22 rows' seconds as TRX plus the timer's one_time_setup_ms for host fixtures, and set-up per test; then the review of the re-cut is recorded in the delta"
           ],
           "test_file": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
           "scenario_name": "Without_a_number_the_need_names_no_cycle",
@@ -527,7 +527,7 @@
           "criteria": [
             "c and h are measured on this class with the real registrations, with and without the seeders, on one machine, before and after; seeded tables each port reads are listed",
             "Stage 3 is written as a sum, net of new host rows, with F projected at E's c; the verdict against 14.1 s is stated, and under the line the recommendation is to stop",
-            "Guarantee 6: seconds of the 22 rows plus new rows, against 05-01's. If they do not fall, that is reported as a finding, not fixed",
+            "Guarantee 6: seconds of the 22 rows plus new rows (TRX plus the timer's one_time_setup_ms for host fixtures, on both sides), against 05-01's. If they do not fall, that is reported as a finding, not fixed",
             "P2, clause A with the timer: every line on the re-cut id table; host_build_count not above the last count",
             "The question to the maintainer is written in the delta, with the seeders choice, and no further step is started"
           ],

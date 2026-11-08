@@ -1470,6 +1470,8 @@ T6's step 06-03 (`10d691cf9`) landed on trunk after `P0` ran, so it is the paren
 | `Slice06AnOperatorSeesEveryRealityCheckTest` | 10 | 5.048 | 5.280 | 4.910 | 5.048 | 4.557 |
 | **Family** | **81** | | | | **23.613** | **31.784** |
 
+The family sum 23.613 s is **pre-`ced6e04ac`**: then the first row built the host and TRX held it. From `ced6e04ac` on, a host fixture builds in `[OneTimeSetUp]`, which TRX leaves out, so 03-xx compares against a re-baseline on the post-`ced6e04ac` tree that adds the timer's `one_time_setup_ms` (see "Slice A review").
+
 **`c` and `h`, the starting figures on `Slice04`.** The port does not exist yet, so neither can be read as such today; these are what each will be compared with. All from the median round, round 2.
 
 | Figure | Reading | How |
@@ -1527,3 +1529,15 @@ Both means hold the first test's warm-up. `h` is the host's body less the port's
 | `TestSelectionClauseTest.TheCoverageScriptLeavesOutEveryConnectorByDefault`, `TestSelectionClauseTest.TheFastScriptLeavesOutIntegrationAndEveryConnector` | **Foreign:** `b27724342`, a trunk fix to the fast and coverage scripts' filters, landed after `P0` |
 
 Also green, by name: `TestTierGuardTest` 90, `TestHostPerFixtureGuardTest` 18, `SharedHostsDrainTheUpdateQueueGuardTest` 17, `IntegrationFixtureCategoryTest` 2, and the `ForecastRealityCheck` namespace (66 + 5 + 10 + 1 + 2), 220 in all. `dotnet build` Debug and `-c Release`: 0 warnings, 0 errors.
+
+
+## Slice A review (2026-11-08)
+
+Refactor `692af5bd3`: the host and port paths share the own-window rule, the licence stand-in and the pinned day; 125 reality-check tests before and after, build 0 warnings.
+
+Adversarial review (sonnet): NEEDS_REVISION, documentation only. Probes clean: the port tests drive the real `ForecastRealityCheckService` over a real per-scenario database with written-out expectations; host and port assert the same rule; `Today` is pinned once; the out-of-list edit to `ForecastRealityCheckAcceptanceTest.cs` only repoints `Today`.
+
+- **Fixed, medium:** the roadmap's TRX comparisons (03-xx, 05-01, 05-05) now add the timer's `one_time_setup_ms` for host fixtures on both sides. Without it the moved class looks slower and the classes left at the host look faster.
+- **Fixed, medium:** the family baseline 23.613 s is marked pre-`ced6e04ac`; 03-xx re-baselines on the post-`ced6e04ac` tree with `one_time_setup_ms`.
+- **Accepted, low:** `PortDoubles.PremiumLicence()` is a loose mock answering only `CanUsePremiumFeatures`. The host uses the same stand-in, so the two cannot diverge; the free-tier path is out of this Story's scope.
+- **Accepted, low:** `PortDoubles` refresh settings copy the seeder's numbers with nothing tying them. Today they feed only a cache lifetime no assertion reads; revisit if a port scenario starts depending on them.
