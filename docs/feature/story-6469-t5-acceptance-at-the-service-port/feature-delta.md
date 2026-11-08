@@ -1664,3 +1664,31 @@ The test names of the whole family, before and after, are the same list; the cla
 **Red, re-run before the removal,** the three 02-03 breaks applied together to the contract class, then restored (`cmp` clean): `Days` among the winner words reds B9, B10 and B11 (`$.standardWindowDays`, `$.sampledWindowDays`, ...); `Sufficient` for `Brown` reds B9 and B10 (the second failure in their scope, "the answer carries facts; ..."); numbers `>= 0` reds B12 (`$.teamId = 1`, `$.standardWindowDays[0] = 14`, ...). 4 failed, 17 passed.
 
 **TRX, by class name:** `Slice01...Test` 51 rows, all passed; `RealityCheckWireContractTest` 21 rows, all passed. `Test-Fast.ps1`: 9545 passed. `dotnet build Lighthouse.Backend`: 0 warnings. The diff touches the four rows and the specifications' now-unused members only (4 insertions, 138 deletions); the other 47 rows are unchanged.
+
+## Wave: DELIVER / [REF] Slice B: `Slice01` at the port (step 02-05, 2026-11-08)
+
+**What moved.** `Slice01OneSentenceAboutYourSamplingWindowTest` now derives from `RealityCheckAtThePortTest`; all 51 rows keep their ids, the shipped-engine row included. The scenarios became synchronous (`async Task` to `void`, `await` dropped); names, arguments, Givens and Thens are unchanged. What the host base used to give the specifications now comes from the port base (`StandardWindowDays`, `HorizonDays`, `ConfidenceLevels`, `GivenATeamForecastingFromFixedDates`, `WhatIsStoredFor`) or from the specifications themselves (the four closed-set words `NotTested`, `NotEvaluated`, `UsesFixedDates`, `NotAPositiveLength`). Every row asks through the port base's `TheAnswerTo`, so through `RealityCheckPortAnswer.ReadFrom` and the history rule. The no-write row moved with today's check (`WhatIsStoredFor`, Team and Work Items); 02-06 widens it.
+
+**The shipped engine at the port.** The port base gained one switch, `AScenarioMayRunTheShippedEngine`, false by default: `Slice04` keeps the strict engine no row may reach. `Slice01` turns it on, and the script then sits over the real `ForecastService` with the starting number pinned at 4172 and 1,000 runs, as at the host. Rows that never call `RunAsShipped` never reach it, as at the host.
+
+**Criterion 4, counted.** Distinct service registrations the other 50 rows need: **21**, the port base's list (clock, licence, settings, cache, event dispatcher, 14 repositories and services the check reads through, the scripted forecast, the check's service), not counting the harness's own 4 (logging, crypto, clock, database). What `A_Team_finishing_one_Work_Item_every_day...` needs beyond that: **10** (`ForecastService`, `IRandomNumberService`, `IPortfolioRepository`, `IWhatTheForecastWaitsFor`, `IDependencyDecision`, `IDependencyHonourPolicy`, `ForecastSimulation`, `IDrawStreamFactory`, `ForecastSimulationLimits`, `TimeProvider`). 10 does not outnumber 21, so the row runs at the port and is **not** a second skeleton. Read as the DESIGN rule words it ("if those registrations outnumber everything the other 50 port rows need"); read as the row's total (31) against 21 the rule would hold for any row needing one service more, so it decides nothing.
+
+**Id table for this step.** Class `API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest` before and after for every row: the sorted `testName` lists of the before and after TRX are identical, 51 lines. The shipped-engine row stayed in the class (no class change). The rows now read `Unit` in `trx_to_csv.py`, as they left the host.
+
+**Red at the port.** `ForecastDataSufficiencyPolicy.MinimumActiveDays` 5 to 6 in the working tree (reverted, `git status` clean on that file, never committed): `Five_days_with_finished_work_is_enough_to_check_and_four_is_not(5,True)` red, `Assert.That(cell.IsSufficient, ...) Expected: True But was: False` and `Expected: "Sufficient" But was: "TooFewActiveDays"`; `(4,False)` green, as it should be.
+
+**Seconds, Debug, one machine, class alone.**
+
+| | Before, host | After, port |
+|---|---|---|
+| TRX sum, 51 rows | 12.238 | 7.078 |
+| One-time set-up, outside the TRX | 1.769 (host build 1.757) | 0 |
+| Class total | **14.007** | **7.078** |
+| Set-up, all rows | 5.876 (115 ms a row) | 1.139 (22 ms a row, the first holding the schema template) |
+
+**Runs.** `Slice01` by name: 51 passed. `Slice06` (10), `RealityCheckSkeletonTest` (1), `TestTierGuardTest` (90), `TestHostPerFixtureGuardTest` (18), `SharedHostsDrainTheUpdateQueueGuardTest` (17): 136 passed. Family filter (`ForecastRealityCheck|RealityCheckWireContractTest`): 132 passed. `Test-Fast.ps1`: 9596 passed (9545 + 51). `dotnet build Lighthouse.Backend`: 0 warnings, 0 errors.
+
+**For review.**
+- `ForecastRealityCheckAcceptanceTest` now serves `Slice06` and the skeleton only, and still carries members no subclass reads: `NotTested`, `NotEvaluated`, `UsesFixedDates`, `NotAPositiveLength`, `StandardWindowDays`, `GivenATeamForecastingFromFixedDates`, `GivenTheTeamFinishedAWorkItemEvery`, `GivenTheTeamFinishedWorkItemsOn`. The file is outside this step's list; trimming them is a follow-up.
+- The pinned starting number and the run count now sit in both bases. Moving them into `RealityCheckForecastScript` beside `Today` would make one place; that file is outside this step's list.
+- `RealityCheckWireContractTest.AdjustTheHost` still repeats the host base's service swaps; not unified here.

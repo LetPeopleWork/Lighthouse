@@ -2,12 +2,15 @@ using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Services.Implementation.Dependencies;
 using Lighthouse.Backend.Services.Implementation.DomainEvents;
 using Lighthouse.Backend.Services.Implementation.Forecast;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Dependencies;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
@@ -31,6 +34,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     {
         protected static readonly DateTimeOffset Today = RealityCheckForecastScript.Today;
 
+        /// <summary>The sampling windows every Team is checked against, whatever its own setting is.</summary>
+        protected static readonly int[] StandardWindowDays = RealityCheckForecastScript.StandardWindowDays;
+
+        /// <summary>One, two, four and eight weeks, each ending today.</summary>
+        protected static readonly int[] HorizonDays = RealityCheckForecastScript.HorizonDays;
+
+        protected static readonly int[] ConfidenceLevels = [50, 70, 85, 95];
+
+        /// <summary>Far fewer runs than production's ten thousand; a scenario needs a spread, not precision.</summary>
+        private const int SimulatedRunsWhenTheEngineRuns = 1_000;
+
+        private const long PinnedStartingNumber = 4172;
+
         private ServicePortHarness harness = null!;
 
         private RealityCheckSeedSteps seed = null!;
@@ -38,6 +54,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         protected RealityCheckForecastScript Forecasts { get; private set; } = null!;
 
         protected static DateOnly TodayDay => RealityCheckForecastScript.TodayDay;
+
+        /// <summary>
+        /// Whether a scenario of this fixture may ask for the shipped engine. Where none does, the engine under
+        /// the script refuses to be reached, so a check the script failed to answer cannot pass by simulating.
+        /// </summary>
+        protected virtual bool AScenarioMayRunTheShippedEngine => false;
 
         [SetUp]
         public void GiveTheScenarioItsOwnDatabase()
@@ -61,6 +83,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected int GivenATeam(string name, int samplingWindowDays) => seed.GivenATeam(name, samplingWindowDays);
 
+        protected int GivenATeamForecastingFromFixedDates(string name, int inertSamplingWindowDays)
+            => seed.GivenATeamForecastingFromFixedDates(name, inertSamplingWindowDays);
+
         protected void GivenTheTeamFinishedAWorkItemEveryDay(int teamId) => seed.GivenTheTeamFinishedAWorkItemEveryDay(teamId);
 
         protected void GivenTheTeamFinishedAWorkItemEvery(int teamId, int days) => seed.GivenTheTeamFinishedAWorkItemEvery(teamId, days);
@@ -81,6 +106,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
             return RealityCheckPortAnswer.ReadFrom(result, Forecasts);
         }
+
+        // --- Reading what is stored ---
+
+        protected RealityCheckSeedSteps.TeamAsStored WhatIsStoredFor(int teamId) => seed.WhatIsStoredFor(teamId);
 
         private void RegisterWhatTheCheckReads(IServiceCollection services)
         {
@@ -107,9 +136,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             services.AddScoped<IForecastFilterRuleService, ForecastFilterRuleService>();
             services.AddScoped<ITeamMetricsService, TeamMetricsService>();
 
-            // No scenario here asks for the simulation, so the engine under the script refuses to be reached.
-            services.AddScoped(_ => forecasts.Over(Mock.Of<IForecastService>(MockBehavior.Strict)));
             services.AddScoped<IForecastRealityCheckService, ForecastRealityCheckService>();
+
+            if (!AScenarioMayRunTheShippedEngine)
+            {
+                services.AddScoped(_ => forecasts.Over(Mock.Of<IForecastService>(MockBehavior.Strict)));
+                return;
+            }
+
+            RegisterTheShippedEngine(services);
+            services.AddScoped(provider => forecasts.Over(provider.GetRequiredService<ForecastService>()));
+        }
+
+        /// <summary>The engine as the product builds it, with its starting number pinned and fewer runs.</summary>
+        private static void RegisterTheShippedEngine(IServiceCollection services)
+        {
+            services.AddSingleton(TimeProvider.System);
+            services.AddSingleton<IRandomNumberService, RandomNumberService>();
+            services.AddSingleton<IDrawStreamFactory>(new DrawsFromAPinnedStartingNumber(PinnedStartingNumber));
+            services.AddSingleton(new ForecastSimulationLimits(
+                SimulatedRunsWhenTheEngineRuns,
+                ForecastSimulationLimits.Default.MostDaysOneSimulatedRunMayCover));
+            services.AddSingleton<ForecastSimulation>();
+            services.AddScoped<IPortfolioRepository, PortfolioRepository>();
+            services.AddScoped<IDependencyHonourPolicy, DependencyHonourPolicy>();
+            services.AddScoped<IDependencyDecision, DependencyDecision>();
+            services.AddScoped<IWhatTheForecastWaitsFor, WhatTheForecastWaitsFor>();
+            services.AddScoped<ForecastService>();
         }
     }
 }

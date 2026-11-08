@@ -1,13 +1,13 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// Step definitions for slice 01 - the facts the verdict sentence is composed from, read off the wire.
+    /// Step definitions for slice 01 - the facts the verdict sentence is composed from, read off the answer.
     ///
     /// The Teams are the ones the stories name. Ocean Explorer finishes work every day and sits at 30
     /// days; Deep Current sits at 14; Coastal Survey finishes work in bursts, one day in five, which
     /// leaves every two-week window holding fewer than five days with finished work.
     /// </summary>
-    public partial class Slice01OneSentenceAboutYourSamplingWindowTest : ForecastRealityCheckAcceptanceTest
+    public partial class Slice01OneSentenceAboutYourSamplingWindowTest : RealityCheckAtThePortTest
     {
         /// <summary>The shipped data-sufficiency bar, written out so the answer is checked against the number and not against itself.</summary>
         private const int TheShippedBarInDays = 5;
@@ -32,6 +32,18 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         private const string TooFewActiveDays = "TooFewActiveDays";
         private const string DegenerateForecast = "DegenerateForecast";
 
+        /// <summary>The Team has no rolling window for the check to test, so its setting sits neither inside nor outside anything.</summary>
+        private const string NotTested = "NotTested";
+
+        /// <summary>A level's reading when no check could be evaluated at all.</summary>
+        private const string NotEvaluated = "NotEvaluated";
+
+        /// <summary>Why a setting was not tested: the Team forecasts from a fixed pair of dates. Wins when both reasons apply.</summary>
+        private const string UsesFixedDates = "UsesFixedDates";
+
+        /// <summary>Why a setting was not tested: the stored window is zero days or fewer.</summary>
+        private const string NotAPositiveLength = "NotAPositiveLength";
+
         private static readonly int[] TheThreeLongerStandardWindows = [30, 60, 90];
 
         private static readonly int[] TheOwnWindowWithTheTwoOuterStandardOnes = [14, 45, 90];
@@ -43,6 +55,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         private static readonly string[] EveryReasonACheckCanGive = [Sufficient, TooFewActiveDays, DegenerateForecast];
 
         private static readonly string[] EveryWayACheckCanLand = [OverForecast, WithinBand, UnderForecast];
+
+        protected override bool AScenarioMayRunTheShippedEngine => true;
+
         // --- Given ---
 
         private int GivenOceanExplorerFinishingWorkEveryDay() => GivenATeamFinishingWorkEveryDay("Ocean Explorer", 30);

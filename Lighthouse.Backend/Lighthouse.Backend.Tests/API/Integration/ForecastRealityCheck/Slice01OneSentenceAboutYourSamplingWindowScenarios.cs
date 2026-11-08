@@ -5,9 +5,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// Forecast tab answers whether the sampling window behind every forecast it publishes would have got
     /// the last few periods right, and which of the four confidence levels held up.
     ///
-    /// Driving port: the check itself, over HTTP, on both the latest and the versioned route. The
-    /// sentence the forecaster reads is composed in the browser from what these scenarios pin, so the
-    /// words are asserted in the Team Forecast view's own tests; these pin the facts the words rest on.
+    /// Driving port: the check's service, called with no host. The routes, the status and the names the
+    /// answer travels under are pinned by RealityCheckWireContractTest. The sentence the forecaster reads is
+    /// composed in the browser from what these scenarios pin, so the words are asserted in the Team Forecast
+    /// view's own tests; these pin the facts the words rest on.
     ///
     /// Step definitions live in Slice01OneSentenceAboutYourSamplingWindowSpecifications.cs.
     /// </summary>
@@ -24,12 +25,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// is also scored on, reads this steady Team as beating every forecast it was ever given.
         /// </summary>
         [Test]
-        public async Task A_Team_finishing_one_Work_Item_every_day_delivers_exactly_what_every_level_of_every_check_forecast()
+        public void A_Team_finishing_one_Work_Item_every_day_delivers_exactly_what_every_level_of_every_check_forecast()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             GivenTheForecastIsWorkedOutAsShipped();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             using (Assert.EnterMultipleScope())
             {
@@ -44,11 +45,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // --- What the answer states it checked ---
 
         [Test]
-        public async Task Every_check_ends_today_and_reaches_back_by_its_own_length()
+        public void Every_check_ends_today_and_reaches_back_by_its_own_length()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             using (Assert.EnterMultipleScope())
             {
@@ -58,11 +59,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [Test]
-        public async Task The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear()
+        public void The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             ThenTheAnswerStatesTheLadderTheHorizonsTheLevelsAndTheBar(answer);
         }
@@ -71,11 +72,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(30)]
         [TestCase(60)]
         [TestCase(90)]
-        public async Task A_Team_whose_window_is_on_the_standard_ladder_is_checked_sixteen_times(int samplingWindowDays)
+        public void A_Team_whose_window_is_on_the_standard_ladder_is_checked_sixteen_times(int samplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(samplingWindowDays);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -92,11 +93,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(45)]
         [TestCase(7)]
         [TestCase(120)]
-        public async Task A_Team_whose_window_is_off_the_ladder_has_it_checked_as_a_fifth_window(int samplingWindowDays)
+        public void A_Team_whose_window_is_off_the_ladder_has_it_checked_as_a_fifth_window(int samplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(samplingWindowDays);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -112,22 +113,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         [TestCase(30)]
         [TestCase(45)]
-        public async Task No_part_of_the_answer_can_rank_one_sampling_window_above_another(int samplingWindowDays)
+        public void No_part_of_the_answer_can_rank_one_sampling_window_above_another(int samplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(samplingWindowDays);
             GivenTheWindowsBehaveDifferently(samplingWindowDays);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             ThenTheWindowsThatBehavedAlikeComeBackInTheLaddersOwnOrder(answer);
         }
 
         [Test]
-        public async Task Every_check_that_was_run_is_in_the_answer_including_the_ones_that_could_not_be_evaluated()
+        public void Every_check_that_was_run_is_in_the_answer_including_the_ones_that_could_not_be_evaluated()
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
 
-            var answer = await TheAnswerTo(coastalSurvey);
+            var answer = TheAnswerTo(coastalSurvey);
 
             using (Assert.EnterMultipleScope())
             {
@@ -141,23 +142,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // --- The region, never a winner ---
 
         [Test]
-        public async Task Every_window_behaving_alike_is_an_answer_that_says_the_setting_is_fine()
+        public void Every_window_behaving_alike_is_an_answer_that_says_the_setting_is_fine()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             GivenEveryCheckHeldAtTheCautiousLevelsOnly();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             ThenEveryWindowIsInTheRegionAndTheSettingIsInsideIt(answer);
         }
 
         [Test]
-        public async Task Deep_Currents_fourteen_day_window_over_forecast_three_times_in_four_and_sits_outside_the_region()
+        public void Deep_Currents_fourteen_day_window_over_forecast_three_times_in_four_and_sits_outside_the_region()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();
             GivenTheFourteenDayWindowOverForecastInThreeOfItsFourChecks();
 
-            var answer = await TheAnswerTo(deepCurrent);
+            var answer = TheAnswerTo(deepCurrent);
 
             using (Assert.EnterMultipleScope())
             {
@@ -173,12 +174,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// bounds would have said 14 to 90 and called the Team inside.
         /// </summary>
         [Test]
-        public async Task The_windows_either_side_of_an_off_ladder_setting_can_hold_up_when_the_setting_itself_does_not()
+        public void The_windows_either_side_of_an_off_ladder_setting_can_hold_up_when_the_setting_itself_does_not()
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(45);
             Forecasts.EveryCheckOf(45, HeldUpTo.NoLevel);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -188,13 +189,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [Test]
-        public async Task An_off_ladder_setting_can_hold_up_when_the_windows_either_side_of_it_do_not()
+        public void An_off_ladder_setting_can_hold_up_when_the_windows_either_side_of_it_do_not()
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(45);
             Forecasts.EveryCheckOf(30, HeldUpTo.NoLevel);
             Forecasts.EveryCheckOf(60, HeldUpTo.NoLevel);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -204,12 +205,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [Test]
-        public async Task When_no_window_held_up_the_answer_says_so_rather_than_naming_the_least_bad()
+        public void When_no_window_held_up_the_answer_says_so_rather_than_naming_the_least_bad()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();
             Forecasts.Otherwise = HeldUpTo.NoLevel;
 
-            var answer = await TheAnswerTo(deepCurrent);
+            var answer = TheAnswerTo(deepCurrent);
 
             using (Assert.EnterMultipleScope())
             {
@@ -226,12 +227,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// so it is enough to put the window outside.
         /// </summary>
         [Test]
-        public async Task A_window_that_fell_short_of_its_most_cautious_forecast_in_two_of_four_checks_is_outside_the_region()
+        public void A_window_that_fell_short_of_its_most_cautious_forecast_in_two_of_four_checks_is_outside_the_region()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             GivenTheThirtyDayWindowFellShortOfItsMostCautiousForecastInTwoOfFourChecks();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             using (Assert.EnterMultipleScope())
             {
@@ -247,12 +248,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// line instead. Only falling short of the cautious forecast counts.
         /// </summary>
         [Test]
-        public async Task Delivering_more_than_forecast_never_counts_against_a_window_only_falling_short_does()
+        public void Delivering_more_than_forecast_never_counts_against_a_window_only_falling_short_does()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             GivenTheSixtyDayWindowFellShortOnceAndDeliveredMoreThanForecastThreeTimes();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             using (Assert.EnterMultipleScope())
             {
@@ -271,12 +272,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(2, 1, false)]
         [TestCase(1, 0, true)]
         [TestCase(1, 1, false)]
-        public async Task A_window_only_some_of_whose_checks_could_run_is_judged_on_the_ones_that_did(int checksThatRan, int ofThemFellShort, bool holdsUp)
+        public void A_window_only_some_of_whose_checks_could_run_is_judged_on_the_ones_that_did(int checksThatRan, int ofThemFellShort, bool holdsUp)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             GivenOnlySomeOfTheNinetyDayWindowsChecksCouldBeWorkedOut(checksThatRan, ofThemFellShort);
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             ThenTheWindowWasEvaluatedAndHoldsUp(answer, 90, holdsUp);
         }
@@ -286,12 +287,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// lists what held up around it rather than letting a span claim the window it never examined.
         /// </summary>
         [Test]
-        public async Task A_window_that_could_not_be_checked_in_the_middle_of_the_ladder_is_a_gap_in_the_region()
+        public void A_window_that_could_not_be_checked_in_the_middle_of_the_ladder_is_a_gap_in_the_region()
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(60);
             GivenNoneOfTheThirtyDayWindowsChecksCouldBeWorkedOut();
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -302,11 +303,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [Test]
-        public async Task A_Team_whose_history_supports_no_check_at_all_is_told_nothing_could_be_concluded()
+        public void A_Team_whose_history_supports_no_check_at_all_is_told_nothing_could_be_concluded()
         {
             var newlyFormed = GivenATeamThatHasFinishedAlmostNothing();
 
-            var answer = await TheAnswerTo(newlyFormed);
+            var answer = TheAnswerTo(newlyFormed);
 
             using (Assert.EnterMultipleScope())
             {
@@ -320,11 +321,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [Test]
-        public async Task When_the_Teams_own_window_could_not_be_evaluated_its_standing_is_not_determined()
+        public void When_the_Teams_own_window_could_not_be_evaluated_its_standing_is_not_determined()
         {
             var team = GivenATeamFinishingWorkEveryFifthDaySetTo(14);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -346,12 +347,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(70, 11, 11.2)]
         [TestCase(85, 14, 13.6)]
         [TestCase(95, 15, 15.2)]
-        public async Task A_level_is_expected_to_hold_as_often_as_its_own_percentage_of_the_checks(int confidenceLevel, int timesItHeld, double timesItWasExpectedToHold)
+        public void A_level_is_expected_to_hold_as_often_as_its_own_percentage_of_the_checks(int confidenceLevel, int timesItHeld, double timesItWasExpectedToHold)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             GivenTheSixteenChecksHeldUpToEightFiftiesThreeSeventiesThreeEightyFivesOneNinetyFiveAndOneNothing();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             ThenTheLevelHeldAgainstItsNominalRate(answer, confidenceLevel, timesItHeld, timesItWasExpectedToHold, SometimesHeld);
         }
@@ -360,13 +361,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(70, 0, 8.4, NeverHeld)]
         [TestCase(85, 12, 10.2, AlwaysHeld)]
         [TestCase(95, 12, 11.4, SometimesHeld)]
-        public async Task Only_the_checks_that_could_run_count_towards_how_often_a_level_should_have_held(
+        public void Only_the_checks_that_could_run_count_towards_how_often_a_level_should_have_held(
             int confidenceLevel, int timesItHeld, double timesItWasExpectedToHold, string reading)
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
             GivenEveryCheckHeldAtTheCautiousLevelsOnly();
 
-            var answer = await TheAnswerTo(coastalSurvey);
+            var answer = TheAnswerTo(coastalSurvey);
 
             using (Assert.EnterMultipleScope())
             {
@@ -381,12 +382,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// how many times it should have held.
         /// </summary>
         [Test]
-        public async Task A_Team_that_never_reached_even_its_most_cautious_forecast_is_told_no_level_ever_held()
+        public void A_Team_that_never_reached_even_its_most_cautious_forecast_is_told_no_level_ever_held()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();
             Forecasts.Otherwise = HeldUpTo.NoLevel;
 
-            var answer = await TheAnswerTo(deepCurrent);
+            var answer = TheAnswerTo(deepCurrent);
 
             using (Assert.EnterMultipleScope())
             {
@@ -402,12 +403,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// that level predicted, and it reads as neither extreme.
         /// </summary>
         [Test]
-        public async Task A_Team_that_always_beat_its_most_optimistic_forecast_is_told_which_levels_always_held_when_a_miss_was_expected()
+        public void A_Team_that_always_beat_its_most_optimistic_forecast_is_told_which_levels_always_held_when_a_miss_was_expected()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             Forecasts.Otherwise = HeldUpTo.EveryLevel;
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             using (Assert.EnterMultipleScope())
             {
@@ -427,12 +428,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         [TestCase(HeldUpTo.EightyFive, WithinBand)]
         [TestCase(HeldUpTo.Seventy, WithinBand)]
         [TestCase(HeldUpTo.EveryLevel, UnderForecast)]
-        public async Task Each_check_says_where_the_Teams_actual_landed_against_its_forecast(HeldUpTo held, string outcome)
+        public void Each_check_says_where_the_Teams_actual_landed_against_its_forecast(HeldUpTo held, string outcome)
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             Forecasts.Check(30, 56, held);
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             ThenTheCheckLandedAndItsLevelsHeld(answer.Cell(30, 56), outcome, held);
         }
@@ -440,11 +441,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // --- Checks that could not be run ---
 
         [Test]
-        public async Task Coastal_Surveys_fourteen_day_checks_hold_too_few_days_of_finished_work_and_are_named_as_unable_to_run()
+        public void Coastal_Surveys_fourteen_day_checks_hold_too_few_days_of_finished_work_and_are_named_as_unable_to_run()
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
 
-            var answer = await TheAnswerTo(coastalSurvey);
+            var answer = TheAnswerTo(coastalSurvey);
 
             using (Assert.EnterMultipleScope())
             {
@@ -463,11 +464,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         [TestCase(5, true)]
         [TestCase(4, false)]
-        public async Task Five_days_with_finished_work_is_enough_to_check_and_four_is_not(int daysWithFinishedWork, bool canBeChecked)
+        public void Five_days_with_finished_work_is_enough_to_check_and_four_is_not(int daysWithFinishedWork, bool canBeChecked)
         {
             var team = GivenATeamThatFinishedWorkOnlyOnThisManyDaysBeforeLastWeek(daysWithFinishedWork);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             ThenTheOneWeekCheckOfTheTwoWeekWindow(answer.Cell(14, 7), canBeChecked, daysWithFinishedWork);
         }
@@ -478,12 +479,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// "no reading" marker must never reach a count, a band or a cell.
         /// </summary>
         [Test]
-        public async Task A_check_whose_forecast_could_not_be_worked_out_is_named_for_that_reason_and_counts_for_nothing()
+        public void A_check_whose_forecast_could_not_be_worked_out_is_named_for_that_reason_and_counts_for_nothing()
         {
             var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
             Forecasts.CannotBeWorkedOutFor(30, 28);
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             using (Assert.EnterMultipleScope())
             {
@@ -503,12 +504,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// </summary>
         [TestCase(45)]
         [TestCase(0)]
-        public async Task A_Team_forecasting_from_fixed_dates_is_checked_at_the_standard_windows_and_told_its_own_setting_was_not_tested(int storedSamplingWindowDays)
+        public void A_Team_forecasting_from_fixed_dates_is_checked_at_the_standard_windows_and_told_its_own_setting_was_not_tested(int storedSamplingWindowDays)
         {
             var fixedDatesTeam = GivenATeamForecastingFromFixedDates("Lighthouse Keepers", storedSamplingWindowDays);
             GivenTheTeamFinishedAWorkItemEveryDay(fixedDatesTeam);
 
-            var answer = await TheAnswerTo(fixedDatesTeam);
+            var answer = TheAnswerTo(fixedDatesTeam);
 
             using (Assert.EnterMultipleScope())
             {
@@ -519,11 +520,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         [TestCase(0)]
         [TestCase(-7)]
-        public async Task A_stored_window_that_is_not_a_length_of_time_adds_nothing_to_the_check(int storedSamplingWindowDays)
+        public void A_stored_window_that_is_not_a_length_of_time_adds_nothing_to_the_check(int storedSamplingWindowDays)
         {
             var team = GivenATeamFinishingWorkEveryDaySetTo(storedSamplingWindowDays);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {
@@ -535,13 +536,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // --- Read-only, end to end ---
 
         [Test]
-        public async Task Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items()
+        public void Running_the_check_changes_nothing_about_the_Team_or_its_Work_Items()
         {
             var deepCurrent = GivenDeepCurrentSetToFourteenDays();
             GivenTheFourteenDayWindowOverForecastInThreeOfItsFourChecks();
             var storedBefore = WhatIsStoredFor(deepCurrent);
 
-            var answer = await TheAnswerTo(deepCurrent);
+            var answer = TheAnswerTo(deepCurrent);
 
             using (Assert.EnterMultipleScope())
             {
