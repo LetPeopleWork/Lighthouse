@@ -2071,3 +2071,17 @@ Non-blocking points, settled for 05-02 to 05-04:
 1. **Registrations are not too wide.** Every service the base registers is on the host with the same lifetime and implementation, except the named stand-ins. The width is the forecast engine and `TeamMetricsService`'s dependencies, which the need calculator pulls in; nothing is registered that the query does not reach.
 2. **`PortFixtureLifetimes.cs` was edited**, though not in the step's file list: the sign-in double is a deliberate stand-in, and without it B13 reports `IAuthModeResolver` as built by a factory at the port and as `AuthModeResolver` on the host.
 3. **The scripted forecast is a second copy.** The host suite's `ForecastWithScriptedHorizons` and its script are private to `RefinementNeedAcceptanceTest`, so the base carries its own. They can fold into one when the host suite's last user of the script moves.
+
+## Wave: DELIVER / [REF] Slice E: the wire pins before `NeedOverOneCycleTest` moves (step 05-03, 2026-11-08)
+
+**Which rows.** The re-cut ties one row of E1 to E11 to this class's move: **E2**, narrowed to "with no number, `cycleStart` and `cycleEnd` are present and null", one case, no cadence. E1, E3 to E7 and E11 wait for `Slice05`, `Slice10` and `Slice12`; E8 and E9 are not needed; E10 and E13 are 05-04's; E12 landed in 05-02. This reading agrees with the step's brief. The brief's scenario name, `Every_member_of_the_Refinement_tab_has_the_name_the_browser_and_the_clients_read`, is E1's title, and E1 is not tied to this class, so it is not written here.
+
+**What landed.** `RefinementWithoutSignInWireContractTest`, new, in `Tests/Contracts/Refinement/` (namespace `Contracts.Refinement`), on `WireContractTest` with the host unchanged, which is the instance without sign-in. It runs the product's seeders per scenario, as `RealityCheckWireContractTest` does, because the tab reads the Team refresh settings they store. The Team is set up through `RefinementPortGivens` (states Backlog, Analysing, Next and the Ready rule, no cadence), so the wire row and the port rows share one builder.
+
+| Row | Id (new, a new host row) | Asserts | Red reason (the deliberate break) |
+|---|---|---|---|
+| E2 | `Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_Team_with_no_number_states_its_need_as_nulls_and_names_no_date` | 200; `unavailableReason` is `NoCadence`; `need.cycleStart` and `need.cycleEnd` are present with JSON kind Null | `RefinementViewDto.CycleEnd` marked `JsonIgnore(WhenWritingNull)`: `Assert.That(KindOf(need, "cycleEnd"), Is.EqualTo(JsonValueKind.Null))`, `Expected: Null But was: Undefined`. The same on `CycleStart`: `Expected: Null But was: Undefined` for `cycleStart`. Both reverted; `git status` showed the DTO as it was |
+
+**Counts.** Rows written: 1, the count 05-01 states for this class (E2 only). The class by name: 1 passed (TRX total 1). The three guards and the class together (`TestHostUseGuardTest` 34, `PortGivensGuardTest` 6, `RealityCheckWireContractTest` 26 with its B13 rows, this class 1): 67 passed. The class needs no line on either list of `TestHostUseGuardTest`, which stayed green. `Test-Fast.ps1` (builds first): 9647 passed, unchanged, as the new row is a host row outside the fast tier. `dotnet build` in `Lighthouse.Backend`: 0 warnings, 0 errors.
+
+**For Stage 3.** One new host row and one new host fixture (one host build). `NeedOverOneCycleTest`'s 22 rows are still on the host and unchanged; 05-04 may move the class now that E2 is in.
