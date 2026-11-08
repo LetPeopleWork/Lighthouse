@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Modules.FlowMetrics.Domain;
-using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation
 {

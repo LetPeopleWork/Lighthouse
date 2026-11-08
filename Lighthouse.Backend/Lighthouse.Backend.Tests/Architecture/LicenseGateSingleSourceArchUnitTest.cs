@@ -1,5 +1,5 @@
 using ArchUnitNET.NUnit;
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;

@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     public class PercentilesOverTimeSeriesQuery(IPercentilesOverTimeSnapshotRepository repository) : IPercentilesOverTimeSeriesQuery
     {

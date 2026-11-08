@@ -1,5 +1,5 @@
 using ArchUnitNET.Loader;
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 
 namespace Lighthouse.Backend.Tests.Architecture

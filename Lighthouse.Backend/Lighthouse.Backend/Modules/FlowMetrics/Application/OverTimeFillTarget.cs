@@ -1,9 +1,8 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// Everything one pass needs about one owner: how far forward its observations reach, every
@@ -54,7 +53,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
             return new OverTimeFillTarget(
                 lastObservedOn,
-                [.. Implementation.PercentileFamilies.For(team, metrics).Select(retention.Guard)],
+                [.. Application.PercentileFamilies.For(team, metrics).Select(retention.Guard)],
                 [.. services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(team).Select(retention.Guard)],
                 () => metrics.InvalidateTeamMetrics(team),
                 () => retention.NoEarlierThanTheEdge(EarliestFinishedDay(
@@ -79,7 +78,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
 
             return new OverTimeFillTarget(
                 lastObservedOn,
-                [.. Implementation.PercentileFamilies.For(portfolio, metrics).Select(retention.Guard)],
+                [.. Application.PercentileFamilies.For(portfolio, metrics).Select(retention.Guard)],
                 [.. services.GetRequiredService<IProcessBehaviorSnapshotWriter>().FamiliesFor(portfolio).Select(retention.Guard)],
                 () => metrics.InvalidatePortfolioMetrics(portfolio),
                 () => retention.NoEarlierThanTheEdge(EarliestFinishedDay(

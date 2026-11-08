@@ -17,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// The one type allowed to decide a percentile day. Both write policies live on it, so a day
         /// filled in behind the series and a day recorded this afternoon run the same computation.
         /// </summary>
-        private const string TheWriter = "Services/Implementation/PercentileSnapshotWriter.cs";
+        private const string TheWriter = "Modules/FlowMetrics/Application/PercentileSnapshotWriter.cs";
 
         /// <summary>
         /// The demo synthesiser invents a backdated history for a freshly-loaded demo instead of
@@ -36,9 +36,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// <summary>Everything a chart load runs through on the thread the reader is waiting on.</summary>
         private static readonly string[] TheReadPath =
         [
-            "Services/Implementation/GapAskingPercentilesOverTimeSeriesQuery.cs",
-            "Services/Implementation/GapAskingProcessBehaviorSeriesQuery.cs",
-            "Services/Implementation/OverTimeGapReconciler.cs",
+            "Modules/FlowMetrics/Application/GapAskingPercentilesOverTimeSeriesQuery.cs",
+            "Modules/FlowMetrics/Application/GapAskingProcessBehaviorSeriesQuery.cs",
+            "Modules/FlowMetrics/Application/OverTimeGapReconciler.cs",
         ];
 
         /// <summary>Every way an over-time day gets written, percentile and process limit alike.</summary>
@@ -60,7 +60,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// The one type allowed to decide a process-behaviour day. Both write policies live on it, so
         /// a day filled in behind the series and a day recorded this afternoon run the same computation.
         /// </summary>
-        private const string TheProcessBehaviorWriter = "Services/Implementation/ProcessBehaviorSnapshotWriter.cs";
+        private const string TheProcessBehaviorWriter = "Modules/FlowMetrics/Application/ProcessBehaviorSnapshotWriter.cs";
 
         private static readonly string[] FilesAllowedToDeclareTheProcessBehaviorFamilies = [TheProcessBehaviorWriter];
 
@@ -92,7 +92,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// note of days no pass can write, the most days one visit hands over and the bound at today all
         /// live there.
         /// </summary>
-        private const string TheReconciler = "Services/Implementation/OverTimeGapReconciler.cs";
+        private const string TheReconciler = "Modules/FlowMetrics/Application/OverTimeGapReconciler.cs";
 
         private static readonly string[] TheOnlyPlaceAFillStarts = [TheReconciler];
 

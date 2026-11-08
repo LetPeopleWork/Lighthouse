@@ -1,8 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// The oldest day an owner still keeps finished work from. Every refresh deletes what finished

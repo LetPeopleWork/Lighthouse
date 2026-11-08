@@ -1,9 +1,9 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Interfaces;
 
-namespace Lighthouse.Backend.Services.Implementation
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     public class ProcessBehaviorSnapshotWriter : IProcessBehaviorSnapshotWriter
     {

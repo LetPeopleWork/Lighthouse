@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Reflection.Emit;
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Implementation;
 
 namespace Lighthouse.Backend.Tests.Architecture

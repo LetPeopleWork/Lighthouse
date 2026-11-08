@@ -1,7 +1,7 @@
 using System.Reflection;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Microsoft.EntityFrameworkCore;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;

@@ -2,7 +2,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Events;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 
-namespace Lighthouse.Backend.Services.Implementation.BackgroundServices
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     /// <summary>
     /// What earlier passes already found out about an owner, so that a chart load stops asking for

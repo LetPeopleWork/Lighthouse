@@ -1,4 +1,4 @@
-using Lighthouse.Backend.Services.Implementation;
+using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
