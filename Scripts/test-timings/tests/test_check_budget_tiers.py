@@ -6,11 +6,13 @@ that talks to a real tracker, one of them 30 s. The check is run as CI runs it, 
 """
 
 import json
+import os
 import re
 import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -19,11 +21,14 @@ sys.path.insert(0, str(HERE.parent))
 from test_check_budget import (  # noqa: E402
     BACKEND_COLUMNS,
     FRONTEND_COLUMNS,
+    SUMMARY_VARIABLE,
     TESTS_NAMESPACE,
     BudgetCheckTestCase,
     CheckWorkspace,
     allowed,
 )
+
+import test_check_budget_time_budgets as time_budgets  # noqa: E402
 
 import check_budget  # noqa: E402
 
@@ -295,6 +300,99 @@ class SourceThatCannotBeReadGivesNoVerdict(TierReportTestCase):
 
         self.assertEqual(figures["Left out"][0], 0)
         self.assertEqual(figures["Fast"][0], 101)
+
+
+FENCE = "```"
+
+
+def summary_block(report):
+    return f"\n{FENCE}\n{report}\n{FENCE}\n"
+
+
+class TheReportLandsInTheJobSummary(TierReportTestCase):
+    def outer_file(self, text):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        path = Path(folder.name) / "step-summary.md"
+        path.write_text(text, encoding="utf-8")
+        return path
+
+    def check_steady_backend_into(self, summary):
+        timings = self.workspace.steady_run()
+        self.workspace.planted_budget()
+        return self.workspace.check("backend", timings, summary=summary)
+
+    def test_the_report_also_lands_in_the_jobs_summary_after_what_is_there(self):
+        earlier = "## Backend tests\n\n1,234 passed\n"
+        summary = self.outer_file(earlier)
+
+        first = self.check_steady_backend_into(summary)
+        second = self.check_steady_backend_into(summary)
+
+        self.assert_passes_quietly(first)
+        self.assert_passes_quietly(second)
+        report = self.report_of(first, "Backend test time")
+        written = summary.read_text(encoding="utf-8")
+        self.assertEqual(written, earlier + summary_block(report) + summary_block(report))
+        self.assertEqual([line for line in written.splitlines() if line.startswith("::")], [])
+
+    def test_with_no_summary_file_named_the_run_only_prints(self):
+        timings = self.workspace.steady_run()
+        self.workspace.planted_budget()
+        for summary in (None, ""):
+            with self.subTest(summary=summary):
+                before = self.workspace.snapshot()
+
+                result = self.workspace.check("backend", timings, summary=summary)
+
+                self.assert_passes_quietly(result)
+                self.report_of(result, "Backend test time")
+                self.assertEqual(self.workspace.snapshot(), before)
+
+    def test_a_summary_that_cannot_be_written_warns_and_changes_no_verdict(self):
+        unwritable = self.outer_file("").parent / "a-folder"
+        unwritable.mkdir()
+
+        result = self.check_steady_backend_into(unwritable)
+
+        self.assert_warns_and_passes(result, "summary", "a-folder")
+        self.assertEqual(len(self.annotations(result, "warning")), 1, msg=self._explain(result))
+        self.report_of(result, "Backend test time")
+
+    def test_the_report_comes_before_any_verdict(self):
+        summary = self.outer_file("")
+        timings = self.workspace.steady_run(integration_seconds=4)
+        self.workspace.budget()
+
+        result = self.workspace.check("backend", timings, summary=summary)
+
+        self.assert_fails_naming(result, "PortfolioEndpointTest")
+        report = self.report_of(result, "Backend test time")
+        lines = result.stdout.splitlines()
+        first_error = next(i for i, line in enumerate(lines) if line.startswith("::error::"))
+        self.assertTrue(
+            all(lines.index(line) < first_error for line in report.splitlines()),
+            msg=self._explain(result),
+        )
+        self.assertEqual(summary.read_text(encoding="utf-8"), summary_block(report))
+
+    def test_the_checks_own_tests_leave_the_real_summary_alone(self):
+        real = self.outer_file("## The job's own summary\n")
+        timings = self.workspace.steady_run()
+        self.workspace.planted_budget()
+        other = time_budgets.Workspace(self.outer_file("").parent)
+        other_timings = other.backend_timings({f"{FAST_CLASS}.Prices": 0.01})
+        other.budget()
+
+        with mock.patch.dict(os.environ, {SUMMARY_VARIABLE: str(real)}):
+            results = [
+                self.workspace.check("backend", timings),
+                other.check("backend", other_timings),
+            ]
+
+        for result in results:
+            self.assert_passes_quietly(result)
+        self.assertEqual(real.read_text(encoding="utf-8"), "## The job's own summary\n")
 
 
 if __name__ == "__main__":

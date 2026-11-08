@@ -250,6 +250,7 @@ def stale_entries(allowlisted: list[str], still_present: set[str]) -> list[str]:
 
 
 WARN_ONLY_VARIABLE = "LIGHTHOUSE_BUDGET_WARN_ONLY"
+SUMMARY_VARIABLE = "GITHUB_STEP_SUMMARY"
 
 
 def warn_only_requested(environment: dict[str, str], flag: bool) -> bool:
@@ -264,6 +265,16 @@ def warn_only_requested(environment: dict[str, str], flag: bool) -> bool:
         f"{WARN_ONLY_VARIABLE} is set to {escaped(repr(value))}, "
         "but only true or false (or leaving it unset) are understood"
     )
+
+
+def summary_file(environment: dict[str, str]) -> Path | None:
+    name = environment.get(SUMMARY_VARIABLE, "")
+    return Path(name) if name else None
+
+
+def summary_block(report: str) -> str:
+    # The summary renders Markdown, which would fold the report's columns into one paragraph.
+    return f"\n```\n{report}\n```\n"
 
 
 def unneeded_entries(
@@ -486,6 +497,7 @@ def main(argv: list[str] | None = None) -> int:
 def _check(arguments: argparse.Namespace) -> int:
     stack, allowlist_name = arguments.stack, arguments.allowlist.name
     warn_only = warn_only_requested(os.environ, arguments.warn_only)
+    summary = summary_file(os.environ)
     rows = load_timings(stack, arguments.csv)
     budget_seconds, ceilings = load_allowlist(stack, arguments.allowlist)
     if stack == "backend" and not arguments.source_root.is_dir():
@@ -493,7 +505,7 @@ def _check(arguments: argparse.Namespace) -> int:
             f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
         )
     connector_classes = _connector_classes(stack, arguments.source_root)
-    print(tier_report(stack, count_tiers(stack, rows, connector_classes)))
+    publish_report(tier_report(stack, count_tiers(stack, rows, connector_classes)), summary)
 
     findings = judge(stack, rows, budget_seconds, ceilings)
     still_present = _still_present(stack, rows, arguments.source_root, ceilings)
@@ -510,6 +522,20 @@ def _check(arguments: argparse.Namespace) -> int:
         print(unneeded_annotation(unit, allowlist_name))
     breached = bool(findings) and not warn_only
     return 1 if breached or stale or unneeded else 0
+
+
+def publish_report(report: str, summary: Path | None) -> None:
+    print(report)
+    if summary is None:
+        return
+    try:
+        with summary.open("a", encoding="utf-8") as stream:
+            stream.write(summary_block(report))
+    except OSError as error:
+        print(
+            f"::warning::the report could not be added to the job summary "
+            f"{escaped(str(summary))}: {_reason(error)}"
+        )
 
 
 def _connector_classes(stack: str, source_root: Path) -> set[str]:

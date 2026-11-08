@@ -69,7 +69,9 @@ class Workspace(base.CheckWorkspace):
         return self._run([], stack, timings, (), switch)
 
     def _run(self, files, stack, timings, options, switch):
-        environment = {name: value for name, value in os.environ.items() if name != SWITCH}
+        environment = base.check_environment(
+            base={name: value for name, value in os.environ.items() if name != SWITCH}
+        )
         if switch is not None:
             environment[SWITCH] = switch
         command = [

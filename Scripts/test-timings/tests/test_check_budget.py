@@ -2,6 +2,7 @@ import contextlib
 import csv
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
@@ -23,6 +24,16 @@ BUDGET_SECONDS = 60
 ALLOWLIST_NAME = "test-time-budget.json"
 TESTS_NAMESPACE = "Lighthouse.Backend.Tests.Services"
 TRX_NS = "http://microsoft.com/schemas/VisualStudio/TeamTest/2010"
+SUMMARY_VARIABLE = "GITHUB_STEP_SUMMARY"
+
+
+def check_environment(summary=None, base=None):
+    """The environment a planted run gets: the job's own summary file is never inherited."""
+    environment = dict(os.environ if base is None else base)
+    environment.pop(SUMMARY_VARIABLE, None)
+    if summary is not None:
+        environment[SUMMARY_VARIABLE] = str(summary)
+    return environment
 
 
 def allowed(unit, ceiling_seconds, reason="starts a real Postgres container"):
@@ -95,7 +106,7 @@ class CheckWorkspace:
     def write_test_source(self, file_name, source):
         (self.source_root / file_name).write_text(source, encoding="utf-8")
 
-    def check(self, stack, timings, *options):
+    def check(self, stack, timings, *options, summary=None):
         command = [
             sys.executable,
             str(CHECK_BUDGET),
@@ -110,7 +121,12 @@ class CheckWorkspace:
         if stack == "backend":
             command += ["--source-root", str(self.source_root)]
         return subprocess.run(
-            command, capture_output=True, text=True, cwd=self.root, timeout=60
+            command,
+            capture_output=True,
+            text=True,
+            cwd=self.root,
+            env=check_environment(summary),
+            timeout=60,
         )
 
     def convert_vitest_report(self, report):
