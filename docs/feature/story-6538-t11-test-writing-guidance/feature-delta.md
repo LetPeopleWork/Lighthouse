@@ -973,3 +973,48 @@ RED: SKIPPED, `NOT_APPLICABLE: guidance text; the searches in criteria 1, 3, 5, 
 **C-5 (changed paths).** `git status --short` before the commit: the skill folder, `CLAUDE.md`, `docs/ci-learnings.md` and this delta; nothing else.
 
 **C-6.** The examples hold no token-shaped string (`gitleaks` is not on the shell allowlist here); the commit hook's own scan runs at each commit, no bypass.
+
+## Wave: DELIVER / [REF] Skill checklist, minimum items
+
+Fixed and committed before the trial runs (B-8). Each row: the rule it answers, the item the reviewer marks followed, not followed or not applicable with a quoted line, and the phrase it is searched by in the frozen wording (B-9).
+
+| # | Rule | Item | Phrase checked against the wording |
+|---|---|---|---|
+| 1 | Frontend 1 | A rule is asserted on a function or hook, with no render | `on a function or hook, with no render` |
+| 2 | Frontend 2 | Several checks of one wiring share one render | `share one render` |
+| 3 | Frontend 3 | The fixture is the smallest the behaviour allows | `smallest the behaviour allows` |
+| 4 | Frontend 4 | Time is a fake clock and no sleep | `a fake clock and no sleep` |
+| 5 | Frontend 5 | A slow test is made smaller, with no longer timeout and no retry | `no longer timeout` |
+| 6 | Frontend 6 | A test passes alone and shuffled, building its own state | `passes alone and shuffled` |
+| 7 | Frontend 7 | A new view pins its loading look and its failure look | `loading look and its failure look` |
+| 8 | Frontend 8 | A touched frontend test moves down a layer | `touched frontend test moves down` |
+| 9 | The deliberate break | The test was shown red by deleting or inverting its production line, then the line was restored | `shown red by deleting or inverting` |
+| 10 | Backend 1 | A new scenario starts at the application-service port | `starts at the application-service port` |
+| 11 | Backend 2 | A host test is a named skeleton or sits in Contracts | `named skeleton or sits in Contracts` |
+| 12 | Backend 3 | The rule is pinned by a unit test and the wiring by one host test | `wiring by one host test` |
+| 13 | Backend 4 | No state is shared across fixtures | `shared across fixtures` |
+| 14 | Backend 5 | Time is `FakeLighthouseClock`, never the ambient clock | `ambient clock` |
+| 15 | Backend 6 | The feature's mutation config names the acceptance folder of the feature | `mutation config names` |
+| 16 | Backend 7 | A touched backend class sheds rows from `HostUsersStillToMove` | `sheds rows from` |
+| 17 | Touch it, improve it | A touched test class ends better than it began, on either stack | `ends better than it began` |
+| 18 | Load and quote | The report carries the closing line of each file read | `closing line of each file read` |
+| 19 | The fast cycle | The step names the fast-loop commands and its own named test | `names the fast-loop commands` |
+| 20 | No tags | No nWave scenario tags in anything written. **Not measured by the trial** (the wording's own last sentence says so); recorded as not measured | exempt: the project's no-tags sentence |
+
+20 items.
+
+## Wave: DELIVER / [REF] Trial wording, frozen (feature: Story 6083)
+
+The wording of "The trial, as worded" with only the angle-bracket parts filled: `<feature>` is Story 6083 (the over-time history fill on by default), `<feature workspace>` is `docs/feature/story-6083-over-time-history-fill-on-by-default`, `<scratch workspace>` is `docs/feature/story-6538-t11-test-writing-guidance/trial`. Note for the orchestrator: that workspace has no `discuss/` folder, so its stories are read from the DISCUSS sections of its `feature-delta.md` and from `slices/`; the frozen sentence is left as it is.
+
+```
+You are the acceptance designer for Story 6083 (the over-time history fill on by default), a feature that is already delivered. Its stories are in docs/feature/story-6083-over-time-history-fill-on-by-default/discuss/.
+First read, with ctx_read in full mode and fresh=true, .claude/skills/test-writing/SKILL.md and the file in
+.claude/skills/test-writing/references/ for your half (frontend.md or backend.md). Each file ends with a line "End of <file>".
+Quote that last line back in your report, one per file. If you did not see it, say so and read the file again in pages.
+Then write the acceptance scenarios for Story 6083 (the over-time history fill on by default) into docs/feature/story-6538-t11-test-writing-guidance/trial/ and nowhere else. Write no test file and no production file.
+Report: the files you read with their last lines, the scenarios you wrote, and any rule of the skill you did not follow and why.
+No nWave scenario tags (@us-, @slice-, @kpi-, @contract-shape and the like) in anything you write.
+```
+
+Overlap check (B-9): each of the 19 phrases of the table, searched with `grep -c -i -F` in the block above, has 0 hits (control: "full mode", a phrase that is in the wording, has 1 hit). The block equals "The trial, as worded" with only the three angle-bracket parts filled (`diff` against the original with those parts substituted: no difference). The one exempt sentence is the last line, the project's no-tags sentence.
