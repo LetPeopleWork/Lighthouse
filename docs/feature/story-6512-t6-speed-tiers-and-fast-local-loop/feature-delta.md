@@ -2396,3 +2396,7 @@ Run 42407897220 at `a4bb4163f`, the last step's push. `force_full=false`, so a p
 ## Wave: DELIVER / [REF] Push 8 judged (2026-11-07)
 
 Run 42409777954 at `a7f78a81c`, the review's fixes for slices E and F. `force_full=false`, so a plain run: 12,933 passed, 2 skipped, 12,935 in all, the count of the local list before it. Against push 7's CSV: 0 ids lost, 0 outcomes changed, 2 added, both in `TestSelectionClauseTest`. Every gate passed and the run stopped at deploy approval. The Story stays open for one thing: the maintainer's answer on the backend fast tier, 73.29 s against 60 s.
+
+## Wave: DELIVER / [REF] Closed (2026-11-08)
+
+**Maintainer decision:** the backend fast tier's median of 73.29 s against the 60 s target is accepted and stays recorded as a miss (guarantee 16, not met). T5 will add roughly 11 to 13 s by moving tests into the fast tier; T9's fast-tier ceiling keeps the time from rising, and T10's moves lower it. ADO #6512 Closed.
