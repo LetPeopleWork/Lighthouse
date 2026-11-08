@@ -2233,3 +2233,31 @@ The maintainer chose to **close T5 here**, with the remaining moves in a new Sto
 The other answer was to **keep the stand-in.** Port scenarios take their settings from the `IAppSettingService` stand-in, not from the real seeders. E13 checks the stand-in's answer against a seeded database.
 
 Guarantee 6 is not met when the class runs alone (+0.14 s, from first-use cost). That is accepted as a recorded finding. In a full run the same ids fall by 3.75 s.
+
+## Wave: DELIVER / [REF] Slice E review (2026-11-08)
+
+`nw-software-crafter-reviewer`, model `sonnet`: **APPROVED**, no blockers. No assertion was lost in the move, the set-up is sound (fake clock, a database per scenario, no static state), the code carries no internal references and no nWave tags.
+
+T5 closes, so the guard gaps it named go to Story 6602, which extends these guards as its classes move:
+
+**E10**
+- It sends one input at a time, so a save-side tidy that depends on a combination of inputs is not seen.
+- It compares only `RefinementSettings`. The Team fields `ATeam` writes directly are not compared: states, SLE, throughput history.
+- Its "No states chosen" case stores `States = []`, while Zenith at the port stores no settings at all.
+- It compares through `JsonSerializer`, so a `[JsonIgnore]` member drifts unseen.
+
+**E13**
+- It walks the stubbed setups only. A newly read, unstubbed `IAppSettingService` member returns its default and stays green.
+- `PremiumLicence` and `SignInOff` are not compared with the host.
+
+**`PortGivensGuardTest`**
+- It misses nested setters outside `Models.Refinement` (`StageRules.Ready.Mode`).
+- It misses a collection mutation through a getter (`team.ToDoStates.Add`).
+- It misses `context.Set<Team>()` and `context.Add(team)`.
+- It has no planted case for `Update` or for a nested set.
+
+**Smaller points**
+- `ScriptedForecasts` stamps `DateTime.UtcNow`.
+- The shipped engine runs on `TimeProvider.System`.
+- `GravitysStates` is duplicated in the port base and the wire class.
+- `NewScope()` is public only for the guard's planted classes.
