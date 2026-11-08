@@ -145,9 +145,10 @@ BACKEND_CATEGORY_COLUMN = trx_to_csv.CSV_COLUMNS[1]
 class Tier:
     tests: int = 0
     seconds: Decimal = Decimal(0)
+    largest: Decimal = Decimal(0)
 
     def adding(self, seconds: Decimal) -> Tier:
-        return Tier(self.tests + 1, self.seconds + seconds)
+        return Tier(self.tests + 1, self.seconds + seconds, max(self.largest, seconds))
 
     @property
     def mean(self) -> Decimal | None:
@@ -184,11 +185,54 @@ def _tier_of(stack: str, row: dict[str, str]) -> str:
     return INTEGRATION if row[BACKEND_CATEGORY_COLUMN] == INTEGRATION else FAST
 
 
+RUNS_TO_ENFORCE = 5
+LEDGERS_FIELD = "ledgers"
+FAST_LEDGER, MEAN_LEDGER, TOTAL_LEDGER = "fast_test_limit", "mean_ceiling", "total_ceiling"
+LEDGER_WORDS = {
+    FAST_LEDGER: "fast test limit ledger",
+    MEAN_LEDGER: "mean ceiling ledger",
+    TOTAL_LEDGER: "total ceiling ledger",
+}
+TESTS_WHEN_SET = "tests_when_set"
+
+
+@dataclass(frozen=True)
+class LedgerEntry:
+    seconds: Decimal
+    runs: int
+    tests_when_set: int | None = None
+
+    @property
+    def enforced(self) -> bool:
+        return self.runs >= RUNS_TO_ENFORCE
+
+
+@dataclass(frozen=True)
+class Limit:
+    """What one ledger says today: its newest enforced entry, and the provisional one after it."""
+
+    enforced: LedgerEntry | None = None
+    provisional: LedgerEntry | None = None
+
+    @property
+    def in_force(self) -> LedgerEntry | None:
+        return self.enforced or self.provisional
+
+
+@dataclass(frozen=True)
+class Ledgers:
+    fast: Limit = Limit()
+    mean: Limit = Limit()
+    total: Limit = Limit()
+
+
+NO_LEDGERS = Ledgers()
 NOTHING_LABELLED = "nothing labelled yet"
 FIGURES_WIDTH = 41
+CEILING_WIDTH = 31
 
 
-def tier_report(stack: str, count: TierCount) -> str:
+def tier_report(stack: str, count: TierCount, ledgers: Ledgers = NO_LEDGERS) -> str:
     if stack == "frontend":
         return "\n".join(
             [
@@ -202,10 +246,16 @@ def tier_report(stack: str, count: TierCount) -> str:
             ]
         )
     labelled = count.integration.tests > 0
+    integration = count.integration
     integration_lines = (
         [
-            _tier_line(INTEGRATION, count.integration, "mean not set"),
-            f"{'':<{FIGURES_WIDTH}}total not set",
+            _tier_line(
+                INTEGRATION,
+                integration,
+                _ceiling_cell("mean", "", ledgers.mean, integration.mean),
+            ),
+            f"{'':<{FIGURES_WIDTH}}"
+            + _ceiling_cell("total", "", ledgers.total, integration.seconds),
         ]
         if labelled
         else [_aside_line(INTEGRATION, None, NOTHING_LABELLED)]
@@ -214,13 +264,53 @@ def tier_report(stack: str, count: TierCount) -> str:
         [
             "Backend test time",
             f"{'Tier':<12}{'Tests':>7}{'Seconds':>10}{'Mean s':>9}   {'Ceiling':<32}Room",
-            _tier_line(FAST, count.fast, "per test not set"),
+            _tier_line(FAST, count.fast, _fast_cell(ledgers.fast, count.fast)),
             *integration_lines,
             _aside_line("Left out", count.left_out, "connector classes, not judged"),
             _aside_line("Not run", count.not_run, "did not pass, not counted"),
+            *_since_the_total_was_set(ledgers.total, integration),
             _shares_line(count) if labelled else _shares_text(NOTHING_LABELLED),
         ]
     )
+
+
+def _fast_cell(limit: Limit, fast: Tier) -> str:
+    room = f"largest {fast.largest:.3f} s" if limit.in_force else ""
+    return _cell(_limit_text("per test", " s", limit), room)
+
+
+def _ceiling_cell(label: str, unit: str, limit: Limit, value: Decimal | None) -> str:
+    return _cell(_limit_text(label, unit, limit), _room(limit, value))
+
+
+def _cell(limit_text: str, room: str) -> str:
+    return f"{limit_text:<{CEILING_WIDTH}} {room}".rstrip()
+
+
+def _limit_text(label: str, unit: str, limit: Limit) -> str:
+    shown, provisional = limit.in_force, limit.provisional
+    if shown is None:
+        return f"{label} not set"
+    text = f"{label} {shown.seconds:,}{unit}"
+    if provisional is None:
+        return text
+    if limit.enforced is None:
+        return f"{text} (provisional, {provisional.runs} of {RUNS_TO_ENFORCE})"
+    return f"{text}, provisional {provisional.seconds:,} ({provisional.runs} of {RUNS_TO_ENFORCE})"
+
+
+def _room(limit: Limit, value: Decimal | None) -> str:
+    shown = limit.in_force
+    if shown is None or value is None:
+        return ""
+    return f"{(shown.seconds - value) / shown.seconds * 100:.0f} %"
+
+
+def _since_the_total_was_set(total: Limit, integration: Tier) -> list[str]:
+    shown = total.in_force
+    if shown is None:
+        return []
+    return [f"Since the total was set: {integration.tests - shown.tests_when_set:+d} tests"]
 
 
 def _tier_line(name: str, tier: Tier, ceiling: str = "") -> str:
@@ -392,7 +482,7 @@ def _milliseconds(text: str | None) -> Decimal | None:
     return value if value.is_finite() and value >= 0 else None
 
 
-def load_allowlist(stack: str, path: Path) -> tuple[Decimal, dict[str, Decimal]]:
+def _section(stack: str, path: Path) -> tuple[str, dict]:
     name = escaped(str(path))
     try:
         document = json.loads(path.read_text(encoding="utf-8"))
@@ -401,6 +491,110 @@ def load_allowlist(stack: str, path: Path) -> tuple[Decimal, dict[str, Decimal]]
     section = document.get(stack) if isinstance(document, dict) else None
     if not isinstance(section, dict):
         raise CannotJudge(f"{name} has no {stack} section")
+    return name, section
+
+
+def load_ledgers(path: Path) -> Ledgers:
+    """The backend's three ledgers of limits, refused whole if any of them is broken or rises."""
+    name, section = _section("backend", path)
+    block = section.get(LEDGERS_FIELD, {})
+    if not isinstance(block, dict):
+        raise CannotJudge(
+            f"{name} has a {LEDGERS_FIELD} block in its backend section that is not an object"
+        )
+    return Ledgers(
+        *(
+            _limit_of(block.get(ledger, []), ledger, f"{name} has a {LEDGER_WORDS[ledger]}")
+            for ledger in (FAST_LEDGER, MEAN_LEDGER, TOTAL_LEDGER)
+        )
+    )
+
+
+def _limit_of(entries: object, ledger: str, where: str) -> Limit:
+    if not isinstance(entries, list):
+        raise CannotJudge(f"{where} that is not a list")
+    read = [
+        _ledger_entry(entry, ledger, f"{where} whose entry {number}")
+        for number, entry in enumerate(entries, start=1)
+    ]
+    _refuse_an_early_provisional(read, where)
+    if ledger != TOTAL_LEDGER:
+        _refuse_a_rise(read, where)
+    enforced = [entry for entry in read if entry.enforced]
+    return Limit(
+        enforced=enforced[-1] if enforced else None,
+        provisional=read[-1] if read and not read[-1].enforced else None,
+    )
+
+
+def _refuse_an_early_provisional(read: list[LedgerEntry], where: str) -> None:
+    for number, entry in enumerate(read[:-1], start=1):
+        if not entry.enforced:
+            raise CannotJudge(
+                f"{where} whose entry {number} is provisional but not the last; only the last "
+                f"entry may have fewer than {RUNS_TO_ENFORCE} run ids"
+            )
+
+
+def _refuse_a_rise(read: list[LedgerEntry], where: str) -> None:
+    newest: LedgerEntry | None = None
+    for number, entry in enumerate(read, start=1):
+        if newest is not None and entry.enforced and entry.seconds >= newest.seconds:
+            raise CannotJudge(
+                f"{where} whose entry {number}, {entry.seconds}s, is not below the "
+                f"{newest.seconds}s before it; this limit only goes down"
+            )
+        if newest is not None and entry.seconds > newest.seconds:
+            raise CannotJudge(
+                f"{where} whose provisional entry {number}, {entry.seconds}s, is above the "
+                f"enforced {newest.seconds}s before it; this limit only goes down"
+            )
+        newest = entry if entry.enforced else newest
+
+
+def _ledger_entry(entry: object, ledger: str, where: str) -> LedgerEntry:
+    if not isinstance(entry, dict):
+        raise CannotJudge(f"{where} is not an object")
+    seconds = _positive_seconds(entry.get("seconds"))
+    if seconds is None:
+        raise CannotJudge(f"{where} has no positive number as its seconds")
+    if not _is_text(entry.get("reason")):
+        raise CannotJudge(f"{where} has no reason")
+    runs = _distinct_runs(entry.get("runs"), where)
+    if ledger != TOTAL_LEDGER:
+        return LedgerEntry(seconds, runs)
+    return LedgerEntry(seconds, runs, _tests_when_set(entry.get(TESTS_WHEN_SET), where))
+
+
+def _distinct_runs(runs: object, where: str) -> int:
+    if not isinstance(runs, list):
+        raise CannotJudge(f"{where} has no list of run ids")
+    if not runs:
+        raise CannotJudge(f"{where} has no run id")
+    seen: set[str] = set()
+    for run in runs:
+        if not _is_run_id(run):
+            raise CannotJudge(f"{where} has a run id that is neither a whole number nor text")
+        # The same run written once as a number and once as text is still one run.
+        if str(run) in seen:
+            raise CannotJudge(f"{where} names run {escaped(str(run))} more than once")
+        seen.add(str(run))
+    return len(seen)
+
+
+def _is_run_id(run: object) -> bool:
+    # JSON true arrives as a Python bool, which would otherwise pass as the number 1.
+    return _is_text(run) or (isinstance(run, int) and not isinstance(run, bool))
+
+
+def _tests_when_set(tests: object, where: str) -> int:
+    if isinstance(tests, bool) or not isinstance(tests, int) or tests <= 0:
+        raise CannotJudge(f"{where} has no positive whole number as its {TESTS_WHEN_SET}")
+    return tests
+
+
+def load_allowlist(stack: str, path: Path) -> tuple[Decimal, dict[str, Decimal]]:
+    name, section = _section(stack, path)
     budget_seconds = _positive_seconds(section.get("budget_seconds"))
     if budget_seconds is None:
         raise CannotJudge(f"{name} sets no positive budget_seconds in its {stack} section")
@@ -500,12 +694,15 @@ def _check(arguments: argparse.Namespace) -> int:
     summary = summary_file(os.environ)
     rows = load_timings(stack, arguments.csv)
     budget_seconds, ceilings = load_allowlist(stack, arguments.allowlist)
+    ledgers = load_ledgers(arguments.allowlist) if stack == "backend" else NO_LEDGERS
     if stack == "backend" and not arguments.source_root.is_dir():
         raise CannotJudge(
             f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
         )
     connector_classes = _connector_classes(stack, arguments.source_root)
-    publish_report(tier_report(stack, count_tiers(stack, rows, connector_classes)), summary)
+    publish_report(
+        tier_report(stack, count_tiers(stack, rows, connector_classes), ledgers), summary
+    )
 
     findings = judge(stack, rows, budget_seconds, ceilings)
     still_present = _still_present(stack, rows, arguments.source_root, ceilings)

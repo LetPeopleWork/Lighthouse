@@ -5,6 +5,11 @@
   },
   "backend": {
     "budget_seconds": 34,
+    "ledgers": {
+      "fast_test_limit": [],
+      "mean_ceiling": [],
+      "total_ceiling": []
+    },
     "allowlist": [
       {
         "unit": "Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest",

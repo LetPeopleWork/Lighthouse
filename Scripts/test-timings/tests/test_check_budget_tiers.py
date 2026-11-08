@@ -19,6 +19,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent))
 
 from test_check_budget import (  # noqa: E402
+    ALLOWLIST_NAME,
     BACKEND_COLUMNS,
     FRONTEND_COLUMNS,
     SUMMARY_VARIABLE,
@@ -393,6 +394,263 @@ class TheReportLandsInTheJobSummary(TierReportTestCase):
         for result in results:
             self.assert_passes_quietly(result)
         self.assertEqual(real.read_text(encoding="utf-8"), "## The job's own summary\n")
+
+
+RUN_IDS = [42372930241, 42372874167, 41904560367, 42401000001, 42401000002, 42401000003]
+ENFORCING_RUNS = 5
+FAST_LEDGER, MEAN_LEDGER, TOTAL_LEDGER = "fast_test_limit", "mean_ceiling", "total_ceiling"
+LEDGER_WORDS = {
+    FAST_LEDGER: "fast test limit ledger",
+    MEAN_LEDGER: "mean ceiling ledger",
+    TOTAL_LEDGER: "total ceiling ledger",
+}
+
+
+def entry(seconds, runs=ENFORCING_RUNS, reason="the largest of five plain runs on main", **extra):
+    run_ids = RUN_IDS[:runs] if isinstance(runs, int) else runs
+    return {"seconds": seconds, "runs": run_ids, "reason": reason, **extra}
+
+
+def total_entry(seconds, tests_when_set=20, **extra):
+    return entry(seconds, tests_when_set=tests_when_set, **extra)
+
+
+def planted_ledgers(**ledgers):
+    """Fast limit 2 s, mean ceiling 0.5 s, total ceiling 10 s set at 20 tests, all enforced."""
+    return {
+        FAST_LEDGER: [entry(2)],
+        MEAN_LEDGER: [entry(0.5)],
+        TOTAL_LEDGER: [total_entry(10)],
+        **ledgers,
+    }
+
+
+def ceiling_cell(ceiling, room):
+    return f"{ceiling:<31} {room}"
+
+
+def fast_line(ceiling, room):
+    return f"Fast            100       1.0    0.010   {ceiling_cell(ceiling, room)}"
+
+
+def mean_line(ceiling, room):
+    return f"Integration      20       8.0    0.400   {ceiling_cell(ceiling, room)}"
+
+
+def total_line(ceiling, room):
+    return f"{'':<41}{ceiling_cell(ceiling, room)}"
+
+
+class LedgerTestCase(TierReportTestCase):
+    def check_ledgers(self, ledgers, *options):
+        timings = self.workspace.steady_run()
+        self.write_ledgers(ledgers)
+        return self.workspace.check("backend", timings, *options)
+
+    def write_ledgers(self, ledgers):
+        document = {
+            "frontend": {"budget_seconds": PLANTED_BUDGET_SECONDS, "allowlist": []},
+            "backend": {
+                "budget_seconds": PLANTED_BUDGET_SECONDS,
+                "allowlist": [],
+                "ledgers": ledgers,
+            },
+        }
+        self.workspace.raw_allowlist(json.dumps(document, indent=2))
+
+    def accepted_report(self, ledgers):
+        result = self.check_ledgers(ledgers)
+        self.assertEqual(result.returncode, 0, msg=self._explain(result))
+        self.assertEqual(self.annotations(result, "error"), [], msg=self._explain(result))
+        return self.report_of(result, "Backend test time").splitlines()
+
+    def assert_ledger_refused(self, result, ledger, *fragments):
+        self.assertEqual(result.returncode, 2, msg=self._explain(result))
+        errors = self.annotations(result, "error")
+        self.assertEqual(len(errors), 1, msg=self._explain(result))
+        for fragment in (LEDGER_WORDS.get(ledger, ledger), ALLOWLIST_NAME, *fragments):
+            self.assertIn(fragment, errors[0], msg=self._explain(result))
+        self.assertNotIn("Backend test time", result.stdout, msg=self._explain(result))
+        self.assertNotIn("Traceback", result.stderr, msg=self._explain(result))
+
+
+
+class ALimitIsLoweredByANewEntry(LedgerTestCase):
+    def test_a_limit_is_lowered_by_a_new_entry(self):
+        result = self.check_ledgers(planted_ledgers())
+
+        self.assert_passes_quietly(result)
+        report = self.report_of(result, "Backend test time").splitlines()
+        self.assertIn(fast_line("per test 2 s", "largest 0.010 s"), report)
+        self.assertIn(mean_line("mean 0.5", "20 %"), report)
+        self.assertIn(total_line("total 10", "20 %"), report)
+        self.assertIn("Since the total was set: +0 tests", report)
+        self.assertLess(
+            report.index("Not run           3   did not pass, not counted"),
+            report.index("Since the total was set: +0 tests"),
+        )
+
+        lowered = self.accepted_report(planted_ledgers(**{MEAN_LEDGER: [entry(0.5), entry(0.45)]}))
+
+        self.assertIn(mean_line("mean 0.45", "11 %"), lowered)
+
+
+class AMeanOrFastLimitThatRisesIsRefused(LedgerTestCase):
+    def test_a_mean_or_fast_limit_that_rises_is_refused(self):
+        cases = {
+            (MEAN_LEDGER, "above"): [entry(0.5), entry(0.55)],
+            (MEAN_LEDGER, "equal"): [entry(0.5), entry(0.5)],
+            (FAST_LEDGER, "above"): [entry(2), entry(2.5)],
+            (FAST_LEDGER, "equal"): [entry(2), entry(2)],
+        }
+        for (ledger, how), entries in cases.items():
+            with self.subTest(ledger=ledger, how=how):
+                self.workspace = self.fresh_workspace()
+
+                result = self.check_ledgers(planted_ledgers(**{ledger: entries}))
+
+                self.assert_ledger_refused(result, ledger, "entry 2", "only goes down")
+
+    def test_the_total_may_rise_with_a_reason(self):
+        report = self.accepted_report(
+            planted_ledgers(
+                **{TOTAL_LEDGER: [total_entry(10), total_entry(13, tests_when_set=26)]}
+            )
+        )
+
+        self.assertIn(total_line("total 13", "38 %"), report)
+        self.assertIn("Since the total was set: -6 tests", report)
+
+        self.workspace = self.fresh_workspace()
+        blank_reason = [total_entry(10), total_entry(13, tests_when_set=26, reason="  ")]
+
+        result = self.check_ledgers(planted_ledgers(**{TOTAL_LEDGER: blank_reason}))
+
+        self.assert_ledger_refused(result, TOTAL_LEDGER, "entry 2", "reason")
+
+
+class AProvisionalEntryCannotSitAboveTheMeanOrFastLimit(LedgerTestCase):
+    def test_a_provisional_entry_above_the_mean_or_fast_limit_is_refused(self):
+        for ledger, enforced, above in ((MEAN_LEDGER, 0.5, 0.6), (FAST_LEDGER, 2, 2.4)):
+            with self.subTest(ledger=ledger):
+                self.workspace = self.fresh_workspace()
+                entries = [entry(enforced), entry(above, runs=2)]
+
+                result = self.check_ledgers(planted_ledgers(**{ledger: entries}))
+
+                self.assert_ledger_refused(result, ledger, "provisional", "entry 2")
+
+    def test_a_provisional_entry_equal_to_or_below_the_limit_is_accepted_and_shown_beside_it(self):
+        cases = [
+            (MEAN_LEDGER, [entry(0.5), entry(0.5, runs=2)], mean_line("mean 0.5, provisional 0.5 (2 of 5)", "20 %")),
+            (MEAN_LEDGER, [entry(0.5), entry(0.45, runs=2)], mean_line("mean 0.5, provisional 0.45 (2 of 5)", "20 %")),
+            (FAST_LEDGER, [entry(2), entry(2, runs=2)], fast_line("per test 2 s, provisional 2 (2 of 5)", "largest 0.010 s")),
+            (FAST_LEDGER, [entry(2), entry(1.8, runs=2)], fast_line("per test 2 s, provisional 1.8 (2 of 5)", "largest 0.010 s")),
+            (TOTAL_LEDGER, [total_entry(10), total_entry(13, runs=2)], total_line("total 10, provisional 13 (2 of 5)", "20 %")),
+        ]
+        for ledger, entries, expected in cases:
+            with self.subTest(ledger=ledger, entries=entries):
+                self.workspace = self.fresh_workspace()
+
+                report = self.accepted_report(planted_ledgers(**{ledger: entries}))
+
+                self.assertIn(expected, report)
+
+
+class ThereIsOneProvisionalEntryAtMostAndItComesLast(LedgerTestCase):
+    def test_there_is_one_provisional_entry_at_most_and_it_comes_last(self):
+        cases = {
+            "two provisional": [entry(0.5), entry(0.48, runs=2), entry(0.45, runs=3)],
+            "provisional before enforced": [entry(0.5, runs=2), entry(0.45)],
+        }
+        for case, entries in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+
+                result = self.check_ledgers(planted_ledgers(**{MEAN_LEDGER: entries}))
+
+                self.assert_ledger_refused(result, MEAN_LEDGER, "provisional", "last")
+
+
+class DistinctRunIdsDecideWhatAnEntryIs(LedgerTestCase):
+    def test_distinct_run_ids_decide_what_an_entry_is(self):
+        cases = {
+            "one id": (entry(0.5, runs=1), "mean 0.5 (provisional, 1 of 5)"),
+            "four ids": (entry(0.5, runs=4), "mean 0.5 (provisional, 4 of 5)"),
+            "five ids": (entry(0.5, runs=5), "mean 0.5"),
+            "six ids": (entry(0.5, runs=6), "mean 0.5"),
+            "five text ids": (entry(0.5, runs=[str(run) for run in RUN_IDS[:5]]), "mean 0.5"),
+        }
+        for case, (only_entry, ceiling) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+
+                report = self.accepted_report(planted_ledgers(**{MEAN_LEDGER: [only_entry]}))
+
+                self.assertIn(mean_line(ceiling, "20 %"), report)
+
+    def test_an_entry_with_no_run_id_or_a_repeated_one_is_refused(self):
+        cases = {
+            "no id": (entry(0.5, runs=[]), "no run id"),
+            "a repeat": (entry(0.5, runs=[*RUN_IDS[:4], RUN_IDS[0]]), "more than once"),
+            "a repeat as text": (entry(0.5, runs=[*RUN_IDS[:4], str(RUN_IDS[0])]), "more than once"),
+        }
+        for case, (only_entry, fragment) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+
+                result = self.check_ledgers(planted_ledgers(**{MEAN_LEDGER: [only_entry]}))
+
+                self.assert_ledger_refused(result, MEAN_LEDGER, "entry 1", fragment)
+
+
+class AMalformedEntryIsRefused(LedgerTestCase):
+    def test_a_malformed_entry_is_refused_naming_what_is_wrong(self):
+        no_reason = entry(0.5)
+        del no_reason["reason"]
+        no_count = total_entry(10)
+        del no_count["tests_when_set"]
+        cases = {
+            "seconds 0": (MEAN_LEDGER, [entry(0)], "seconds"),
+            "seconds -1": (MEAN_LEDGER, [entry(-1)], "seconds"),
+            "seconds as text": (MEAN_LEDGER, [entry("0.5")], "seconds"),
+            "seconds true": (MEAN_LEDGER, [entry(True)], "seconds"),
+            "no reason": (MEAN_LEDGER, [no_reason], "reason"),
+            "ledger not a list": (MEAN_LEDGER, entry(0.5), "not a list"),
+            "entry not an object": (MEAN_LEDGER, [0.5], "entry 1"),
+            "ids not a list": (MEAN_LEDGER, [entry(0.5, runs=str(RUN_IDS[0]))], "run ids"),
+            "an id of true": (MEAN_LEDGER, [entry(0.5, runs=[*RUN_IDS[:4], True])], "run id"),
+            "an id of blank text": (MEAN_LEDGER, [entry(0.5, runs=[*RUN_IDS[:4], " "])], "run id"),
+            "total with no count": (TOTAL_LEDGER, [no_count], "tests_when_set"),
+            "total counted at 0": (TOTAL_LEDGER, [total_entry(10, tests_when_set=0)], "tests_when_set"),
+        }
+        for case, (ledger, entries, fragment) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+
+                result = self.check_ledgers(planted_ledgers(**{ledger: entries}))
+
+                self.assert_ledger_refused(result, ledger, fragment)
+
+    def test_a_ledgers_block_that_is_not_an_object_is_refused(self):
+        result = self.check_ledgers([entry(0.5)])
+
+        self.assert_ledger_refused(result, "ledgers", "not an object")
+
+
+class TheSwitchDoesNotSoftenABadLedger(LedgerTestCase):
+    def test_the_switch_does_not_soften_a_bad_ledger(self):
+        rising = planted_ledgers(**{MEAN_LEDGER: [entry(0.5), entry(0.55)]})
+
+        with self.subTest(switch="--warn-only"):
+            self.assert_ledger_refused(
+                self.check_ledgers(rising, "--warn-only"), MEAN_LEDGER, "only goes down"
+            )
+        with self.subTest(switch="variable"):
+            self.workspace = self.fresh_workspace()
+            with mock.patch.dict(os.environ, {check_budget.WARN_ONLY_VARIABLE: "true"}):
+                result = self.check_ledgers(rising)
+            self.assert_ledger_refused(result, MEAN_LEDGER, "only goes down")
 
 
 if __name__ == "__main__":
