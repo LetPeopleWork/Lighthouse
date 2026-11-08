@@ -1,6 +1,9 @@
 using Lighthouse.Backend.Models.AppSettings;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
+using Microsoft.AspNetCore.Http;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.TestHelpers
@@ -31,5 +34,19 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                 .Returns(new RefreshSettings { Interval = 60, RefreshAfter = 180, StartDelay = 10 });
             return settings.Object;
         }
+
+        /// <summary>Sign-in is off, as it is on every instance a port scenario stands for.</summary>
+        public static IAuthModeResolver SignInOff()
+        {
+            var authMode = new Mock<IAuthModeResolver>();
+            authMode.Setup(resolver => resolver.Resolve()).Returns(new RuntimeAuthStatus { Mode = AuthMode.Disabled });
+            return authMode.Object;
+        }
+
+        /// <summary>
+        /// A port scenario serves no request, so there is none to read. The product's own accessor with nothing in
+        /// it says exactly that; a service reads the request only when sign-in is on, and at the port it is off.
+        /// </summary>
+        public static IHttpContextAccessor NoRequest() => new HttpContextAccessor();
     }
 }

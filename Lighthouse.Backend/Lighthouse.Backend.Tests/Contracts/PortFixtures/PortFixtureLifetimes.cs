@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +11,7 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
     /// request, given one instance for the whole scenario, shares state the product never shares, and a scenario
     /// passes on it that a real caller could never see. This compares a port fixture's registrations with the
     /// host's, by service type and lifetime, and by what is built for them. The stand-ins a port fixture puts in
-    /// on purpose (the licence, the settings, the scripted forecast, the clocks and the pinned random draws) are
+    /// on purpose (the licence, the settings, the sign-in mode, the scripted forecast, the clocks and the pinned random draws) are
     /// compared by lifetime only. Any other service a factory builds on both sides is reported, as what two
     /// factories return cannot be told apart without running them.
     /// </summary>
@@ -24,6 +25,7 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
             typeof(ILighthouseClock),
             typeof(TimeProvider),
             typeof(IDrawStreamFactory),
+            typeof(IAuthModeResolver),
         ];
 
         public ServiceDescriptor? OnTheHost(Type serviceType)

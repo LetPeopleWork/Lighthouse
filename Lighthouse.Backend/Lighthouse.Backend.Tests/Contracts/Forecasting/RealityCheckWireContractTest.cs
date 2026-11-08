@@ -8,6 +8,7 @@ using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck;
+using Lighthouse.Backend.Tests.API.Integration.Refinement;
 using Lighthouse.Backend.Tests.Contracts.PortFixtures;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -341,17 +342,21 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
         {
             yield return PortFixture<Slice01OneSentenceAboutYourSamplingWindowTest>();
             yield return PortFixture<Slice04TheAnswerOpensInADialogTest>();
+            yield return PortFixture(nameof(RefinementAtThePortTest), () => RefinementAtThePortTest.WhatItRegisters);
         }
 
         private static TestCaseData PortFixture<TFixture>() where TFixture : RealityCheckAtThePortTest, new()
-            => new TestCaseData(new TFixture()).SetArgDisplayNames(typeof(TFixture).Name);
+            => PortFixture(typeof(TFixture).Name, () => new TFixture().WhatItRegisters);
+
+        private static TestCaseData PortFixture(string fixtureName, Func<IServiceCollection> whatItRegisters)
+            => new TestCaseData(fixtureName, whatItRegisters).SetArgDisplayNames(fixtureName);
 
         [TestCaseSource(nameof(PortFixtures))]
-        public void Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(RealityCheckAtThePortTest portFixture)
+        public void Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(string fixtureName, Func<IServiceCollection> whatItRegisters)
         {
-            var differences = new PortFixtureLifetimes(hostAsItIs).HowItDiffersFromTheHost(portFixture.WhatItRegisters);
+            var differences = new PortFixtureLifetimes(hostAsItIs).HowItDiffersFromTheHost(whatItRegisters());
 
-            Assert.That(differences, Is.Empty, $"{portFixture.GetType().Name} registers services unlike the host");
+            Assert.That(differences, Is.Empty, $"{fixtureName} registers services unlike the host");
         }
 
         /// <summary>
