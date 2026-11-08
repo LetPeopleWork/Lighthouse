@@ -17,6 +17,13 @@ or make it a wire contract on WireContractTest in Tests/Contracts/.
 A new scenario starts at the port. A skeleton is one or two per user flow, on the list in `TestHostUseGuardTest`; a wire contract covers
 the route, status, JSON names, headers and 401/403. A new scenario in a class already on the guard's list goes in a new class at the port too.
 
+**Code that is not an application service.** A start-up seeder, a background job or a hosted service has no route and no port of its own,
+and "at the port" still applies: run it against the harness's database context and services directly, with no host, as a scenario would
+call a service (build the harness, take a scope, hand the seeder or the job the scope's context and services, call its entry method, and
+read the result from the database). If that cannot be done, for example because the code only runs inside the host's start-up sequence,
+it is not left as an unnamed host test: it becomes a named skeleton with its user flow, and the scenario says why it could not be driven
+without the host.
+
 **Example.** The port base of the Reality Check builds the real service over a database of the scenario's own, with no host:
 
 ```cs
@@ -52,6 +59,11 @@ formats are right is asserted once, on the wire contract's host. Changing the li
 **Finding.** The port harness gives each scenario a database file of its own, copied from a schema template (`service-port-<guid>.db`
 under the temp folder), and deletes it afterwards; a scenario still got its set-up for 22 ms, so nothing was gained by sharing a
 database. A host fixture that keeps one host for several tests resets what differs per test in its per-test set-up.
+
+**A scenario's Given is stated in full.** It never refers to another scenario's set-up or outcome ("given scenario 2's start" is not a
+Given): a reader, and the test that follows, must get the whole starting state from that one scenario. Where several scenarios start
+alike, each one lists the same rows again, or they share a named builder in code that each calls for itself, never a state left behind
+by an earlier test.
 
 **Example.** The harness is the unit of isolation: build it per scenario and let it dispose of what it made.
 

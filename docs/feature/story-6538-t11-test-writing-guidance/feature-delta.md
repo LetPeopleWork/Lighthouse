@@ -1018,3 +1018,95 @@ No nWave scenario tags (@us-, @slice-, @kpi-, @contract-shape and the like) in a
 ```
 
 Overlap check (B-9): each of the 19 phrases of the table, searched with `grep -c -i -F` in the block above, has 0 hits (control: "full mode", a phrase that is in the wording, has 1 hit). The block equals "The trial, as worded" with only the three angle-bracket parts filled (`diff` against the original with those parts substituted: no difference). The one exempt sentence is the last line, the project's no-tags sentence.
+
+## Wave: DELIVER / [REF] Trial and review (2026-11-08, step 02-01, part 2)
+
+The trial was one `nw-acceptance-designer` dispatch on sonnet with the frozen wording; its output is `trial/story-6083-acceptance-scenarios.md` (101 lines, committed at dd07b8c70). A separate reviewer on haiku scored it against the 20 checklist items. The table is the reviewer's, verbatim.
+
+| # | Item | Verdict | Quote / reason |
+|---|---|---|---|
+| 1 | Frontend 1, rule on fn/hook | N/A | Line 3: "Backend story." |
+| 2 | Frontend 2, one render | N/A | Backend-only output. |
+| 3 | Frontend 3, smallest fixture | N/A | Frontend rule; backend fixture line: "A row is one `OptionalFeatures` row plus at most one `AppSettings` row." |
+| 4 | Frontend 4, fake clock | N/A | "no clock (nothing here reads time, so no `FakeLighthouseClock`)" (claim not checked against source) |
+| 5 | Frontend 5, slow test | N/A | No frontend test; no timeout or retry mentioned. |
+| 6 | Frontend 6, alone and shuffled | Not followed (owed) | "run the class alone, in file order and shuffled." Nothing run; no code written. |
+| 7 | Frontend 7, loading/failure look | N/A | No view. Report says "nothing visible"; output silent. |
+| 8 | Frontend 8, touched frontend test moves down | N/A | No frontend test touched. |
+| 9 | Deliberate break | Not followed (owed) | "Break check: for each of scenarios 1, 4 and 8, invert the seeded `Enabled` value..." Not run. |
+| 10 | Backend 1, starts at port | Followed | "built with `ServicePortHarness`" under `Tests/Acceptance/OverTimeHistoryFill/` (scenarios 1-7). |
+| 11 | Backend 2, skeleton or Contracts | Followed | "one row on `WireContractTest` in `Tests/Contracts/`"; "Skeleton \| none". |
+| 12 | Backend 3, unit plus one host test | Followed | "unit test next to `OptionalFeatureSeeder`" (8); one host row (9). |
+| 13 | Backend 4, no shared state | Followed, with caveat | "each scenario builds its own harness. ... No shared state." But Givens of 4-7 point at "scenario 2's start" and "scenario 1's start". |
+| 14 | Backend 5, FakeLighthouseClock | N/A | "no clock (nothing here reads time...)". Unverified. |
+| 15 | Backend 6, mutation config names folder | Followed | "the test-case filter names `Tests.Acceptance.OverTimeHistoryFill` as its added last term". |
+| 16 | Backend 7, sheds HostUsersStillToMove rows | Not followed (unaddressed) | Output adds a row to `WireContractTest` but never says whether it is on the guard list. |
+| 17 | Touch it, improve it | Not followed (unaddressed) | Same touch of `WireContractTest`; no improvement stated. |
+| 18 | Load and quote closing lines | Followed (report claim only) | Output file quotes nothing. Report claims "End of SKILL.md", "End of backend.md", "End of frontend.md". |
+| 19 | Fast cycle named | Followed | "Run `Lighthouse.Backend/Test-Fast.ps1` and the named scenarios". Named, not run. |
+| 20 | No tags | Not measured | Output says "Plain words, no tags." Scan: no `@`-tags; only NUnit `[TestCase]`. |
+
+### Deviations the reviewer listed, each with its output line
+
+Nothing here is fixed in the trial output, and no deviation was resolved silently. Output lines are those of `trial/story-6083-acceptance-scenarios.md`.
+
+| # | Deviation | Output line |
+|---|---|---|
+| 1 | The Givens of scenarios 4 to 7 chain to other scenarios, so those scenarios are not self-contained. | 51 ("Given scenario 2's start ..."), 58, 64 and 71 ("Given scenario 1's start") |
+| 2 | Scenario 8 is unit-level but numbered with the acceptance scenarios. | 76 (heading "8. The once-only rule (unit level, no harness)") |
+| 3 | The coverage line's count disagrees with its own list: it names 3, 4, 5, 6, 7, 9 and the off rows of 8, then says "6 of 9". | 95 |
+| 4 | "Nothing here reads time" is asserted but not shown. | 17 |
+| 5 | Items 6, 9 and 11 are owed: no code was written, no break run, no test run. | 100 and 101 (the "Checks owed at hand-over" list) |
+| 6 | A touched existing class is not checked against the guard list. | 12 (the `WireContractTest` row), and nowhere else |
+| 7 | The loading/failure reasoning appears only in the trial agent's report, not in the output. | none in the output; the report only |
+
+### The reviewer's judgements
+
+- Placing the seeder "at the port" under backend rule 1 is a stretch. Rule 1 names application services, so the skill should cover seeders. (Acted on below, edit (a).)
+- Scenario 9, the 403 wire contract, is right under rule 2.
+
+### Orchestrator's notes
+
+- **Items 16 and 17 are arguably misapplied. Both readings stand.** Reading one (the reviewer's): the output adds a row to `WireContractTest`, a hosted class, so rule 7 and "touch it, improve it" apply and the output is silent on both. Reading two (the orchestrator's): scenario 9 adds a **new** wire-contract class and does not touch an existing hosted class, so there is no row to shed from `HostUsersStillToMove` and no existing test to improve. The output's line 12 says "one row on `WireContractTest`", which is ambiguous between the two. This record does not choose; the checklist items stay as frozen, and the maintainer may rule on them.
+- The trial agent did not read the nw-* skill files, and it skipped Phase 0 because the brief asked for scenarios only. The trial therefore measured the skill's reach on an agent without the nWave method loaded, which is the weaker setting.
+- The workspace has no `discuss/` path. The frozen wording names one, a dead path. The agent read the stories from the Story 6083 workspace instead.
+- Item 18 is a report claim only: the output file quotes no closing line, so the check that the files were read in full rests on the agent's word.
+
+### Skill edits made because of the trial
+
+Two edits, each made separately and each followed by the same searches (below). The reviewer's judgement and deviation 1 are the two real lessons; nothing else in the skill was changed.
+
+**Edit (a), rule 1 of `references/backend.md`: code that is not an application service.** A new paragraph, "Code that is not an application service", after the three ways out. A start-up seeder, a background job or a hosted service is driven at the port by running it against the harness's database context and services directly, with no host (build the harness, take a scope, hand the code the scope's context and services, call its entry method, read the result from the database). If that cannot be done it becomes a named skeleton with its user flow, and the scenario says why. Answers the reviewer's judgement and the trial's stretch of "at the port" for the seeder. Not verified against a real seeder in this step: it states the way the harness is built (rule 1's own example), and the next feature that has a seeder tests whether the wording is enough.
+
+**Edit (b), rule 4 of `references/backend.md`: a Given is stated in full.** A new paragraph, "A scenario's Given is stated in full": a Given never refers to another scenario's set-up or outcome; where scenarios start alike each lists the rows again, or they call a shared named builder, never a state an earlier test left behind. Answers deviation 1.
+
+**Searches after edit (a), then again after edit (b).** Script: one `checks.sh` run twice, output saved after each edit; the two outputs are identical (`diff` prints nothing, exit 0), as expected, because neither paragraph adds a name, a reference or a pattern hit.
+
+- Last lines, read fresh from disk with `tail -n 1`: `SKILL.md: End of SKILL.md`; `references/backend.md: End of backend.md`; `references/frontend.md: End of frontend.md`. `backend.md` is now 108 lines.
+- Names. Backend names, `git grep -l -F` outside the workspace and the skill, files: `ServicePortHarness` 14, `WireContractTest` 22, `TestHostUseGuardTest` 14, `HostUsersStillToMove` 6, `SkeletonsByUserFlow` 3, `FakeLighthouseClock` 106, `RealityCheckWireContractTest` 13, `ForecastRealityCheckServiceTest` 7, `ForecastDataSufficiencyPolicy` 23, `TestDatabaseTemplate` 7, `NewScope` 9, `RegisterWhatTheCheckReads` 1, `Tests/Contracts/` 10, `Lighthouse.Backend/Test-Fast.ps1` 6, `FullyQualifiedName!~API.Integration` 65, `service-port-` 1; known-missing `NoSuchNameXyz` 0. Marked planned in the skill: `Tests.Acceptance.<Feature>`. The frontend names script ran as well: every frontend name found, `NoSuchNameInTheTreeXyz` 0 files, "paths tracked: yes". The counts are higher than at C-2 because the tree has moved since then (more files use these names); none dropped to 0.
+- Guard quotes, `git grep -c -F` at `HEAD` (dd07b8c70 plus the working edits, which do not touch `TestHostUseGuardTest.cs`), file `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs`: "move it to the application-service port" 2; "list it as a skeleton with its user flow" 2; "or make it a wire contract on WireContractTest" 1; "Its line goes in this commit" 2. The frontend guard strings (`Time budget:`, ` offenders`, `listed here with why it is slow`, `BUDGET_SECONDS = `) are found at `HEAD` too.
+- Pattern lists, positive control first: the planted line `Story 6083 #1234 @us-01 3,648` hit all three lists (list 1, list 2, list 3: one line each). On the skill folder: list 2 and list 3 print nothing; list 1 prints one line, `SKILL.md:42` "The full gates run once at the end of a slice and before every push." the same single, accepted hit as at C-4 (the word "slice" with no number, in `CLAUDE.md`'s own rule too). Neither new paragraph adds a hit.
+- B-3, `git grep -n --untracked -F` for "New backend acceptance scenarios drive the application-service port." outside this workspace and the archived T5 workspace: `references/backend.md:7` and `CLAUDE.md:134` (the one rule line). Nothing else.
+
+## Wave: DELIVER / [REF] Closing record of Story 6538's skill trial
+
+**Deferred check: OPEN.** It is not passed and not done. The trial above was run on a feature that was already delivered, by an agent without the nWave method loaded, on one story, and its output is scenarios on paper: the reviewer's owed items (alone and shuffled, the deliberate break, a test run) could not be measured because no code was written. What would settle it is the next feature's DISTILL, which writes "skill loaded: yes/no" and the deviations from the skill's rules into its own `feature-delta.md`; the maintainer reads that after its DELIVER and rules on whether the skill changed what was written. Until then the status stays open, and no step or Story may cite the trial as evidence that the skill works.
+
+What the trial did show, without settling anything: of the 20 items, 6 were followed, 1 followed with a caveat, 4 not followed (items 6 and 9 owed, items 16 and 17 unaddressed and disputed above), 8 not applicable to a backend story, and 1 not measured. Two rule gaps were found and taught (edits (a) and (b)); five further deviations (2, 3, 4, 5, 7 above) sit in the trial output and are recorded, not fixed, because the output is the trial's evidence and stays as the designer wrote it.
+
+**Criterion 19, the unpushed range.** `git log origin/main..HEAD` after `git fetch` holds 7 commits (1484f4099, 8dd59f6fb, a25c8fdc2, 2fa7efeee, ee975e808, e7e78638b, dd07b8c70). `git log origin/main..HEAD --name-only --format= | sort -u` prints these paths, exactly:
+
+```
+.claude/skills/test-writing/SKILL.md
+.claude/skills/test-writing/references/backend.md
+.claude/skills/test-writing/references/frontend.md
+CLAUDE.md
+docs/ci-learnings.md
+docs/feature/story-6536-t9-per-tier-ratchets/feature-delta.md
+docs/feature/story-6538-t11-test-writing-guidance/feature-delta.md
+docs/feature/story-6538-t11-test-writing-guidance/trial/story-6083-acceptance-scenarios.md
+Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs
+Scripts/test-timings/test-time-budget.json
+```
+
+**Criterion 19 is not met as worded**: two paths are outside docs/, .claude/ and CLAUDE.md. Both come from other sessions' commits: `Scripts/test-timings/test-time-budget.json` from a25c8fdc2, and `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs` from e7e78638b. Neither is this step's work. Whether to push the range, or to hold it back, is the orchestrator's call; nothing was pushed.
