@@ -1,4 +1,10 @@
-"""Fail the verify job when a test file (frontend) or class (backend) runs over its time budget."""
+"""Report each stack's test tiers, and fail the verify job when a test file (frontend) or class
+(backend) runs over its time budget.
+
+A limit is in one of three states. With none written, the check only reports. A provisional
+limit, read from fewer than five CI runs, warns on a breach and never fails. An enforced limit,
+read from five or more runs, fails the build on a breach.
+"""
 
 from __future__ import annotations
 
@@ -61,7 +67,6 @@ class CannotJudge(Exception):
     """An input the check cannot trust, so it gives no verdict rather than a wrong one."""
 
 
-SKIPPED_SOURCE_FOLDERS = ("bin", "obj", "StrykerOutput")
 # Anchored at line start so a comment that merely mentions a namespace or a class declares nothing.
 DECLARATION = re.compile(
     r"^[ \t]*(?:namespace\s+([\w.]+)\s*[;{]"
@@ -129,6 +134,117 @@ def judge(
     return findings
 
 
+FAST, INTEGRATION = "Fast", "Integration"
+COMPONENT_TEST_SUFFIX = ".test.tsx"
+PASSED = "Passed"
+OUTCOME_COLUMN = {stack: columns[3] for stack, columns in COLUMNS.items()}
+BACKEND_CATEGORY_COLUMN = trx_to_csv.CSV_COLUMNS[1]
+
+
+@dataclass(frozen=True)
+class Tier:
+    tests: int = 0
+    seconds: Decimal = Decimal(0)
+
+    def adding(self, seconds: Decimal) -> Tier:
+        return Tier(self.tests + 1, self.seconds + seconds)
+
+    @property
+    def mean(self) -> Decimal | None:
+        return self.seconds / self.tests if self.tests else None
+
+
+@dataclass(frozen=True)
+class TierCount:
+    fast: Tier
+    integration: Tier
+    left_out: int
+    not_run: int
+
+
+def count_tiers(
+    stack: str, rows: list[dict[str, str]], connector_classes: set[str]
+) -> TierCount:
+    tiers = {FAST: Tier(), INTEGRATION: Tier()}
+    left_out = not_run = 0
+    for row in rows:
+        if stack == "backend" and class_of(row[UNIT_COLUMN[stack]]) in connector_classes:
+            left_out += 1
+        elif row[OUTCOME_COLUMN[stack]] != PASSED:
+            not_run += 1
+        else:
+            tier = _tier_of(stack, row)
+            tiers[tier] = tiers[tier].adding(Decimal(row[DURATION_COLUMN[stack]]) / 1000)
+    return TierCount(tiers[FAST], tiers[INTEGRATION], left_out, not_run)
+
+
+def _tier_of(stack: str, row: dict[str, str]) -> str:
+    if stack == "frontend":
+        return INTEGRATION if row[UNIT_COLUMN[stack]].endswith(COMPONENT_TEST_SUFFIX) else FAST
+    return INTEGRATION if row[BACKEND_CATEGORY_COLUMN] == INTEGRATION else FAST
+
+
+NOTHING_LABELLED = "nothing labelled yet"
+FIGURES_WIDTH = 41
+
+
+def tier_report(stack: str, count: TierCount) -> str:
+    if stack == "frontend":
+        return "\n".join(
+            [
+                "Frontend test time",
+                f"{'Tier':<12}{'Tests':>7}{'Seconds':>10}{'Mean s':>9}",
+                _tier_line(FAST, count.fast),
+                _tier_line(INTEGRATION, count.integration),
+                _aside_line("Not run", count.not_run, "did not pass, not counted"),
+                "The seconds do not compare across runs: the runner sets them.",
+                _shares_line(count),
+            ]
+        )
+    labelled = count.integration.tests > 0
+    integration_lines = (
+        [
+            _tier_line(INTEGRATION, count.integration, "mean not set"),
+            f"{'':<{FIGURES_WIDTH}}total not set",
+        ]
+        if labelled
+        else [_aside_line(INTEGRATION, None, NOTHING_LABELLED)]
+    )
+    return "\n".join(
+        [
+            "Backend test time",
+            f"{'Tier':<12}{'Tests':>7}{'Seconds':>10}{'Mean s':>9}   {'Ceiling':<32}Room",
+            _tier_line(FAST, count.fast, "per test not set"),
+            *integration_lines,
+            _aside_line("Left out", count.left_out, "connector classes, not judged"),
+            _aside_line("Not run", count.not_run, "did not pass, not counted"),
+            _shares_line(count) if labelled else _shares_text(NOTHING_LABELLED),
+        ]
+    )
+
+
+def _tier_line(name: str, tier: Tier, ceiling: str = "") -> str:
+    mean = "-" if tier.mean is None else f"{tier.mean:.3f}"
+    line = f"{name:<12}{tier.tests:>7,}{tier.seconds:>10,.1f}{mean:>9}"
+    return f"{line}   {ceiling}" if ceiling else line
+
+
+def _aside_line(name: str, tests: int | None, note: str) -> str:
+    figure = "" if tests is None else f"{tests:,}"
+    return f"{name:<12}{figure:>7}   {note}"
+
+
+def _shares_line(count: TierCount) -> str:
+    counted = count.fast.tests + count.integration.tests
+    fast_share = Decimal(count.fast.tests * 100) / counted if counted else Decimal(0)
+    integration_share = Decimal(100) - fast_share if counted else Decimal(0)
+    return _shares_text(f"{fast_share:.1f} % fast, {integration_share:.1f} % integration")
+
+
+def _shares_text(shares: str) -> str:
+    return f"This stack only, not the pyramid shares: {shares}. No gate."
+
+
 def stale_entries(allowlisted: list[str], still_present: set[str]) -> list[str]:
     return [unit for unit in allowlisted if unit not in still_present]
 
@@ -182,14 +298,12 @@ def unneeded_annotation(unit: str, allowlist_name: str) -> str:
     return f"::error::{escaped(unit)} is allowlisted in {allowlist_name} but is not needed; remove its entry"
 
 
-def _is_build_or_mutation_output(folder: str) -> bool:
-    return folder in SKIPPED_SOURCE_FOLDERS or folder.startswith(".stryker-tmp")
-
-
 def declared_classes(source_root: Path) -> set[str]:
     classes = set()
     for directory, folders, files in source_root.walk():
-        folders[:] = [folder for folder in folders if not _is_build_or_mutation_output(folder)]
+        folders[:] = [
+            folder for folder in folders if not trx_to_csv.is_build_or_mutation_output(folder)
+        ]
         for file in files:
             if file.endswith(".cs"):
                 classes |= _classes_in(_source_of(directory / file))
@@ -378,6 +492,8 @@ def _check(arguments: argparse.Namespace) -> int:
         raise CannotJudge(
             f"the backend test source folder {escaped(str(arguments.source_root))} does not exist"
         )
+    connector_classes = _connector_classes(stack, arguments.source_root)
+    print(tier_report(stack, count_tiers(stack, rows, connector_classes)))
 
     findings = judge(stack, rows, budget_seconds, ceilings)
     still_present = _still_present(stack, rows, arguments.source_root, ceilings)
@@ -394,6 +510,18 @@ def _check(arguments: argparse.Namespace) -> int:
         print(unneeded_annotation(unit, allowlist_name))
     breached = bool(findings) and not warn_only
     return 1 if breached or stale or unneeded else 0
+
+
+def _connector_classes(stack: str, source_root: Path) -> set[str]:
+    if stack == "frontend":
+        return set()
+    try:
+        return trx_to_csv.discover_connector_class_names(source_root)
+    except trx_to_csv.UnreadableSourceError as error:
+        raise CannotJudge(
+            f"{escaped(str(error.path))} cannot be read, so the classes that talk to a real "
+            "tracker cannot be told apart"
+        ) from error
 
 
 def _still_present(

@@ -333,9 +333,24 @@ def _namespaced_sources(source_root: Path) -> list[tuple[str, str]]:
     ]
 
 
+BUILD_OR_MUTATION_OUTPUT_FOLDERS = ("bin", "obj", "StrykerOutput")
+
+
+def is_build_or_mutation_output(folder: str) -> bool:
+    return folder in BUILD_OR_MUTATION_OUTPUT_FOLDERS or folder.startswith(".stryker-tmp")
+
+
 @functools.cache
 def _cs_sources(source_root: Path) -> list[tuple[Path, str | None]]:
-    return [(cs_file, _read_cs_file(cs_file)) for cs_file in source_root.rglob("*.cs")]
+    sources = []
+    for directory, folders, files in source_root.walk():
+        folders[:] = sorted(folder for folder in folders if not is_build_or_mutation_output(folder))
+        sources += [
+            (directory / file, _read_cs_file(directory / file))
+            for file in sorted(files)
+            if file.endswith(".cs")
+        ]
+    return sources
 
 
 def _blanked(content: str, keep_literals: bool) -> str:
