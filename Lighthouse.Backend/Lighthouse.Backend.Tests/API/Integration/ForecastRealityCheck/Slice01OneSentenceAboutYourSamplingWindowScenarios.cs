@@ -18,30 +18,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         // --- The check answers ---
 
         /// <summary>
-        /// The one scenario that runs the shipped forecast engine end to end. Everything else scripts the
-        /// forecast so it can say which levels held; this one proves the real engine's answer is read the
-        /// same way.
-        /// </summary>
-        [Test]
-        public async Task Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date()
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-            GivenTheForecastIsWorkedOutAsShipped();
-            var storedBefore = WhatIsStoredFor(oceanExplorer);
-
-            var answer = await ReadTheAnswer(await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(oceanExplorer));
-
-            using (Assert.EnterMultipleScope())
-            {
-                ThenEveryCheckEndsToday(answer);
-                ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
-                ThenEachLevelHeldExactlyWhenTheTeamDeliveredAtLeastItsForecast(answer);
-                ThenTheDenominatorCountsWhatWasEvaluated(answer);
-                ThenNothingAboutTheTeamChanged(oceanExplorer, storedBefore);
-            }
-        }
-
-        /// <summary>
         /// A Team that finishes exactly one Work Item every day leaves the shipped engine nothing to be unsure
         /// about: every level of every check forecasts one item for each day of the horizon, and the Team
         /// delivers exactly that. A check that scored one day more than its horizon, or learned from a day it
@@ -63,94 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 ThenEveryCheckLandedThisWay(answer, WithinBand);
                 ThenEveryLevelHeldInEveryCheck(answer);
             }
-        }
-
-        [Test]
-        public async Task The_same_check_answers_on_the_versioned_route_as_well()
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-
-            var answer = await ReadTheAnswer(await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(oceanExplorer, route: VersionedRoute));
-
-            ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
-        }
-
-        [TestCase(NoOptions)]
-        [TestCase("{\"applyFilterOverride\":null}")]
-        [TestCase("{\"applyFilterOverride\":false}")]
-        [TestCase("{\"applyFilterOverride\":true}")]
-        public async Task The_check_answers_whether_or_not_the_forecast_filter_choice_is_given(string options)
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-
-            var answer = await ReadTheAnswer(await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(oceanExplorer, options));
-
-            ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
-        }
-
-        [TestCase("{\"applyFilterOverride\":\"yes\"}")]
-        [TestCase("{\"applyFilterOverride\":1}")]
-        [TestCase("{\"applyFilterOverride\":")]
-        public async Task A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked(string options)
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-            await GivenTheCheckAnswersForATeamThatExists(oceanExplorer);
-
-            using var refused = await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(oceanExplorer, options);
-
-            await ThenTheRequestIsRefusedWithoutASingleCheck(refused);
-        }
-
-        /// <summary>
-        /// The check takes no dates. A caller that sends some anyway - an old client, a hand-written
-        /// script - must not be able to move the check off today.
-        /// </summary>
-        [Test]
-        public async Task Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today()
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-
-            var answer = await ReadTheAnswer(await WhenSomebodyWhoCanReadTheTeamRunsTheCheck(oceanExplorer, ARequestCarryingDatesFromLastYear));
-
-            ThenEveryCheckEndsToday(answer);
-        }
-
-        // --- Who may ask ---
-
-        [Test]
-        public async Task Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer()
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-
-            var answer = await ReadTheAnswer(await WhenTomWhoCanOnlyReadTheTeamRunsTheCheck(oceanExplorer));
-
-            ThenSixteenChecksWereRunAndEveryOneCouldBeEvaluated(answer);
-        }
-
-        /// <summary>
-        /// Refused as "not found", exactly as the single back-test refuses, so the answer never reveals
-        /// that a Team the person may not see exists at all.
-        /// </summary>
-        [Test]
-        public async Task Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it()
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-            var harbourPilots = GivenAnotherTeam("Harbour Pilots");
-
-            using var refused = await WhenSomebodyWhoCanReadOnlyAnotherTeamRunsTheCheck(oceanExplorer, harbourPilots);
-
-            await ThenTheyAreToldItWasNotFoundWithoutASingleCheck(refused);
-        }
-
-        [Test]
-        public async Task A_Team_that_does_not_exist_is_answered_as_not_found()
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-            await GivenTheCheckAnswersForATeamThatExists(oceanExplorer);
-
-            using var answer = await WhenTheCheckIsRunForATeamNobodyCreated();
-
-            ThenThereIsNoSuchTeam(answer);
         }
 
         // --- What the answer states it checked ---
@@ -667,35 +555,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 ThenTheTeamsSettingIs(answer, 14, Outside);
                 ThenNothingAboutTheTeamChanged(deepCurrent, storedBefore);
             }
-        }
-
-        /// <summary>Nothing is stored between runs, so a second press over the same history answers identically.</summary>
-        [Test]
-        public async Task Running_the_check_twice_gives_the_same_answer_twice()
-        {
-            var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
-
-            var first = await TheAnswerTo(coastalSurvey);
-            var second = await TheAnswerTo(coastalSurvey);
-
-            ThenTheTwoAnswersAreTheSame(first, second);
-        }
-
-        // --- What must keep working beside it ---
-
-        /// <summary>
-        /// The single back-test sits in the same group on the same tab and its contract is not widened.
-        /// It is also the harness's own proof that seeding, the pinned clock and the scripted forecast reach
-        /// the real forecast endpoints.
-        /// </summary>
-        [Test]
-        public async Task The_single_back_test_beside_the_check_still_answers_as_it_did()
-        {
-            var oceanExplorer = GivenOceanExplorerFinishingWorkEveryDay();
-
-            using var response = await WhenMariaBackTestsTheLastFourWeeksByHand(oceanExplorer);
-
-            await ThenTheBackTestAnswersWithFourLevelsAndWhatTheTeamDelivered(response);
         }
     }
 }

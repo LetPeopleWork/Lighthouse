@@ -1570,3 +1570,44 @@ Adversarial review (sonnet): NEEDS_REVISION, documentation only. Probes clean: t
 **Found.** Dropping only `UseFreshDatabase()` leaves B2 green: the tear-down deletes the file and the next scope copies the template again. The fresh path is there for the file locks `TestWebApplicationFactory` describes, not for the content, so B2's database half holds through the delete.
 
 **B5 takes 30 s,** the queue wait `SharedHostTearDown.LeaveTheHostIdleOrFail` fixes. Its scenario holds a refresh open on the queue, sees the tear-down fail inside `Assert.ThrowsAsync`, then lets the refresh end so NUnit's own tear-down finds the host idle and no red row is left. The queue has a reader on a test host (hosted services are removed, the reader is not), so a refresh that returns at once never shows as active. Shortening it needs a patience argument on `SharedHostTearDown`, outside this step's files: open for the reviewer.
+
+## Wave: DELIVER / [REF] Slice B: fifteen rows leave `Slice01` (step 02-02, 2026-11-08)
+
+**Before the step,** a separate commit gave `SharedHostTearDown.LeaveTheHostIdleOrFail` an optional queue patience (30 s by default, so every other caller waits as before) and `WireContractTest` a `LeaveTheHostIdleWithin(patience)` its `[TearDown]` calls with the default. B5 passes 1 s: 30.08 s before, 1.06 s after, same assertion.
+
+**What moved.** A move only: test names, bodies and the steps they call are copied word for word; steps no remaining `Slice01` row calls are removed from it. `RealityCheckSkeletonTest` sits on `ForecastRealityCheckAcceptanceTest`, the host `Slice01` still uses, and keeps `ThenNothingAboutTheTeamChanged` read back from the host's database, so the controller's own `GetForecastThroughputStatus` call stays covered. `RealityCheckWireContractTest` sits on `WireContractTest`. Its `AdjustTheHost` turns on test sign-in and makes the same service swaps as the host base (clock, licence, pinned draws, run limits, the scripted forecast), leaving out only the log capture no contract row reads. Its own `[SetUp]` runs the seeders the schema template does not hold, and its `[TearDown]` tells the memo to forget the seeded Teams. The rows ask as Tom, as a viewer of another Team or as an admin through the client's sign-in headers; no test decides who may read what.
+
+**TRX, by class name** (`dotnet test --filter` on the three classes and the three guards, 191 rows, all passed):
+
+| Class | Before | After |
+|---|---|---|
+| `API.Integration.ForecastRealityCheck.Slice01OneSentenceAboutYourSamplingWindowTest` | 66 | 51 |
+| `Contracts.Forecasting.RealityCheckWireContractTest` | 0 | 14 |
+| `API.Integration.ForecastRealityCheck.RealityCheckSkeletonTest` | 0 | 1 |
+| `TestTierGuardTest`, `TestHostPerFixtureGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest` | | 90, 18, 17, green |
+
+The test names of the whole family, before and after, are the same list; the class diff is exactly the fifteen rows below. `Test-Fast.ps1`: 9545 passed. `dotnet build`: 0 warnings.
+
+**Id table for this step.** Old class `Slice01OneSentenceAboutYourSamplingWindowTest` for every row.
+
+| # | Test name | New class |
+|---|---|---|
+| 1 | `Maria_runs_the_reality_check_on_Ocean_Explorer_and_gets_an_answer_without_giving_a_date` | `RealityCheckSkeletonTest` |
+| 2 | `The_same_check_answers_on_the_versioned_route_as_well` | `RealityCheckWireContractTest` |
+| 3 | `The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{}")` | `RealityCheckWireContractTest` |
+| 4 | `The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":null}")` | `RealityCheckWireContractTest` |
+| 5 | `The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":false}")` | `RealityCheckWireContractTest` |
+| 6 | `The_check_answers_whether_or_not_the_forecast_filter_choice_is_given("{\"applyFilterOverride\":true}")` | `RealityCheckWireContractTest` |
+| 7 | `A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":\"yes\"}")` | `RealityCheckWireContractTest` |
+| 8 | `A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":1}")` | `RealityCheckWireContractTest` |
+| 9 | `A_request_whose_filter_choice_is_not_yes_no_or_unset_is_refused_and_nothing_is_checked("{\"applyFilterOverride\":")` | `RealityCheckWireContractTest` |
+| 10 | `Dates_sent_with_the_request_are_ignored_and_every_check_still_ends_today` | `RealityCheckWireContractTest` |
+| 11 | `Tom_who_can_read_the_Team_but_not_change_it_gets_the_whole_answer` | `RealityCheckWireContractTest` |
+| 12 | `Somebody_who_cannot_read_the_Team_is_refused_and_learns_nothing_about_it` | `RealityCheckWireContractTest` |
+| 13 | `A_Team_that_does_not_exist_is_answered_as_not_found` | `RealityCheckWireContractTest` |
+| 14 | `The_single_back_test_beside_the_check_still_answers_as_it_did` | `RealityCheckWireContractTest` |
+| 15 | `Running_the_check_twice_gives_the_same_answer_twice` | `RealityCheckWireContractTest` |
+
+**The hook, broken.** `AdjustTheHost` returning the host without test sign-in: `Somebody_who_cannot_read_the_Team...` red, `Expected: NotFound But was: OK`. Tom's row and the missing Team's row stay green, as they would on the old host: with sign-in off everybody may read, and a Team nobody created is not found either way. Restored byte for byte.
+
+**For review.** The host set-up in `AdjustTheHost` repeats the host base's service swaps; one shared place for both is left to 02-05, when `Slice01` leaves that base, since the host base is not in this step's files. The contract's `[TearDown]` forgets the seeded Teams before the base's queue wait rather than after it, as the host base does; no contract row starts a refresh, so nothing can write notes back in between.

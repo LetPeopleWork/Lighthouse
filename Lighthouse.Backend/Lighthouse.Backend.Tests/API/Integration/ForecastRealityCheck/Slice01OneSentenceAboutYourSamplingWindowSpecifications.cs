@@ -1,7 +1,4 @@
-using System.Net;
-using System.Text;
 using System.Text.Json;
-using Lighthouse.Backend.Tests.TestHelpers;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
@@ -18,8 +15,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         private const int TheShippedBarInDays = 5;
 
         private const int LevelsPerCheck = 4;
-
-        private const int ANumberNoTeamWasEverGiven = 987_654;
 
         // The closed sets the answer speaks in, spelled as they travel on the wire.
         private const string AllWindowsAlike = "AllWindowsAlike";
@@ -38,9 +33,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         private const string Sufficient = "Sufficient";
         private const string TooFewActiveDays = "TooFewActiveDays";
         private const string DegenerateForecast = "DegenerateForecast";
-
-        private const string ARequestCarryingDatesFromLastYear =
-            "{\"startDate\":\"2025-06-01\",\"endDate\":\"2025-07-01\",\"historicalStartDate\":\"2025-03-01\",\"historicalEndDate\":\"2025-06-01\"}";
 
         private static readonly int[] TheThreeLongerStandardWindows = [30, 60, 90];
 
@@ -201,29 +193,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
             }
         }
 
-        private async Task GivenTheCheckAnswersForATeamThatExists(int teamId) => await TheAnswerTo(teamId);
-
-        // --- When ---
-
-        private Task<HttpResponseMessage> WhenTomWhoCanOnlyReadTheTeamRunsTheCheck(int teamId)
-            => WhenTheCheckIsRunBy(client => client.AsTeamViewer(teamId, "tom-becker"), teamId);
-
-        private Task<HttpResponseMessage> WhenSomebodyWhoCanReadOnlyAnotherTeamRunsTheCheck(int teamId, int theTeamTheyCanRead)
-            => WhenTheCheckIsRunBy(client => client.AsTeamViewer(theTeamTheyCanRead, "harbour-pilot"), teamId);
-
-        private Task<HttpResponseMessage> WhenTheCheckIsRunForATeamNobodyCreated()
-            => WhenTheCheckIsRunBy(client => client.AsSystemAdmin(), ANumberNoTeamWasEverGiven);
-
-        private async Task<HttpResponseMessage> WhenMariaBackTestsTheLastFourWeeksByHand(int teamId)
-        {
-            Client.AsTeamViewer(teamId, "maria-santos");
-            var body =
-                $"{{\"startDate\":\"{TodayDay.AddDays(-28):yyyy-MM-dd}\",\"endDate\":\"{TodayDay:yyyy-MM-dd}\"," +
-                $"\"historicalStartDate\":\"{TodayDay.AddDays(-58):yyyy-MM-dd}\",\"historicalEndDate\":\"{TodayDay.AddDays(-28):yyyy-MM-dd}\"}}";
-
-            using var content = new StringContent(body, Encoding.UTF8, "application/json");
-            return await Client.PostAsync($"/api/latest/forecast/backtest/{teamId}", content);
-        }
 
         // --- Then: what was checked ---
 
@@ -439,33 +408,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         // --- Then: which levels held ---
-
-        private static void ThenEachLevelHeldExactlyWhenTheTeamDeliveredAtLeastItsForecast(RealityCheckAnswer answer)
-        {
-            var disagreements = new List<string>();
-
-            foreach (var cell in answer.Cells.Where(cell => cell.IsSufficient))
-            {
-                if (cell.ForecastByLevel.Count != LevelsPerCheck || cell.ActualCompleted is null)
-                {
-                    disagreements.Add($"{cell.SamplingWindowDays}d/{cell.HorizonDays}d carries no complete forecast or no actual");
-                    continue;
-                }
-
-                var byLevel = cell.ForecastByLevel;
-                if (!(byLevel[95] <= byLevel[85] && byLevel[85] <= byLevel[70] && byLevel[70] <= byLevel[50]))
-                {
-                    disagreements.Add($"{cell.SamplingWindowDays}d/{cell.HorizonDays}d reads its levels out of order");
-                }
-
-                disagreements.AddRange(ConfidenceLevels
-                    .Where(level => cell.HeldByLevel.GetValueOrDefault(level) != (cell.ActualCompleted >= byLevel[level]))
-                    .Select(level => $"{cell.SamplingWindowDays}d/{cell.HorizonDays}d at {level}%: forecast {byLevel[level]}, actual {cell.ActualCompleted}"));
-            }
-
-            Assert.That(disagreements, Is.Empty,
-                "a level held exactly when the Team delivered at least what that level forecast");
-        }
 
         private static void ThenEveryCheckScoredOneWorkItemForEachDayOfItsHorizon(RealityCheckAnswer answer)
         {
@@ -709,35 +651,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 "the check reads; it never writes a Team setting, a Work Item or anything else");
         }
 
-        private static void ThenTheTwoAnswersAreTheSame(RealityCheckAnswer first, RealityCheckAnswer second)
-        {
-            Assert.That(second.Root.GetRawText(), Is.EqualTo(first.Root.GetRawText()),
-                "nothing is kept between runs, so the same history answers the same way");
-        }
-
-        private static async Task ThenTheyAreToldItWasNotFoundWithoutASingleCheck(HttpResponseMessage response)
-        {
-            var body = await response.Content.ReadAsStringAsync();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound),
-                    "a person who cannot read the Team is told it was not found, like the back-test, so the answer never reveals that it exists");
-                Assert.That(body, Does.Not.Contain("cells"));
-            }
-        }
-
-        private static async Task ThenTheRequestIsRefusedWithoutASingleCheck(HttpResponseMessage response)
-        {
-            var body = await response.Content.ReadAsStringAsync();
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.BadRequest));
-                Assert.That(body, Does.Not.Contain("cells"));
-            }
-        }
-
         private static void ThenEveryReasonAndOutcomeComesFromItsClosedSet(RealityCheckAnswer answer)
         {
             using (Assert.EnterMultipleScope())
@@ -747,27 +660,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
                 Assert.That(answer.Cells.Where(cell => cell.Outcome is not null).Select(cell => cell.Outcome), Is.All.AnyOf(EveryWayACheckCanLand));
                 Assert.That(answer.Cells.Where(cell => !cell.IsSufficient), Is.Not.Empty,
                     "this Team's two-week windows are too thin, so the closed set is exercised on both sides");
-            }
-        }
-
-        private static void ThenThereIsNoSuchTeam(HttpResponseMessage response)
-        {
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        }
-
-        private static async Task ThenTheBackTestAnswersWithFourLevelsAndWhatTheTeamDelivered(HttpResponseMessage response)
-        {
-            var body = await response.Content.ReadAsStringAsync();
-            Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
-
-            using var document = JsonDocument.Parse(body);
-            var result = document.RootElement;
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(RealityCheckAnswer.Field(result, "percentiles").GetArrayLength(), Is.EqualTo(LevelsPerCheck));
-                Assert.That(RealityCheckAnswer.Field(result, "actualThroughput").GetInt32(), Is.GreaterThan(0),
-                    "the Team finished work every day of the four weeks it was back-tested over");
             }
         }
 
