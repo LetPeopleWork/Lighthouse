@@ -84,6 +84,7 @@ We’d like to recognize the efforts of all individual contributors. Thank you f
 - [**Steve Pereira**](https://www.linkedin.com/in/devopsto/)  
 - [**James Hattersley-Dykes**](https://www.linkedin.com/in/jameshd/)
 - **Tim Brencher**
+- [**Adam McKeever**](https://www.linkedin.com/in/adam-mckeever-55a24592/)
 
 
 ---

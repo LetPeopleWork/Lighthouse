@@ -4,6 +4,44 @@ layout: home
 nav_order: 95
 ---
 
+# Lighthouse v26.11.8.1
+
+## Parents From More Than One Place
+
+Not every tracker keeps its hierarchy in one place. Some Features hang under their parent through Jira's own Parent, others through an *is caused by* link, others again through a custom field holding the parent's key. Lighthouse read one field at most, so whatever sat elsewhere showed up without a parent.
+
+Teams and Portfolios on Jira and Azure DevOps now have **Parent sources**: an ordered list of up to five places to look. For each Work Item or Feature, the first source that names a parent wins. Set a default on the connection and every Team or Portfolio follows it, or give one its own list. Refresh History tells you when a source could not be read.
+
+![Parent sources](https://raw.githubusercontent.com/LetPeopleWork/Lighthouse/refs/heads/main/docs/assets/features/parent_sources.png)
+
+Full detail: [Parent sources](https://docs.lighthouse.letpeople.work/portfolios/edit.html#parent-sources).
+
+## State Mappings You Can Trust
+
+A state mapping groups several tracker states under one name. Behind the scenes, though, the To Do, Doing and Done lists held the mapping's name in place of its states, and a few hand edits could make a tracker state quietly drop out of the lists, taking its Work Items with it.
+
+The lists now always keep your tracker's own states, and a mapping is shown on top of them as one chip that names what it groups. Lighthouse refuses a mapping that would hide a state or mix categories, and tells you why. Wait states, cycle time boundaries and Refinement states can name a mapping directly.
+
+Full detail: [State Mappings](https://docs.lighthouse.letpeople.work/teams/edit.html#state-mappings).
+
+## Bugfixes and Improvements
+
+- **Board Wizard says why it found no boards.** When Jira or Azure DevOps refuses to list boards, the Wizard shows what the tracker answered, instead of an empty list that looks like you have none. On Jira connections that cannot list boards at all (OAuth and scoped tokens), **Select Jira Board** is disabled and says why. Full detail: [Board Wizard](https://docs.lighthouse.letpeople.work/concepts/worktrackingsystems/jira.html#board-wizard).
+- **Team Admins and Portfolio Admins can open their Settings tab again** when RBAC is on. It stayed blank for anyone who was not a System Admin.
+- **Only System Admins can delete a Team or Portfolio**, also through the API, as the [RBAC docs](https://docs.lighthouse.letpeople.work/settings/rbac.html) always said.
+- **Tighter access checks.** A restricted API key can no longer create an unrestricted one, licence details are shown to System Admins only, and a few other API endpoints now check who is asking.
+- **A full database disk is named in plain words** in Recent problems, instead of a raw database error.
+- Updated various third-party libraries.
+
+## Contributions ❤️
+
+Special thanks to everyone who contributed feedback for this release:
+- [Steve Pereira](https://www.linkedin.com/in/devopsto/)
+- [James Hattersley-Dykes](https://www.linkedin.com/in/jameshd/)
+- [Adam McKeever](https://www.linkedin.com/in/adam-mckeever-55a24592/)
+
+[**Full Changelog**](https://github.com/LetPeopleWork/Lighthouse/compare/v26.11.1.2...v26.11.8.1)
+
 # Lighthouse v26.11.1.2
 
 ## Every Report in One Place, Created and Removed in Bulk

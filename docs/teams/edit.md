@@ -392,6 +392,8 @@ For example, with this list:
 2. `Program Ref`, an Additional Field holding a key
 3. *Parent (default)*
 
+![Parent sources](../assets/features/parent_sources.png)
+
 A Work Item linked to a Feature by *is caused by* hangs under that Feature. One without such a link but with a value in `Program Ref` hangs under that value. One with neither hangs under its Jira parent. One with none of the three has no Feature.
 
 What counts as yielding a parent depends on the source:
