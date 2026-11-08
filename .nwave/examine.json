@@ -1,0 +1,5 @@
+{
+  "commands": [
+    { "name": "architecture-rules", "path": "Scripts/examine/architecture-rules" }
+  ]
+}
