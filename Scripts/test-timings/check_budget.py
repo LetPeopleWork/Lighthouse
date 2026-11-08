@@ -61,6 +61,7 @@ class Finding:
     seconds: Decimal
     limit: Decimal
     limit_kind: str
+    provisional: bool = False
 
 
 class CannotJudge(Exception):
@@ -191,11 +192,11 @@ FAST_TEST_LIMIT, CLASS_CEILING = "fast test limit", "class ceiling"
 def judge_fast(
     rows: list[dict[str, str]],
     connector_classes: set[str],
-    limit_seconds: Decimal | None,
+    limit: Limit,
     ceilings: dict[str, Decimal],
 ) -> list[Finding]:
     """Each backend test counted in the fast tier, one at a time, against the fast test limit."""
-    if limit_seconds is None:
+    if limit.in_force is None:
         return []
     findings = []
     for row in rows:
@@ -207,15 +208,20 @@ def judge_fast(
             or _tier_of("backend", row) != FAST
         ):
             continue
-        limit, limit_kind = (
-            (ceilings[unit], CLASS_CEILING)
-            if unit in ceilings
-            else (limit_seconds, FAST_TEST_LIMIT)
-        )
         seconds = Decimal(row[DURATION_COLUMN["backend"]]) / 1000
-        if seconds > limit:
-            findings.append(Finding(test, seconds, limit, limit_kind))
+        if unit in ceilings:
+            if seconds > ceilings[unit]:
+                findings.append(Finding(test, seconds, ceilings[unit], CLASS_CEILING))
+            continue
+        breached = limit.breached_by(seconds)
+        if breached:
+            kind = _kind(FAST_TEST_LIMIT, breached)
+            findings.append(Finding(test, seconds, breached.seconds, kind, not breached.enforced))
     return findings
+
+
+def _kind(limit_kind: str, entry: LedgerEntry) -> str:
+    return limit_kind if entry.enforced else f"provisional {limit_kind}"
 
 
 RUNS_TO_ENFORCE = 5
@@ -255,6 +261,14 @@ class Limit:
     def enforced_seconds(self) -> Decimal | None:
         return self.enforced.seconds if self.enforced else None
 
+    def breached_by(self, value: Decimal) -> LedgerEntry | None:
+        """The entry a value is over: the enforced one first, so a lower provisional one only
+        warns between the two and can never stand in for a failure."""
+        for entry in (self.enforced, self.provisional):
+            if entry is not None and value > entry.seconds:
+                return entry
+        return None
+
 
 @dataclass(frozen=True)
 class Ledgers:
@@ -267,24 +281,64 @@ NO_LEDGERS = Ledgers()
 MEAN_CEILING, TOTAL_CEILING = "mean ceiling", "total ceiling"
 
 
-def judge_integration(integration: Tier, ledgers: Ledgers, allowlist_name: str) -> list[str]:
-    """The backend Integration tier as a whole against its enforced mean and total ceilings."""
+@dataclass(frozen=True)
+class TierBreach:
+    text: str
+    provisional: bool
+
+
+def judge_integration(
+    integration: Tier, ledgers: Ledgers, allowlist_name: str
+) -> list[TierBreach]:
+    """The backend Integration tier as a whole against its mean and total ceilings."""
     breaches = []
-    mean, total = ledgers.mean.enforced, ledgers.total.enforced
-    if mean and integration.mean is not None and integration.mean > mean.seconds:
+    mean = ledgers.mean.breached_by(integration.mean) if integration.mean is not None else None
+    if mean:
         breaches.append(
-            f"{INTEGRATION} tests averaged {_over(integration.mean)}s each over "
-            f"{integration.tests:,} tests, over the {mean.seconds}s {MEAN_CEILING} "
-            f"set in {allowlist_name}"
+            TierBreach(
+                f"{INTEGRATION} tests averaged {_over(integration.mean)}s each over "
+                f"{integration.tests:,} tests, over the {mean.seconds}s "
+                f"{_kind(MEAN_CEILING, mean)} set in {allowlist_name}",
+                not mean.enforced,
+            )
         )
-    if total and integration.seconds > total.seconds:
+    total = ledgers.total.breached_by(integration.seconds)
+    if total:
         breaches.append(
-            f"{INTEGRATION} tests took {_over(integration.seconds)}s in all over "
-            f"{integration.tests:,} tests, over the {total.seconds}s {TOTAL_CEILING} "
-            f"set in {allowlist_name}; "
-            f"{integration.tests - total.tests_when_set:+d} tests since it was set"
+            TierBreach(
+                f"{INTEGRATION} tests took {_over(integration.seconds)}s in all over "
+                f"{integration.tests:,} tests, over the {total.seconds}s "
+                f"{_kind(TOTAL_CEILING, total)} set in {allowlist_name}; "
+                f"{integration.tests - total.tests_when_set:+d} tests since it was set",
+                not total.enforced,
+            )
         )
     return breaches
+
+
+def provisional_notes(ledgers: Ledgers) -> list[str]:
+    named = (
+        (FAST_TEST_LIMIT, ledgers.fast),
+        (f"{INTEGRATION} {MEAN_CEILING}", ledgers.mean),
+        (f"{INTEGRATION} {TOTAL_CEILING}", ledgers.total),
+    )
+    return [
+        f"the {name} of {limit.provisional.seconds}s is provisional, {limit.provisional.runs} "
+        f"of {RUNS_TO_ENFORCE} runs, so it warns and does not fail"
+        for name, limit in named
+        if limit.provisional is not None
+    ]
+
+
+def refuse_an_unlabelled_run(integration: Tier, ledgers: Ledgers, allowlist_name: str) -> None:
+    # A run whose tests all read Unit has no tier to hold to these limits, so a pass would be
+    # a verdict nobody checked.
+    in_force = any(limit.in_force for limit in (ledgers.fast, ledgers.mean, ledgers.total))
+    if in_force and integration.tests == 0:
+        raise CannotJudge(
+            f"{allowlist_name} holds limits that need {INTEGRATION} tests, but this run has none, "
+            "so it cannot be judged"
+        )
 
 
 def _over(seconds: Decimal) -> str:
@@ -800,10 +854,11 @@ def _check(arguments: argparse.Namespace) -> int:
     connector_classes = _connector_classes(stack, arguments.source_root)
     count = count_tiers(stack, rows, connector_classes)
     publish_report(tier_report(stack, count, ledgers), summary)
+    refuse_an_unlabelled_run(count.integration, ledgers, allowlist_name)
 
     findings = judge(stack, rows, budget_seconds, ceilings)
     fast_limit = ledgers.fast.enforced_seconds
-    fast_findings = judge_fast(rows, connector_classes, fast_limit, fast_ceilings)
+    fast_findings = judge_fast(rows, connector_classes, ledgers.fast, fast_ceilings)
     tier_breaches = judge_integration(count.integration, ledgers, allowlist_name)
     still_present = _still_present(stack, rows, arguments.source_root, ceilings or fast_ceilings)
     stale = stale_entries([*ceilings, *fast_ceilings], still_present)
@@ -812,10 +867,7 @@ def _check(arguments: argparse.Namespace) -> int:
         print(f"::notice::{WARN_ONLY_VARIABLE} is true, so budget enforcement is off")
     for finding in findings:
         print(breach_annotation(finding, allowlist_name, kind))
-    for finding in fast_findings:
-        print(breach_annotation(finding, allowlist_name, kind, places=3))
-    for breach in tier_breaches:
-        print(f"::{kind}::{breach}")
+    _print_tier_verdicts(ledgers, fast_findings, tier_breaches, allowlist_name, kind)
     for unit in stale:
         print(stale_annotation(stack, unit, allowlist_name))
     unneeded = unneeded_entries(stack, rows, budget_seconds, ceilings)
@@ -823,8 +875,29 @@ def _check(arguments: argparse.Namespace) -> int:
         unneeded += unneeded_entries(stack, rows, fast_limit, fast_ceilings)
     for unit in unneeded:
         print(unneeded_annotation(unit, allowlist_name))
-    breached = bool(findings or fast_findings or tier_breaches) and not warn_only
+    failing = [*findings, *fast_findings, *tier_breaches]
+    breached = any(not breach.provisional for breach in failing) and not warn_only
     return 1 if breached or stale or unneeded else 0
+
+
+def _print_tier_verdicts(
+    ledgers: Ledgers,
+    fast_findings: list[Finding],
+    tier_breaches: list[TierBreach],
+    allowlist_name: str,
+    kind: str,
+) -> None:
+    for note in provisional_notes(ledgers):
+        print(f"::warning::{note}")
+    for finding in fast_findings:
+        severity = _severity(finding.provisional, kind)
+        print(breach_annotation(finding, allowlist_name, severity, places=3))
+    for breach in tier_breaches:
+        print(f"::{_severity(breach.provisional, kind)}::{breach.text}")
+
+
+def _severity(provisional: bool, kind: str) -> str:
+    return "warning" if provisional else kind
 
 
 def _backend_limits(stack: str, allowlist: Path) -> tuple[Ledgers, dict[str, Decimal]]:

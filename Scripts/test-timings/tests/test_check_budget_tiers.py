@@ -11,6 +11,7 @@ import re
 import sys
 import tempfile
 import unittest
+from decimal import Decimal
 from pathlib import Path
 from unittest import mock
 
@@ -977,6 +978,257 @@ class TheOlderClassBudgetStillJudgesBesideTheNewLimits(CeilingTestCase):
         warnings = self.annotations(result, "warning")
         self.assertEqual(len(warnings), 1, msg=self._explain(result))
         self.assertIn("summary", warnings[0], msg=self._explain(result))
+
+
+PROVISIONAL_RUNS = 2
+NOTHING_TO_JUDGE = (
+    f"::error::{ALLOWLIST_NAME} holds limits that need Integration tests, "
+    "but this run has none, so it cannot be judged"
+)
+
+
+def progress_line(limit, seconds, runs=PROVISIONAL_RUNS):
+    return (
+        f"::warning::the {limit} of {seconds}s is provisional, {runs} of {ENFORCING_RUNS} runs, "
+        "so it warns and does not fail"
+    )
+
+
+def only(ledger, entries):
+    return {FAST_LEDGER: [], MEAN_LEDGER: [], TOTAL_LEDGER: [], ledger: entries}
+
+
+class AProvisionalLimitWarnsAndNeverFails(CeilingTestCase):
+    """Each limit read from two runs; the first case of each is a run over it."""
+
+    SLOW_UNIT = row(f"{FAST_CLASS}.PricesAWholeCatalogue", "Unit", 3.4)
+    CASES = (
+        (
+            FAST_LEDGER,
+            "fast test limit",
+            entry(2, runs=PROVISIONAL_RUNS),
+            dict(seconds=0.4, tests=20, extra_rows=[SLOW_UNIT]),
+            f"{FAST_CLASS}.PricesAWholeCatalogue took 3.400s, over the 2s provisional fast test "
+            f"limit set in {ALLOWLIST_NAME}",
+        ),
+        (
+            MEAN_LEDGER,
+            "Integration mean ceiling",
+            entry(0.5, runs=PROVISIONAL_RUNS),
+            dict(seconds=0.6, tests=16),
+            "Integration tests averaged 0.600s each over 16 tests, over the 0.5s provisional mean "
+            f"ceiling set in {ALLOWLIST_NAME}",
+        ),
+        (
+            TOTAL_LEDGER,
+            "Integration total ceiling",
+            total_entry(10, runs=PROVISIONAL_RUNS),
+            dict(seconds=0.4, tests=26),
+            "Integration tests took 10.400s in all over 26 tests, over the 10s provisional total "
+            f"ceiling set in {ALLOWLIST_NAME}; +6 tests since it was set",
+        ),
+    )
+
+    def test_a_breached_provisional_limit_warns_on_its_own_number_and_passes(self):
+        for ledger, limit, provisional, run, breach in self.CASES:
+            with self.subTest(limit=limit):
+                self.workspace = self.fresh_workspace()
+
+                result = self.check_integration(**run, ledgers=only(ledger, [provisional]))
+
+                self.assertEqual(result.returncode, 0, msg=self._explain(result))
+                self.assertEqual(self.annotations(result, "error"), [], msg=self._explain(result))
+                self.assertCountEqual(
+                    self.annotations(result, "warning"),
+                    [f"::warning::{breach}", progress_line(limit, provisional["seconds"])],
+                    msg=self._explain(result),
+                )
+
+    def test_a_provisional_limit_says_how_far_along_it_is_on_every_run(self):
+        ledgers = {ledger: [provisional] for ledger, _, provisional, _, _ in self.CASES}
+
+        result = self.check_integration(0.4, 20, ledgers=ledgers)
+
+        self.assertEqual(result.returncode, 0, msg=self._explain(result))
+        self.assertEqual(self.annotations(result, "error"), [], msg=self._explain(result))
+        self.assertCountEqual(
+            self.annotations(result, "warning"),
+            [progress_line(limit, provisional["seconds"]) for _, limit, provisional, _, _ in self.CASES],
+            msg=self._explain(result),
+        )
+        report = self.report_of(result, "Backend test time").splitlines()
+        for line in (
+            fast_line("per test 2 s (provisional, 2 of 5)", "largest 0.010 s"),
+            mean_line("mean 0.5 (provisional, 2 of 5)", "20 %"),
+            total_line("total 10 (provisional, 2 of 5)", "20 %"),
+        ):
+            self.assertIn(line, report, msg=self._explain(result))
+
+
+class ANewerShortEntryCannotSwitchOffAnEnforcedOne(CeilingTestCase):
+    def ledgers(self):
+        return planted_ledgers(**{MEAN_LEDGER: [entry(0.5), entry(0.45, runs=PROVISIONAL_RUNS)]})
+
+    def test_over_the_enforced_number_fails_once_and_between_the_two_only_warns(self):
+        over_both = self.check_integration(0.6, 16, ledgers=self.ledgers())
+
+        self.assert_breaches_alone(
+            over_both, "mean ceiling", "averaged 0.600s", "over the 0.5s mean ceiling"
+        )
+        self.assertEqual(
+            self.annotations(over_both, "warning"),
+            [progress_line("Integration mean ceiling", 0.45)],
+            msg=self._explain(over_both),
+        )
+
+        self.workspace = self.fresh_workspace()
+
+        between = self.check_integration(0.47, 16, ledgers=self.ledgers())
+
+        self.assertEqual(between.returncode, 0, msg=self._explain(between))
+        self.assertEqual(self.annotations(between, "error"), [], msg=self._explain(between))
+        self.assertCountEqual(
+            self.annotations(between, "warning"),
+            [
+                "::warning::Integration tests averaged 0.470s each over 16 tests, over the 0.45s "
+                f"provisional mean ceiling set in {ALLOWLIST_NAME}",
+                progress_line("Integration mean ceiling", 0.45),
+            ],
+            msg=self._explain(between),
+        )
+
+
+class ALimitInForceWithNoIntegrationTestsGivesNoVerdict(LedgerTestCase):
+    SLOW_UNIT = row(f"{FAST_CLASS}.PricesAWholeCatalogue", "Unit", 3.4)
+
+    def unit_rows_only(self, extra_rows):
+        return self.workspace.backend_rows(
+            [row(f"{FAST_CLASS}.Prices{index}", "Unit", 0.01) for index in range(100)]
+            + list(extra_rows)
+        )
+
+    def test_a_limit_in_force_with_no_integration_tests_gives_no_verdict(self):
+        switch_on = {check_budget.WARN_ONLY_VARIABLE: "true"}
+        cases = {
+            "mean, enforced": (only(MEAN_LEDGER, [entry(0.5)]), (), {}),
+            "mean, provisional": (only(MEAN_LEDGER, [entry(0.5, runs=PROVISIONAL_RUNS)]), (), {}),
+            "fast limit alone": (only(FAST_LEDGER, [entry(2)]), (), {}),
+            "total alone": (only(TOTAL_LEDGER, [total_entry(10)]), (), {}),
+            "a test over the fast limit": (only(FAST_LEDGER, [entry(2)]), [self.SLOW_UNIT], {}),
+            "the switch on": (planted_ledgers(), [self.SLOW_UNIT], switch_on),
+        }
+        for case, (ledgers, extra_rows, environment) in cases.items():
+            with self.subTest(case=case):
+                self.workspace = self.fresh_workspace()
+                timings = self.unit_rows_only(extra_rows)
+                self.write_ledgers(ledgers)
+
+                with mock.patch.dict(os.environ, environment):
+                    result = self.workspace.check("backend", timings)
+
+                self.assertEqual(result.returncode, 2, msg=self._explain(result))
+                self.assertEqual(
+                    self.annotations(result, "error"), [NOTHING_TO_JUDGE], msg=self._explain(result)
+                )
+                self.assertNotIn("PricesAWholeCatalogue", result.stdout, msg=self._explain(result))
+                lines = result.stdout.splitlines()
+                self.assertLess(
+                    lines.index("Backend test time"),
+                    lines.index(NOTHING_TO_JUDGE),
+                    msg=self._explain(result),
+                )
+
+
+PLANTED_NAMESPACE = "Lighthouse.Backend.Tests.Planted"
+
+
+class ShippedWorkspace(TierWorkspace, time_budgets.Workspace):
+    """Writes rows of any category and checks them against the shipped file and test source."""
+
+
+def shipped_ledger_values():
+    backend = json.loads(check_budget.DEFAULT_ALLOWLIST.read_text(encoding="utf-8"))["backend"]
+    ledgers = backend.get("ledgers", {})
+    seconds = [item["seconds"] for entries in ledgers.values() for item in entries]
+    ceilings = [item["ceiling_seconds"] for item in backend.get("fast_allowlist", [])]
+    return [str(Decimal(str(value))) for value in seconds + ceilings]
+
+
+class TheShippedFileObeysTheLedgerRulesWhateverItsNumbers(unittest.TestCase):
+    def test_the_reader_accepts_the_shipped_file(self):
+        ledgers = check_budget.load_ledgers(check_budget.DEFAULT_ALLOWLIST)
+
+        check_budget.load_fast_allowlist(check_budget.DEFAULT_ALLOWLIST, ledgers.fast)
+
+    def test_no_test_pins_a_number_of_the_shipped_ledgers_and_an_empty_ledger_has_none(self):
+        sources = {path.name: path.read_text(encoding="utf-8") for path in HERE.glob("*.py")}
+        for value in shipped_ledger_values():
+            with self.subTest(value=value):
+                self.assertEqual(
+                    [name for name, text in sources.items() if value in text],
+                    [],
+                    msg=f"{value}, from the shipped ledgers, is written in a test",
+                )
+
+
+class ABreachPlantedFromTheShippedLimitsFails(TierReportTestCase):
+    """Each shipped limit with an enforced entry, read from the file, and a run just over it."""
+
+    def fresh_workspace(self):
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        return ShippedWorkspace(Path(folder.name))
+
+    def setUp(self):
+        super().setUp()
+        self.ledgers = check_budget.load_ledgers(check_budget.DEFAULT_ALLOWLIST)
+        self.budget, _ = check_budget.load_allowlist("backend", check_budget.DEFAULT_ALLOWLIST)
+
+    def hosted(self, seconds, tests=1):
+        # Spread over classes so no planted class runs over the class budget as well.
+        per_class = max(1, int(self.budget / max(seconds, Decimal("0.001"))) - 1)
+        return [
+            row(f"{PLANTED_NAMESPACE}.Hosted{index // per_class}Test.Serves{index}", "Integration", seconds)
+            for index in range(tests)
+        ]
+
+    def check_shipped(self, rows):
+        return self.workspace.check_shipped("backend", self.workspace.backend_rows(rows))
+
+    def over_the_fast_limit(self, limit):
+        test = f"{PLANTED_NAMESPACE}.PricingTest.PricesAWholeCatalogue"
+        rows = [row(test, "Unit", limit + Decimal("0.001")), *self.hosted(Decimal(0))]
+        return self.check_shipped(rows), (test, "fast test limit")
+
+    def over_the_mean(self, limit):
+        return self.check_shipped(self.hosted(limit + Decimal("0.001"), 2)), ("mean ceiling",)
+
+    def over_the_total(self, limit):
+        mean = self.ledgers.mean.enforced
+        seconds = min(mean.seconds, limit) if mean else limit
+        tests = int(limit / seconds) + 1
+        return self.check_shipped(self.hosted(seconds, tests)), ("total ceiling",)
+
+    def over_the_class_budget(self):
+        test = f"{PLANTED_NAMESPACE}.SlowTest.Runs"
+        rows = [row(test, "Unit", self.budget + 1), *self.hosted(Decimal(0))]
+        return self.check_shipped(rows), (f"{PLANTED_NAMESPACE}.SlowTest", "budget")
+
+    def test_each_enforced_shipped_limit_fails_a_run_just_over_it_and_an_empty_ledger_leaves_it_to_the_class_budget(self):
+        planted = {
+            FAST_LEDGER: (self.ledgers.fast, self.over_the_fast_limit),
+            MEAN_LEDGER: (self.ledgers.mean, self.over_the_mean),
+            TOTAL_LEDGER: (self.ledgers.total, self.over_the_total),
+        }
+        for ledger, (limit, plant) in planted.items():
+            with self.subTest(ledger=ledger, empty=limit.enforced is None):
+                self.workspace = self.fresh_workspace()
+
+                result, named = (
+                    plant(limit.enforced.seconds) if limit.enforced else self.over_the_class_budget()
+                )
+
+                self.assert_fails_naming(result, *named)
 
 
 if __name__ == "__main__":

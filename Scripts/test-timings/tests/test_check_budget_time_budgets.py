@@ -530,15 +530,23 @@ class ASlowUnitPlantedInARunFailsAgainstTheShippedBudgets(TimeBudgetTestCase):
 
         self.assert_fails_naming(result, "src/pages/Planted.test.tsx", breach_phrase("55.0", 54))
 
+    def planted_backend_class(self):
+        # Once the shipped ledgers hold a limit, a run without an Integration test cannot be judged.
+        rows = [
+            ("Planted.Slow.Runs", "Unit", "35000.000", "Passed"),
+            ("Planted.Hosted.Serves", "Integration", "0.000", "Passed"),
+        ]
+        return self.workspace._write_csv("test-timings-backend.csv", base.BACKEND_COLUMNS, rows)
+
     def test_a_backend_class_of_35_seconds_fails_the_build(self):
-        timings = self.workspace.backend_timings({"Planted.Slow.Runs": 35.0})
+        timings = self.planted_backend_class()
 
         result = self.workspace.check_shipped("backend", timings)
 
         self.assert_fails_naming(result, "Planted.Slow", breach_phrase("35.0", 34))
 
     def test_a_planted_backend_class_is_only_a_warning_when_the_variable_is_true(self):
-        timings = self.workspace.backend_timings({"Planted.Slow.Runs": 35.0})
+        timings = self.planted_backend_class()
 
         result = self.workspace.check_shipped("backend", timings, switch="true")
 
