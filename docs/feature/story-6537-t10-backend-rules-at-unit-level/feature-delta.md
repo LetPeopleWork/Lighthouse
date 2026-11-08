@@ -711,3 +711,11 @@ The first review came back NEEDS_REVISION. Changed:
 - Low points: 1.1's Then; 6.2 needs both conditions; lines for the three-push limit, no TypeScript change, no ADR or `CLAUDE.md` change, and the leftover positive case; `hop` is T5's `h` (2.3); 3.4 names the seven variables.
 
 **Not settled.** Whether the line applies to a suite or to the pair. Scenario counts are now 21 plus 2 conditional, above the 15 to 20 asked for; each added row is a named review point.
+
+## Wave: DELIVER / [REF] Inherited from T9 and T5 at their close (2026-11-08)
+
+The maintainer decided on 2026-11-08 to close T9 #6536 with its backend ledger entries still provisional. They warn and do not fail. T10 takes over two items:
+- **T9's enforcing commit (its step 03-02) becomes T10's first data commit.** It needs 5 distinct eligible runs counted after T5's last move push, which is push 5 of 2026-11-08. These are the same 5 runs T10 needs for its before set (see "What is ranked, and from which runs"). The recipe is in ADR-237 and in T9's delta: the calibration table, `h` from the largest and smallest values with a floor of 1.13, and the rounding.
+- **T9's criterion 7, the first eligible run with connector tests,** is read from those runs.
+
+T5 #6469 also closed, at its slice E checkpoint. The remaining host-to-port moves of the Refinement and report-window classes are in **Story 6602**. If T10's ranking puts a Refinement or report-window suite in its top two, settle with the maintainer which Story takes it before either starts, so the same class is not moved twice.
