@@ -114,7 +114,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(named, Does.Contain(theCopy));
-                Assert.That(named, Does.Not.Contain(KeyOf(typeof(PlantedFixtures.WireContractTestTest.OneHostForThreeScenarios))));
+                Assert.That(named, Does.Not.Contain(KeyOf(typeof(PlantedFixtures.WireContractTestTest.ACopyOfOneHostForThreeScenarios))));
             }
         }
 
@@ -158,7 +158,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void A_copy_of_the_contract_bases_own_test_elsewhere_is_not_exempt()
         {
-            Assert.That(HostUsersOnNeitherList(), Does.Contain(Planted + "/WireContractTestTest/OneHostForThreeScenarios"));
+            Assert.That(HostUsersOnNeitherList(), Does.Contain(Planted + "/WireContractTestTest/ACopyOfOneHostForThreeScenarios"));
         }
 
         [Test]
@@ -605,7 +605,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                     public void Serve(int scenario) => Assert.That(scenario, Is.Positive);
                 }
 
-                internal abstract class OneHostForThreeScenarios
+                internal abstract class ACopyOfOneHostForThreeScenarios
                 {
                     [OneTimeSetUp]
                     public void StartTheHost() => _ = new TestWebApplicationFactory<Program>();
