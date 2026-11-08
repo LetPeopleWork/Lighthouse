@@ -1541,3 +1541,32 @@ Adversarial review (sonnet): NEEDS_REVISION, documentation only. Probes clean: t
 - **Fixed, medium:** the family baseline 23.613 s is marked pre-`ced6e04ac`; 03-xx re-baselines on the post-`ced6e04ac` tree with `one_time_setup_ms`.
 - **Accepted, low:** `PortDoubles.PremiumLicence()` is a loose mock answering only `CanUsePremiumFeatures`. The host uses the same stand-in, so the two cannot diverge; the free-tier path is out of this Story's scope.
 - **Accepted, low:** `PortDoubles` refresh settings copy the seeder's numbers with nothing tying them. Today they feed only a cache lifetime no assertion reads; revisit if a port scenario starts depending on them.
+
+## Wave: DELIVER / [REF] Slice B: `WireContractTest` (step 02-01, 2026-11-08)
+
+**What landed.** `Contracts/WireContractTest.cs`: abstract, on `IntegrationFixture`. `[OneTimeSetUp]` builds a `TestWebApplicationFactory<Program>` with `UseSchemaTemplate` on, passes it through the one hook `AdjustTheHost`, and starts the server. `[SetUp]` resets the clock, moves to a fresh database path, forgets the cached metrics and makes a new `Client`. `[TearDown]` runs `SharedHostTearDown.LeaveTheHostIdleOrFail`, then disposes the client and deletes the database even when the wait failed. It offers `Client`, `Services`, `Clock` and `NewScope()`; no seeding, routes or domain words.
+
+**New row ids,** all in `Lighthouse.Backend.Tests.TestHelpers.WireContractTestTest`, 8 in all. The fixtures B1 to B3 and B5 are nested and on the base, so NUnit runs their one-time set-up and hook; the outer class holds only B4, reads it by reflection and starts no host.
+
+| Row | Id |
+|---|---|
+| B1 | `WireContractTestTest+OneHostForThreeScenarios.A_contract_fixture_starts_one_host_however_many_scenarios_it_holds(1)`, `(2)`, `(3)` |
+| B2 | `WireContractTestTest+EveryScenarioStartsAfresh.Each_contract_scenario_starts_from_a_fresh_database_on_the_same_day(1)`, `(2)` |
+| B3 | `WireContractTestTest+SignInTurnedOnThroughTheHook.A_fixture_changes_the_host_through_its_one_hook` |
+| B4 | `WireContractTestTest.A_contract_fixture_is_in_the_hosted_tier_without_saying_so` |
+| B5 | `WireContractTestTest+WorkLeftOnTheQueue.A_contract_scenario_that_leaves_work_in_the_queue_fails_at_tear_down` |
+
+**Red, each for its own reason,** by a deliberate break of the base, run, then restored byte for byte:
+
+| Row | Break | Red |
+|---|---|---|
+| B1 | The client made from a new `AdjustTheHost(root)` each scenario | `host builds by scenario 1/2/3: Expected: 1 But was: 2/3/4` |
+| B2, database | Neither the fresh path nor the tear-down's delete | `Teams found at the start of scenario 2: Expected: 0 But was: 1` |
+| B2, day | No `Clock.Reset()` | `the day at the start of scenario 2: Expected: 2026-11-08 23:30 But was: 2026-11-11 23:30` |
+| B3 | The hook's answer ignored | `Expected: Forbidden But was: OK` |
+| B4 | The base off `IntegrationFixture` | `Expected: exactly one item equal to "Integration" But was: no matching items` |
+| B5 | The tear-down does not wait | `Expected: <NUnit.Framework.AssertionException> But was: null` |
+
+**Found.** Dropping only `UseFreshDatabase()` leaves B2 green: the tear-down deletes the file and the next scope copies the template again. The fresh path is there for the file locks `TestWebApplicationFactory` describes, not for the content, so B2's database half holds through the delete.
+
+**B5 takes 30 s,** the queue wait `SharedHostTearDown.LeaveTheHostIdleOrFail` fixes. Its scenario holds a refresh open on the queue, sees the tear-down fail inside `Assert.ThrowsAsync`, then lets the refresh end so NUnit's own tear-down finds the host idle and no red row is left. The queue has a reader on a test host (hosted services are removed, the reader is not), so a refresh that returns at once never shows as active. Shortening it needs a patience argument on `SharedHostTearDown`, outside this step's files: open for the reviewer.
