@@ -1,0 +1,284 @@
+{
+"counters": {
+"E": 3,
+"F": 29,
+"P": 3,
+"S": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRulesReachModulesArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend.Tests.Architecture namespace",
+"move": "F21",
+"preserved": "F22",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"public_oracle": {
+"expected": "F10",
+"falsifier": "F11",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F9"
+},
+"records": {
+"agreement": [
+{
+"contract": "Architecture rules over the production assembly",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture",
+"party": "Consumer",
+"reason": "F27"
+}
+],
+"decisions": [
+"F23"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-only architecture rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs",
+"reason": "F26"
+},
+{
+"decision": "Changed",
+"kind": "test-only architecture rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F26"
+},
+{
+"decision": "Changed",
+"kind": "test-only architecture rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs",
+"reason": "F26"
+},
+{
+"decision": "Changed",
+"kind": "test-only architecture rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ArchivedDeliveryReadPathArchUnitTest.cs",
+"reason": "F26"
+},
+{
+"decision": "Changed",
+"kind": "test-only architecture rule",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventDispatcherSeamArchUnitTest.cs",
+"reason": "F26"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F28"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F29"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs",
+"reason": "F24",
+"symbol": "ApplicationCoreRules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:11",
+"reason": "F25",
+"symbol": "ModuleBoundariesArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs:14",
+"reason": "F25",
+"symbol": "KernelRules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ArchivedDeliveryReadPathArchUnitTest.cs:8",
+"reason": "F25",
+"symbol": "ArchivedDeliveryReadPathArchUnitTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventDispatcherSeamArchUnitTest.cs:11",
+"reason": "F25",
+"symbol": "DomainEventDispatcherSeamArchUnitTest"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/KernelRules.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ArchivedDeliveryReadPathArchUnitTest.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventDispatcherSeamArchUnitTest.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/DomainEventHandlerOrderPinTest.cs",
+"public_oracle": {
+"expected": "F13",
+"falsifier": "F14",
+"promises": [
+"P2",
+"P3"
+],
+"stimulus": "F12"
+},
+"records": {
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F18"
+},
+{
+"analysis": "reuse",
+"reason": "F19"
+},
+{
+"analysis": "impact",
+"reason": "F20"
+}
+]
+},
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F15"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F16"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F17"
+}
+]
+},
+"facts": {
+"F1": "Story 6358 S02 Flow metrics pilot, part A of 3 (DESIGN slice 1): before any Flow metrics type moves out of Lighthouse.Backend.Services into Lighthouse.Backend.Modules.FlowMetrics, widen the architecture rules that key on the Services namespace so a moved type stays examined, and pin the domain-event handler order. Design: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (R0, R6, E2, E3, D-8).",
+"F10": "Each rule reports the Modules offender as it reports the same offender under Lighthouse.Backend.Services; domain-event handlers are found by implementing IDomainEventHandler<>, not by namespace; each rule's examined set on the real assembly does not shrink",
+"F11": "A rule passes while a made-up offender sits under Lighthouse.Backend.Modules, or a handler outside .Services.Implementation.DomainEvents escapes the handler rules",
+"F12": "Build the production service provider as Program.cs registers it and resolve IEnumerable<IDomainEventHandler<TeamDataRefreshed>> and IEnumerable<IDomainEventHandler<PortfolioFeaturesRefreshed>>",
+"F13": "The handler types come back in today's registration order, written out in the test as two literal lists (PortfolioFeaturesRefreshedMetricsInvalidationHandler before the three recorders; ReconstructionMemo and TeamDataRefreshedForecastTriggerHandler at their current positions)",
+"F14": "Two registrations in Program.cs are swapped and the pin still passes",
+"F15": "Every architecture rule that checks or forbids the application core (types under Lighthouse.Backend.Services) applies in the same way to types under Lighthouse.Backend.Modules, so a type moved into a module still fails a rule it would have failed before the move.",
+"F16": "A test shows the order in which domain-event handlers run for TeamDataRefreshed and for PortfolioFeaturesRefreshed, and it fails if a move or registration change reorders them.",
+"F17": "After the change, no production file is edited and every test that existed before still passes.",
+"F18": "The order pin adds one test and changes no code",
+"F19": "No component is reused or changed; one new test",
+"F2": "Moving code into Modules cannot silently drop it out of an architecture rule or reorder event handlers",
+"F20": "No code target",
+"F21": "Lift the five application-core rules (core-not-on-API, parent-placement kernel, archived read path, handler service-locator, handler awaits saves) into Architecture/ApplicationCoreRules.cs, KernelRules shape, read through IlDependencies, subjects as parameters, and make the four existing rule test classes call them on the real production module; defaults stay Services-only and namespace-fragment handler selection",
+"F22": "Every existing Architecture test stays green with the same examined types; no production file changes",
+"F23": "Rule surface for the application-core rules (declared by the design owner after the acceptance designer's BLOCKED-BY design, 2026-11-08).\n\nNew file Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs: `internal static class ApplicationCoreRules`, in the KernelRules shape. Every rule takes a Mono.Cecil `ModuleDefinition`, reads dependencies through `IlDependencies` (not ArchUnitNET), and returns `KernelRuleVerdict` (Examined, Offenders, Rule) whose `Check()` the real-assembly tests call.\n\nConstants:\n- `ApplicationCoreRules.ApplicationCore = @\"^Lighthouse\\.Backend\\.(Services|Modules)(\\.|$)\"` (introduced by the implementation phase, not the prefactoring).\n- The API, Data and other forbidden-target patterns the current rules use, lifted as constants of the same class.\n\nRules (subject types that are fixed today by full name become parameters, so a made-up type can stand in):\n1. `CoreDoesNotDependOnApi(ModuleDefinition module, string core = <core pattern>)` — from ModuleBoundariesArchUnitTest's service-layer-does-not-depend-on-API rule.\n2. `ParentPlacementKernelDependsOnNoCoreOrData(ModuleDefinition module, IReadOnlyCollection<string> kernelTypes, string core = <core pattern>)` — from ModuleBoundariesArchUnitTest's ParentPlacementKernel rule; the real test passes today's four kernel type names.\n3. `ArchivedReadPathReachesNoRecalculation(ModuleDefinition module, IReadOnlyCollection<string> projectionTypes, string core = <core pattern>)` — from ArchivedDeliveryReadPathArchUnitTest; the real test passes today's two projection type names.\n4. `HandlersUseNoServiceLocator(ModuleDefinition module)` and 5. `HandlersAwaitRepositorySaves(ModuleDefinition module)` — from DomainEventDispatcherSeamArchUnitTest. They select the handlers themselves.\n6. `KernelRules.ModelsDoNotDependOnServices` stays where it is; only its default `services` argument changes in the implementation phase.\n\nPrefactoring (crafter, phase before-move): create ApplicationCoreRules with rules 1 to 5 and make the four existing test classes call them on the real production module, with behaviour preserved: the core pattern default is `KernelRules.TheServices`, and the handler rules select handlers by the `.Services.Implementation.DomainEvents` namespace fragment, exactly as today. Moving rules 1 to 3 from ArchUnitNET NotDependOnAny to IlDependencies may reveal real offenders in async bodies that ArchUnitNET missed in Release: if it does, do not baseline them, reject and report them (they are a finding for the maintainer). Preserved: every existing Architecture test stays green and no production file changes.\n\nImplementation (crafter, after the oracle is approved and its RED observed): the core-pattern defaults become `ApplicationCore` (rules 1 to 3 and KernelRules.ModelsDoNotDependOnServices), and rules 4 and 5 select handlers as every non-abstract type implementing `IDomainEventHandler<>`, wherever its namespace. Six real handlers outside `.Services.Implementation.DomainEvents` (ReconstructionMemo, and the five trigger handlers in Services.Implementation.BackgroundServices.Update) come under rules 4 and 5 for the first time; any of them that breaks a rule goes on an inline two-way baseline in that rule, named one per line with the reason, and is reported for the gate lessons. No rule is loosened otherwise.\n\n\"Examined set does not shrink\": on the real production module, each rule's Examined with the widened default is a superset of its Examined when called with `KernelRules.TheServices` (rules 1 to 3) or with today's namespace-fragment selection (rules 4 and 5, exposed as an explicit selector overload or parameter the crafter adds in the prefactoring, e.g. `HandlersUseNoServiceLocator(module, HandlerSelection.ByDomainEventsNamespace)`). The oracle asserts that superset on the real module, and asserts on a fixture module that a made-up offender under `Lighthouse.Backend.Modules.*` (made-up handler implementing IDomainEventHandler<> outside a DomainEvents namespace, for rules 4 and 5) is reported by the default call, just as the same offender under `Lighthouse.Backend.Services.*` is.\n\nOrder: prefactoring crafter, then acceptance designer (oracle against this surface, semantic RED = the Modules offenders are not reported), oracle approval, crafter implementation.\n",
+"F24": "KernelRules is specific to Models; the five application-core rules need the same rule-defined-once shape with subject and pattern parameters so made-up types can be checked, and later module Stories reuse it",
+"F25": "Its rule(s) move into ApplicationCoreRules (shared, parameterised) and it calls them on the real production module; its test names stay",
+"F26": "Test project only; production code and its behaviour are unchanged; the rule examines at least the types it examined before",
+"F27": "The rules read the compiled production assembly; no production contract changes",
+"F28": "No wire, DTO, route or cross-process contract is touched; the slice changes test-project rules only",
+"F29": "The slice's oracle is itself the architectural test (rules over the compiled assembly); no further architectural test is designed",
+"F3": "Every architecture rule that examines or forbids the application core (types under Lighthouse.Backend.Services) examines or forbids a type under Lighthouse.Backend.Modules in the same way, so moving a type into a module never drops it from a rule",
+"F4": "The order in which domain-event handlers run for TeamDataRefreshed and PortfolioFeaturesRefreshed is pinned by a test, so a later move or registration change cannot reorder them unnoticed",
+"F5": "No production behaviour changes: no production file is edited, and every existing test stays green",
+"F6": "Moving any Flow metrics type (feature B), and the module rules R1 to R5 (feature C)",
+"F7": "A made-up type under Lighthouse.Backend.Modules that breaks an application-core rule is reported by that rule, exactly as the same type under Lighthouse.Backend.Services is",
+"F8": "The resolved handler order for TeamDataRefreshed and PortfolioFeaturesRefreshed is pinned, and swapping two registrations fails the pin",
+"F9": "Run each application-core rule (ModuleBoundariesArchUnitTest ServiceLayerPattern and ParentPlacementKernel, KernelRules.TheServices, ArchivedDeliveryReadPathArchUnitTest ServiceNamespacePattern, DomainEventDispatcherSeamArchUnitTest handler rules) over made-up offender types placed under Lighthouse.Backend.Modules"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_out": [
+"F6"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F7",
+"promises": [
+"P1",
+"P3"
+]
+},
+{
+"id": "S2",
+"observation": "F8",
+"promises": [
+"P2",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6358-s02a-rules-first",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}

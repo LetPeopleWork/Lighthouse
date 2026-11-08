@@ -48,8 +48,11 @@ namespace Lighthouse.Backend.Tests.Architecture
                 $"Types in namespaces matching \"{models}\" should not depend on any type in namespaces matching \"{forbidden}\", because {because}");
     }
 
-    /// <summary>What a kernel rule looked at, and which of those types broke it.</summary>
-    internal sealed record KernelRuleVerdict(IReadOnlyList<string> Examined, IReadOnlyList<IlDependent> Offenders, string Rule)
+    /// <summary>
+    /// What a rule looked at, and which of those types broke it. <paramref name="Breaks"/> says how an offender
+    /// relates to the names listed after it, so a failure reads as a sentence.
+    /// </summary>
+    internal sealed record KernelRuleVerdict(IReadOnlyList<string> Examined, IReadOnlyList<IlDependent> Offenders, string Rule, string Breaks = "depends on")
     {
         public void Check()
         {
@@ -58,7 +61,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 return;
             }
 
-            var offenders = Offenders.Select(offender => $"{offender.TypeName} depends on {string.Join(", ", offender.Targets)}");
+            var offenders = Offenders.Select(offender => $"{offender.TypeName} {Breaks} {string.Join(", ", offender.Targets)}");
 
             Assert.Fail($"{Rule}{Environment.NewLine}{string.Join(Environment.NewLine, offenders)}");
         }

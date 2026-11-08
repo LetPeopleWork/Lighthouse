@@ -10,9 +10,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [TestFixture]
     public class ModuleBoundariesArchUnitTest
     {
-        private const string ApiLayerPattern = @"^Lighthouse\.Backend\.API($|\..*)";
-        private const string ServiceLayerPattern = @"^Lighthouse\.Backend\.Services($|\..*)";
-
         internal const string WorkTrackingIntegrationPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)";
         private const string WorkItemsSyncPattern =
@@ -32,8 +29,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string StoredRecordsPattern =
             @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.Repositories)($|\..*)";
-
-        private const string DataLayerPattern = @"^Lighthouse\.Backend\.Data($|\..*)";
 
         private static readonly string[] ParentPlacementKernelTypes =
         [
@@ -83,19 +78,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ServiceLayer_DoesNotDependOnApiLayer()
         {
-            Types().That().ResideInNamespaceMatching(ServiceLayerPattern)
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ApiLayerPattern))
-                .Because(
-                    "the application core (Services.Implementation and Interfaces) is driven by the API, so it " +
-                    "must not depend back on it; the DTOs the core returns live in the Models, not in API.DTO.")
-                .Check(Architecture);
+            ApplicationCoreRules.CoreDoesNotDependOnApi(ProductionModule.Value).Check();
         }
 
         [Test]
         public void SharedKernel_DoesNotDependUpwardOnApi()
         {
             Types().That().ResideInNamespaceMatching(KernelRules.TheModels)
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ApiLayerPattern))
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ApplicationCoreRules.TheApi))
                 .Because(
                     "Models is the shared kernel at the bottom of the modular monolith; it must not depend " +
                     "upward on the API driving adapter.")
@@ -139,19 +129,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void ParentPlacementKernel_DependsOnNoServiceOrData()
         {
-            Types().That().HaveFullName(ParentPlacementKernelTypes[0])
-                .Or().HaveFullName(ParentPlacementKernelTypes[1])
-                .Or().HaveFullName(ParentPlacementKernelTypes[2])
-                .Or().HaveFullName(ParentPlacementKernelTypes[3])
-                .Should().NotDependOnAny(
-                    Types().That().ResideInNamespaceMatching(ServiceLayerPattern)
-                        .Or().ResideInNamespaceMatching(DataLayerPattern))
-                .Because(
-                    "deciding under which issue a record hangs must be checkable from what it is handed alone. " +
-                    "If the pick could reach a repository, the database context, a connector or a logging service, " +
-                    "its answer could change with what it happened to read, and a wrongly placed parent looks " +
-                    "exactly like correct data.")
-                .Check(Architecture);
+            ApplicationCoreRules.ParentPlacementKernelDependsOnNoCoreOrData(ProductionModule.Value, ParentPlacementKernelTypes).Check();
         }
 
         [Test]
