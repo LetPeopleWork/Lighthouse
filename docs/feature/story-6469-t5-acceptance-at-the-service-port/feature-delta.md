@@ -2033,3 +2033,19 @@ The business rules behind every row move with it to the port; `RefinementCadence
 - Tear-down: about 51 ms for the class, about 2 ms a row.
 
 **Open for the review.** Whether the moved class keeps its namespace under `API.Integration`, as the pilot's `Slice04` did to keep its ids, in which case the Stryker configs, which leave out `API.Integration`, never run it for a mutant unless slice E's config is written to let it in (backend rule 6). Where the 7 non-port rows of `Slice05`, `Slice10` and `Slice12` go, decided when those classes move.
+
+## Wave: DELIVER / [REF] Slice E re-cut review (2026-11-08, step 05-01)
+
+`nw-acceptance-designer-reviewer`, model `sonnet`: **APPROVED**, with no blockers. The reviewer checked these claims in the code:
+- The keeper rows: `Slice09` (cycle, range, percentiles, horizon, ready count), the no-number row of `Slice09`, `Slice04` line 142, and `Slice05` lines 130 and 151.
+- The break: `SearchHorizonDays = 366`. The year-ahead row needs offset 362, so a horizon of 362 turns it red.
+- The correction of the recurring-rule port to `IRecurringBlackoutRuleService.Create`.
+- The arithmetic: 22 rows, a total of 300, and m = 71.
+
+Non-blocking points, settled for 05-02 to 05-04:
+1. **Namespace.** The moved class keeps its `API.Integration` namespace, per D-6469-8, so its ids stay. Slice E's mutation is N/A (it changes test files only), so no Stryker config is needed for it.
+2. **The guard line.** The class's line in `HostUsersStillToMove` comes off in 05-04's move commit, per backend rule 7.
+3. **The outlier row.** `A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens` takes 1.4–1.6 s against a median row of 0.17 s. 05-04 reads it at the port, and 05-05 names its cause if it stays slow.
+4. **E10 and blackouts.** Blackout kinds are not E10 inputs. They are covered by the two real blackout services at the port.
+5. **The break's red.** With no cycle, the answer is `NoCadence` with a null range. So the red names the range or verdict, not "a missing cycle".
+6. **Registrations for the port.** `BlackoutPeriodService` also needs `IRepository<RecurringBlackoutRule>` and `IDomainEventDispatcher`, and the port must register `IRecurringBlackoutRuleService`.
