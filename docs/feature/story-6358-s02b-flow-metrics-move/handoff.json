@@ -146,12 +146,66 @@
 "stimulus": "F63",
 "user_result": "F65"
 }
+],
+"S3": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F82",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsImplementations_LiveInTheModuleApplication_AndNoneIsLeftUnderServices"
+},
+"expected": "F68",
+"stimulus": "F80",
+"user_result": "F81"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F85",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsImplementationFiles_SitInTheModuleApplicationFolder_AndNowhereElse"
+},
+"expected": "F72",
+"stimulus": "F83",
+"user_result": "F84"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F78",
+"test": "Lighthouse.Backend.Tests.Architecture (FlowMetricsModuleLayoutArchUnitTest earlier tests, ApplicationCoreRulesReachModulesArchUnitTest, DomainEventHandlerOrderPinTest)"
+},
+"expected": "F87",
+"stimulus": "F86",
+"user_result": "F88"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host (root), at slice end and feature end",
+"reason": "F79"
+},
+"expected": "F64",
+"stimulus": "F63",
+"user_result": "F65"
+}
 ]
 },
 "counters": {
 "D": 1,
 "E": 4,
-"F": 79,
+"F": 88,
 "P": 3,
 "S": 5
 },
@@ -993,6 +1047,15 @@
 "F78": "A behaviour change in a metrics service that no architecture test reads; the existing unit and integration suites and the answer capture own that",
 "F79": "This oracle reads layout only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice",
 "F8": "The Flow metrics contract (the two metrics-service interfaces with their records, the snapshot writer, series query, gap reconciler, history-filler and snapshot-repository interfaces) lives in Lighthouse.Backend.Modules.FlowMetrics.Application",
+"F80": "Read the compiled production assembly for the sixteen Flow metrics implementation types, by name",
+"F81": "A developer finds the Flow metrics services, writers, queries and their helpers in the module's Application layer, nowhere else",
+"F82": "A copy of an implementation kept under a namespace other than Services, for example the module's Domain or the API, next to the moved one",
+"F83": "Read the production project's source folders for the sixteen implementation files",
+"F84": "The folder a developer opens matches the namespace the implementation declares",
+"F85": "A file in the right folder whose namespace line was not changed; the implementation placement test catches that one",
+"F86": "Run the Architecture tests after the move, the earlier placement checks, the Domain rule, the application-core rules and the event-handler order pin included",
+"F87": "Every earlier check and the handler-order pin stay green with only using, namespace and path-string edits",
+"F88": "Moving the implementations changes nothing already in place, and the metrics handlers still run in the same order",
 "F9": "The Flow metrics implementations (the three metrics services, cache key, percentile families, blocked-count series builder, snapshot writers, series queries, gap reconciler, reconstruction memo, retention edge, fill target) live in Lighthouse.Backend.Modules.FlowMetrics.Application"
 },
 "product": {

@@ -328,6 +328,124 @@ This oracle reads layout only; the design runs the answer capture and comparison
 
 host \(root\)\, at slice end and feature end
 
+### S3
+
+##### Covers
+
+P1
+
+```text
+Read the compiled production assembly for the sixteen Flow metrics implementation types, by name
+```
+
+```text
+Each sits in the Flow metrics module's Application namespace exactly, not in another layer, and no type of the same name is left under Services; a type that has not moved is named as missing from Application and as left behind
+```
+
+```text
+A developer finds the Flow metrics services, writers, queries and their helpers in the module's Application layer, nowhere else
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsModuleLayoutArchUnitTest\.TheFlowMetricsImplementations\_LiveInTheModuleApplication\_AndNoneIsLeftUnderServices
+
+```text
+A copy of an implementation kept under a namespace other than Services, for example the module's Domain or the API, next to the moved one
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Read the production project's source folders for the sixteen implementation files
+```
+
+```text
+Each file sits in the module's Application folder and no file of the same name sits anywhere else in the production project
+```
+
+```text
+The folder a developer opens matches the namespace the implementation declares
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsModuleLayoutArchUnitTest\.TheFlowMetricsImplementationFiles\_SitInTheModuleApplicationFolder\_AndNowhereElse
+
+```text
+A file in the right folder whose namespace line was not changed; the implementation placement test catches that one
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Run the Architecture tests after the move, the earlier placement checks, the Domain rule, the application-core rules and the event-handler order pin included
+```
+
+```text
+Every earlier check and the handler-order pin stay green with only using, namespace and path-string edits
+```
+
+```text
+Moving the implementations changes nothing already in place, and the metrics handlers still run in the same order
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture \(FlowMetricsModuleLayoutArchUnitTest earlier tests\, ApplicationCoreRulesReachModulesArchUnitTest\, DomainEventHandlerOrderPinTest\)
+
+```text
+A behaviour change in a metrics service that no architecture test reads; the existing unit and integration suites and the answer capture own that
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them
+```
+
+```text
+The two captures are identical
+```
+
+```text
+Nothing a user sees in the metrics changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+This oracle reads layout only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice
+```
+
+host \(root\)\, at slice end and feature end
+
 ## Expectations
 
 ### Rows

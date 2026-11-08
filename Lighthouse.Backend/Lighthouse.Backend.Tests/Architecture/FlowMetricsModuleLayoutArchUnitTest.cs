@@ -87,6 +87,27 @@ namespace Lighthouse.Backend.Tests.Architecture
             "IProcessBehaviorSnapshotRepository.cs",
         ];
 
+        // Each implementation file declares exactly one type, named like the file.
+        private static readonly string[] Implementations =
+        [
+            "BaseMetricsService",
+            "TeamMetricsService",
+            "PortfolioMetricsService",
+            "MetricsCacheKey",
+            "PercentileFamilies",
+            "BlockedCountSeriesBuilder",
+            "PercentileSnapshotWriter",
+            "ProcessBehaviorSnapshotWriter",
+            "PercentilesOverTimeSeriesQuery",
+            "GapAskingPercentilesOverTimeSeriesQuery",
+            "ProcessBehaviorSeriesQuery",
+            "GapAskingProcessBehaviorSeriesQuery",
+            "OverTimeGapReconciler",
+            "ReconstructionMemo",
+            "RetentionEdge",
+            "OverTimeFillTarget",
+        ];
+
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
 
         private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(FlowMetricsModuleLayoutArchUnitTest).Assembly));
@@ -133,6 +154,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheFlowMetricsContractFiles_SitInTheModuleApplicationFolder_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(ModuleApplicationFolder, ContractFiles);
+        }
+
+        [Test]
+        public void TheFlowMetricsImplementations_LiveInTheModuleApplication_AndNoneIsLeftUnderServices()
+        {
+            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleApplicationNamespace, Implementations).Check();
+        }
+
+        [Test]
+        public void TheFlowMetricsImplementationFiles_SitInTheModuleApplicationFolder_AndNowhereElse()
+        {
+            ThenEachFileSitsOnlyIn(ModuleApplicationFolder, [.. Implementations.Select(name => $"{name}.cs")]);
         }
 
         [Test]
