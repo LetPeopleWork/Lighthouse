@@ -37,8 +37,6 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string NeedBandAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.NeedBand($|\+.*)";
 
-        private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
-
         private static readonly string[] RepositoryWriters = ["Save", "Add", "Append", "Update", "Remove", "Delete", "Apply"];
 
         private static readonly string[] SizingLogRewrites = ["ExecuteUpdate", "ExecuteDelete", "Remove"];
@@ -161,7 +159,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().HaveFullName(typeof(StageRuleMatcher).FullName!)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ServicesImplementationPattern)
                     .And().DoNotResideInNamespace(RefinementImplementationNamespace))
-                .AndShould().NotDependOnAny(Types().That().ResideInNamespace(RepositoriesNamespace))
+                .AndShould().NotDependOnAny(Types().That().HaveFullNameMatching(RepositoryRecognition.RepositoryContracts))
                 .Because("matching rules is the rule engine's job; the matcher only hands it the Work Items already in refinement.")
                 .Check(Architecture);
         }
@@ -195,7 +193,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             var readPath = ReadPath();
             var writes = readPath
                 .SelectMany(type => type.Dependencies.OfType<MethodCallDependency>())
-                .Where(call => call.TargetMember.DeclaringType.Namespace.FullName == RepositoriesNamespace
+                .Where(call => RepositoryRecognition.IsRepositoryContract(call.TargetMember.DeclaringType.FullName)
                     && RepositoryWriters.Any(writer => call.TargetMember.Name.StartsWith(writer, StringComparison.Ordinal)))
                 .Select(call => $"{call.Origin.FullName} calls {call.TargetMember.DeclaringType.FullName}.{call.TargetMember.Name}")
                 .ToList();

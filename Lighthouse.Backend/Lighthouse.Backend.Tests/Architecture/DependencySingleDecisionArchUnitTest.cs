@@ -541,7 +541,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Types().That().Are(typeof(DependencyHonourPolicy)).Or().Are(typeof(DependencyCycleDetector))
                 .Should().NotDependOnAny(Types().That()
-                    .ResideInNamespaceMatching(@"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.Repositories)($|\..*)").Or()
+                    .ResideInNamespaceMatching(RepositoryRecognition.StoredRecordsPattern).Or()
                     .ResideInNamespaceMatching(@"^Microsoft\.EntityFrameworkCore($|\..*)").Or()
                     .ResideInNamespaceMatching(@"^Microsoft\.Extensions\.Logging($|\..*)"))
                 .Because(

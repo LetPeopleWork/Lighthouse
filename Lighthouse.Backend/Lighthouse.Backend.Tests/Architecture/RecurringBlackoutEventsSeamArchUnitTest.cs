@@ -9,7 +9,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     public class RecurringBlackoutEventsSeamArchUnitTest
     {
         private const string RecurringBlackoutRuleFullName = "Lighthouse.Backend.Models.RecurringBlackoutRule";
-        private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
         private const string ServiceImplementationNamespace = "Lighthouse.Backend.Services.Implementation";
         private const string ForecastChartControllersPattern = "Lighthouse.Backend.API";
         private const string BlackoutPeriodServiceInterfaceFullName = "Lighthouse.Backend.Services.Interfaces.IBlackoutPeriodService";
@@ -20,7 +19,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void RecurringBlackoutRule_DoesNotDependOnRepositories()
         {
             Classes().That().HaveFullName(RecurringBlackoutRuleFullName)
-                .Should().NotDependOnAny(Types().That().ResideInNamespace(RepositoriesNamespace))
+                .Should().NotDependOnAny(Types().That().HaveFullNameMatching(RepositoryRecognition.RepositoryContracts))
                 .Because(
                     "ADR-060: the recurring-rule entity must not acquire IRepository<RecurringBlackoutRule> or any " +
                     "repository. The union service fetches the rules and expands them into blackout days; the entity " +

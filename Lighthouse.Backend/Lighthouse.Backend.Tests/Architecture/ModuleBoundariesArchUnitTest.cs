@@ -24,12 +24,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)";
         internal const string ReportsPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Reports($|\..*)";
-        private const string PlatformPersistencePattern =
-            @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.(Repositories|DatabaseManagement|DomainEvents|Seeding|OAuth))($|\..*)";
-
-        private const string StoredRecordsPattern =
-            @"^Lighthouse\.Backend\.(Data|Services\.(Implementation|Interfaces)\.Repositories)($|\..*)";
-
         private static readonly string[] ParentPlacementKernelTypes =
         [
             "Lighthouse.Backend.Models.ParentResolution",
@@ -64,7 +58,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Types().That().ResideInNamespaceMatching(ReportsPattern).As("Reports");
 
         private static readonly GivenTypesConjunctionWithDescription PlatformPersistenceModule =
-            Types().That().ResideInNamespaceMatching(PlatformPersistencePattern).As("Platform/Persistence");
+            Types().That().ResideInNamespaceMatching(RepositoryRecognition.PlatformPersistencePattern).As("Platform/Persistence");
 
         [OneTimeTearDown]
         public void DisposeModule()
@@ -117,7 +111,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void WorkTrackingConnectors_DoNotDependOnAnyRepository()
         {
             Types().That().Are(WorkTrackingIntegrationModule)
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(StoredRecordsPattern))
+                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(RepositoryRecognition.StoredRecordsPattern))
                 .Because(
                     "a connector only translates what the tracker sent, so it must not touch the database context " +
                     "or any repository, interface or implementation. Whatever it needs to know about stored " +
@@ -145,7 +139,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(PlatformPersistenceModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ReportsModule.GetObjects(Architecture), Is.Not.Empty);
-                Assert.That(Types().That().ResideInNamespaceMatching(StoredRecordsPattern).GetObjects(Architecture), Is.Not.Empty);
+                Assert.That(Types().That().ResideInNamespaceMatching(RepositoryRecognition.StoredRecordsPattern).GetObjects(Architecture), Is.Not.Empty);
                 foreach (var kernelPattern in new[] { KernelRules.TheModels, KernelRules.TheServices, KernelRules.TheUpdateQueue })
                 {
                     Assert.That(IlDependencies.TypesIn(ProductionModule.Value, kernelPattern), Is.Not.Empty, kernelPattern);

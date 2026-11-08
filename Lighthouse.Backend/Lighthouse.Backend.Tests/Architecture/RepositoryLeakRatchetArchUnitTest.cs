@@ -24,10 +24,6 @@ namespace Lighthouse.Backend.Tests.Architecture
     [Category("slice-s05a")]
     public partial class RepositoryLeakRatchetArchUnitTest
     {
-        private const string RepositoriesFolder = "Services/Implementation/Repositories/";
-
-        private const string ConcreteRepositoriesNamespace = "Lighthouse.Backend.Services.Implementation.Repositories";
-
         private const string ApiNamespace = @"^Lighthouse\.Backend\.API(\.|$)";
 
         private const string FixtureNamespace = @"^Lighthouse\.Backend\.Tests\.Architecture\.RatchetFixtures$";
@@ -263,7 +259,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void ACallInsideTheRepositoriesFolder_IsAllowed()
         {
             var source = new ProductionSourceFile(
-                RepositoriesFolder + "TeamRepository.cs",
+                RepositoryRecognition.RepositoriesFolder + "TeamRepository.cs",
                 "class TeamRepository\n{\n    void Run() => GetAllByPredicate(t => t.Id == 1);\n}");
 
             Assert.That(GetAllByPredicateCallSites([source]), Is.Empty);
@@ -386,7 +382,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private static List<string> GetAllByPredicateCallSites(IEnumerable<ProductionSourceFile> sources)
             => sources
-                .Where(file => !file.RelativePath.StartsWith(RepositoriesFolder, StringComparison.Ordinal))
+                .Where(file => !RepositoryRecognition.IsInRepositoriesFolder(file.RelativePath))
                 .SelectMany(file => CallLines(file.RelativePath, ProductionSource.WithoutComments(file.Source)))
                 .ToList();
 
@@ -398,24 +394,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Read from the compiled IL rather than from ArchUnitNET's dependency graph: in a Release build,
         // which is what CI tests, ArchUnitNET loses a repository used only inside an async method.
         private static List<string> RepositoryDependentsIn(ModuleDefinition module, string namespacePattern)
-            => IlDependencies.DependentsIn(module, namespacePattern, IsRepository)
+            => IlDependencies.DependentsIn(module, namespacePattern, RepositoryRecognition.IsRepository)
                 .Select(dependent => dependent.TypeName)
                 .ToList();
-
-        // The repositories namespace under Services.Interfaces also holds service contracts that are
-        // not repositories, so a contract counts by its name; a concrete repository counts by where it lives.
-        private static bool IsRepository(TypeReference type)
-            => IlDependencies.NamespaceOf(type) == ConcreteRepositoriesNamespace || RepositoryContractName().IsMatch(WithoutGenericArity(type.Name));
-
-        private static string WithoutGenericArity(string typeName)
-        {
-            var arity = typeName.IndexOf('`');
-
-            return arity < 0 ? typeName : typeName[..arity];
-        }
-
-        [GeneratedRegex(@"^I\w*Repository$")]
-        private static partial Regex RepositoryContractName();
     }
 }
 

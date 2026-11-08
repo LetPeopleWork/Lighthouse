@@ -43,15 +43,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly string VerdictVocabularyPattern =
             $@"^{Regex.Escape(ModelsNamespace)}\.({string.Join("|", VerdictVocabulary)})$";
 
-        private const string RepositoriesPattern = @"^Lighthouse\.Backend\.Services\.Interfaces\.Repositories($|\..*)";
-
         private const string PersistencePattern = @"^Lighthouse\.Backend\.Data($|\..*)";
 
         private const string ImplementationPattern = @"^Lighthouse\.Backend\.Services\.Implementation($|\..*)";
 
         private const string Controller = "Lighthouse.Backend.API.ForecastRealityCheckController";
-
-        private const string RepositoriesNamespace = "Lighthouse.Backend.Services.Interfaces.Repositories";
 
         private static readonly string[] RepositoryWriters = ["Save", "Add", "Update", "Remove", "Delete"];
 
@@ -95,7 +91,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void Nothing_in_the_reality_check_can_reach_a_repository()
         {
             TheRealityCheckBesideItsController()
-                .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(RepositoriesPattern))
+                .Should().NotDependOnAny(Types().That().HaveFullNameMatching(RepositoryRecognition.RepositoryContracts))
                 .Because(
                     "the sweep is handed the Team it checks and reads everything else through the metrics service. " +
                     "A repository is a Save away from writing a Team setting, which the check must never do.")
@@ -112,7 +108,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .ToList();
             var writes = controller
                 .SelectMany(type => type.Dependencies.OfType<MethodCallDependency>())
-                .Where(call => call.TargetMember.DeclaringType.Namespace.FullName == RepositoriesNamespace
+                .Where(call => RepositoryRecognition.IsRepositoryContract(call.TargetMember.DeclaringType.FullName)
                     && RepositoryWriters.Any(writer => call.TargetMember.Name.StartsWith(writer + "(", StringComparison.Ordinal)))
                 .Select(call => $"{call.Origin.FullName} calls {call.TargetMember.DeclaringType.FullName}.{call.TargetMember.Name}")
                 .ToList();
