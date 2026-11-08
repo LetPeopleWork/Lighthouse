@@ -8,7 +8,7 @@ type WorkTrackingSystemOption = {
 	isOptional?: boolean;
 };
 
-type AdditionalFieldDefinitions = {
+export type AdditionalFieldDefinitions = {
 	id: number;
 	reference: string;
 	displayName: string;
@@ -55,9 +55,23 @@ export async function createAzureDevOpsConnection(
 	});
 }
 
+const JIRA_ADDITIONAL_FIELDS: AdditionalFieldDefinitions[] = [
+	{
+		id: 0,
+		reference: "fixVersions",
+		displayName: "Fix Versions",
+	},
+	{
+		id: 0,
+		reference: "Size Estimate",
+		displayName: "Story Points",
+	},
+];
+
 export async function createJiraConnection(
 	api: APIRequestContext,
 	connectionName: string,
+	additionalFieldDefinitions: AdditionalFieldDefinitions[] = JIRA_ADDITIONAL_FIELDS,
 ): Promise<{ id: number; name: string }> {
 	const options: WorkTrackingSystemOption[] = [];
 	options.push(
@@ -83,19 +97,6 @@ export async function createJiraConnection(
 			isOptional: true,
 		},
 	);
-
-	const additionalFieldDefinitions: AdditionalFieldDefinitions[] = [
-		{
-			id: 0,
-			reference: "fixVersions",
-			displayName: "Fix Versions",
-		},
-		{
-			id: 0,
-			reference: "Size Estimate",
-			displayName: "Story Points",
-		},
-	];
 
 	return createWorkTrackingSystemConnection(api, {
 		name: connectionName,

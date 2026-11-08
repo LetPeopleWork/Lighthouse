@@ -36,6 +36,11 @@ export async function createPortfolio(
 			doneItemsCutoffDays: 365,
 		},
 	});
+	if (!response.ok()) {
+		throw new Error(
+			`Creating Portfolio ${portfolioName} failed: ${response.status()} ${await response.text()}`,
+		);
+	}
 	return response.json();
 }
 

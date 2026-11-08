@@ -3,11 +3,14 @@ import {
 	test,
 	testWithDemoData,
 } from "../../fixutres/LighthouseFixture";
+import { createPortfolio } from "../../helpers/api/portfolios";
 import {
+	createTeam,
 	deleteTeam,
 	followTheConnectionsEstimation,
 	keepHistoryFor,
 } from "../../helpers/api/teams";
+import { createJiraConnection } from "../../helpers/api/workTrackingSystemConnections";
 import { formatLocalDate } from "../../helpers/dates";
 import {
 	takeDialogScreenshot,
@@ -698,6 +701,60 @@ testWithDemo(
 		);
 	},
 );
+
+// The list is shown on Jira and Azure DevOps connections only, and the demo data reads CSV, so this
+// shot builds its own Jira connection with the two Additional Fields the docs' example names.
+test("Take @screenshot of a Portfolio's Parent sources list", async ({
+	request,
+	overviewPage,
+}) => {
+	const connection = await createJiraConnection(request, "Jira Cloud", [
+		{ id: 0, reference: "Caused by", displayName: "Is caused by" },
+		{ id: 0, reference: "customfield_10200", displayName: "Program Ref" },
+	]);
+	const jiraStates = {
+		toDo: ["To Do"],
+		doing: ["In Progress"],
+		done: ["Done"],
+	};
+	// Lighthouse lets you add a Portfolio only once a Team exists.
+	await createTeam(
+		request,
+		"Lagunitas",
+		connection.id,
+		'project = "LGHTHSDMO" AND labels = "Lagunitas"',
+		["Story", "Bug"],
+		jiraStates,
+	);
+	const portfolio = await createPortfolio(
+		request,
+		"Oberon Initiative",
+		connection.id,
+		'project = "LGHTHSDMO" AND fixVersion = "Oberon Initiative"',
+		["Epic"],
+		jiraStates,
+	);
+
+	const overview = await overviewPage.lightHousePage.open();
+	const portfolioDetail = await overview.goToPortfolio(portfolio.name);
+	const settings = await portfolioDetail.editPortfolio();
+	const parentSources = await settings.openParentSources();
+	await parentSources.override();
+	await parentSources.addSource("Is caused by");
+	await parentSources.addSource("Program Ref");
+	await parentSources.moveDown("Parent (default)");
+	await parentSources.moveDown("Parent (default)");
+	await parentSources.expectOrder([
+		"Is caused by",
+		"Program Ref",
+		"Parent (default)",
+	]);
+
+	await takeElementScreenshot(
+		parentSources.section,
+		"features/parent_sources.png",
+	);
+});
 
 // Scenario 11 ("It's Not Always What It Seems") seeds Team Gravity, whose whole characterisation is
 // old work in progress — which makes it the one demo board where the At Risk widget has something to

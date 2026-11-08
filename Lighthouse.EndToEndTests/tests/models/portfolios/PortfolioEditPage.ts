@@ -1,5 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 import { BaseEditPage } from "../common/BaseEditPage";
+import { ParentSourcesList } from "../common/ParentSourcesList";
 import { PortfolioDetailPage } from "./PortfolioDetailPage";
 
 export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
@@ -10,6 +11,13 @@ export class PortfolioEditPage extends BaseEditPage<PortfolioDetailPage> {
 	override async save(): Promise<PortfolioDetailPage> {
 		await this.saveButton.click();
 		return new PortfolioDetailPage(this.page);
+	}
+
+	async openParentSources(): Promise<ParentSourcesList> {
+		const parentSources = new ParentSourcesList(this.page);
+		await this.toggleAdvancedConfiguration();
+		await expect(parentSources.heading).toBeVisible();
+		return parentSources;
 	}
 
 	async toggleDefaultFeatureSizeConfiguration(): Promise<void> {
