@@ -12,7 +12,7 @@ on:
 
 jobs:
   package-linux-standalone:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: github.ref == 'refs/heads/main'
     permissions:
       actions: write
