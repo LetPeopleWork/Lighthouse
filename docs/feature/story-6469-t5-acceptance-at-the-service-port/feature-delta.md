@@ -1713,3 +1713,72 @@ The test names of the whole family, before and after, are the same list; the cla
 - `RealityCheckAtThePortTest` gained one line, `protected DatabaseWriteWatch DatabaseWrites => harness.Writes;`. It was outside this step's file list, but the harness is private to the port base and the specifications cannot reach it otherwise.
 - `Slice04` has no no-write row; the watch is there for any port row that wants it.
 - The counter stays always on; `During` clears what it holds, so the seed's writes before the step are not counted.
+
+## Wave: DELIVER / [REF] Slice B: the port against the host, and the slice's proofs (step 02-07, 2026-11-08)
+
+**B13.** `Contracts/PortFixtures/PortFixtureLifetimesWireContractTest.cs`, on `WireContractTest`, so it needs no line on the shrinking list. Its one hook captures the host's registrations (`ConfigureTestServices` on a plain `TestWebApplicationFactory<Program>`); one case per port fixture, `Slice01...Test` and `Slice04...Test`, reads what the fixture adds to the harness through the port base's new `WhatItRegisters` and compares each service type with the host's last unkeyed registration: present, same lifetime, and the same implementation type. The stand-ins built on purpose are compared by lifetime only: the licence, the settings, the scripted forecast, `ILighthouseClock`, `TimeProvider` and the pinned draws (`IDrawStreamFactory`). The last two were not in the named list; see "For review". A factory registration on either side reads as "whatever a factory returns", so it differs from a type on the other side.
+
+**Red, first, against the port base as it was** (`evidence/02-07-b13-first-run-against-the-port-as-it-was.txt`): both cases, licence and settings `Singleton at the port and Scoped on the host`; for `Slice01` also `TimeProvider`, `IDrawStreamFactory` and `ForecastService is not registered on the host`. Fixed in `RealityCheckAtThePortTest`: the licence and settings stand-ins are scoped, and the shipped `ForecastService` is built inside the scripted forecast's factory (`ActivatorUtilities`) instead of being registered as a concrete type the host never has. `Slice01` 51, `Slice04` 5 and B13 2: 58 passed.
+
+**Red, planted** (`evidence/02-07-b13-scoped-planted-as-singleton.txt`): `ITeamMetricsService` registered as a singleton in the port base, both cases red, `ITeamMetricsService lives as Singleton at the port and as Scoped on the host`. Restored, `cmp` clean.
+
+**Deliberate break** (`evidence/02-07-deliberate-break-minimum-active-days.txt`). `ForecastDataSufficiencyPolicy.MinimumActiveDays` 5 to 6, only the pilot's classes run (`Slice01`, `Slice04`, `Slice06`): 2 failed, 66 passed. `Five_days_with_finished_work_is_enough_to_check_and_four_is_not(5,True)` red at the port, `Expected: True But was: False` and `Expected: "Sufficient"` against `TooFewActiveDays`; `(4,False)` green. Also red, `The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear`, `Expected: 5 But was: 6`. Reverted with `git checkout`; `git diff -- Lighthouse.Backend/Lighthouse.Backend/` prints nothing.
+
+**Id table, `PB` against `PA`** (`evidence/02-07-PB.txt`, ids from the TRX as `className.testName`). The family in `PA`: 81 (`Slice01` 66, `Slice04` 5, `Slice06` 10).
+
+| | Rows |
+|---|---|
+| Kept, same class | 66 (`Slice01` 51, `Slice04` 5, `Slice06` 10) |
+| Changed class, as mapped in 02-02 | 15 (14 to `RealityCheckWireContractTest`, Maria's to `RealityCheckSkeletonTest`) |
+| Gone | 0 |
+| **The family's table** | **81** |
+| New wire rows, B6 to B12 | 7 |
+| B13, one per port fixture | 2 |
+| Named elsewhere: `ServicePortHarnessTest` (02-06) | 9 |
+| Named elsewhere: `WireContractTestTest` (02-01) | 8 |
+
+Only in `PA`: 15 lines, the 15 moved rows. Only in `PB`: 41 = 15 + 7 + 2 + 9 + 8. No foreign line.
+
+**Seconds** (`evidence/02-07-seconds-before-and-after.txt`). Before: `38a665ecc^` (`3196fb081`, after `ced6e04ac`) in a scratch worktree; no post-`ced6e04ac` reading of the whole family existed. After: this step's tree. Both Release, each class alone in its own `dotnet test`, 3 rounds, timer on; a class's seconds are its TRX durations plus the timer's `one_time_setup_ms`. Medians per class, summed:
+
+| Class | Before | After |
+|---|---|---|
+| `Slice01...Test` | 16.686 (66 rows, host) | 6.918 (51 rows, port) |
+| `Slice04...Test` | 2.666 (port since slice A) | 2.774 |
+| `Slice06...Test` | 5.057 | 5.429 |
+| `RealityCheckWireContractTest` | | 6.749 (21 rows, host) |
+| `RealityCheckSkeletonTest` | | 3.115 (1 row, host) |
+| `PortFixtureLifetimesWireContractTest` | | 1.999 (2 rows, host) |
+| **Family** | **24.409** | **26.984** |
+
+**Criterion 4 is not met: the family's seconds rise by 2.58 s** (rounds summed: 22.547, 24.567, 24.784 before; 27.648, 26.645, 26.871 after). `Slice01` falls by 9.77 s, but the slice adds three host fixtures, each paying a host build of 1.7 to 2.2 s in one-time set-up, and the 22 rows the two wire classes hold cost 9.86 s between them. Without B13 the after sum is 24.985, still above. TRX alone falls, 21.182 to 19.458, which is the reading guarantee 6 warned would mislead. All 27 runs green.
+
+**`PB`.** Clause `A`, timer on (`LIGHTHOUSE_FIXTURE_TIMING=1`), 6 workers, Release, this step's tree, the rules of a list run: no test process and no build running (both 0), `dotnet build-server shutdown` exit 0, Docker 29.9.3, the seven variables removed and the count 0.
+
+| | |
+|---|---|
+| Console | `Failed: 0, Passed: 12960, Skipped: 2, Total: 12962`, 6 m 19 s, exit 0 |
+| TRX rows | 12,971: 12,960 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted id list | `4d6272b805b86af40f429a2c016fa2316fc631e18fb97395c7e2e7b319a2c795` |
+| Against `PA` | 15 only in `PA`, 41 only in `PB`, each on the table above |
+| `host_build_count`, summed | **626**, against 619 in the timing run |
+
+Every line of the host-build difference, by fixture against the timing run's CSV:
+
+| Change | Fixture | Why |
+|---|---|---|
+| +4 | `WireContractTestTest` B1, B2, B3, B5 | 02-01, allowed |
+| +2 | `DeleteUnitRightsTests` | **Foreign:** `6efb2b255` (Bug 6575) added the class after the timing run |
+| +1, +1 | `RealityCheckWireContractTest`, `RealityCheckSkeletonTest` | 02-02 |
+| −1, −1 | `Slice01...Test`, `Slice04...Test` | left the host (02-05, slice A) |
+| +1 | `PortFixtureLifetimesWireContractTest` | B13, this step |
+
+**Criterion 5 is not met by one host build:** the limit is 619 + 4 = 623; less the 2 foreign builds `PB` reads 624. The one over is B13's own host.
+
+**Runs.** Guards `TestTierGuardTest`, `TestHostPerFixtureGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`: 125 passed. `Test-Fast.ps1`: 9605 passed, unchanged, as B13 is hosted. `dotnet build Lighthouse.Backend` Debug and the tests in Release: 0 warnings, 0 errors.
+
+**For review.**
+- Criteria 4 and 5 fail, as above. Both come from the host fixtures the slice adds; folding the skeleton row and B13 into `RealityCheckWireContractTest`'s host would win back about two host builds, but that host carries the reality check's own swaps, so B13 would compare against an adjusted host.
+- B13 exempts `TimeProvider` and the pinned draws from the implementation comparison besides the named stand-ins: the host under test fakes `TimeProvider` itself, and the host's reality-check fixtures pin the draws the same way.
+- B13 compares what a port fixture adds, not the harness's own four registrations (logging, crypto, clock, database); `ServicePortHarness` does not hand its collection out.
+- B13 and the planned E13 are not wire tests, yet live under `Contracts` because that route needs no new line on the shrinking list.

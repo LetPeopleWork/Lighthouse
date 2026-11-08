@@ -1,0 +1,17 @@
+Test run for /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Debug/net10.0/Lighthouse.Backend.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2-dev (x64)
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice01OneSentenceAboutYourSamplingWindowTest) [64 ms]
+  Error Message:
+     Slice01OneSentenceAboutYourSamplingWindowTest registers services unlike the host
+Assert.That(differences, Is.Empty)
+  Expected: <empty>
+  But was:  < "ITeamMetricsService lives as Singleton at the port and as Scoped on the host" >
+  Failed Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice04TheAnswerOpensInADialogTest) [56 ms]
+  Error Message:
+     Slice04TheAnswerOpensInADialogTest registers services unlike the host
+Assert.That(differences, Is.Empty)
+  Expected: <empty>
+  But was:  < "ITeamMetricsService lives as Singleton at the port and as Scoped on the host" >
+Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 122 ms - Lighthouse.Backend.Tests.dll (net10.0)

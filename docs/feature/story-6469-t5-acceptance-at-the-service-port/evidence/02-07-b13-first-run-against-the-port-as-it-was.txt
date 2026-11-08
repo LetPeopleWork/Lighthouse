@@ -1,0 +1,17 @@
+B13, first run, against RealityCheckAtThePortTest as committed in 272f35006 (no plant):
+
+  Failed Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice01OneSentenceAboutYourSamplingWindowTest) [111 ms]
+  Error Message:
+     Slice01OneSentenceAboutYourSamplingWindowTest registers services unlike the host
+Assert.That(differences, Is.Empty)
+  Expected: <empty>
+  But was:  < "ILicenseService lives as Singleton at the port and as Scoped on the host", "IAppSettingService lives as Singleton at the port and as Scoped on the host", "TimeProvider is built as SystemTimeProvider at the port and as ResettableFakeTimeProvider on the host", "IDrawStreamFactory is built as DrawsFromAPinnedStartingNumber at the port and as DrawStreamFactory on the host", "ForecastService is not registered on the host" >
+  Failed Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host(Slice04TheAnswerOpensInADialogTest) [62 ms]
+  Error Message:
+     Slice04TheAnswerOpensInADialogTest registers services unlike the host
+Assert.That(differences, Is.Empty)
+  Expected: <empty>
+  But was:  < "ILicenseService lives as Singleton at the port and as Scoped on the host", "IAppSettingService lives as Singleton at the port and as Scoped on the host" >
+Failed!  - Failed:     2, Passed:     0, Skipped:     0, Total:     2, Duration: 175 ms - Lighthouse.Backend.Tests.dll (net10.0)
+
+At that point the stand-in list held the licence, the settings, the scripted forecast and ILighthouseClock only.

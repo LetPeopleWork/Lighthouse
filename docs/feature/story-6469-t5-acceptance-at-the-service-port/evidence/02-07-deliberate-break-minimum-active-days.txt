@@ -1,0 +1,22 @@
+Test run for /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Debug/net10.0/Lighthouse.Backend.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2-dev (x64)
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed Five_days_with_finished_work_is_enough_to_check_and_four_is_not(5,True) [80 ms]
+  Error Message:
+   Multiple failures or warnings in test:
+  1)   Assert.That(cell.IsSufficient, Is.EqualTo(canBeChecked))
+  Expected: True
+  But was:  False
+  2)   Assert.That(cell.Reason, Is.EqualTo(canBeChecked ? Sufficient : TooFewActiveDays))
+  Expected string length 10 but was 16. Strings differ at index 0.
+  Expected: "Sufficient"
+  But was:  "TooFewActiveDays"
+  -----------^
+  Failed The_answer_states_exactly_what_it_checked_and_the_bar_each_check_had_to_clear [107 ms]
+  Error Message:
+     the bar a check's history had to clear is the shipped one, echoed rather than restated
+Assert.That(answer.MinimumActiveDays, Is.EqualTo(TheShippedBarInDays))
+  Expected: 5
+  But was:  6
+Failed!  - Failed:     2, Passed:    66, Skipped:     0, Total:    68, Duration: 7 s - Lighthouse.Backend.Tests.dll (net10.0)

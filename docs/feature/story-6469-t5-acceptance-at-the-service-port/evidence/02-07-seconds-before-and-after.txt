@@ -1,0 +1,29 @@
+Each class alone, Release, timer on, 3 rounds. base = 38a665ecc^ (3196fb081, post-ced6e04ac) in a scratch worktree; after = this step's tree.
+trx_s = TRX durations summed; one_time_setup_s = the timer's one_time_setup_ms summed; total_s = both.
+base Slice01OneSentenceAboutYourSamplingWindowTest r1 exit=0 rows=66 outcomes={'Passed': 66} trx_s=13.439 one_time_setup_s=1.618 total_s=15.058 host_builds=1
+base Slice04TheAnswerOpensInADialogTest r1 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.666 one_time_setup_s=0.000 total_s=2.666 host_builds=0
+base Slice06AnOperatorSeesEveryRealityCheckTest r1 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.266 one_time_setup_s=1.557 total_s=4.823 host_builds=1
+base Slice01OneSentenceAboutYourSamplingWindowTest r2 exit=0 rows=66 outcomes={'Passed': 66} trx_s=15.036 one_time_setup_s=1.650 total_s=16.686 host_builds=1
+base Slice04TheAnswerOpensInADialogTest r2 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.789 one_time_setup_s=0.000 total_s=2.789 host_builds=0
+base Slice06AnOperatorSeesEveryRealityCheckTest r2 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.480 one_time_setup_s=1.612 total_s=5.092 host_builds=1
+base Slice01OneSentenceAboutYourSamplingWindowTest r3 exit=0 rows=66 outcomes={'Passed': 66} trx_s=15.330 one_time_setup_s=1.789 total_s=17.119 host_builds=1
+base Slice04TheAnswerOpensInADialogTest r3 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.608 one_time_setup_s=0.000 total_s=2.608 host_builds=0
+base Slice06AnOperatorSeesEveryRealityCheckTest r3 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.501 one_time_setup_s=1.556 total_s=5.057 host_builds=1
+after Slice01OneSentenceAboutYourSamplingWindowTest r1 exit=0 rows=51 outcomes={'Passed': 51} trx_s=7.298 one_time_setup_s=0.000 total_s=7.298 host_builds=0
+after Slice04TheAnswerOpensInADialogTest r1 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.798 one_time_setup_s=0.000 total_s=2.798 host_builds=0
+after Slice06AnOperatorSeesEveryRealityCheckTest r1 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.686 one_time_setup_s=1.742 total_s=5.429 host_builds=1
+after RealityCheckWireContractTest r1 exit=0 rows=21 outcomes={'Passed': 21} trx_s=4.720 one_time_setup_s=2.084 total_s=6.804 host_builds=1
+after RealityCheckSkeletonTest r1 exit=0 rows=1 outcomes={'Passed': 1} trx_s=1.334 one_time_setup_s=1.730 total_s=3.064 host_builds=1
+after PortFixtureLifetimesWireContractTest r1 exit=0 rows=2 outcomes={'Passed': 2} trx_s=0.088 one_time_setup_s=2.168 total_s=2.255 host_builds=1
+after Slice01OneSentenceAboutYourSamplingWindowTest r2 exit=0 rows=51 outcomes={'Passed': 51} trx_s=6.854 one_time_setup_s=0.000 total_s=6.854 host_builds=0
+after Slice04TheAnswerOpensInADialogTest r2 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.643 one_time_setup_s=0.000 total_s=2.643 host_builds=0
+after Slice06AnOperatorSeesEveryRealityCheckTest r2 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.651 one_time_setup_s=1.634 total_s=5.285 host_builds=1
+after RealityCheckWireContractTest r2 exit=0 rows=21 outcomes={'Passed': 21} trx_s=4.644 one_time_setup_s=2.105 total_s=6.749 host_builds=1
+after RealityCheckSkeletonTest r2 exit=0 rows=1 outcomes={'Passed': 1} trx_s=1.350 one_time_setup_s=1.764 total_s=3.115 host_builds=1
+after PortFixtureLifetimesWireContractTest r2 exit=0 rows=2 outcomes={'Passed': 2} trx_s=0.079 one_time_setup_s=1.920 total_s=1.999 host_builds=1
+after Slice01OneSentenceAboutYourSamplingWindowTest r3 exit=0 rows=51 outcomes={'Passed': 51} trx_s=6.918 one_time_setup_s=0.000 total_s=6.918 host_builds=0
+after Slice04TheAnswerOpensInADialogTest r3 exit=0 rows=5 outcomes={'Passed': 5} trx_s=2.774 one_time_setup_s=0.000 total_s=2.774 host_builds=0
+after Slice06AnOperatorSeesEveryRealityCheckTest r3 exit=0 rows=10 outcomes={'Passed': 10} trx_s=3.746 one_time_setup_s=1.693 total_s=5.439 host_builds=1
+after RealityCheckWireContractTest r3 exit=0 rows=21 outcomes={'Passed': 21} trx_s=4.584 one_time_setup_s=1.948 total_s=6.532 host_builds=1
+after RealityCheckSkeletonTest r3 exit=0 rows=1 outcomes={'Passed': 1} trx_s=1.459 one_time_setup_s=1.753 total_s=3.212 host_builds=1
+after PortFixtureLifetimesWireContractTest r3 exit=0 rows=2 outcomes={'Passed': 2} trx_s=0.086 one_time_setup_s=1.910 total_s=1.996 host_builds=1
