@@ -2,6 +2,7 @@ using Lighthouse.Backend.Modules.CoreRulesFixtures;
 using Lighthouse.Backend.Modules.CoreRulesFixtures.Handlers;
 using Lighthouse.Backend.Models.CoreRulesFixtures.ReachingAModule;
 using Lighthouse.Backend.Models.CoreRulesFixtures.ReachingAService;
+using Lighthouse.Backend.Models.CoreRulesFixtures.ReachingNoCore;
 using Lighthouse.Backend.Services.CoreRulesFixtures;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.DomainEvents.CoreRulesFixtures;
@@ -14,15 +15,18 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// The application core is moving out of Services into modules one type at a time. A rule that only looks at
     /// Services would quietly stop checking a type the day it moves, and the real code alone cannot show that,
     /// because it holds no offender. Here the same rules run over made-up offenders: one placed under Services and
-    /// the very same one placed under Modules must both be reported. On the real code, widening a rule must never
+    /// the very same one placed under Modules must both be reported, and a compliant twin next to each must not be,
+    /// so a rule that simply flags everything it looks at fails too. On the real code, widening a rule must never
     /// make it look at fewer types than before, and every domain-event handler must be looked at, wherever it lives.
     /// </summary>
     [TestFixture]
     public class ApplicationCoreRulesReachModulesArchUnitTest
     {
-        private const string ModelsReachingAService = @"^Lighthouse\.Backend\.Models\.CoreRulesFixtures\.ReachingAService$";
+        private const string ModelsReachingAService = @"^Lighthouse\.Backend\.Models\.CoreRulesFixtures\.(ReachingAService|ReachingNoCore)$";
 
-        private const string ModelsReachingAModule = @"^Lighthouse\.Backend\.Models\.CoreRulesFixtures\.ReachingAModule$";
+        private const string ModelsReachingAModule = @"^Lighthouse\.Backend\.Models\.CoreRulesFixtures\.(ReachingAModule|ReachingNoCore)$";
+
+        private static readonly string TypeReachingNoCore = typeof(ATypeReachingNoCore).FullName!;
 
         private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(ApplicationCoreRulesReachModulesArchUnitTest).Assembly));
 
@@ -51,7 +55,18 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var verdict = ApplicationCoreRules.CoreDoesNotDependOnApi(FixtureModule.Value);
 
-            ThenTheRuleReports(verdict, offender, placement, "the application core must not depend back on the API");
+            ThenTheRuleReportsOnlyTheOffender(verdict, offender, CoreTypeReachingNothing(placement), placement, "the application core must not depend back on the API");
+        }
+
+        [TestCase(CorePlacement.UnderServices)]
+        [TestCase(CorePlacement.UnderModules)]
+        public void ACoreTypeThatReachesTheApiOnlyInsideAnAsyncMethod_IsReportedWhereverTheCoreTypeLives(CorePlacement placement)
+        {
+            var offender = CoreTypeReachingTheApiOnlyInsideAnAsyncMethod(placement);
+
+            var verdict = ApplicationCoreRules.CoreDoesNotDependOnApi(FixtureModule.Value);
+
+            ThenTheRuleReportsOnlyTheOffender(verdict, offender, CoreTypeReachingNothing(placement), placement, "the application core must not depend back on the API, not even inside an async method, which a Release build hides from a dependency graph");
         }
 
         [TestCase(CorePlacement.UnderServices)]
@@ -60,9 +75,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var kernelType = TypeReachingTheCore(placement);
 
-            var verdict = ApplicationCoreRules.ParentPlacementKernelDependsOnNoCoreOrData(FixtureModule.Value, [kernelType]);
+            var verdict = ApplicationCoreRules.ParentPlacementKernelDependsOnNoCoreOrData(FixtureModule.Value, [kernelType, TypeReachingNoCore]);
 
-            ThenTheRuleReports(verdict, kernelType, placement, "deciding under which parent a record hangs must not reach the application core");
+            ThenTheRuleReportsOnlyTheOffender(verdict, kernelType, TypeReachingNoCore, placement, "deciding under which parent a record hangs must not reach the application core");
         }
 
         [TestCase(CorePlacement.UnderServices)]
@@ -71,9 +86,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var projectionType = TypeReachingTheCore(placement);
 
-            var verdict = ApplicationCoreRules.ArchivedReadPathReachesNoRecalculation(FixtureModule.Value, [projectionType]);
+            var verdict = ApplicationCoreRules.ArchivedReadPathReachesNoRecalculation(FixtureModule.Value, [projectionType, TypeReachingNoCore]);
 
-            ThenTheRuleReports(verdict, projectionType, placement, "the view of a retired Delivery must reach nothing it could recalculate from");
+            ThenTheRuleReportsOnlyTheOffender(verdict, projectionType, TypeReachingNoCore, placement, "the view of a retired Delivery must reach nothing it could recalculate from");
         }
 
         [TestCase(CorePlacement.UnderServices)]
@@ -84,7 +99,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var verdict = KernelRules.ModelsDoNotDependOnServices(FixtureModule.Value, ModelsReaching(placement));
 
-            ThenTheRuleReports(verdict, model, placement, "the Models are the shared kernel and must not depend on the application core");
+            ThenTheRuleReportsOnlyTheOffender(verdict, model, TypeReachingNoCore, placement, "the Models are the shared kernel and must not depend on the application core");
         }
 
         [TestCase(CorePlacement.UnderServices)]
@@ -95,7 +110,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var verdict = ApplicationCoreRules.HandlersUseNoServiceLocator(FixtureModule.Value);
 
-            ThenTheRuleReports(verdict, handler, placement, "a domain-event handler must take its collaborators, not look them up");
+            ThenTheRuleReportsOnlyTheOffender(verdict, handler, CompliantHandler(placement), placement, "a domain-event handler must take its collaborators, not look them up");
         }
 
         [TestCase(CorePlacement.UnderServices)]
@@ -106,7 +121,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             var verdict = ApplicationCoreRules.HandlersAwaitRepositorySaves(FixtureModule.Value);
 
-            ThenTheRuleReports(verdict, handler, placement, "a domain-event handler must await its repository save");
+            ThenTheRuleReportsOnlyTheOffender(verdict, handler, CompliantHandler(placement), placement, "a domain-event handler must await its repository save");
         }
 
         [Test]
@@ -140,6 +155,27 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             CorePlacement.UnderServices => typeof(AServiceTypeThatReachesTheApi).FullName!,
             CorePlacement.UnderModules => typeof(AModuleTypeThatReachesTheApi).FullName!,
+            _ => throw new ArgumentOutOfRangeException(nameof(placement)),
+        };
+
+        private static string CoreTypeReachingTheApiOnlyInsideAnAsyncMethod(CorePlacement placement) => placement switch
+        {
+            CorePlacement.UnderServices => typeof(AServiceTypeThatReachesTheApiOnlyInsideAnAsyncMethod).FullName!,
+            CorePlacement.UnderModules => typeof(AModuleTypeThatReachesTheApiOnlyInsideAnAsyncMethod).FullName!,
+            _ => throw new ArgumentOutOfRangeException(nameof(placement)),
+        };
+
+        private static string CoreTypeReachingNothing(CorePlacement placement) => placement switch
+        {
+            CorePlacement.UnderServices => typeof(AServiceType).FullName!,
+            CorePlacement.UnderModules => typeof(AModuleType).FullName!,
+            _ => throw new ArgumentOutOfRangeException(nameof(placement)),
+        };
+
+        private static string CompliantHandler(CorePlacement placement) => placement switch
+        {
+            CorePlacement.UnderServices => typeof(ServicesHandlerTakingItsCollaboratorsAndAwaitingItsSave).FullName!,
+            CorePlacement.UnderModules => typeof(ModuleHandlerTakingItsCollaboratorsAndAwaitingItsSave).FullName!,
             _ => throw new ArgumentOutOfRangeException(nameof(placement)),
         };
 
@@ -194,14 +230,22 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static IEnumerable<TypeDefinition> TypeAndItsNestedTypes(TypeDefinition type)
             => [type, .. type.NestedTypes.SelectMany(TypeAndItsNestedTypes)];
 
-        private static void ThenTheRuleReports(KernelRuleVerdict verdict, string offender, CorePlacement placement, string why)
+        private static void ThenTheRuleReportsOnlyTheOffender(KernelRuleVerdict verdict, string offender, string compliantTwin, CorePlacement placement, string why)
         {
+            var reported = verdict.Offenders.Select(dependent => dependent.TypeName).ToList();
+
             Assert.That(
-                verdict.Offenders.Select(reported => reported.TypeName),
+                reported,
                 Does.Contain(offender),
                 $"The made-up offender {offender} ({placement}) was not reported. Why it matters: {why}, and a type moved " +
                 "from Services into a module must stay under the same rule. How to fix: the rule's application-core " +
                 "pattern, or its handler selection, must take in Lighthouse.Backend.Modules as it takes in Services.");
+            Assert.That(
+                reported,
+                Does.Not.Contain(compliantTwin),
+                $"The compliant type {compliantTwin} ({placement}) was reported although it breaks nothing. Why it matters: " +
+                "a rule that flags every type it looks at would bury the real offender among false ones. How to fix: " +
+                "widen what the rule looks at, not what it counts as a breach.");
         }
 
         private static void ThenNothingDroppedOut(KernelRuleVerdict widened, IEnumerable<string> mustStillBeExamined, string what)
@@ -334,6 +378,72 @@ namespace Lighthouse.Backend.Modules.CoreRulesFixtures.Handlers
         {
             repository.Save();
             return Task.CompletedTask;
+        }
+    }
+}
+
+namespace Lighthouse.Backend.Services.CoreRulesFixtures
+{
+    using Lighthouse.Backend.API.CoreRulesFixtures;
+
+    internal sealed class AServiceTypeThatReachesTheApiOnlyInsideAnAsyncMethod
+    {
+        public async Task<int> AnswerAsync()
+        {
+            await Task.Yield();
+            return new AnApiType().Answer;
+        }
+    }
+}
+
+namespace Lighthouse.Backend.Modules.CoreRulesFixtures
+{
+    using Lighthouse.Backend.API.CoreRulesFixtures;
+
+    internal sealed class AModuleTypeThatReachesTheApiOnlyInsideAnAsyncMethod
+    {
+        public async Task<int> AnswerAsync()
+        {
+            await Task.Yield();
+            return new AnApiType().Answer;
+        }
+    }
+}
+
+namespace Lighthouse.Backend.Models.CoreRulesFixtures.ReachingNoCore
+{
+    internal sealed class ATypeReachingNoCore
+    {
+        public int Answer => 42;
+    }
+}
+
+namespace Lighthouse.Backend.Services.Implementation.DomainEvents.CoreRulesFixtures
+{
+    using Lighthouse.Backend.Models.CoreRulesFixtures.Events;
+    using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+
+    internal sealed class ServicesHandlerTakingItsCollaboratorsAndAwaitingItsSave(IFixtureRepository repository) : IDomainEventHandler<AFixtureEvent>
+    {
+        public async Task HandleAsync(AFixtureEvent domainEvent, CancellationToken cancellationToken)
+        {
+            await Task.Yield();
+            repository.Save();
+        }
+    }
+}
+
+namespace Lighthouse.Backend.Modules.CoreRulesFixtures.Handlers
+{
+    using Lighthouse.Backend.Models.CoreRulesFixtures.Events;
+    using Lighthouse.Backend.Services.Interfaces.DomainEvents;
+
+    internal sealed class ModuleHandlerTakingItsCollaboratorsAndAwaitingItsSave(IFixtureRepository repository) : IDomainEventHandler<AFixtureEvent>
+    {
+        public async Task HandleAsync(AFixtureEvent domainEvent, CancellationToken cancellationToken)
+        {
+            await Task.Yield();
+            repository.Save();
         }
     }
 }

@@ -9,15 +9,15 @@
 P1
 
 ```text
-Run the rule that keeps the application core off the API over a made-up core type that uses an API type, once placed under Services and once under Modules
+Run the rule that keeps the application core off the API over a made-up core type that uses an API type and over a compliant twin beside it, once placed under Services and once under Modules
 ```
 
 ```text
-The rule reports the made-up type in both places
+The rule reports the made-up type in both places and does not report the compliant twin
 ```
 
 ```text
-A maintainer who moves a core type into a module is still told when it reaches into the API
+A maintainer who moves a core type into a module is still told when it reaches into the API, and is not told about types that do not
 ```
 
 ##### Disposition
@@ -27,7 +27,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ApplicationCoreRulesReachModulesArchUnitTest\.cs\:\:ApplicationCoreRulesReachModulesArchUnitTest\.ACoreTypeThatReachesTheApi\_IsReportedWhereverTheCoreTypeLives
 
 ```text
-The core pattern widened to Modules only for types reached through a field, since the made-up type reaches the API through a property and not inside a method body
+A rule that flags only some compliant core types, for example those with a constructor parameter; the compliant twin has none
 ```
 
 ###### Obligations
@@ -39,11 +39,11 @@ None.
 P1
 
 ```text
-Run the parent-placement rule with a made-up placement type that uses a core type, the core type once under Services and once under Modules
+Run the parent-placement rule over a made-up placement type that uses a core type and a compliant type that uses none, the core type once under Services and once under Modules
 ```
 
 ```text
-The rule reports the made-up placement type in both cases
+The rule reports the made-up placement type in both cases and does not report the compliant type
 ```
 
 ```text
@@ -69,11 +69,11 @@ None.
 P1
 
 ```text
-Run the retired-Delivery read-path rule with a made-up view type that uses a core type, the core type once under Services and once under Modules
+Run the retired-Delivery read-path rule over a made-up view type that uses a core type and a compliant type that uses none, the core type once under Services and once under Modules
 ```
 
 ```text
-The rule reports the made-up view type in both cases
+The rule reports the made-up view type in both cases and does not report the compliant type
 ```
 
 ```text
@@ -99,11 +99,11 @@ None.
 P1
 
 ```text
-Run the shared-kernel rule with its default core argument over a made-up Model that uses a core type, the core type once under Services and once under Modules
+Run the shared-kernel rule with its default core argument over a made-up Model that uses a core type and a compliant Model that uses none, the core type once under Services and once under Modules
 ```
 
 ```text
-The rule reports the made-up Model in both cases
+The rule reports the made-up Model in both cases and does not report the compliant Model
 ```
 
 ```text
@@ -129,15 +129,15 @@ None.
 P1
 
 ```text
-Run the no-service-locator handler rule with its default selection over a made-up domain-event handler that looks up a collaborator, once in the domain-events namespace under Services and once under Modules
+Run the no-service-locator handler rule with its default selection over a made-up domain-event handler that looks up a collaborator and a compliant handler that takes its collaborator, once in the domain-events namespace under Services and once under Modules
 ```
 
 ```text
-The rule reports the made-up handler in both places
+The rule reports the made-up handler in both places and does not report the compliant handler
 ```
 
 ```text
-A domain-event handler that moves into a module is still told when it looks up its collaborators
+A domain-event handler that moves into a module is still told when it looks up its collaborators, and a handler that takes them is left alone
 ```
 
 ##### Disposition
@@ -147,7 +147,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ApplicationCoreRulesReachModulesArchUnitTest\.cs\:\:ApplicationCoreRulesReachModulesArchUnitTest\.AHandlerThatUsesTheServiceLocator\_IsReportedWhereverItLives
 
 ```text
-Handlers selected by a namespace that happens to include Modules rather than by implementing the handler interface; the real-code tests below close that by requiring every real handler outside the domain-events namespace to be examined
+Handlers selected by a namespace that happens to include Modules rather than by implementing the handler interface; the real-code tests close that by requiring every real handler outside the domain-events namespace to be examined
 ```
 
 ###### Obligations
@@ -159,11 +159,11 @@ None.
 P1
 
 ```text
-Run the awaited-save handler rule with its default selection over a made-up domain-event handler that saves through a repository without awaiting, once in the domain-events namespace under Services and once under Modules
+Run the awaited-save handler rule with its default selection over a made-up domain-event handler that saves without awaiting and a compliant handler that awaits before saving, once in the domain-events namespace under Services and once under Modules
 ```
 
 ```text
-The rule reports the made-up handler in both places
+The rule reports the made-up handler in both places and does not report the compliant handler
 ```
 
 ```text
@@ -177,7 +177,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ApplicationCoreRulesReachModulesArchUnitTest\.cs\:\:ApplicationCoreRulesReachModulesArchUnitTest\.AHandlerThatSavesWithoutAwaiting\_IsReportedWhereverItLives
 
 ```text
-Handlers selected by a namespace that happens to include Modules rather than by implementing the handler interface; the real-code tests close that
+A rule that counts every save call, awaited or not, as a breach only when it sits in the handler's own method body; the compliant handler's save sits in the compiler-made async body, which the rule skips, so that over-report is not caught
 ```
 
 ###### Obligations
@@ -298,6 +298,36 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture \(every test in th
 
 ```text
 A production file edited in a way no architecture test sees; that part of the promise is checked by the reviewer on the diff, not by a test
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Run the rule that keeps the application core off the API over a made-up core type that uses an API type only inside an async method, and over a compliant twin, once placed under Services and once under Modules
+```
+
+```text
+The rule reports the made-up type in both places, in a Release build as in a Debug build, and does not report the compliant twin
+```
+
+```text
+A core type moved into a module is still caught when it reaches the API only inside an async method, which a Release build hides from a dependency graph
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ApplicationCoreRulesReachModulesArchUnitTest\.cs\:\:ApplicationCoreRulesReachModulesArchUnitTest\.ACoreTypeThatReachesTheApiOnlyInsideAnAsyncMethod\_IsReportedWhereverTheCoreTypeLives
+
+```text
+A rule that reads async bodies but misses a lambda closure reaching the API; the fixture uses no lambda
 ```
 
 ###### Obligations
