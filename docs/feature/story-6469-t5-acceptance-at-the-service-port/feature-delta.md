@@ -1922,3 +1922,114 @@ Adversarial review of slice C (the host-use guard): five findings, all taken. Co
 - **Fixed, low (F5): the exemption covered the whole top-level `WireContractTestTest`.** It now covers only the fixtures nested in it, still keyed on the real `typeof(WireContractTestTest)`. A `[Test]` on the class itself that starts a host is named by rule 1. The real class's own test reads a category by reflection and starts no host, so it passes. Planted: the planted copy `PlantedFixtures.WireContractTestTest` became an abstract class with a test that starts a host; the rule takes the exempt name as a parameter, and with the copy's name passed in, the copy itself is named and its nested `OneHostForThreeScenarios` is not.
 
 **Runs.** By class, under Debug and under `-c Release`, the same counts both times: `TestHostUseGuardTest` 34 (23 before, plus 11), `TestHostPerFixtureGuardTest` 18, `TestTierGuardTest` 90, `SharedHostsDrainTheUpdateQueueGuardTest` 17, `DbContextComesFromAScopeGuardTest` 10, all passed. `Test-Fast.ps1`: 9641 passed (9630 before, plus the 11 new guard tests). `dotnet build Lighthouse.Backend` in Debug and Release: 0 warnings, 0 errors.
+
+## Wave: DELIVER / [REF] Slice E: the re-cut to `NeedOverOneCycleTest`, for review (step 05-01, 2026-11-08)
+
+This overrides the slice E tables of "Slice E note" and "What each slice must show" for the checkpoint. Nothing moved and no code changed in this step. Slice E's first class is `NeedOverOneCycleTest`, boxed at one working day ("Review revision"); the rest of the smaller option waits for the maintainer at the checkpoint.
+
+**1. The 22 rows, one by one.** Every row's only `When` is `WhenTheCoachOpensTheRefinementTab`, so all 22 are port rows, as "How each row was read" says. Every row keeps its class, its method and its arguments, so its id (D-6469-27; the full list, with seconds, is in `evidence/05-01-before-need-over-one-cycle.txt`).
+
+| Rows | Test | Givens at the port | What it pins |
+|---|---|---|---|
+| 1 | `The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after` | Builder: states, Ready rule, Thursday cadence; scripted forecast; clock on 2 October | Verdict, range, percentiles, 7 working days, cycle 8 to 15 October, ready count 2, next Refinement 8 October, not a Refinement day |
+| 4 | `Every_day_before_the_next_Refinement_reads_the_same_number` (2, 5, 6, 7) | As above, clock moved | The same need and cycle on each day before the Refinement |
+| 2 | `With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle` (5, 6) | As above, plus an open weekly rule on Saturday and Sunday | Range 4 to 6 over 5 working days, cycle 8 to 15 |
+| 1 | `On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement` | As the first, clock on the 8th | Cycle 8 to 15; next Refinement the 15th, a Refinement day |
+| 4 | `A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements` (2, 5, 6, 8) | Builder: Monday and Thursday cadence. **No scripted forecast** | Range = working days of the gap, from the shipped engine; cycle 5 to 8 or 8 to 12 |
+| 2 | `Only_a_blackout_day_inside_the_cycle_shortens_it` (12, 5) | One blackout day | Working days 6 or 7 |
+| 1 | `A_blacked_out_Refinement_after_the_next_is_skipped_and_the_cycle_runs_to_the_one_that_happens` | One blackout day on the 15th | Cycle 8 to 22, 13 working days |
+| 1 | `A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens` | One blackout day on the 8th | Cycle 15 to 22; next Refinement the 15th |
+| 1 | `Today_a_blacked_out_Refinement_day_starts_no_cycle_and_the_next_Refinement_does` | The same, clock on the 8th | Cycle 15 to 22; not a Refinement day |
+| 1 | `A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead` | A run of blackout days to 29 September 2027, and a weekly Thursday rule for one day | Cycle 30 September to 14 October 2027 |
+| 1 | `A_year_of_blacked_out_Refinements_after_the_next_leaves_no_cycle_and_no_number` | A run of blackout days to 12 November 2027 | `NoCadence`, no range, no cycle; next Refinement still the 8th |
+| 3 | `Without_a_number_the_need_names_no_cycle` (Cadence, ThroughputHistory, RefinementStates) | A Team with no cadence; with 4 days of history; Team Zenith with no states | The reason, no verdict or range, both cycle ends null |
+
+**Shared steps, and where each goes.**
+
+| Step | Today | At the port |
+|---|---|---|
+| `GravityRefinesSixWorkItems`, `GravityWithItsReadyRule`, `TheAdminHasSetTheCadence` | Settings saves through the route, each asserting 200 | `RefinementPortGivens`, the one builder (D-6469-31, D-6469-35); E10 stands for the saves |
+| `SeedTeam`, `SeedTaggedWorkItems`, `TheTeamFinishedWorkEveryDay` | Repository writes, already | The same writes, on the harness's scope |
+| `ABlackoutDayOn`, `BlackoutDaysFrom` | `POST /api/latest/blackout-periods`, asserting success | `IBlackoutPeriodService.Create`, the real service |
+| `WeekendsAreBlackedOut`, `ThursdaysAreBlackedOutFrom` | `POST /api/latest/recurring-blackout-rules`, asserting success | **`IRecurringBlackoutRuleService.Create`**, the real service. This port is missing from "Slice E note" and from the step's brief, which name only `IBlackoutPeriodService` |
+| `TodayIs` | `FakeLighthouseClock` on the host | The same clock |
+| `TheTeamIsLikelyToPull...` | `ForecastWithScriptedHorizons` over the real `ForecastService` | The same double. The 4 two-weekday rows script nothing, so the port registers the shipped engine behind it, as slice B's note lists (`IRandomNumberService`, `IFeatureRepository`, `IPortfolioRepository`, `IWhatTheForecastWaitsFor`, `ForecastSimulation`, `TimeProvider`) |
+| `ReadTheRefinementTab` | `GET` the tab, JSON | `IRefinementViewQuery.ForTeam`, read into the same readings |
+| `NeedIn`, `CycleIn`, `CadenceFactsIn`, `ReadyCountIn` | JSON readers; `NeedIn` and `CycleIn` also assert the members exist | Readers of the port's answer. "The member exists" is wire, and goes to the host rows below |
+
+**The suite's table still adds up to 300.**
+
+| | Rows |
+|---|---|
+| Port now: `NeedOverOneCycleTest` | 22 |
+| Port after the checkpoint, if the maintainer says go: `Slice05` 17, `Slice10` 10, `Slice12` 22 | 49 |
+| Stay at the host in those three classes: `Slice05` 1, `Slice10` 2, `Slice12` 4 | 7 |
+| The 15 classes outside the smaller option, on `HostUsersStillToMove` | 222 |
+| **Total** | **300** |
+
+At the checkpoint no host row changes class, so no new host class is needed yet; the 7 rows' home is decided when their classes move.
+
+**2. The smaller option's tallies, re-checked** (`evidence/05-01-row-check.txt`, row by row). `NeedOverOneCycle` 22, `Slice05` 17 and `Slice12` 22 hold. `Slice10` falls from 12 to 10: `Setting_an_SLE_replaces_the_fallback_on_the_next_read` and `Clearing_the_SLE_brings_the_fallback_back_on_the_next_read` read the tab first, but the action under test is the Team settings save between the reads, and clearing relies on the save turning 0 and 0 into no SLE. By the rule that put `Votes_outlive...` at the host, they stay. **`m` is 71, not 73: it moves by 2.** No `c` has been measured on a Refinement port yet; the last figure, `Slice04`'s 0.6 ms, is unchanged. **D-6469-34 does not fire, so Stage 3 is not restated.** It runs at the checkpoint as planned, with this class's measured `c`. For reading only: at the "Review revision" figures, 2 rows fewer take about 0.4 s off E's gross at `c` = 0.
+
+**3. E1 to E11 for the smaller option.** What still pins the wire after a class moves is the host rows that stay, chiefly `Slice09ClientNeedTest`, which reads the same need, cycle and heading through the shared readers, and `Slice04RefinementCadenceTest`, which stays whole.
+
+| Row | Verdict | Reason |
+|---|---|---|
+| E1 | **Needed, narrowed, when `Slice10` moves:** the `yardstick` member and what it holds | Only `Slice10` calls `YardstickIn`. Every other member of the tab stays read by host rows (`Slice02`, `Slice03`, `Slice07`, `Slice09`, `Slice13`) |
+| E2 | **Needed at the checkpoint, narrowed:** with no number, `cycleStart` and `cycleEnd` are present and null | Only this class asserts both ends present when there is no number (`CycleIn` on `Without_a_number...` and `A_year_of_blacked_out...`). `Slice09`'s no-number row reads the reason, the null verdict, range and next Refinement, not the cycle. Planned cases: no cadence. Add `cycleEnd`, which E2's list missed |
+| E3 | **Needed, narrowed, when `Slice12` moves:** `recordedAt` as `yyyy-MM-ddTHH:mm:ss.fffZ` | Days stay pinned as `yyyy-MM-dd` by `Slice09` and `Slice04`. Only `Slice12` compares `recordedAt`; `Slice17` passes null for it |
+| E4 | **Needed, narrowed, when `Slice05` and `Slice10` move:** the need's reason (`NoCadence`, `InsufficientData`, `NoRefinementStates`) and the yardstick source | After this class moves, `InsufficientData` and `NoRefinementStates` are still read as text by `Slice05`'s `Too_little_Throughput_history...` and `A_Team_nobody_set_up...`; `NoCadence` by `Slice09`. Verdicts, stages, ready sources, answers and channels stay read by host classes |
+| E5 | **Needed, narrowed, when `Slice12` moves:** `isOpenQuestion` and any log member `Slice17` does not read | `Slice17` reads entries through `LogEntryReading`, so most log names stay pinned. Re-read at that step |
+| E6 | **Needed, as a question, when `Slice12` moves** | A vote's 409 and code stay at the host in `Slice11`. A question's goes through the comments route and only `Slice12` pins it |
+| E7 | **Needed when `Slice12` moves** (2 cases) | Only `Slice12` pins 400 and the code for an empty or too long comment |
+| E8 | Not needed | `madeReady` is read only by `Slice13`, which stays |
+| E9 | Not needed | The take-back rows are `Slice16`'s, which stays |
+| E10 | **Needed at the checkpoint** | This class's Givens leave the settings save behind. Its inputs are in item 4 |
+| E11 | **Needed, narrowed, when `Slice12` moves:** the open-question flag on the row a question answers with | `Slice17`'s `HasCommented` keeps the answer's status and row; whether it reads the flag is checked at that step |
+
+E12 and E13 stand as "Review revision" has them, needed at the checkpoint. E12's IL reading also names the two blackout tables: a port class writes blackout periods and rules only through the two services.
+
+**Every pin this class holds through the tab's JSON.**
+
+| Pin | After the move |
+|---|---|
+| `cycleStart`, `cycleEnd` as dates | Host: `Slice09ClientNeedTest.A_client_is_told_whether_to_refine_more_or_stop` (8 to 15 October) |
+| `cycleStart`, `cycleEnd` present and null with no number | **E2** |
+| `nextRefinementDate`, `isRefinementDay` | Host: `Slice04RefinementCadenceTest.The_next_Refinement_is_the_first_cadence_day_after_today` and `Slice09`'s first row; null with no cadence: `Slice09`'s `A_client_is_told_why_there_is_no_number` |
+| The range: `verdict`, `low`, `high`, `lowPercentile`, `highPercentile`, `horizonWorkingDays` | Host: `Slice09`'s first row (`Below`, 5, 8, 50, 85, 7); percentiles also `Slice07BandPercentilesTest` |
+| `readyCount` | Host: `Slice09`'s first row, `Slice03StageRulesTest` |
+| No-number reasons as text: `NoCadence` | Host: `Slice09`'s `A_client_is_told_why_there_is_no_number` |
+| `InsufficientData`, `NoRefinementStates` | Host: `Slice05`'s two rows until `Slice05` moves, then **E4** |
+| Null `verdict`, `low`, `high` with no number | Host: `Slice09`'s `A_client_is_told_why_there_is_no_number` |
+
+The business rules behind every row move with it to the port; `RefinementCadenceCalendar`'s and `RefinementNeedCalculator`'s unit tests stay as they are.
+
+**4. E10's inputs for this class**, as members of `RefinementPortGivens.EveryInput`, each one case.
+
+| Input | Covers |
+|---|---|
+| States chosen: `Backlog`, `Analysing`, `Next` | The states, with the healing the save does |
+| Ready rule: tags contain `ready`, no Being-refined rule | The ready rule |
+| Cadence: Thursday, every week, no starting week | The cadence, one weekday |
+| Cadence: Monday and Thursday, every week, no starting week | The cadence, several weekdays |
+| No states chosen (Team Zenith) | What a Team that never saved stores |
+
+**Blackout days are not E10 inputs.** At the port they go through the real `IBlackoutPeriodService.Create` and `IRecurringBlackoutRuleService.Create`, which are their doors, so what is stored is what a save stores, with their own checks. Each kind the class uses goes through them: one day (start equal to end), a run of days (to 29 September 2027 and to 12 November 2027), an open weekly rule (Saturday and Sunday from 28 September 2026, no end) and a weekly rule bounded to one day (Thursday 7 October 2027). What is lost is only the route's role check (`TheCallerAdministersTheWholeInstance`), which is the blackout routes' own, not this class's. A blackout changes the history the engine draws from, which is why those rows script their forecast.
+
+**5. The deliberate break.** `LongestComment` belongs to `Slice12` and the voter-key plant to `Slice11`, and neither moves at the checkpoint. The break for this class: **`RefinementCadenceCalendar.SearchHorizonDays` from 366 to 362**, in the working tree, after the move. From the first day searched, 3 October 2026, the next Refinement that is not blacked out, 30 September 2027, is the 363rd day, so with 362 days searched there is none: `A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead` must go red at the port, naming its missing cycle, and the output is kept under `evidence/`. Then revert. `A_year_of_blacked_out_Refinements...` stays green under that break, as its next cycle end lies further out than either horizon; it guards against raising the horizon instead.
+
+**6. Before readings** (`evidence/05-01-before-need-over-one-cycle.txt`). One machine, `NeedOverOneCycleTest` alone, Release, timer on, 3 rounds, on `f98bc2dd4`, the seven tracker variables removed (count 0), `dotnet build-server shutdown` first, load about 1. All 22 passed in each round.
+
+| Round | TRX sum | `one_time_setup_ms` | Total | Set-up per test (timer mean) | Host build |
+|---|---|---|---|---|---|
+| 1 | 4.680 | 1.661 | 6.341 | 113.7 ms | 1.635 |
+| 2 | 5.414 | 1.667 | 7.081 | 136.3 ms | 1.642 |
+| 3 | 5.176 | 1.690 | 6.866 | 128.2 ms | 1.665 |
+| **Median** | **5.176** | **1.667** | **6.866** | **128.2 ms** | **1.642** |
+
+- The after reading adds `one_time_setup_ms` to the TRX for any host fixture, as "Slice A review" requires; at the port it is 0.
+- Set-up per row, counting the host build, is about 0.205 s ((2.82 + 1.69) / 22), against the 0.19 s Stage 3 used for the family, so the saving estimate stands.
+- One row, `A_blacked_out_next_Refinement_is_skipped...`, takes 1.43 to 1.58 s in every round, against a median row of 0.16 to 0.19 s. Its cause is not read here; the after reading will show whether it is the host's.
+- Tear-down: about 51 ms for the class, about 2 ms a row.
+
+**Open for the review.** Whether the moved class keeps its namespace under `API.Integration`, as the pilot's `Slice04` did to keep its ids, in which case the Stryker configs, which leave out `API.Integration`, never run it for a mutant unless slice E's config is written to let it in (backend rule 6). Where the 7 non-port rows of `Slice05`, `Slice10` and `Slice12` go, decided when those classes move.

@@ -1,0 +1,38 @@
+NeedOverOneCycleTest alone, Release, timer on (LIGHTHOUSE_FIXTURE_TIMING=1), 3 rounds, on f98bc2dd4, the seven tracker variables removed (count 0), dotnet build-server shutdown first.
+trx_s = TRX durations summed; one_time_setup_s = the timer's one_time_setup_ms; total_s = both.
+r1 rows=22 outcomes={'Passed'} trx_s=4.680 one_time_setup_s=1.661 total_s=6.341 setup_count=22 setup_total_ms=2501.5 setup_mean_ms=113.71 teardown_total_ms=50.0 host_builds=1 host_build_ms=1635.4
+   slowest 1.535 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.078; median row 0.136
+r2 rows=22 outcomes={'Passed'} trx_s=5.414 one_time_setup_s=1.667 total_s=7.081 setup_count=22 setup_total_ms=2998.6 setup_mean_ms=136.30 teardown_total_ms=52.2 host_builds=1 host_build_ms=1642.0
+   slowest 1.430 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.121; median row 0.189
+r3 rows=22 outcomes={'Passed'} trx_s=5.176 one_time_setup_s=1.690 total_s=6.866 setup_count=22 setup_total_ms=2820.4 setup_mean_ms=128.20 teardown_total_ms=51.3 host_builds=1 host_build_ms=1664.6
+   slowest 1.584 A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens; fastest 0.103; median row 0.168
+
+Timer rows:
+fixture,setup_count,setup_total_ms,setup_mean_ms,teardown_total_ms,one_time_setup_ms,one_time_teardown_ms,host_build_count,host_build_total_ms
+NeedOverOneCycleTest,22,2501.5,113.71,50.0,1660.6,4.7,1,1635.4
+NeedOverOneCycleTest,22,2998.6,136.30,52.2,1667.5,4.9,1,1642.0
+NeedOverOneCycleTest,22,2820.4,128.20,51.3,1689.8,4.7,1,1664.6
+
+Per row, seconds in rounds 1 2 3:
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(2,"2026-10-05","2026-10-08",3)	0.173	0.188	0.172	median=0.173
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(5,"2026-10-05","2026-10-08",3)	0.170	0.182	0.166	median=0.170
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(6,"2026-10-08","2026-10-12",4)	0.238	0.211	0.224	median=0.224
+A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements(8,"2026-10-08","2026-10-12",4)	0.183	0.190	0.164	median=0.183
+A_blacked_out_Refinement_after_the_next_is_skipped_and_the_cycle_runs_to_the_one_that_happens	0.214	0.207	0.209	median=0.209
+A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens	1.535	1.430	1.584	median=1.535
+A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead	0.241	0.288	0.246	median=0.246
+A_year_of_blacked_out_Refinements_after_the_next_leaves_no_cycle_and_no_number	0.144	0.194	0.170	median=0.170
+Every_day_before_the_next_Refinement_reads_the_same_number(2)	0.135	0.189	0.163	median=0.163
+Every_day_before_the_next_Refinement_reads_the_same_number(5)	0.134	0.185	0.164	median=0.164
+Every_day_before_the_next_Refinement_reads_the_same_number(6)	0.138	0.182	0.165	median=0.165
+Every_day_before_the_next_Refinement_reads_the_same_number(7)	0.127	0.182	0.166	median=0.166
+On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement	0.124	0.179	0.162	median=0.162
+Only_a_blackout_day_inside_the_cycle_shortens_it(12,6)	0.136	0.190	0.173	median=0.173
+Only_a_blackout_day_inside_the_cycle_shortens_it(5,7)	0.135	0.193	0.173	median=0.173
+The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after	0.128	0.181	0.161	median=0.161
+Today_a_blacked_out_Refinement_day_starts_no_cycle_and_the_next_Refinement_does	0.136	0.193	0.169	median=0.169
+With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle(5)	0.138	0.192	0.173	median=0.173
+With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle(6)	0.137	0.195	0.172	median=0.172
+Without_a_number_the_need_names_no_cycle(Cadence,"NoCadence")	0.115	0.169	0.145	median=0.145
+Without_a_number_the_need_names_no_cycle(RefinementStates,"NoRefinementStates")	0.078	0.121	0.103	median=0.103
+Without_a_number_the_need_names_no_cycle(ThroughputHistory,"InsufficientData")	0.121	0.174	0.151	median=0.151

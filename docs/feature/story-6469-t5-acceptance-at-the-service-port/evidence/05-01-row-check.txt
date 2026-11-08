@@ -1,0 +1,72 @@
+Row-by-row check of the smaller option's four Refinement classes (D-6469-34), read from the test sources at HEAD.
+A row's first When decides, as in "How each row was read"; a row that acts through a settings save stays, as
+Votes_outlive_a_Work_Item_leaving_refinement does. Count = TestCase rows. P = port, S = stays at the host, C = contract.
+
+NeedOverOneCycleTest (22: P 22)
+  1 P The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after
+  4 P Every_day_before_the_next_Refinement_reads_the_same_number (2, 5, 6, 7)
+  2 P With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle (5, 6)
+  1 P On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement
+  4 P A_Team_refining_on_two_weekdays_plans_for_the_gap_between_its_next_two_Refinements (2, 5, 6, 8) - no scripted forecast, so the shipped engine
+  2 P Only_a_blackout_day_inside_the_cycle_shortens_it (12, 5)
+  1 P A_blacked_out_Refinement_after_the_next_is_skipped_and_the_cycle_runs_to_the_one_that_happens
+  1 P A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens
+  1 P Today_a_blacked_out_Refinement_day_starts_no_cycle_and_the_next_Refinement_does
+  1 P A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead
+  1 P A_year_of_blacked_out_Refinements_after_the_next_leaves_no_cycle_and_no_number
+  3 P Without_a_number_the_need_names_no_cycle (Cadence, ThroughputHistory, RefinementStates)
+
+Slice05NeedAndVerdictTest (18: P 17, S 1) - as first read
+  1 P Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull
+  4 P The_verdict_compares_the_ready_count_with_both_ends_of_the_range
+  1 P On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict
+  1 P On_a_Team_with_stages_votes_do_not_move_the_verdict
+  1 S The_range_uses_the_same_horizon_as_the_manual_forecast (compares with the forecast route's answer)
+  1 P Blackout_days_inside_the_cycle_are_not_counted
+  1 P On_a_Refinement_day_the_number_is_for_the_following_Refinement
+  1 P Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number
+  1 P Without_a_cadence_there_is_no_number_and_the_list_stays
+  1 P A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states
+  3 P The_high_end_is_stated_as_forecast_whatever_number_of_Work_Items_is_listed
+  1 P A_range_of_nothing_says_stop_with_two_ready
+  1 P Three_hundred_Work_Items_in_refinement_still_answer_with_a_verdict_within_two_seconds
+
+Slice10SleYardstickTest (12: P 10, S 2) - CHANGED from P 12
+  1 P The_Teams_SLE_is_the_yardstick_every_voter_answers_against
+  1 P Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time
+  1 P Work_Items_finished_before_the_Throughput_window_do_not_move_the_fallback
+  1 P Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback
+  1 P Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback
+  1 P No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number
+  1 P Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished
+  2 P Half_an_SLE_is_no_SLE_and_the_fallback_is_used
+  1 S Setting_an_SLE_replaces_the_fallback_on_the_next_read (its second When is WhenTheAdminSetsTheSleTo75PercentWithinTenDays, a Team settings save)
+  1 S Clearing_the_SLE_brings_the_fallback_back_on_the_next_read (WhenTheAdminClearsTheSle saves probability 0 and days 0; that 0/0 means "no SLE" is the save's rule)
+  1 P Every_voter_is_shown_the_same_yardstick
+
+Slice12CommentsTest (26: P 22, C 4) - as first read
+  1 P A_Yes_but_carries_its_condition_into_the_Work_Items_log
+  2 P Any_answer_may_carry_a_comment
+  1 P A_vote_without_a_comment_carries_none
+  1 P A_changed_mind_keeps_both_votes_in_the_log_oldest_first
+  1 P The_log_says_who_said_what_when_and_from_where_oldest_first
+  1 P The_log_marks_the_question_still_waiting_for_its_askers_vote
+  1 P The_log_names_who_currently_votes_each_answer_in_the_order_they_voted
+  1 P Somebody_who_never_voted_reads_how_the_votes_split_and_every_comment
+  1 P A_question_without_a_vote_flags_the_Work_Item_and_counts_as_no_vote
+  1 P The_asker_voting_closes_their_own_question
+  1 P Somebody_elses_vote_does_not_close_the_question
+  1 P A_comment_from_somebody_who_has_voted_is_no_open_question_and_keeps_their_vote
+  1 P A_question_counts_for_nothing_towards_readiness
+  2 P An_empty_question_is_refused_and_nothing_is_recorded (SizingOutcome at the port; status and code go to E7)
+  1 P A_comment_of_two_thousand_characters_is_kept_whole
+  1 P A_comment_longer_than_two_thousand_characters_is_refused (as above)
+  1 P A_question_of_two_thousand_characters_is_kept_whole
+  1 P A_vote_whose_comment_is_longer_than_two_thousand_characters_is_refused (as above)
+  1 C A_question_without_a_name_is_refused
+  1 P A_question_on_a_Work_Item_that_is_not_in_refinement_is_refused (409 and code go to E6, as a question)
+  1 C The_log_of_a_Work_Item_that_is_not_in_refinement_is_not_found
+  2 C The_log_of_a_Work_Item_whose_reference_holds_a_slash_opens
+  1 P A_comment_comes_back_exactly_as_it_was_written
+
+Tally: m = 22 + 17 + 10 + 22 = 71 (DISTILL's reading: 73). Moved by 2, under D-6469-34's 5.
