@@ -267,12 +267,105 @@
 "stimulus": "F63",
 "user_result": "F65"
 }
+],
+"S5": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F110",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsHistoryFiller_LivesInTheModuleBackgroundAdapters_AndIsNotLeftUnderServices; Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsSnapshotRepositories_LiveInTheModulePersistenceAdapters_AndNoneIsLeftUnderServices"
+},
+"expected": "F108",
+"stimulus": "F107",
+"user_result": "F109"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F113",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsHistoryFillerFile_SitsInTheModuleBackgroundFolder_AndNowhereElse; Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsSnapshotRepositoryFiles_SitInTheModulePersistenceFolder_AndNowhereElse"
+},
+"expected": "F112",
+"stimulus": "F111",
+"user_result": "F45"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F117",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.AMovedSnapshotRepository_IsStillSeenAsARepositoryByEveryRepositoryRule"
+},
+"expected": "F115",
+"stimulus": "F114",
+"user_result": "F116"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F121",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.AMovedSnapshotRepositoryContract_IsStillSeenAsARepositoryContract"
+},
+"expected": "F119",
+"stimulus": "F118",
+"user_result": "F120"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F125",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ATypeThatIsNoRepository_IsSeenAsNoneByTheRepositoryRules; Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ARepositoryTheRulesKnewBeforeTheMove_IsStillSeenAsOne"
+},
+"expected": "F123",
+"stimulus": "F122",
+"user_result": "F124"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F129",
+"test": "Lighthouse.Backend.Tests.Architecture (ModuleBoundariesArchUnitTest, RepositoryLeakRatchetArchUnitTest, DependencySingleDecisionArchUnitTest, RealityCheckReadOnlyArchUnitTest, RefinementModuleArchUnitTest, RecurringBlackoutEventsSeamArchUnitTest, BlackoutForecastShiftSeamArchUnitTest)"
+},
+"expected": "F127",
+"stimulus": "F126",
+"user_result": "F128"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host (root), at slice end and feature end",
+"reason": "F133"
+},
+"expected": "F131",
+"stimulus": "F130",
+"user_result": "F132"
+}
 ]
 },
 "counters": {
 "D": 2,
 "E": 4,
-"F": 106,
+"F": 133,
 "P": 3,
 "S": 5
 },
@@ -1055,9 +1148,36 @@
 "F104": "A handler registered without implementing the handler interface directly, which neither the rules nor the comparison would find",
 "F105": "S5 design correction (design owner, 2026-11-08), after the acceptance designer's BLOCKED-BY.\n\nRepository recognition moves to one place. Several architecture rules recognise a repository, a repository contract or the stored-records types by namespace or folder, through private constants: ModuleBoundariesArchUnitTest (StoredRecordsPattern, PlatformPersistencePattern), RepositoryLeakRatchetArchUnitTest (RepositoriesFolder, ConcreteRepositoriesNamespace, IsRepository), DependencySingleDecisionArchUnitTest (the same stored-records regex inline), and the contract rules RealityCheckReadOnlyArchUnitTest, RefinementModuleArchUnitTest, RecurringBlackoutEventsSeamArchUnitTest and BlackoutForecastShiftSeamArchUnitTest (Services.Interfaces.Repositories). The oracle step extracts them, behaviour-free, into one test support, Lighthouse.Backend.Tests/Architecture/RepositoryRecognition.cs, as internal members the rules read; the rules keep their verdicts (each rule's tests stay green after the extraction, run before the oracle is added).\n\nThe oracle then asserts recognition at the target places, by name strings: the three snapshot repositories under Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence (and their files under Modules/FlowMetrics/Adapters/Persistence/) are recognised as concrete repositories and stored-records types; the three I...SnapshotRepository contracts under Lighthouse.Backend.Modules.FlowMetrics.Application are recognised as repository contracts. RED today, because the patterns only know Services. The contract half closes a gap S2 opened when those contracts left Services.Interfaces.Repositories.\n\nThe crafter's edit commit (separate from the move commit) widens RepositoryRecognition to \"the Services repositories namespace or folder, or a module's Adapters.Persistence\" for implementations and \"the Services repository-contracts namespace, or an I...Repository type in a module's Application layer\" for contracts. Every rule then sees the moved types through the one support.\n",
 "F106": "Repository recognition, extracted from the rules in the oracle step, widens to a module's Adapters.Persistence and Application repository contracts so every rule still sees the moved repositories",
+"F107": "Read the compiled production assembly for the background history filler and the three snapshot repositories, by name",
+"F108": "The filler sits in the module's Adapters.Background namespace and the three repositories in its Adapters.Persistence namespace, exactly, none left under Services; a type that has not moved is named as missing and as left behind",
+"F109": "A developer finds the module's background work and its stored-snapshot access in the module's adapter layers, nowhere else",
 "F11": "The background history filler lives in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background and the three snapshot repositories in Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence, still recognised as repositories by every repository rule, with the EF model unchanged",
+"F110": "A copy of a moved type kept under a namespace other than Services, for example the module's Application, next to the moved one",
+"F111": "Read the production project's source folders for the filler file and the three repository files",
+"F112": "The filler file sits in Modules/FlowMetrics/Adapters/Background and the repository files in Modules/FlowMetrics/Adapters/Persistence, and no file of the same name sits anywhere else",
+"F113": "A file in the right folder whose namespace line was not changed; the placement tests catch that one",
+"F114": "Ask the one shared repository recognition, which every repository rule reads, about each moved snapshot repository at its new namespace and file",
+"F115": "Each is recognised as a repository by the persistence-leak rule, as holding stored records, as part of the persistence platform, and its file as a repository's own file exempt from the query-building guard",
+"F116": "Every rule that guards repositories keeps guarding the moved ones, so nothing that writes or leaks the stored snapshots slips through",
+"F117": "A rule that stops reading the shared recognition and keeps a private copy of the old namespace; the extraction removed every such copy, and a new one would have to be written by hand",
+"F118": "Ask the shared recognition about each of the three snapshot repository contracts at their place in the module's Application layer",
+"F119": "Each is recognised as a repository contract, as the read-only and blackout rules need, and as a repository by the persistence-leak rule",
 "F12": "Read the compiled production assembly: the namespaces of the five calculators, and every type the Lighthouse.Backend.Modules.FlowMetrics.Domain namespace depends on, async bodies included",
+"F120": "The rules that keep the Forecast Reality Check and the Refinement tab read-only, and the blackout models free of repositories, see the moved contracts again",
+"F121": "An I...Repository contract placed in a module's Domain instead of its Application layer, which the recognition is not asked about",
+"F122": "Ask the shared recognition about types that are no repositories (a made-up calculation and a made-up I...Writer contract in the module's Application layer, the module's background filler, a made-up service under Services.Implementation) and about a repository and contract the rules knew before the move",
+"F123": "None of the non-repositories is taken for a repository, contract, stored records, persistence platform or repository file; the Services repository and the generic Services repository contract are still recognised",
+"F124": "Widening the recognition neither exempts ordinary code from the repository rules nor drops a repository they guarded before",
+"F125": "A widening that also takes another module layer, such as Adapters.Background of a different module, for persistence; only this module's filler is asked",
+"F126": "Run the seven repository rule classes after the recognition was moved into one shared place, before any oracle test was added",
+"F127": "Every rule test stays green, with the same number of tests, and each rule examines the same types as before",
+"F128": "Moving the recognition into one place changes no rule's verdict",
+"F129": "A rule whose examined set shrank while it stays green; for the contract rules the old and new selections were compared and found equal, 18 types and 15 call targets",
 "F13": "Each of the five calculators sits in Lighthouse.Backend.Modules.FlowMetrics.Domain, none is left under Lighthouse.Backend.Services, and Domain reaches only Lighthouse.Backend.Models types and the base library; a made-up Domain type that reaches a Services, Data, EF Core or Microsoft.Extensions type is reported",
+"F130": "After the move, check the EF model for pending changes for each provider, and capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them",
+"F131": "No pending model changes, and the two captures are identical",
+"F132": "Nothing a user sees, and nothing stored, changes",
+"F133": "This oracle reads layout and recognition only; the design runs the pending-model-changes check in this slice's edit step and the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice",
 "F14": "A calculator still sits under Services, or Domain reaches a forbidden type and the rule stays green",
 "F15": "Read the compiled production assembly: the namespaces of the eleven contract types",
 "F16": "Each of the eleven contract types sits in Lighthouse.Backend.Modules.FlowMetrics.Application and none is left under Lighthouse.Backend.Services; the earlier layer checks stay green",

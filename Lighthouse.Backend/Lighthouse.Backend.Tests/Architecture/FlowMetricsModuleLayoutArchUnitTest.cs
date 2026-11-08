@@ -35,6 +35,14 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string ModulePoliciesFolder = "Modules/FlowMetrics/Application/Policies";
 
+        private const string ModuleBackgroundNamespace = "Lighthouse.Backend.Modules.FlowMetrics.Adapters.Background";
+
+        private const string ModuleBackgroundFolder = "Modules/FlowMetrics/Adapters/Background";
+
+        private const string ModulePersistenceNamespace = "Lighthouse.Backend.Modules.FlowMetrics.Adapters.Persistence";
+
+        private const string ModulePersistenceFolder = "Modules/FlowMetrics/Adapters/Persistence";
+
         private static readonly string[] PureCalculations =
         [
             "PercentileCalculator",
@@ -124,6 +132,23 @@ namespace Lighthouse.Backend.Tests.Architecture
             "DemoPercentilesBackfillHandler",
         ];
 
+        // Each adapter file declares exactly one type, named like the file.
+        private static readonly string[] BackgroundAdapters = ["OverTimeHistoryFiller"];
+
+        private static readonly string[] SnapshotRepositories =
+        [
+            "BlockedCountSnapshotRepository",
+            "PercentilesOverTimeSnapshotRepository",
+            "ProcessBehaviorSnapshotRepository",
+        ];
+
+        private static readonly string[] SnapshotRepositoryContracts =
+        [
+            "IBlockedCountSnapshotRepository",
+            "IPercentilesOverTimeSnapshotRepository",
+            "IProcessBehaviorSnapshotRepository",
+        ];
+
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));
 
         private static readonly Lazy<ModuleDefinition> FixtureModule = new(() => IlDependencies.ReadModule(typeof(FlowMetricsModuleLayoutArchUnitTest).Assembly));
@@ -194,6 +219,91 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void TheFlowMetricsEventHandlerFiles_SitInTheModulePoliciesFolder_AndNowhereElse()
         {
             ThenEachFileSitsOnlyIn(ModulePoliciesFolder, [.. Policies.Select(name => $"{name}.cs")]);
+        }
+
+        [Test]
+        public void TheFlowMetricsHistoryFiller_LivesInTheModuleBackgroundAdapters_AndIsNotLeftUnderServices()
+        {
+            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModuleBackgroundNamespace, BackgroundAdapters).Check();
+        }
+
+        [Test]
+        public void TheFlowMetricsHistoryFillerFile_SitsInTheModuleBackgroundFolder_AndNowhereElse()
+        {
+            ThenEachFileSitsOnlyIn(ModuleBackgroundFolder, [.. BackgroundAdapters.Select(name => $"{name}.cs")]);
+        }
+
+        [Test]
+        public void TheFlowMetricsSnapshotRepositories_LiveInTheModulePersistenceAdapters_AndNoneIsLeftUnderServices()
+        {
+            FlowMetricsModuleRules.TypesLiveInTheirLayer(ProductionModule.Value, ModulePersistenceNamespace, SnapshotRepositories).Check();
+        }
+
+        [Test]
+        public void TheFlowMetricsSnapshotRepositoryFiles_SitInTheModulePersistenceFolder_AndNowhereElse()
+        {
+            ThenEachFileSitsOnlyIn(ModulePersistenceFolder, [.. SnapshotRepositories.Select(name => $"{name}.cs")]);
+        }
+
+        [TestCaseSource(nameof(SnapshotRepositories))]
+        public void AMovedSnapshotRepository_IsStillSeenAsARepositoryByEveryRepositoryRule(string repository)
+        {
+            ThenEveryRepositoryRuleSeesIt(ModulePersistenceNamespace, repository, $"{ModulePersistenceFolder}/{repository}.cs");
+        }
+
+        [TestCaseSource(nameof(SnapshotRepositoryContracts))]
+        public void AMovedSnapshotRepositoryContract_IsStillSeenAsARepositoryContract(string contract)
+        {
+            var fullName = $"{ModuleApplicationNamespace}.{contract}";
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(
+                    RepositoryRecognition.IsRepositoryContract(fullName),
+                    Is.True,
+                    $"{fullName} is not recognised as a repository contract. Why it matters: the rules that keep the Forecast " +
+                    "Reality Check and the Refinement tab read-only, and the blackout models free of repositories, would no longer " +
+                    "see this contract and would pass code that writes through it. How to fix: recognise an I...Repository type " +
+                    "in a module's Application layer as a repository contract, next to the Services repository contracts.");
+                Assert.That(
+                    RepositoryRecognition.IsRepository(ModuleApplicationNamespace, contract),
+                    Is.True,
+                    $"{fullName} is not recognised as a repository by the repository-leak rule. Why it matters: an API type " +
+                    "depending on it would leak the persistence layer unseen. How to fix: keep recognising contracts by their name.");
+            }
+        }
+
+        [TestCase(ModuleApplicationNamespace, "AFlowMetricsCalculationThatIsNoRepository", "Modules/FlowMetrics/Application/AFlowMetricsCalculationThatIsNoRepository.cs")]
+        [TestCase(ModuleApplicationNamespace, "IAFlowMetricsSnapshotWriter", "Modules/FlowMetrics/Application/IAFlowMetricsSnapshotWriter.cs")]
+        [TestCase(ModuleBackgroundNamespace, "OverTimeHistoryFiller", "Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs")]
+        [TestCase("Lighthouse.Backend.Services.Implementation", "AServiceThatIsNoRepository", "Services/Implementation/AServiceThatIsNoRepository.cs")]
+        public void ATypeThatIsNoRepository_IsSeenAsNoneByTheRepositoryRules(string namespaceName, string typeName, string relativePath)
+        {
+            const string why = " Why it matters: recognising more than the repositories would exempt ordinary code from the " +
+                "query-building guard and forbid modules from depending on it. How to fix: widen recognition only to a module's " +
+                "Adapters.Persistence and to I...Repository contracts in a module's Application layer.";
+            var fullName = $"{namespaceName}.{typeName}";
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(RepositoryRecognition.IsRepository(namespaceName, typeName), Is.False, $"{fullName} was taken for a repository.{why}");
+                Assert.That(RepositoryRecognition.IsRepositoryContract(fullName), Is.False, $"{fullName} was taken for a repository contract.{why}");
+                Assert.That(RepositoryRecognition.HoldsStoredRecords(namespaceName), Is.False, $"{namespaceName} was taken for a place that holds stored records.{why}");
+                Assert.That(RepositoryRecognition.IsPlatformPersistence(namespaceName), Is.False, $"{namespaceName} was taken for the persistence platform.{why}");
+                Assert.That(RepositoryRecognition.IsInRepositoriesFolder(relativePath), Is.False, $"{relativePath} was taken for a repository's own file.{why}");
+            }
+        }
+
+        [Test]
+        public void ARepositoryTheRulesKnewBeforeTheMove_IsStillSeenAsOne()
+        {
+            ThenEveryRepositoryRuleSeesIt(RepositoryRecognition.ConcreteRepositoriesNamespace, "TeamRepository", $"{RepositoryRecognition.RepositoriesFolder}TeamRepository.cs");
+
+            Assert.That(
+                RepositoryRecognition.IsRepositoryContract($"{RepositoryRecognition.RepositoryContractsNamespace}.IRepository`1"),
+                Is.True,
+                "The generic repository contract in Services is no longer recognised. Why it matters: widening recognition must " +
+                "not drop what the rules already guard. How to fix: keep the Services repository contracts in the recognition.");
         }
 
         [Test]
@@ -273,6 +383,25 @@ namespace Lighthouse.Backend.Tests.Architecture
                 failure!.Message,
                 Does.Contain(offender).And.Contain(forbiddenTarget),
                 "The failure must name both the offending Domain type and the forbidden type it reached, so the reader knows what to undo.");
+        }
+
+        private static void ThenEveryRepositoryRuleSeesIt(string namespaceName, string repository, string relativePath)
+        {
+            const string why = " Why it matters: a rule that no longer recognises a repository stops guarding it and still passes. " +
+                "How to fix: recognise the Services repositories namespace and folder, or a module's Adapters.Persistence, in RepositoryRecognition.";
+            var fullName = $"{namespaceName}.{repository}";
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(RepositoryRecognition.IsRepository(namespaceName, repository), Is.True,
+                    $"{fullName} is not recognised as a repository, so an API type depending on it is not counted as a persistence leak.{why}");
+                Assert.That(RepositoryRecognition.HoldsStoredRecords(namespaceName), Is.True,
+                    $"{namespaceName} is not recognised as holding stored records, so a module or a pure decision could reach it unseen.{why}");
+                Assert.That(RepositoryRecognition.IsPlatformPersistence(namespaceName), Is.True,
+                    $"{namespaceName} is not recognised as part of the persistence platform the module boundaries know.{why}");
+                Assert.That(RepositoryRecognition.IsInRepositoriesFolder(relativePath), Is.True,
+                    $"{relativePath} is not recognised as a repository's own file, so its own queries would count against the query-building guard.{why}");
+            }
         }
 
         private static void ThenEachFileSitsOnlyIn(string folder, IReadOnlyCollection<string> fileNames)

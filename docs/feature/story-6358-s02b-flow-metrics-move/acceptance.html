@@ -663,6 +663,186 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>host (root), at slice end and feature end</p>
 
+<h3>S5</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled production assembly for the background history filler and the three snapshot repositories, by name
+</code></pre>
+
+<pre><code>The filler sits in the module&#x27;s Adapters.Background namespace and the three repositories in its Adapters.Persistence namespace, exactly, none left under Services; a type that has not moved is named as missing and as left behind
+</code></pre>
+
+<pre><code>A developer finds the module&#x27;s background work and its stored-snapshot access in the module&#x27;s adapter layers, nowhere else
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsHistoryFiller_LivesInTheModuleBackgroundAdapters_AndIsNotLeftUnderServices; Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsSnapshotRepositories_LiveInTheModulePersistenceAdapters_AndNoneIsLeftUnderServices</p>
+
+<pre><code>A copy of a moved type kept under a namespace other than Services, for example the module&#x27;s Application, next to the moved one
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the production project&#x27;s source folders for the filler file and the three repository files
+</code></pre>
+
+<pre><code>The filler file sits in Modules/FlowMetrics/Adapters/Background and the repository files in Modules/FlowMetrics/Adapters/Persistence, and no file of the same name sits anywhere else
+</code></pre>
+
+<pre><code>The folder a developer opens matches the namespace the type declares
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsHistoryFillerFile_SitsInTheModuleBackgroundFolder_AndNowhereElse; Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheFlowMetricsSnapshotRepositoryFiles_SitInTheModulePersistenceFolder_AndNowhereElse</p>
+
+<pre><code>A file in the right folder whose namespace line was not changed; the placement tests catch that one
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Ask the one shared repository recognition, which every repository rule reads, about each moved snapshot repository at its new namespace and file
+</code></pre>
+
+<pre><code>Each is recognised as a repository by the persistence-leak rule, as holding stored records, as part of the persistence platform, and its file as a repository&#x27;s own file exempt from the query-building guard
+</code></pre>
+
+<pre><code>Every rule that guards repositories keeps guarding the moved ones, so nothing that writes or leaks the stored snapshots slips through
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.AMovedSnapshotRepository_IsStillSeenAsARepositoryByEveryRepositoryRule</p>
+
+<pre><code>A rule that stops reading the shared recognition and keeps a private copy of the old namespace; the extraction removed every such copy, and a new one would have to be written by hand
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Ask the shared recognition about each of the three snapshot repository contracts at their place in the module&#x27;s Application layer
+</code></pre>
+
+<pre><code>Each is recognised as a repository contract, as the read-only and blackout rules need, and as a repository by the persistence-leak rule
+</code></pre>
+
+<pre><code>The rules that keep the Forecast Reality Check and the Refinement tab read-only, and the blackout models free of repositories, see the moved contracts again
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.AMovedSnapshotRepositoryContract_IsStillSeenAsARepositoryContract</p>
+
+<pre><code>An I...Repository contract placed in a module&#x27;s Domain instead of its Application layer, which the recognition is not asked about
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Ask the shared recognition about types that are no repositories (a made-up calculation and a made-up I...Writer contract in the module&#x27;s Application layer, the module&#x27;s background filler, a made-up service under Services.Implementation) and about a repository and contract the rules knew before the move
+</code></pre>
+
+<pre><code>None of the non-repositories is taken for a repository, contract, stored records, persistence platform or repository file; the Services repository and the generic Services repository contract are still recognised
+</code></pre>
+
+<pre><code>Widening the recognition neither exempts ordinary code from the repository rules nor drops a repository they guarded before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ATypeThatIsNoRepository_IsSeenAsNoneByTheRepositoryRules; Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ARepositoryTheRulesKnewBeforeTheMove_IsStillSeenAsOne</p>
+
+<pre><code>A widening that also takes another module layer, such as Adapters.Background of a different module, for persistence; only this module&#x27;s filler is asked
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the seven repository rule classes after the recognition was moved into one shared place, before any oracle test was added
+</code></pre>
+
+<pre><code>Every rule test stays green, with the same number of tests, and each rule examines the same types as before
+</code></pre>
+
+<pre><code>Moving the recognition into one place changes no rule&#x27;s verdict
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture (ModuleBoundariesArchUnitTest, RepositoryLeakRatchetArchUnitTest, DependencySingleDecisionArchUnitTest, RealityCheckReadOnlyArchUnitTest, RefinementModuleArchUnitTest, RecurringBlackoutEventsSeamArchUnitTest, BlackoutForecastShiftSeamArchUnitTest)</p>
+
+<pre><code>A rule whose examined set shrank while it stays green; for the contract rules the old and new selections were compared and found equal, 18 types and 15 call targets
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>After the move, check the EF model for pending changes for each provider, and capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them
+</code></pre>
+
+<pre><code>No pending model changes, and the two captures are identical
+</code></pre>
+
+<pre><code>Nothing a user sees, and nothing stored, changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>This oracle reads layout and recognition only; the design runs the pending-model-changes check in this slice&#x27;s edit step and the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice
+</code></pre>
+
+<p>host (root), at slice end and feature end</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
