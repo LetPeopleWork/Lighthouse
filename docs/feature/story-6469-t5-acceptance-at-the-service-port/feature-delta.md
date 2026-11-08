@@ -2223,3 +2223,13 @@ The port runs without seeders: the `IAppSettingService` stand-in answers the one
 > **Recommendation: B, without the seeders.** It clears the line by about 3.3 s on a projection, and the one class measured beat its projection by about 1 s in the full run. Against it: the whole of E and F is under 1 % of the suite, and its wall-clock gain at 6 workers is a few seconds. If you value the margin over the saving, take A: the class already moved stays moved, and nothing is lost. **With the seeders, the recommendation would be to stop (A).**
 
 **Counts.** `P2`: 13,011 passed, 0 failed. The class alone: 22 passed in each of 12 rounds (9 without the seeders, the probe set included, and 3 with). The wire class: 7 passed in each of 6 rounds. `dotnet build` of the tests in Release after the revert: 0 warnings, 0 errors. `git status` after the revert: clean.
+
+## Wave: DELIVER / [REF] Maintainer decision at the slice E checkpoint (2026-11-08)
+
+The maintainer chose to **close T5 here**, with the remaining moves in a new Story.
+- **What stays at the port:** `NeedOverOneCycleTest`.
+- **What moves to Story 6602:** `Slice05`, `Slice10`, `Slice12` and the report-window class (F). Story 6602 is tagged Continuous Improvement and has no parent, like T8 and T10. It takes over the plan and the measurements above.
+
+The other answer was to **keep the stand-in.** Port scenarios take their settings from the `IAppSettingService` stand-in, not from the real seeders. E13 checks the stand-in's answer against a seeded database.
+
+Guarantee 6 is not met when the class runs alone (+0.14 s, from first-use cost). That is accepted as a recorded finding. In a full run the same ids fall by 3.75 s.
