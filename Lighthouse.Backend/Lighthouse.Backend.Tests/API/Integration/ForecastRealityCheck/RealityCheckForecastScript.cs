@@ -30,6 +30,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         internal static readonly int[] HorizonDays = [7, 14, 28, 56];
 
         /// <summary>
+        /// The day the instance believes it is, for every scenario. Arbitrary; that it never moves is the
+        /// point, since every check this feature makes is measured back from it.
+        /// </summary>
+        internal static readonly DateTimeOffset Today = new(2026, 9, 22, 9, 0, 0, TimeSpan.Zero);
+
+        /// <summary>
         /// The forecast value a level is given when the scenario wants it NOT to hold. No scenario seeds
         /// anywhere near this many finished Work Items in one period, so the Team can never reach it.
         /// </summary>

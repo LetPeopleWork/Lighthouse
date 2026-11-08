@@ -1483,3 +1483,47 @@ Both means hold the first test's warm-up. `h` is the host's body less the port's
 **The helper's own tier.** `ServicePortHarnessTest` starts no host, so it sits off `IntegrationFixture`, where T6's guard would fail it as on the base for no reason. It is in the fast tier by the filter: 9,536 passed, `L6-F`'s 9,527 plus its 9 rows. The rows sum to 0.39 s once the schema template exists.
 
 **Found.** Copies of the schema template run in write-ahead-log mode, not the rollback journal `TestDatabaseTemplate`'s comment says: a write under way leaves `-wal` and `-shm` beside the file. The copy is still whole, as the template is checkpointed before it is moved into place. This bears on the file-level write check of "Review revision", where `data_version` is still unproven.
+
+## Wave: DELIVER / [REF] Slice A: `Slice04` at the port, `c`, `h` and `PA` (2026-11-08)
+
+**What moved.** `RealityCheckAtThePortTest` is the port base: a `ServicePortHarness` per scenario, the real services `Run` reads through (`TeamMetricsService`, `ForecastFilterRuleService`, `BlackoutPeriodService`, the repositories behind them), the scripted forecast over a strict engine no row reaches, the clock pinned to the host's day, and `PortDoubles.PremiumLicence()` and `PortDoubles.SettingsAsSeeded()` (refresh 60/180/10, the seeder's rows). `RealityCheckPortAnswer` reads `Run`'s result into the same `RealityCheckAnswer` a caller gets (web defaults, enums as text) and carries the history rule. `Slice04TheAnswerOpensInADialogTest` now derives from it; its scenarios became synchronous, names kept. The pinned `Today` moved into `RealityCheckForecastScript` beside the ladder, so the host fixture and the port base share one value. The simulated runs and the pinned starting number stay in the host fixture: no port row asks for the engine yet.
+
+**A9.** Seen red first, the reader with no rule: `Expected: <NUnit.Framework.AssertionException> But was: null`. Green with the rule; the failure names the history: "a check learned from 31 days, which is no window swept".
+
+**A missing licence fails at resolve.** Not a new row: A8 shows it on the harness. Read once on the port base too, with the licence line removed in the working tree (reverted, never committed): `Unable to resolve service for type '...ILicenseService' while attempting to activate '...ForecastFilterRuleService'`. The port uses the real `ForecastFilterRuleService` and the host's premium mock, now `PortDoubles.PremiumLicence()`.
+
+**Ids.** The 5 rows keep their ids (`PA` against `P0`: 0 lines only in `P0`). In `trx_to_csv.py` they now read `Unit`, as they left the host.
+
+**`c` and `h`, before and after, one machine, interleaved.** Release, each class alone, 3 rounds each, before on `ced6e04ac` in a scratch worktree, after on this commit's tree. Set-up per test was read with a stopwatch probe in `[SetUp]`, never committed; the timer gives only sums.
+
+| Figure | Before, host | After, port |
+|---|---|---|
+| TRX sum, 5 rows, rounds | 1.980, 2.019, 2.128 (median 2.019) | 2.637, 2.602, 2.957 (median 2.637) |
+| One-time set-up, outside the TRX | 1.793, 1.560, 1.822 (host build 1.773, 1.549, 1.811) | 0 |
+| Class total, TRX plus one-time | 3.776, 3.583, 3.955 (median 3.776) | 2.637 (median) |
+| First row's set-up | 610 to 651 ms | 1,150 to 1,277 ms: the schema template, built once per test process, and shared by every port and template fixture in a full run |
+| Set-up per row after the first | 94 to 110 ms (round means 109.8, 105.7, 93.5) | 0.4 to 1.0 ms |
+| Body per row after the first, TRX less set-up and tear-down | about 105 ms (round means 108, 105, 98) | about 103 ms (round means 110, 103, 102) |
+
+- **`c`, steady: about 0.6 ms a row,** against the host's 94 to 110 ms. Mean with the first row's warm-up: 234 ms, but that is the template build, which the host's 230 ms did not hold either way. **This `c` proves the helper only:** `Slice04` has no seeders, as "Review revision" says.
+- **`h`, steady: about 2 ms** (105 less 103), within round-to-round noise, so the body is the same at both, as DESIGN assumed.
+- **A reading to correct, found here.** Since `ced6e04ac` the host fixture builds the host in `[OneTimeSetUp]` (the seed steps take `Factory.Services` there), and a TRX duration does not hold one-time set-up. The before readings above (3.860 s) were taken before that commit, when the first row built the host and its TRX held it. So on `ced6e04ac` a TRX-only sum reads 2.019 s for the host and 2.637 s for the port, a rise, while the class's real cost fell from 3.776 s to 2.637 s. Guarantee 6 sums TRX seconds; for host fixtures from `ced6e04ac` on it must add the timer's `one_time_setup_ms`, or the moved suites will look slower than they are. Against the pre-`ced6e04ac` 3.860 s the class falls by 1.22 s.
+
+**Does a TRX duration hold tear-down? Yes,** read on `Slice04` at the port: a `Thread.Sleep(1000)` planted in `[TearDown]` (reverted, never committed) raised every row's TRX duration by 1.0 to 1.1 s (0.06 to 0.13 s before, 1.05 to 1.16 s with it).
+
+**`PA`.** One run of clause `A`, no timer, 6 workers, Release, on this commit's tree, with the rules of a list run: no test process and no build running (both checks 0), `dotnet build-server shutdown` exit 0, Docker 29.9.3 up, the seven variables removed and the count printing 0.
+
+| | |
+|---|---|
+| Console | `Failed: 0, Passed: 12934, Skipped: 2, Total: 12936`, 6 m 39 s, exit 0 |
+| TRX `Counters total` and CSV rows | 12,945: 12,934 `Passed`, 11 `NotExecuted` |
+| `sha256` of the sorted list | `c7e953e7fb85bbc3fc00072cda48f5e47546c5b7aba5229aa982f046fe3613b0` |
+| Against `P0` | 0 lines only in `P0`; 12 only in `PA`, listed below |
+
+| Only in `PA` | Why |
+|---|---|
+| `RealityCheckPortAnswerTest.An_answer_whose_check_learned_from_more_than_its_own_window_is_not_read` | This slice, A9 |
+| `ServicePortHarnessTest`, 10 rows (A1 to A8, A7 twice) | This slice, step 01-01 |
+| `TestSelectionClauseTest.TheCoverageScriptLeavesOutEveryConnectorByDefault`, `TestSelectionClauseTest.TheFastScriptLeavesOutIntegrationAndEveryConnector` | **Foreign:** `b27724342`, a trunk fix to the fast and coverage scripts' filters, landed after `P0` |
+
+Also green, by name: `TestTierGuardTest` 90, `TestHostPerFixtureGuardTest` 18, `SharedHostsDrainTheUpdateQueueGuardTest` 17, `IntegrationFixtureCategoryTest` 2, and the `ForecastRealityCheck` namespace (66 + 5 + 10 + 1 + 2), 220 in all. `dotnet build` Debug and `-c Release`: 0 warnings, 0 errors.

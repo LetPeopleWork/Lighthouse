@@ -72,11 +72,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 
         protected static readonly int[] ConfidenceLevels = [50, 70, 85, 95];
 
-        /// <summary>
-        /// The day the instance believes it is, for every scenario. Arbitrary; that it never moves is the
-        /// point, since every check this feature makes is measured back from it.
-        /// </summary>
-        protected static readonly DateTimeOffset Today = new(2026, 9, 22, 9, 0, 0, TimeSpan.Zero);
+        protected static readonly DateTimeOffset Today = RealityCheckForecastScript.Today;
 
         /// <summary>Far fewer runs than production's ten thousand; a scenario needs a spread, not precision.</summary>
         private const int SimulatedRunsWhenTheEngineRuns = 1_000;

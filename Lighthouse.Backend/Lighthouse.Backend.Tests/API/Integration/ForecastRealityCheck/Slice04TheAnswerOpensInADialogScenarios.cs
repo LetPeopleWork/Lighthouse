@@ -7,7 +7,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     /// pin is the one fact the table needs and the answer did not carry - every period's actual, including a
     /// period in which no sampling window could be checked, whose checks carry no actual of their own.
     ///
-    /// Driving port: the check itself, over HTTP. Step definitions live in
+    /// Driving port: the check's service, called with no host. Step definitions live in
     /// Slice04TheAnswerOpensInADialogSpecifications.cs.
     /// </summary>
     [TestFixture]
@@ -15,11 +15,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
     public partial class Slice04TheAnswerOpensInADialogTest
     {
         [Test]
-        public async Task Every_period_the_check_scored_is_in_the_answer_with_its_days_and_what_the_Team_delivered()
+        public void Every_period_the_check_scored_is_in_the_answer_with_its_days_and_what_the_Team_delivered()
         {
             var oceanExplorer = GivenOceanExplorerFinishingAWorkItemEveryDay();
 
-            var answer = await TheAnswerTo(oceanExplorer);
+            var answer = TheAnswerTo(oceanExplorer);
 
             using (Assert.EnterMultipleScope())
             {
@@ -31,11 +31,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [Test]
-        public async Task Every_check_that_could_be_evaluated_carries_the_same_actual_as_its_period()
+        public void Every_check_that_could_be_evaluated_carries_the_same_actual_as_its_period()
         {
             var coastalSurvey = GivenCoastalSurveyWhichFinishesWorkInBursts();
 
-            var answer = await TheAnswerTo(coastalSurvey);
+            var answer = TheAnswerTo(coastalSurvey);
 
             using (Assert.EnterMultipleScope())
             {
@@ -50,11 +50,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// and yet the table still prints what the Team delivered in each period.
         /// </summary>
         [Test]
-        public async Task A_Team_whose_history_supports_no_check_still_gets_four_periods_each_with_what_it_delivered()
+        public void A_Team_whose_history_supports_no_check_still_gets_four_periods_each_with_what_it_delivered()
         {
             var newlyFormed = GivenATeamThatHasFinishedAlmostNothing();
 
-            var answer = await TheAnswerTo(newlyFormed);
+            var answer = TheAnswerTo(newlyFormed);
 
             using (Assert.EnterMultipleScope())
             {
@@ -66,11 +66,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         }
 
         [Test]
-        public async Task A_week_in_which_the_Team_delivered_nothing_is_a_period_whose_actual_is_zero_not_missing()
+        public void A_week_in_which_the_Team_delivered_nothing_is_a_period_whose_actual_is_zero_not_missing()
         {
             var harbourPilots = GivenHarbourPilotsWhoFinishedNothingLastWeek();
 
-            var answer = await TheAnswerTo(harbourPilots);
+            var answer = TheAnswerTo(harbourPilots);
 
             using (Assert.EnterMultipleScope())
             {
@@ -85,11 +85,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
         /// kept per window.
         /// </summary>
         [Test]
-        public async Task A_Team_whose_own_window_is_off_the_ladder_gets_one_period_per_horizon_never_one_per_window()
+        public void A_Team_whose_own_window_is_off_the_ladder_gets_one_period_per_horizon_never_one_per_window()
         {
             var team = GivenATeamFinishingAWorkItemEveryDaySetTo(45);
 
-            var answer = await TheAnswerTo(team);
+            var answer = TheAnswerTo(team);
 
             using (Assert.EnterMultipleScope())
             {

@@ -1,14 +1,14 @@
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck
 {
     /// <summary>
-    /// Step definitions for the periods the answer scored - every period's dates and actual, read off the wire.
+    /// Step definitions for the periods the answer scored - every period's dates and actual, read off the answer.
     ///
     /// Ocean Explorer finishes one Work Item every day, so a period of H days holds exactly H. Coastal Survey
     /// finishes work one day in five, which leaves its two-week window unable to run. The newly formed Team has
     /// finished three Work Items in five months, so no check can run at all. Harbour Pilots finished work
     /// every day until a week ago and nothing since - the whole Team was away.
     /// </summary>
-    public partial class Slice04TheAnswerOpensInADialogTest : ForecastRealityCheckAcceptanceTest
+    public partial class Slice04TheAnswerOpensInADialogTest : RealityCheckAtThePortTest
     {
         private const int LongestHistoryAnyCheckReaches = 160;
 
