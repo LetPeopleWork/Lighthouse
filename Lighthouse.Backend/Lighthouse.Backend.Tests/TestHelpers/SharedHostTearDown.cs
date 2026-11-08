@@ -11,13 +11,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
     /// </summary>
     public static class SharedHostTearDown
     {
-        public static async Task LeaveTheHostIdleOrFail(IServiceProvider services)
+        private static readonly TimeSpan QueuePatience = TimeSpan.FromSeconds(30);
+
+        public static async Task LeaveTheHostIdleOrFail(IServiceProvider services, TimeSpan? queuePatience = null)
         {
             // The gate reopens last: letting an operator in is refused for as long as a pass or an update is
             // still running. Draining first is safe while an operator is counted as waiting, because a pass
             // that finds one stands down at once rather than writing, so the drain cannot hang on the gate.
             await SharedHostCleanup.DrainTheHistoryFillerOrFail(services.GetRequiredService<OverTimeHistoryFiller>(), TimeSpan.FromSeconds(60));
-            await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(services, TimeSpan.FromSeconds(30));
+            await SharedHostCleanup.WaitUntilTheQueueIsIdleOrFail(services, queuePatience ?? QueuePatience);
             SharedHostCleanup.ReopenTheMaintenanceGate(services);
         }
     }

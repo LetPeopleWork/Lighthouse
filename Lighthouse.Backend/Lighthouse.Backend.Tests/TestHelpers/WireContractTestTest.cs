@@ -98,13 +98,15 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         {
             private const int QueuedTeam = 4711;
 
+            private static readonly TimeSpan ShortPatience = TimeSpan.FromSeconds(1);
+
             [Test]
             public async Task A_contract_scenario_that_leaves_work_in_the_queue_fails_at_tear_down()
             {
                 var refreshMayEnd = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                 Services.GetRequiredService<IUpdateQueueService>().EnqueueUpdate(UpdateType.Team, QueuedTeam, _ => refreshMayEnd.Task);
 
-                var failure = await Assert.ThrowsAsync<AssertionException>(LeaveTheHostIdle);
+                var failure = await Assert.ThrowsAsync<AssertionException>(() => LeaveTheHostIdleWithin(ShortPatience));
 
                 // Letting the refresh end is what lets the tear-down NUnit runs after this scenario find the host
                 // idle, so the failure is seen here and nowhere else.

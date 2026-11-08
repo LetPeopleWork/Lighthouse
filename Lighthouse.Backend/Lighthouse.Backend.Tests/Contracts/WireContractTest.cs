@@ -56,13 +56,19 @@ namespace Lighthouse.Backend.Tests.Contracts
         }
 
         [TearDown]
-        public async Task LeaveTheHostIdle()
+        public Task LeaveTheHostIdle() => LeaveTheHostIdleWithin(null);
+
+        /// <summary>
+        /// The tear-down with its own wait for the update queue, for a scenario that leaves work on the queue on
+        /// purpose and expects the tear-down to fail: it need not sit through the full wait to see that.
+        /// </summary>
+        protected async Task LeaveTheHostIdleWithin(TimeSpan? queuePatience)
         {
             using var _ = Measure(GetType().Name, MeasurementKind.TearDown);
 
             try
             {
-                await SharedHostTearDown.LeaveTheHostIdleOrFail(host.Services);
+                await SharedHostTearDown.LeaveTheHostIdleOrFail(host.Services, queuePatience);
             }
             finally
             {
