@@ -7,7 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application.Policies
 {
     /// <summary>
     /// Demo-only: after a demo owner refreshes, synthesizes a backdated percentile history so the

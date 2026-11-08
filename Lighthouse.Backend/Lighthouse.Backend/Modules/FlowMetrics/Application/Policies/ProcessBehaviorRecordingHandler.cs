@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.Logging;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application.Policies
 {
     public class ProcessBehaviorRecordingHandler
         : IDomainEventHandler<TeamDataRefreshed>,

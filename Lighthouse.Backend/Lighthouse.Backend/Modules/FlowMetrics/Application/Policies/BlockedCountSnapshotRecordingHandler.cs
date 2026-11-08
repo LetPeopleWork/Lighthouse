@@ -7,7 +7,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 using Microsoft.Extensions.Logging;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application.Policies
 {
     public class BlockedCountSnapshotRecordingHandler
         : IDomainEventHandler<TeamDataRefreshed>,

@@ -4,7 +4,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces.DomainEvents;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 
-namespace Lighthouse.Backend.Services.Implementation.DomainEvents
+namespace Lighthouse.Backend.Modules.FlowMetrics.Application.Policies
 {
     public class BlackoutConfigurationChangedMetricsInvalidationHandler(
         IRepository<Team> teamRepository,

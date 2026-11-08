@@ -83,6 +83,7 @@ using Lighthouse.Backend.Standalone;
 using Lighthouse.Backend.API.Swagger;
 using Lighthouse.Backend.API.Filters;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
+using Lighthouse.Backend.Modules.FlowMetrics.Application.Policies;
 
 namespace Lighthouse.Backend
 {

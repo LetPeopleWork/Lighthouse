@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         /// has would be a bug in the screenshot, not in the data. It is named here rather than
         /// pattern-matched so that a third copy has to be argued for instead of just appearing.
         /// </summary>
-        private const string TheDemoSynthesiser = "Services/Implementation/DomainEvents/DemoPercentilesBackfillHandler.cs";
+        private const string TheDemoSynthesiser = "Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs";
 
         private static readonly string[] FilesAllowedToDeclareTheHorizons = [TheWriter, TheDemoSynthesiser];
 
