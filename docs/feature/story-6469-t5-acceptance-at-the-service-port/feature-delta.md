@@ -1853,3 +1853,26 @@ Adversarial review of slice B: NEEDS_REVISION. Code fixes in `ba9619c53`; no tes
 - **Probe 4, the 51 `Slice01` rows' business assertions: no weakening.** `38a665ecc` against HEAD, on both the Specifications and Scenarios files. Only three assertions are gone: the rank walk, the no-sentence walk and the negative-number walk. Step 02-04 removed them on purpose, and the contract rows `No_part_of_the_answer_on_the_wire_can_rank_a_window` (30, 45), `The_windows_of_an_off_ladder_setting_rank_nothing_on_the_wire` and `A_check_with_no_forecast_puts_no_negative_number_on_the_wire` hold them. Every other assertion, with its expected value and message, is word for word. The only other changes are `async` to sync, and the no-write row gaining the write watch.
 
 **Runs.** The family, `RealityCheckWireContractTest`, `WireContractTestTest` and `ServicePortHarnessTest`: 163 passed. Guards `TestTierGuardTest`, `TestHostPerFixtureGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest`: 125 passed. `Test-Fast.ps1`: 9607 passed (two more, the new harness rows). `dotnet build Lighthouse.Backend`: 0 warnings.
+
+## Wave: DELIVER / [REF] Slice C: both lists from the first run, and a real class caught (step 03-04, 2026-11-08)
+
+**The first list, generated.** A temporary test ran the guard's scan once over every concrete class and wrote the host users on neither list to a file, under Debug and under `-c Release`. Both files hold **330** names, and `diff` finds them identical (C19 holds). The list was pasted in sorted, untouched, and the temporary test removed. DESIGN expected more than 400, going by T6's count of hosted files; the scan counts classes, and 330 is the real number.
+
+- `Slice06AnOperatorSeesEveryRealityCheckTest` is on it, and so is `TestWebApplicationFactoryTest`, which tests the host itself and stays for good.
+- No pilot port class is on either list: `RealityCheckAtThePortTest` and `ServicePortHarnessTest` reach no host. `RealityCheckWireContractTest` is on the base, so by rule 3 it is on neither.
+- One why for the whole list, as DESIGN asked, with no slice or Story id. No count constant.
+
+**`SkeletonsByUserFlow` is empty today.** Criterion 2's `RealityCheckSkeletonTest` line is superseded by the fold in `1abfbd8b0` (step 02-07): the skeleton's one row is now a row of `RealityCheckWireContractTest`, on `WireContractTest` in `Contracts.Forecasting`, and a type on the base may not be on a list. The class was not recreated. The only class in the assembly that calls itself a skeleton is `FastWithManyFeatures.Slice01WalkingSkeletonScenarios`; it predates the convention and came out of the scan with the others, so it stays on the first list. Moving it to `SkeletonsByUserFlow`, with its user flow, is a one-line move for the Story that judges it, and is left to the review.
+
+**Rule 4 read "the contracts namespace" as an exact match.** DESIGN's wording is "outside `...Tests.Contracts`", and the real contracts sit by area below it (`Contracts.Forecasting`). With the lists empty, the real pass named `Contracts.Forecasting.RealityCheckWireContractTest` as on the base outside the namespace. The check is now the namespace or one below it, on a namespace boundary.
+
+- Planted `Contracts.Planted…AWireContractBelowItsNamespace`, on the base: red before the fix, named by rule 4 (`evidence/03-04-rule4-below-contracts-red-debug.txt`), green after.
+- Planted `ContractsLookalike…AWireContractInANamespaceThatOnlyStartsLikeIt`, on the base in a namespace that only begins with the same name: red under both the old and the new check. With the `.` dropped from the prefix, this case went red: the type was no longer named. Put back, and checked with `cmp`.
+
+**The real pass.** `Every_concrete_class_in_the_test_assembly_keeps_every_rule` runs all four rules over the concrete classes, nested ones included, with compiler-made types left out, as `TestTierGuardTest` does; the planted fixtures are abstract and fall out by that filter. Rule 2 judges "no longer exists" against every type in the module. Green under Debug and Release.
+
+**C17 and C18.** A temporary concrete `Lighthouse.Backend.Tests.API.Integration.AHostUserOnNeitherListTest` started a `TestWebApplicationFactory<Program>` in its test. Under Debug and under `-c Release` the real pass failed with `1 type(s) start an application host without a reason:` and that full name, and nothing else: `evidence/03-04-c17-a-real-host-user-red-debug.txt`, `evidence/03-04-c18-a-real-host-user-red-release.txt`. The file was deleted; `git status` afterwards shows only the guard and the evidence (`evidence/03-04-c17-c18-git-status-after-removal.txt`).
+
+**Seconds.** `TestHostUseGuardTest` alone, 23 tests, three runs: 3.64, 3.52 and 3.68 s summed over its tests, about 5.3 s from the first test's start to the last one's end. The one-time read of the assembly sits in the first test. Far under the 34 s budget.
+
+**Runs.** `TestHostUseGuardTest`, `TestHostPerFixtureGuardTest`, `TestTierGuardTest`, `SharedHostsDrainTheUpdateQueueGuardTest` and `DbContextComesFromAScopeGuardTest`, by class: 158 passed under Debug and under Release. `Test-Fast.ps1`: 9630 passed. `dotnet build Lighthouse.Backend`, Debug and Release: 0 warnings. The guard and the four other guards ran once more after the last wording change to the rule 4 message.

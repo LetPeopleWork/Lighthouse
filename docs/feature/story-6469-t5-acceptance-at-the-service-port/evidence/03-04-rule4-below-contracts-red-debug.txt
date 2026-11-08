@@ -1,0 +1,19 @@
+Test run for /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Debug/net10.0/Lighthouse.Backend.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2-dev (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed A_fixture_on_the_base_in_a_namespace_below_contracts_passes_every_rule [64 ms]
+  Error Message:
+     Assert.That(EveryRuleNames(StillToMove(), NoSkeletons()), Does.Not.Contain(aWireContract))
+  Expected: not some item equal to "Lighthouse.Backend.Tests.Contracts.Planted.PlantedContractFixturesBelowTheNamespace/AWireContractBelowItsNamespace"
+  But was:  < "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/AnOuterClass/AnInnerFixtureThatStartsAHost", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/StartsAHostInAConstructor", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/StartsAHostInAHelperTheSetUpCalls", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/StartsAHostInOneTimeSetUp", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/StartsAHostInTestsThatCarryTestCaseOnly", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/StartsAHostThroughItsBase", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/WireContractTestTest/OneHostForThreeScenarios", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/AWireContractOutsideItsNamespace", "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest/PlantedFixtures/WireContractTestTest/OneHostOnTheBaseForThreeScenarios", "Lighthouse.Backend.Tests.Contracts.Planted.PlantedContractFixturesBelowTheNamespace/AWireContractBelowItsNamespace"... >
+
+  Stack Trace:
+     at Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_on_the_base_in_a_namespace_below_contracts_passes_every_rule() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs:line 230
+
+1)    at Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.A_fixture_on_the_base_in_a_namespace_below_contracts_passes_every_rule() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs:line 230
+
+
+
+Failed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 64 ms - Lighthouse.Backend.Tests.dll (net10.0)

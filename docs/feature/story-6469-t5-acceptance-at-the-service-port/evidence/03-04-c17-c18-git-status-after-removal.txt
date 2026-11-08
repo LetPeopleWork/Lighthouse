@@ -1,0 +1,5 @@
+ M Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs
+?? docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/03-04-c17-a-real-host-user-red-debug.txt
+?? docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/03-04-c17-c18-git-status-after-removal.txt
+?? docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/03-04-c18-a-real-host-user-red-release.txt
+?? docs/feature/story-6469-t5-acceptance-at-the-service-port/evidence/03-04-rule4-below-contracts-red-debug.txt

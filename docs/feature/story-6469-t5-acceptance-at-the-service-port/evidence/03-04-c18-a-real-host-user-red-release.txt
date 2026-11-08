@@ -1,0 +1,23 @@
+Test run for /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2-dev (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Failed Every_concrete_class_in_the_test_assembly_keeps_every_rule [2 s]
+  Error Message:
+     1 type(s) start an application host without a reason:
+  Lighthouse.Backend.Tests.API.Integration.AHostUserOnNeitherListTest
+A test may start a host only for a reason. For each type, do one of three things: move it to the application-service port (build the service with ServicePortHarness, or with new for up to three collaborators, under Tests/Acceptance/<Feature>/); list it as a skeleton with its user flow, if it asserts a business outcome that needs the route or the wiring; or make it a wire contract on WireContractTest in Tests/Contracts/. Fix the type; do not add it to the list of host users still to move, which only shrinks.
+Assert.That(withoutAReason, Is.Empty)
+  Expected: <empty>
+  But was:  < "Lighthouse.Backend.Tests.API.Integration.AHostUserOnNeitherListTest" >
+
+  Stack Trace:
+     at Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.Every_concrete_class_in_the_test_assembly_keeps_every_rule() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs:line 577
+   at Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.Every_concrete_class_in_the_test_assembly_keeps_every_rule()
+
+1)    at Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest.Every_concrete_class_in_the_test_assembly_keeps_every_rule() in /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs:line 573
+
+
+
+Failed!  - Failed:     1, Passed:    22, Skipped:     0, Total:    23, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
