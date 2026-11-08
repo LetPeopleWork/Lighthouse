@@ -15,7 +15,7 @@ Tick every item before you write a test, and again before you hand it over.
 
 1. Name the behaviour in one sentence, and the lowest layer that can prove it (see "Layer rule").
 2. A rule (arithmetic, ordering, filtering, validation, wording, a decision) is asserted on a function or hook, not through a render.
-3. One render per wiring: several checks of one wiring share one render.
+3. One render per wiring: several checks of one wiring share one render within one test.
 4. The fixture is as small as the behaviour allows. A long list only when the list itself is the test.
 5. Time is a fake clock, advanced by the test or left to follow real ticks (`shouldAdvanceTime`). Never a sleep or a real wait.
 6. A slow or flaky test is made smaller or deterministic. It is never given a longer timeout or a retry.
@@ -90,8 +90,6 @@ rule above.
 
 ## No nWave scenario tags
 
-Write no nWave scenario tags in any test, test title, comment or scenario text: a tag is a label that no tool here reads. Keep any such
-classification in the feature workspace, not in the code. The Playwright title tags that the package scripts filter on (`@screenshot`,
-`@auth`, `@rbac`, `@proxyauth`) are real and stay.
+The rule is in `CLAUDE.md` (DISTILL writes no nWave scenario tags into the code); it holds for every test this skill guides.
 
 End of SKILL.md

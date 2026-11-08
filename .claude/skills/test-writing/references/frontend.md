@@ -83,7 +83,7 @@ const items = Array.from({ length: PAGE_SIZE + 1 }, (_, index) => generateWorkIt
 
 **Finding.** The CI frontend run shuffles the tests of every file, seeded by the run id, and has found three kinds: a test that fails alone
 or on one seed and passes on the next; a lazy route or provider that only the first test to need it pays for; a listener or timer a test
-leaves behind for the next. Replay a red file with `pnpm test --sequence.shuffle.tests --sequence.seed=<run id> <the red file>`.
+leaves behind for the next. How to replay a red file on its seed is in `docs/ci-learnings.md`, Frontend.
 
 **Example.** Each test starts from state it builds itself and leaves nothing behind:
 

@@ -1110,3 +1110,24 @@ Scripts/test-timings/test-time-budget.json
 ```
 
 **Criterion 19 is not met as worded**: two paths are outside docs/, .claude/ and CLAUDE.md. Both come from other sessions' commits: `Scripts/test-timings/test-time-budget.json` from a25c8fdc2, and `Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs` from e7e78638b. Neither is this step's work. Whether to push the range, or to hold it back, is the orchestrator's call; nothing was pushed.
+
+## Wave: DELIVER / [REF] Skill review (2026-11-08, step 02-01, C-7)
+
+`nw-skill-reviewer`, model `haiku`, two rounds.
+
+**Round 1: NEEDS_REVISION, 2 critical.** Both were scope points, where the skill restated a rule that another file owns:
+- **C1.** `references/frontend.md` repeated the shuffle replay command from `docs/ci-learnings.md`. It now points to that file.
+- **C2.** The "No nWave scenario tags" section in `SKILL.md` restated `CLAUDE.md`. It is now one line that points there.
+
+**Fixed with them, non-critical:**
+- Checklist item 3 now says "within one test".
+- Title 1 of `backend.md` has lost its trailing period.
+- The `Tests/Acceptance/<Feature>/` folder is now described as created by the first feature with port scenarios, since it does not exist yet.
+
+**Left as they are, non-critical:**
+- **Measured numbers without a date or run id** (frontend rules 1 and 2, backend rule 1). They illustrate the size of the gap and gate nothing.
+- **Relative test paths** with no stated base.
+- **"Finding" as the label of rule 7.**
+- **Partial overlap with `CLAUDE.md`** in frontend rule 7 and in the "Improve the tests you touch" section. These sections keep the how and name the rule.
+
+**Round 2: APPROVED.** No critical point is open, so C-7 has passed.

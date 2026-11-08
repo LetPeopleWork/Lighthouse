@@ -4,14 +4,14 @@ The backend half of the test-writing skill. NUnit, tests under `Lighthouse.Backe
 measured finding in words and one example. The seconds below are Debug builds on one machine, a class run alone, so read them as
 proportions and not as promises.
 
-### 1. New backend acceptance scenarios drive the application-service port.
+### 1. New backend acceptance scenarios drive the application-service port
 
 **Finding.** The sampling-window class of the Forecast Reality Check, 51 rows, took 14.0 seconds on a web host and 7.1 seconds at the port
 with the same rows and the same ids. Set-up was 115 ms a row on the host and 22 ms a row at the port, and the host's one-time build, 1.8
 seconds, sits outside a TRX duration, so a TRX alone makes a host class look faster than it is.
 
 **The three ways out.** When `TestHostUseGuardTest` names a type that starts a host without a reason, it says, and this wording is pinned by a test:
-move it to the application-service port (build the service with ServicePortHarness, or with new for up to three collaborators, under Tests/Acceptance/<Feature>/);
+move it to the application-service port (build the service with ServicePortHarness, or with new for up to three collaborators, under Tests/Acceptance/<Feature>/ in Lighthouse.Backend.Tests, a folder the first feature with port scenarios creates);
 list it as a skeleton with its user flow, if it asserts a business outcome that needs the route or the wiring;
 or make it a wire contract on WireContractTest in Tests/Contracts/.
 A new scenario starts at the port. A skeleton is one or two per user flow, on the list in `TestHostUseGuardTest`; a wire contract covers
