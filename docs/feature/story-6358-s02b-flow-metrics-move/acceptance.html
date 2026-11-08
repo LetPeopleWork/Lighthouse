@@ -151,7 +151,185 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled production assembly for the six pure Flow metrics calculation types, by name
+</code></pre>
+
+<pre><code>Each of the six sits in the Flow metrics module&#x27;s Domain namespace and no type of the same name is left under Services; a type that has not moved is named twice, as missing from the Domain and as left behind
+</code></pre>
+
+<pre><code>A developer finds the pure Flow metrics calculations in the module&#x27;s Domain layer, nowhere else
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ThePureFlowMetricsCalculations_LiveInTheModuleDomain_AndNoneIsLeftUnderServices</p>
+
+<pre><code>A copy of a calculation kept under a namespace other than Services, for example the API, next to the moved one
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the production project&#x27;s source folders for the four files that hold the calculations
+</code></pre>
+
+<pre><code>Each file sits in the module&#x27;s Domain folder and no file of the same name sits anywhere else in the production project
+</code></pre>
+
+<pre><code>The folder a developer opens matches the namespace the type declares
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ThePureFlowMetricsCalculationFiles_SitInTheModuleDomainFolder_AndNowhereElse</p>
+
+<pre><code>A file in the right folder whose namespace line was not changed; the type placement test catches that one
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Read every type the real module&#x27;s Domain namespace references, async bodies included
+</code></pre>
+
+<pre><code>The Domain holds at least one type and reaches only its own Domain, the Models, System types and compiler-made helper types
+</code></pre>
+
+<pre><code>The module&#x27;s pure calculations can be tested by handing them values, with no database, setting or logger behind them
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheModuleDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary</p>
+
+<pre><code>A Domain type that reads a file or the clock through the base library, or reaches a forbidden type only by a type name in a string
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the same Domain rule on made-up Domain types that each reach one forbidden layer (Services, the data layer, EF Core, Microsoft.Extensions, the module&#x27;s Application, the module&#x27;s Adapters, and Services only inside an async method), each next to a compliant twin
+</code></pre>
+
+<pre><code>Exactly the offender is reported, named with the forbidden type it reached, also in a Release build; the twin, which uses a Models type, System types, a sibling, a lambda, an iterator, a written-out array and a generic parameter, is examined and not reported
+</code></pre>
+
+<pre><code>A Domain change that reaches a forbidden layer fails the tests, and a clean Domain change does not
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ADomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot</p>
+
+<pre><code>A Domain type that reaches a forbidden type only through an attribute argument of a kind the IL reader does not walk
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the Domain rule on a Domain namespace that holds no type
+</code></pre>
+
+<pre><code>The rule fails and names the Domain pattern that held nothing
+</code></pre>
+
+<pre><code>A Domain rule pointed at the wrong namespace cannot stay green unseen
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ADomainThatHoldsNoType_FailsTheRuleInsteadOfPassingUnseen</p>
+
+<pre><code>A Domain pattern that matches one unrelated type counts as not empty
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the existing unit tests of the four moved calculation files after the move, with only using and namespace edits
+</code></pre>
+
+<pre><code>Every row stays green with the same expected values
+</code></pre>
+
+<pre><code>Percentiles, process limits, SLE risk and baseline checks give the same answers as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Services.Implementation (PercentileCalculatorTest, XmRCalculatorTest, SleRiskCalculatorTest, BaselineValidationServiceTest)</p>
+
+<pre><code>A behaviour change in a branch none of the existing rows reaches
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them
+</code></pre>
+
+<pre><code>The two captures are identical
+</code></pre>
+
+<pre><code>Nothing a user sees in the metrics changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>This oracle reads layout and dependencies only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run and the handler-order pin at the end of each slice
+</code></pre>
+
+<p>host (root), at slice end and feature end</p>
 
 <h2>Expectations</h2>
 

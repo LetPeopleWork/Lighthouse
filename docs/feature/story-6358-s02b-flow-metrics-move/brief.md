@@ -70,9 +70,9 @@ The five pure Flow metrics calculators (PercentileCalculator, XmRCalculator with
 
 #### Promises
 
-P1
-
 P2
+
+P1
 
 P3
 

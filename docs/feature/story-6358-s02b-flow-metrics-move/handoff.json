@@ -1,8 +1,103 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F42",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ThePureFlowMetricsCalculations_LiveInTheModuleDomain_AndNoneIsLeftUnderServices"
+},
+"expected": "F40",
+"stimulus": "F39",
+"user_result": "F41"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F46",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ThePureFlowMetricsCalculationFiles_SitInTheModuleDomainFolder_AndNowhereElse"
+},
+"expected": "F44",
+"stimulus": "F43",
+"user_result": "F45"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F50",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.TheModuleDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary"
+},
+"expected": "F48",
+"stimulus": "F47",
+"user_result": "F49"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F54",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ADomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot"
+},
+"expected": "F52",
+"stimulus": "F51",
+"user_result": "F53"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F58",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsModuleLayoutArchUnitTest.ADomainThatHoldsNoType_FailsTheRuleInsteadOfPassingUnseen"
+},
+"expected": "F56",
+"stimulus": "F55",
+"user_result": "F57"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F62",
+"test": "Lighthouse.Backend.Tests.Services.Implementation (PercentileCalculatorTest, XmRCalculatorTest, SleRiskCalculatorTest, BaselineValidationServiceTest)"
+},
+"expected": "F60",
+"stimulus": "F59",
+"user_result": "F61"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "host (root), at slice end and feature end",
+"reason": "F66"
+},
+"expected": "F64",
+"stimulus": "F63",
+"user_result": "F65"
+}
+]
+},
 "counters": {
 "D": 1,
 "E": 4,
-"F": 38,
+"F": 66,
 "P": 3,
 "S": 5
 },
@@ -23,8 +118,8 @@
 "expected": "F13",
 "falsifier": "F14",
 "promises": [
-"P1",
 "P2",
+"P1",
 "P3"
 ],
 "stimulus": "F12"
@@ -90,6 +185,9 @@
 }
 ]
 },
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs"
+],
 "targets": [
 {
 "change": "Create",
@@ -795,9 +893,37 @@
 "F36": "The module's Domain layer refers only to the shared kernel (Lighthouse.Backend.Models) and the .NET base library; none of its types refers to an Application, Adapters, Services, Data, EF Core or Microsoft.Extensions type.",
 "F37": "A user sees no change: every metrics API answer on the same day is identical before and after the move, with no change to the stored data model.",
 "F38": "The existing test suite, including the event-handler order check, stays green after the move, and the only edits to existing tests are using, namespace and path-string edits.",
+"F39": "Read the compiled production assembly for the six pure Flow metrics calculation types, by name",
 "F4": "The module's Domain depends only on the shared kernel (Lighthouse.Backend.Models) and the .NET base library: no Application, Adapters, Services, Data, EF Core or Microsoft.Extensions type",
+"F40": "Each of the six sits in the Flow metrics module's Domain namespace and no type of the same name is left under Services; a type that has not moved is named twice, as missing from the Domain and as left behind",
+"F41": "A developer finds the pure Flow metrics calculations in the module's Domain layer, nowhere else",
+"F42": "A copy of a calculation kept under a namespace other than Services, for example the API, next to the moved one",
+"F43": "Read the production project's source folders for the four files that hold the calculations",
+"F44": "Each file sits in the module's Domain folder and no file of the same name sits anywhere else in the production project",
+"F45": "The folder a developer opens matches the namespace the type declares",
+"F46": "A file in the right folder whose namespace line was not changed; the type placement test catches that one",
+"F47": "Read every type the real module's Domain namespace references, async bodies included",
+"F48": "The Domain holds at least one type and reaches only its own Domain, the Models, System types and compiler-made helper types",
+"F49": "The module's pure calculations can be tested by handing them values, with no database, setting or logger behind them",
 "F5": "Nothing a user sees changes: every metrics API answer is identical before and after on the same day, the event-handler order pin stays green, the EF model is unchanged, and every existing test stays green with only using, namespace and path-string edits",
+"F50": "A Domain type that reads a file or the clock through the base library, or reaches a forbidden type only by a type name in a string",
+"F51": "Run the same Domain rule on made-up Domain types that each reach one forbidden layer (Services, the data layer, EF Core, Microsoft.Extensions, the module's Application, the module's Adapters, and Services only inside an async method), each next to a compliant twin",
+"F52": "Exactly the offender is reported, named with the forbidden type it reached, also in a Release build; the twin, which uses a Models type, System types, a sibling, a lambda, an iterator, a written-out array and a generic parameter, is examined and not reported",
+"F53": "A Domain change that reaches a forbidden layer fails the tests, and a clean Domain change does not",
+"F54": "A Domain type that reaches a forbidden type only through an attribute argument of a kind the IL reader does not walk",
+"F55": "Run the Domain rule on a Domain namespace that holds no type",
+"F56": "The rule fails and names the Domain pattern that held nothing",
+"F57": "A Domain rule pointed at the wrong namespace cannot stay green unseen",
+"F58": "A Domain pattern that matches one unrelated type counts as not empty",
+"F59": "Run the existing unit tests of the four moved calculation files after the move, with only using and namespace edits",
 "F6": "The module dependency rules R3 to R5, deleting the old Metrics type-set rule, and relocating the unit tests (feature C); extracting a registration extension (later Story); renaming *Service roles",
+"F60": "Every row stays green with the same expected values",
+"F61": "Percentiles, process limits, SLE risk and baseline checks give the same answers as before",
+"F62": "A behaviour change in a branch none of the existing rows reaches",
+"F63": "Capture every metrics API answer on the feature base and on the candidate, back to back on the same day, and compare them",
+"F64": "The two captures are identical",
+"F65": "Nothing a user sees in the metrics changes",
+"F66": "This oracle reads layout and dependencies only; the design runs the answer capture and comparison once at the end of the feature, and the filtered full test run and the handler-order pin at the end of each slice",
 "F7": "The five pure Flow metrics calculators (PercentileCalculator, XmRCalculator with XmRResult, SleRiskCalculator, BaselineValidationService with BaselineValidationResult) live in Lighthouse.Backend.Modules.FlowMetrics.Domain, and that Domain reaches only the shared kernel and the base library",
 "F8": "The Flow metrics contract (the two metrics-service interfaces with their records, the snapshot writer, series query, gap reconciler, history-filler and snapshot-repository interfaces) lives in Lighthouse.Backend.Modules.FlowMetrics.Application",
 "F9": "The Flow metrics implementations (the three metrics services, cache key, percentile families, blocked-count series builder, snapshot writers, series queries, gap reconciler, reconstruction memo, retention edge, fill target) live in Lighthouse.Backend.Modules.FlowMetrics.Application"
@@ -828,8 +954,8 @@
 "id": "S1",
 "observation": "F7",
 "promises": [
-"P1",
 "P2",
+"P1",
 "P3"
 ]
 },

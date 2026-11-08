@@ -140,7 +140,7 @@ dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests
 
 #### Supports
 
-None.
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsModuleRules\.cs
 
 #### Public oracle
 
@@ -158,9 +158,9 @@ A calculator still sits under Services, or Domain reaches a forbidden type and t
 
 ##### Promises
 
-P1
-
 P2
+
+P1
 
 P3
 
