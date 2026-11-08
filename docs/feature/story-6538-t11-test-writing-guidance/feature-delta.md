@@ -797,6 +797,7 @@ These answer DESIGN's open points and supersede any earlier line that waits on t
 | 3 | The trial's feature? | **Story 6501** (ordered parent sources), subject to B-7's size check; the next feature that fits if it does not |
 | 4 | Candidate tools? | **Out of T11.** Small Stories after it |
 | 5 | Rigor | `standard` (agreed 2026-11-07, recorded in `.nwave/afk.json`): crafter model sonnet, reviewer model haiku |
+| 6 | Improve the tests you touch (2026-11-08, afternoon) | **Yes, and it goes in CLAUDE.md, not only the skill.** Slice B adds a **fourth** CLAUDE.md line beside the three B-5 names: when a change touches a test class on either stack, it leaves the class better than it found it. On the backend, the rows it touches move down to the service port or to unit level, so a line comes off `HostUsersStillToMove`. On the frontend, a test moves down a layer the frontend half allows. The skill carries the how. This supersedes the "exactly three lines" of step 02-01's criterion 4, which now reads four. The line holds no Story, slice or ADR number, like the other three |
 
 Roadmap: `deliver/roadmap.json`, two steps, one per slice.
 
