@@ -839,8 +839,8 @@ backlog order in ADO.
 
 Cross-Epic edges, from the briefs (all one direction): S12c ==> S02/S03a-d DTO moves (`slice-32` line 30, `slice-04`
 line 33); S06 and S07a "ideally before" S03a/S03b; S07b and S12a soft on S02 (with #6508 first they do not wait);
-S12b and S07b soft on S05c/d/f; S03d, S03i and S13 soft on S05c/d; S05f "S02 may absorb this" (S05f stays in #6507,
-S02's DESIGN is told it is done); FE4 soft on S07b. S07c was in a soft loop with S05c and S08 and says its decision goes
+S12b and S07b soft on S05c/d/f; S03d, S03i and S13 soft on S05c/d; S05f "S02 may absorb this" (decided 2026-11-08 at
+S02's DESIGN: S05f is kept separate, stays in #6507 and is Next after the pilot); FE4 soft on S07b. S07c was in a soft loop with S05c and S08 and says its decision goes
 in S08's catalogue, so it moved to #6511. Risk: S02 is the go/no-go gate of #6510; a "stop" leaves that Epic almost
 empty, by design.
 

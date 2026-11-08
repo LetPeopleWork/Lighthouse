@@ -11192,3 +11192,24 @@ C4Container
   Rel(api, db, "Reads rules and the switch from")
   Rel(api, idp, "Validates sign-in with")
 ```
+
+## Application Architecture — story-6358-s02-metrics-pilot (Flow metrics module, target; lands with Story 6358)
+
+Feature: S02 Metrics pilot (go/no-go gate), Epic 6510. Wave: DESIGN. Date: 2026-11-08. Paradigm: OOP, behaviour-free refactoring.
+Workspace: `docs/feature/story-6358-s02-metrics-pilot/feature-delta.md`. **Target, not today**: until the Story is delivered the code is flat in `Services`.
+
+### Module shape (ADR-270 layout, first use)
+
+- Root `Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/`, namespace `Lighthouse.Backend.Modules.FlowMetrics.<Layer>`, inside the one assembly.
+- `Domain`: `PercentileCalculator`, `XmRCalculator`, `SleRiskCalculator`, `BaselineValidationService`. Pure; depend on the kernel only.
+- `Application`: the two metrics-service ports with their records, `BaseMetricsService` and the Team and Portfolio services (S07b later), snapshot writers, series queries with the gap reconciler, history-filler ports, the snapshot-repository ports, and `Policies/` (recording, invalidation and demo backfill handlers).
+- `Adapters`: `Background/OverTimeHistoryFiller` (hosted service), `Persistence/` (the three snapshot repositories).
+- Stay outside: the Metrics controllers (S12a), the entities and `Models/Metrics` DTOs (EF snapshot names, S04b and S12c), Delivery metric types (Promises), blocked-transition capture (Work Items), Program.cs registrations (same lines, order pinned).
+
+### Enforcement (IlDependencies, inline two-way baselines)
+
+Domain depends on the kernel only; Application has no EF, `Data`, `Adapters` or `API` reference; outside types reach `Domain` only from a listed set (6) and `Application` only from `API`, the composition root, Reports, Refinement and a listed set of undeclared inbound edges (8); one `ApplicationCore` pattern (`Services` or `Modules`) keeps the older namespace rules whole while types move; a pin fixes the handler order for the two refresh events. S05f (read ports) stays separate.
+
+### ADR references
+
+ADR-270 (layout, glossary names), ADR-268 (ratchet convention).

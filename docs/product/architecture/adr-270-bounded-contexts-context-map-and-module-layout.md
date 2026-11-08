@@ -557,3 +557,19 @@ These were not decided on the board; the packaging Story of the named context de
   needs a name of its own. A naming decision for Epic 6455.
 - Where `ManualRank` (a Feature's Lighthouse rank) lives, together with Feature ranking above.
 - **Signals as a report type or as its own concept a report can include.**
+
+## Note, 2026-11-08 (DESIGN of Story 6358, the Flow metrics pilot)
+
+Two things fixed ahead of the pilot's lessons amendment, which is written when the pilot lands.
+
+- **Folder and namespace spelling (settles Decision 6's "exact folder names").** One word per context, PascalCase, the
+  glossary name: `Modules/FlowMetrics`, `Modules/WorkItems`, `Modules/TrackerIntegration`,
+  `Modules/OrganisationSetup`, `Modules/Forecasting`, `Modules/Promises`, `Modules/Refinement`, `Modules/Reports`,
+  `Modules/Access`, `Modules/Licensing`. Namespace: `Lighthouse.Backend.Modules.<Context>.<Layer>`. No folder for
+  Signals (target only) or Platform (composition root). Existing identifiers keep their spelling (`License*`).
+- **Known gaps, found by measuring the pilot's edges and settled in the lessons amendment.** The map above draws no
+  edge for two dependencies that exist in today's code: **Flow metrics ↔ Forecasting** (Forecasting reads
+  `ITeamMetricsService` and `ForecastThroughputStatus`; the metrics services take `IForecastFilterRuleService` and
+  resolve `IForecastService` through the service locator) and **Work Items → Flow metrics** beyond the event reaction
+  (`TeamDataService`, `WorkItemService`). The pilot names them in inline ratchet lists; whether the map or the code
+  moves is decided in the amendment.
