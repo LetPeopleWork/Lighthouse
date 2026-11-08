@@ -26,7 +26,7 @@
 | 24 | pages/Common/MetricsView/useDateRange.test.tsx | 37 | 37 | 0 | 0 | E0 | keep | a hook driven with renderHook and no DOM query; only the .tsx suffix and a router wrapper keep it here |
 | 25 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx | 17 | 0 | 0 | 17 | E2 | keep | counts of asks per opening are a loading flow in a dialog with licence and terminology contexts |
 | 26 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryNotesPanel.archived.test.tsx | 7 | 0 | 3 | 4 | E1 | keep | deliveryArchivedRefusal.ts exists and has no .test.ts of its own |
-| 27 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.overdue.test.tsx | 6 | 0 | 6 | 0 | - | keep | overdue word, colour and tooltip |
+| 27 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.overdue.test.tsx | 6 | 0 | 4 | 2 | E1 | keep | overdue word, colour and tooltip |
 | 28 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.picker.test.tsx | 6 | 0 | 5 | 1 | E1 | keep | the picker's narrowing rule sits in the tab |
 | 29 | pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryGanttChart.test.tsx | 2 | 0 | 2 | 0 | - | keep | mount smoke |
 | 30 | pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx | 4 | 0 | 4 | 0 | - | keep | tab order and routing |
@@ -50,5 +50,5 @@
 | 48 | hooks/useUsageDataConsent.test.tsx | 21 | 21 | 0 | 0 | E0 | keep | a hook driven with renderHook and no DOM query; only the .tsx suffix keeps it here |
 | 49 | pages/Connections/Edit/EditConnection.test.tsx | 15 | 0 | 15 | 0 | - | keep | page wiring to services, titles and the RBAC guard |
 | 50 | utils/charts/scatterMarkerUtils.test.tsx | 19 | 9 | 10 | 0 | E0 | keep | getBubbleSize and getMarkerColor are pure functions already tested directly; the render helpers need the DOM |
-| | Sum | 682 | 86 | 376 | 220 | | |
+| | Sum | 682 | 86 | 374 | 222 | | |
 files: 50 mismatches: 0

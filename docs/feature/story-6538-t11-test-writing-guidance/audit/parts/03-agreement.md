@@ -37,7 +37,14 @@ agreement 174/242 = 0.719008; kappa 0.5272
 confusion (first, second): {('U','U'): 55, ('U','M'): 56, ('M','U'): 12, ('M','M'): 93, ('L','L'): 26}
 ```
 
-**0.719008 is below 0.80 after the one round. No second round is run. The headline is marked "low confidence".** The raters agree on every Logic test (all 26 match, none is
-split). They disagree on the line between UI and Mixed: the second rater called a test Mixed whenever a rendered result stood beside a rule, where the first rater called it UI
-when the assertion states only that something is present. Only the Logic label feeds Low and Middle. High takes the Mixed tests too; section 5 shows High on both raters'
-labels for the ten files.
+**0.719008 is below 0.80 after the one round. No second round is run. The headline is marked "low confidence".**
+
+- **What the second rater saw.** Of the 86 Logic tests in the sample, **26 were rated by both raters and all 26 agree**. The other 60 were never seen by the second rater, among them 58 of the
+  67 tests that make up Low (picks 24 and 48, the two hook files; the other 9 are in pick 50). **Low rests mostly on tests only the first rater labelled.**
+- **The tightening narrowed what counts as Logic.** The added wording says a test that mounts a component is never Logic. That is a categorical exclusion, made within the one agreement
+  round the design allows. On the labels as first written (`labels-round1.tsv`) Middle was 17.9 % (interval 6.4 % to 29.7 %), on the final labels it is 12.6 % (2.5 % to 23.9 %); Low is 9.8 % on both,
+  High 47.8 % against 45.2 % (`bootstrap-output-round1.txt` against `bootstrap-output.txt`). The band is 4 on both, because even the larger Middle is far below N.
+- **The largest remaining kind was not re-read.** 56 of the 68 round-2 disagreements are first rater UI against second rater Mixed. The design asks the first rater to re-read, in the other 40
+  files, every test of a kind that disagreed; that was done for the Logic-against-Mixed kind and for Mixed tests that state only presence, and **not for the UI tests that state a value a rule decided**.
+  High (which takes the Mixed tests) is therefore likely understated. It is unlikely to lift the band: High's lower end is 33.9 % and N is 83.8 %, so a re-read would have to turn most of the UI tests (over half of all sampled tests) into Mixed.
+  Low and Middle do not depend on this kind.

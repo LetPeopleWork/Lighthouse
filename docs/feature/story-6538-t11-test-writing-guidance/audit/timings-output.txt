@@ -18,9 +18,9 @@ ten files with the most seconds (sum of their tests' durations):
 sample seconds matched by name: 666 of 682 tests (unmatched: parametrised or renamed titles, 16)
 sample seconds, matched tests: 61.27
   logic: 1.15 s over 85 matched tests
-  mixed: 33.37 s over 213 matched tests
-  UI: 26.76 s over 368 matched tests
+  mixed: 33.82 s over 215 matched tests
+  UI: 26.31 s over 366 matched tests
 seconds in the Low tests (logic in E0 files): 1.13 s (1.9 % of the sample's matched seconds)
 seconds in the Middle tests (logic in E0 and E1 files): 1.15 s (1.9 %)
-seconds in the High tests (logic plus mixed): 34.52 s (56.3 %)
+seconds in the High tests (logic plus mixed): 34.97 s (57.1 %)
 top-ten files that the pick rule also chose: ['components/Common/Team/ModifyTeamSettings.test.tsx']

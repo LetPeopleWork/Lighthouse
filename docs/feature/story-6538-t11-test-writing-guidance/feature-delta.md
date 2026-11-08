@@ -918,3 +918,13 @@ None of those files is staged or committed by this step; no guard test, budget f
 - Round 2: NEEDS_REVISION, no critical point. One high (the tag rule would have led an agent to strip the Playwright title tags the package scripts filter on: the rule now names them as real and kept) and four low (rule 7 source label, item 5 wording
   with `shouldAdvanceTime`, the full path of `slowTests.ts`, the pyramid figures marked "a target picture, not a measurement"). All five were applied after round 2; the rule allows no third round, and no critical point was open in either round.
   The pyramid sections and the tag section carry no example of their own, left as they are: the checklist and the layer rule carry them.
+
+## Wave: DELIVER / [REF] Slice A, review fixes (2026-11-08, step 01-01)
+
+One revision pass after the adversarial review (0 critical, 4 high). Audit record: the agreement paragraph and the verdict block now say that 26 of the 86 Logic tests were rated by both raters (Low rests mostly on
+unrated tests), report Low/Middle/High on the labels as first written beside the final ones (Middle 17.9 % against 12.6 %, band 4 on both, `audit/bootstrap-output-round1.txt`), describe the tightening as a narrowing of
+what counts as Logic, state that the UI-against-Mixed kind was not re-read (High likely understated), say that Low includes the E0 reading (0 % without it), and note the mixed bases of N (0.8373 on the current CSV
+total). Row 27 was relabelled (two Mixed tests, class E1); final numbers: Low 9.8 % (0.0 to 21.7), Middle 12.6 % (2.5 to 23.9), High 45.2 % (33.9 to 54.7), band 4. Skill: rule 5 uses `PAGE_SIZE + 1`, rule 2 shows one test
+with several expectations, rules 1, 2 and 3 state what was measured, the Stryker claim is softened, the CI limit factor and first-test allowance are named, and the audit pointer is gone.
+Re-run after the edits: patterns (nothing printed), names (all found, including `PAGE_SIZE`, `RowRangeFooter`, `LIMIT_FACTOR`, `FIRST_TEST_ALLOWANCE_SECONDS`; the known-missing name returns 0), guards (`git diff --stat HEAD` empty), the rule
+diffs (empty, 18 and 7 lines), and a full fresh read of both skill files, ending `End of SKILL.md` and `End of frontend.md`; outputs in `audit/names-output.txt` and `audit/guard-output.txt`.

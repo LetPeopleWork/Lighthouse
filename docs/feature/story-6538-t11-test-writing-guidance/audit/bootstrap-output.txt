@@ -5,5 +5,5 @@ N used: 0.8378
 |---|---|---|---|
 | Low | 9.8 % | 0.0 % | 21.7 % |
 | Middle | 12.6 % | 2.5 % | 23.9 % |
-| High | 44.9 % | 33.6 % | 54.5 % |
-band 4 (Low lower 0.0 %, Middle lower 2.5 %, High lower 33.6 %, against N 83.8 %)
+| High | 45.2 % | 33.9 % | 54.7 % |
+band 4 (Low lower 0.0 %, Middle lower 2.5 %, High lower 33.9 %, against N 83.8 %)

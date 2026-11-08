@@ -35,6 +35,7 @@ down beats adding one higher up. Time is the gate: each test has a per-test limi
 
 The frontend limit is read from `vitest.config.ts` (`BUDGET_SECONDS` for a `.test.tsx` test, `FAST_BUDGET_SECONDS` for any other test
 file) by the reporter `src/tests/timeBudget/timeBudgetReporter.ts`, which prints a `Time budget:` summary line ending in `offenders`.
+On CI every limit is multiplied by a factor and a file's first test gets an allowance (`LIMIT_FACTOR`, `FIRST_TEST_ALLOWANCE_SECONDS`).
 A test over its limit that is not in the allow-list `src/tests/timeBudget/slowTests.ts` fails the run. The allow-list says a test is "listed here with why it
 is slow": a listed test carries a reason and a ceiling, and is the exception, not a way out.
 
@@ -44,8 +45,8 @@ and the slowest tests in a green main run are page and dialog tests that render 
 ## A check that cannot fail is not a check
 
 Finding: a test that compares a value with the result of the same computation, or asserts on a mock set up to return the value it
-asserts, stays green after the production line is deleted. Stryker mutates product code per feature, but StrykerJS does not mutate JSX
-text, and a change that only adds or edits tests has nothing to mutate. So the deliberate break is the proof, not an option: delete or
+asserts, stays green after the production line is deleted. Stryker mutates product code per feature, and a mutation run may not catch a
+change to visible text; a change that only adds or edits tests has nothing to mutate. So the deliberate break is the proof, not an option: delete or
 invert the production line the test covers, run the one test, see it red for the reason in its name, put the line back.
 
 Example, with `getBubbleSize` from `src/utils/charts/scatterMarkerUtils.tsx`:

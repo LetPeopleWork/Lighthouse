@@ -6,8 +6,8 @@ a measured finding in words and one example.
 ### 1. Logic on the function, not through a render
 
 **Finding.** A page test that renders a large tree to prove a rule cost seconds in the slowest files of a green main run; the same kind of
-rule asserted on a function or hook took a fraction of a second. In the audit of a sample of the `.test.tsx` files, a test that proved a
-rule through a render took several times as long, on average, as one that called the function directly.
+rule asserted on a function or hook took a fraction of a second. Measured on a sample of page and dialog tests, a test that proved a
+rule through a render took about ten times as long, on average, as one that called the function directly (about a sixth of a second against about a hundredth).
 
 **Example.** Where a state's band sits is a rule of `computePaceBandRects`, exported from `WorkItemAgingChart.tsx`; no chart is rendered:
 
@@ -18,13 +18,14 @@ expect(rects[0].x).toBe(stateIndex - STATE_BAND_HALF_WIDTH);
 
 ### 2. One render per wiring
 
-**Finding.** The test files with the most seconds in a green main run each hold dozens of tests that render the same large form or page
-again and again; the heaviest take about ten seconds in all.
+**Finding.** The ten test files with the most seconds in a green main run take between eight and eleven seconds each, and hold between
+eighteen and over a hundred tests. In `ModifyTeamSettings.test.tsx`, one of them, each test renders the whole form again.
 
-**Example.** One render of `SaveStateIndicator`, every check of that wiring after it:
+**Example.** One test of one behaviour renders once and checks everything that behaviour shows. Sharing means several expectations in one
+test, not one render kept across several tests (rule 6: each test builds its own state):
 
 ```tsx
-it("says it could not save and offers a Retry that calls the handler", () => {
+it("offers a Retry when saving failed", () => {
   const onRetry = vi.fn();
   render(<SaveStateIndicator saveState="error" canSave={true} onRetry={onRetry} />);
   expect(screen.getByText("Couldn't save")).toBeInTheDocument();
@@ -35,8 +36,8 @@ it("says it could not save and offers a Retry that calls the handler", () => {
 
 ### 3. Small fixtures
 
-**Finding.** The tests the allow-list `slowTests.ts` names are paging and long-list tests over a couple of hundred Work Items, each
-allowed several seconds; the behaviour they prove needs a page's worth of items, not the whole list.
+**Finding.** The three entries of the allow-list `slowTests.ts` are a dialog over 243 Work Items, a refinement list of 143 Work Items and a
+long list of packages, with ceilings from 2.5 to 5.0 seconds. Each one renders a list far longer than the behaviour it proves needs.
 
 **Example.** Three Work Items show the order. Two hundred show only the cost:
 
@@ -73,9 +74,9 @@ machine.
 **Example.** A slow test is made smaller until it fits, not given more time:
 
 ```tsx
-// Not this: it("pages to the last item", async () => { /* 243 items */ }, 15_000);
-// This: the same test over a page and one more item, which fits the limit.
-const items = Array.from({ length: 11 }, (_, index) => generateWorkItem(index));
+// Not this: the same test over 243 Work Items, with a 15-second timeout added.
+// This: a page and one more item (PAGE_SIZE is exported by RowRangeFooter.tsx), which is all paging needs.
+const items = Array.from({ length: PAGE_SIZE + 1 }, (_, index) => generateWorkItem(index));
 ```
 
 ### 6. No order dependence

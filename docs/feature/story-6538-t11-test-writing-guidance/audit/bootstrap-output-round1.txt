@@ -1,0 +1,9 @@
+files 50, tests 682
+method: percentile bootstrap, files resampled within group, 10000 resamples, seed 6538, 2.5th and 97.5th percentiles, test-count weighted pooled ratio
+N used: 0.8378
+| Share | Point | Lower end (2.5th) | Upper end (97.5th) |
+|---|---|---|---|
+| Low | 9.8 % | 0.0 % | 21.7 % |
+| Middle | 17.9 % | 6.4 % | 29.7 % |
+| High | 47.8 % | 37.0 % | 57.3 % |
+band 4 (Low lower 0.0 %, Middle lower 6.4 %, High lower 37.0 %, against N 83.8 %)

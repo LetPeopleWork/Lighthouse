@@ -123,6 +123,8 @@ reading of the design's wording ("the function exists"); it puts 67 tests into L
 
 **The call is a label for the reader and plans nothing.** Every call is *keep*: no rewrite and no move of any test is planned in this Story under any band.
 
+**Row 27 was relabelled after review.** `DeliverySection.overdue.test.tsx` first read all UI. Two of its tests state a result a rule decided (the word "overdue" for a past target, and the colour it is drawn in), so under the Mixed definition they are Mixed and the file's class is E1 (`labels_round2.tsv`, last row).
+
 | # | File | Tests | Logic | UI | Mixed | E | Call | Note |
 |---|---|---|---|---|---|---|---|---|
 | 1 | components/Common/Charts/CumulativeStateTimeScopeControl.test.tsx | 8 | 0 | 5 | 3 | E1 | keep | the scope reset after an invalid pick is an effect; a pure validity check could come out |
@@ -151,7 +153,7 @@ reading of the design's wording ("the function exists"); it puts 67 tests into L
 | 24 | pages/Common/MetricsView/useDateRange.test.tsx | 37 | 37 | 0 | 0 | E0 | keep | a hook driven with renderHook and no DOM query; only the .tsx suffix and a router wrapper keep it here |
 | 25 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.loadsOnce.test.tsx | 17 | 0 | 0 | 17 | E2 | keep | counts of asks per opening are a loading flow in a dialog with licence and terminology contexts |
 | 26 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryNotesPanel.archived.test.tsx | 7 | 0 | 3 | 4 | E1 | keep | deliveryArchivedRefusal.ts exists and has no .test.ts of its own |
-| 27 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.overdue.test.tsx | 6 | 0 | 6 | 0 | - | keep | overdue word, colour and tooltip |
+| 27 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.overdue.test.tsx | 6 | 0 | 4 | 2 | E1 | keep | overdue word, colour and tooltip |
 | 28 | pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTab.picker.test.tsx | 6 | 0 | 5 | 1 | E1 | keep | the picker's narrowing rule sits in the tab |
 | 29 | pages/Portfolios/Detail/Components/DeliveryGrid/timeline/DeliveryGanttChart.test.tsx | 2 | 0 | 2 | 0 | - | keep | mount smoke |
 | 30 | pages/Portfolios/Detail/PortfolioDetail.reportsTab.test.tsx | 4 | 0 | 4 | 0 | - | keep | tab order and routing |
@@ -175,7 +177,7 @@ reading of the design's wording ("the function exists"); it puts 67 tests into L
 | 48 | hooks/useUsageDataConsent.test.tsx | 21 | 21 | 0 | 0 | E0 | keep | a hook driven with renderHook and no DOM query; only the .tsx suffix keeps it here |
 | 49 | pages/Connections/Edit/EditConnection.test.tsx | 15 | 0 | 15 | 0 | - | keep | page wiring to services, titles and the RBAC guard |
 | 50 | utils/charts/scatterMarkerUtils.test.tsx | 19 | 9 | 10 | 0 | E0 | keep | getBubbleSize and getMarkerColor are pure functions already tested directly; the render helpers need the DOM |
-| | Sum | 682 | 86 | 376 | 220 | | |
+| | Sum | 682 | 86 | 374 | 222 | | |
 files: 50 mismatches: 0
 
 ## 4. Second rater and agreement (scenario A-4)
@@ -216,10 +218,17 @@ agreement 174/242 = 0.719008; kappa 0.5272
 confusion (first, second): {('U','U'): 55, ('U','M'): 56, ('M','U'): 12, ('M','M'): 93, ('L','L'): 26}
 ```
 
-**0.719008 is below 0.80 after the one round. No second round is run. The headline is marked "low confidence".** The raters agree on every Logic test (all 26 match, none is
-split). They disagree on the line between UI and Mixed: the second rater called a test Mixed whenever a rendered result stood beside a rule, where the first rater called it UI
-when the assertion states only that something is present. Only the Logic label feeds Low and Middle. High takes the Mixed tests too; section 5 shows High on both raters'
-labels for the ten files.
+**0.719008 is below 0.80 after the one round. No second round is run. The headline is marked "low confidence".**
+
+- **What the second rater saw.** Of the 86 Logic tests in the sample, **26 were rated by both raters and all 26 agree**. The other 60 were never seen by the second rater, among them 58 of the
+  67 tests that make up Low (picks 24 and 48, the two hook files; the other 9 are in pick 50). **Low rests mostly on tests only the first rater labelled.**
+- **The tightening narrowed what counts as Logic.** The added wording says a test that mounts a component is never Logic. That is a categorical exclusion, made within the one agreement
+  round the design allows. On the labels as first written (`labels-round1.tsv`) Middle was 17.9 % (interval 6.4 % to 29.7 %), on the final labels it is 12.6 % (2.5 % to 23.9 %); Low is 9.8 % on both,
+  High 47.8 % against 45.2 % (`bootstrap-output-round1.txt` against `bootstrap-output.txt`). The band is 4 on both, because even the larger Middle is far below N.
+- **The largest remaining kind was not re-read.** 56 of the 68 round-2 disagreements are first rater UI against second rater Mixed. The design asks the first rater to re-read, in the other 40
+  files, every test of a kind that disagreed; that was done for the Logic-against-Mixed kind and for Mixed tests that state only presence, and **not for the UI tests that state a value a rule decided**.
+  High (which takes the Mixed tests) is therefore likely understated. It is unlikely to lift the band: High's lower end is 33.9 % and N is 83.8 %, so a re-read would have to turn most of the UI tests (over half of all sampled tests) into Mixed.
+  Low and Middle do not depend on this kind.
 
 ## 5. The estimate and the band (scenario A-5)
 
@@ -228,8 +237,9 @@ tests in E0 and E1 files, the headline. **High** = logic plus mixed tests in fil
 each 95 % interval; the point and the upper end are reported beside it.
 
 **N, the needed share, and its source.** Frontend alone, N = 4,907 of 5,857 = **0.8378** (about 84 %), the design's figure from the brief's counts: 90 % of 9,505 tests is 8,554.5, of
-which 3,648 are already fast, leaving 4,907 of the 5,857 `.tsx` tests to move. The 5,857 is also the number of `.test.tsx` rows in the CSV of the run named in section 6, so the brief's count
-is still the current one by that measure. No backend labels exist yet (T6 has not labelled them), so N is for the frontend alone and the whole-suite N is not used. As a sensitivity, N computed the
+which 3,648 are already fast, leaving 4,907 of the 5,857 `.tsx` tests to move. The 5,857 is also the number of `.test.tsx` rows in the CSV of the run named in section 6, but the brief's 9,505 total is its dated figure and not the current one:
+that CSV has 9,530 rows, of which 3,673 are not `.tsx`, so on today's rows N = (8,577 - 3,673) / 5,857 = 0.8373. The bases are mixed (the brief's counts, the CSV's rows, and the sample's weights, which are listing titles
+with a parametrised title counted once); the band is the same under each. No backend labels exist yet (T6 has not labelled them), so N is for the frontend alone and the whole-suite N is not used. As a sensitivity, N computed the
 same way from today's listing (fast tier = the 2,578 non-`.tsx` tests of 7,970, 90 % = 7,173, so 4,595 of 5,392 must move) is 0.852; the band below is 4 under that N too.
 
 **Method line.** Percentile bootstrap: files resampled with replacement within their group, 10,000 resamples, seed 6538, 2.5th and 97.5th percentiles (linear interpolation between order
@@ -243,17 +253,18 @@ N used: 0.8378
 |---|---|---|---|
 | Low | 9.8 % | 0.0 % | 21.7 % |
 | Middle | 12.6 % | 2.5 % | 23.9 % |
-| High | 44.9 % | 33.6 % | 54.5 % |
-band 4 (Low lower 0.0 %, Middle lower 2.5 %, High lower 33.6 %, against N 83.8 %)
+| High | 45.2 % | 33.9 % | 54.7 % |
+band 4 (Low lower 0.0 %, Middle lower 2.5 %, High lower 33.9 %, against N 83.8 %)
 ```
 
-Band: the lower end of High (33.6 %) is below N (83.8 %), so **band 4**: moving logic cannot reach 90 %.
+Band: the lower end of High (33.9 %) is below N (83.8 %), so **band 4**: moving logic cannot reach 90 %.
 
-Two sensitivity runs, printed by the same script, neither changes the band:
+Three sensitivity runs, printed by the same script (`bootstrap.py`), none changes the band:
 
 - With the second rater's labels in place of the first rater's for the ten files they read (`labels-second-rater-on-its-files.tsv`): Low 9.8 % (lower end 0.0 %), Middle 12.6 % (lower end
-  2.5 %), High 51.3 % (lower end 37.6 %, upper end 62.3 %). Band 4.
-- With N = 0.852 (above): lower ends unchanged, band 4.
+  2.5 %), High 51.6 % (lower end 37.9 %, upper end 62.5 %). Band 4.
+- With N = 0.852 (above), or 0.8373 (the current CSV total of 9,530 rows): lower ends unchanged, band 4.
+- With the labels as first written, before the tightened wording (`labels-round1.tsv`, `bootstrap-output-round1.txt`): Low 9.8 % (0.0 % to 21.7 %), Middle 17.9 % (6.4 % to 29.7 %), High 47.8 % (37.0 % to 57.3 %). Band 4.
 
 **The verdict rule and the band wording were not edited after a number was seen.** The verdict rule's text (the Statistic, the N definition and the four-band table, from "Statistic" to
 the line before "Which model does what") is compared with the DESIGN commit `3ad54cfa0`, and the band wording table with the DISTILL commit `f249408df` (`rule_diff.sh`); each diff is
@@ -297,11 +308,11 @@ ten files with the most seconds (sum of their tests' durations):
 sample seconds matched by name: 666 of 682 tests (unmatched: parametrised or renamed titles, 16)
 sample seconds, matched tests: 61.27
   logic: 1.15 s over 85 matched tests
-  mixed: 33.37 s over 213 matched tests
-  UI: 26.76 s over 368 matched tests
+  mixed: 33.82 s over 215 matched tests
+  UI: 26.31 s over 366 matched tests
 seconds in the Low tests (logic in E0 files): 1.13 s (1.9 % of the sample's matched seconds)
 seconds in the Middle tests (logic in E0 and E1 files): 1.15 s (1.9 %)
-seconds in the High tests (logic plus mixed): 34.52 s (56.3 %)
+seconds in the High tests (logic plus mixed): 34.97 s (57.1 %)
 top-ten files that the pick rule also chose: ['components/Common/Team/ModifyTeamSettings.test.tsx']
 ```
 
@@ -316,11 +327,11 @@ names per case). Seconds are reported beside the shares because a share moved is
 |---|---|---|
 | Low (logic in E0 files) | 1.13 | 1.9 % |
 | Middle (logic in E0 and E1 files) | 1.15 | 1.9 % |
-| High (logic plus mixed) | 34.52 | 56.3 % |
+| High (logic plus mixed) | 34.97 | 57.1 % |
 | All matched sample tests | 61.27 | 100 % |
 
-Per test, on the matched tests, the logic tests took about 13 ms on average (1.15 s over 85), the mixed tests about 157 ms (33.37 s over 213) and the UI tests about 73 ms (26.76 s over
-368). So the logic tests are the cheap ones: moving them saves little time even where the share is large. Time stays the rule.
+Per test, on the matched tests, the logic tests took about 13 ms on average (1.15 s over 85), the mixed tests about 157 ms (33.82 s over 215) and the UI tests about 72 ms (26.31 s over
+366). So the logic tests are the cheap ones: moving them saves little time even where the share is large. Time stays the rule.
 
 ## 7. No rewrite or move is planned (scenario A-7)
 
@@ -338,17 +349,20 @@ Three hits, none a step that rewrites or moves a test: the first is the text of 
 
 ## Verdict block (goes to the maintainer; the last section of this record)
 
-**LOW CONFIDENCE.** Agreement between the two raters stayed below 0.80 after the one round (0.719008, kappa 0.5272), so the headline carries a low-confidence mark. The mark concerns the
-line between UI and Mixed labels. The raters agree on every Logic test (26 of 26), and the Logic share is what Low and Middle are built from.
+**LOW CONFIDENCE.** Agreement between the two raters stayed below 0.80 after the one round (0.719008, kappa 0.5272), so the headline carries a low-confidence mark. Read it with these limits:
+
+- The raters agree on the 26 Logic tests they both rated, which are 26 of the 86 in the sample. **Low rests mostly on tests only the first rater labelled** (58 of its 67 tests).
+- The tightened wording narrowed what counts as Logic (a test that mounts a component is never Logic). On the labels as first written Middle was 17.9 %, on the final labels 12.6 %. The band is 4 on both.
+- The UI-against-Mixed kind (56 of the 68 round-2 disagreements) was **not re-read** in the other 40 files, so **High is likely understated**. It is unlikely to reach N: that needs most UI tests to turn Mixed.
 
 | Field | Content |
 |---|---|
 | Commit, file and test counts | Listing run at `ced6e04acb72b5adda3fa87fe45e749e584e9f80`; 410 `.test.tsx` files by `git ls-files` and by the Vitest listing, no difference to name; 5,392 tests in the listing (the CSV's 5,857 counts parametrised cases one by one). Sample: 50 files, 682 tests |
-| N used and where it came from | 0.8378 (4,907 of 5,857 `.tsx` tests must move for the fast tier to reach 90 %), the design's figure from the brief's counts; frontend alone, because the backend has no labels yet. Sensitivity: 0.852 from today's listing, same band |
-| Low, Middle, High | Test-count weighted, percentile bootstrap, files resampled within group, 10,000 resamples, seed 6538, 2.5th and 97.5th percentiles. **Low** 9.8 %, interval 0.0 % to 21.7 %. **Middle (headline)** 12.6 %, interval 2.5 % to 23.9 %. **High** 44.9 %, interval 33.6 % to 54.5 % (51.3 %, 37.6 % to 62.3 % on the second rater's labels for its ten files) |
-| Seconds | Run 42457232387 (green `main`, 2026-11-08), 666 of 682 sample tests matched: the Low tests took 1.13 s, the Middle tests 1.15 s, the High tests 34.52 s, out of 61.27 s. The logic tests are the cheap ones (about 13 ms each against about 157 ms for a mixed test), so a large share moved saves little time |
+| N used and where it came from | 0.8378 (4,907 of 5,857 `.tsx` tests must move for the fast tier to reach 90 %), the design's figure from the brief's counts, frontend alone because the backend has no labels yet. It mixes bases: the brief's total is 9,505, the current CSV has 9,530 rows (N = 0.8373 on that total), and the sample's weights are listing titles. Sensitivity: 0.852 from today's listing. The band is the same under all three |
+| Low, Middle, High | Test-count weighted, percentile bootstrap, files resampled within group, 10,000 resamples, seed 6538, 2.5th and 97.5th percentiles. **Low** 9.8 %, interval 0.0 % to 21.7 %. **Middle (headline)** 12.6 %, interval 2.5 % to 23.9 %. **High** 45.2 %, interval 33.9 % to 54.7 %. **Low includes the E0 reading** (tests that already call a hook or function directly, 67 tests in three files); without that reading Low is 0 %, and Middle and the band do not change. On the labels as first written (before the tightened wording): Low 9.8 % (0.0 % to 21.7 %), Middle 17.9 % (6.4 % to 29.7 %), High 47.8 % (37.0 % to 57.3 %), also band 4. With the second rater's labels for its ten files: High 51.6 % (37.9 % to 62.5 %) |
+| Seconds | Run 42457232387 (green `main`, 2026-11-08), 666 of 682 sample tests matched: the Low tests took 1.13 s, the Middle tests 1.15 s, the High tests 34.97 s, out of 61.27 s. The logic tests are the cheap ones (about 13 ms each against about 157 ms for a mixed test), so a large share moved saves little time |
 | Agreement and confidence | Round 1: 179 of 242 = 0.739669 (kappa 0.5816). Round 2, after the tightened wording: 174 of 242 = 0.719008 (kappa 0.5272). Low confidence, marked above |
-| Band and verdict | **Band 4**: the lower end of High (33.6 %) is below N (83.8 %). The verdict rule and the band wording are unchanged since the DESIGN and DISTILL commits (empty diffs, section 5) |
+| Band and verdict | **Band 4**: the lower end of High (33.9 %) is below N (83.8 %). The verdict rule and the band wording are unchanged since the DESIGN and DISTILL commits (empty diffs, section 5) |
 | What the maintainer decides | Whether to plan any rewrite. No rewrite is planned in this Story under any band |
 
 Wording sent to the maintainer for band 4: "Moving logic cannot reach 90 %. Keep the shares as a direction and let time stay the rule."

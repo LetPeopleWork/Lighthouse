@@ -21,3 +21,5 @@ reading of the design's wording ("the function exists"); it puts 67 tests into L
 
 **The call is a label for the reader and plans nothing.** Every call is *keep*: no rewrite and no move of any test is planned in this Story under any band.
 
+**Row 27 was relabelled after review.** `DeliverySection.overdue.test.tsx` first read all UI. Two of its tests state a result a rule decided (the word "overdue" for a past target, and the colour it is drawn in), so under the Mixed definition they are Mixed and the file's class is E1 (`labels_round2.tsv`, last row).
+

@@ -1,6 +1,6 @@
 pnpm test:fast                                               9 files
 vitest.config.ts                                             50 files
-BUDGET_SECONDS                                               3 files
+BUDGET_SECONDS                                               4 files
 FAST_BUDGET_SECONDS                                          1 files
 timeBudgetReporter.ts                                        8 files
 slowTests.ts                                                 24 files
@@ -24,6 +24,10 @@ Stryker                                                      669 files
 Playwright                                                   300 files
 pnpm test                                                    276 files
 CLAUDE.md                                                    293 files
+PAGE_SIZE                                                    13 files
+RowRangeFooter                                               13 files
+LIMIT_FACTOR                                                 7 files
+FIRST_TEST_ALLOWANCE_SECONDS                                 3 files
 @screenshot                                                  149 files
 @auth                                                        42 files
 @rbac                                                        48 files
