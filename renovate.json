@@ -73,6 +73,13 @@
       "matchDepTypes": ["postgres-upgrade-source"],
       "matchUpdateTypes": ["major"],
       "enabled": false
+    },
+    {
+      "description": "The Linux standalone AppImage only runs on systems whose glibc is at least as new as the one it was built on, and its WebKitGTK pins exist only on that Ubuntu release. A newer runner image would quietly drop every user on an older distribution, so the image moves only by hand, as a decision about the oldest Linux we support. Story #6601 replaces this pin with a build that no longer depends on GitHub's runner images.",
+      "matchManagers": ["github-actions"],
+      "matchFileNames": [".github/workflows/ci_package-linux-standalone.yml"],
+      "matchDepNames": ["ubuntu"],
+      "enabled": false
     }
   ],
   "customManagers": [
