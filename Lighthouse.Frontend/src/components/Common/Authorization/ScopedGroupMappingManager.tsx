@@ -31,12 +31,6 @@ interface ScopedGroupMappingManagerProps {
 	readOnly?: boolean;
 }
 
-const roleLabels: Record<ScopedRbacRole, string> = {
-	Viewer: "Viewer",
-	TeamAdmin: "Team Admin",
-	PortfolioAdmin: "Portfolio Admin",
-};
-
 const FORBIDDEN_MESSAGE =
 	"You don't have permission to view group mappings for this scope.";
 const GENERIC_LOAD_ERROR = "Failed to load group mappings.";
@@ -145,7 +139,7 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 						>
 							{allowedRoles.map((role) => (
 								<MenuItem key={role} value={role}>
-									{roleLabels[role]}
+									{getRoleLabel(role)}
 								</MenuItem>
 							))}
 						</TextField>
