@@ -234,12 +234,190 @@
 "stimulus": "F220",
 "user_result": "F222"
 }
+],
+"S3": [
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F29"
+],
+"still_passes_if": "F227",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::TheModuleApplication_DependsOnNoEntityFrameworkCoreDataAdaptersOrApiType"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F226"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F29"
+],
+"still_passes_if": "F231",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::TheModuleApplication_ReachesForecastingOnlyThroughTheListedEdges"
+},
+"expected": "F229",
+"stimulus": "F228",
+"user_result": "F230"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F29"
+],
+"still_passes_if": "F235",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::AnApplicationReachingOnlyItsOwnTypesTheModelsAndAListedForecastingEdge_PassesBothRules"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F30"
+],
+"still_passes_if": "F239",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::AnApplicationTypeReachingALayerBelowIt_FailsTheRuleAndIsNamed"
+},
+"expected": "F237",
+"stimulus": "F236",
+"user_result": "F238"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F31"
+],
+"still_passes_if": "F243",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::AListedEdgeBelowTheApplicationThatIsGone_FailsTheRuleAndIsNamedForDeletion"
+},
+"expected": "F241",
+"stimulus": "F240",
+"user_result": "F242"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F30"
+],
+"still_passes_if": "F247",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::AListedTypeReachingASecondForecastingType_FailsTheRuleAndNamesOnlyTheNewEdge"
+},
+"expected": "F245",
+"stimulus": "F244",
+"user_result": "F246"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F30"
+],
+"still_passes_if": "F251",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::ATypeReachingForecastingOnlyInsideAnAsyncMethod_FailsTheRuleAndIsNamed"
+},
+"expected": "F249",
+"stimulus": "F248",
+"user_result": "F250"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F31"
+],
+"still_passes_if": "F255",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::AListedForecastingEdgeThatIsGone_FailsTheRuleAndIsNamedForDeletion"
+},
+"expected": "F253",
+"stimulus": "F252",
+"user_result": "F254"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F34"
+],
+"still_passes_if": "F259",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::AnApplicationThatHoldsNoType_FailsBothRules"
+},
+"expected": "F257",
+"stimulus": "F256",
+"user_result": "F258"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F31"
+],
+"still_passes_if": "F263",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs::TheHandWrittenScannerOfTransitionReads_IsGone_AndTheTwoNameRulesOfTheMetricsServicesStay"
+},
+"expected": "F261",
+"stimulus": "F260",
+"user_result": "F262"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "independent reviewer of the S3 candidate diff",
+"reason": "F267"
+},
+"expected": "F265",
+"stimulus": "F264",
+"user_result": "F266"
+}
 ]
 },
 "counters": {
 "D": 7,
 "E": 3,
-"F": 223,
+"F": 267,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1198,10 +1376,54 @@
 "F221": "One failure names the newcomer as not on the list and the former caller with 'delete'",
 "F222": "One run shows both changes to who calls the Application",
 "F223": "A failure that names both but omits what the newcomer reaches; the single-newcomer cases pin that part",
+"F224": "Read the compiled production assembly and list every edge from a type in the Flow metrics module's Application into EF Core, the data layer, the module's Adapters or the API",
+"F225": "No such edge exists, and the module's Application holds types, so the rule checked something",
+"F226": "A maintainer sees that the module's Application depends on no storage, database context, adapter or API type, which covers the transition DbSets the old scanner checked in two services",
+"F227": "the forbidden pattern leaves out one of the four layers while production happens not to reach it; the made-up offender rows run the same forbidden pattern and catch that",
+"F228": "Read the compiled production assembly and list every edge from a type in the module's Application into Forecasting, matched exactly as the module map matches Forecasting",
+"F229": "The edges equal the inline list of three: BaseMetricsService to IForecastService through the service locator, TeamMetricsService to IForecastFilterRuleService, TeamMetricsService to ForecastDataSufficiencyPolicy",
 "F23": "dotnet test over Lighthouse.Backend.Tests, Architecture namespace: the rule reads the compiled production assembly Lighthouse.dll through IlDependencies",
+"F230": "A maintainer sees the only three ways the module reaches Forecasting, and any fourth one fails the build",
+"F231": "the rule compares dependent types instead of dependent-to-target pairs, so a listed service reaching a new Forecasting type would pass; the second-Forecasting-type row fails that",
+"F232": "Run both rules on a made-up Application whose types reach only their own Application and its Policies, a Models type, the base library, the service provider, and Forecasting through the one listed edge",
+"F233": "The rule below the Application finds no edge and passes; the Forecasting rule finds exactly the listed edge and passes",
+"F234": "Compliant code never fails the rules, so nobody switches them off",
+"F235": "the Forecasting rule reports an edge only once per type although the type reaches the listed target in two methods; the compliant type reaches it in one method only",
+"F236": "Run the rule below the Application, with the production forbidden layers, on five made-up Application types: one holding a DbSet of Feature transitions, one reading a DbSet of Work Item transitions only inside an async method, one reaching the database context, one in a Policies sub-namespace of the Application reaching a module adapter, one reaching an API type",
+"F237": "Each fails, naming its edge as not on the list, and asks to delete nothing",
+"F238": "A new reach of an Application type into storage, the database context, an adapter or the API fails the build and names the type and what it reaches, async bodies included; a transition DbSet is caught in any Application type, not only in the two services the old scanner named",
+"F239": "the rule catches a transition DbSet only as a field, a cast or a type token, not as a generic argument of a method it calls; no made-up type reaches it that way",
 "F24": "Mono.Cecil ModuleDefinition of Lighthouse.dll and of the test assembly (made-up fixtures)",
+"F240": "Run the rule below the Application on the compliant made-up Application with one listed edge into EF Core that no longer exists",
+"F241": "The rule fails, naming that edge with 'delete it', and names no new edge",
+"F242": "A list entry below the Application that is gone has to be deleted, so the dependency cannot come back unseen",
+"F243": "the rule treats a listed edge as stale only when its dependent reaches nothing forbidden any more; the made-up former user reaches nothing, so a dependent that still reaches a different forbidden type is not made up",
+"F244": "Run the Forecasting rule on a made-up Application type that is listed for IForecastService and also reaches IForecastFilterRuleService",
+"F245": "The rule fails, naming only the new edge to IForecastFilterRuleService as not on the list, and asks to delete nothing",
+"F246": "A listed service that starts using one more Forecasting type fails the build, not only a new service",
+"F247": "the rule compares pairs but drops a target reached through a constructor parameter that is never used in a method body; the made-up type uses both in a method",
+"F248": "Run the Forecasting rule on a made-up Application type that asks the service provider for IForecastService only inside an async method, with an empty list",
+"F249": "The rule fails, naming the edge to IForecastService as not on the list, in Debug and in Release builds",
 "F25": "Test rules depend on the production assembly's IL; production code depends on nothing in the tests",
+"F250": "A Forecasting edge written only inside an async method cannot slip past the rule in the Release build CI tests",
+"F251": "the async edge is caught only because the type also reaches Forecasting outside the async method; the made-up type holds only a service provider outside it",
+"F252": "Run the Forecasting rule on the compliant made-up Application with the live edge and one gone edge listed",
+"F253": "The rule fails, naming only the gone edge with 'delete it', and names no new edge",
+"F254": "A Forecasting edge that was removed has to come off the list, so the list only shrinks",
+"F255": "a gone edge whose dependent still reaches a different Forecasting type is reported as stale only together with a newcomer; that combined case is not made up here",
+"F256": "Run both rules on a made-up Application namespace that holds no type",
+"F257": "Both rules fail and say that no type lives in that namespace, so the rule checked nothing",
+"F258": "If the module's Application is renamed or emptied, the rules fail instead of passing while they guard nothing; the module is found by its namespace",
+"F259": "only an empty namespace is guarded, not a namespace that holds types with no edge at all; that case is the compliant row for the rule below, which must pass",
 "F26": "Rule verdict: NUnit pass, or failure message naming each newcomer with the fix hint and each stale entry with 'delete'",
+"F260": "Look in the test assembly for the old scanner test by name, list what the Metrics rules class reaches of raw method bodies and EF Core, and list which of its two name rules are still tests",
+"F261": "No test has the old scanner's name, the Metrics rules reach neither raw method bodies nor EF Core, and both name rules are still tests",
+"F262": "The hand-written opcode scanner and its transition DbSet list are gone, and the two rules about the shared per-state helper remain",
+"F263": "the scanner is kept under a new name in a different class; the rule below the Application then makes it redundant but not absent",
+"F264": "Check that the module map's non-empty canary names the five Flow metrics namespaces, and that its Forecasting pattern is visible to the other architecture tests",
+"F265": "The canary fails if any of Domain, Application, Application.Policies, Adapters.Background or Adapters.Persistence holds no type",
+"F266": "A renamed or emptied module namespace fails the canary",
+"F267": "The change is a list edit inside another test's assertions; a test can only see it by reading that test's source or the strings in its IL, which pins wording, not behaviour. Partly observed: the Application's emptiness fails both outbound rules here, and this oracle reads the Forecasting pattern by name so it compiles before and after the pattern is made internal",
 "F27": "Edges invisible in IL: reflection by string name, DI resolution by non-generic Type argument created at runtime",
 "F28": "A baseline check passes iff the set of measured entries equals the set of listed entries; otherwise it fails naming every newcomer and every stale entry in one message; order and duplicates do not matter",
 "F29": "equal lists pass",

@@ -419,6 +419,330 @@ A failure that names both but omits what the newcomer reaches; the single-newcom
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P1
+
+P2
+
+```text
+Read the compiled production assembly and list every edge from a type in the Flow metrics module's Application into EF Core, the data layer, the module's Adapters or the API
+```
+
+```text
+No such edge exists, and the module's Application holds types, so the rule checked something
+```
+
+```text
+A maintainer sees that the module's Application depends on no storage, database context, adapter or API type, which covers the transition DbSets the old scanner checked in two services
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:TheModuleApplication\_DependsOnNoEntityFrameworkCoreDataAdaptersOrApiType
+
+```text
+the forbidden pattern leaves out one of the four layers while production happens not to reach it; the made-up offender rows run the same forbidden pattern and catch that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Read the compiled production assembly and list every edge from a type in the module's Application into Forecasting, matched exactly as the module map matches Forecasting
+```
+
+```text
+The edges equal the inline list of three: BaseMetricsService to IForecastService through the service locator, TeamMetricsService to IForecastFilterRuleService, TeamMetricsService to ForecastDataSufficiencyPolicy
+```
+
+```text
+A maintainer sees the only three ways the module reaches Forecasting, and any fourth one fails the build
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:TheModuleApplication\_ReachesForecastingOnlyThroughTheListedEdges
+
+```text
+the rule compares dependent types instead of dependent-to-target pairs, so a listed service reaching a new Forecasting type would pass; the second-Forecasting-type row fails that
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run both rules on a made-up Application whose types reach only their own Application and its Policies, a Models type, the base library, the service provider, and Forecasting through the one listed edge
+```
+
+```text
+The rule below the Application finds no edge and passes; the Forecasting rule finds exactly the listed edge and passes
+```
+
+```text
+Compliant code never fails the rules, so nobody switches them off
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:AnApplicationReachingOnlyItsOwnTypesTheModelsAndAListedForecastingEdge\_PassesBothRules
+
+```text
+the Forecasting rule reports an edge only once per type although the type reaches the listed target in two methods; the compliant type reaches it in one method only
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+P2
+
+```text
+Run the rule below the Application, with the production forbidden layers, on five made-up Application types: one holding a DbSet of Feature transitions, one reading a DbSet of Work Item transitions only inside an async method, one reaching the database context, one in a Policies sub-namespace of the Application reaching a module adapter, one reaching an API type
+```
+
+```text
+Each fails, naming its edge as not on the list, and asks to delete nothing
+```
+
+```text
+A new reach of an Application type into storage, the database context, an adapter or the API fails the build and names the type and what it reaches, async bodies included; a transition DbSet is caught in any Application type, not only in the two services the old scanner named
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:AnApplicationTypeReachingALayerBelowIt\_FailsTheRuleAndIsNamed
+
+```text
+the rule catches a transition DbSet only as a field, a cast or a type token, not as a generic argument of a method it calls; no made-up type reaches it that way
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the rule below the Application on the compliant made-up Application with one listed edge into EF Core that no longer exists
+```
+
+```text
+The rule fails, naming that edge with 'delete it', and names no new edge
+```
+
+```text
+A list entry below the Application that is gone has to be deleted, so the dependency cannot come back unseen
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:AListedEdgeBelowTheApplicationThatIsGone\_FailsTheRuleAndIsNamedForDeletion
+
+```text
+the rule treats a listed edge as stale only when its dependent reaches nothing forbidden any more; the made-up former user reaches nothing, so a dependent that still reaches a different forbidden type is not made up
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the Forecasting rule on a made-up Application type that is listed for IForecastService and also reaches IForecastFilterRuleService
+```
+
+```text
+The rule fails, naming only the new edge to IForecastFilterRuleService as not on the list, and asks to delete nothing
+```
+
+```text
+A listed service that starts using one more Forecasting type fails the build, not only a new service
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:AListedTypeReachingASecondForecastingType\_FailsTheRuleAndNamesOnlyTheNewEdge
+
+```text
+the rule compares pairs but drops a target reached through a constructor parameter that is never used in a method body; the made-up type uses both in a method
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the Forecasting rule on a made-up Application type that asks the service provider for IForecastService only inside an async method, with an empty list
+```
+
+```text
+The rule fails, naming the edge to IForecastService as not on the list, in Debug and in Release builds
+```
+
+```text
+A Forecasting edge written only inside an async method cannot slip past the rule in the Release build CI tests
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:ATypeReachingForecastingOnlyInsideAnAsyncMethod\_FailsTheRuleAndIsNamed
+
+```text
+the async edge is caught only because the type also reaches Forecasting outside the async method; the made-up type holds only a service provider outside it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the Forecasting rule on the compliant made-up Application with the live edge and one gone edge listed
+```
+
+```text
+The rule fails, naming only the gone edge with 'delete it', and names no new edge
+```
+
+```text
+A Forecasting edge that was removed has to come off the list, so the list only shrinks
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:AListedForecastingEdgeThatIsGone\_FailsTheRuleAndIsNamedForDeletion
+
+```text
+a gone edge whose dependent still reaches a different Forecasting type is reported as stale only together with a newcomer; that combined case is not made up here
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+P2
+
+```text
+Run both rules on a made-up Application namespace that holds no type
+```
+
+```text
+Both rules fail and say that no type lives in that namespace, so the rule checked nothing
+```
+
+```text
+If the module's Application is renamed or emptied, the rules fail instead of passing while they guard nothing; the module is found by its namespace
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:AnApplicationThatHoldsNoType\_FailsBothRules
+
+```text
+only an empty namespace is guarded, not a namespace that holds types with no edge at all; that case is the compliant row for the rule below, which must pass
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Look in the test assembly for the old scanner test by name, list what the Metrics rules class reaches of raw method bodies and EF Core, and list which of its two name rules are still tests
+```
+
+```text
+No test has the old scanner's name, the Metrics rules reach neither raw method bodies nor EF Core, and both name rules are still tests
+```
+
+```text
+The hand-written opcode scanner and its transition DbSet list are gone, and the two rules about the shared per-state helper remain
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsApplicationOutboundArchUnitTest\.cs\:\:TheHandWrittenScannerOfTransitionReads\_IsGone\_AndTheTwoNameRulesOfTheMetricsServicesStay
+
+```text
+the scanner is kept under a new name in a different class; the rule below the Application then makes it redundant but not absent
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Check that the module map's non-empty canary names the five Flow metrics namespaces, and that its Forecasting pattern is visible to the other architecture tests
+```
+
+```text
+The canary fails if any of Domain, Application, Application.Policies, Adapters.Background or Adapters.Persistence holds no type
+```
+
+```text
+A renamed or emptied module namespace fails the canary
+```
+
+##### Disposition
+
+NotTested
+
+```text
+The change is a list edit inside another test's assertions; a test can only see it by reading that test's source or the strings in its IL, which pins wording, not behaviour. Partly observed: the Application's emptiness fails both outbound rules here, and this oracle reads the Forecasting pattern by name so it compiles before and after the pattern is made internal
+```
+
+independent reviewer of the S3 candidate diff
+
 ## Expectations
 
 ### Rows
