@@ -118,9 +118,14 @@ No frontend file changed, so no frontend gate ran.
      reach;
   4. the five canary namespaces were not each broken by hand; the reviewer reasoned from `IlDependencies.TypesIn`.
 
+## Gate decision
+
+Go-with-changes, decided by the maintainer on 2026-11-09 (ADR-270, "Gate decision"). Changes 1, 2 and 4 apply to
+every S03* Story from its start. The next Story that touches the module rules first lifts the Application rules into a
+shared class. S03b decides the Work Items → Flow metrics edge, and S03c the Flow metrics ↔ Forecasting cycle.
+
 ## Knowingly left open
 
-- **The gate.** ADR-270 recommends **go-with-changes**; the maintainer decides.
 - **Open question 3 of the design:** should S04b record a hard dependency on a migration spike for the three
   snapshot entities, whose names sit in the EF model snapshots of both providers?
 - **Open question 4 of the design:** `TeamMetricsService.UpdateTeamMetrics` writes through

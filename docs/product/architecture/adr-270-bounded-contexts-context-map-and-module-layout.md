@@ -686,13 +686,13 @@ Each lesson below says what to do differently in the next packaging Stories (S03
    the Story. *S03\*:* the bar for a move is "no file lower than its baseline", measured with the same test filter on
    the old and the new paths. Killing old survivors is its own improvement item.
 
-### Gate recommendation: go-with-changes
+### Gate decision: go-with-changes
 
-**Recommendation, awaiting the maintainer's decision. Not decided.**
+**Decided by the maintainer on 2026-11-09: go-with-changes.** The S03* Stories go ahead with the changes below.
 
 Read against the thresholds of D-10: no behavioural assertion changed; the edits outside the moved set were `using`
 lines and rule and path files; the Domain inbound list (R3) names 6 outside types, fewer than 15. That meets "go". The
-recommendation is **go-with-changes**, because lessons 1 to 8 change how the next contexts are packaged and two edges
+decision is **go-with-changes**, because lessons 1 to 8 change how the next contexts are packaged and two edges
 of the map need a decision. The changes:
 
 1. Every S03* starts with a rules-first feature (lesson 1) and measures its edges from the IL before writing its
@@ -702,8 +702,12 @@ of the map need a decision. The changes:
 3. The module rules become shared. The Domain and Adapters inbound rules already sit on `FlowMetricsModuleRules` with
    the namespaces as parameters; the Application inbound and outbound rules are still private to their oracle files.
    Lift them there too, and give the class a name that fits any module, before an S03* copies them.
+   *Decided:* the next Story that touches these rules does the lift, as its first step.
 4. Each S03* declares its EXAMINE commands up front (lesson 8), and uses "no file lower than its baseline" as the
    mutation bar of a move (lesson 9).
 5. The map decides the two undeclared edges: **Flow metrics ↔ Forecasting** is a cycle (R4 and R5), and **Work Items
    → Flow metrics** is a direct call beyond the event (R3 and R4). Both stay ratcheted. Which side moves is for S03b
    (Work Items, ratchet candidate 1) and S03c (Forecasting) to decide, and it must be decided before S09b.
+   *Decided:* S03b decides the Work Items edge and S03c the Forecasting cycle, each in its own DESIGN.
+
+Changes 1, 2 and 4 apply to every S03* Story from its start.
