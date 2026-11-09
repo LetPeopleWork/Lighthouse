@@ -743,6 +743,184 @@ The change is a list edit inside another test's assertions; a test can only see 
 
 independent reviewer of the S3 candidate diff
 
+### S4
+
+##### Covers
+
+P3
+
+```text
+Look up each of the 33 listed Flow metrics unit-test files in the test project's source tree and its classes in the compiled test assembly
+```
+
+```text
+Each file sits only in the Flow metrics module test folder of its layer (Domain, Application, Application Policies, Background adapters or Persistence adapters), no copy is left in its old place, and every class compiled from it lives in that layer's test namespace
+```
+
+```text
+A developer finds every Flow metrics unit test next to the module, in the layer of the code it tests
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsUnitTestPlacementTest\.AFlowMetricsUnitTestFile\_SitsOnlyInItsModuleLayerFolder\_AndItsClassesLiveInThatLayer
+
+```text
+a listed test file declares only a top-level enum, interface or delegate with no method body, which the symbols cannot tie to a file; or a test file that is not on the list of 33 stays under Services
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Read every class the compiled test assembly ties to a file under the Flow metrics module test folder
+```
+
+```text
+At least one class is found there, and each one's namespace is the namespace its folder gives
+```
+
+```text
+A test's namespace tells a developer and a test filter exactly where its file sits
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsUnitTestPlacementTest\.EveryClassUnderTheFlowMetricsModuleTestFolder\_HasTheNamespaceOfItsFolder
+
+```text
+the module test folder holds a type with no method body whose namespace disagrees with its folder; or a test class sits in the module folder although its subject is not a module type
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Run the file placement rule on made-up test trees: a file left in its old place, a moved file with a copy left behind, a file moved into the wrong layer folder, and a file moved into its layer folder next to a neighbour
+```
+
+```text
+The first three each name the missing layer path and every other path that still holds the file; the compliant tree reports nothing
+```
+
+```text
+An unfinished or wrong move cannot pass unseen, and a finished move is not flagged
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsUnitTestPlacementTest\.AMadeUpTestFileOutsideItsLayerFolder\_IsReported\_AndOneThatSitsThereIsNot
+
+```text
+the rule compares paths case-sensitively, so a file whose folder differs only in letter case would be reported as missing on a case-insensitive disk rather than accepted
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Run the namespace and folder rule on the classes compiled from the placement test's own file, which holds a made-up class whose namespace names the module Domain test folder and a compliant twin in the folder's own namespace
+```
+
+```text
+Exactly the made-up class is reported, naming its namespace, its file and the namespace its folder gives; the twin and the placement test class are not reported
+```
+
+```text
+A test class whose namespace disagrees with its folder is named, and a correct one is not
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Architecture\.FlowMetricsUnitTestPlacementTest\.AMadeUpClassWhoseNamespaceDoesNotMatchItsFolder\_IsReported\_AndItsCompliantTwinIsNot
+
+```text
+the folder namespace is derived from the path under the test project with a fixed root namespace, so a rule that ignored the root and compared only the trailing folder names would also pass
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Run the whole backend test suite without the live tracker categories, before and after the move
+```
+
+```text
+Every test passes and the number of tests is the same after the move as before it, apart from the placement tests added with this oracle
+```
+
+```text
+Nothing a user sees changes: every existing test still runs and passes
+```
+
+##### Disposition
+
+Tested
+
+dotnet test Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Lighthouse\.Backend\.Tests\.csproj \-\-filter TestCategory\!\=JiraIntegration\&TestCategory\!\=LinearIntegration\&TestCategory\!\=AdoIntegration\&TestCategory\!\=ServiceNowIntegration\&TestCategory\!\=GithubIntegration
+
+```text
+a test row inside a moved class is replaced by another with the same count, which neither the count nor the placement test sees
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Compare each moved file with its original, and check that no production file and no EF model file changed
+```
+
+```text
+Each move is a rename whose only edits are the namespace line and using lines; class names, test bodies, production code and the EF model are unchanged
+```
+
+```text
+The move changes where the tests live and nothing about what they check or what the product does
+```
+
+##### Disposition
+
+NotTested
+
+```text
+No declared architecture or contract locator observes the content of a diff; pinning file text would couple the oracle to every line of 33 files
+```
+
+slice reviewer\, reading git diff \-M of the slice commit
+
 ## Expectations
 
 ### Rows

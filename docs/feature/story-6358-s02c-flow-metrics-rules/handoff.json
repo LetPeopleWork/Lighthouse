@@ -412,12 +412,92 @@
 "stimulus": "F264",
 "user_result": "F266"
 }
+],
+"S4": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F271",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsUnitTestPlacementTest.AFlowMetricsUnitTestFile_SitsOnlyInItsModuleLayerFolder_AndItsClassesLiveInThatLayer"
+},
+"expected": "F269",
+"stimulus": "F268",
+"user_result": "F270"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F275",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsUnitTestPlacementTest.EveryClassUnderTheFlowMetricsModuleTestFolder_HasTheNamespaceOfItsFolder"
+},
+"expected": "F273",
+"stimulus": "F272",
+"user_result": "F274"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F279",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsUnitTestPlacementTest.AMadeUpTestFileOutsideItsLayerFolder_IsReported_AndOneThatSitsThereIsNot"
+},
+"expected": "F277",
+"stimulus": "F276",
+"user_result": "F278"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F283",
+"test": "Lighthouse.Backend.Tests.Architecture.FlowMetricsUnitTestPlacementTest.AMadeUpClassWhoseNamespaceDoesNotMatchItsFolder_IsReported_AndItsCompliantTwinIsNot"
+},
+"expected": "F281",
+"stimulus": "F280",
+"user_result": "F282"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F287",
+"test": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
+},
+"expected": "F285",
+"stimulus": "F284",
+"user_result": "F286"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "slice reviewer, reading git diff -M of the slice commit",
+"reason": "F291"
+},
+"expected": "F289",
+"stimulus": "F288",
+"user_result": "F290"
+}
 ]
 },
 "counters": {
 "D": 7,
 "E": 3,
-"F": 267,
+"F": 291,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1424,9 +1504,33 @@
 "F265": "The canary fails if any of Domain, Application, Application.Policies, Adapters.Background or Adapters.Persistence holds no type",
 "F266": "A renamed or emptied module namespace fails the canary",
 "F267": "The change is a list edit inside another test's assertions; a test can only see it by reading that test's source or the strings in its IL, which pins wording, not behaviour. Partly observed: the Application's emptiness fails both outbound rules here, and this oracle reads the Forecasting pattern by name so it compiles before and after the pattern is made internal",
+"F268": "Look up each of the 33 listed Flow metrics unit-test files in the test project's source tree and its classes in the compiled test assembly",
+"F269": "Each file sits only in the Flow metrics module test folder of its layer (Domain, Application, Application Policies, Background adapters or Persistence adapters), no copy is left in its old place, and every class compiled from it lives in that layer's test namespace",
 "F27": "Edges invisible in IL: reflection by string name, DI resolution by non-generic Type argument created at runtime",
+"F270": "A developer finds every Flow metrics unit test next to the module, in the layer of the code it tests",
+"F271": "a listed test file declares only a top-level enum, interface or delegate with no method body, which the symbols cannot tie to a file; or a test file that is not on the list of 33 stays under Services",
+"F272": "Read every class the compiled test assembly ties to a file under the Flow metrics module test folder",
+"F273": "At least one class is found there, and each one's namespace is the namespace its folder gives",
+"F274": "A test's namespace tells a developer and a test filter exactly where its file sits",
+"F275": "the module test folder holds a type with no method body whose namespace disagrees with its folder; or a test class sits in the module folder although its subject is not a module type",
+"F276": "Run the file placement rule on made-up test trees: a file left in its old place, a moved file with a copy left behind, a file moved into the wrong layer folder, and a file moved into its layer folder next to a neighbour",
+"F277": "The first three each name the missing layer path and every other path that still holds the file; the compliant tree reports nothing",
+"F278": "An unfinished or wrong move cannot pass unseen, and a finished move is not flagged",
+"F279": "the rule compares paths case-sensitively, so a file whose folder differs only in letter case would be reported as missing on a case-insensitive disk rather than accepted",
 "F28": "A baseline check passes iff the set of measured entries equals the set of listed entries; otherwise it fails naming every newcomer and every stale entry in one message; order and duplicates do not matter",
+"F280": "Run the namespace and folder rule on the classes compiled from the placement test's own file, which holds a made-up class whose namespace names the module Domain test folder and a compliant twin in the folder's own namespace",
+"F281": "Exactly the made-up class is reported, naming its namespace, its file and the namespace its folder gives; the twin and the placement test class are not reported",
+"F282": "A test class whose namespace disagrees with its folder is named, and a correct one is not",
+"F283": "the folder namespace is derived from the path under the test project with a fixed root namespace, so a rule that ignored the root and compared only the trailing folder names would also pass",
+"F284": "Run the whole backend test suite without the live tracker categories, before and after the move",
+"F285": "Every test passes and the number of tests is the same after the move as before it, apart from the placement tests added with this oracle",
+"F286": "Nothing a user sees changes: every existing test still runs and passes",
+"F287": "a test row inside a moved class is replaced by another with the same count, which neither the count nor the placement test sees",
+"F288": "Compare each moved file with its original, and check that no production file and no EF model file changed",
+"F289": "Each move is a rename whose only edits are the namespace line and using lines; class names, test bodies, production code and the EF model are unchanged",
 "F29": "equal lists pass",
+"F290": "The move changes where the tests live and nothing about what they check or what the product does",
+"F291": "No declared architecture or contract locator observes the content of a diff; pinning file text would couple the oracle to every line of 33 files",
 "F3": "Every edge into and out of the Flow metrics module is named: outside types reach its Domain only from the listed types and its Adapters only from the composition root (R3), reach its Application only from API, the composition root, Reports, Refinement and the listed undeclared edges (R4), and its Application depends on no EF Core, Data, Adapters or API type and reaches Forecasting only through the listed types (R5); each rule fails on a new offender and on a stale baseline entry, also for an edge written only inside an async method",
 "F30": "newcomer fails, named",
 "F31": "stale entry fails, named with delete",
