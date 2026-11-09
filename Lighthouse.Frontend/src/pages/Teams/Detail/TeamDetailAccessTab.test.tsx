@@ -110,7 +110,9 @@ describe("The Access tab of a Team", () => {
 				/^Also reachable through access to all Teams and Portfolios$/,
 			),
 		).toBeInTheDocument();
-		expect(screen.getByText(/^Viewer: group team-readers$/)).toBeInTheDocument();
+		expect(
+			screen.getByText(/^Viewer: group team-readers$/),
+		).toBeInTheDocument();
 		expect(screen.getByText("Team Group Access")).toBeInTheDocument();
 		expect(screen.queryByLabelText(/^Group value$/)).not.toBeInTheDocument();
 		expect(

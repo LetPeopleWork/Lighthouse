@@ -142,7 +142,9 @@ describe("The rules for all Teams and Portfolios on a unit's Access tab", () => 
 				/^Also reachable through access to all Teams and Portfolios$/,
 			),
 		).toBeInTheDocument();
-		expect(screen.getByText(/^Viewer: group team-readers$/)).toBeInTheDocument();
+		expect(
+			screen.getByText(/^Viewer: group team-readers$/),
+		).toBeInTheDocument();
 		expect(
 			screen.getByText(
 				/^Removing someone below does not take away what these rules give\.$/,

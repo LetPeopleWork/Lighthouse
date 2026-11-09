@@ -58,7 +58,9 @@ const authService = {
 const openAccessSettings = () =>
 	render(
 		<QueryClientProvider
-			client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+			client={
+				new QueryClient({ defaultOptions: { queries: { retry: false } } })
+			}
 		>
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({
@@ -113,10 +115,12 @@ describe("Settings > Access, people who hold no role of their own", () => {
 			"No direct role",
 			"Actions",
 		]);
-		expect(screen.getByTestId("rbac-status-unassigned-count")).toHaveTextContent(
-			/^No direct role: 1$/,
+		expect(
+			screen.getByTestId("rbac-status-unassigned-count"),
+		).toHaveTextContent(/^No direct role: 1$/);
+		const filter = screen.getByLabelText(
+			/^Show users with no direct role only$/,
 		);
-		const filter = screen.getByLabelText(/^Show users with no direct role only$/);
 		expect(screen.queryByText(/unassigned/i)).not.toBeInTheDocument();
 
 		fireEvent.click(filter);
