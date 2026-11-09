@@ -19,6 +19,51 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         public const string TheBaseLibrary = @"^System(\.|$)";
 
+        public const string FlowMetricsModule = @"^Lighthouse\.Backend\.Modules\.FlowMetrics(\.|$)";
+
+        public const string FlowMetricsAdapters = @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters(\.|$)";
+
+        public const string TheCompositionRoot = "Lighthouse.Backend.Program";
+
+        public const string AnyNamespace = "^";
+
+        /// <summary>
+        /// The types outside the module that reach its Domain are exactly the listed ones: a new one fails and is
+        /// named, and a listed one that no longer reaches the Domain fails until it is deleted from the list.
+        /// </summary>
+        public static InboundVerdict DomainIsReachedFromOutsideOnlyBy(ModuleDefinition module, IReadOnlyCollection<string> listed, string moduleNamespaces = FlowMetricsModule, string domain = FlowMetricsDomain, string outside = AnyNamespace)
+            => new(
+                OutsideDependents(module, moduleNamespaces, domain, outside),
+                listed,
+                $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{domain}\" only " +
+                "from the types on the list, because the Domain holds the module's own calculations and the module answers the " +
+                "rest of the code through its Application. Every outside type that reaches the Domain directly ties that code to " +
+                "how the module calculates, so the module can no longer change its calculations on its own. Call the module's " +
+                "Application instead; the list only shrinks.");
+
+        /// <summary>
+        /// Nothing outside the module reaches its Adapters except the composition root, which registers them. The
+        /// composition root is compared both ways too, so a root that stops reaching the Adapters fails as well.
+        /// </summary>
+        public static InboundVerdict AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot(ModuleDefinition module, string compositionRoot = TheCompositionRoot, string moduleNamespaces = FlowMetricsModule, string adapters = FlowMetricsAdapters, string outside = AnyNamespace)
+            => new(
+                OutsideDependents(module, moduleNamespaces, adapters, outside),
+                [compositionRoot],
+                $"Types outside namespaces matching \"{moduleNamespaces}\" should reach types in namespaces matching \"{adapters}\" only " +
+                $"from the composition root {compositionRoot}, because the Adapters are how the module talks to storage and runs " +
+                "in the background: the composition root registers them and everything else reaches the module through its " +
+                "Application. An outside type that uses an adapter directly bypasses the module and depends on how it stores " +
+                "its data. Depend on the module's Application contract instead.");
+
+        private static List<IlDependent> OutsideDependents(ModuleDefinition module, string moduleNamespaces, string target, string outside)
+        {
+            var insideTheModule = IlDependencies.TypesIn(module, moduleNamespaces).ToHashSet(StringComparer.Ordinal);
+
+            return IlDependencies.DependentsIn(module, outside, type => IlDependencies.ResidesInNamespaceMatching(type, target))
+                .Where(dependent => !insideTheModule.Contains(dependent.TypeName))
+                .ToList();
+        }
+
         /// <summary>
         /// Each named type lives in the layer's namespace, and no type of that name is left behind in the namespace
         /// it moved out of. Types are named as strings, so the rule compiles before and after the move.
@@ -83,5 +128,24 @@ namespace Lighthouse.Backend.Tests.Architecture
             => type.DeclaringType is null ? type : OutermostOf(type.DeclaringType);
 
         private static string SimpleNameOf(string fullName) => fullName[(fullName.LastIndexOf('.') + 1)..];
+    }
+
+    /// <summary>
+    /// The outside types a rule caught reaching a part of a module, each with what it reached, and the list of the
+    /// ones allowed to. <see cref="Check"/> compares the two both ways.
+    /// </summary>
+    internal sealed record InboundVerdict(IReadOnlyList<IlDependent> Dependents, IReadOnlyCollection<string> Listed, string Rule)
+    {
+        public void Check()
+        {
+            var reachedByNewcomers = Dependents
+                .Where(dependent => !Listed.Contains(dependent.TypeName, StringComparer.Ordinal))
+                .Select(dependent => $"{dependent.TypeName} reaches {string.Join(", ", dependent.Targets)}");
+
+            InlineBaseline.AssertMatches(
+                Dependents.Select(dependent => dependent.TypeName),
+                Listed,
+                $"{Rule}{Environment.NewLine}{string.Join(Environment.NewLine, reachedByNewcomers)}");
+        }
     }
 }
