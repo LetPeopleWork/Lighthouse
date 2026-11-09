@@ -961,4 +961,32 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules FlowMetrics, Debug and Release: 102/102 passed each. Includes Domain/Adapters/Application reach rules, Application-free-of-EF/Data/Adapters/API, Forecasting edges, stale-entry 'NamedForDeletion' tests, newcomer-named tests, async-only newcomer tests (Domain, Adapters, Application, Forecasting, DbSet), module-Domain purity, TheHandWrittenScannerOfTransitionReads_IsGone, DbSet-transition counterexamples (sync and async) fail and are named. Real-code rules pass.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+architecture-rules FlowMetrics, Debug and Release: 102/102 passed each. Includes Domain/Adapters/Application reach rules, Application-free-of-EF/Data/Adapters/API, Forecasting edges, stale-entry 'NamedForDeletion' tests, newcomer-named tests, async-only newcomer tests (Domain, Adapters, Application, Forecasting, DbSet), module-Domain purity, TheHandWrittenScannerOfTransitionReads_IsGone, DbSet-transition counterexamples (sync and async) fail and are named. Real-code rules pass.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+ef-model-unchanged: Sqlite and Postgres both report 'No changes have been made to the model since the last migration.' backend-tests (filtered suite): 13132 total, 13120 passed, 12 skipped, 0 failed, exit 0. Folder/namespace tests (33 classes by layer, EveryClass...HasTheNamespaceOfItsFolder, no copy left behind) pass. Not probed: metrics-answers-compare (budget), and that test edits were only folder/namespace/using (no diff access, source-blind); baseline skipped count and test count before change not observed.
+```
