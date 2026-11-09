@@ -1924,6 +1924,10 @@ Where refusal lives: GetTeamSystemWideRulesAsync and GetPortfolioSystemWideRules
 An unknown Team or Portfolio id answers 404 Not Found on the unit rules read (recommended option, consistent with the other unit routes), never an empty list that would read as no rules. The guard answers first: a caller without access to manage that unit gets 403 for an existing unit; for an id that does not exist a System Admin gets 404.
 ```
 
+```text
+S3 lists group rules only; the everyone signed in line on the notice and in the unit rules read belongs to S4. The unknown-unit 404 is owned by TeamExistsAsync and PortfolioExistsAsync on IRbacAdministrationService: the controller asks the port whether the unit exists, because the API layer may not reach a repository.
+```
+
 ##### Constraints
 
 None.
@@ -2090,14 +2094,14 @@ Extend
 Existing page test; its non-System-Admin form assertion moves to the System Admin case
 ```
 
-Show unassigned users only
+Show users with no direct role only
 
-Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettings\.test\.tsx\:166
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettings\.test\.tsx\:169
 
 Extend
 
 ```text
-Existing settings test; the label becomes Show users with no direct role only
+Existing settings test; its label was Show unassigned users only and becomes Show users with no direct role only
 ```
 
 ##### Impact
@@ -2109,7 +2113,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Interfaces\/Authorization\/I
 Changed
 
 ```text
-Two members
+Four members: GetTeamSystemWideRulesAsync, GetPortfolioSystemWideRulesAsync, and TeamExistsAsync and PortfolioExistsAsync for the unknown-unit 404
 ```
 
 test double
@@ -2381,7 +2385,7 @@ None.
 ###### L9
 
 ```text
-The rules of a unit are the distinct role and holder pairs of every non System Admin rule whose AppliesTo reaches the unit, plus everyone signed in when the switch is on
+In S3 the rules of a unit are the distinct role and holder pairs of every non System Admin group rule whose AppliesTo reaches the unit; S3 covers group rules only, and S4 adds the everyone signed in line when the switch is on
 ```
 
 Invariant
@@ -3494,7 +3498,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+The Access tab notice renders the role through getRoleLabel; for an Admin-on-all rule S5 must render Admin: group <value> as sketched, not Team Admin or Portfolio Admin. The S5 oracle pins this line.
+```
 
 ##### Constraints
 

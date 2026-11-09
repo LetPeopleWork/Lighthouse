@@ -590,7 +590,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 589,
+"F": 594,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -1561,14 +1561,15 @@
 "F232",
 "F567",
 "F568",
-"F569"
+"F569",
+"F591"
 ],
 "impact": [
 {
 "decision": "Changed",
 "kind": "port interface",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs:1",
-"reason": "F245"
+"reason": "F593"
 },
 {
 "decision": "Migrated",
@@ -1667,7 +1668,7 @@
 "kind": "Invariant",
 "layer": "Application",
 "owner": "RbacAdministrationService",
-"statement": "F265",
+"statement": "F594",
 "treatment": {
 "cases": [
 "F266",
@@ -1796,9 +1797,9 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:166",
-"reason": "F571",
-"symbol": "Show unassigned users only"
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:169",
+"reason": "F592",
+"symbol": "Show users with no direct role only"
 }
 ]
 },
@@ -2405,6 +2406,9 @@
 "subject": "F388"
 }
 ],
+"decisions": [
+"F590"
+],
 "impact": [
 {
 "decision": "Changed",
@@ -2855,7 +2859,6 @@
 "F262": "Warning notice per M-S3, never hidden",
 "F263": "Rules listed for a unit",
 "F264": "Twin rows; which people a rule reaches",
-"F265": "The rules of a unit are the distinct role and holder pairs of every non System Admin rule whose AppliesTo reaches the unit, plus everyone signed in when the switch is on",
 "F266": "one Viewer rule",
 "F267": "twin rows: one line",
 "F268": "System Admin group: absent",
@@ -3186,7 +3189,6 @@
 "F569": "An unknown Team or Portfolio id answers 404 Not Found on the unit rules read (recommended option, consistent with the other unit routes), never an empty list that would read as no rules. The guard answers first: a caller without access to manage that unit gets 403 for an existing unit; for an id that does not exist a System Admin gets 404.",
 "F57": "Role or scope ints written by a newer release and read by an older one",
 "F570": "Existing page test; its non-System-Admin form assertion moves to the System Admin case",
-"F571": "Existing settings test; the label becomes Show users with no direct role only",
 "F572": "Updated by the crafter in the GREEN commit that changes the wiring",
 "F573": "Updated by the crafter in the GREEN commit that changes the copy",
 "F574": "Caller does not manage the unit members (Viewer, or Admin of another unit)",
@@ -3207,6 +3209,11 @@
 "F588": "A mistyped or deleted unit is not shown as a unit with no rules reaching it",
 "F589": "Answering an empty list for an unknown unit",
 "F59": "No two accepted switch writes were based on the same token",
+"F590": "The Access tab notice renders the role through getRoleLabel; for an Admin-on-all rule S5 must render Admin: group <value> as sketched, not Team Admin or Portfolio Admin. The S5 oracle pins this line.",
+"F591": "S3 lists group rules only; the everyone signed in line on the notice and in the unit rules read belongs to S4. The unknown-unit 404 is owned by TeamExistsAsync and PortfolioExistsAsync on IRbacAdministrationService: the controller asks the port whether the unit exists, because the API layer may not reach a repository.",
+"F592": "Existing settings test; its label was Show unassigned users only and becomes Show users with no direct role only",
+"F593": "Four members: GetTeamSystemWideRulesAsync, GetPortfolioSystemWideRulesAsync, and TeamExistsAsync and PortfolioExistsAsync for the unknown-unit 404",
+"F594": "In S3 the rules of a unit are the distinct role and holder pairs of every non System Admin group rule whose AppliesTo reaches the unit; S3 covers group rules only, and S4 adds the everyone signed in line when the switch is on",
 "F6": "A System Admin turns on Everyone signed in, after a confirm, and every signed-in person with a profile reads every Team and Portfolio; off by default and no change without opting in",
 "F60": "Right after a rule removal no row with that group, role and scope remains",
 "F61": "One SaveChanges under the token; insert when no row exists",

@@ -1835,6 +1835,9 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 <pre><code>An unknown Team or Portfolio id answers 404 Not Found on the unit rules read (recommended option, consistent with the other unit routes), never an empty list that would read as no rules. The guard answers first: a caller without access to manage that unit gets 403 for an existing unit; for an id that does not exist a System Admin gets 404.
 </code></pre>
 
+<pre><code>S3 lists group rules only; the everyone signed in line on the notice and in the unit rules read belongs to S4. The unknown-unit 404 is owned by TeamExistsAsync and PortfolioExistsAsync on IRbacAdministrationService: the controller asks the port whether the unit exists, because the API layer may not reach a repository.
+</code></pre>
+
 <h5>Constraints</h5>
 
 <p>None.</p>
@@ -1985,13 +1988,13 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 <pre><code>Existing page test; its non-System-Admin form assertion moves to the System Admin case
 </code></pre>
 
-<p>Show unassigned users only</p>
+<p>Show users with no direct role only</p>
 
-<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:166</p>
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:169</p>
 
 <p>Extend</p>
 
-<pre><code>Existing settings test; the label becomes Show users with no direct role only
+<pre><code>Existing settings test; its label was Show unassigned users only and becomes Show users with no direct role only
 </code></pre>
 
 <h5>Impact</h5>
@@ -2002,7 +2005,7 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 
 <p>Changed</p>
 
-<pre><code>Two members
+<pre><code>Four members: GetTeamSystemWideRulesAsync, GetPortfolioSystemWideRulesAsync, and TeamExistsAsync and PortfolioExistsAsync for the unknown-unit 404
 </code></pre>
 
 <p>test double</p>
@@ -2243,7 +2246,7 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 
 <h6>L9</h6>
 
-<pre><code>The rules of a unit are the distinct role and holder pairs of every non System Admin rule whose AppliesTo reaches the unit, plus everyone signed in when the switch is on
+<pre><code>In S3 the rules of a unit are the distinct role and holder pairs of every non System Admin group rule whose AppliesTo reaches the unit; S3 covers group rules only, and S4 adds the everyone signed in line when the switch is on
 </code></pre>
 
 <p>Invariant</p>
@@ -3235,7 +3238,8 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 
 <h5>Decisions</h5>
 
-<p>None.</p>
+<pre><code>The Access tab notice renders the role through getRoleLabel; for an Admin-on-all rule S5 must render Admin: group &lt;value&gt; as sketched, not Team Admin or Portfolio Admin. The S5 oracle pins this line.
+</code></pre>
 
 <h5>Constraints</h5>
 
