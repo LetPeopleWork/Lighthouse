@@ -1169,3 +1169,15 @@ render through Terminology in all copy below. These settle P8, P12 and DESIGN's 
   - switch, failed: "Could not load this setting. Reload the page to try again." Loading: disabled with a spinner, never
     shown off until known. A 409 still reloads the state and shows the existing conflict message.
   - Section heading "SSO Groups"; roles "System Admin", "Viewer on all", "Admin on all"; confirm dialog copy as sketched.
+
+## Wave: DELIVER / [REF] Rigor Profile (maintainer decision, 2026-11-09)
+
+| Slice | Profile | Crafter, acceptance designer, architect | Reviewers |
+|---|---|---|---|
+| 01 One group reads every unit | thorough | opus | sonnet |
+| 02 Limited keys follow their owner | thorough | opus | sonnet |
+| 03 The Access tab says so | standard | sonnet | haiku |
+| 04 Everyone signed in can view | thorough | opus | sonnet |
+| 05 One group administers every unit | thorough | opus | sonnet |
+
+The architecture review owed since DESIGN, the whole-candidate review and EXAMINE use sonnet.
