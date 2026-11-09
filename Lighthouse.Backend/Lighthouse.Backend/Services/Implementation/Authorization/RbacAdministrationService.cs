@@ -114,10 +114,10 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return [];
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
             return distinctTeamIds
-                .Where(teamId => HasTeamReadPermission(effectivePermissions, teamId))
+                .Where(teamId => effectiveAccess.CanRead(PermissionScopeType.Team, teamId))
                 .ToList();
         }
 
@@ -149,16 +149,16 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return [];
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
             return distinctPortfolioIds
-                .Where(portfolioId => HasPortfolioReadPermission(effectivePermissions, portfolioId))
+                .Where(portfolioId => effectiveAccess.CanRead(PermissionScopeType.Portfolio, portfolioId))
                 .ToList();
         }
 
         /// <summary>
-        /// The write twin of <see cref="GetReadablePortfolioIdsAsync"/>, kept branch-for-branch identical with
-        /// <see cref="HasPortfolioWritePermission"/> swapped in: diverging here is silent over-permission (Epic 5375 OQ-1).
+        /// The write twin of <see cref="GetReadablePortfolioIdsAsync"/>, kept branch-for-branch identical with the
+        /// write check swapped in: any other difference between the two silently grants more than it should.
         /// </summary>
         public async Task<IReadOnlyList<int>> GetWritablePortfolioIdsAsync(
             ClaimsPrincipal principal,
@@ -188,10 +188,10 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return [];
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
             return distinctPortfolioIds
-                .Where(portfolioId => HasPortfolioWritePermission(effectivePermissions, portfolioId))
+                .Where(portfolioId => effectiveAccess.CanWrite(PermissionScopeType.Portfolio, portfolioId))
                 .ToList();
         }
 
@@ -219,8 +219,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-            return HasTeamReadPermission(effectivePermissions, teamId);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
+            return effectiveAccess.CanRead(PermissionScopeType.Team, teamId);
         }
 
         public async Task<bool> CanWriteTeamAsync(ClaimsPrincipal principal, int teamId, CancellationToken cancellationToken = default)
@@ -246,8 +246,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-            return HasTeamWritePermission(effectivePermissions, teamId);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
+            return effectiveAccess.CanWrite(PermissionScopeType.Team, teamId);
         }
 
         public async Task<bool> CanReadPortfolioAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
@@ -273,8 +273,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-            return HasPortfolioReadPermission(effectivePermissions, portfolioId);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
+            return effectiveAccess.CanRead(PermissionScopeType.Portfolio, portfolioId);
         }
 
         public async Task<bool> CanWritePortfolioAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
@@ -300,8 +300,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-            return HasPortfolioWritePermission(effectivePermissions, portfolioId);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
+            return effectiveAccess.CanWrite(PermissionScopeType.Portfolio, portfolioId);
         }
 
         public async Task<bool> CanCreateTeamAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -407,12 +407,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
-            return effectivePermissions.Any(entry =>
-                entry.Key.ScopeId.HasValue
-                && ((entry.Key.ScopeType == PermissionScopeType.Team && entry.Value == UserRole.TeamAdmin)
-                    || (entry.Key.ScopeType == PermissionScopeType.Portfolio && entry.Value == UserRole.PortfolioAdmin)));
+            return effectiveAccess.AdministersAnyUnit;
         }
 
         public async Task<UserAuthorizationSummary> GetAuthorizationSummaryAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -460,15 +457,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
                 if (currentUser is not null)
                 {
-                    var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
-                    adminTeamIds.AddRange(
-                        effectivePermissions
-                            .Where(e => e.Key.ScopeType == PermissionScopeType.Team && e.Key.ScopeId.HasValue && e.Value == UserRole.TeamAdmin)
-                            .Select(e => e.Key.ScopeId!.Value));
-                    adminPortfolioIds.AddRange(
-                        effectivePermissions
-                            .Where(e => e.Key.ScopeType == PermissionScopeType.Portfolio && e.Key.ScopeId.HasValue && e.Value == UserRole.PortfolioAdmin)
-                            .Select(e => e.Key.ScopeId!.Value));
+                    var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
+                    adminTeamIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Team));
+                    adminPortfolioIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Portfolio));
                 }
             }
 
@@ -617,12 +608,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return true;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
-            return effectivePermissions.TryGetValue(
-                       new PermissionScopeKey(PermissionScopeType.System, null),
-                       out var role)
-                   && role == UserRole.SystemAdmin;
+            return effectiveAccess.IsSystemAdmin;
         }
 
         public async Task<bool> IsRestrictedApiKeyAsync(ClaimsPrincipal principal, CancellationToken cancellationToken = default)
@@ -648,9 +636,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
-            return HasTeamWritePermission(effectivePermissions, teamId);
+            return effectiveAccess.CanWrite(PermissionScopeType.Team, teamId);
         }
 
         public async Task<bool> CanManagePortfolioMembershipAsync(ClaimsPrincipal principal, int portfolioId, CancellationToken cancellationToken = default)
@@ -666,9 +654,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return false;
             }
 
-            var effectivePermissions = await GetEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
-            return HasPortfolioWritePermission(effectivePermissions, portfolioId);
+            return effectiveAccess.CanWrite(PermissionScopeType.Portfolio, portfolioId);
         }
 
         public async Task<IReadOnlyList<RbacScopedMemberSummary>> GetTeamMembersAsync(int teamId, CancellationToken cancellationToken = default)
@@ -1014,27 +1002,25 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         }
 
         /// <summary>
-        /// Computes the effective permissions for the current principal. When an
+        /// Computes the effective access of the current principal. When an
         /// <c>api_key_id</c> claim is present (request authenticated via API key), the
-        /// owner's permissions are intersected with the per-key <see cref="ApiKeyPermission"/>
-        /// rows. The intersection rule: for each <c>ApiKeyPermission (R_key, T, S)</c>, the
-        /// row is included in the effective set iff the owner is authorized at the same
-        /// scope <c>(T, S)</c> with a role of equal-or-broader priority (SystemAdmin reaches
-        /// every scope; TeamAdmin/PortfolioAdmin reach their own scope; Viewer covers only
-        /// Viewer). When the API key has zero <see cref="ApiKeyPermission"/> rows, the
-        /// owner's permissions are returned unchanged (backwards-compatibility for legacy
-        /// keys issued before per-key scoping).
+        /// owner's access is limited to the per-key <see cref="ApiKeyPermission"/> rows the
+        /// owner covers: a row counts only when the owner holds the same scope with a role of
+        /// equal-or-broader priority (SystemAdmin reaches every scope; TeamAdmin/PortfolioAdmin
+        /// reach their own scope; Viewer covers only Viewer). When the API key has zero
+        /// <see cref="ApiKeyPermission"/> rows, the owner's access is returned unchanged
+        /// (backwards-compatibility for legacy keys issued before per-key scoping).
         /// </summary>
-        private async Task<Dictionary<PermissionScopeKey, UserRole>> GetEffectivePermissionsAsync(
+        private async Task<EffectiveAccess> GetEffectiveAccessAsync(
             ClaimsPrincipal principal,
             UserProfile currentUser,
             CancellationToken cancellationToken)
         {
-            var ownerPermissions = await GetOwnerEffectivePermissionsAsync(principal, currentUser, cancellationToken);
+            var ownerAccess = await GetOwnerEffectiveAccessAsync(principal, currentUser, cancellationToken);
 
             if (!TryGetApiKeyId(principal, out var apiKeyId))
             {
-                return ownerPermissions;
+                return ownerAccess;
             }
 
             var apiKeyPermissions = await context.ApiKeyPermissions
@@ -1044,13 +1030,13 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             if (apiKeyPermissions.Count == 0)
             {
-                return ownerPermissions;
+                return ownerAccess;
             }
 
-            return IntersectWithApiKeyScope(ownerPermissions, apiKeyPermissions);
+            return ownerAccess.LimitedTo(apiKeyPermissions);
         }
 
-        private async Task<Dictionary<PermissionScopeKey, UserRole>> GetOwnerEffectivePermissionsAsync(
+        private async Task<EffectiveAccess> GetOwnerEffectiveAccessAsync(
             ClaimsPrincipal principal,
             UserProfile currentUser,
             CancellationToken cancellationToken)
@@ -1062,15 +1048,27 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             var virtualPermissions = await GetVirtualPermissionsAsync(principal, cancellationToken);
 
-            var virtualPermissionMap = ToHighestRoleMap(virtualPermissions);
-            var explicitPermissionMap = ToHighestRoleMap(explicitPermissions);
+            return EffectiveAccess.Resolve(ExplicitReplacesGroup(virtualPermissions, explicitPermissions));
+        }
 
-            foreach (var explicitEntry in explicitPermissionMap)
-            {
-                virtualPermissionMap[explicitEntry.Key] = explicitEntry.Value;
-            }
+        // A role granted to the person directly replaces whatever their groups give on the same scope,
+        // even a higher one. The direct rows take the place of the first group row they replace, so
+        // the order in which units are listed stays the order of the group rows.
+        private static IEnumerable<PermissionRule> ExplicitReplacesGroup(
+            IReadOnlyList<PermissionRule> groupPermissions,
+            IReadOnlyList<PermissionRule> explicitPermissions)
+        {
+            return groupPermissions
+                .SelectMany(groupPermission => ExplicitOrGroupOnSameScope(groupPermission, explicitPermissions))
+                .Concat(explicitPermissions);
+        }
 
-            return virtualPermissionMap;
+        private static List<PermissionRule> ExplicitOrGroupOnSameScope(
+            PermissionRule groupPermission,
+            IReadOnlyList<PermissionRule> explicitPermissions)
+        {
+            var explicitOnSameScope = explicitPermissions.Where(groupPermission.HasSameScopeAs).ToList();
+            return explicitOnSameScope.Count > 0 ? explicitOnSameScope : [groupPermission];
         }
 
         private static bool TryGetApiKeyId(ClaimsPrincipal principal, out int apiKeyId)
@@ -1085,62 +1083,13 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             return int.TryParse(claimValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out apiKeyId);
         }
 
-        // ADR-137 D59: principals rebuilt from a stored credential or subject carry no live group
+        // Principals rebuilt from a stored credential or subject carry no live group
         // claims, so the stored snapshot is their only route to an RbacGroupMapping. An ordinary OIDC
         // cookie principal has no auth_method claim and never reaches the fallback.
         private static bool CannotCarryLiveGroupClaims(ClaimsPrincipal principal)
         {
             var authMethod = principal.FindFirst(ApiKeyPrincipalFactory.AuthMethodClaimType)?.Value;
             return authMethod is ApiKeyPrincipalFactory.AuthMethodValue or ApiKeyPrincipalFactory.AuthMethodEmbedValue;
-        }
-
-        private static Dictionary<PermissionScopeKey, UserRole> IntersectWithApiKeyScope(
-            IReadOnlyDictionary<PermissionScopeKey, UserRole> ownerPermissions,
-            IReadOnlyList<PermissionRule> apiKeyPermissions)
-        {
-            var result = new Dictionary<PermissionScopeKey, UserRole>();
-            foreach (var keyPermission in apiKeyPermissions)
-            {
-                if (!OwnerCoversScope(ownerPermissions, keyPermission))
-                {
-                    continue;
-                }
-
-                var key = new PermissionScopeKey(keyPermission.ScopeType, keyPermission.ScopeId);
-                if (!result.TryGetValue(key, out var existingRole)
-                    || GetRolePriority(keyPermission.Role) > GetRolePriority(existingRole))
-                {
-                    result[key] = keyPermission.Role;
-                }
-            }
-
-            return result;
-        }
-
-        private static bool OwnerCoversScope(
-            IReadOnlyDictionary<PermissionScopeKey, UserRole> ownerPermissions,
-            PermissionRule keyPermission)
-        {
-            var requestedPriority = GetRolePriority(keyPermission.Role);
-
-            if (ownerPermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.System, null), out var systemRole)
-                && systemRole == UserRole.SystemAdmin)
-            {
-                return true;
-            }
-
-            if (keyPermission.ScopeType == PermissionScopeType.System)
-            {
-                return false;
-            }
-
-            if (ownerPermissions.TryGetValue(new PermissionScopeKey(keyPermission.ScopeType, keyPermission.ScopeId), out var scopedRole)
-                && GetRolePriority(scopedRole) >= requestedPriority)
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private async Task<IReadOnlyList<PermissionRule>> GetVirtualPermissionsAsync(
@@ -1225,67 +1174,6 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             }
         }
 
-        private static Dictionary<PermissionScopeKey, UserRole> ToHighestRoleMap(IEnumerable<PermissionRule> permissions)
-        {
-            var result = new Dictionary<PermissionScopeKey, UserRole>();
-
-            foreach (var permission in permissions)
-            {
-                var key = new PermissionScopeKey(permission.ScopeType, permission.ScopeId);
-                if (!result.TryGetValue(key, out var existingRole)
-                    || GetRolePriority(permission.Role) > GetRolePriority(existingRole))
-                {
-                    result[key] = permission.Role;
-                }
-            }
-
-            return result;
-        }
-
-        private static int GetRolePriority(UserRole role)
-        {
-            return role switch
-            {
-                UserRole.SystemAdmin => 4,
-                UserRole.TeamAdmin => 3,
-                UserRole.PortfolioAdmin => 3,
-                UserRole.Viewer => 2,
-                _ => 0,
-            };
-        }
-
-        private static bool HasTeamReadPermission(
-            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
-            int teamId)
-        {
-            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Team, teamId), out var role)
-                && (role == UserRole.TeamAdmin || role == UserRole.Viewer);
-        }
-
-        private static bool HasTeamWritePermission(
-            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
-            int teamId)
-        {
-            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Team, teamId), out var role)
-                && role == UserRole.TeamAdmin;
-        }
-
-        private static bool HasPortfolioReadPermission(
-            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
-            int portfolioId)
-        {
-            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Portfolio, portfolioId), out var role)
-                && (role == UserRole.PortfolioAdmin || role == UserRole.Viewer);
-        }
-
-        private static bool HasPortfolioWritePermission(
-            IReadOnlyDictionary<PermissionScopeKey, UserRole> effectivePermissions,
-            int portfolioId)
-        {
-            return effectivePermissions.TryGetValue(new PermissionScopeKey(PermissionScopeType.Portfolio, portfolioId), out var role)
-                && role == UserRole.PortfolioAdmin;
-        }
-
         private static bool IsValidGroupMappingScope(UserRole role, PermissionScopeType scopeType, int? scopeId)
         {
             return role switch
@@ -1346,10 +1234,6 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             return await HasSystemAdminAsync(cancellationToken);
         }
-
-        private readonly record struct PermissionRule(PermissionScopeType ScopeType, int? ScopeId, UserRole Role);
-
-        private readonly record struct PermissionScopeKey(PermissionScopeType ScopeType, int? ScopeId);
 
         public async Task<RbacOperationResult> GrantCreatorTeamAdminAsync(
             int userProfileId,
