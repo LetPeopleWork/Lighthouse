@@ -811,6 +811,304 @@ The message shows but an earlier answer stays visible beside it
 
 None.
 
+### S3
+
+##### Covers
+
+P3
+
+```text
+A Team Admin opens the Access tab of Team Zenith while the rules call is pending, after it fails, after it answers one Viewer rule for team-readers, and after it answers nothing
+```
+
+```text
+Pending: a spinner and Checking access to all Teams and Portfolios…, no heading. Failed: a warning saying More people may reach this Team than listed below and to reload, no button. One rule: info notice headed Also reachable through access to all Teams and Portfolios with Viewer: group team-readers and the two sentences. No rule: nothing at all, only after the answer arrived. A Portfolio asks its own rules and says Portfolio
+```
+
+```text
+The admin is never told nothing reaches the unit when the check is unfinished or failed, and sees which groups reach the unit through the all-units rules
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Authorization\/SystemWideRulesNotice\.test\.tsx
+
+```text
+A notice that hides itself while loading or after a failure, or shows an info line instead of the warning
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+The notice is shown for Team Zenith, then for Team Apollo, and Zenith's answer arrives after the switch
+```
+
+```text
+Zenith's group never appears under Apollo; Apollo shows its own answer
+```
+
+```text
+An admin never reads another unit's rules on their unit
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Authorization\/SystemWideRulesNotice\.test\.tsx
+
+```text
+A query keyed by unit kind only, where the last answer to arrive wins
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+The group list of a Team is rendered read-only for a Team Admin
+```
+
+```text
+Groups and roles are listed; no Group value field, no Add Group Mapping button, no Actions column and no Remove button
+```
+
+```text
+A Team Admin is not offered a form whose save is refused
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Authorization\/ScopedGroupMappingManagerReadOnly\.test\.tsx
+
+```text
+Hiding only the add button but keeping Remove buttons or the Actions header
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+A System Admin opens Settings Access with one user who holds no role of their own
+```
+
+```text
+The column, the chip No direct role: 1 and the filter Show users with no direct role only say so; the word Unassigned appears nowhere; the filter still narrows to that user
+```
+
+```text
+Settings says what is true: the user has no direct role, not that they have no access
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettingsNoDirectRole\.test\.tsx
+
+```text
+Renaming the column but leaving Unassigned in the chip or filter
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+A Team Admin of Zenith, and a Portfolio Admin of Ocean Explorer, ask which rules reach their unit when one Viewer rule exists twice, another group has its own rule, a System Admin group exists and rules for single units exist
+```
+
+```text
+Distinct role and group pairs only, one line for twin rows, the System Admin group absent, rules of single units absent, nothing listed when no rule reaches the unit, and each line carries only a role and a group
+```
+
+```text
+The admin reads each rule once, never sees a System Admin group's name, and gets no line to edit
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/UnitSystemWideRulesAtThePortTest\.cs
+
+```text
+Answering the stored lines without deduplicating, or with a mapping id, or listing the unit's own group mappings
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P3
+
+```text
+A Team Admin of Zenith, a System Admin, a reader through the Viewer rule, a Team Admin of Apollo and a person with no role each ask for Zenith's rules; the Portfolio twin likewise
+```
+
+```text
+Only the unit's admin and a System Admin may ask; the Viewer is refused
+```
+
+```text
+A person who only reads is never shown which groups reach the unit
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/UnitSystemWideRulesAtThePortTest\.cs
+
+```text
+Guarding the read with the right to read the unit
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+A browser asks for the rules of Team 11 and Portfolio 21 under both route versions after a Viewer rule and a System Admin group were stored
+```
+
+```text
+200 with one line whose members are exactly role and holder, role Viewer, holder team-readers; no id, no scope and no System Admin group
+```
+
+```text
+The Access tab receives the role and group it prints and nothing it must not show
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Authorization\/SystemWideRulesWireContractTest\.cs
+
+```text
+Serialising the stored mapping line with its id and scope
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+A signed-in Viewer of the unit and an admin of another unit ask for the rules of Team 11 and Portfolio 21 under both route versions
+```
+
+```text
+403 for each
+```
+
+```text
+Somebody who only reads, or administers another unit, is turned away
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Authorization\/SystemWideRulesWireContractTest\.cs
+
+```text
+A route open to any signed-in person
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Every controller action is inspected, including the two new routes
+```
+
+```text
+Each declares its access
+```
+
+```text
+No new route is open by omission
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/EveryActionDeclaresItsAccessArchitectureTest\.cs
+
+```text
+A new route with only a class-level Authorize
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+TeamDetail and PortfolioDetail mount the notice and pass the system-admin-only prop to the group list
+```
+
+```text
+The notice sits above Team Access and Portfolio Access; only a System Admin is offered the group form
+```
+
+```text
+On the real Access tab a Team Admin sees the notice and no form
+```
+
+##### Disposition
+
+NotTested
+
+```text
+The page tests that render TeamDetail and PortfolioDetail are no declared support of this slice and each page needs a large stand-in set; the components are observed alone and the mounting is left to the whole-candidate review and the examiner
+```
+
+design
+
 ## Expectations
 
 ### Rows

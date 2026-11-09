@@ -409,6 +409,154 @@
 "stimulus": "F521",
 "user_result": "F523"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9"
+],
+"still_passes_if": "F528",
+"test": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.test.tsx"
+},
+"expected": "F526",
+"stimulus": "F525",
+"user_result": "F527"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F532",
+"test": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.test.tsx"
+},
+"expected": "F530",
+"stimulus": "F529",
+"user_result": "F531"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F536",
+"test": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx"
+},
+"expected": "F534",
+"stimulus": "F533",
+"user_result": "F535"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F540",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx"
+},
+"expected": "F538",
+"stimulus": "F537",
+"user_result": "F539"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9",
+"L9/F266",
+"L9/F267",
+"L9/F268",
+"L9/F269"
+],
+"still_passes_if": "F544",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/UnitSystemWideRulesAtThePortTest.cs"
+},
+"expected": "F542",
+"stimulus": "F541",
+"user_result": "F543"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F548",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/UnitSystemWideRulesAtThePortTest.cs"
+},
+"expected": "F546",
+"stimulus": "F545",
+"user_result": "F547"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L9"
+],
+"still_passes_if": "F552",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/SystemWideRulesWireContractTest.cs"
+},
+"expected": "F550",
+"stimulus": "F549",
+"user_result": "F551"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F556",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/SystemWideRulesWireContractTest.cs"
+},
+"expected": "F554",
+"stimulus": "F553",
+"user_result": "F555"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F560",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs"
+},
+"expected": "F558",
+"stimulus": "F557",
+"user_result": "F559"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "design",
+"reason": "F564"
+},
+"expected": "F562",
+"stimulus": "F561",
+"user_result": "F563"
+}
 ]
 },
 "counters": {
@@ -416,7 +564,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 524,
+"F": 564,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -2905,10 +3053,50 @@
 "F522": "Could not load the SSO group rules. Reload the page to try again. is shown in place of the table, and no table",
 "F523": "A failed load never looks like no rules",
 "F524": "The message shows but an earlier answer stays visible beside it",
+"F525": "A Team Admin opens the Access tab of Team Zenith while the rules call is pending, after it fails, after it answers one Viewer rule for team-readers, and after it answers nothing",
+"F526": "Pending: a spinner and Checking access to all Teams and Portfolios…, no heading. Failed: a warning saying More people may reach this Team than listed below and to reload, no button. One rule: info notice headed Also reachable through access to all Teams and Portfolios with Viewer: group team-readers and the two sentences. No rule: nothing at all, only after the answer arrived. A Portfolio asks its own rules and says Portfolio",
+"F527": "The admin is never told nothing reaches the unit when the check is unfinished or failed, and sees which groups reach the unit through the all-units rules",
+"F528": "A notice that hides itself while loading or after a failure, or shows an info line instead of the warning",
+"F529": "The notice is shown for Team Zenith, then for Team Apollo, and Zenith's answer arrives after the switch",
 "F53": "ILicenseService enforcement gate, unchanged",
+"F530": "Zenith's group never appears under Apollo; Apollo shows its own answer",
+"F531": "An admin never reads another unit's rules on their unit",
+"F532": "A query keyed by unit kind only, where the last answer to arrive wins",
+"F533": "The group list of a Team is rendered read-only for a Team Admin",
+"F534": "Groups and roles are listed; no Group value field, no Add Group Mapping button, no Actions column and no Remove button",
+"F535": "A Team Admin is not offered a form whose save is refused",
+"F536": "Hiding only the add button but keeping Remove buttons or the Actions header",
+"F537": "A System Admin opens Settings Access with one user who holds no role of their own",
+"F538": "The column, the chip No direct role: 1 and the filter Show users with no direct role only say so; the word Unassigned appears nowhere; the filter still narrows to that user",
+"F539": "Settings says what is true: the user has no direct role, not that they have no access",
 "F54": "Controllers and RbacGuard depend on IRbacAdministrationService; RbacAdministrationService depends on Models/Authorization values and LighthouseAppContext; AppliesTo and EffectiveAccess depend on nothing outside Models",
+"F540": "Renaming the column but leaving Unassigned in the chip or filter",
+"F541": "A Team Admin of Zenith, and a Portfolio Admin of Ocean Explorer, ask which rules reach their unit when one Viewer rule exists twice, another group has its own rule, a System Admin group exists and rules for single units exist",
+"F542": "Distinct role and group pairs only, one line for twin rows, the System Admin group absent, rules of single units absent, nothing listed when no rule reaches the unit, and each line carries only a role and a group",
+"F543": "The admin reads each rule once, never sees a System Admin group's name, and gets no line to edit",
+"F544": "Answering the stored lines without deduplicating, or with a mapping id, or listing the unit's own group mappings",
+"F545": "A Team Admin of Zenith, a System Admin, a reader through the Viewer rule, a Team Admin of Apollo and a person with no role each ask for Zenith's rules; the Portfolio twin likewise",
+"F546": "Only the unit's admin and a System Admin may ask; the Viewer is refused",
+"F547": "A person who only reads is never shown which groups reach the unit",
+"F548": "Guarding the read with the right to read the unit",
+"F549": "A browser asks for the rules of Team 11 and Portfolio 21 under both route versions after a Viewer rule and a System Admin group were stored",
 "F55": "Rule rows (Viewer, AllUnits, null) and (UnitAdmin, AllUnits, null); existing System, Team and Portfolio pairs",
+"F550": "200 with one line whose members are exactly role and holder, role Viewer, holder team-readers; no id, no scope and no System Admin group",
+"F551": "The Access tab receives the role and group it prints and nothing it must not show",
+"F552": "Serialising the stored mapping line with its id and scope",
+"F553": "A signed-in Viewer of the unit and an admin of another unit ask for the rules of Team 11 and Portfolio 21 under both route versions",
+"F554": "403 for each",
+"F555": "Somebody who only reads, or administers another unit, is turned away",
+"F556": "A route open to any signed-in person",
+"F557": "Every controller action is inspected, including the two new routes",
+"F558": "Each declares its access",
+"F559": "No new route is open by omission",
 "F56": "SystemAdmin on AllUnits; UnitAdmin on System, Team or Portfolio; an API key on AllUnits; the switch granting more than reading",
+"F560": "A new route with only a class-level Authorize",
+"F561": "TeamDetail and PortfolioDetail mount the notice and pass the system-admin-only prop to the group list",
+"F562": "The notice sits above Team Access and Portfolio Access; only a System Admin is offered the group form",
+"F563": "On the real Access tab a Team Admin sees the notice and no form",
+"F564": "The page tests that render TeamDetail and PortfolioDetail are no declared support of this slice and each page needs a large stand-in set; the components are observed alone and the mounting is left to the whole-candidate review and the examiner",
 "F57": "Role or scope ints written by a newer release and read by an older one",
 "F58": "Twin rule rows from concurrent creates",
 "F59": "No two accepted switch writes were based on the same token",
