@@ -14,7 +14,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.WorkTrackingConnectors($|\..*)|^Lighthouse\.Backend\.Factories($|\..*)";
         private const string WorkItemsSyncPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(WorkItems|TeamData|WorkItemRules)($|\..*)";
-        private const string ForecastingPattern =
+        internal const string ForecastingPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Forecast($|\..*)";
         internal const string PortfolioDeliveryPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices|Interfaces\.Update)($|\..*)";
@@ -24,6 +24,15 @@ namespace Lighthouse.Backend.Tests.Architecture
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Refinement($|\..*)";
         internal const string ReportsPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Reports($|\..*)";
+        private static readonly string[] FlowMetricsNamespaces =
+        [
+            @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Domain$",
+            @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Application$",
+            @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Application\.Policies$",
+            @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters\.Background$",
+            @"^Lighthouse\.Backend\.Modules\.FlowMetrics\.Adapters\.Persistence$",
+        ];
+
         private static readonly string[] ParentPlacementKernelTypes =
         [
             "Lighthouse.Backend.Models.ParentResolution",
@@ -140,9 +149,9 @@ namespace Lighthouse.Backend.Tests.Architecture
                 Assert.That(RefinementModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(ReportsModule.GetObjects(Architecture), Is.Not.Empty);
                 Assert.That(Types().That().ResideInNamespaceMatching(RepositoryRecognition.StoredRecordsPattern).GetObjects(Architecture), Is.Not.Empty);
-                foreach (var kernelPattern in new[] { KernelRules.TheModels, KernelRules.TheServices, KernelRules.TheUpdateQueue })
+                foreach (var namespacePattern in new[] { KernelRules.TheModels, KernelRules.TheServices, KernelRules.TheUpdateQueue }.Concat(FlowMetricsNamespaces))
                 {
-                    Assert.That(IlDependencies.TypesIn(ProductionModule.Value, kernelPattern), Is.Not.Empty, kernelPattern);
+                    Assert.That(IlDependencies.TypesIn(ProductionModule.Value, namespacePattern), Is.Not.Empty, namespacePattern);
                 }
 
                 foreach (var kernelType in ParentPlacementKernelTypes)
