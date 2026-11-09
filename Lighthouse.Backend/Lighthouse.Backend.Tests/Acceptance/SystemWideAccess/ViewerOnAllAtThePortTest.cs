@@ -11,6 +11,10 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
     [TestFixture]
     public class ViewerOnAllAtThePortTest
     {
+        private const string SystemAdminsGroup = "lh-system-admins";
+
+        private const string DuplicateMessage = "This group already has this role here.";
+
         private SystemWideAccessScenario scenario = null!;
 
         [SetUp]
@@ -134,16 +138,34 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         }
 
         [Test]
-        public async Task Removing_a_rule_stored_twice_removes_both_and_the_list_shows_it_once()
+        public async Task Removing_a_System_Admin_group_stored_twice_removes_both_and_the_list_shows_it_once()
+        {
+            scenario.TwoEqualRowsWereStored(SystemAdminsGroup, UserRole.SystemAdmin, PermissionScopeType.System, null);
+
+            await TheTwinsAreListedOnceAndRemovedTogether(SystemAdminsGroup);
+        }
+
+        [Test]
+        public async Task Removing_a_Viewer_on_all_rule_stored_twice_removes_both_and_the_list_shows_it_once()
         {
             scenario.TwoEqualRowsWereStored(TeamReaders, UserRole.Viewer, AllUnits, null);
 
-            var lines = await scenario.TheRulesList();
-            Assert.That(lines, Has.Count.EqualTo(1), "WHAT: a rule stored twice is listed twice. WHY: the System Admin sees one rule, one line, and one Remove that removes it. HOW: list one line per group, role and scope.");
+            await TheTwinsAreListedOnceAndRemovedTogether(TeamReaders);
+        }
 
-            await scenario.AlexRemovesOneLine(lines[0].Id);
+        [Test]
+        public async Task Adding_a_rule_that_already_exists_is_refused_with_the_duplicate_message()
+        {
+            await scenario.AlexAddsAMapping(TeamReaders, UserRole.Viewer, PermissionScopeType.Team, TeamZenith);
 
-            Assert.That(scenario.StoredRowsFor(TeamReaders), Is.Zero, "WHAT: a twin of the removed rule is still stored. WHY: it would keep granting Viewer on all after the System Admin removed the rule. HOW: on removal delete every row with the same group, role and scope.");
+            var addedAgain = await scenario.AlexAddsAMapping(TeamReaders, UserRole.Viewer, PermissionScopeType.Team, TeamZenith);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(addedAgain.Succeeded, Is.False, "WHAT: adding a rule equal to an existing one was accepted. WHY: the System Admin must learn the group already has that role there. HOW: refuse an equal row on create.");
+                Assert.That(addedAgain.Message, Is.EqualTo(DuplicateMessage), "WHAT: the refusal does not say the group already has the role. WHY: this is the message the page shows. HOW: answer the duplicate message.");
+                Assert.That(scenario.StoredRowsFor(TeamReaders), Is.EqualTo(1), "WHAT: a refused add stored a row. WHY: a refusal writes nothing. HOW: check for the equal row before saving.");
+            }
         }
 
         [Test]
@@ -159,11 +181,22 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(changed.Succeeded, Is.False, "WHAT: changing a role onto an equal existing line was accepted. WHY: it would store two equal rules, which then show and remove as one. HOW: refuse the change with the duplicate message.");
+                Assert.That(changed.Message, Is.EqualTo(DuplicateMessage), "WHAT: the refusal does not say the group already has the role. WHY: this is the message the page shows. HOW: answer the duplicate message.");
                 Assert.That(
                     linesAfter.Select(line => line.Role),
                     Is.EquivalentTo(new[] { UserRole.Viewer, UserRole.TeamAdmin }),
                     "WHAT: a refused change still altered the stored lines. WHY: a refusal writes nothing. HOW: check for the equal line before saving.");
             }
+        }
+
+        private async Task TheTwinsAreListedOnceAndRemovedTogether(string group)
+        {
+            var lines = (await scenario.TheRulesList()).Where(line => line.GroupValue == group).ToList();
+            Assert.That(lines, Has.Count.EqualTo(1), "WHAT: a rule stored twice is listed twice. WHY: the System Admin sees one rule, one line, and one Remove that removes it. HOW: list one line per group, role and scope.");
+
+            await scenario.AlexRemovesOneLine(lines[0].Id);
+
+            Assert.That(scenario.StoredRowsFor(group), Is.Zero, "WHAT: a twin of the removed rule is still stored. WHY: it would keep granting its role after the System Admin removed the rule. HOW: on removal delete every row with the same group, role and scope.");
         }
 
         /// <summary>L4: a mapping is accepted for exactly the valid pairs of role, scope and unit; every role and scope the server knows is tried, so a value added later fails here until it is placed.</summary>

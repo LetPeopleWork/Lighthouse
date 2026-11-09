@@ -352,7 +352,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_rule_stored_twice_removes_both_and_the_list_shows_it_once</p>
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_Viewer_on_all_rule_stored_twice_removes_both_and_the_list_shows_it_once</p>
 
 <pre><code>Removal deletes twins only for the AllUnits scope while twins on another scope stay
 </code></pre>
@@ -368,10 +368,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Team Zenith has a Viewer and a Team Admin mapping for the same group; the System Admin changes the Team Admin line to Viewer
 </code></pre>
 
-<pre><code>The change is refused and both lines stay as they were
+<pre><code>Refused with This group already has this role here.; both lines stay as they were
 </code></pre>
 
-<pre><code>A change that would make two equal rules is refused
+<pre><code>A change that would make two equal rules is refused and says why
 </code></pre>
 
 <h5>Disposition</h5>
@@ -380,7 +380,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Changing_a_role_onto_an_equal_rule_that_already_exists_is_refused</p>
 
-<pre><code>The refusal carries any message rather than the existing duplicate message
+<pre><code>The refusal is right on update but an equal row is still accepted on a second path such as a differently trimmed group value
 </code></pre>
 
 <h6>Obligations</h6>
@@ -691,6 +691,161 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::shows a spinner where the rules table goes while the rules load</p>
 
 <pre><code>The previous rules stay shown undimmed beside the spinner on a reload
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A System Admin group mapping is stored twice; the System Admin lists the rules and removes the one line
+</code></pre>
+
+<pre><code>One line is listed and afterwards no row for the group is left
+</code></pre>
+
+<pre><code>Twins on any scope show once and go together
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_System_Admin_group_stored_twice_removes_both_and_the_list_shows_it_once</p>
+
+<pre><code>Twins are collapsed only when their unit is empty, and a Team twin pair stays listed twice
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The System Admin adds Viewer on Team Zenith for team-readers, then adds the same mapping again
+</code></pre>
+
+<pre><code>The second add is refused with This group already has this role here. and one row stays stored
+</code></pre>
+
+<pre><code>Adding a rule twice says the group already has it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Adding_a_rule_that_already_exists_is_refused_with_the_duplicate_message</p>
+
+<pre><code>Two concurrent adds both pass the check and store twins
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Noor holds Team Admin on Team Zenith directly and reads everything through Viewer on all; she holds a Team Admin key and a Viewer key, each limited to Team Zenith, and asks whether she may issue a Team Admin key there
+</code></pre>
+
+<pre><code>She may issue it; the Team Admin key writes Team Zenith and neither reads nor writes Team Apollo; the Viewer key reads Team Zenith and does not write it
+</code></pre>
+
+<pre><code>A wider key works as granted and a narrower key stays narrow
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_Team_Admin_key_writes_the_Team_its_owner_administers_while_a_Viewer_key_there_only_reads</p>
+
+<pre><code>Key coverage ignores the rule and uses only the owner&#x27;s direct row on the key&#x27;s unit
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Noor reads only through Viewer on all and holds a stored key limited to Team Admin on Team Zenith; she also asks whether she may issue one
+</code></pre>
+
+<pre><code>The key writes nothing on Team Zenith and issuing is refused
+</code></pre>
+
+<pre><code>A key never claims more than its owner has
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_Team_Admin_key_of_an_owner_who_only_reads_through_the_rule_writes_nothing</p>
+
+<pre><code>The key&#x27;s row is dropped entirely so it also stops reading Team Zenith
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The System Admin enters a group, picks System Admin and adds the mapping
+</code></pre>
+
+<pre><code>Sent as System Admin on System with no unit, the rules reload, and no usage event is reported
+</code></pre>
+
+<pre><code>System Admin groups work as before and are not counted as system-wide access
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::adds a System Admin group as before and reports nothing</p>
+
+<pre><code>The event is reported for a System Admin group added on another path
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The System Admin opens Settings, Access when the rules cannot be loaded
+</code></pre>
+
+<pre><code>Could not load the SSO group rules. Reload the page to try again. is shown in place of the table, and no table
+</code></pre>
+
+<pre><code>A failed load never looks like no rules
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::says the rules could not load, in place of the table, when they cannot be loaded</p>
+
+<pre><code>The message shows but an earlier answer stays visible beside it
 </code></pre>
 
 <h6>Obligations</h6>

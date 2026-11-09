@@ -11,6 +11,7 @@ import type { RbacGroupMapping } from "../../../models/Authorization/RbacModels"
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type { IAuthService } from "../../../services/Api/AuthService";
+import type { IRbacService } from "../../../services/Api/RbacService";
 import {
 	createMockApiServiceContext,
 	createMockLicensingService,
@@ -91,7 +92,7 @@ const openAccessSettings = () =>
 		>
 			<ApiServiceContext.Provider
 				value={createMockApiServiceContext({
-					rbacService,
+					rbacService: rbacService as unknown as IRbacService,
 					authService,
 					licensingService: createMockLicensingService(),
 				})}

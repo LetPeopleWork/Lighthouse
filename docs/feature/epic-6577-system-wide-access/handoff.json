@@ -103,7 +103,7 @@
 "L6/F197"
 ],
 "still_passes_if": "F430",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_rule_stored_twice_removes_both_and_the_list_shows_it_once"
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_Viewer_on_all_rule_stored_twice_removes_both_and_the_list_shows_it_once"
 },
 "expected": "F428",
 "stimulus": "F427",
@@ -116,14 +116,14 @@
 "disposition": {
 "kind": "Tested",
 "obligations": [
-"L6/F198"
+"L6/F498"
 ],
-"still_passes_if": "F434",
+"still_passes_if": "F501",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Changing_a_role_onto_an_equal_rule_that_already_exists_is_refused"
 },
-"expected": "F432",
+"expected": "F499",
 "stimulus": "F431",
-"user_result": "F433"
+"user_result": "F500"
 },
 {
 "covers": [
@@ -315,6 +315,99 @@
 "expected": "F480",
 "stimulus": "F479",
 "user_result": "F481"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F196",
+"L6/F197"
+],
+"still_passes_if": "F504",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_System_Admin_group_stored_twice_removes_both_and_the_list_shows_it_once"
+},
+"expected": "F428",
+"stimulus": "F502",
+"user_result": "F503"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F497"
+],
+"still_passes_if": "F508",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Adding_a_rule_that_already_exists_is_refused_with_the_duplicate_message"
+},
+"expected": "F506",
+"stimulus": "F505",
+"user_result": "F507"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F192",
+"L8/F203"
+],
+"still_passes_if": "F512",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_Team_Admin_key_writes_the_Team_its_owner_administers_while_a_Viewer_key_there_only_reads"
+},
+"expected": "F510",
+"stimulus": "F509",
+"user_result": "F511"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F194",
+"L8/F204"
+],
+"still_passes_if": "F516",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_Team_Admin_key_of_an_owner_who_only_reads_through_the_rule_writes_nothing"
+},
+"expected": "F514",
+"stimulus": "F513",
+"user_result": "F515"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F520",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::adds a System Admin group as before and reports nothing"
+},
+"expected": "F518",
+"stimulus": "F517",
+"user_result": "F519"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F524",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::says the rules could not load, in place of the table, when they cannot be loaded"
+},
+"expected": "F522",
+"stimulus": "F521",
+"user_result": "F523"
 }
 ]
 },
@@ -323,7 +416,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 498,
+"F": 524,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -2712,9 +2805,6 @@
 "F43": "Accepts and returns AllUnits and UnitAdmin",
 "F430": "Removal deletes twins only for the AllUnits scope while twins on another scope stay",
 "F431": "Team Zenith has a Viewer and a Team Admin mapping for the same group; the System Admin changes the Team Admin line to Viewer",
-"F432": "The change is refused and both lines stay as they were",
-"F433": "A change that would make two equal rules is refused",
-"F434": "The refusal carries any message rather than the existing duplicate message",
 "F435": "The System Admin adds a mapping for every role, every scope, with and without a unit",
 "F436": "Accepted exactly for System Admin on System without unit, Team Admin on Team, Portfolio Admin on Portfolio, Viewer on Team or Portfolio with a unit, and Viewer on all without unit; a refusal stores no row",
 "F437": "Only meaningful rules can be added",
@@ -2785,10 +2875,36 @@
 "F496": "Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope; creating or updating a mapping onto an equal existing row is refused with the new message This group already has this role here. and leaves the rows unchanged",
 "F497": "create a mapping equal to an existing row: refused with This group already has this role here. rows unchanged",
 "F498": "update a mapping role onto an existing equal row: refused with This group already has this role here. rows unchanged",
+"F499": "Refused with This group already has this role here.; both lines stay as they were",
 "F5": "A Team or Portfolio Admin sees on the Access tab, read-only, which system-wide rules also reach the unit; Settings shows No direct role instead of Unassigned",
 "F50": "LighthouseAppContext on SQLite and PostgreSQL",
+"F500": "A change that would make two equal rules is refused and says why",
+"F501": "The refusal is right on update but an equal row is still accepted on a second path such as a differently trimmed group value",
+"F502": "A System Admin group mapping is stored twice; the System Admin lists the rules and removes the one line",
+"F503": "Twins on any scope show once and go together",
+"F504": "Twins are collapsed only when their unit is empty, and a Team twin pair stays listed twice",
+"F505": "The System Admin adds Viewer on Team Zenith for team-readers, then adds the same mapping again",
+"F506": "The second add is refused with This group already has this role here. and one row stays stored",
+"F507": "Adding a rule twice says the group already has it",
+"F508": "Two concurrent adds both pass the check and store twins",
+"F509": "Noor holds Team Admin on Team Zenith directly and reads everything through Viewer on all; she holds a Team Admin key and a Viewer key, each limited to Team Zenith, and asks whether she may issue a Team Admin key there",
 "F51": "ILogger",
+"F510": "She may issue it; the Team Admin key writes Team Zenith and neither reads nor writes Team Apollo; the Viewer key reads Team Zenith and does not write it",
+"F511": "A wider key works as granted and a narrower key stays narrow",
+"F512": "Key coverage ignores the rule and uses only the owner's direct row on the key's unit",
+"F513": "Noor reads only through Viewer on all and holds a stored key limited to Team Admin on Team Zenith; she also asks whether she may issue one",
+"F514": "The key writes nothing on Team Zenith and issuing is refused",
+"F515": "A key never claims more than its owner has",
+"F516": "The key's row is dropped entirely so it also stops reading Team Zenith",
+"F517": "The System Admin enters a group, picks System Admin and adds the mapping",
+"F518": "Sent as System Admin on System with no unit, the rules reload, and no usage event is reported",
+"F519": "System Admin groups work as before and are not counted as system-wide access",
 "F52": "usage-data event sender",
+"F520": "The event is reported for a System Admin group added on another path",
+"F521": "The System Admin opens Settings, Access when the rules cannot be loaded",
+"F522": "Could not load the SSO group rules. Reload the page to try again. is shown in place of the table, and no table",
+"F523": "A failed load never looks like no rules",
+"F524": "The message shows but an earlier answer stays visible beside it",
 "F53": "ILicenseService enforcement gate, unchanged",
 "F54": "Controllers and RbacGuard depend on IRbacAdministrationService; RbacAdministrationService depends on Models/Authorization values and LighthouseAppContext; AppliesTo and EffectiveAccess depend on nothing outside Models",
 "F55": "Rule rows (Viewer, AllUnits, null) and (UnitAdmin, AllUnits, null); existing System, Team and Portfolio pairs",

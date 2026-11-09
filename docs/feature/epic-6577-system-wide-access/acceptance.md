@@ -234,7 +234,7 @@ One rule shows once and one Remove ends it
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/ViewerOnAllAtThePortTest\.cs\:\:Removing\_a\_rule\_stored\_twice\_removes\_both\_and\_the\_list\_shows\_it\_once
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/ViewerOnAllAtThePortTest\.cs\:\:Removing\_a\_Viewer\_on\_all\_rule\_stored\_twice\_removes\_both\_and\_the\_list\_shows\_it\_once
 
 ```text
 Removal deletes twins only for the AllUnits scope while twins on another scope stay
@@ -253,11 +253,11 @@ Team Zenith has a Viewer and a Team Admin mapping for the same group; the System
 ```
 
 ```text
-The change is refused and both lines stay as they were
+Refused with This group already has this role here.; both lines stay as they were
 ```
 
 ```text
-A change that would make two equal rules is refused
+A change that would make two equal rules is refused and says why
 ```
 
 ##### Disposition
@@ -267,7 +267,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/ViewerOnAllAtThePortTest\.cs\:\:Changing\_a\_role\_onto\_an\_equal\_rule\_that\_already\_exists\_is\_refused
 
 ```text
-The refusal carries any message rather than the existing duplicate message
+The refusal is right on update but an equal row is still accepted on a second path such as a differently trimmed group value
 ```
 
 ###### Obligations
@@ -626,6 +626,185 @@ Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettingsViewerOnAll\.test\
 
 ```text
 The previous rules stay shown undimmed beside the spinner on a reload
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+A System Admin group mapping is stored twice; the System Admin lists the rules and removes the one line
+```
+
+```text
+One line is listed and afterwards no row for the group is left
+```
+
+```text
+Twins on any scope show once and go together
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/ViewerOnAllAtThePortTest\.cs\:\:Removing\_a\_System\_Admin\_group\_stored\_twice\_removes\_both\_and\_the\_list\_shows\_it\_once
+
+```text
+Twins are collapsed only when their unit is empty, and a Team twin pair stays listed twice
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+The System Admin adds Viewer on Team Zenith for team-readers, then adds the same mapping again
+```
+
+```text
+The second add is refused with This group already has this role here. and one row stays stored
+```
+
+```text
+Adding a rule twice says the group already has it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/ViewerOnAllAtThePortTest\.cs\:\:Adding\_a\_rule\_that\_already\_exists\_is\_refused\_with\_the\_duplicate\_message
+
+```text
+Two concurrent adds both pass the check and store twins
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+Noor holds Team Admin on Team Zenith directly and reads everything through Viewer on all; she holds a Team Admin key and a Viewer key, each limited to Team Zenith, and asks whether she may issue a Team Admin key there
+```
+
+```text
+She may issue it; the Team Admin key writes Team Zenith and neither reads nor writes Team Apollo; the Viewer key reads Team Zenith and does not write it
+```
+
+```text
+A wider key works as granted and a narrower key stays narrow
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/LimitedKeyUnderRuleAtThePortTest\.cs\:\:A\_Team\_Admin\_key\_writes\_the\_Team\_its\_owner\_administers\_while\_a\_Viewer\_key\_there\_only\_reads
+
+```text
+Key coverage ignores the rule and uses only the owner's direct row on the key's unit
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Noor reads only through Viewer on all and holds a stored key limited to Team Admin on Team Zenith; she also asks whether she may issue one
+```
+
+```text
+The key writes nothing on Team Zenith and issuing is refused
+```
+
+```text
+A key never claims more than its owner has
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/LimitedKeyUnderRuleAtThePortTest\.cs\:\:A\_Team\_Admin\_key\_of\_an\_owner\_who\_only\_reads\_through\_the\_rule\_writes\_nothing
+
+```text
+The key's row is dropped entirely so it also stops reading Team Zenith
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+The System Admin enters a group, picks System Admin and adds the mapping
+```
+
+```text
+Sent as System Admin on System with no unit, the rules reload, and no usage event is reported
+```
+
+```text
+System Admin groups work as before and are not counted as system-wide access
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettingsViewerOnAll\.test\.tsx\:\:adds a System Admin group as before and reports nothing
+
+```text
+The event is reported for a System Admin group added on another path
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+The System Admin opens Settings, Access when the rules cannot be loaded
+```
+
+```text
+Could not load the SSO group rules. Reload the page to try again. is shown in place of the table, and no table
+```
+
+```text
+A failed load never looks like no rules
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettingsViewerOnAll\.test\.tsx\:\:says the rules could not load\, in place of the table\, when they cannot be loaded
+
+```text
+The message shows but an earlier answer stays visible beside it
 ```
 
 ###### Obligations

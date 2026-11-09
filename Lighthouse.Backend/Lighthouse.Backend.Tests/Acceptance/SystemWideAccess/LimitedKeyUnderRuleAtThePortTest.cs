@@ -83,6 +83,48 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         }
 
         [Test]
+        public async Task A_Team_Admin_key_writes_the_Team_its_owner_administers_while_a_Viewer_key_there_only_reads()
+        {
+            await scenario.AlexAddsViewerOnAllFor(TeamReaders);
+            scenario.NoorHoldsDirectly(UserRole.TeamAdmin, PermissionScopeType.Team, TeamZenith);
+            var adminKey = scenario.AKeyIsStoredFor(Noor, (UserRole.TeamAdmin, PermissionScopeType.Team, TeamZenith));
+            var viewerKey = scenario.AKeyIsStoredFor(Noor, (UserRole.Viewer, PermissionScopeType.Team, TeamZenith));
+
+            var mayIssueAdminKey = await scenario.MayIssueAKeyAs(Noor_SignedIn(), RbacGuardRequirement.TeamWrite, TeamZenith);
+            var adminKeyWritesZenith = await scenario.CanWriteTeam(TheKey(Noor, adminKey), TeamZenith);
+            var adminKeyWritesApollo = await scenario.CanWriteTeam(TheKey(Noor, adminKey), TeamApollo);
+            var adminKeyReadsApollo = await scenario.CanReadTeam(TheKey(Noor, adminKey), TeamApollo);
+            var viewerKeyReadsZenith = await scenario.CanReadTeam(TheKey(Noor, viewerKey), TeamZenith);
+            var viewerKeyWritesZenith = await scenario.CanWriteTeam(TheKey(Noor, viewerKey), TeamZenith);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(mayIssueAdminKey, Is.True, "WHAT: an owner who administers Team Zenith directly may not issue a Team Admin key on it once a Viewer rule also reaches her. WHY: a rule only adds; her Team Admin role stays. HOW: take the higher of her unit role and the rule.");
+                Assert.That(adminKeyWritesZenith, Is.True, "WHAT: the Team Admin key on Team Zenith cannot write it. WHY: its owner is Team Admin there, so the key works as granted. HOW: cover the key row with the owner's role on that unit, the higher of her own role and the rule.");
+                Assert.That(adminKeyWritesApollo, Is.False, "WHAT: the Team Admin key writes Team Apollo. WHY: the key is limited to Team Zenith. HOW: give the key its own rows only.");
+                Assert.That(adminKeyReadsApollo, Is.False, "WHAT: the Team Admin key reads Team Apollo although its owner reaches it only through the rule. WHY: a limited key keeps its exact scope. HOW: give the key its own rows only, never the owner's reach.");
+                Assert.That(viewerKeyReadsZenith, Is.True, "WHAT: the Viewer key on Team Zenith cannot read it. WHY: its owner reaches Team Zenith. HOW: cover the key row with the owner's role there.");
+                Assert.That(viewerKeyWritesZenith, Is.False, "WHAT: the Viewer key on Team Zenith writes it. WHY: a key never exceeds its own limit, even when its owner is Team Admin. HOW: answer the lower of the key role and the owner's role.");
+            }
+        }
+
+        [Test]
+        public async Task A_Team_Admin_key_of_an_owner_who_only_reads_through_the_rule_writes_nothing()
+        {
+            await scenario.AlexAddsViewerOnAllFor(TeamReaders);
+            var adminKey = scenario.AKeyIsStoredFor(Noor, (UserRole.TeamAdmin, PermissionScopeType.Team, TeamZenith));
+
+            var writesZenith = await scenario.CanWriteTeam(TheKey(Noor, adminKey), TeamZenith);
+            var mayIssue = await scenario.MayIssueAKeyAs(Noor_SignedIn(), RbacGuardRequirement.TeamWrite, TeamZenith);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(writesZenith, Is.False, "WHAT: a Team Admin key writes Team Zenith although its owner only reads it through the rule. WHY: a key never exceeds its owner. HOW: answer the lower of the key role and the owner's role on that unit.");
+                Assert.That(mayIssue, Is.False, "WHAT: an owner who only reads through the rule may issue a write key. WHY: a key never claims more than its owner has. HOW: refuse a key role above the owner's role on that unit.");
+            }
+        }
+
+        [Test]
         public async Task A_key_whose_owner_reaches_nothing_reads_nothing()
         {
             await scenario.AlexAddsViewerOnAllFor(TeamReaders);
