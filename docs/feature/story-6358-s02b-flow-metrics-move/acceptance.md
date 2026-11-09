@@ -852,4 +852,42 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules: 572 tests passed, 0 failed (layer, handler, repository rules). Own check: 42 .cs files under Modules/FlowMetrics, namespace matches folder for all (two Domain files use block-scoped namespace, verified manually). Domain files only 'using Lighthouse.Backend.Models.Metrics'. Layers: Domain(4), Application(27 incl contracts), Application/Policies(7 handlers), Adapters/Background(1), Adapters/Persistence(3). No old Services copies of moved types found.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe architecture-rules: 572 tests passed, 0 failed (layer, handler, repository rules). Own check: 42 .cs files under Modules/FlowMetrics, namespace matches folder for all (two Domain files use block-scoped namespace, verified manually). Domain files only 'using Lighthouse.Backend.Models.Metrics'. Layers: Domain(4), Application(27 incl contracts), Application/Policies(7 handlers), Adapters/Background(1), Adapters/Persistence(3). No old Services copies of moved types found.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe metrics-answers-compare: base 7ec328cb vs candidate 81ab8697, same day 2026-11-09: IDENTICAL 366 responses and 3 snapshot tables. Probe ef-model-unchanged: Sqlite and Postgres both report no changes since last migration.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests: 13063 total, 13051 passed, 12 skipped, 0 failed. Not probed: whether edits to existing tests were limited to using/namespace/path-string (needs a diff, outside examiner boundary); assessment limitation.
+```

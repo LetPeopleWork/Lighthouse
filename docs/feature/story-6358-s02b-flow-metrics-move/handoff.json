@@ -365,7 +365,7 @@
 "counters": {
 "D": 2,
 "E": 4,
-"F": 133,
+"F": 136,
 "P": 3,
 "S": 5
 },
@@ -1106,6 +1106,32 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F134"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F134"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F135"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F136"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1178,6 +1204,9 @@
 "F131": "No pending model changes, and the two captures are identical",
 "F132": "Nothing a user sees, and nothing stored, changes",
 "F133": "This oracle reads layout and recognition only; the design runs the pending-model-changes check in this slice's edit step and the answer capture and comparison once at the end of the feature, and the filtered full test run at the end of each slice",
+"F134": "Probe architecture-rules: 572 tests passed, 0 failed (layer, handler, repository rules). Own check: 42 .cs files under Modules/FlowMetrics, namespace matches folder for all (two Domain files use block-scoped namespace, verified manually). Domain files only 'using Lighthouse.Backend.Models.Metrics'. Layers: Domain(4), Application(27 incl contracts), Application/Policies(7 handlers), Adapters/Background(1), Adapters/Persistence(3). No old Services copies of moved types found.",
+"F135": "Probe metrics-answers-compare: base 7ec328cb vs candidate 81ab8697, same day 2026-11-09: IDENTICAL 366 responses and 3 snapshot tables. Probe ef-model-unchanged: Sqlite and Postgres both report no changes since last migration.",
+"F136": "Probe backend-tests: 13063 total, 13051 passed, 12 skipped, 0 failed. Not probed: whether edits to existing tests were limited to using/namespace/path-string (needs a diff, outside examiner boundary); assessment limitation.",
 "F14": "A calculator still sits under Services, or Domain reaches a forbidden type and the rule stays green",
 "F15": "Read the compiled production assembly: the namespaces of the eleven contract types",
 "F16": "Each of the eleven contract types sits in Lighthouse.Backend.Modules.FlowMetrics.Application and none is left under Lighthouse.Backend.Services; the earlier layer checks stay green",
