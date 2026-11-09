@@ -560,11 +560,11 @@
 ]
 },
 "counters": {
-"B": 10,
+"B": 11,
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 564,
+"F": 577,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -1503,9 +1503,9 @@
 "driving_port": "F160",
 "failures": [
 {
-"condition": "F259",
+"condition": "F574",
 "id": "B5",
-"observation": "F260",
+"observation": "F575",
 "outcome": "Refusal"
 },
 {
@@ -1513,6 +1513,12 @@
 "id": "B6",
 "observation": "F262",
 "outcome": "Indeterminate"
+},
+{
+"condition": "F576",
+"id": "B11",
+"observation": "F577",
+"outcome": "Refusal"
 }
 ]
 },
@@ -1526,7 +1532,10 @@
 }
 ],
 "decisions": [
-"F232"
+"F232",
+"F567",
+"F568",
+"F569"
 ],
 "impact": [
 {
@@ -1606,6 +1615,24 @@
 "kind": "existing component test",
 "locator": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.test.tsx:1",
 "reason": "F254"
+},
+{
+"decision": "Migrated",
+"kind": "existing page test",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx:904",
+"reason": "F572"
+},
+{
+"decision": "Migrated",
+"kind": "existing page test",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx:676",
+"reason": "F572"
+},
+{
+"decision": "Migrated",
+"kind": "existing page test",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:166",
+"reason": "F573"
 }
 ],
 "laws": [
@@ -1728,6 +1755,24 @@
 "locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
 "reason": "F244",
 "symbol": "SystemWideRulesNotice"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx:904",
+"reason": "F570",
+"symbol": "creates team-scoped group mappings on access tab"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx:676",
+"reason": "F570",
+"symbol": "creates portfolio-scoped group mappings on access tab"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:166",
+"reason": "F571",
+"symbol": "Show unassigned users only"
 }
 ]
 },
@@ -1735,7 +1780,9 @@
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/UnitSystemWideRulesAtThePortTest.cs",
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/SystemWideRulesWireContractTest.cs",
 "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx",
-"Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx"
+"Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx",
+"Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx",
+"Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx"
 ],
 "targets": [
 {
@@ -1792,11 +1839,26 @@
 "change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx",
 "reason": "F228"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx",
+"reason": "F565"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx",
+"reason": "F565"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx",
+"reason": "F566"
 }
 ],
 "verification": [
-"pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/components/Common/Authorization/SystemWideRulesNotice.test.tsx src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx",
-"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Acceptance.SystemWideAccess.UnitSystemWideRules|FullyQualifiedName~SystemWideRulesWireContractTest|FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest\""
+"pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/components/Common/Authorization/SystemWideRulesNotice.test.tsx src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx",
+"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Acceptance.SystemWideAccess.UnitSystemWideRules|FullyQualifiedName~SystemWideRulesWireContractTest|FullyQualifiedName~SystemWideRulesRefusalWireContractTest|FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest\""
 ]
 },
 "S4": {
@@ -2762,9 +2824,7 @@
 "F256": "New call in the same commit",
 "F257": "One deployable; the wire contract support pins route, status and JSON names",
 "F258": "A new read and component beside existing ones; no preserving move makes them easier (FE5 #6393 stays a separate improvement item)",
-"F259": "Caller does not manage the unit members",
 "F26": "Code facts: code-fact query.reads-of PermissionScopeKey answered from textsearch at noisy confidence over live source (AST provider did not answer), 22 sites, all inside RbacAdministrationService.cs; it may miss indirect uses, so ADR-280 list of 13 or more readers plus deletion of the type (a missed reader cannot compile) carry the closure. typesafe: unavailable, Jev is unauthorized in ~/.nwave/config.json.",
-"F260": "403 through the declared access",
 "F261": "Rules read fails",
 "F262": "Warning notice per M-S3, never hidden",
 "F263": "Rules listed for a unit",
@@ -3097,7 +3157,20 @@
 "F562": "The notice sits above Team Access and Portfolio Access; only a System Admin is offered the group form",
 "F563": "On the real Access tab a Team Admin sees the notice and no form",
 "F564": "The page tests that render TeamDetail and PortfolioDetail are no declared support of this slice and each page needs a large stand-in set; the components are observed alone and the mounting is left to the whole-candidate review and the examiner",
+"F565": "Migrated at GREEN: its non-System-Admin createGroupMapping assertion pins the old Bug 6576 behaviour",
+"F566": "Migrated at GREEN: it clicks Show unassigned users only, which M-S2 renames",
+"F567": "Bug 6576 page wiring is Tested: TeamDetailAccessTab.test.tsx and PortfolioDetailAccessTab.test.tsx render the page as a non-System-Admin unit Admin (notice shown, no add-mapping form) and as a System Admin (form shown). The existing TeamDetail.test.tsx, PortfolioDetail.test.tsx and RbacSettings.test.tsx are S3 targets the crafter migrates in the GREEN commit, because they pin the old form and the Unassigned copy.",
+"F568": "Where refusal lives: GetTeamSystemWideRulesAsync and GetPortfolioSystemWideRulesAsync take the unit id and no principal, so the refusal is enforced at the controller guard (RbacGuard with the same access as managing that unit members, through CanManageTeamMembershipAsync and its Portfolio twin). The refusal obligation (403 for a Viewer and for an Admin of another unit, on both route versions) is observed on the wire class SystemWideRulesRefusalWireContractTest; port rows that call CanManageTeamMembershipAsync are predicate-guard rows, not the read.",
+"F569": "An unknown Team or Portfolio id answers 404 Not Found on the unit rules read (recommended option, consistent with the other unit routes), never an empty list that would read as no rules. The guard answers first: a caller without access to manage that unit gets 403 for an existing unit; for an id that does not exist a System Admin gets 404.",
 "F57": "Role or scope ints written by a newer release and read by an older one",
+"F570": "Existing page test; its non-System-Admin form assertion moves to the System Admin case",
+"F571": "Existing settings test; the label becomes Show users with no direct role only",
+"F572": "Updated by the crafter in the GREEN commit that changes the wiring",
+"F573": "Updated by the crafter in the GREEN commit that changes the copy",
+"F574": "Caller does not manage the unit members (Viewer, or Admin of another unit)",
+"F575": "403 at the controller guard on api/latest and api/v1, observed by SystemWideRulesRefusalWireContractTest",
+"F576": "Unknown Team or Portfolio id",
+"F577": "404 Not Found, not an empty list",
 "F58": "Twin rule rows from concurrent creates",
 "F59": "No two accepted switch writes were based on the same token",
 "F6": "A System Admin turns on Everyone signed in, after a confirm, and every signed-in person with a profile reads every Team and Portfolio; off by default and no change without opting in",

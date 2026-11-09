@@ -1835,13 +1835,37 @@ Extend
 No direct role column, chip and filter copy per M-S2
 ```
 
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/TeamDetail\.test\.tsx
+
+Extend
+
+```text
+Migrated at GREEN: its non-System-Admin createGroupMapping assertion pins the old Bug 6576 behaviour
+```
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetail\.test\.tsx
+
+Extend
+
+```text
+Migrated at GREEN: its non-System-Admin createGroupMapping assertion pins the old Bug 6576 behaviour
+```
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettings\.test\.tsx
+
+Extend
+
+```text
+Migrated at GREEN: it clicks Show unassigned users only, which M-S2 renames
+```
+
 Lighthouse\.Frontend\/src\/components\/Common\/Authorization\/SystemWideRulesNotice\.test\.tsx
 
 #### Verification
 
 ```text
-pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/components/Common/Authorization/SystemWideRulesNotice.test.tsx src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx
-dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~Acceptance.SystemWideAccess.UnitSystemWideRules|FullyQualifiedName~SystemWideRulesWireContractTest|FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest"
+pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/components/Common/Authorization/SystemWideRulesNotice.test.tsx src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx
+dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~Acceptance.SystemWideAccess.UnitSystemWideRules|FullyQualifiedName~SystemWideRulesWireContractTest|FullyQualifiedName~SystemWideRulesRefusalWireContractTest|FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest"
 ```
 
 #### Supports
@@ -1853,6 +1877,10 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Authorization\/Syste
 Lighthouse\.Frontend\/src\/components\/Common\/Authorization\/ScopedGroupMappingManagerReadOnly\.test\.tsx
 
 Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettingsNoDirectRole\.test\.tsx
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/TeamDetailAccessTab\.test\.tsx
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetailAccessTab\.test\.tsx
 
 #### Public oracle
 
@@ -1882,6 +1910,18 @@ None.
 
 ```text
 New members on IRbacAdministrationService force the existing test double ClaimsDrivenRbacAdministrationService to gain them. That file is no slice oracle or support, so S3 and S4 acceptance designers each add throwing members there without staling an earlier approval.
+```
+
+```text
+Bug 6576 page wiring is Tested: TeamDetailAccessTab.test.tsx and PortfolioDetailAccessTab.test.tsx render the page as a non-System-Admin unit Admin (notice shown, no add-mapping form) and as a System Admin (form shown). The existing TeamDetail.test.tsx, PortfolioDetail.test.tsx and RbacSettings.test.tsx are S3 targets the crafter migrates in the GREEN commit, because they pin the old form and the Unassigned copy.
+```
+
+```text
+Where refusal lives: GetTeamSystemWideRulesAsync and GetPortfolioSystemWideRulesAsync take the unit id and no principal, so the refusal is enforced at the controller guard (RbacGuard with the same access as managing that unit members, through CanManageTeamMembershipAsync and its Portfolio twin). The refusal obligation (403 for a Viewer and for an Admin of another unit, on both route versions) is observed on the wire class SystemWideRulesRefusalWireContractTest; port rows that call CanManageTeamMembershipAsync are predicate-guard rows, not the read.
+```
+
+```text
+An unknown Team or Portfolio id answers 404 Not Found on the unit rules read (recommended option, consistent with the other unit routes), never an empty list that would read as no rules. The guard answers first: a caller without access to manage that unit gets 403 for an existing unit; for an id that does not exist a System Admin gets 404.
 ```
 
 ##### Constraints
@@ -2030,6 +2070,36 @@ CreateNew
 No existing read-only list of rules; reuses CircularProgress, Alert and a keyed TanStack query
 ```
 
+creates team\-scoped group mappings on access tab
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/TeamDetail\.test\.tsx\:904
+
+Extend
+
+```text
+Existing page test; its non-System-Admin form assertion moves to the System Admin case
+```
+
+creates portfolio\-scoped group mappings on access tab
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetail\.test\.tsx\:676
+
+Extend
+
+```text
+Existing page test; its non-System-Admin form assertion moves to the System Admin case
+```
+
+Show unassigned users only
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettings\.test\.tsx\:166
+
+Extend
+
+```text
+Existing settings test; the label becomes Show users with no direct role only
+```
+
 ##### Impact
 
 port interface
@@ -2162,6 +2232,36 @@ UnchangedCompatible
 Default prop keeps today behaviour
 ```
 
+existing page test
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/TeamDetail\.test\.tsx\:904
+
+Migrated
+
+```text
+Updated by the crafter in the GREEN commit that changes the wiring
+```
+
+existing page test
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetail\.test\.tsx\:676
+
+Migrated
+
+```text
+Updated by the crafter in the GREEN commit that changes the wiring
+```
+
+existing page test
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettings\.test\.tsx\:166
+
+Migrated
+
+```text
+Updated by the crafter in the GREEN commit that changes the copy
+```
+
 ##### Agreement
 
 GET authorization\/teams\/\{teamId\}\/system\-wide\-rules and portfolios twin
@@ -2223,13 +2323,13 @@ Controllers and RbacGuard -> IRbacAdministrationService -> Models/Authorization 
 ####### B5
 
 ```text
-Caller does not manage the unit members
+Caller does not manage the unit members (Viewer, or Admin of another unit)
 ```
 
 Refusal
 
 ```text
-403 through the declared access
+403 at the controller guard on api/latest and api/v1, observed by SystemWideRulesRefusalWireContractTest
 ```
 
 ####### B6
@@ -2242,6 +2342,18 @@ Indeterminate
 
 ```text
 Warning notice per M-S3, never hidden
+```
+
+####### B11
+
+```text
+Unknown Team or Portfolio id
+```
+
+Refusal
+
+```text
+404 Not Found, not an empty list
 ```
 
 ##### Observations

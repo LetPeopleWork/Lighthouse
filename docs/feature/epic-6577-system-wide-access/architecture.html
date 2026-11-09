@@ -1757,12 +1757,33 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <pre><code>No direct role column, chip and filter copy per M-S2
 </code></pre>
 
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Migrated at GREEN: its non-System-Admin createGroupMapping assertion pins the old Bug 6576 behaviour
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Migrated at GREEN: its non-System-Admin createGroupMapping assertion pins the old Bug 6576 behaviour
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Migrated at GREEN: it clicks Show unassigned users only, which M-S2 renames
+</code></pre>
+
 <p>Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.test.tsx</p>
 
 <h4>Verification</h4>
 
-<pre><code>pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/components/Common/Authorization/SystemWideRulesNotice.test.tsx src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx
-dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Acceptance.SystemWideAccess.UnitSystemWideRules|FullyQualifiedName~SystemWideRulesWireContractTest|FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest&quot;
+<pre><code>pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/components/Common/Authorization/SystemWideRulesNotice.test.tsx src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx
+dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter &quot;FullyQualifiedName~Acceptance.SystemWideAccess.UnitSystemWideRules|FullyQualifiedName~SystemWideRulesWireContractTest|FullyQualifiedName~SystemWideRulesRefusalWireContractTest|FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest&quot;
 </code></pre>
 
 <h4>Supports</h4>
@@ -1774,6 +1795,10 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 <p>Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx</p>
 
 <p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx</p>
 
 <h4>Public oracle</h4>
 
@@ -1799,6 +1824,15 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 <h5>Decisions</h5>
 
 <pre><code>New members on IRbacAdministrationService force the existing test double ClaimsDrivenRbacAdministrationService to gain them. That file is no slice oracle or support, so S3 and S4 acceptance designers each add throwing members there without staling an earlier approval.
+</code></pre>
+
+<pre><code>Bug 6576 page wiring is Tested: TeamDetailAccessTab.test.tsx and PortfolioDetailAccessTab.test.tsx render the page as a non-System-Admin unit Admin (notice shown, no add-mapping form) and as a System Admin (form shown). The existing TeamDetail.test.tsx, PortfolioDetail.test.tsx and RbacSettings.test.tsx are S3 targets the crafter migrates in the GREEN commit, because they pin the old form and the Unassigned copy.
+</code></pre>
+
+<pre><code>Where refusal lives: GetTeamSystemWideRulesAsync and GetPortfolioSystemWideRulesAsync take the unit id and no principal, so the refusal is enforced at the controller guard (RbacGuard with the same access as managing that unit members, through CanManageTeamMembershipAsync and its Portfolio twin). The refusal obligation (403 for a Viewer and for an Admin of another unit, on both route versions) is observed on the wire class SystemWideRulesRefusalWireContractTest; port rows that call CanManageTeamMembershipAsync are predicate-guard rows, not the read.
+</code></pre>
+
+<pre><code>An unknown Team or Portfolio id answers 404 Not Found on the unit rules read (recommended option, consistent with the other unit routes), never an empty list that would read as no rules. The guard answers first: a caller without access to manage that unit gets 403 for an existing unit; for an id that does not exist a System Admin gets 404.
 </code></pre>
 
 <h5>Constraints</h5>
@@ -1933,6 +1967,33 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 <pre><code>No existing read-only list of rules; reuses CircularProgress, Alert and a keyed TanStack query
 </code></pre>
 
+<p>creates team-scoped group mappings on access tab</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx:904</p>
+
+<p>Extend</p>
+
+<pre><code>Existing page test; its non-System-Admin form assertion moves to the System Admin case
+</code></pre>
+
+<p>creates portfolio-scoped group mappings on access tab</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx:676</p>
+
+<p>Extend</p>
+
+<pre><code>Existing page test; its non-System-Admin form assertion moves to the System Admin case
+</code></pre>
+
+<p>Show unassigned users only</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:166</p>
+
+<p>Extend</p>
+
+<pre><code>Existing settings test; the label becomes Show users with no direct role only
+</code></pre>
+
 <h5>Impact</h5>
 
 <p>port interface</p>
@@ -2052,6 +2113,33 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 <pre><code>Default prop keeps today behaviour
 </code></pre>
 
+<p>existing page test</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx:904</p>
+
+<p>Migrated</p>
+
+<pre><code>Updated by the crafter in the GREEN commit that changes the wiring
+</code></pre>
+
+<p>existing page test</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx:676</p>
+
+<p>Migrated</p>
+
+<pre><code>Updated by the crafter in the GREEN commit that changes the wiring
+</code></pre>
+
+<p>existing page test</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.test.tsx:166</p>
+
+<p>Migrated</p>
+
+<pre><code>Updated by the crafter in the GREEN commit that changes the copy
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>GET authorization/teams/{teamId}/system-wide-rules and portfolios twin</p>
@@ -2105,12 +2193,12 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 
 <p>####### B5</p>
 
-<pre><code>Caller does not manage the unit members
+<pre><code>Caller does not manage the unit members (Viewer, or Admin of another unit)
 </code></pre>
 
 <p>Refusal</p>
 
-<pre><code>403 through the declared access
+<pre><code>403 at the controller guard on api/latest and api/v1, observed by SystemWideRulesRefusalWireContractTest
 </code></pre>
 
 <p>####### B6</p>
@@ -2121,6 +2209,16 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 <p>Indeterminate</p>
 
 <pre><code>Warning notice per M-S3, never hidden
+</code></pre>
+
+<p>####### B11</p>
+
+<pre><code>Unknown Team or Portfolio id
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>404 Not Found, not an empty list
 </code></pre>
 
 <h5>Observations</h5>
