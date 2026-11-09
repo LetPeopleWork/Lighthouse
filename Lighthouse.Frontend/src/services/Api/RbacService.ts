@@ -5,6 +5,7 @@ import {
 	type RbacStatus,
 	type RbacUser,
 	type ScopedRbacRole,
+	type SystemWideRule,
 	type UserAuthorizationSummary,
 	UserAuthorizationSummarySchema,
 } from "../../models/Authorization/RbacModels";
@@ -37,6 +38,8 @@ export interface IRbacService {
 	getGroupMappings(): Promise<RbacGroupMapping[]>;
 	getTeamGroupMappings(teamId: number): Promise<RbacGroupMapping[]>;
 	getPortfolioGroupMappings(portfolioId: number): Promise<RbacGroupMapping[]>;
+	getTeamSystemWideRules(teamId: number): Promise<SystemWideRule[]>;
+	getPortfolioSystemWideRules(portfolioId: number): Promise<SystemWideRule[]>;
 	createGroupMapping(request: CreateRbacGroupMappingRequest): Promise<void>;
 	removeGroupMapping(mappingId: number): Promise<void>;
 	deleteUser(userId: number): Promise<void>;
@@ -176,6 +179,24 @@ export class RbacService extends BaseApiService implements IRbacService {
 		return this.withErrorHandling(async () => {
 			const response = await this.apiService.get<RbacGroupMapping[]>(
 				`/authorization/portfolios/${portfolioId}/group-mappings`,
+			);
+			return response.data;
+		});
+	}
+
+	getTeamSystemWideRules(teamId: number): Promise<SystemWideRule[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<SystemWideRule[]>(
+				`/authorization/teams/${teamId}/system-wide-rules`,
+			);
+			return response.data;
+		});
+	}
+
+	getPortfolioSystemWideRules(portfolioId: number): Promise<SystemWideRule[]> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<SystemWideRule[]>(
+				`/authorization/portfolios/${portfolioId}/system-wide-rules`,
 			);
 			return response.data;
 		});

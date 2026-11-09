@@ -14,10 +14,10 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import type {
-	GroupMappingRole,
-	RbacGroupMapping,
-	ScopedRbacRole,
+import {
+	getRoleLabel,
+	type RbacGroupMapping,
+	type ScopedRbacRole,
 } from "../../../models/Authorization/RbacModels";
 import { ApiError } from "../../../services/Api/ApiError";
 
@@ -27,20 +27,14 @@ interface ScopedGroupMappingManagerProps {
 	groupMappingsFetcher: () => Promise<RbacGroupMapping[]>;
 	onCreateMapping: (groupValue: string, role: ScopedRbacRole) => Promise<void>;
 	onRemoveMapping: (mappingId: number) => Promise<void>;
+	/** Shows the list only: no form to add a group and no way to remove one. */
+	readOnly?: boolean;
 }
 
 const roleLabels: Record<ScopedRbacRole, string> = {
 	Viewer: "Viewer",
 	TeamAdmin: "Team Admin",
 	PortfolioAdmin: "Portfolio Admin",
-};
-
-const getScopedRoleLabel = (role: GroupMappingRole): string => {
-	if (role === "SystemAdmin") {
-		return "System Admin";
-	}
-
-	return roleLabels[role] ?? "Viewer";
 };
 
 const FORBIDDEN_MESSAGE =
@@ -60,6 +54,7 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 	groupMappingsFetcher,
 	onCreateMapping,
 	onRemoveMapping,
+	readOnly = false,
 }) => {
 	const [mappings, setMappings] = useState<RbacGroupMapping[]>([]);
 	const [loading, setLoading] = useState<boolean>(true);
@@ -129,38 +124,40 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 				{loadError && <Alert severity="error">{loadError}</Alert>}
 				{localError && <Alert severity="error">{localError}</Alert>}
 
-				<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-					<TextField
-						label="Group value"
-						size="small"
-						value={groupValueInput}
-						onChange={(event) => setGroupValueInput(event.target.value)}
-						data-testid="scoped-group-value-input"
-					/>
-					<TextField
-						select
-						label="Role"
-						size="small"
-						value={roleInput}
-						onChange={(event) =>
-							setRoleInput(event.target.value as ScopedRbacRole)
-						}
-						data-testid="scoped-group-role-input"
-					>
-						{allowedRoles.map((role) => (
-							<MenuItem key={role} value={role}>
-								{roleLabels[role]}
-							</MenuItem>
-						))}
-					</TextField>
-					<Button
-						variant="contained"
-						onClick={handleCreate}
-						data-testid="scoped-group-add-button"
-					>
-						Add Group Mapping
-					</Button>
-				</Box>
+				{!readOnly && (
+					<Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+						<TextField
+							label="Group value"
+							size="small"
+							value={groupValueInput}
+							onChange={(event) => setGroupValueInput(event.target.value)}
+							data-testid="scoped-group-value-input"
+						/>
+						<TextField
+							select
+							label="Role"
+							size="small"
+							value={roleInput}
+							onChange={(event) =>
+								setRoleInput(event.target.value as ScopedRbacRole)
+							}
+							data-testid="scoped-group-role-input"
+						>
+							{allowedRoles.map((role) => (
+								<MenuItem key={role} value={role}>
+									{roleLabels[role]}
+								</MenuItem>
+							))}
+						</TextField>
+						<Button
+							variant="contained"
+							onClick={handleCreate}
+							data-testid="scoped-group-add-button"
+						>
+							Add Group Mapping
+						</Button>
+					</Box>
+				)}
 
 				<Box>
 					<TextField
@@ -191,7 +188,7 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 							<TableRow>
 								<TableCell>Group</TableCell>
 								<TableCell>Role</TableCell>
-								<TableCell align="right">Actions</TableCell>
+								{!readOnly && <TableCell align="right">Actions</TableCell>}
 							</TableRow>
 						</TableHead>
 						<TableBody>
@@ -201,17 +198,19 @@ const ScopedGroupMappingManager: React.FC<ScopedGroupMappingManagerProps> = ({
 									data-testid={`scoped-group-row-${mapping.id}`}
 								>
 									<TableCell>{mapping.groupValue}</TableCell>
-									<TableCell>{getScopedRoleLabel(mapping.role)}</TableCell>
-									<TableCell align="right">
-										<Button
-											size="small"
-											color="error"
-											onClick={() => handleRemove(mapping.id)}
-											data-testid={`scoped-group-remove-${mapping.id}`}
-										>
-											Remove
-										</Button>
-									</TableCell>
+									<TableCell>{getRoleLabel(mapping.role)}</TableCell>
+									{!readOnly && (
+										<TableCell align="right">
+											<Button
+												size="small"
+												color="error"
+												onClick={() => handleRemove(mapping.id)}
+												data-testid={`scoped-group-remove-${mapping.id}`}
+											>
+												Remove
+											</Button>
+										</TableCell>
+									)}
 								</TableRow>
 							))}
 						</TableBody>

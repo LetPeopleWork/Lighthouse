@@ -83,6 +83,14 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
 
         Task<IReadOnlyList<RbacGroupMappingSummary>> GetPortfolioGroupMappingsAsync(int portfolioId, CancellationToken cancellationToken = default);
 
+        Task<bool> TeamExistsAsync(int teamId, CancellationToken cancellationToken = default);
+
+        Task<bool> PortfolioExistsAsync(int portfolioId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<SystemWideRule>> GetTeamSystemWideRulesAsync(int teamId, CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<SystemWideRule>> GetPortfolioSystemWideRulesAsync(int portfolioId, CancellationToken cancellationToken = default);
+
         Task<RbacOperationResult> CreateGroupMappingAsync(
             string groupValue,
             UserRole role,

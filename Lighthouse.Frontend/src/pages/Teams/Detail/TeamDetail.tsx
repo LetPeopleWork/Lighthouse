@@ -14,6 +14,7 @@ import { useNavigate, useParams } from "react-router";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import ScopedGroupMappingManager from "../../../components/Common/Authorization/ScopedGroupMappingManager";
 import ScopedMembershipManager from "../../../components/Common/Authorization/ScopedMembershipManager";
+import SystemWideRulesNotice from "../../../components/Common/Authorization/SystemWideRulesNotice";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -658,6 +659,7 @@ const TeamDetail: React.FC = () => {
 											onAssignRole={handleAssignTeamRole}
 											onRemoveRole={handleRemoveTeamMember}
 										/>
+										<SystemWideRulesNotice unitKind="Team" unitId={team.id} />
 										<ScopedGroupMappingManager
 											title="Team Group Access"
 											allowedRoles={["TeamAdmin", "Viewer"]}
@@ -666,6 +668,9 @@ const TeamDetail: React.FC = () => {
 											}
 											onCreateMapping={handleCreateTeamGroupMapping}
 											onRemoveMapping={handleRemoveTeamGroupMapping}
+											readOnly={
+												!rbac.isSystemAdmin || rbac.isLoading || rbac.loadFailed
+											}
 										/>
 									</Stack>
 								)}

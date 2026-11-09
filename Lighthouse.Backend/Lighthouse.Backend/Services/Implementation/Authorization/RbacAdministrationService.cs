@@ -906,6 +906,37 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .ToListAsync(cancellationToken);
         }
 
+        public Task<bool> TeamExistsAsync(int teamId, CancellationToken cancellationToken = default)
+            => context.Teams.AnyAsync(team => team.Id == teamId, cancellationToken);
+
+        public Task<bool> PortfolioExistsAsync(int portfolioId, CancellationToken cancellationToken = default)
+            => context.Portfolios.AnyAsync(portfolio => portfolio.Id == portfolioId, cancellationToken);
+
+        public async Task<IReadOnlyList<SystemWideRule>> GetTeamSystemWideRulesAsync(int teamId, CancellationToken cancellationToken = default)
+        {
+            return await ReadSystemWideRulesReaching(PermissionScopeType.Team, cancellationToken);
+        }
+
+        public async Task<IReadOnlyList<SystemWideRule>> GetPortfolioSystemWideRulesAsync(int portfolioId, CancellationToken cancellationToken = default)
+        {
+            return await ReadSystemWideRulesReaching(PermissionScopeType.Portfolio, cancellationToken);
+        }
+
+        private async Task<IReadOnlyList<SystemWideRule>> ReadSystemWideRulesReaching(PermissionScopeType unitType, CancellationToken cancellationToken)
+        {
+            var storedRows = await context.RbacGroupMappings
+                .Where(x => x.ScopeType == PermissionScopeType.AllUnits && x.ScopeId == null)
+                .OrderBy(x => x.GroupValue)
+                .ThenBy(x => x.Role)
+                .ToListAsync(cancellationToken);
+
+            return storedRows
+                .Select(row => SystemWideRule.TryReading(row, unitType, out var rule) ? rule : null)
+                .OfType<SystemWideRule>()
+                .Distinct()
+                .ToList();
+        }
+
         public async Task<RbacOperationResult> CreateGroupMappingAsync(
             string groupValue,
             UserRole role,

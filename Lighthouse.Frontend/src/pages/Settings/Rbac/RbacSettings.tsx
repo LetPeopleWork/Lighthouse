@@ -265,7 +265,7 @@ const RbacSettings: React.FC = () => {
 							data-testid="rbac-status-ready"
 						/>
 						<Chip
-							label={`Unassigned users: ${status?.unassignedUserCount ?? 0}`}
+							label={`No direct role: ${status?.unassignedUserCount ?? 0}`}
 							data-testid="rbac-status-unassigned-count"
 						/>
 						<Chip
@@ -313,7 +313,7 @@ const RbacSettings: React.FC = () => {
 					sx={{ minWidth: 220 }}
 				/>
 				<FormControlLabel
-					label="Show unassigned users only"
+					label="Show users with no direct role only"
 					control={
 						<Checkbox
 							checked={showUnassignedOnly}
@@ -330,7 +330,7 @@ const RbacSettings: React.FC = () => {
 						<TableCell>Email</TableCell>
 						<TableCell>Subject</TableCell>
 						<TableCell>System Admin</TableCell>
-						<TableCell>Unassigned</TableCell>
+						<TableCell>No direct role</TableCell>
 						<TableCell align="right">Actions</TableCell>
 					</TableRow>
 				</TableHead>

@@ -366,6 +366,36 @@ namespace Lighthouse.Backend.API
             return Ok(mappings);
         }
 
+        [RbacGuard(RbacGuardRequirement.TeamWrite, ScopeIdRouteKey = "teamId")]
+        [HttpGet("teams/{teamId:int}/system-wide-rules")]
+        [ProducesResponseType<IReadOnlyList<SystemWideRule>>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetTeamSystemWideRules(int teamId, CancellationToken cancellationToken)
+        {
+            if (!await rbacAdministrationService.TeamExistsAsync(teamId, cancellationToken))
+            {
+                return NotFound($"Team {teamId} does not exist.");
+            }
+
+            return Ok(await rbacAdministrationService.GetTeamSystemWideRulesAsync(teamId, cancellationToken));
+        }
+
+        [RbacGuard(RbacGuardRequirement.PortfolioWrite, ScopeIdRouteKey = "portfolioId")]
+        [HttpGet("portfolios/{portfolioId:int}/system-wide-rules")]
+        [ProducesResponseType<IReadOnlyList<SystemWideRule>>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetPortfolioSystemWideRules(int portfolioId, CancellationToken cancellationToken)
+        {
+            if (!await rbacAdministrationService.PortfolioExistsAsync(portfolioId, cancellationToken))
+            {
+                return NotFound($"Portfolio {portfolioId} does not exist.");
+            }
+
+            return Ok(await rbacAdministrationService.GetPortfolioSystemWideRulesAsync(portfolioId, cancellationToken));
+        }
+
         [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpPost("group-mappings")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

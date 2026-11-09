@@ -60,6 +60,21 @@ export type GroupMappingScopeType =
 
 export type GroupMappingRole = "SystemAdmin" | ScopedRbacRole;
 
+export interface SystemWideRule {
+	role: GroupMappingRole;
+	holder: string;
+}
+
+const ROLE_LABELS: Record<GroupMappingRole, string> = {
+	SystemAdmin: "System Admin",
+	Viewer: "Viewer",
+	TeamAdmin: "Team Admin",
+	PortfolioAdmin: "Portfolio Admin",
+};
+
+export const getRoleLabel = (role: GroupMappingRole): string =>
+	ROLE_LABELS[role] ?? "Viewer";
+
 export interface RbacGroupMapping {
 	id: number;
 	groupValue: string;

@@ -28,6 +28,8 @@ describe("RbacSettings", () => {
 		getGroupMappings: vi.fn(),
 		getTeamGroupMappings: vi.fn(),
 		getPortfolioGroupMappings: vi.fn(),
+		getTeamSystemWideRules: vi.fn().mockResolvedValue([]),
+		getPortfolioSystemWideRules: vi.fn().mockResolvedValue([]),
 		createGroupMapping: vi.fn(),
 		removeGroupMapping: vi.fn(),
 	};
@@ -146,7 +148,7 @@ describe("RbacSettings", () => {
 		});
 	});
 
-	it("should allow filtering to unassigned users only", async () => {
+	it("should allow filtering to users with no direct role only", async () => {
 		mockRbacService.getStatus.mockResolvedValue({
 			enabled: true,
 			premiumGateSatisfied: true,
@@ -163,7 +165,9 @@ describe("RbacSettings", () => {
 			expect(screen.getByTestId("rbac-user-row-2")).toBeInTheDocument();
 		});
 
-		fireEvent.click(screen.getByLabelText("Show unassigned users only"));
+		fireEvent.click(
+			screen.getByLabelText("Show users with no direct role only"),
+		);
 
 		await waitFor(() => {
 			expect(screen.queryByTestId("rbac-user-row-1")).not.toBeInTheDocument();

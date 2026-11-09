@@ -23,6 +23,8 @@ const mockApiServiceContext = createMockApiServiceContext({
 		getGroupMappings: vi.fn().mockResolvedValue([]),
 		getTeamGroupMappings: vi.fn().mockResolvedValue([]),
 		getPortfolioGroupMappings: vi.fn().mockResolvedValue([]),
+		getTeamSystemWideRules: vi.fn().mockResolvedValue([]),
+		getPortfolioSystemWideRules: vi.fn().mockResolvedValue([]),
 		createGroupMapping: vi.fn(),
 		removeGroupMapping: vi.fn(),
 		deleteUser: vi.fn(),

@@ -686,7 +686,7 @@ describe("PortfolioDetail - RBAC Tab Visibility", () => {
 		]);
 		const createGroupMapping = vi.fn().mockResolvedValue(undefined);
 
-		renderWithRbac(true, true, false, {
+		renderWithRbac(true, true, true, {
 			getPortfolioGroupMappings,
 			createGroupMapping,
 		});

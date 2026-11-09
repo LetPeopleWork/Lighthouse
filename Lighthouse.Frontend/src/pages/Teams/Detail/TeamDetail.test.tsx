@@ -14,6 +14,7 @@ import {
 	createMockUpdateSubscriptionService,
 	createMockWorkTrackingSystemService,
 } from "../../../tests/MockApiServiceProvider";
+import { renderWithQueryClient } from "../../../tests/renderWithQueryClient";
 import TeamDetail from "./TeamDetail";
 
 // Mock components
@@ -797,7 +798,7 @@ describe("TeamDetail - RBAC Settings Tab Visibility", () => {
 			rbacService: mockRbacService,
 			updateSubscriptionService: mockUpdateSubscription,
 		});
-		render(
+		renderWithQueryClient(
 			<BrowserRouter>
 				<ApiServiceContext.Provider value={mockApiContext}>
 					<TeamDetail />
@@ -918,7 +919,7 @@ describe("TeamDetail - RBAC Settings Tab Visibility", () => {
 		renderTeamDetail({
 			getAuthorizationSummary: vi.fn().mockResolvedValue({
 				isRbacEnabled: true,
-				isSystemAdmin: false,
+				isSystemAdmin: true,
 				canCreateTeam: true,
 				canCreatePortfolio: false,
 			}),

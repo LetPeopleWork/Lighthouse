@@ -168,6 +168,18 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public Task<IReadOnlyList<RbacGroupMappingSummary>> GetGroupMappingsAsync(CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<RbacGroupMappingSummary>>([]);
 
+        public Task<bool> TeamExistsAsync(int teamId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<bool> PortfolioExistsAsync(int portfolioId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<IReadOnlyList<SystemWideRule>> GetTeamSystemWideRulesAsync(int teamId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<IReadOnlyList<SystemWideRule>> GetPortfolioSystemWideRulesAsync(int portfolioId, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
         public Task<IReadOnlyList<RbacGroupMappingSummary>> GetTeamGroupMappingsAsync(int teamId, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<RbacGroupMappingSummary>>([]);
 

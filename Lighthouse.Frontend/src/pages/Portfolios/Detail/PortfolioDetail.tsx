@@ -6,6 +6,7 @@ import { useNavigate, useParams } from "react-router";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import ScopedGroupMappingManager from "../../../components/Common/Authorization/ScopedGroupMappingManager";
 import ScopedMembershipManager from "../../../components/Common/Authorization/ScopedMembershipManager";
+import SystemWideRulesNotice from "../../../components/Common/Authorization/SystemWideRulesNotice";
 import DetailHeader from "../../../components/Common/DetailHeader/DetailHeader";
 import FeatureOwnerHeader from "../../../components/Common/FeatureOwnerHeader/FeatureOwnerHeader";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
@@ -591,6 +592,10 @@ const PortfolioDetail: React.FC = () => {
 											onAssignRole={handleAssignPortfolioRole}
 											onRemoveRole={handleRemovePortfolioMember}
 										/>
+										<SystemWideRulesNotice
+											unitKind="Portfolio"
+											unitId={portfolio.id}
+										/>
 										<ScopedGroupMappingManager
 											title="Portfolio Group Access"
 											allowedRoles={["PortfolioAdmin", "Viewer"]}
@@ -599,6 +604,9 @@ const PortfolioDetail: React.FC = () => {
 											}
 											onCreateMapping={handleCreatePortfolioGroupMapping}
 											onRemoveMapping={handleRemovePortfolioGroupMapping}
+											readOnly={
+												!rbac.isSystemAdmin || rbac.isLoading || rbac.loadFailed
+											}
 										/>
 									</Stack>
 								)}
