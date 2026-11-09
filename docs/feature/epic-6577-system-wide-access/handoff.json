@@ -3,7 +3,8 @@
 "B": 10,
 "C": 2,
 "D": 11,
-"F": 389,
+"E": 9,
+"F": 398,
 "K": 9,
 "L": 14,
 "N": 2,
@@ -1949,6 +1950,73 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F390"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F391"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F392"
+},
+{
+"id": "E4",
+"promises": [
+"P3"
+],
+"text": "F393"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F394"
+},
+{
+"id": "E6",
+"promises": [
+"P4"
+],
+"text": "F395"
+},
+{
+"id": "E7",
+"promises": [
+"P4"
+],
+"text": "F396"
+},
+{
+"id": "E8",
+"promises": [
+"P5"
+],
+"text": "F397"
+},
+{
+"id": "E9",
+"promises": [
+"P5"
+],
+"text": "F398"
+}
+]
+},
 "facts": {
 "F1": "Epic 6577: Viewer and Admin access for all Teams and Portfolios through system-wide rules, plus an opt-in switch that lets everyone signed in view. Design: docs/feature/epic-6577-system-wide-access/feature-delta.md, ADR-280, ADR-281.",
 "F10": "Creating, cloning or deleting units, connections, system settings, RBAC administration or licence details through Admin on all",
@@ -2271,6 +2339,15 @@
 "F388": "Admin on all",
 "F389": "CreateGroupMappingAsync -> EffectiveAccess UnitAdmin -> write checks and my-summary -> useRbac tabs",
 "F39": "The single inbound port implementation for access; every new read and write goes through it",
+"F390": "A System Admin can add Viewer on all for one SSO group, and a member of that group can then read every existing Team and Portfolio, and any Team or Portfolio created afterwards, without being added to any of them.",
+"F391": "A limited API key owned by a member of that group reads the Teams and Portfolios its owner reaches through the rule and its own limit allows, and nothing it was not allowed before.",
+"F392": "A limited API key whose owner reaches a unit only through a system-wide rule works on that unit at the key's exact scope (read-only stays read-only, wider scope works as granted), and never reaches any unit or action beyond the key's limit, even if the owner's rule is wider.",
+"F393": "On a Team or Portfolio Access tab, an Admin of that unit sees a read-only list of the system-wide rules that also reach it, which they cannot edit or remove there; a person who is not an Admin of the unit does not gain this view.",
+"F394": "Where Settings showed Unassigned for a person with no direct role on a unit, it now shows No direct role.",
+"F395": "Everyone signed in is off by default and a fresh or existing install changes no one's access until a System Admin turns it on; turning it on asks for a confirm first, and declining leaves it off.",
+"F396": "After it is confirmed on, every signed-in person with a profile reads every Team and Portfolio, including ones created later; turning it off removes that reach again.",
+"F397": "Admin on all lets members of the chosen group edit settings and members on every Team and Portfolio, including ones created later.",
+"F398": "Holders of Admin on all are still refused every System-Admin-only action (for example system settings and managing system-wide rules).",
 "F4": "A limited API key whose owner reaches its unit through a rule works at the key's exact scope and reaches nothing beyond its limit",
 "F40": "Already returns group mapping rows for the principal, including AllUnits rows once they exist",
 "F41": "Maps a stale switch write to 409 as for other configuration",
