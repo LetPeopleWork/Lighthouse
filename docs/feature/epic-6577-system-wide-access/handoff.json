@@ -1,0 +1,2444 @@
+{
+"counters": {
+"B": 10,
+"C": 2,
+"D": 11,
+"F": 389,
+"K": 9,
+"L": 14,
+"N": 2,
+"P": 5,
+"S": 5,
+"T": 3,
+"Y": 10
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "group-mappings payload: scopeType and role enums (strings out, ints in)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"party": "Producer",
+"reason": "F43"
+},
+{
+"contract": "group-mappings payload: scopeType and role enums (strings out, ints in)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:1",
+"party": "Consumer",
+"reason": "F44"
+},
+{
+"contract": "group-mappings payload: scopeType and role enums (strings out, ints in)",
+"decision": "UnchangedCompatible",
+"locator": "/storage/repos/lighthouse-clients",
+"party": "Consumer",
+"reason": "F45"
+},
+{
+"contract": "my-summary payload",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:418",
+"party": "Producer",
+"reason": "F46"
+},
+{
+"contract": "my-summary payload",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.ts:33",
+"party": "Consumer",
+"reason": "F47"
+}
+],
+"boundaries": {
+"dependency_direction": "F54",
+"driven_ports": [
+"F50",
+"F51",
+"F52",
+"F53"
+],
+"driving_port": "F49"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F69",
+"design": "Blocked",
+"runtime": "DesignedNotBuilt",
+"subject": "F68"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F30"
+},
+{
+"id": "K2",
+"text": "F31"
+},
+{
+"id": "K3",
+"text": "F32"
+},
+{
+"id": "K4",
+"text": "F33"
+},
+{
+"id": "K5",
+"text": "F34"
+},
+{
+"id": "K6",
+"text": "F35"
+},
+{
+"id": "K7",
+"text": "F36"
+},
+{
+"id": "K8",
+"text": "F37"
+},
+{
+"id": "K9",
+"text": "F38"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F19"
+},
+{
+"id": "D2",
+"text": "F20"
+},
+{
+"id": "D3",
+"text": "F21"
+},
+{
+"id": "D4",
+"text": "F22"
+},
+{
+"id": "D5",
+"text": "F23"
+},
+{
+"id": "D6",
+"text": "F24"
+},
+{
+"id": "D7",
+"text": "F25"
+},
+{
+"id": "D8",
+"text": "F26"
+},
+{
+"id": "D9",
+"text": "F27"
+},
+{
+"id": "D10",
+"text": "F28"
+},
+{
+"id": "D11",
+"text": "F29"
+}
+],
+"models": [
+{
+"assumptions": [
+"F64",
+"F65"
+],
+"atoms": [
+{
+"atomicity": "F61",
+"kind": "Action",
+"name": "put",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:16",
+"symbol": "RbacAdministrationService switch update (designed, not built)"
+},
+{
+"atomicity": "F62",
+"kind": "Action",
+"name": "removeRule",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:963",
+"symbol": "RbacAdministrationService.RemoveGroupMappingAsync"
+},
+{
+"atomicity": "F63",
+"kind": "Action",
+"name": "checkRule",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:916",
+"symbol": "RbacAdministrationService.CreateGroupMappingAsync"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F66",
+"id": "N1",
+"kills": [
+"noLostSwitchWrite"
+]
+},
+{
+"description": "F67",
+"id": "N2",
+"kills": [
+"removalLeavesNoTwin"
+]
+}
+],
+"path": "docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "noLostSwitchWrite",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:876",
+"statement": "F59",
+"symbol": "EveryoneSignedInSetting.ConcurrencyToken"
+},
+{
+"kind": "Invariant",
+"name": "removalLeavesNoTwin",
+"site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:963",
+"statement": "F60",
+"symbol": "RbacAdministrationService.RemoveGroupMappingAsync"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F48"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:16",
+"reason": "F39",
+"symbol": "RbacAdministrationService"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1146",
+"reason": "F40",
+"symbol": "GetVirtualPermissionsAsync"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/Filters/ConcurrencyConflictExceptionFilter.cs:7",
+"reason": "F41",
+"symbol": "ConcurrencyConflictExceptionFilter"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs:1",
+"reason": "F42",
+"symbol": "AppSetting and OptionalFeature"
+}
+],
+"risks": [
+{
+"allowed": "F72",
+"forbidden": "F73",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "RbacAdministrationService",
+"preserved": "F71",
+"residue": "F74",
+"source": "F70"
+},
+{
+"allowed": "F77",
+"forbidden": "F78",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "EffectiveAccess",
+"preserved": "F76",
+"residue": "F79",
+"source": "F75"
+},
+{
+"allowed": "F82",
+"forbidden": "F83",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "EveryoneSignedInSetting",
+"preserved": "F81",
+"residue": "F84",
+"source": "F80"
+},
+{
+"allowed": "F87",
+"forbidden": "F88",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "RbacAdministrationService",
+"preserved": "F86",
+"residue": "F89",
+"source": "F85"
+},
+{
+"allowed": "F92",
+"forbidden": "F93",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "EffectiveAccess",
+"preserved": "F91",
+"residue": "F84",
+"source": "F90"
+},
+{
+"allowed": "F96",
+"forbidden": "F97",
+"id": "Y6",
+"kind": "SinglePointOfFailure",
+"owner": "EffectiveAccess",
+"preserved": "F95",
+"residue": "F98",
+"source": "F94"
+},
+{
+"allowed": "F96",
+"forbidden": "F101",
+"id": "Y7",
+"kind": "Bypass",
+"owner": "RbacAdministrationService",
+"preserved": "F100",
+"residue": "F102",
+"source": "F99"
+},
+{
+"allowed": "F105",
+"forbidden": "F106",
+"id": "Y8",
+"kind": "Bypass",
+"owner": "RbacAdministrationService",
+"preserved": "F104",
+"residue": "F107",
+"source": "F103"
+},
+{
+"allowed": "F96",
+"forbidden": "F110",
+"id": "Y9",
+"kind": "Bypass",
+"owner": "CurrentUserProfileService",
+"preserved": "F109",
+"residue": "F111",
+"source": "F108"
+},
+{
+"allowed": "F96",
+"forbidden": "F114",
+"id": "Y10",
+"kind": "Stressor",
+"owner": "RbacAdministrationService",
+"preserved": "F113",
+"residue": "F115",
+"source": "F112"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "RbacAdministrationService",
+"state": "F55"
+},
+{
+"kind": "Excluded",
+"owner": "RbacAdministrationService",
+"state": "F56"
+},
+{
+"kind": "Unknown",
+"owner": "EffectiveAccess",
+"state": "F57"
+},
+{
+"kind": "Admitted",
+"owner": "RbacAdministrationService",
+"state": "F58"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs",
+"move": "F128",
+"preserved": "F129",
+"verification": [
+"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~RbacAdministrationServiceTest|FullyQualifiedName~CreateRightsAcceptanceTest|FullyQualifiedName~RbacGuardAttributeTest\""
+]
+},
+"public_oracle": {
+"expected": "F126",
+"falsifier": "F127",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F125"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~AccessTablesSingleReaderArchUnitTest",
+"id": "T1",
+"obligation": "F217",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessTablesSingleReaderArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F162",
+"driven_ports": [
+"F161"
+],
+"driving_port": "F160",
+"failures": [
+{
+"condition": "F163",
+"id": "B1",
+"observation": "F164",
+"outcome": "Refusal"
+},
+{
+"condition": "F165",
+"id": "B2",
+"observation": "F166",
+"outcome": "Refusal"
+},
+{
+"condition": "F167",
+"id": "B3",
+"observation": "F168",
+"outcome": "Refusal"
+},
+{
+"condition": "F169",
+"id": "B4",
+"observation": "F170",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F208",
+"bypass": "F210",
+"constructor": "EffectiveAccess.Resolve",
+"consumer": "The 13 or more read, write and summary readers in RbacAdministrationService",
+"harm": "F207",
+"id": "C1",
+"owner": "EffectiveAccess",
+"proposition": "F206",
+"public_observation": "F209"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F212",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F211"
+},
+{
+"axis": "Inhabitation",
+"basis": "F213",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F211"
+},
+{
+"axis": "PublicReachability",
+"basis": "F214",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F211"
+},
+{
+"axis": "PublicReachability",
+"basis": "F216",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F215"
+}
+],
+"constructors": [
+{
+"name": "AppliesTo.AllUnits",
+"signature": "static AppliesTo AllUnits"
+},
+{
+"name": "EffectiveAccess.Resolve",
+"signature": "static EffectiveAccess Resolve(IEnumerable<PermissionRule> ownerRows, IEnumerable<PermissionRule> ruleRows)"
+}
+],
+"decisions": [
+"F130"
+],
+"equality": [
+{
+"definition": "F173",
+"under": "EffectiveAccess"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/PermissionScopeType.cs:7",
+"reason": "F146"
+},
+{
+"decision": "Changed",
+"kind": "domain value",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/AppliesTo.cs:1",
+"reason": "F147"
+},
+{
+"decision": "Changed",
+"kind": "domain value",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:1",
+"reason": "F147"
+},
+{
+"decision": "Changed",
+"kind": "application service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1028",
+"reason": "F148"
+},
+{
+"decision": "Changed",
+"kind": "controller",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F149"
+},
+{
+"decision": "Changed",
+"kind": "usage-data enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:90",
+"reason": "F150"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/settings/usagedata.md:68",
+"reason": "F151"
+},
+{
+"decision": "Changed",
+"kind": "frontend model",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:1",
+"reason": "F152"
+},
+{
+"decision": "Changed",
+"kind": "frontend page",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F153"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "port interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs:1",
+"reason": "F154"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test double",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs:1",
+"reason": "F155"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "existing tests",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Authorization/RbacAdministrationServiceTest.cs:1",
+"reason": "F156"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "unit routes and RbacGuard",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacGuardAttribute.cs:1",
+"reason": "F157"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Algebraic",
+"layer": "Domain",
+"owner": "EffectiveAccess",
+"statement": "F174",
+"treatment": {
+"cases": [
+"F175",
+"F176",
+"F177",
+"F178",
+"F179"
+],
+"kind": "Finite",
+"reason": "F180"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "EffectiveAccess",
+"statement": "F181",
+"treatment": {
+"cases": [
+"F182"
+],
+"kind": "Finite",
+"reason": "F183"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "EffectiveAccess",
+"statement": "F184",
+"treatment": {
+"cases": [
+"F185",
+"F186"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RbacAdministrationService",
+"statement": "F188",
+"treatment": {
+"cases": [
+"F189"
+],
+"kind": "Finite",
+"reason": "F190"
+}
+},
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RbacAdministrationService",
+"statement": "F191",
+"treatment": {
+"cases": [
+"F192",
+"F193",
+"F194"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+},
+{
+"id": "L6",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RbacAdministrationService",
+"statement": "F195",
+"treatment": {
+"cases": [
+"F196",
+"F197",
+"F198"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+},
+{
+"id": "L7",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "RbacAdministrationService",
+"statement": "F199",
+"treatment": {
+"cases": [
+"F200"
+],
+"kind": "Finite",
+"reason": "F201"
+}
+},
+{
+"id": "L8",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RbacAdministrationService",
+"statement": "F202",
+"treatment": {
+"cases": [
+"F203",
+"F204",
+"F205"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F158"
+},
+{
+"analysis": "contract_tests",
+"reason": "F159"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F172",
+"description": "F171",
+"result_type": "bool"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/PermissionScopeType.cs:5",
+"reason": "F131",
+"symbol": "PermissionScopeType"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1352",
+"reason": "F132",
+"symbol": "PermissionScopeKey"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGroupMapping.cs:1",
+"reason": "F133",
+"symbol": "AppliesTo"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1289",
+"reason": "F134",
+"symbol": "IsValidGroupMappingScope"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1053",
+"reason": "F135",
+"symbol": "GetOwnerEffectivePermissionsAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:418",
+"reason": "F136",
+"symbol": "GetAuthorizationSummaryAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F137",
+"symbol": "AuthorizationController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:90",
+"reason": "F138",
+"symbol": "UsageDataEventName"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F139",
+"symbol": "RbacSettings"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1257",
+"reason": "F140",
+"symbol": "HasTeamReadPermission"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1097",
+"reason": "F141",
+"symbol": "IntersectWithApiKeyScope"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:882",
+"reason": "F142",
+"symbol": "GetTeamGroupMappingsAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:23",
+"reason": "F143",
+"symbol": "UserAuthorizationSummary"
+},
+{
+"decision": "Extend",
+"locator": "docs/settings/usagedata.md:68",
+"reason": "F144",
+"symbol": "Parent sources were saved"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/AppliesTo.cs:1",
+"reason": "F133",
+"symbol": "AppliesTo"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:1",
+"reason": "F145",
+"symbol": "EffectiveAccess"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/SystemWideAccessScenario.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllListCostTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Authorization/EffectiveAccessTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessTablesSingleReaderArchUnitTest.cs",
+"Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/PermissionScopeType.cs",
+"reason": "F116"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/AppliesTo.cs",
+"reason": "F117"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs",
+"reason": "F118"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+"reason": "F119"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F122"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx",
+"reason": "F124"
+}
+],
+"verification": [
+"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Acceptance.SystemWideAccess.ViewerOnAll|FullyQualifiedName~Acceptance.SystemWideAccess.LimitedKeyUnderRule|FullyQualifiedName~EffectiveAccessTest|FullyQualifiedName~AccessTablesSingleReaderArchUnitTest\"",
+"pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.test.tsx",
+"public_oracle": {
+"expected": "F230",
+"falsifier": "F231",
+"promises": [
+"P3"
+],
+"stimulus": "F229"
+},
+"records": {
+"agreement": [
+{
+"contract": "GET authorization/teams/{teamId}/system-wide-rules and portfolios twin",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"party": "Producer",
+"reason": "F255"
+},
+{
+"contract": "GET authorization/teams/{teamId}/system-wide-rules and portfolios twin",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/RbacService.ts:1",
+"party": "Consumer",
+"reason": "F256"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest",
+"id": "T2",
+"obligation": "F272",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/EveryActionDeclaresItsAccessArchitectureTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F162",
+"driven_ports": [
+"F161"
+],
+"driving_port": "F160",
+"failures": [
+{
+"condition": "F259",
+"id": "B5",
+"observation": "F260",
+"outcome": "Refusal"
+},
+{
+"condition": "F261",
+"id": "B6",
+"observation": "F262",
+"outcome": "Indeterminate"
+}
+]
+},
+"closure": [
+{
+"axis": "PublicReachability",
+"basis": "F271",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F270"
+}
+],
+"decisions": [
+"F232"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "port interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs:1",
+"reason": "F245"
+},
+{
+"decision": "Migrated",
+"kind": "test double",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs:1",
+"reason": "F246"
+},
+{
+"decision": "Changed",
+"kind": "application service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:882",
+"reason": "F247"
+},
+{
+"decision": "Changed",
+"kind": "read model",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/SystemWideRule.cs:1",
+"reason": "F147"
+},
+{
+"decision": "Changed",
+"kind": "controller",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F248"
+},
+{
+"decision": "Changed",
+"kind": "frontend model",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:1",
+"reason": "F249"
+},
+{
+"decision": "Changed",
+"kind": "frontend api client",
+"locator": "Lighthouse.Frontend/src/services/Api/RbacService.ts:1",
+"reason": "F250"
+},
+{
+"decision": "Changed",
+"kind": "frontend component",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
+"reason": "F147"
+},
+{
+"decision": "Changed",
+"kind": "frontend component",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.tsx:1",
+"reason": "F251"
+},
+{
+"decision": "Changed",
+"kind": "frontend page",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:1",
+"reason": "F252"
+},
+{
+"decision": "Changed",
+"kind": "frontend page",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:1",
+"reason": "F252"
+},
+{
+"decision": "Changed",
+"kind": "frontend page",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F253"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "existing component test",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.test.tsx:1",
+"reason": "F254"
+}
+],
+"laws": [
+{
+"id": "L9",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RbacAdministrationService",
+"statement": "F265",
+"treatment": {
+"cases": [
+"F266",
+"F267",
+"F268",
+"F269"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F257"
+},
+{
+"analysis": "prefactoring",
+"reason": "F258"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F264",
+"description": "F263",
+"result_type": "IReadOnlyList<SystemWideRule>"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs:1",
+"reason": "F233",
+"symbol": "IRbacAdministrationService"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGroupMappingSummary.cs:1",
+"reason": "F234",
+"symbol": "SystemWideRule"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F235",
+"symbol": "AuthorizationController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/RbacService.ts:1",
+"reason": "F236",
+"symbol": "RbacService"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.tsx:1",
+"reason": "F237",
+"symbol": "SystemWideRulesNotice"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.tsx:1",
+"reason": "F238",
+"symbol": "ScopedGroupMappingManager"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.ts:33",
+"reason": "F239",
+"symbol": "useRbac"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F240",
+"symbol": "RbacSettings"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:882",
+"reason": "F241",
+"symbol": "GetTeamGroupMappingsAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:90",
+"reason": "F242",
+"symbol": "TeamDetail"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:60",
+"reason": "F242",
+"symbol": "PortfolioDetail"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:23",
+"reason": "F243",
+"symbol": "UserAuthorizationSummary"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/SystemWideRule.cs:1",
+"reason": "F234",
+"symbol": "SystemWideRule"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
+"reason": "F244",
+"symbol": "SystemWideRulesNotice"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/UnitSystemWideRulesAtThePortTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/SystemWideRulesWireContractTest.cs",
+"Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx",
+"Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs",
+"reason": "F218"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+"reason": "F219"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/SystemWideRule.cs",
+"reason": "F220"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+"reason": "F221"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts",
+"reason": "F222"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/RbacService.ts",
+"reason": "F223"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx",
+"reason": "F224"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Authorization/ScopedGroupMappingManager.tsx",
+"reason": "F225"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx",
+"reason": "F226"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx",
+"reason": "F227"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx",
+"reason": "F228"
+}
+],
+"verification": [
+"pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/components/Common/Authorization/SystemWideRulesNotice.test.tsx src/components/Common/Authorization/ScopedGroupMappingManagerReadOnly.test.tsx src/pages/Settings/Rbac/RbacSettingsNoDirectRole.test.tsx",
+"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Acceptance.SystemWideAccess.UnitSystemWideRules|FullyQualifiedName~SystemWideRulesWireContractTest|FullyQualifiedName~EveryActionDeclaresItsAccessArchitectureTest\""
+]
+},
+"S4": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/EveryoneSignedInAtThePortTest.cs",
+"public_oracle": {
+"expected": "F289",
+"falsifier": "F290",
+"promises": [
+"P4"
+],
+"stimulus": "F288"
+},
+"records": {
+"agreement": [
+{
+"contract": "GET and PUT authorization/everyone-signed-in (everyoneCanView, concurrencyToken)",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"party": "Producer",
+"reason": "F315"
+},
+{
+"contract": "GET and PUT authorization/everyone-signed-in (everyoneCanView, concurrencyToken)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/RbacService.ts:1",
+"party": "Consumer",
+"reason": "F316"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~ExpandOnlyMigrationGuardTest",
+"id": "T3",
+"obligation": "F350",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ExpandOnlyMigrationGuardTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F162",
+"driven_ports": [
+"F161"
+],
+"driving_port": "F160",
+"failures": [
+{
+"condition": "F319",
+"id": "B7",
+"observation": "F320",
+"outcome": "Refusal"
+},
+{
+"condition": "F321",
+"id": "B8",
+"observation": "F322",
+"outcome": "Refusal"
+},
+{
+"condition": "F323",
+"id": "B9",
+"observation": "F324",
+"outcome": "Indeterminate"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F344",
+"bypass": "F346",
+"constructor": "EveryoneSignedInSeeder",
+"consumer": "EffectiveAccess.Resolve",
+"harm": "F343",
+"id": "C2",
+"owner": "EveryoneSignedInSetting",
+"proposition": "F342",
+"public_observation": "F345"
+}
+],
+"closure": [
+{
+"axis": "Inhabitation",
+"basis": "F348",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F347"
+},
+{
+"axis": "PublicReachability",
+"basis": "F349",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F347"
+}
+],
+"decisions": [
+"F291"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "entity",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EveryoneSignedInSetting.cs:1",
+"reason": "F147"
+},
+{
+"decision": "Changed",
+"kind": "seeder",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/EveryoneSignedInSeeder.cs:1",
+"reason": "F147"
+},
+{
+"decision": "Changed",
+"kind": "persistence context",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:22",
+"reason": "F306"
+},
+{
+"decision": "Changed",
+"kind": "composition root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1492",
+"reason": "F307"
+},
+{
+"decision": "Changed",
+"kind": "migration",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite:1",
+"reason": "F308"
+},
+{
+"decision": "Changed",
+"kind": "migration",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres:1",
+"reason": "F308"
+},
+{
+"decision": "Changed",
+"kind": "domain value",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:1",
+"reason": "F309"
+},
+{
+"decision": "Changed",
+"kind": "port interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs:1",
+"reason": "F245"
+},
+{
+"decision": "Migrated",
+"kind": "test double",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ClaimsDrivenRbacAdministrationService.cs:1",
+"reason": "F246"
+},
+{
+"decision": "Changed",
+"kind": "application service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1053",
+"reason": "F310"
+},
+{
+"decision": "Changed",
+"kind": "controller",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F248"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "auth service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Auth/CurrentUserProfileService.cs:30",
+"reason": "F311"
+},
+{
+"decision": "Changed",
+"kind": "frontend model",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:1",
+"reason": "F249"
+},
+{
+"decision": "Changed",
+"kind": "frontend api client",
+"locator": "Lighthouse.Frontend/src/services/Api/RbacService.ts:1",
+"reason": "F250"
+},
+{
+"decision": "Changed",
+"kind": "frontend page",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F312"
+},
+{
+"decision": "Changed",
+"kind": "frontend component",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
+"reason": "F313"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/settings/usagedata.md:68",
+"reason": "F314"
+}
+],
+"laws": [
+{
+"id": "L10",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "EffectiveAccess",
+"statement": "F325",
+"treatment": {
+"cases": [
+"F326",
+"F327",
+"F328",
+"F329",
+"F330"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+},
+{
+"evidence": [
+"docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt"
+],
+"id": "L11",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "EveryoneSignedInSetting",
+"statement": "F331",
+"treatment": {
+"cases": [
+"F332",
+"F333"
+],
+"kind": "Finite",
+"reason": "F334"
+}
+},
+{
+"id": "L12",
+"kind": "Invariant",
+"layer": "Infrastructure",
+"owner": "EveryoneSignedInSeeder",
+"statement": "F335",
+"treatment": {
+"cases": [
+"F336",
+"F337",
+"F338"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+},
+{
+"id": "L13",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "EffectiveAccess",
+"statement": "F339",
+"treatment": {
+"cases": [
+"F340",
+"F341"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F317"
+},
+{
+"analysis": "prefactoring",
+"reason": "F318"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/IConcurrencyTokenEntity.cs:3",
+"reason": "F292",
+"symbol": "EveryoneSignedInSetting"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs:876",
+"reason": "F293",
+"symbol": "ApplyConcurrencyTokenForEdit"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/OptionalFeatureSeeder.cs:1",
+"reason": "F294",
+"symbol": "ISeeder"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1053",
+"reason": "F295",
+"symbol": "GetOwnerEffectivePermissionsAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Auth/CurrentUserProfileService.cs:10",
+"reason": "F296",
+"symbol": "CurrentUserProfileService"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:414",
+"reason": "F297",
+"symbol": "RejectEmbedPrincipalWhoseIdentityIsGone"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F298",
+"symbol": "RbacSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs:6",
+"reason": "F299",
+"symbol": "IRbacAdministrationService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F235",
+"symbol": "AuthorizationController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:23",
+"reason": "F300",
+"symbol": "UserAuthorizationSummary"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/RbacService.ts:45",
+"reason": "F236",
+"symbol": "RbacService"
+},
+{
+"decision": "Extend",
+"locator": "docs/settings/usagedata.md:68",
+"reason": "F301",
+"symbol": "Parent sources were saved"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EveryoneSignedInSetting.cs:1",
+"reason": "F292",
+"symbol": "EveryoneSignedInSetting"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/EveryoneSignedInSeeder.cs:1",
+"reason": "F302",
+"symbol": "EveryoneSignedInSeeder"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite:1",
+"reason": "F303",
+"symbol": "Sqlite migration"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Migrations.Postgres:1",
+"reason": "F303",
+"symbol": "Postgres migration"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:1",
+"reason": "F304",
+"symbol": "EffectiveAccess"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
+"reason": "F305",
+"symbol": "SystemWideRulesNotice"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/EveryoneSignedInSeederTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/EveryoneSignedInStaleWriteTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/RemovedPersonEmbedSkeletonTest.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/EveryoneSignedInWireContractTest.cs",
+"Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsEveryoneSignedIn.test.tsx",
+"Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeEveryone.test.tsx"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EveryoneSignedInSetting.cs",
+"reason": "F273"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Seeding/EveryoneSignedInSeeder.cs",
+"reason": "F274"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Data/LighthouseAppContext.cs",
+"reason": "F275"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Program.cs",
+"reason": "F276"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Sqlite",
+"reason": "F277"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Migrations.Postgres",
+"reason": "F277"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs",
+"reason": "F278"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Authorization/IRbacAdministrationService.cs",
+"reason": "F279"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+"reason": "F280"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+"reason": "F281"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Auth/CurrentUserProfileService.cs",
+"reason": "F282"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts",
+"reason": "F283"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/RbacService.ts",
+"reason": "F284"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx",
+"reason": "F285"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx",
+"reason": "F286"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F287"
+}
+],
+"verification": [
+"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Acceptance.SystemWideAccess.EveryoneSignedIn|FullyQualifiedName~Acceptance.SystemWideAccess.RemovedPersonEmbed|FullyQualifiedName~EveryoneSignedInWireContractTest|FullyQualifiedName~ExpandOnlyMigrationGuardTest\"",
+"pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pages/Settings/Rbac/RbacSettingsEveryoneSignedIn.test.tsx src/components/Common/Authorization/SystemWideRulesNoticeEveryone.test.tsx"
+]
+},
+"S5": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs",
+"public_oracle": {
+"expected": "F360",
+"falsifier": "F361",
+"promises": [
+"P5"
+],
+"stimulus": "F359"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F162",
+"driven_ports": [
+"F161"
+],
+"driving_port": "F160",
+"failures": [
+{
+"condition": "F381",
+"id": "B10",
+"observation": "F382",
+"outcome": "Refusal"
+}
+]
+},
+"closure": [
+{
+"axis": "PublicReachability",
+"basis": "F389",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F388"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "domain enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/UserRole.cs:8",
+"reason": "F368"
+},
+{
+"decision": "Changed",
+"kind": "domain value",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:1",
+"reason": "F369"
+},
+{
+"decision": "Changed",
+"kind": "application service",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1289",
+"reason": "F370"
+},
+{
+"decision": "Changed",
+"kind": "controller",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F371"
+},
+{
+"decision": "Changed",
+"kind": "frontend model",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:1",
+"reason": "F372"
+},
+{
+"decision": "Changed",
+"kind": "frontend page",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F373"
+},
+{
+"decision": "Changed",
+"kind": "frontend component",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
+"reason": "F374"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/settings/usagedata.md:68",
+"reason": "F314"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "frontend hooks",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.ts:33",
+"reason": "F375"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "member and API-key writers",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/ApiKeyController.cs:1",
+"reason": "F376"
+}
+],
+"laws": [
+{
+"id": "L14",
+"kind": "Algebraic",
+"layer": "Domain",
+"owner": "EffectiveAccess",
+"statement": "F383",
+"treatment": {
+"cases": [
+"F384",
+"F385",
+"F386",
+"F387"
+],
+"kind": "Finite",
+"reason": "F187"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F377"
+},
+{
+"analysis": "contract_tests",
+"reason": "F378"
+},
+{
+"analysis": "prefactoring",
+"reason": "F379"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F380"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/UserRole.cs:5",
+"reason": "F362",
+"symbol": "UserRole"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:604",
+"reason": "F363",
+"symbol": "CanManageRbacAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:418",
+"reason": "F364",
+"symbol": "GetAuthorizationSummaryAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F365",
+"symbol": "RbacSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs:15",
+"reason": "F354",
+"symbol": "AuthorizationController"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts:23",
+"reason": "F355",
+"symbol": "UserAuthorizationSummary"
+},
+{
+"decision": "Extend",
+"locator": "docs/settings/usagedata.md:68",
+"reason": "F301",
+"symbol": "Parent sources were saved"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:1",
+"reason": "F366",
+"symbol": "EffectiveAccess"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
+"reason": "F367",
+"symbol": "SystemWideRulesNotice"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs",
+"Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx",
+"Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeAdmin.test.tsx"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/UserRole.cs",
+"reason": "F351"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs",
+"reason": "F352"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs",
+"reason": "F353"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/API/AuthorizationController.cs",
+"reason": "F354"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Authorization/RbacModels.ts",
+"reason": "F355"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx",
+"reason": "F356"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx",
+"reason": "F357"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F358"
+}
+],
+"verification": [
+"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~Acceptance.SystemWideAccess.AdminOnAll",
+"pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx src/components/Common/Authorization/SystemWideRulesNoticeAdmin.test.tsx"
+]
+}
+}
+},
+"facts": {
+"F1": "Epic 6577: Viewer and Admin access for all Teams and Portfolios through system-wide rules, plus an opt-in switch that lets everyone signed in view. Design: docs/feature/epic-6577-system-wide-access/feature-delta.md, ADR-280, ADR-281.",
+"F10": "Creating, cloning or deleting units, connections, system settings, RBAC administration or licence details through Admin on all",
+"F100": "All checks through IRbacAdministrationService",
+"F101": "A second reader that ignores rules",
+"F102": "Architecture test reading compiled IL",
+"F103": "Deserialization of an out-of-range role or scope int on a group-mappings request",
+"F104": "Valid pairs only",
+"F105": "Refusal",
+"F106": "A stored row with an unknown value",
+"F107": "Valid-pairs table refuses every pair not listed",
+"F108": "An embed session of a person removed during the session",
+"F109": "No reads for a person without a profile",
+"F11": "Team Admins saving group mappings for their own unit (Bug 6576 hides the form instead); refreshing a key's stale group snapshot",
+"F110": "An embed reader keeping the switch reach",
+"F111": "Program.cs RejectEmbedPrincipalWhoseIdentityIsGone; S4 pins it and widens the guard only if RED",
+"F112": "Second stressor walk (walkthrough, not execution): a Team is deleted, Premium lapses, RBAC is turned off, a list of 200 Teams",
+"F113": "A rule names no unit so nothing dangles; the licence gate refuses first; RBAC off answers before rules; lookups stay constant per list",
+"F114": "A rule surviving as a grant without RBAC or Premium",
+"F115": "NFR-1 query-count test in S1",
+"F116": "Append AllUnits = 3",
+"F117": "Value object answering Reaches(unit)",
+"F118": "Value object: System role plus lazily built unit reach; replaces the private dictionary",
+"F119": "Builds EffectiveAccess, moves every reader, deletes PermissionScopeKey, valid pairs, removal of all twins, deduped list, key coverage by owner reach, my-summary through Reaches",
+"F12": "Moving the page to its target surface (Epic 6473); levels and per-level membership (Epic 6455); pattern-matching rules",
+"F120": "Actor log line on rule add and remove; usage-data event on a Viewer-on-all add",
+"F121": "Append SystemWideAccessGranted = 26",
+"F122": "List the event",
+"F123": "AllUnits scope in the unions",
+"F124": "SSO Groups heading, Role choice with Viewer on all, Applies to column, loading and failure looks of the rules table",
+"F125": "Through IRbacAdministrationService built with ServicePortHarness: a System Admin creates the mapping team-readers, Viewer, AllUnits; then a person whose only access is the group team-readers asks to read an existing Team, an existing Portfolio and a Team created after the rule, lists Teams, and asks to write one; an outsider asks the same; the member unlimited key asks to read; the member creates a key limited to Viewer on Team Zenith and it asks to read Team Zenith, Team Apollo and a Portfolio; the member asks for a key with TeamAdmin on Team Zenith; the rule is removed and the member and the limited key ask again",
+"F126": "Member: read allowed on every unit including the later Team, the list holds every Team, write refused; outsider refused; unlimited key reads what the member reads; the limited key reads Team Zenith only; the TeamAdmin key is refused with the existing message; after removal the member and the key are refused on their next request; the rules list shows one line Viewer on all for team-readers",
+"F127": "An exact-key implementation refuses the member or leaves the limited key reading nothing; a later Team is missing; Viewer on all is allowed to write; the outsider reads; the limited key reads Team Apollo or the Portfolio; the refusal message changes; a removed rule still grants",
+"F128": "Replace the private Dictionary of PermissionScopeKey to UserRole and the Has*Permission helpers with EffectiveAccess holding today exact-key semantics, and delete PermissionScopeKey, before any rule reach is added; makes adding reach a change in one value instead of 13 or more readers",
+"F129": "Every existing read, write, summary and key-intersection answer",
+"F130": "S1 covers P1 and P2 (the former key-limit slice is merged in): LimitedKeyUnderRuleAtThePortTest is S1 own oracle file, written with the Viewer-on-all scenarios and observed RED with them on the original source.",
+"F131": "One appended value carries the applies-to part; no column",
+"F132": "Deleted as a readable type so a missed reader cannot compile",
+"F133": "No existing type answers whether a rule reaches a unit; RbacGroupMapping stays a row",
+"F134": "Serves create and update; gains the AllUnits pairs",
+"F135": "Keeps the explicit-replaces-group merge on unit keys, then builds EffectiveAccess",
+"F136": "Admin lists filled through Reaches over existing unit ids",
+"F137": "Existing access endpoints accept the new scope",
+"F138": "Next integer appended",
+"F139": "Existing section; layout of ScopedGroupMappingManager reused",
+"F140": "The private dictionary and its Has*Permission helpers are exact-key lookups that cannot express reach; 13 or more readers need one higher-role rule, so EffectiveAccess replaces them",
+"F141": "With OwnerCoversScope: coverage asks RoleOn for the key unit; the result stays the key exact rows",
+"F142": "Not reused for rules (rule rows would land beside a Remove button); left unchanged",
+"F143": "Same RBAC unions gain AllUnits",
+"F144": "One table row for the new event",
+"F145": "Replaces the private exact-key dictionary; one owner for the higher-role rule",
+"F146": "AllUnits appended; stored as int",
+"F147": "New",
+"F148": "Every reader moves to EffectiveAccess",
+"F149": "Log line and event",
+"F15": "Unit admins trust who reaches their unit (Story 6580, Bug 6576)",
+"F150": "Value 26",
+"F151": "Row added",
+"F152": "Unions",
+"F153": "Role choice and column",
+"F154": "No new member in this slice",
+"F155": "Interface unchanged in this slice",
+"F156": "Behaviour without rules unchanged; it is the prefactoring oracle",
+"F157": "Calls the same service checks",
+"F158": "The changed contracts (group-mappings enums, my-summary) are recorded once in the shared agreement analysis",
+"F159": "One deployable; see the shared reason",
+"F16": "Open-by-choice organisations need no group (Story 6581)",
+"F160": "IRbacAdministrationService (application-service port), reached through AuthorizationController and RbacGuard",
+"F161": "LighthouseAppContext",
+"F162": "Controllers and RbacGuard -> IRbacAdministrationService -> Models/Authorization values and LighthouseAppContext; frontend through RbacService.ts and useRbac()",
+"F163": "Invalid role and scope pair",
+"F164": "RbacOperationResult failure, no row written",
+"F165": "Equal rule already exists on update",
+"F166": "Existing duplicate message",
+"F167": "Caller is not System Admin",
+"F168": "Refused as today",
+"F169": "Reading rule rows throws",
+"F17": "Delivery leads administer every unit without running the system (Story 6582)",
+"F170": "Error answer, never a grant; System Admin unaffected",
+"F171": "Read or write answer of IRbacAdministrationService for a principal on a Team or Portfolio",
+"F172": "Whether the reach came from a unit role, a rule or the switch",
+"F173": "Two values are equal when their SystemRole is equal and RoleOn is equal for every unit",
+"F174": "RoleOn(unit) is the higher of the unit role and the role of every rule whose AppliesTo reaches the unit; Viewer is below TeamAdmin and PortfolioAdmin",
+"F175": "no row: none",
+"F176": "Viewer rule only: Viewer on every Team and Portfolio",
+"F177": "Viewer rule plus TeamAdmin on Team A: TeamAdmin on A, Viewer elsewhere",
+"F178": "Viewer on Team A plus Viewer rule: Viewer",
+"F179": "explicit role replacing a group role on a unit key, then a rule: the higher of both",
+"F18": "Leaders read everything without System Admin, and limited keys follow their owner within their limit (Stories 6578 and 6579)",
+"F180": "Closed enums; every pair enumerated",
+"F181": "A rule only adds: adding a rule never lowers any read or write answer",
+"F182": "every role on Team and Portfolio with and without a Viewer rule",
+"F183": "Finite role set",
+"F184": "SystemRole depends only on the System row; rule rows never change it",
+"F185": "System Admin with and without rules",
+"F186": "rule-only person: no System role",
+"F187": "Finite",
+"F188": "IsValidGroupMappingScope accepts exactly the valid pairs of the shared constraint",
+"F189": "every UserRole value times every PermissionScopeType value, with null and non-null ScopeId",
+"F19": "Paradigm object_oriented, ports and adapters in the modular monolith. Domain owners: AppliesTo (value object, Models/Authorization) alone answers Reaches(unit); EffectiveAccess (value object, Models/Authorization) owns role resolution, split into the System role and a lazily built unit reach, and answers RoleOn(unit), CanRead, CanWrite and SystemRole; EveryoneSignedInSetting (entity with ConcurrencyToken) owns the switch; SystemWideRule (read model) carries holder, role and applies-to for the Access tab. RbacAdministrationService is the application service: it loads rows, builds these values and asks them; it never compares roles itself.",
+"F190": "Enumerated from Enum.GetValues, so a later value fails the table",
+"F191": "A limited key yields exactly its own rows, each at the lower of the key role and the owner RoleOn for that unit, and nothing when the owner does not reach the unit",
+"F192": "owner reaches unit through a rule",
+"F193": "owner reaches nothing",
+"F194": "owner Viewer through rule, key asks TeamAdmin: refused",
+"F195": "Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope",
+"F196": "two twin rows then remove: none left",
+"F197": "two twin rows listed: one line",
+"F198": "update role onto an existing equal row: refused with the duplicate message",
+"F199": "Permission lookups for a list do not grow with the number of units, my-summary included",
+"F2": "An organisation gives broad read or admin rights with one rule instead of granting each Team and Portfolio or making people System Admin, and stays private by default.",
+"F20": "Carriers and owners. Decisions: EffectiveAccess and AppliesTo in Models/Authorization. Effects: rows through LighthouseAppContext (mappings, permissions, keys, the switch row), one Information line per rule add, rule remove and switch change through ILogger in AuthorizationController, and the name-only usage-data event SystemWideAccessGranted = 26 through the existing usage-data sender. Errors: RbacOperationResult for refusals (invalid pair, duplicate, not System Admin), DbUpdateConcurrencyException mapped to 409 by ConcurrencyConflictExceptionFilter, and any failed read of rules or the switch surfaces as an error, never a grant. Per-process state: none; no cache, so every request re-reads.",
+"F200": "200 Teams with one rule: query count equals the count for 2 Teams",
+"F201": "Cost law observed by counting commands on the harness SQLite database",
+"F202": "A key never exceeds the lower of its limit and its owner role, and never reaches beyond its own rows",
+"F203": "limit Viewer Team, owner Viewer on all",
+"F204": "limit TeamAdmin Team, owner Viewer on all: refused",
+"F205": "rule removed: key refused next request",
+"F206": "No reader decides a unit answer from exact unit keys alone",
+"F207": "A rule-only person is refused on a missed path",
+"F208": "Owner permission rows and group rule rows",
+"F209": "A rule-only person reads every unit on every consumer",
+"F21": "Cross-layer algebra. Domain: roles SystemAdmin, TeamAdmin, PortfolioAdmin, Viewer and UnitAdmin (new, 4); scopes System, Team(id), Portfolio(id) and AllUnits (new, 3, null ScopeId); operations Reaches, RoleOn, SystemRole, CanRead, CanWrite; observation is the read or write answer for a principal on a unit. Application: Success, Refusal (invalid pair, duplicate equal row, caller not System Admin), Conflict (stale or missing switch token) and Error (failed read). Adapter: EF optimistic concurrency on the switch row; a null ScopeId is not unique in the index on SQLite or PostgreSQL, so twins are representable. Infrastructure: a restore without the switch row reads as off and the idempotent seeder adds it again; enums stored as ints, so a rollback meets unknown values and fails closed; no retry, replay or queue.",
+"F210": "Direct queries on UserPermissions or RbacGroupMappings outside the service (architecture test); reflection",
+"F211": "Viewer on all",
+"F212": "Valid-pairs table over closed enums and compiler totality; PermissionScopeKey deleted",
+"F213": "CreateGroupMappingAsync admits (Viewer, AllUnits, null)",
+"F214": "CreateGroupMappingAsync -> RbacGroupMappings -> GetVirtualPermissionsAsync -> EffectiveAccess.Resolve -> read check -> RbacGuard on unit routes; acyclic",
+"F215": "Limited key under a rule",
+"F216": "Key creation -> IntersectWithApiKeyScope -> read check on the key route",
+"F217": "Only the Access service reads RbacGroupMappings and UserPermissions, over every production type including types added later, read from compiled IL",
+"F218": "GetTeamSystemWideRulesAsync and GetPortfolioSystemWideRulesAsync",
+"F219": "Unit rules read through Reaches, deduped, System Admin groups left out, no mapping id; access for those who manage the unit members",
+"F22": "Liveness is not applicable: every operation is one synchronous request that reads rows and answers; nothing propagates in the background, so a removed rule or a switch turned off takes effect on the next request by construction (no cache), and there is no eventual-progress obligation to model.",
+"F220": "Read model: role and holder (group name)",
+"F221": "Two GET actions with declared access",
+"F222": "SystemWideRule type",
+"F223": "Two calls",
+"F224": "Read-only notice, keyed TanStack query, loading, failure and loaded looks per M-S1 and M-S3",
+"F225": "Read-only mode: no add form, no Actions column",
+"F226": "Mount notice; pass isSystemAdmin && !isLoading && !loadFailed from useRbac()",
+"F227": "Same as TeamDetail",
+"F228": "No direct role column, chip and filter copy per M-S2",
+"F229": "Render the Access tab notice for Team Zenith while the rules call is pending, after it fails, and after it answers one Viewer on all rule for team-readers and nothing else; render ScopedGroupMappingManager read-only; through IRbacAdministrationService a Team Admin of Zenith reads Zenith rules, a Viewer asks the same, and a System Admin group exists",
+"F23": "Test rules. The Lighthouse test-writing skill wins over nWave own test rules where they differ (nine-run per-test timing, PBT density). Read in full and fresh; last lines quoted: SKILL.md ends with End of SKILL.md; references/backend.md ends with End of backend.md; references/frontend.md ends with End of frontend.md. Backend scenarios drive the application-service port (IRbacAdministrationService built with ServicePortHarness) under Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/, namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess, which the feature mutation config must name; a host only as a wire contract in Tests/Contracts. Frontend tests are Vitest plus RTL at the lowest layer. No nWave scenario tags in test code; comments rare and never citing internal references. Each slice has its own oracle files and never edits an earlier slice oracle; a shared builder lives in a support file owned by the slice that creates it. The slice oracle is the backend port class or the lead frontend test; the slice further test files are listed as its supports.",
+"F230": "Loading: spinner and Checking access to all Teams and Portfolios...; failure: warning Could not check access to all Teams and Portfolios. More people may reach this Team than listed below. Reload the page to try again.; loaded: heading Also reachable through access to all Teams and Portfolios with Viewer and team-readers; no rule: nothing, only after the answer; read-only manager shows the list with no add form and no Actions column; the port answers role and group, no mapping id and no System Admin group; the Viewer is refused; Settings shows No direct role",
+"F231": "Notice hidden or empty while loading or after a failure; a late answer for another unit lands; System Admin group listed; Viewer allowed; add form shown to a Team Admin; Unassigned still shown",
+"F232": "New members on IRbacAdministrationService force the existing test double ClaimsDrivenRbacAdministrationService to gain them. That file is no slice oracle or support, so S3 and S4 acceptance designers each add throwing members there without staling an earlier approval.",
+"F233": "The single inbound port",
+"F234": "RbacGroupMappingSummary carries a mapping id and scope for administration; the Access tab line must carry neither",
+"F235": "Access endpoints live here",
+"F236": "Existing RBAC client",
+"F237": "No existing read-only list of rules; reuses CircularProgress and Alert",
+"F238": "Read-only prop, no hook in the child",
+"F239": "Unchanged; parent derives the prop",
+"F24": "Open items taken with the recommended option. R-3: S4 first states the removed-person-with-embed-cookie case; if GREEN on the original source the guard is not widened and the test stays as a pin; only if RED is the CurrentUserProfileService guard widened, and then LastSeenAt for embed viewers is kept. FE5 #6393 stays a separate improvement item. E2E: DoD item 4 asks one thin step per flow in RoleBasedAccessControl.spec.ts through page objects against the Keycloak realm; it is owed at feature end and is not a slice oracle command because it needs Keycloak. The DESIGN copy questions are settled by M-S1 to M-S4.",
+"F240": "Copy only",
+"F241": "Not reused for the unit rules read, which carries no mapping id",
+"F242": "Hosts the Access tab",
+"F243": "Gains the SystemWideRule type",
+"F244": "No existing read-only list of rules; reuses CircularProgress, Alert and a keyed TanStack query",
+"F245": "Two members",
+"F246": "Gains the two members, throwing",
+"F247": "New read beside the unit mappings read",
+"F248": "Two routes",
+"F249": "Type",
+"F25": "Verification output: the host reads runner-derived counts from the dotnet test summary (Passed, Failed, Skipped, and a build or set-up failure as no tests run) and from the Vitest summary (Tests passed and failed, and a failed file import as set-up failure); exit status alone is not a RED. Fast loop inside a slice: pwsh Lighthouse.Backend/Test-Fast.ps1 and pnpm test --changed.",
+"F250": "Calls",
+"F251": "Read-only mode",
+"F252": "Notice and prop",
+"F253": "Copy",
+"F254": "Default prop keeps today behaviour",
+"F255": "New route; JSON names pinned by the wire contract",
+"F256": "New call in the same commit",
+"F257": "One deployable; the wire contract support pins route, status and JSON names",
+"F258": "A new read and component beside existing ones; no preserving move makes them easier (FE5 #6393 stays a separate improvement item)",
+"F259": "Caller does not manage the unit members",
+"F26": "Code facts: code-fact query.reads-of PermissionScopeKey answered from textsearch at noisy confidence over live source (AST provider did not answer), 22 sites, all inside RbacAdministrationService.cs; it may miss indirect uses, so ADR-280 list of 13 or more readers plus deletion of the type (a missed reader cannot compile) carry the closure. typesafe: unavailable, Jev is unauthorized in ~/.nwave/config.json.",
+"F260": "403 through the declared access",
+"F261": "Rules read fails",
+"F262": "Warning notice per M-S3, never hidden",
+"F263": "Rules listed for a unit",
+"F264": "Twin rows; which people a rule reaches",
+"F265": "The rules of a unit are the distinct role and holder pairs of every non System Admin rule whose AppliesTo reaches the unit, plus everyone signed in when the switch is on",
+"F266": "one Viewer rule",
+"F267": "twin rows: one line",
+"F268": "System Admin group: absent",
+"F269": "no rule: empty",
+"F27": "Waived claims noLostSwitchWrite and removalLeavesNoTwin, proof INDETERMINATE. Maintainer waiver 2026-11-09, temporary: the Quint model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt is to be typechecked, mutant-killed and verified once the maintainer allows quint, before slice S4 oracle and before the whole-candidate review; until then the S4 stale-write test on SQLite and PostgreSQL and the S1 twin-removal tests are the checks.",
+"F270": "Unit rules notice",
+"F271": "RbacGroupMappings -> unit rules read -> GET route -> RbacService -> SystemWideRulesNotice on TeamDetail and PortfolioDetail",
+"F272": "Every controller action, including the two new ones, declares its access",
+"F273": "Entity: EveryoneCanView, ConcurrencyToken, IConcurrencyTokenEntity",
+"F274": "Idempotent ISeeder; missing row is off",
+"F275": "One DbSet, token configured",
+"F276": "Register the seeder",
+"F277": "Additive table, generated by the CreateMigration script",
+"F278": "Viewer reach from the switch for a resolved profile",
+"F279": "Get and set of the switch",
+"F28": "Authority: the DESIGN of feature-delta.md (DDD-1 to DDD-18, Reuse Analysis, Driving and Driven Ports, Loading and Failure Looks), ADR-280 and ADR-281, with the DELIVER sections Sketch Review (M-S1 to M-S4, binding UI copy), Rigor Profile and Architecture Review R-1 to R-6. Where R-1 to R-6 differ from the earlier DESIGN text they win: the seven readers are 13 or more; the key coverage change and the key-limit tests both live in S1, which now covers P1 and P2 (the product merged the former key-limit slice into S1); DDD-15 is conditional on R-3. All maintainer decisions M1 to M4 are confirmed unchanged.",
+"F280": "Reads the switch once a profile is resolved; PUT upserts under the token; System role never reads it; unit rules read names everyone signed in",
+"F281": "GET and PUT everyone-signed-in, actor log line, usage-data event when turned on",
+"F282": "Only if the embed pin is RED on the original source",
+"F283": "Switch type",
+"F284": "Get and put",
+"F285": "Switch, confirm dialog, loading and failure looks per M-S4",
+"F286": "Names everyone signed in",
+"F287": "Event row extended to the switch",
+"F288": "Through IRbacAdministrationService on a fresh harness database after the seeder ran: GET the switch; a person with a profile and no group asks to read a Team and a Portfolio; a System Admin PUTs on with the token read; the person asks again, asks to write, and their key reads; a principal with no profile asks; a second PUT with the old token and one with no token; a non System Admin PUTs; the switch read is made to throw while a System Admin asks to manage RBAC and the person asks to read; the switch is turned off and the person asks again",
+"F289": "Off with a token by default; refused before; read allowed on every Team and Portfolio after, write refused, key reads; no-profile principal refused; stale token 409, missing token refused, row unchanged; non System Admin refused; with the read throwing System Admin still manages RBAC and the unit read is an error, not a grant; after off the person is refused and real roles are unchanged",
+"F29": "Claim-to-checker. EffectiveAccess, AppliesTo, the valid-pairs table and the key intersection are total functions over the closed enums UserRole and PermissionScopeType: totality is checked by the C# compiler (a switch over the enum without a default fails the build under TreatWarningsAsErrors) and the laws by exhaustive NUnit tables over every pair; no formal checker is selected for them because the domain is finite and exhaustively enumerated. The two concurrent write protocols, noLostSwitchWrite (switch PUT under its concurrency token including the no-row upsert) and removalLeavesNoTwin (rule creation racing with removal of all twins), are state-model safety claims: Quint is selected, model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt. Both stay INDETERMINATE under the recorded maintainer waiver until the model is run. Agda is not selected (no proof beyond finite tables). TLA+ and TLC are not selected: no liveness or fairness claim exists.",
+"F290": "Switch on by default or on with a missing row; a stale write accepted; the switch grants write; System Admin lost or a unit read granted when the switch read throws; a no-profile principal reads",
+"F291": "R-3 taken: RemovedPersonEmbedSkeletonTest is written first as a named skeleton on the embed flow (it needs the host cookie validation in Program.cs) and run on the original source; if GREEN, CurrentUserProfileService is not changed and the test stays as a pin; if RED, the guard widens to embed principals and LastSeenAt for embed viewers is kept. The stale-write test runs on SQLite and on PostgreSQL through SharedPostgresContainer because EF InMemory does not enforce the token. Program.cs gains the seeder registration, so the full backend integration suite runs before push.",
+"F292": "No existing record has a token and belongs to Access; implements IConcurrencyTokenEntity",
+"F293": "Stale edit rule as for other configuration",
+"F294": "Idempotent start-up rows, also after a restore",
+"F295": "Adds the switch reach after a profile is resolved",
+"F296": "Conditional on R-3",
+"F297": "Already rejects an embed principal whose profile is gone",
+"F298": "Same section",
+"F299": "The single inbound port gains get and set of the switch",
+"F3": "A System Admin adds Viewer on all for one SSO group, and its members read every Team and Portfolio, including ones created later; their limited API keys read what they reach",
+"F30": "Rules are RbacGroupMapping rows with scope AllUnits and a null ScopeId; no column changes. Enum values are appended only, AllUnits = 3 and UnitAdmin = 4, never renumbered; usage-data SystemWideAccessGranted = 26, appended.",
+"F300": "Gains the switch type",
+"F301": "Event row extended",
+"F302": "Follows the existing ISeeder pattern; idempotent",
+"F303": "New additive migration files generated by the CreateMigration script",
+"F304": "Created by S1 within this feature; S4 extends it with the switch reach",
+"F305": "Created by S3 within this feature; S4 extends it with the everyone line",
+"F306": "DbSet and token",
+"F307": "Seeder registered",
+"F308": "Expand-only",
+"F309": "Switch reach",
+"F31": "Valid pairs: System only with SystemAdmin; Team with TeamAdmin or Viewer; Portfolio with PortfolioAdmin or Viewer; AllUnits only with Viewer or UnitAdmin; UnitAdmin only with AllUnits. An API key can never be limited to AllUnits.",
+"F310": "Switch read and upsert",
+"F311": "Unchanged unless the embed pin is RED",
+"F312": "Switch",
+"F313": "Everyone line",
+"F314": "Row extended",
+"F315": "New route; 409 on stale token, refusal on missing token",
+"F316": "New calls in the same commit",
+"F317": "One deployable; the wire contract support pins route, status codes and JSON names",
+"F318": "New record, seeder and routes; no preserving move eases them",
+"F319": "PUT with a stale token",
+"F32": "Bounds: the group value keeps the existing mapping request validation, no new bound; the number of rules and of units is unbounded by authority (none stated); NFR-1 bounds cost instead: permission lookups for a list do not grow with the number of units, checked with 200 Teams, my-summary included.",
+"F320": "409 and the existing conflict message; the UI reloads the state",
+"F321": "PUT with no token",
+"F322": "Refused, row unchanged",
+"F323": "Switch read fails",
+"F324": "Unit reads error, System Admin unaffected; UI shows Could not load this setting. Reload the page to try again.",
+"F325": "The switch adds Viewer reach only, only for a resolved profile, and an absent row equals off",
+"F326": "on, profile, no group: Viewer on all",
+"F327": "on, no profile: nothing",
+"F328": "off: no change",
+"F329": "absent row: as off",
+"F33": "A rule only adds: the role on a unit is the higher of the unit role and any reach; the explicit-replaces-group merge on unit keys runs first, unchanged. The System role never depends on rules or the switch.",
+"F330": "on, TeamAdmin on A: TeamAdmin on A",
+"F331": "A switch write based on a token that is not the stored token is refused and leaves the row unchanged; a write with no row inserts it",
+"F332": "two writers, same token: one accepted, one 409, on SQLite and PostgreSQL",
+"F333": "no row, PUT: row inserted",
+"F334": "Finite; the race itself is the Quint model claim",
+"F335": "The seeder is idempotent: running it twice leaves one row and never changes its value",
+"F336": "no row",
+"F337": "row on",
+"F338": "row off",
+"F339": "SystemRole never reads the switch: a failing switch read leaves System Admin true and makes unit reads errors",
+"F34": "Fail closed and no cache: a failed read of rules or the switch is an error, never a grant; a change applies on the next request.",
+"F340": "switch read throws, System Admin manages RBAC",
+"F341": "switch read throws, person read: error",
+"F342": "The switch can only grant reading",
+"F343": "Everyone signed in becomes an admin",
+"F344": "One boolean EveryoneCanView",
+"F345": "Write refused for a switch-only person",
+"F346": "Direct row edits in the database; a later field added to the record",
+"F347": "Everyone signed in",
+"F348": "Seeder inserts the off row; PUT turns it on",
+"F349": "PUT route -> EveryoneSignedInSetting -> GetOwnerEffectivePermissionsAsync -> EffectiveAccess -> read check on unit routes",
+"F35": "Private by default: the switch is off by default and a missing row is off; it can only grant reading; it applies only to a person with a stable subject and a profile.",
+"F350": "Every migration, including the new one, is expand-only",
+"F351": "Append UnitAdmin = 4",
+"F352": "UnitAdmin reads as TeamAdmin on a Team and PortfolioAdmin on a Portfolio; no System role",
+"F353": "Valid pair (UnitAdmin, AllUnits); write-side readers and member management; my-summary admin lists through Reaches",
+"F354": "Usage-data event on an Admin-on-all add",
+"F355": "UnitAdmin in the union",
+"F356": "Admin on all in the Role choice",
+"F357": "Says Admin",
+"F358": "Event row extended to Admin on all",
+"F359": "Through IRbacAdministrationService: a System Admin creates team-admins, UnitAdmin, AllUnits; a member whose only access is that group asks to write an existing Team, an existing Portfolio and a Team created later, to manage their members, and reads my-summary; the same member asks to manage RBAC, create, clone or delete a Team or Portfolio, manage connections, change system settings, read licence details and update all Teams; a key limited to Team Zenith under that owner asks to write Zenith and Apollo; the rule is removed and the member asks again; the switch is on and a switch-only person asks to write",
+"F36": "All RBAC logic flows through IRbacAdministrationService; no component fetches my-summary directly; UI gating derives from useRbac(); my-summary keeps its contract.",
+"F360": "Writes and member management allowed on every unit including the later one; my-summary adminTeamIds and adminPortfolioIds list every unit; every System-Admin-only action refused; the key writes Zenith only; after removal refused; the switch-only person is refused write",
+"F361": "UnitAdmin read as System Admin; a write refused; admin lists empty; the key reaches Apollo; the switch yields admin",
+"F362": "One generic role (M2) instead of two",
+"F363": "Reads only the System role, so Admin on all cannot reach System-Admin-only actions",
+"F364": "Admin lists from existing unit ids through Reaches",
+"F365": "Same Role choice",
+"F366": "Created by S1 within this feature; S5 extends it with UnitAdmin",
+"F367": "Created by S3 within this feature; S5 extends it with Admin wording",
+"F368": "UnitAdmin appended; stored as int",
+"F369": "UnitAdmin resolution",
+"F37": "UI copy fixed by M-S1 to M-S4; Team and Portfolio render through Terminology. Every new or changed view has its loading look and its failure look; failures say reload, no Retry button.",
+"F370": "Valid pair and write readers",
+"F371": "Event",
+"F372": "Union",
+"F373": "Option",
+"F374": "Admin wording",
+"F375": "Fed by fuller my-summary lists",
+"F376": "Allow-list their roles; UnitAdmin not admitted as a key or member role",
+"F377": "The UnitAdmin enum value and fuller my-summary lists are covered by the shared agreement analysis",
+"F378": "One deployable",
+"F379": "S1 prefactoring already gives one resolver; no further move",
+"F38": "One additive migration only, in S4, made with the CreateMigration PowerShell script, expand-only.",
+"F380": "The access-table reader law is checked in S1 over all types; no new dependency law",
+"F381": "Admin on all asks a System-Admin-only action",
+"F382": "Refused as for a TeamAdmin today",
+"F383": "UnitAdmin on a unit equals TeamAdmin on a Team and PortfolioAdmin on a Portfolio, and gives no System role",
+"F384": "UnitAdmin rule, Team",
+"F385": "UnitAdmin rule, Portfolio",
+"F386": "UnitAdmin rule, CanManageRbac false",
+"F387": "UnitAdmin plus Viewer rule: UnitAdmin",
+"F388": "Admin on all",
+"F389": "CreateGroupMappingAsync -> EffectiveAccess UnitAdmin -> write checks and my-summary -> useRbac tabs",
+"F39": "The single inbound port implementation for access; every new read and write goes through it",
+"F4": "A limited API key whose owner reaches its unit through a rule works at the key's exact scope and reaches nothing beyond its limit",
+"F40": "Already returns group mapping rows for the principal, including AllUnits rows once they exist",
+"F41": "Maps a stale switch write to 409 as for other configuration",
+"F42": "Rejected as the switch carrier: no concurrency token and not owned by Access (ADR-281); EveryoneSignedInSetting is created instead",
+"F43": "Accepts and returns AllUnits and UnitAdmin",
+"F44": "Unions gain AllUnits and UnitAdmin in the same commit",
+"F45": "Clients neither list nor create mappings (DISCUSS house checklist)",
+"F46": "Same fields; adminTeamIds and adminPortfolioIds are fuller for an admin reach",
+"F47": "Reads the same lists",
+"F48": "Every producer and consumer of the changed contracts ships in one build of one deployable (backend plus bundled frontend in the same commit); lighthouse-clients consumes none of them. The JSON names of the new endpoints are pinned by a Lighthouse wire contract inside the slice that adds them.",
+"F49": "IRbacAdministrationService, reached through AuthorizationController routes under api/latest and api/v1 and through RbacGuard for every unit route",
+"F5": "A Team or Portfolio Admin sees on the Access tab, read-only, which system-wide rules also reach the unit; Settings shows No direct role instead of Unassigned",
+"F50": "LighthouseAppContext on SQLite and PostgreSQL",
+"F51": "ILogger",
+"F52": "usage-data event sender",
+"F53": "ILicenseService enforcement gate, unchanged",
+"F54": "Controllers and RbacGuard depend on IRbacAdministrationService; RbacAdministrationService depends on Models/Authorization values and LighthouseAppContext; AppliesTo and EffectiveAccess depend on nothing outside Models",
+"F55": "Rule rows (Viewer, AllUnits, null) and (UnitAdmin, AllUnits, null); existing System, Team and Portfolio pairs",
+"F56": "SystemAdmin on AllUnits; UnitAdmin on System, Team or Portfolio; an API key on AllUnits; the switch granting more than reading",
+"F57": "Role or scope ints written by a newer release and read by an older one",
+"F58": "Twin rule rows from concurrent creates",
+"F59": "No two accepted switch writes were based on the same token",
+"F6": "A System Admin turns on Everyone signed in, after a confirm, and every signed-in person with a profile reads every Team and Portfolio; off by default and no change without opting in",
+"F60": "Right after a rule removal no row with that group, role and scope remains",
+"F61": "One SaveChanges under the token; insert when no row exists",
+"F62": "One ExecuteDelete over every row with the same group, role and scope",
+"F63": "Check and insert are separate statements; the race is modelled",
+"F64": "The database applies a conditional update or insert atomically (EF concurrency token check, primary key on the one switch row)",
+"F65": "Two concurrent writers bound the race; more writers add no new interleaving class",
+"F66": "put accepts without comparing the token read with the stored token",
+"F67": "removeRule deletes one row instead of every twin",
+"F68": "Switch write under its token and rule removal with twins",
+"F69": "Quint selected, model not yet executed; INDETERMINATE under the temporary maintainer waiver of 2026-11-09",
+"F7": "Admin on all lets a group's members edit settings and members on every Team and Portfolio, while every System-Admin-only action stays refused",
+"F70": "Assumption: the group claim is present and current",
+"F71": "Rules give nothing to a person without the group; the switch still works",
+"F72": "A key snapshot stays stale until its owner signs in again",
+"F73": "A grant from a missing or malformed claim",
+"F74": "Stale key snapshot accepted by P11",
+"F75": "Assumption: reading rules and the switch succeeds",
+"F76": "System Admin keeps System Admin",
+"F77": "Unit reads answer an error",
+"F78": "A grant after a failed read",
+"F79": "None beyond the error page",
+"F8": "A system-wide role for one named person, and an API key limited to Viewer on all",
+"F80": "Assumption: the switch row exists",
+"F81": "Behaviour as switch off",
+"F82": "Seeder adds the row on next start; PUT upserts",
+"F83": "Switch read as on",
+"F84": "None",
+"F85": "Assumption: the unique index prevents equal rules",
+"F86": "The rule list shows one line per group, role and scope",
+"F87": "Twin rows stored by a race",
+"F88": "A removed rule still reaching through a twin",
+"F89": "Twin rows until removal; harmless because a rule only adds",
+"F9": "Hiding one unit from a system-wide rule",
+"F90": "Assumption: stored enum values are known (negated by a rollback to an older release)",
+"F91": "Older release ignores AllUnits and UnitAdmin rows",
+"F92": "Those rows grant nothing on the older release",
+"F93": "An unknown value read as a grant",
+"F94": "EffectiveAccess is the one resolver for every read and write answer",
+"F95": "One rule for 13 or more readers",
+"F96": "none",
+"F97": "A wrong resolver granting broadly",
+"F98": "Covered by exhaustive tables and a rule-only-person scenario per consumer",
+"F99": "Code outside the Access service querying RbacGroupMappings or UserPermissions directly"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+}
+],
+"scope_out": [
+"F8",
+"F9",
+"F10",
+"F11",
+"F12"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F3",
+"promises": [
+"P1",
+"P2"
+],
+"work": {
+"size": "L",
+"value": "F18"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S3",
+"observation": "F5",
+"promises": [
+"P3"
+],
+"work": {
+"size": "M",
+"value": "F15"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S4",
+"observation": "F6",
+"promises": [
+"P4"
+],
+"work": {
+"size": "M",
+"value": "F16"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S5",
+"observation": "F7",
+"promises": [
+"P5"
+],
+"work": {
+"size": "M",
+"value": "F17"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "epic-6577-system-wide-access",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
