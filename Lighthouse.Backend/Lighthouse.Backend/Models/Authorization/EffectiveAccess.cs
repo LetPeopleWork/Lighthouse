@@ -156,8 +156,7 @@ namespace Lighthouse.Backend.Models.Authorization
 
         private sealed record Reach(AppliesTo AppliesTo, UserRole Role)
         {
-            public bool Administers => GivesOn(PermissionScopeType.Team) == UserRole.TeamAdmin
-                || GivesOn(PermissionScopeType.Portfolio) == UserRole.PortfolioAdmin;
+            public bool Administers => AdministersOn(PermissionScopeType.Team) || AdministersOn(PermissionScopeType.Portfolio);
 
             public UserRole? GivesOn(PermissionScopeType unitType)
             {
@@ -167,6 +166,11 @@ namespace Lighthouse.Backend.Models.Authorization
                 }
 
                 return Role == UserRole.UnitAdmin ? AdminRoleOn(unitType) : Role;
+            }
+
+            private bool AdministersOn(PermissionScopeType unitType)
+            {
+                return GivesOn(unitType) is { } given && given == AdminRoleOn(unitType);
             }
         }
 

@@ -449,20 +449,17 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             var canCreatePortfolio = await CanCreatePortfolioAsync(principal, cancellationToken);
             var systemAdminDisplayNames = await GetSystemAdminDisplayNamesAsync(cancellationToken);
 
-            var adminTeamIds = new List<int>();
-            var adminPortfolioIds = new List<int>();
+            IReadOnlyList<int> adminTeamIds = [];
+            IReadOnlyList<int> adminPortfolioIds = [];
 
-            if (!isSystemAdmin)
+            if (!isSystemAdmin
+                && await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken) is { } currentUser)
             {
-                var currentUser = await currentUserProfileService.GetOrCreateFromPrincipalAsync(principal, cancellationToken);
-                if (currentUser is not null)
-                {
-                    var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
-                    var storedTeamIds = await context.Teams.Select(team => team.Id).ToListAsync(cancellationToken);
-                    var storedPortfolioIds = await context.Portfolios.Select(portfolio => portfolio.Id).ToListAsync(cancellationToken);
-                    adminTeamIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Team, storedTeamIds));
-                    adminPortfolioIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Portfolio, storedPortfolioIds));
-                }
+                var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
+                var storedTeamIds = await context.Teams.Select(team => team.Id).ToListAsync(cancellationToken);
+                var storedPortfolioIds = await context.Portfolios.Select(portfolio => portfolio.Id).ToListAsync(cancellationToken);
+                adminTeamIds = effectiveAccess.AdministeredUnitIds(PermissionScopeType.Team, storedTeamIds);
+                adminPortfolioIds = effectiveAccess.AdministeredUnitIds(PermissionScopeType.Portfolio, storedPortfolioIds);
             }
 
             return new UserAuthorizationSummary

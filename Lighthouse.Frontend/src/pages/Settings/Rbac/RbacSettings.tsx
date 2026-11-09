@@ -42,39 +42,33 @@ import { useUsageDataReporter } from "../../../services/UsageData/usageDataRepor
 import { fireAndForget } from "../../../utils/fireAndForget";
 import EveryoneSignedInSection from "./EveryoneSignedInSection";
 
-type SsoGroupRole = "SystemAdmin" | "ViewerOnAll" | "AdminOnAll";
+const ssoGroupRoles = ["SystemAdmin", "ViewerOnAll", "AdminOnAll"] as const;
+
+type SsoGroupRole = (typeof ssoGroupRoles)[number];
 
 interface SsoGroupRoleChoice {
-	value: SsoGroupRole;
 	label: string;
 	role: GroupMappingRole;
 	scopeType: GroupMappingScopeType;
 }
 
-const ssoGroupRoleChoices: SsoGroupRoleChoice[] = [
-	{
-		value: "SystemAdmin",
+const ssoGroupRoleChoices: Record<SsoGroupRole, SsoGroupRoleChoice> = {
+	SystemAdmin: {
 		label: "System Admin",
 		role: "SystemAdmin",
 		scopeType: "System",
 	},
-	{
-		value: "ViewerOnAll",
+	ViewerOnAll: {
 		label: "Viewer on all",
 		role: "Viewer",
 		scopeType: "AllUnits",
 	},
-	{
-		value: "AdminOnAll",
+	AdminOnAll: {
 		label: "Admin on all",
 		role: "UnitAdmin",
 		scopeType: "AllUnits",
 	},
-];
-
-const choiceOf = (value: SsoGroupRole): SsoGroupRoleChoice =>
-	ssoGroupRoleChoices.find((choice) => choice.value === value) ??
-	ssoGroupRoleChoices[0];
+};
 
 const mappingFor = (
 	choice: SsoGroupRoleChoice,
@@ -199,7 +193,7 @@ const RbacSettings: React.FC = () => {
 		}
 
 		try {
-			const choice = choiceOf(roleChoice);
+			const choice = ssoGroupRoleChoices[roleChoice];
 			await rbacService.createGroupMapping(
 				mappingFor(choice, normalizedGroupValue),
 			);
@@ -444,9 +438,9 @@ const RbacSettings: React.FC = () => {
 							data-testid="rbac-group-mapping-role"
 							sx={{ minWidth: 180 }}
 						>
-							{ssoGroupRoleChoices.map((choice) => (
-								<MenuItem key={choice.value} value={choice.value}>
-									{choice.label}
+							{ssoGroupRoles.map((role) => (
+								<MenuItem key={role} value={role}>
+									{ssoGroupRoleChoices[role].label}
 								</MenuItem>
 							))}
 						</TextField>
