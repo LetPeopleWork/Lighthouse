@@ -967,9 +967,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     "The setting was sent without the token it was read with. Reload the page and try again.");
             }
 
-            var stored = await context.EveryoneSignedInSettings
-                .OrderBy(setting => setting.Id)
-                .FirstOrDefaultAsync(cancellationToken);
+            var stored = await TheSwitchToChange.FirstOrDefaultAsync(cancellationToken);
 
             if (stored is null)
             {
@@ -987,10 +985,11 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         }
 
         // The instance keeps one switch; should a second row ever appear, the oldest is the one read and saved.
-        private IQueryable<EveryoneSignedInSetting> TheSwitch => context.EveryoneSignedInSettings
-            .AsNoTracking()
+        private IQueryable<EveryoneSignedInSetting> TheSwitchToChange => context.EveryoneSignedInSettings
             .OrderBy(setting => setting.Id)
             .Take(1);
+
+        private IQueryable<EveryoneSignedInSetting> TheSwitch => TheSwitchToChange.AsNoTracking();
 
         // Read synchronously because the unit roles that need it are worked out lazily, on the first unit question.
         private bool EveryoneSignedInCanView()
