@@ -9,8 +9,11 @@ home="$HOME"
 mkdir -p "$out"
 cat > "$out/architecture-rules" <<EOF
 #!/usr/bin/env bash
-# Runs the backend architecture rules and prints NUnit's per-test results.
-# Usage: architecture-rules [name-fragment]
+# Runs the backend architecture rules and prints one line per test (Passed or Failed, with its name and case)
+# plus the totals; a failing test also prints its message.
+# Usage: architecture-rules [name-fragment [Debug|Release]]
+#   name-fragment  runs only the rules whose full name contains it, for example FlowMetrics
+#   Release        builds and runs the rules the way CI does (some code is compiled differently there)
 set -euo pipefail
 # The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
 export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
@@ -18,8 +21,11 @@ filter="FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
 if [ \$# -gt 0 ] && [ -n "\$1" ]; then
   filter="\${filter}&FullyQualifiedName~\$1"
 fi
-exec dotnet test "$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj" \\
-  --filter "\$filter" --logger "console;verbosity=normal"
+configuration="\${2:-Debug}"
+echo "configuration: \$configuration, filter: \$filter"
+dotnet test "$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj" -c "\$configuration" \\
+  --filter "\$filter" --logger "console;verbosity=normal" 2>&1 \\
+  | grep -E "^  (Passed|Failed) |^    (Error Message|  )|^Test Run|^Total tests|^ +(Passed|Failed|Skipped):|: error " || true
 EOF
 chmod +x "$out/architecture-rules"
 
