@@ -212,6 +212,213 @@ The comparison treated names case-insensitively; no case pins two names that dif
 
 
 
+### S2
+
+##### Covers
+
+P1
+
+```text
+Read the compiled production assembly, in Debug and in Release, and list every type outside the Flow metrics module, the API, the composition root, Reports and Refinement that references a type in the module's Application or its Policies
+```
+
+```text
+The list equals the ten listed types: ForecastService and its nested GatheredInputs, ForecastInputs, ForecastInputFingerprint, ForecastRealityCheckService, TeamDataService, WorkItemService, WriteBackTriggerService, FeatureListActiveWork and DatabaseMaintenanceGate; the API controllers, the composition root, the two Reports series and the two Refinement types are not counted
+```
+
+```text
+A developer who adds a direct caller of the Flow metrics Application outside its allowed callers sees the build fail naming that type, and one who removes a listed caller is told to delete it from the list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs\:\:TheModuleApplication\_IsReachedFromOutsideOnlyByTheApiTheCompositionRootReportsRefinementAndTheListedTypes
+
+```text
+A rule whose Application pattern drops the Policies sub-namespace: no production outside type reaches only the Policies today, so this list stays green; the made-up newcomer that reaches the Policies fails that rule
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the same rule on made-up types: a caller in a legal caller's namespace, a composition root with a nested type that reaches the Policies, a listed caller written twice on the list, an outside type that reaches only the Domain, and a type in the module's own Adapters that calls the Application
+```
+
+```text
+The rule finds exactly the listed caller and passes
+```
+
+```text
+Code that calls the Application only from allowed places keeps the build green, so the rule is not switched off
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs\:\:OnlyAllowedCallersReachingTheApplication\_PassTheRule
+
+```text
+A rule that sets legal callers aside by a looser test than their namespaces, for example any namespace that merely contains the legal name; no made-up lookalike namespace exists to catch it
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the rule on made-up outside types that reach only the module's Domain or nothing, with an empty list
+```
+
+```text
+The rule finds no type and passes
+```
+
+```text
+A module with no undeclared caller passes against an empty list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs\:\:NoOutsideTypeReachingTheApplicationAndAnEmptyList\_PassTheRule
+
+```text
+A rule that never reports anything; the other made-up cases fail such a rule (observed with a blind rule)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Add a made-up outside type, not on the list, that calls a type in the Application's Policies
+```
+
+```text
+The rule fails, names the newcomer as not on the list with the Policies type it reaches, and does not ask to delete the listed caller
+```
+
+```text
+A new undeclared caller of the Application fails the build and is named with what it reaches
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs\:\:AnOutsideTypeNotOnTheList\_FailsTheRuleAndIsNamed
+
+```text
+A rule that names the newcomer but whose fix hint gives poor advice; the hint wording is judged by review, not pinned
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Add a made-up outside type, not on the list, that calls the Application only after an await inside an async method, and run the rule from a Debug build and from a Release build
+```
+
+```text
+In both builds the rule fails and names the async-only caller as not on the list, with the Application type it reaches
+```
+
+```text
+A new caller of the Application written only inside an async method fails the Release build that CI runs, not just the Debug one
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs\:\:AnOutsideTypeReachingTheApplicationOnlyInsideAnAsyncMethod\_FailsTheRuleAndIsNamed
+
+```text
+A reader that walks async state machines but not lambda closures; the design names async methods, and closures are read by the same nested-type walk
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+List a made-up type that no longer calls the Application, beside the listed caller that still does
+```
+
+```text
+The rule fails, names the gone type with 'delete', and names no newcomer
+```
+
+```text
+A caller that stopped using the Application must be deleted from the list, so the list only shrinks
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs\:\:AListedTypeThatNoLongerReachesTheApplication\_FailsTheRuleAndIsNamedForDeletion
+
+```text
+A rule that orders several stale entries differently; only one stale entry is made up
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Add the made-up newcomer and list the made-up former caller at the same time
+```
+
+```text
+One failure names the newcomer as not on the list and the former caller with 'delete'
+```
+
+```text
+One run shows both changes to who calls the Application
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/FlowMetricsInboundApplicationArchUnitTest\.cs\:\:ANewcomerAndAStaleEntryAtOnce\_AreBothNamedInOneFailure
+
+```text
+A failure that names both but omits what the newcomer reaches; the single-newcomer cases pin that part
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

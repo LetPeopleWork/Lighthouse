@@ -118,12 +118,128 @@
 "stimulus": "F192",
 "user_result": "F194"
 }
+],
+"S2": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F29"
+],
+"still_passes_if": "F199",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs::TheModuleApplication_IsReachedFromOutsideOnlyByTheApiTheCompositionRootReportsRefinementAndTheListedTypes"
+},
+"expected": "F197",
+"stimulus": "F196",
+"user_result": "F198"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F29",
+"L1/F33"
+],
+"still_passes_if": "F203",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs::OnlyAllowedCallersReachingTheApplication_PassTheRule"
+},
+"expected": "F201",
+"stimulus": "F200",
+"user_result": "F202"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F34"
+],
+"still_passes_if": "F207",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs::NoOutsideTypeReachingTheApplicationAndAnEmptyList_PassTheRule"
+},
+"expected": "F205",
+"stimulus": "F204",
+"user_result": "F206"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F30"
+],
+"still_passes_if": "F211",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs::AnOutsideTypeNotOnTheList_FailsTheRuleAndIsNamed"
+},
+"expected": "F209",
+"stimulus": "F208",
+"user_result": "F210"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F37",
+"L1/F30"
+],
+"still_passes_if": "F215",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs::AnOutsideTypeReachingTheApplicationOnlyInsideAnAsyncMethod_FailsTheRuleAndIsNamed"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F31"
+],
+"still_passes_if": "F219",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs::AListedTypeThatNoLongerReachesTheApplication_FailsTheRuleAndIsNamedForDeletion"
+},
+"expected": "F217",
+"stimulus": "F216",
+"user_result": "F218"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F32"
+],
+"still_passes_if": "F223",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs::ANewcomerAndAStaleEntryAtOnce_AreBothNamedInOneFailure"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+}
 ]
 },
 "counters": {
 "D": 7,
 "E": 3,
-"F": 195,
+"F": 223,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -1050,10 +1166,38 @@
 "F193": "Equal, reordered or repeated lists and two empty lists pass; a newcomer fails named with the fix hint; a stale entry fails named with delete; both at once are named in one failure",
 "F194": "Every inline list behaves the same: it can only shrink, and its failure says what to add to the code or delete from the list",
 "F195": "The comparison treated names case-insensitively; no case pins two names that differ only by case, and type names are compared ordinally",
+"F196": "Read the compiled production assembly, in Debug and in Release, and list every type outside the Flow metrics module, the API, the composition root, Reports and Refinement that references a type in the module's Application or its Policies",
+"F197": "The list equals the ten listed types: ForecastService and its nested GatheredInputs, ForecastInputs, ForecastInputFingerprint, ForecastRealityCheckService, TeamDataService, WorkItemService, WriteBackTriggerService, FeatureListActiveWork and DatabaseMaintenanceGate; the API controllers, the composition root, the two Reports series and the two Refinement types are not counted",
+"F198": "A developer who adds a direct caller of the Flow metrics Application outside its allowed callers sees the build fail naming that type, and one who removes a listed caller is told to delete it from the list",
+"F199": "A rule whose Application pattern drops the Policies sub-namespace: no production outside type reaches only the Policies today, so this list stays green; the made-up newcomer that reaches the Policies fails that rule",
 "F2": "The Flow metrics module's dependencies are ratcheted by namespace rules, its tests sit next to its name, and the architecture records say what the pilot taught",
 "F20": "Lighthouse test rules (root context; the test-writing skill wins over nWave's on timing and PBT density): rules run in the fast suite without a host; no nWave scenario tags; comments rare and never cite internal references (R3, D-6, S05f, ADR numbers). Last lines quoted: .claude/skills/test-writing/SKILL.md ends 'End of SKILL.md'; references/backend.md ends 'End of backend.md'. Verification per slice: pwsh Lighthouse.Backend/Test-Fast.ps1 (fast loop) and the Architecture-filtered dotnet test (declared); never live tracker categories or a bare TestCategory=Integration.",
+"F200": "Run the same rule on made-up types: a caller in a legal caller's namespace, a composition root with a nested type that reaches the Policies, a listed caller written twice on the list, an outside type that reaches only the Domain, and a type in the module's own Adapters that calls the Application",
+"F201": "The rule finds exactly the listed caller and passes",
+"F202": "Code that calls the Application only from allowed places keeps the build green, so the rule is not switched off",
+"F203": "A rule that sets legal callers aside by a looser test than their namespaces, for example any namespace that merely contains the legal name; no made-up lookalike namespace exists to catch it",
+"F204": "Run the rule on made-up outside types that reach only the module's Domain or nothing, with an empty list",
+"F205": "The rule finds no type and passes",
+"F206": "A module with no undeclared caller passes against an empty list",
+"F207": "A rule that never reports anything; the other made-up cases fail such a rule (observed with a blind rule)",
+"F208": "Add a made-up outside type, not on the list, that calls a type in the Application's Policies",
+"F209": "The rule fails, names the newcomer as not on the list with the Policies type it reaches, and does not ask to delete the listed caller",
 "F21": "No behaviour change: no production file changes in this feature; EF model unchanged; routes, DTOs, responses unchanged. Baselines are never loosened: an entry leaves the list only when the edge is gone. Old and new layouts coexist.",
+"F210": "A new undeclared caller of the Application fails the build and is named with what it reaches",
+"F211": "A rule that names the newcomer but whose fix hint gives poor advice; the hint wording is judged by review, not pinned",
+"F212": "Add a made-up outside type, not on the list, that calls the Application only after an await inside an async method, and run the rule from a Debug build and from a Release build",
+"F213": "In both builds the rule fails and names the async-only caller as not on the list, with the Application type it reaches",
+"F214": "A new caller of the Application written only inside an async method fails the Release build that CI runs, not just the Debug one",
+"F215": "A reader that walks async state machines but not lambda closures; the design names async methods, and closures are read by the same nested-type walk",
+"F216": "List a made-up type that no longer calls the Application, beside the listed caller that still does",
+"F217": "The rule fails, names the gone type with 'delete', and names no newcomer",
+"F218": "A caller that stopped using the Application must be deleted from the list, so the list only shrinks",
+"F219": "A rule that orders several stale entries differently; only one stale entry is made up",
 "F22": "Scope out: registration extension for the module; read ports for GetAllByPredicate (S05f); moving entities or DTOs out of Models; renaming *Service roles; moving the Metrics controllers out of API.",
+"F220": "Add the made-up newcomer and list the made-up former caller at the same time",
+"F221": "One failure names the newcomer as not on the list and the former caller with 'delete'",
+"F222": "One run shows both changes to who calls the Application",
+"F223": "A failure that names both but omits what the newcomer reaches; the single-newcomer cases pin that part",
 "F23": "dotnet test over Lighthouse.Backend.Tests, Architecture namespace: the rule reads the compiled production assembly Lighthouse.dll through IlDependencies",
 "F24": "Mono.Cecil ModuleDefinition of Lighthouse.dll and of the test assembly (made-up fixtures)",
 "F25": "Test rules depend on the production assembly's IL; production code depends on nothing in the tests",
