@@ -2619,7 +2619,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/E
 #### Verification
 
 ```text
-dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~Acceptance.SystemWideAccess.EveryoneSignedIn|FullyQualifiedName~Acceptance.SystemWideAccess.RemovedPersonEmbed|FullyQualifiedName~EveryoneSignedInWireContractTest|FullyQualifiedName~ExpandOnlyMigrationGuardTest"
+dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~Acceptance.SystemWideAccess.EveryoneSignedIn|FullyQualifiedName~Acceptance.SystemWideAccess.RemovedPersonEmbed|FullyQualifiedName~EveryoneSignedInWireContractTest|FullyQualifiedName~ExpandOnlyMigrationGuardTest|FullyQualifiedName~TestHostUseGuardTest"
 pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pages/Settings/Rbac/RbacSettingsEveryoneSignedIn.test.tsx src/components/Common/Authorization/SystemWideRulesNoticeEveryone.test.tsx
 ```
 
@@ -2636,6 +2636,8 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Authorization\/Every
 Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettingsEveryoneSignedIn\.test\.tsx
 
 Lighthouse\.Frontend\/src\/components\/Common\/Authorization\/SystemWideRulesNoticeEveryone\.test\.tsx
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TestHostUseGuardTest\.cs
 
 #### Public oracle
 
@@ -2665,6 +2667,14 @@ None.
 
 ```text
 R-3 taken: RemovedPersonEmbedSkeletonTest is written first as a named skeleton on the embed flow (it needs the host cookie validation in Program.cs) and run on the original source; if GREEN, CurrentUserProfileService is not changed and the test stays as a pin; if RED, the guard widens to embed principals and LastSeenAt for embed viewers is kept. The stale-write test runs on SQLite and on PostgreSQL through SharedPostgresContainer because EF InMemory does not enforce the token. Program.cs gains the seeder registration, so the full backend integration suite runs before push.
+```
+
+```text
+TestHostUseGuardTest.cs is an S4 support: the oracle author adds the SkeletonsByUserFlow entry for the named host skeleton RemovedPersonEmbedSkeletonTest, and the guard runs in the S4 verification.
+```
+
+```text
+The switch is read as SystemWideRule(Viewer, "everyone signed in") with no separate kind field. On screen a group renders as Viewer: group <value> and the switch as Viewer: everyone signed in, so they never look alike; a kind field would change the two-field wire shape S3 pinned. An SSO group literally named everyone signed in collides only inside the read model, and that collision is accepted. Root decision taken autonomously, logged for the maintainer.
 ```
 
 ##### Constraints

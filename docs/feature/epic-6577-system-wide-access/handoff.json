@@ -750,7 +750,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 631,
+"F": 633,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -2140,7 +2140,9 @@
 }
 ],
 "decisions": [
-"F291"
+"F291",
+"F632",
+"F633"
 ],
 "impact": [
 {
@@ -2442,7 +2444,8 @@
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/RemovedPersonEmbedSkeletonTest.cs",
 "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/EveryoneSignedInWireContractTest.cs",
 "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsEveryoneSignedIn.test.tsx",
-"Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeEveryone.test.tsx"
+"Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeEveryone.test.tsx",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
 ],
 "targets": [
 {
@@ -2527,7 +2530,7 @@
 }
 ],
 "verification": [
-"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Acceptance.SystemWideAccess.EveryoneSignedIn|FullyQualifiedName~Acceptance.SystemWideAccess.RemovedPersonEmbed|FullyQualifiedName~EveryoneSignedInWireContractTest|FullyQualifiedName~ExpandOnlyMigrationGuardTest\"",
+"dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter \"FullyQualifiedName~Acceptance.SystemWideAccess.EveryoneSignedIn|FullyQualifiedName~Acceptance.SystemWideAccess.RemovedPersonEmbed|FullyQualifiedName~EveryoneSignedInWireContractTest|FullyQualifiedName~ExpandOnlyMigrationGuardTest|FullyQualifiedName~TestHostUseGuardTest\"",
 "pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pages/Settings/Rbac/RbacSettingsEveryoneSignedIn.test.tsx src/components/Common/Authorization/SystemWideRulesNoticeEveryone.test.tsx"
 ]
 },
@@ -3416,6 +3419,8 @@
 "F63": "Check and insert are separate statements; the race is modelled",
 "F630": "Upgrading never loses data and a release one back still runs, with the switch simply off",
 "F631": "A migration that adds the table and also alters an unrelated column in a way the guard does not classify; the guard owns that boundary",
+"F632": "TestHostUseGuardTest.cs is an S4 support: the oracle author adds the SkeletonsByUserFlow entry for the named host skeleton RemovedPersonEmbedSkeletonTest, and the guard runs in the S4 verification.",
+"F633": "The switch is read as SystemWideRule(Viewer, \"everyone signed in\") with no separate kind field. On screen a group renders as Viewer: group <value> and the switch as Viewer: everyone signed in, so they never look alike; a kind field would change the two-field wire shape S3 pinned. An SSO group literally named everyone signed in collides only inside the read model, and that collision is accepted. Root decision taken autonomously, logged for the maintainer.",
 "F64": "The database applies a conditional update or insert atomically (EF concurrency token check, primary key on the one switch row)",
 "F65": "Two concurrent writers bound the race; more writers add no new interleaving class",
 "F68": "Switch write under its token and rule removal with twins",
