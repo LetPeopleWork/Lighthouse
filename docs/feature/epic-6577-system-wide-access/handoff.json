@@ -549,13 +549,39 @@
 "P3"
 ],
 "disposition": {
-"kind": "NotTested",
-"owner": "design",
-"reason": "F564"
+"kind": "Tested",
+"still_passes_if": "F581",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx"
 },
-"expected": "F562",
-"stimulus": "F561",
-"user_result": "F563"
+"expected": "F579",
+"stimulus": "F578",
+"user_result": "F580"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F585",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx"
+},
+"expected": "F583",
+"stimulus": "F582",
+"user_result": "F584"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F589",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/SystemWideRulesWireContractTest.cs"
+},
+"expected": "F587",
+"stimulus": "F586",
+"user_result": "F588"
 }
 ]
 },
@@ -564,7 +590,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 577,
+"F": 589,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -3153,10 +3179,6 @@
 "F559": "No new route is open by omission",
 "F56": "SystemAdmin on AllUnits; UnitAdmin on System, Team or Portfolio; an API key on AllUnits; the switch granting more than reading",
 "F560": "A new route with only a class-level Authorize",
-"F561": "TeamDetail and PortfolioDetail mount the notice and pass the system-admin-only prop to the group list",
-"F562": "The notice sits above Team Access and Portfolio Access; only a System Admin is offered the group form",
-"F563": "On the real Access tab a Team Admin sees the notice and no form",
-"F564": "The page tests that render TeamDetail and PortfolioDetail are no declared support of this slice and each page needs a large stand-in set; the components are observed alone and the mounting is left to the whole-candidate review and the examiner",
 "F565": "Migrated at GREEN: its non-System-Admin createGroupMapping assertion pins the old Bug 6576 behaviour",
 "F566": "Migrated at GREEN: it clicks Show unassigned users only, which M-S2 renames",
 "F567": "Bug 6576 page wiring is Tested: TeamDetailAccessTab.test.tsx and PortfolioDetailAccessTab.test.tsx render the page as a non-System-Admin unit Admin (notice shown, no add-mapping form) and as a System Admin (form shown). The existing TeamDetail.test.tsx, PortfolioDetail.test.tsx and RbacSettings.test.tsx are S3 targets the crafter migrates in the GREEN commit, because they pin the old form and the Unassigned copy.",
@@ -3171,7 +3193,19 @@
 "F575": "403 at the controller guard on api/latest and api/v1, observed by SystemWideRulesRefusalWireContractTest",
 "F576": "Unknown Team or Portfolio id",
 "F577": "404 Not Found, not an empty list",
+"F578": "A Team Admin who is not a System Admin, and then a System Admin, open the Access tab of Team Zenith",
+"F579": "The Team Admin sees the notice about rules for all Teams and Portfolios and the group list with no form to add a group; the System Admin sees the add form and the notice",
 "F58": "Twin rule rows from concurrent creates",
+"F580": "On the real Access tab a Team Admin is told who else reaches the Team and is not offered a form whose save is refused",
+"F581": "Mounting the notice but still passing the form to every Team Admin, or hiding the form from System Admins too",
+"F582": "A Portfolio Admin who is not a System Admin, and then a System Admin, open the Access tab of Portfolio Ocean Explorer",
+"F583": "The Portfolio Admin sees the notice and the group list with no add form; the System Admin sees the add form and the notice",
+"F584": "On the real Access tab a Portfolio Admin is told who else reaches the Portfolio and is not offered a form whose save is refused",
+"F585": "Mounting the notice on Teams only, or leaving the form for every Portfolio Admin",
+"F586": "A browser asks for the rules of an existing Team or Portfolio and of a number no unit ever had, under both route versions",
+"F587": "The existing unit answers 200 with its rules; the unknown number answers 404, never an empty list",
+"F588": "A mistyped or deleted unit is not shown as a unit with no rules reaching it",
+"F589": "Answering an empty list for an unknown unit",
 "F59": "No two accepted switch writes were based on the same token",
 "F6": "A System Admin turns on Everyone signed in, after a confirm, and every signed-in person with a profile reads every Team and Portfolio; off by default and no change without opting in",
 "F60": "Right after a rule removal no row with that group, role and scope remains",

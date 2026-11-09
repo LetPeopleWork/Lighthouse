@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import type { ComponentType, ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -215,8 +215,10 @@ describe("The rules for all Teams and Portfolios on a unit's Access tab", () => 
 		await waitFor(() =>
 			expect(rbacService.getTeamSystemWideRules).toHaveBeenCalledWith(12),
 		);
-		zenith.resolve([aRuleOf("Viewer", "zenith-only-readers")]);
-		await Promise.resolve();
+		await act(async () => {
+			zenith.resolve([aRuleOf("Viewer", "zenith-only-readers")]);
+			await zenith.promise;
+		});
 
 		expect(screen.queryByText(/zenith-only-readers/)).not.toBeInTheDocument();
 		expect(screen.getByRole("progressbar")).toBeInTheDocument();

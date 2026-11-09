@@ -1092,23 +1092,79 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>TeamDetail and PortfolioDetail mount the notice and pass the system-admin-only prop to the group list
+<pre><code>A Team Admin who is not a System Admin, and then a System Admin, open the Access tab of Team Zenith
 </code></pre>
 
-<pre><code>The notice sits above Team Access and Portfolio Access; only a System Admin is offered the group form
+<pre><code>The Team Admin sees the notice about rules for all Teams and Portfolios and the group list with no form to add a group; the System Admin sees the add form and the notice
 </code></pre>
 
-<pre><code>On the real Access tab a Team Admin sees the notice and no form
+<pre><code>On the real Access tab a Team Admin is told who else reaches the Team and is not offered a form whose save is refused
 </code></pre>
 
 <h5>Disposition</h5>
 
-<p>NotTested</p>
+<p>Tested</p>
 
-<pre><code>The page tests that render TeamDetail and PortfolioDetail are no declared support of this slice and each page needs a large stand-in set; the components are observed alone and the mounting is left to the whole-candidate review and the examiner
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx</p>
+
+<pre><code>Mounting the notice but still passing the form to every Team Admin, or hiding the form from System Admins too
 </code></pre>
 
-<p>design</p>
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A Portfolio Admin who is not a System Admin, and then a System Admin, open the Access tab of Portfolio Ocean Explorer
+</code></pre>
+
+<pre><code>The Portfolio Admin sees the notice and the group list with no add form; the System Admin sees the add form and the notice
+</code></pre>
+
+<pre><code>On the real Access tab a Portfolio Admin is told who else reaches the Portfolio and is not offered a form whose save is refused
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx</p>
+
+<pre><code>Mounting the notice on Teams only, or leaving the form for every Portfolio Admin
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A browser asks for the rules of an existing Team or Portfolio and of a number no unit ever had, under both route versions
+</code></pre>
+
+<pre><code>The existing unit answers 200 with its rules; the unknown number answers 404, never an empty list
+</code></pre>
+
+<pre><code>A mistyped or deleted unit is not shown as a unit with no rules reaching it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Authorization/SystemWideRulesWireContractTest.cs</p>
+
+<pre><code>Answering an empty list for an unknown unit
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

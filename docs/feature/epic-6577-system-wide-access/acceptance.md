@@ -1088,26 +1088,90 @@ A new route with only a class-level Authorize
 P3
 
 ```text
-TeamDetail and PortfolioDetail mount the notice and pass the system-admin-only prop to the group list
+A Team Admin who is not a System Admin, and then a System Admin, open the Access tab of Team Zenith
 ```
 
 ```text
-The notice sits above Team Access and Portfolio Access; only a System Admin is offered the group form
+The Team Admin sees the notice about rules for all Teams and Portfolios and the group list with no form to add a group; the System Admin sees the add form and the notice
 ```
 
 ```text
-On the real Access tab a Team Admin sees the notice and no form
+On the real Access tab a Team Admin is told who else reaches the Team and is not offered a form whose save is refused
 ```
 
 ##### Disposition
 
-NotTested
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/TeamDetailAccessTab\.test\.tsx
 
 ```text
-The page tests that render TeamDetail and PortfolioDetail are no declared support of this slice and each page needs a large stand-in set; the components are observed alone and the mounting is left to the whole-candidate review and the examiner
+Mounting the notice but still passing the form to every Team Admin, or hiding the form from System Admins too
 ```
 
-design
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+A Portfolio Admin who is not a System Admin, and then a System Admin, open the Access tab of Portfolio Ocean Explorer
+```
+
+```text
+The Portfolio Admin sees the notice and the group list with no add form; the System Admin sees the add form and the notice
+```
+
+```text
+On the real Access tab a Portfolio Admin is told who else reaches the Portfolio and is not offered a form whose save is refused
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetailAccessTab\.test\.tsx
+
+```text
+Mounting the notice on Teams only, or leaving the form for every Portfolio Admin
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+A browser asks for the rules of an existing Team or Portfolio and of a number no unit ever had, under both route versions
+```
+
+```text
+The existing unit answers 200 with its rules; the unknown number answers 404, never an empty list
+```
+
+```text
+A mistyped or deleted unit is not shown as a unit with no rules reaching it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Authorization\/SystemWideRulesWireContractTest\.cs
+
+```text
+Answering an empty list for an unknown unit
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 

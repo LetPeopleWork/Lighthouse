@@ -20,7 +20,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
     /// <summary>
     /// A Team or Portfolio Admin asks which rules for every Team and Portfolio also reach their unit. They read the
     /// rules as a role and a group, once each, with no stored line to change and no System Admin group; a person who
-    /// only reads the unit is not let in to ask. L9 is the law: the rules of a unit are the distinct role and group
+    /// only reads the unit is not let in to ask. The rules of a unit are the distinct role and group
     /// pairs of every rule that reaches it, other than a System Admin group.
     /// </summary>
     [TestFixture]
@@ -49,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         public void Dispose() => scenario.Dispose();
 
         [Test]
-        public async Task L9_one_Viewer_rule_reaching_every_Team_is_read_as_a_role_and_a_group_and_nothing_else()
+        public async Task One_Viewer_rule_reaching_every_Team_is_read_as_a_role_and_a_group_and_nothing_else()
         {
             scenario.ARuleForEveryUnitIsStored(TeamReaders, UserRole.Viewer);
 
@@ -63,7 +63,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         }
 
         [Test]
-        public async Task L9_twin_rows_of_one_rule_make_one_line_while_another_group_keeps_its_own_line()
+        public async Task Twin_rows_of_one_rule_make_one_line_while_another_group_keeps_its_own_line()
         {
             scenario.TwoEqualRowsAreStored(TeamReaders, UserRole.Viewer);
             scenario.ARuleForEveryUnitIsStored(FinanceStaff, UserRole.Viewer);
@@ -74,7 +74,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         }
 
         [Test]
-        public async Task L9_a_System_Admin_group_is_left_out_of_a_units_rules()
+        public async Task A_System_Admin_group_is_left_out_of_a_units_rules()
         {
             scenario.ASystemAdminGroupIsStored(SystemAdminsGroup);
             scenario.ARuleForEveryUnitIsStored(TeamReaders, UserRole.Viewer);
@@ -85,7 +85,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         }
 
         [Test]
-        public async Task L9_with_no_rule_reaching_the_unit_nothing_is_listed_not_even_the_rules_of_single_units()
+        public async Task With_no_rule_reaching_the_unit_nothing_is_listed_not_even_the_rules_of_single_units()
         {
             scenario.ASystemAdminGroupIsStored(SystemAdminsGroup);
             scenario.AMappingIsStored("zenith-readers", UserRole.Viewer, PermissionScopeType.Team, TeamZenith);
@@ -170,7 +170,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
                 {
                     services.AddSingleton(Options.Create(new AuthorizationConfiguration { Enabled = true, GroupClaimName = GroupClaim }));
                     services.AddSingleton(AValidPremiumLicence());
-                    services.AddSingleton(TimeProvider.System);
+                    services.AddSingleton<TimeProvider>(new Microsoft.Extensions.Time.Testing.FakeTimeProvider(TestToday.FrozenNow));
                     services.AddScoped<ICurrentUserProfileService, PeopleWhoSignedInBefore>();
                     services.AddScoped<IRbacAdministrationService, RbacAdministrationService>();
                 });

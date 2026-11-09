@@ -1,6 +1,7 @@
 using System.Net;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -10,21 +11,25 @@ namespace Lighthouse.Backend.Tests.Contracts.Authorization
 {
     /// <summary>
     /// What a browser reads when it asks which rules for all Teams and Portfolios also reach one Team or Portfolio:
-    /// both routes under both versions, and the names of what comes back. What the rules are is asserted at the port.
+    /// both routes under both versions, the names of what comes back, and the answer for a unit that does not exist.
+    /// What the rules are is asserted at the port.
     /// </summary>
     public class SystemWideRulesWireContractTest : WireContractTest
     {
+        private const int ANumberNoUnitWasEverGiven = 987_654;
+
         private static readonly string[] RoleAndHolder = ["role", "holder"];
 
         private static readonly PermissionScopeType AllUnits = Enum.Parse<PermissionScopeType>("AllUnits");
 
-        [TestCase("/api/latest/authorization/teams/11/system-wide-rules")]
-        [TestCase("/api/v1/authorization/teams/11/system-wide-rules")]
-        [TestCase("/api/latest/authorization/portfolios/21/system-wide-rules")]
-        [TestCase("/api/v1/authorization/portfolios/21/system-wide-rules")]
-        public async Task A_unit_answers_its_rules_as_a_role_and_a_holder_and_nothing_else(string route)
+        [TestCase("/api/latest/authorization/teams/{0}/system-wide-rules", true)]
+        [TestCase("/api/v1/authorization/teams/{0}/system-wide-rules", true)]
+        [TestCase("/api/latest/authorization/portfolios/{0}/system-wide-rules", false)]
+        [TestCase("/api/v1/authorization/portfolios/{0}/system-wide-rules", false)]
+        public async Task A_unit_answers_its_rules_as_a_role_and_a_holder_and_nothing_else(string routeOfAnyUnit, bool isTeam)
         {
-            TheseRulesAreStored();
+            var (teamId, portfolioId) = TheseUnitsAndRulesAreStored();
+            var route = string.Format(routeOfAnyUnit, isTeam ? teamId : portfolioId);
 
             using var response = await Client.GetAsync(route);
             var body = await response.Content.ReadAsStringAsync();
@@ -41,13 +46,45 @@ namespace Lighthouse.Backend.Tests.Contracts.Authorization
             }
         }
 
-        private void TheseRulesAreStored()
+        [TestCase("/api/latest/authorization/teams/{0}/system-wide-rules", true)]
+        [TestCase("/api/v1/authorization/teams/{0}/system-wide-rules", true)]
+        [TestCase("/api/latest/authorization/portfolios/{0}/system-wide-rules", false)]
+        [TestCase("/api/v1/authorization/portfolios/{0}/system-wide-rules", false)]
+        public async Task A_unit_that_does_not_exist_is_not_found_where_an_existing_one_answers_its_rules(string routeOfAnyUnit, bool isTeam)
+        {
+            var (teamId, portfolioId) = TheseUnitsAndRulesAreStored();
+
+            using var known = await Client.GetAsync(string.Format(routeOfAnyUnit, isTeam ? teamId : portfolioId));
+            using var unknown = await Client.GetAsync(string.Format(routeOfAnyUnit, ANumberNoUnitWasEverGiven));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(known.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"WHAT: an existing unit was answered {(int)known.StatusCode}. WHY: the route exists for units that exist. HOW: add the GET route.");
+                Assert.That(unknown.StatusCode, Is.EqualTo(HttpStatusCode.NotFound), $"WHAT: a unit that does not exist was answered {(int)unknown.StatusCode}. WHY: an empty list would read as no rule reaching a unit that is not there. HOW: answer 404 when the Team or Portfolio does not exist, as the other unit routes do.");
+            }
+        }
+
+        private (int TeamId, int PortfolioId) TheseUnitsAndRulesAreStored()
         {
             using var scope = NewScope();
             var context = scope.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+            var team = new Team
+            {
+                Name = "Team Zenith",
+                WorkTrackingSystemConnection = new WorkTrackingSystemConnection { Name = "Connection", WorkTrackingSystem = WorkTrackingSystems.Jira },
+                DataRetrievalValue = "project = LIGHTHOUSE",
+            };
+            var portfolio = new Portfolio
+            {
+                Name = "Ocean Explorer",
+                WorkTrackingSystemConnection = team.WorkTrackingSystemConnection,
+            };
+            context.Teams.Add(team);
+            context.Portfolios.Add(portfolio);
             context.RbacGroupMappings.Add(new RbacGroupMapping { GroupValue = "team-readers", Role = UserRole.Viewer, ScopeType = AllUnits, ScopeId = null });
             context.RbacGroupMappings.Add(new RbacGroupMapping { GroupValue = "lh-system-admins", Role = UserRole.SystemAdmin, ScopeType = PermissionScopeType.System, ScopeId = null });
             context.SaveChanges();
+            return (team.Id, portfolio.Id);
         }
     }
 
