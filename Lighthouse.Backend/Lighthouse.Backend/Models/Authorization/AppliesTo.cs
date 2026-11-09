@@ -17,10 +17,16 @@ namespace Lighthouse.Backend.Models.Authorization
 
         public static AppliesTo AllUnits { get; } = new(PermissionScopeType.AllUnits);
 
-        /// <summary>Reads what a stored row applies to. A row on one unit or on the System applies to no set of units.</summary>
+        /// <summary>
+        /// Reads what a stored row applies to. A row on one unit or on the System applies to no set of units. A rule for
+        /// all units gives Viewer or Admin on all and nothing else, so a row for all units with another role, written by
+        /// hand or by a newer release, applies to nothing and grants nothing.
+        /// </summary>
         public static bool TryFrom(PermissionRule row, [NotNullWhen(true)] out AppliesTo? appliesTo)
         {
-            appliesTo = row is { ScopeType: PermissionScopeType.AllUnits, ScopeId: null } ? AllUnits : null;
+            appliesTo = row is { ScopeType: PermissionScopeType.AllUnits, ScopeId: null, Role: UserRole.Viewer or UserRole.UnitAdmin }
+                ? AllUnits
+                : null;
             return appliesTo is not null;
         }
 

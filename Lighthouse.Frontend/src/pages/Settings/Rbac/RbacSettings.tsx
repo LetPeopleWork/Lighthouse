@@ -25,11 +25,14 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import type {
-	CreateRbacGroupMappingRequest,
-	RbacGroupMapping,
-	RbacStatus,
-	RbacUser,
+import {
+	type CreateRbacGroupMappingRequest,
+	type GroupMappingRole,
+	type GroupMappingScopeType,
+	getRoleLabel,
+	type RbacGroupMapping,
+	type RbacStatus,
+	type RbacUser,
 } from "../../../models/Authorization/RbacModels";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -39,27 +42,53 @@ import { useUsageDataReporter } from "../../../services/UsageData/usageDataRepor
 import { fireAndForget } from "../../../utils/fireAndForget";
 import EveryoneSignedInSection from "./EveryoneSignedInSection";
 
-type SsoGroupRole = "SystemAdmin" | "ViewerOnAll";
+type SsoGroupRole = "SystemAdmin" | "ViewerOnAll" | "AdminOnAll";
 
-const ssoGroupRoleChoices: { value: SsoGroupRole; label: string }[] = [
-	{ value: "SystemAdmin", label: "System Admin" },
-	{ value: "ViewerOnAll", label: "Viewer on all" },
+interface SsoGroupRoleChoice {
+	value: SsoGroupRole;
+	label: string;
+	role: GroupMappingRole;
+	scopeType: GroupMappingScopeType;
+}
+
+const ssoGroupRoleChoices: SsoGroupRoleChoice[] = [
+	{
+		value: "SystemAdmin",
+		label: "System Admin",
+		role: "SystemAdmin",
+		scopeType: "System",
+	},
+	{
+		value: "ViewerOnAll",
+		label: "Viewer on all",
+		role: "Viewer",
+		scopeType: "AllUnits",
+	},
+	{
+		value: "AdminOnAll",
+		label: "Admin on all",
+		role: "UnitAdmin",
+		scopeType: "AllUnits",
+	},
 ];
 
+const choiceOf = (value: SsoGroupRole): SsoGroupRoleChoice =>
+	ssoGroupRoleChoices.find((choice) => choice.value === value) ??
+	ssoGroupRoleChoices[0];
+
 const mappingFor = (
-	role: SsoGroupRole,
+	choice: SsoGroupRoleChoice,
 	groupValue: string,
-): CreateRbacGroupMappingRequest =>
-	role === "ViewerOnAll"
-		? { groupValue, role: "Viewer", scopeType: "AllUnits", scopeId: null }
-		: { groupValue, role: "SystemAdmin", scopeType: "System", scopeId: null };
+): CreateRbacGroupMappingRequest => ({
+	groupValue,
+	role: choice.role,
+	scopeType: choice.scopeType,
+	scopeId: null,
+});
 
 const isSsoGroupRule = (mapping: RbacGroupMapping): boolean =>
 	(mapping.scopeType === "System" && mapping.role === "SystemAdmin") ||
 	mapping.scopeType === "AllUnits";
-
-const roleLabelOf = (mapping: RbacGroupMapping): string =>
-	mapping.role === "SystemAdmin" ? "System Admin" : mapping.role;
 
 type RulesLoad = "loading" | "failed" | "loaded";
 
@@ -170,10 +199,11 @@ const RbacSettings: React.FC = () => {
 		}
 
 		try {
+			const choice = choiceOf(roleChoice);
 			await rbacService.createGroupMapping(
-				mappingFor(roleChoice, normalizedGroupValue),
+				mappingFor(choice, normalizedGroupValue),
 			);
-			if (roleChoice === "ViewerOnAll") {
+			if (choice.scopeType === "AllUnits") {
 				reportUsage({ name: UsageDataEventName.SystemWideAccessGranted });
 			}
 			setGroupValueInput("");
@@ -453,7 +483,7 @@ const RbacSettings: React.FC = () => {
 								{groupMappings.map((mapping) => (
 									<TableRow key={mapping.id}>
 										<TableCell>{mapping.groupValue}</TableCell>
-										<TableCell>{roleLabelOf(mapping)}</TableCell>
+										<TableCell>{getRoleLabel(mapping.role)}</TableCell>
 										<TableCell>{appliesToLabelOf(mapping)}</TableCell>
 										<TableCell align="right">
 											<Button

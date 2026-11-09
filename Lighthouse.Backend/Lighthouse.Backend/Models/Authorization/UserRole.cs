@@ -6,5 +6,6 @@ namespace Lighthouse.Backend.Models.Authorization
         TeamAdmin = 1,
         PortfolioAdmin = 2,
         Viewer = 3,
+        UnitAdmin = 4,
     }
 }

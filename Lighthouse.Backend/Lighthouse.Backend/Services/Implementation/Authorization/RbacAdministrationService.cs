@@ -458,8 +458,10 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 if (currentUser is not null)
                 {
                     var effectiveAccess = await GetEffectiveAccessAsync(principal, currentUser, cancellationToken);
-                    adminTeamIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Team));
-                    adminPortfolioIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Portfolio));
+                    var storedTeamIds = await context.Teams.Select(team => team.Id).ToListAsync(cancellationToken);
+                    var storedPortfolioIds = await context.Portfolios.Select(portfolio => portfolio.Id).ToListAsync(cancellationToken);
+                    adminTeamIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Team, storedTeamIds));
+                    adminPortfolioIds.AddRange(effectiveAccess.AdministeredUnitIds(PermissionScopeType.Portfolio, storedPortfolioIds));
                 }
             }
 
@@ -1280,17 +1282,17 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
         private static bool IsValidGroupMappingScope(UserRole role, PermissionScopeType scopeType, int? scopeId)
         {
+            if (scopeType == PermissionScopeType.AllUnits)
+            {
+                return AppliesTo.TryFrom(new PermissionRule(scopeType, scopeId, role), out _);
+            }
+
             return role switch
             {
                 UserRole.SystemAdmin => scopeType == PermissionScopeType.System && !scopeId.HasValue,
                 UserRole.TeamAdmin => scopeType == PermissionScopeType.Team && scopeId.HasValue,
                 UserRole.PortfolioAdmin => scopeType == PermissionScopeType.Portfolio && scopeId.HasValue,
-                UserRole.Viewer => scopeType switch
-                {
-                    PermissionScopeType.Team or PermissionScopeType.Portfolio => scopeId.HasValue,
-                    PermissionScopeType.AllUnits => !scopeId.HasValue,
-                    _ => false,
-                },
+                UserRole.Viewer => (scopeType is PermissionScopeType.Team or PermissionScopeType.Portfolio) && scopeId.HasValue,
                 _ => false,
             };
         }

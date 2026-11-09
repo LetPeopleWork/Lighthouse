@@ -3,7 +3,8 @@ namespace Lighthouse.Backend.Models.Authorization
     /// <summary>
     /// What one person may do: their System role, kept apart, and their role on each Team and Portfolio, which is the
     /// higher of the role they hold on that unit and the role of every SSO group rule that reaches it, and Viewer on
-    /// every unit while everyone signed in can view. A rule only adds. The unit roles are worked out on the first unit
+    /// every unit while everyone signed in can view. Admin on all reads as Team Admin on a Team and Portfolio Admin on
+    /// a Portfolio, and never as the System role. A rule only adds. The unit roles are worked out on the first unit
     /// question, so asking for the System role never depends on them, nor on the switch.
     /// </summary>
     public sealed class EffectiveAccess
@@ -63,9 +64,16 @@ namespace Lighthouse.Backend.Models.Authorization
             return role is not null && role == AdminRoleOn(unitType);
         }
 
-        public IReadOnlyList<int> AdministeredUnitIds(PermissionScopeType unitType)
+        /// <param name="unitType">Team or Portfolio.</param>
+        /// <param name="storedUnitIds">
+        /// Every stored unit of that type, since a rule names no unit and so cannot list the units it administers.
+        /// </param>
+        public IReadOnlyList<int> AdministeredUnitIds(PermissionScopeType unitType, IEnumerable<int> storedUnitIds)
         {
-            return unitRoles.Value.AdministeredUnitIds(unitType);
+            return unitRoles.Value.HeldUnitIds(unitType)
+                .Union(storedUnitIds)
+                .Where(unitId => CanWrite(unitType, unitId))
+                .ToList();
         }
 
         /// <summary>
@@ -146,7 +154,21 @@ namespace Lighthouse.Backend.Models.Authorization
             }
         }
 
-        private sealed record Reach(AppliesTo AppliesTo, UserRole Role);
+        private sealed record Reach(AppliesTo AppliesTo, UserRole Role)
+        {
+            public bool Administers => GivesOn(PermissionScopeType.Team) == UserRole.TeamAdmin
+                || GivesOn(PermissionScopeType.Portfolio) == UserRole.PortfolioAdmin;
+
+            public UserRole? GivesOn(PermissionScopeType unitType)
+            {
+                if (!AppliesTo.Reaches(unitType))
+                {
+                    return null;
+                }
+
+                return Role == UserRole.UnitAdmin ? AdminRoleOn(unitType) : Role;
+            }
+        }
 
         private sealed class UnitRoles
         {
@@ -182,22 +204,23 @@ namespace Lighthouse.Backend.Models.Authorization
                 return new UnitRoles(heldOnUnits, reaches);
             }
 
-            public bool AdministersAny => heldOnUnits.Any(entry => entry.Value == AdminRoleOn(entry.Key.ScopeType));
+            public bool AdministersAny => heldOnUnits.Any(entry => entry.Value == AdminRoleOn(entry.Key.ScopeType))
+                || reaches.Any(reach => reach.Administers);
 
             public UserRole? RoleOn(UnitKey unit)
             {
                 UserRole? held = heldOnUnits.TryGetValue(unit, out var role) ? role : null;
                 return reaches
-                    .Where(reach => reach.AppliesTo.Reaches(unit.ScopeType))
-                    .Aggregate(held, (highest, reach) => HigherOn(unit.ScopeType, highest, reach.Role));
+                    .Select(reach => reach.GivesOn(unit.ScopeType))
+                    .OfType<UserRole>()
+                    .Aggregate(held, (highest, given) => HigherOn(unit.ScopeType, highest, given));
             }
 
-            public List<int> AdministeredUnitIds(PermissionScopeType unitType)
+            public IEnumerable<int> HeldUnitIds(PermissionScopeType unitType)
             {
-                return heldOnUnits
-                    .Where(entry => entry.Key.ScopeType == unitType && entry.Value == AdminRoleOn(unitType))
-                    .Select(entry => entry.Key.UnitId)
-                    .ToList();
+                return heldOnUnits.Keys
+                    .Where(unit => unit.ScopeType == unitType)
+                    .Select(unit => unit.UnitId);
             }
 
             // On a unit, a role that does not belong to that unit type, such as Portfolio Admin on a Team, gives

@@ -58,7 +58,8 @@ export type GroupMappingScopeType =
 	| "Portfolio"
 	| "AllUnits";
 
-export type GroupMappingRole = "SystemAdmin" | ScopedRbacRole;
+/** UnitAdmin is Admin on all: a group rule only, admin on every Team and Portfolio, never a member role. */
+export type GroupMappingRole = "SystemAdmin" | ScopedRbacRole | "UnitAdmin";
 
 export interface SystemWideRule {
 	role: GroupMappingRole;
@@ -85,6 +86,7 @@ const ROLE_LABELS: Record<GroupMappingRole, string> = {
 	Viewer: "Viewer",
 	TeamAdmin: "Team Admin",
 	PortfolioAdmin: "Portfolio Admin",
+	UnitAdmin: "Admin",
 };
 
 export const getRoleLabel = (role: GroupMappingRole): string =>

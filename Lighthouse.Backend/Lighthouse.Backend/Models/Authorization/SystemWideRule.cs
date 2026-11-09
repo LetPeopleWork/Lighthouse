@@ -9,11 +9,10 @@ namespace Lighthouse.Backend.Models.Authorization
         /// <summary>What the everyone-signed-in switch gives while it is on: Viewer, held by everyone signed in.</summary>
         public static SystemWideRule EveryoneSignedIn { get; } = new(UserRole.Viewer, "everyone signed in");
 
-        /// <summary>Reads a stored group mapping as a rule reaching a unit of the given kind. A System Admin group and a rule on one unit are none.</summary>
+        /// <summary>Reads a stored group mapping as a rule reaching a unit of the given kind. A System Admin group, a rule on one unit and a row that grants nothing are none.</summary>
         public static bool TryReading(RbacGroupMapping mapping, PermissionScopeType unitType, out SystemWideRule rule)
         {
-            var reaches = mapping.Role != UserRole.SystemAdmin
-                && AppliesTo.TryFrom(new PermissionRule(mapping.ScopeType, mapping.ScopeId, mapping.Role), out var appliesTo)
+            var reaches = AppliesTo.TryFrom(new PermissionRule(mapping.ScopeType, mapping.ScopeId, mapping.Role), out var appliesTo)
                 && appliesTo.Reaches(unitType);
             rule = reaches ? new SystemWideRule(mapping.Role, mapping.GroupValue) : null!;
             return reaches;
