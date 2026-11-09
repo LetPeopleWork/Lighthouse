@@ -1148,3 +1148,24 @@ No platform risk, stated so the wave is not a silent skip.
 - No platform change. One name-only usage-data event, `SystemWideAccessGranted = 26`.
 - Next: DELIVER on nWave 4 `nwdes`. It opens with the UI sketch review (P8, P12, the notice's loading and failure looks and
   its failure sentence), then the architecture review owed since DESIGN, then the rigor profile per slice.
+
+## Wave: DELIVER / [REF] Maintainer Decisions: Sketch Review (2026-11-09)
+
+Held at the start of DELIVER, before any acceptance designer, because nWave 4 has no separate DISTILL. Team and Portfolio
+render through Terminology in all copy below. These settle P8, P12 and DESIGN's open copy questions.
+
+- **M-S1 (P12) No umbrella noun on screen.** The Access tab notice is headed "Also reachable through access to all Teams and
+  Portfolios", the same phrase as the "Applies to" column. "System-wide rule" stays the term in docs and code.
+- **M-S2 (P8) "Unassigned" becomes "No direct role".** The users table column, the chip ("No direct role: N") and the filter
+  ("Show users with no direct role only") in Settings → Access. Logic unchanged: no row in `UserPermissions`. Slice 03.
+- **M-S3 Access tab notice looks.** Loading: small spinner in the notice's slot, "Checking access to all Teams and
+  Portfolios…". Failure: warning `Alert`, never hidden, no Retry button:
+  "Could not check access to all Teams and Portfolios. More people may reach this Team than listed below. Reload the page to
+  try again." (Portfolio on a Portfolio.) Loaded with no rule: nothing, as today, and only once the answer has arrived.
+- **M-S4 Settings → Access sketch approved as drawn above,** with failures that say reload instead of a Retry button, the same
+  as M-S3. This replaces "with Retry" in DESIGN's loading and failure table:
+  - rules table, failed: "Could not load the SSO group rules. Reload the page to try again." Loading: spinner where the
+    table goes.
+  - switch, failed: "Could not load this setting. Reload the page to try again." Loading: disabled with a spinner, never
+    shown off until known. A 409 still reloads the state and shows the existing conflict message.
+  - Section heading "SSO Groups"; roles "System Admin", "Viewer on all", "Admin on all"; confirm dialog copy as sketched.
