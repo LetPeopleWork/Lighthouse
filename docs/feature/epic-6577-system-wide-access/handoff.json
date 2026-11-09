@@ -742,6 +742,19 @@
 "expected": "F629",
 "stimulus": "F628",
 "user_result": "F630"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F637",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+},
+"expected": "F635",
+"stimulus": "F634",
+"user_result": "F636"
 }
 ]
 },
@@ -750,7 +763,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 633,
+"F": 637,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -3421,6 +3434,10 @@
 "F631": "A migration that adds the table and also alters an unrelated column in a way the guard does not classify; the guard owns that boundary",
 "F632": "TestHostUseGuardTest.cs is an S4 support: the oracle author adds the SkeletonsByUserFlow entry for the named host skeleton RemovedPersonEmbedSkeletonTest, and the guard runs in the S4 verification.",
 "F633": "The switch is read as SystemWideRule(Viewer, \"everyone signed in\") with no separate kind field. On screen a group renders as Viewer: group <value> and the switch as Viewer: everyone signed in, so they never look alike; a kind field would change the two-field wire shape S3 pinned. An SSO group literally named everyone signed in collides only inside the read model, and that collision is accepted. Root decision taken autonomously, logged for the maintainer.",
+"F634": "The test assembly is read for every class that starts an application host",
+"F635": "The removed-person embedded-session check is listed as a named skeleton with its user flow, and no other host user is added",
+"F636": "The one end-to-end check of a removed person's embedded session stays an accepted exception, so fast tests stay at the service port",
+"F637": "A skeleton listed under a user flow it does not walk; the guard checks the listing, review checks the wording",
 "F64": "The database applies a conditional update or insert atomically (EF concurrency token check, primary key on the one switch row)",
 "F65": "Two concurrent writers bound the race; more writers add no new interleaving class",
 "F68": "Switch write under its token and rule removal with twins",

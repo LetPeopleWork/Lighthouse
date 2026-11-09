@@ -1483,6 +1483,36 @@ A migration that adds the table and also alters an unrelated column in a way the
 ###### Obligations
 
 
+##### Covers
+
+P4
+
+```text
+The test assembly is read for every class that starts an application host
+```
+
+```text
+The removed-person embedded-session check is listed as a named skeleton with its user flow, and no other host user is added
+```
+
+```text
+The one end-to-end check of a removed person's embedded session stays an accepted exception, so fast tests stay at the service port
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TestHostUseGuardTest\.cs
+
+```text
+A skeleton listed under a user flow it does not walk; the guard checks the listing, review checks the wording
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

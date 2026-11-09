@@ -42,6 +42,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         // each with the user flow it walks through.
         private static readonly Dictionary<string, string> SkeletonsByUserFlow = new(StringComparer.Ordinal)
         {
+            ["Lighthouse.Backend.Tests.Acceptance.SystemWideAccess.RemovedPersonEmbedSkeletonTest"] = "a person removed during an embedded session reads nothing",
         };
 
         private ModuleDefinition module = null!;
