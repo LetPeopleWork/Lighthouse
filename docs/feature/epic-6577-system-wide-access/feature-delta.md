@@ -1117,3 +1117,34 @@ For DEVOPS: the usage-data event for K3.
 - Migration: one additive table, in slice 04. Rule rows need none.
 - External integrations: none new.
 - Records: ADR-280, ADR-281, a correcting note on ADR-002, the `epic-6577-system-wide-access` section of `brief.md`.
+
+## Wave: DEVOPS / [REF] Platform Lens
+
+No platform risk, stated so the wave is not a silent skip.
+
+- **Environments and deployment:** unchanged. No new host, service, secret or external call.
+- **Database:** one additive table in slice 04, made with `CreateMigration` for every provider. Expand-only, so a rollback to
+  the previous release leaves the table unused and harmless.
+- **Failure modes:** fail closed, per DDD-12. A failed read of rules or the switch is an error, never a grant. Nothing is
+  retried or replayed; there is no queue or cache.
+- **Observability:** DDD-14's Information line per rule add, rule remove and switch change, in the existing log. No new
+  health signal, SLO, dashboard or alert.
+- **CI:** unchanged. The Keycloak realm that `RoleBasedAccessControl.spec.ts` uses already exists.
+
+## Wave: DEVOPS / [REF] Usage-Data Event (maintainer decision, 2026-11-09)
+
+- **Event:** `SystemWideAccessGranted = 26` in `UsageDataEventName`. Name-only, no properties.
+- **When:** a Viewer-on-all or Admin-on-all rule is added, or "everyone signed in" is turned on. Not on removal, and not for a
+  System Admin group mapping, which existed before this feature.
+- **Never sent:** the group value, the actor, or any id or count.
+- **Measures:** K3, distinct instances sending it within 90 days of release.
+- **Slices:** slice 01 emits it for the Viewer-on-all rule and lists it in `docs/settings/usagedata.md`. Slice 04 adds the
+  switch and slice 05 adds Admin on all, each extending the same doc line.
+- **Rejected:** a closed-enum `kind` property (K3 does not need it; our rule allows a property only when a KPI cannot be
+  counted without one), and no event (no signal beyond the one customer).
+
+## Wave: DEVOPS / [REF] Wave Decisions Summary
+
+- No platform change. One name-only usage-data event, `SystemWideAccessGranted = 26`.
+- Next: DELIVER on nWave 4 `nwdes`. It opens with the UI sketch review (P8, P12, the notice's loading and failure looks and
+  its failure sentence), then the architecture review owed since DESIGN, then the rigor profile per slice.
