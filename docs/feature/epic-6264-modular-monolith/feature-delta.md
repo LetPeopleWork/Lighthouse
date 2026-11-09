@@ -184,6 +184,17 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
   - [ ] The context's ArchUnit rule is by namespace. Existing rules (e.g. "WorkTracking-Integration is a leaf input adapter", "Refinement depends down only") are preserved in the new namespaces.
   - [ ] Move commits separate from edit commits. ARCHITECTURE.md §4 row, anchors and diagram updated in the same change.
   - [ ] Behaviour-free, all tests green, mutation score held.
+- **Notes from S02 (2026-11-09), for every S03\*** (the full lessons are in ADR-270, "Lessons from the Flow metrics pilot"; they apply once the maintainer decides the gate):
+  - Use the settled names: `Modules/<Context>` with the ADR-270 glossary name in PascalCase (`WorkItems`, `TrackerIntegration`, `OrganisationSetup`, `Forecasting`, `Promises`, `Refinement`, `Reports`, `Access`, `Licensing`); sub-folders `Application/Policies`, `Adapters/Background`, `Adapters/Persistence`; tests under `Lighthouse.Backend.Tests/Modules/<Context>/`.
+  - Start with a rules-first feature: search the rule files for the context's namespace and folder strings, widen them, and prove it with a made-up type under `Modules`.
+  - Measure inbound and outbound edges from the IL before writing baselines. S02's design counts were low twice.
+  - One oracle file per slice; ADR, `ARCHITECTURE.md` and catalogue edits in the finalize checklist, not in an nwdes slice.
+  - Declare EXAMINE commands up front (reuse `Scripts/examine`), and add an answer comparison for the context's own endpoints.
+  - Mutation bar for a move: no file lower than its baseline, same filter, old paths against new paths.
+  - Each move edits `Program.cs`, which forces the full CI backend suite on the push.
+  - Reuse the Flow metrics rule shapes; lift the Application inbound and outbound rules out of their oracle files into a module-neutral rules class first.
+  - S03b (Work Items) and S03c (Forecasting): each shrinks a Flow metrics list. `TeamDataService` and `WorkItemService` sit in R3 and R4; five Forecasting types sit in R4, and three Flow metrics → Forecasting edges in R5. Together they form a Flow metrics ↔ Forecasting cycle the map does not draw.
+  - S03f (Platform): `DatabaseMaintenanceGate` reaches the Flow metrics Application (R4 list).
 
 #### S04a — Close the `Models ↛ Services` gap
 
@@ -338,6 +349,10 @@ Conventions for every Story: `@infrastructure` · `job_id: infrastructure-only` 
   - [ ] Each context has a `Contracts` namespace. A cross-context ArchUnit rule allows only `Contracts` (with a ratchet baseline if needed, by inline file list).
   - [ ] Direct cross-context service calls that are reactions are listed. Those moved to domain events are done via the existing dispatcher (transport only, ADR-027 D7).
   - [ ] Payoff noted: CI test selection by module path (extending today's path-based connector selection) becomes possible. It is sound only as far as the rules are enforced. CI speed work itself is Story #6302.
+- **Notes from S02 (2026-11-09):**
+  - Registration extensions (`AddFlowMetrics` and the like) land here, not in S03*: S02 kept every registration line in `Program.cs` in place. The handler-order pin (`DomainEventHandlerOrderPinTest`) is the safety net: the dispatcher runs handlers in registration order, and the Flow metrics handlers interleave with the Forecasting trigger of the Team refresh.
+  - The inline edge lists of each module (R3, R4, R5 for Flow metrics) are the starting list of direct cross-context calls this Story sorts into contracts and domain events.
+  - Module tests now sit under `Lighthouse.Backend.Tests/Modules/<Context>/`, which a per-module CI test selection can key on.
 
 #### S09b — Decision: one assembly per context?
 
@@ -819,6 +834,22 @@ item changes the plan for the others.
 - Changes the plan:
   - FE7 and T4: a per-file frontend budget already exists in CI, warn-only; FE7 takes the per-test ratchet, T4 keeps the per-file budget and drops `--warn-only`.
   - Follow-up candidates, not filed: per-test seeding cost in seeded acceptance suites (~210 ms per test with the schema template); two usage-data fixtures leave database files behind; `A_cancelled_refresh_still_lets_go_of_the_work_held_behind_it` cannot fail on a no-op cancel; test names that embed today's date drift the id list daily; a test-writing guidance skill for DISTILL and DELIVER once T4/T5 settle the convention.
+
+### 2026-11-09 — S02 #6358 Metrics pilot (the go/no-go gate) — Delivered, gate decision pending
+- Commits: `a0be163c2` (DESIGN) `..d8b1ea4a2` (slice 8 mutation), in three nwdes features: A rules first, B the move, C the module rules and the test move · workspace: `docs/feature/story-6358-s02-metrics-pilot/` · archive: `docs/evolution/story-6358-s02-metrics-pilot/evolution.md`
+- Ratchet: Flow metrics lives in `Modules/FlowMetrics/{Domain, Application, Application/Policies, Adapters/Background, Adapters/Persistence}`. New rules from the IL: Domain → kernel only; outside → Domain from **6** listed types, → Adapters from the composition root only; outside → Application from API, the composition root, Reports, Refinement and **10** listed types (design: 8); Application → no EF Core, `Data`, `Adapters` or `API`, → Forecasting along **3** listed edges (design: 1 plus 1 invisible). The type-set rule's opcode scanner is deleted. `ApplicationCore` (`Services` or `Modules`) and `RepositoryRecognition` widened first; handler order of the two refresh events pinned.
+- KPIs re-measured: KPI 1 loose files 41 + 61 → **34 + 44**, total 527 → **485**; KPI 2 contexts packaged **1 of 11**; KPI 4 `GetAllByPredicate` allow-list stays 15 files (S05f kept separate, D-7); KPI 12 mutation **64.31 %** before and after, identical file by file (five files below 80 % before the Story). Behaviour capture: 366 metrics API answers and 3 snapshot tables identical; EF model unchanged on both providers.
+- Changes the plan (lessons, in full in ADR-270 "Lessons from the Flow metrics pilot, 2026-11-09"):
+  - Rules first: widen every rule that keys on the context's namespace or folder before any type moves.
+  - One oracle file per slice; a shared file made the earlier approvals stale and forced a re-approval of five slices.
+  - nwdes refuses a prose-only slice outside its own doc folders: ADR and catalogue edits go in the finalize checklist.
+  - Repository recognition already includes a module's `Adapters/Persistence`; nothing more to widen.
+  - Log categories change with the namespace; check configuration for namespace strings first.
+  - `Program.cs` edits force the full CI suite, live tracker tests included.
+  - The generic service-locator call is visible in the IL; measure edges from the IL, not from the design.
+  - The examiner needs public commands (`.nwave/examine.json`, `Scripts/examine`) to observe "no behaviour change".
+  - Mutation cannot rise in a move: the bar is "no file lower than its baseline".
+  - Gate: **go-with-changes recommended, awaiting the maintainer's decision.** Open: questions 3 and 4 of S02's design (a migration spike for the snapshot entities before S04b; `UpdateTeamMetrics` writing through `IWorkItemRepository.Save`), survivor-killing for the metrics services.
 
 ## Wave: DISCUSS / [REF] Split into improvement Epics (2026-11-03)
 

@@ -13,6 +13,10 @@
 > changing what it does) or **target only** (it does not exist yet). Target-only concepts are the language for future
 > features (Epic 6455 "deeper hierarchies" first). They are **not** refactoring work: no packaging Story builds
 > Signals, the promise lifecycle events, levels above the Feature, or organisation-wide defaults for SLE and staleness.
+>
+> **Moved so far (2026-11-09):** Flow metrics, by the pilot Story 6358. For Flow metrics this ADR describes today's
+> code, apart from what is still marked target only (per-level granularity, and the entities and DTOs that stay in
+> `Models`). Every other context is still where §4 places it.
 
 ## Context
 
@@ -55,7 +59,7 @@ set-up, the Deliveries go to Promises. RBAC/Identity splits into Access and Lice
 | **Organisation set-up** | supporting; upstream of nearly all | How this organisation is structured and how it works by default. It holds the levels and their names (Terminology), the units on each level (the leaf unit that generates throughput, today's Team; the units above it, today's Portfolios), the mapping of tracker types, states and fields onto Lighthouse's concepts with its defaults, each unit's overrides, the calendar (blackout periods) and the cadence and priority rules (refresh cadence, Feature ordering policy). Structure and defaults only, no behaviour. | Terminology, blackout periods and recurring rules, refresh cadence, Feature ordering policy, the Team and Portfolio entities and their settings, connection defaults (until a decision on org default versus per-tracker default) | None. Spread over Platform/Persistence (seeding, settings), Portfolio/Delivery, the `Models` kernel and the connection settings | **Packaged** from today's settings, Teams and Portfolios. Levels above the Feature, org-wide defaults with local override for SLE, staleness and similar, and per-level granularity are **target only** |
 | **Tracker integration** | supporting | The anti-corruption layer in front of Jira (Cloud, Server, Data Center), Azure DevOps, Linear, CSV and ServiceNow. Connections, credentials and OAuth, connection health, and the **translation** of each tracker record into a Work Item or Feature during a fetch, applying the mapping it is given. Nobody outside it sees a tracker's model. | Connections and their credentials, connectors, connection health, the shared category-crossing rule that dates started and finished work | WorkTracking-Integration (minus the mapping, which moves to Organisation set-up) | **Packaged** |
 | **Work Items** | supporting | Owns Lighthouse's copy of the work mirrored from the trackers and keeps it current; the refresh process itself is still called sync. The items of every level, leaf and non-leaf alike, are **one item model with a level**, not separate contexts for leaf and non-leaf items. Refreshes (scheduled and forced), the sync mode (full or sweep), parent links (placing Work Items under Features), rolling work up onto Features including the default-size guess for a Feature with no children, dependencies, blocked and state-transition capture. Its outward facts are "this unit's data was refreshed" and "a refresh failed", not its internal steps. | The items (today's Work Items and Features), their state transitions, blocked periods, parent links, the roll-up and the default-size guess, the refresh log, the Team and Portfolio refresh pipelines | WorkItems/Sync, plus the refresh half of Portfolio/Delivery (the Team and Portfolio updaters) | **Packaged** |
-| **Flow metrics** | **core** | One flow calculation at every level: throughput, cycle time, Work Item Age, WIP, percentiles, cumulative state time, process behaviour, blocked history, the day-keyed history snapshots. Granularity differs by level (a Team per day, a strategic level per week or month), which is a property of the level. SLE risk stays here until the first Signals feature. | The metric calculations and caches, the over-time snapshot tables and the history filler | Metrics / Time-in-state | **Packaged** (the pilot for the layout); per-level granularity is target |
+| **Flow metrics** | **core** | One flow calculation at every level: throughput, cycle time, Work Item Age, WIP, percentiles, cumulative state time, process behaviour, blocked history, the day-keyed history snapshots. Granularity differs by level (a Team per day, a strategic level per week or month), which is a property of the level. SLE risk stays here until the first Signals feature. | The metric calculations and caches, the over-time snapshot tables and the history filler | Metrics / Time-in-state | **Packaged** in `Modules/FlowMetrics` by the pilot, Story 6358 (2026-11-09). Its entities and `Models/Metrics` DTOs still sit in `Models`. Per-level granularity is **target only** |
 | **Forecasting** | **core** | Answers "when" and "how many" at every level. It forecasts the items directly above the leaf from the leaf unit's throughput (Monte Carlo), then composes "all children done" upwards level by level. It owns the forecasting inputs of the leaf unit (Feature WIP, throughput window): Organisation set-up owns the unit's identity, structure and way-of-working overrides, Forecasting owns how the leaf unit behaves as capacity, stored as Forecasting's own extension keyed by the unit's id (today both live on `Team`; they move when Forecasting is packaged, an expand-only schema change). A forecast is an answer that is recomputed and replaced; it is a planning aid, not a tracked promise. | Forecasts (completion and start), the forecast round and its fingerprint, manual forecasts, backtests and the reality check, the forecast filter rules | Forecasting, plus the forecast half of Portfolio/Delivery (the forecast updater) | **Packaged**; composing forecasts over more than one level above the leaf is target |
 | **Promises** | **core** | A promise is a target date someone committed to for a set of items on one level, compared against the forecast, with a history of how it ended (kept, missed, renegotiated by moving the target or cutting scope). It includes planning: deciding what fits before committing ("what can we promise by the end of the PI?"). In the user's language one promise is a **Delivery**. A Delivery holds items of the level it hangs off; today's Deliveries are this rule on the Feature level. | Deliveries, their rules, sources (Jira Releases), notes, closure pins and metric snapshots | The Delivery half of Portfolio/Delivery | **Packaged** (today's Deliveries). Promise lifecycle events and Deliveries on levels above the Feature are **target only** |
 | **Signals** | supporting | Turns state into attention: red, amber and green on two levels, the health of a unit or level (for example how many of its items are blocked or stale) and the promise (a Feature's or Delivery's likelihood of hitting its date). It owns thresholds, the current state and the history of when a signal changed, and it suggests when a promise should be renegotiated. One context so that the threshold-and-history mechanism is built once, not twice in Metrics and Promises. | Signal thresholds, current states, change history | None | **Target only.** Nothing to package; SLE risk stays in Flow metrics until the first Signals feature |
@@ -174,6 +178,10 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Tracker integration → Work Items | customer/supplier: Work Items is the customer, the connector port is the negotiated contract | Query through the connector port | Yes (WorkItems/Sync depends on WorkTracking-Integration) | |
 | Organisation set-up → every other context | open host: everyone conforms to its structure (units, levels, names, defaults, calendar) | Queries through its contract; reactions to its events | Today through the kernel. New edges | |
 | Work Items → Flow metrics | upstream publishes, downstream reacts (domain events) | Reacts to the refresh events; reads stored history through read ports | Not drawn in §4. Works today only because the events sit in the kernel. Becomes a legal edge once event types move to Work Items | |
+| Flow metrics → Work Items (Work Items calls Flow metrics, beyond the event) | none designed; a direct call | `TeamDataService` calls `ITeamMetricsService.UpdateTeamMetrics` after a Team refresh (ratchet candidate 1); `WorkItemService` uses `IPortfolioMetricsService` and the Domain's `PercentileCalculator` | **Not legal** (WorkItems/Sync may not depend on Metrics). Measured 2026-11-09 and ratcheted in the R3 and R4 lists | **Derived** (from code, Story 6358) |
+| Forecasting → Flow metrics (Flow metrics calls Forecasting) | none designed | Three edges from the module's Application: `BaseMetricsService` → `IForecastService` (resolved through the service locator; the generic argument is visible in the IL), `TeamMetricsService` → `IForecastFilterRuleService`, `TeamMetricsService` → `ForecastDataSufficiencyPolicy` | **Not legal** (Metrics may not depend on Forecasting). Ratcheted in the R5 list, which only shrinks | **Derived** (from code, Story 6358) |
+| Flow metrics → Forecasting (Forecasting calls Flow metrics) | customer/supplier, undeclared | `ForecastService`, `ForecastService+GatheredInputs`, `ForecastInputs`, `ForecastInputFingerprint` and `ForecastRealityCheckService` read `ITeamMetricsService` and `ForecastThroughputStatus` | **Not legal** (Forecasting depends only on WorkItems/Sync). Ratcheted in the R4 list. With the row above, the two contexts depend on each other: a cycle to break before S09b | **Derived** (from code, Story 6358) |
+| Flow metrics → Platform lane | none designed | `DatabaseMaintenanceGate` reaches the module's Application | Platform is the composition root's infrastructure, not a context; ratcheted in the R4 list until S03f decides | **Derived** (from code, Story 6358) |
 | Work Items → Forecasting | customer/supplier, by events | Reacts to the refresh events; reads Features and throughput through Work Items' contract | Yes (Forecasting depends on WorkItems/Sync) | |
 | Work Items → Refinement | customer/supplier | Reads Work Items in refinement | Yes (Refinement depends on WorkItems/Sync) | **Derived** |
 | Forecasting → Refinement (today) | customer/supplier | Refinement reads the Team's manual How Many forecast | Yes (Refinement depends on Forecasting) | |
@@ -196,6 +204,27 @@ them from the code or the walk, and the maintainer accepted them with the ADR.
 | Platform lane → PostHog | external downstream | The usage-data pipe forwards events the clients hand in | n/a (composition root) | |
 | GitHub Releases → Platform lane | external upstream | Version check and release notes | n/a (composition root) | |
 
+### Edges measured by the Flow metrics pilot (2026-11-09)
+
+Story 6358 measured every edge into and out of `Modules/FlowMetrics` from the compiled IL (`IlDependencies`, Debug and
+Release builds identical) and fixed each list as an inline baseline that fails on a newcomer and on a stale entry
+(ADR-268). The lists only shrink. The rules live in
+`Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs` (R3),
+`FlowMetricsInboundApplicationArchUnitTest.cs` (R4) and `FlowMetricsApplicationOutboundArchUnitTest.cs` (R5).
+
+| Rule | What it allows | Baseline (outside types, or edges) |
+|---|---|---|
+| R2 | The module's Domain depends only on the kernel (`Models`) and the .NET base library | empty |
+| R3, Domain inbound | Outside types reach `Domain` only from the list | 6: `API.PortfolioController`, `API.PortfoliosController`, `API.TeamController`, `API.TeamsController` (they use `BaselineValidationService`), `Reports.Metrics.DailySeriesSummary`, `WorkItems.WorkItemService` |
+| R3, Adapters inbound | Only the composition root reaches `Adapters` | `Program` only, no list |
+| R4, Application inbound | `API`, the composition root, Reports and Refinement by namespace (legal), plus the list | 10 (the design expected 8): Forecasting `ForecastService`, `ForecastService+GatheredInputs`, `ForecastInputs`, `ForecastInputFingerprint`, `ForecastRealityCheckService`; Work Items `TeamData.TeamDataService`, `WorkItems.WorkItemService`; `WriteBackTriggerService` (write-back, see "Left open"); `FeatureListActiveWork`; Platform `DatabaseManagement.DatabaseMaintenanceGate` |
+| R5, Application outbound | No EF Core, `Data`, module `Adapters` or `API` type; Forecasting only through the list | below the Application: empty. Forecasting: 3 edges (see the Forecasting → Flow metrics row) |
+
+The legal R4 callers seen on 2026-11-09: the controllers `ForecastController`, `ForecastRealityCheckController`,
+`PortfolioMetricsController`, `TeamFeatureSizeMetricsController`, `TeamMetricsController`; `Program`; Reports'
+`PortfolioReportMetricSeries` and `TeamReportMetricSeries`; Refinement's `RefinementNeedCalculator` and
+`SleYardstickResolver`.
+
 ### Ratchet candidates
 
 Each of these is an edge today's code takes that §4 does not allow, or one that points the wrong way once its two
@@ -205,6 +234,8 @@ guard (ADR-268) or removes it.
 1. **Work Items calls Flow metrics directly.** `Services/Implementation/TeamData/TeamDataService.cs:23` calls
    `ITeamMetricsService.UpdateTeamMetrics` inline after a Team refresh, while the Portfolio refresh does the same
    reaction in a handler. Metrics is not among WorkItems/Sync's legal dependencies; it should be a handler on the Team refresh event.
+   *Since 2026-11-09 this edge is in the R4 list of the Flow metrics module, which only shrinks; Work Items'
+   packaging Story (S03b) removes it from there.*
 2. **The refresh paths read the licence from RBAC/Identity.** `TeamUpdater.cs:31-34`, `PortfolioUpdater.cs:65-68` and
    `ForecastUpdater.cs:292` (all under `Services/Implementation/BackgroundServices/Update/`) resolve `ILicenseService`.
    Portfolio/Delivery → RBAC/Identity is not a legal edge. In the target these become Work Items and Forecasting reacting to
@@ -224,6 +255,9 @@ guard (ADR-268) or removes it.
    return; `Feature` carries Forecasting's rows (`Models/Feature.cs:60,66`). Decision 7 narrows it.
 7. **Service locator in the updaters.** The updaters resolve collaborators through
    `serviceProvider.GetRequiredService`, which hides their cross-context edges from the architecture tests.
+   *Correction, 2026-11-09:* the generic call `GetRequiredService<T>()` is not hidden from the IL. `IlDependencies`
+   reports `T` as a dependency of the caller, as the Flow metrics pilot found for `BaseMetricsService` →
+   `IForecastService`. Whether the updaters' calls are all generic has not been checked; S03b and S03c measure them.
 
 ## Decision 3: domain events are the default way contexts react to each other
 
@@ -368,7 +402,7 @@ the maintainer). The refresh process itself is still called sync.
 
 | Term | Meaning | Code name today | Drift |
 |---|---|---|---|
-| Flow metric | Throughput, Cycle Time, Work Item Age, WIP and their percentiles, the same calculation at every level | `*MetricsService` | Flat type-set, no folder |
+| Flow metric | Throughput, Cycle Time, Work Item Age, WIP and their percentiles, the same calculation at every level | `Modules/FlowMetrics` (namespace `Lighthouse.Backend.Modules.FlowMetrics.*`); the services are still named `*MetricsService` | No folder drift since Story 6358 (2026-11-09). The `*Service` role names are a later edit (see "Role names") |
 | Snapshot day | The day a history row is recorded for | `RecordedAt` in three tables, another name in the Delivery snapshot | **Drift**: three names for one key |
 
 ### Forecasting
@@ -432,6 +466,23 @@ Other precise names that already say their role (`SyncModeResolver`, `StageRuleM
 - ArchUnitNET enforces "Domain ↛ Adapters" and "Domain ↛ Application" per context, and the legal edges between
   contexts.
 
+**Settled folder names (Story 6358, 2026-11-08 and 2026-11-09).**
+
+- One folder per context, the glossary name in PascalCase as one word: `Modules/FlowMetrics`, `Modules/WorkItems`,
+  `Modules/TrackerIntegration`, `Modules/OrganisationSetup`, `Modules/Forecasting`, `Modules/Promises`,
+  `Modules/Refinement`, `Modules/Reports`, `Modules/Access`, `Modules/Licensing`. No folder for Signals (target only)
+  or Platform (composition root). Existing identifiers keep their spelling (`License*`).
+- Namespace = folder: `Lighthouse.Backend.Modules.<Context>.<Layer>[.<Sub>]`.
+- Sub-folders the pilot used, and the next contexts reuse: `Application/Policies` for domain-event handlers;
+  `Adapters/Background` for hosted services; `Adapters/Persistence` for repositories. A repository's port sits in
+  `Application`, next to the use case.
+- Tests mirror the layout: `Lighthouse.Backend.Tests/Modules/<Context>/{Domain, Application, Adapters}`, each class in
+  the namespace of its folder.
+- The dependency rules are read from the compiled IL (`IlDependencies`), never from ArchUnitNET's graph alone.
+- Flow metrics today: `Domain` (4 files), `Application` (27), `Application/Policies` (7), `Adapters/Background` (1),
+  `Adapters/Persistence` (3). The entities and `Models/Metrics` DTOs stay in `Models` until S12c and S04b, because the
+  EF model snapshots of both providers carry the entity names.
+
 Chosen over:
 - **Flat, role-named folders** per module: the layers are not visible, so the dependency rule cannot be read off the
   tree or enforced per folder.
@@ -443,8 +494,7 @@ entry. Chosen over `features/` (collides with the domain word Feature) and `cont
 the existing `src/context/`).
 
 **Coexistence.** Old and new layouts live side by side until a context is fully moved. A context is moved in one
-packaging Story, behaviour-free. The exact folder names are fixed by the Story that creates the first one (the Flow
-metrics pilot).
+packaging Story, behaviour-free. The exact folder names were fixed by the Flow metrics pilot (see above).
 
 ## Decision 7: what the shared kernel may hold
 
@@ -476,7 +526,7 @@ ownership is logical only (no database per module).
   |---|---|---|
   | Forecasting | Forecasts (completion and start) | Still on the item: `Feature.Forecasts` and `Feature.StartForecasts`; the Story on aggregate boundaries in persistence (S13) moves them out, as its pilot |
   | Forecasting | The leaf unit's capacity inputs (Feature WIP, throughput window), keyed by the unit's id | On `Team`. Moves when Forecasting is packaged (expand-only schema change) |
-  | Flow metrics | Its daily snapshots | Already separate tables |
+  | Flow metrics | Its daily snapshots | Already separate tables; their repositories sit in `Modules/FlowMetrics/Adapters/Persistence` since 2026-11-09, the entities still in `Models` |
   | Promises | Deliveries and their history (closure pins, metric snapshots, notes) | Already separate tables |
   | Signals | Signal history | Target only |
   | Reports | Frozen report windows | Already stored on the report, apart from the items |
@@ -497,6 +547,10 @@ ownership is logical only (no database per module).
   `Persistence` and `Connectors` as sub-folders of `Adapters`. Reasons in Decision 6.
 - **Should the persistence-port and connector-capability Stories run before packaging?** Left to S02, the Story that
   pilots the layout on Flow metrics: it learns what moving one context costs and orders the rest.
+  *Answer from S02 (D-12, 2026-11-09):* **no hard order.** The pilot moved the code without touching a query. The
+  persistence-port Stories (S05*) and the connector-capability Story (S06) can land before or after each S03*; landing
+  after puts the new ports straight into the module's `Application` folder. The one hard order S02 found is S12c
+  before a context's DTOs move, because the entity and DTO names are part of the EF model.
 
 ## Consequences
 
@@ -573,3 +627,83 @@ Two things fixed ahead of the pilot's lessons amendment, which is written when t
   resolve `IForecastService` through the service locator) and **Work Items → Flow metrics** beyond the event reaction
   (`TeamDataService`, `WorkItemService`). The pilot names them in inline ratchet lists; whether the map or the code
   moves is decided in the amendment.
+
+## Lessons from the Flow metrics pilot, 2026-11-09
+
+Story 6358 moved Flow metrics into `Modules/FlowMetrics` in three nwdes features: A, the rules first
+(`docs/feature/story-6358-s02a-rules-first/`); B, the move (`story-6358-s02b-flow-metrics-move/`); and C, the module rules
+and the test move (`story-6358-s02c-flow-metrics-rules/`). The design and its decisions D-4 to D-12 are in
+`docs/feature/story-6358-s02-metrics-pilot/feature-delta.md`; the full record is
+`docs/evolution/story-6358-s02-metrics-pilot/evolution.md`.
+
+**What the pilot measured.** 42 production files moved; 23 more production files outside the module changed, the
+composition root among them. The loose files in `Services/Interfaces` and `Services/Implementation` went from 41 + 61
+to 34 + 44. The behaviour capture of 366 metrics API answers and 3 snapshot tables was identical before and after the
+move. The EF model is unchanged on SQLite and on Postgres. The mutation score of the moved files is 64.31 % before and
+after, identical file by file. No behavioural assertion changed. 33 unit-test files moved under
+`Lighthouse.Backend.Tests/Modules/FlowMetrics`.
+
+Each lesson below says what to do differently in the next packaging Stories (S03*).
+
+1. **Rules first.** The older rules found the application core by the `Services` namespace, or by a fragment such as
+   `.Services.Implementation.DomainEvents`. A type that moved out of `Services` would have left those rules quietly.
+   Feature A widened them to one `ApplicationCore` pattern (`Services` or `Modules`), found handlers by interface,
+   and pinned the handler order of the two refresh events, all before any type moved. Repository recognition followed
+   in feature B. *S03\*:* start with a rules-first feature. Search the rule files for every namespace or folder
+   string of the context, widen each one, and prove with a made-up type under `Modules` that the rule still sees it.
+2. **One oracle file per slice.** In feature B all five slices added tests to one shared oracle file. Each later
+   slice changed bytes that an earlier slice's approval covered, so nwdes refused the whole-candidate close until an
+   independent reviewer re-approved all five slices on the final bytes. Feature C used one oracle file per slice and
+   had no such step. *S03\*:* give every slice its own oracle file; a later slice adds a file and never edits an
+   earlier one.
+3. **nwdes refuses a slice that is prose only, outside its own doc folders.** The documentation slice (DESIGN slice 9)
+   could not be an nwdes slice. *S03\*:* plan the ADR, `ARCHITECTURE.md` and catalogue edits as part of the finalize
+   checklist, not as a slice.
+4. **Repository recognition must include a module's `Adapters/Persistence`.** The repository rules found
+   repositories by the `Repositories` folder and namespace. A moved repository would have passed them unseen.
+   `RepositoryRecognition` now gathers that logic in one place and also accepts a module's `Adapters.Persistence`
+   layer, and an `I…Repository` type in a module's `Application`. *S03\*:* nothing more to widen for repositories;
+   check that each moved repository is still recognised, as `FlowMetricsModuleLayoutArchUnitTest` does.
+5. **Log categories change with the namespace.** A log category is the type's full name, so log lines of moved types
+   now read `Lighthouse.Backend.Modules.FlowMetrics.*`. No configuration key named a moved type, so nothing broke.
+   It is the one change a user of the logs can see. *S03\*:* search `appsettings*.json`, scripts and workflows for
+   the context's namespaces before the move, and say in the record that log categories change.
+6. **`Program.cs` edits force the full CI suite.** `Program.cs` is on the shared path list of the CI test selection, so
+   the push that carries a move runs every backend test, the live tracker tests included. *S03\*:* expect the longer
+   CI job, and push a context's moves together, so the full suite runs once.
+7. **The service-locator edge is visible after all.** The design expected `BaseMetricsService` → `IForecastService`,
+   resolved with `GetRequiredService<IForecastService>()`, to be invisible to every rule. The generic argument is in
+   the IL, and `IlDependencies` reports it. *S03\*:* no source scan is needed for generic service-locator calls.
+   Measure the edges from the IL before writing the baselines; the design's counts were low twice (R4 had 10 edges,
+   not 8; R5 had 3, not 1 plus 1 invisible).
+8. **The examiner needs public commands for "no behaviour change".** The source-blind EXAMINE can only run commands
+   the candidate declares in `.nwave/examine.json`. Feature A had none for two of its expectations, and they came
+   back indeterminate. Features B and C declared commands under `Scripts/examine` (architecture rules by name, the
+   metrics answer comparison, the EF model check, the backend suite) and every expectation came back met. *S03\*:*
+   reuse these commands and add a context's own answer comparison before its first EXAMINE.
+9. **Mutation testing cannot raise a score in a move.** A behaviour-free move keeps every test and every mutant, so
+   the score stays where it was: 64.31 % before and after, below the project's 80 %. Five files were below 80 % before
+   the Story. *S03\*:* the bar for a move is "no file lower than its baseline", measured with the same test filter on
+   the old and the new paths. Killing old survivors is its own improvement item.
+
+### Gate recommendation: go-with-changes
+
+**Recommendation, awaiting the maintainer's decision. Not decided.**
+
+Read against the thresholds of D-10: no behavioural assertion changed; the edits outside the moved set were `using`
+lines and rule and path files; the Domain inbound list (R3) names 6 outside types, fewer than 15. That meets "go". The
+recommendation is **go-with-changes**, because lessons 1 to 8 change how the next contexts are packaged and two edges
+of the map need a decision. The changes:
+
+1. Every S03* starts with a rules-first feature (lesson 1) and measures its edges from the IL before writing its
+   baselines (lesson 7).
+2. One oracle file per slice (lesson 2), and the documentation edits in the finalize checklist, not in a slice
+   (lesson 3).
+3. The module rules become shared. The Domain and Adapters inbound rules already sit on `FlowMetricsModuleRules` with
+   the namespaces as parameters; the Application inbound and outbound rules are still private to their oracle files.
+   Lift them there too, and give the class a name that fits any module, before an S03* copies them.
+4. Each S03* declares its EXAMINE commands up front (lesson 8), and uses "no file lower than its baseline" as the
+   mutation bar of a move (lesson 9).
+5. The map decides the two undeclared edges: **Flow metrics ↔ Forecasting** is a cycle (R4 and R5), and **Work Items
+   → Flow metrics** is a direct call beyond the event (R3 and R4). Both stay ratcheted. Which side moves is for S03b
+   (Work Items, ratchet candidate 1) and S03c (Forecasting) to decide, and it must be decided before S09b.

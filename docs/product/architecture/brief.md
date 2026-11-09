@@ -11213,3 +11213,64 @@ Domain depends on the kernel only; Application has no EF, `Data`, `Adapters` or 
 ### ADR references
 
 ADR-270 (layout, glossary names), ADR-268 (ratchet convention).
+
+## Application Architecture — story-6358 s02 metrics pilot
+
+Feature: S02 Metrics pilot (go/no-go gate), Epic 6510. Waves: DELIVER and finalize. Date: 2026-11-09. Paradigm: OOP,
+behaviour-free refactoring. This section records what shipped; the DESIGN-time section above stays as the plan.
+Workspaces: `docs/feature/story-6358-s02-metrics-pilot/` (design), `story-6358-s02a-rules-first`,
+`story-6358-s02b-flow-metrics-move`, `story-6358-s02c-flow-metrics-rules`. Record:
+`docs/evolution/story-6358-s02-metrics-pilot/evolution.md`.
+
+### Module layout (as shipped)
+
+Root `Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/`, inside the one assembly. Namespace = folder.
+
+| Layer (namespace under `Lighthouse.Backend.Modules.FlowMetrics`) | Files | What it holds |
+|---|---:|---|
+| `Domain` | 4 | `PercentileCalculator`, `XmRCalculator` with `XmRResult`, `SleRiskCalculator`, `BaselineValidationService` with its result. Pure; the kernel and the .NET base library only |
+| `Application` | 27 | The two metrics-service ports with their records, `BaseMetricsService` and the Team and Portfolio services, cache key, percentile families, blocked-count series builder, snapshot writers, series queries, gap reconciler, history-filler ports, reconstruction memo, retention edge, fill target, and the three snapshot-repository ports |
+| `Application.Policies` | 7 | The domain-event handlers: three recorders, two cache invalidations, two demo backfills |
+| `Adapters.Background` | 1 | `OverTimeHistoryFiller`, the hosted service |
+| `Adapters.Persistence` | 3 | The three snapshot repositories |
+
+Unit tests mirror it: `Lighthouse.Backend.Tests/Modules/FlowMetrics/{Domain (4), Application (25), Adapters (4)}`, 33
+files, each class in the namespace of its folder.
+
+Outside the module, unchanged: the three Metrics controllers (`API`), the snapshot entities and `Models/Metrics` DTOs
+(the EF model snapshots carry their names), the Delivery metric types (Promises), the blocked-transition capture (Work
+Items). `Program.cs` keeps every registration in its place; it gained `using` lines only.
+
+### Rule shapes
+
+Every rule reads the compiled IL through `IlDependencies` (ArchUnitNET's graph drops edges written inside `async`
+bodies in a Release build). Every list is an inline baseline compared in both directions with `InlineBaseline`
+(ADR-268): a newcomer fails with a fix hint, a stale entry fails with "delete". Each rule ships with made-up types in
+the test assembly that prove it fails on a newcomer, on an async-only newcomer and on a stale entry, and passes a
+compliant twin.
+
+| Rule | Shape | Baseline |
+|---|---|---|
+| `ApplicationCore` | One pattern, `^Lighthouse\.Backend\.(Services\|Modules)(\.\|$)`, used by every rule on the application core; handlers found by `IDomainEventHandler<>` | none |
+| `RepositoryRecognition` | Repositories and stored records in the `Repositories` folder or a module's `Adapters.Persistence`; `I…Repository` ports also in a module's `Application` | none |
+| Handler-order pin | The resolved handler order of `TeamDataRefreshed` and `PortfolioFeaturesRefreshed`, from the production service provider | the order itself |
+| Layout | Each named type lives in its layer namespace and folder, none left under `Services` | the type list |
+| R2 | `Domain` → kernel and base library only | empty |
+| R3 | Outside → `Domain` only from the list; outside → `Adapters` only from `Program` | 6 types |
+| R4 | Outside → `Application` only from `API`, `Program`, Reports, Refinement, or the list | 10 types |
+| R5 | `Application` → no EF Core, `Data`, module `Adapters` or `API`; → Forecasting only along the list | empty; 3 edges |
+| Test placement | Each Flow metrics unit-test file sits in its layer folder, its classes in the folder's namespace | the file list |
+| Canary | The five module namespaces are non-empty (`ModuleBoundariesArchUnitTest.NamedModules_AreNonEmpty`) | none |
+
+The rule files: `ApplicationCoreRules.cs`, `ApplicationCoreRulesReachModulesArchUnitTest.cs`,
+`RepositoryRecognition.cs`, `DomainEventHandlerOrderPinTest.cs`, `FlowMetricsModuleRules.cs`,
+`FlowMetricsModuleLayoutArchUnitTest.cs`, `FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs`,
+`FlowMetricsInboundApplicationArchUnitTest.cs`, `FlowMetricsApplicationOutboundArchUnitTest.cs`,
+`FlowMetricsUnitTestPlacementTest.cs`, `InlineBaseline.cs`, all under `Lighthouse.Backend.Tests/Architecture/`. The old
+type-set rule's hand-written opcode scanner is deleted; R5 covers what it checked. The two name rules on the metrics
+services stay until S07b removes `BaseMetricsService`.
+
+### ADR references
+
+ADR-270 (layout, settled folder names, measured edges, lessons and the gate recommendation), ADR-268 (ratchet
+convention).
