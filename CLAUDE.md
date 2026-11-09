@@ -48,20 +48,29 @@ Source of truth for "what's in flight" is the Azure DevOps board at `dev.azure.c
 
 ## Wave Sequence
 
-The waves run **DISCOVER → DIVERGE → DISCUSS → DESIGN → DEVOPS → DISTILL → DELIVER**, and they run in
-that order. A request to "go on with X" means *carry on through the sequence as far as X*, not *jump
-to X*. If a wave between the current state and the one asked for has no artifacts, say so and run it
-first.
+The waves run **DISCOVER → DIVERGE → DISCUSS → DESIGN → DEVOPS → DELIVER**, and they run in that order.
+A request to "go on with X" means *carry on through the sequence as far as X*, not *jump to X*. If a wave
+between the current state and the one asked for has no artifacts, say so and run it first.
 
-Skipping is allowed, but only when the user says so in as many words — "skip design", "go straight to
-distill", "no devops for this one". Anything less explicit, including a request that merely names a
-later wave, is a request for the full sequence. A typo is the common case; a deliberate skip is the
-rare one, so resolve the ambiguity towards running the wave.
+**DISTILL is not a wave of its own in nWave 4.** `nw-distill` is not a command: the acceptance designer
+writes each slice's oracle inside the `nwdes` route that `/nw-deliver` runs, with its RED observed before
+any craft. What Lighthouse used to do at the start of DISTILL (the UI sketch review, the architecture
+review a feature still owes) now happens at the **start of DELIVER**, before the first acceptance-designer
+dispatch. Wherever this file says "the acceptance designer", that is the work DISTILL used to name.
+
+**DEVOPS always runs here.** nWave 4's `nw-devops` applies the platform lens only when platform risk is
+material. Lighthouse runs the wave for every feature anyway, because it carries the usage-data question
+below; when there is no platform risk, say so in one line and the wave is just that question.
+
+Skipping is allowed, but only when the user says so in as many words — "skip design", "no devops for
+this one". Anything less explicit, including a request that merely names a later wave, is a request for
+the full sequence. A typo is the common case; a deliberate skip is the rare one, so resolve the
+ambiguity towards running the wave.
 
 Unblocking one narrow question from a skipped wave is **not** a substitute for running it. A wave's
-own skill may hard-block on a missing predecessor (DISTILL blocks on missing DESIGN, for instance) and
-name one thing to ask for; answering that question clears the block but leaves every other decision
-that wave would have made to be improvised silently somewhere downstream. Run the wave.
+own skill may hard-block on a missing predecessor and name one thing to ask for; answering that
+question clears the block but leaves every other decision that wave would have made to be improvised
+silently somewhere downstream. Run the wave.
 
 ## DISCUSS, DEVOPS & DELIVER Waves
 
@@ -131,12 +140,12 @@ Two standing principles worth keeping visible here because they're easy to skip 
   maintainer is there, rather than shipping UI they have not seen. Prefer reusing an existing control or
   table style (`DataGridBase`, `ItemListManager`, the feature-list columns) over a new one, and say which
   one the sketch reuses.
-  **When:** if the slices being distilled touch anything a user sees, walk through the sketches with the
-  maintainer at the **start of DISTILL**, one decision at a time with options, before the scenarios are
-  written. DISTILL pins copy and layout in tests, so a sketch reviewed later means rewriting the tests
-  too, and the review tends to change more than the layout (it has merged and dropped slices). Record the
-  outcome in `feature-delta.md` as a maintainer-decision block; DELIVER then only re-sketches what DISTILL
-  left open.
+  **When:** if the feature's slices touch anything a user sees, walk through the sketches with the
+  maintainer at the **start of DELIVER**, one decision at a time with options, before the first
+  acceptance designer is dispatched. The oracles pin copy and layout in tests, so a sketch reviewed later
+  means rewriting the tests too, and the review tends to change more than the layout (it has merged and
+  dropped slices, which changes what nwdes records). Record the outcome in `feature-delta.md` as a
+  maintainer-decision block; a later slice then only re-sketches what that review left open.
 - **Design for a slow connection: every new view has a loading look and a failure look.** At the
   **DESIGN** wave, any new or changed screen, chart or widget that fetches data answers two questions:
   what does it show while its data is on its way, and what does it show when the data cannot be loaded?
@@ -144,10 +153,10 @@ Two standing principles worth keeping visible here because they're easy to skip 
   current, an empty area that looks like "no data", or a value the reader cannot tell is stale. Reuse
   what exists rather than inventing a new look: `WidgetShell`'s `status` (dimmed under a small spinner
   when there is something to dim, a lone spinner when there is not, and the could-not-load message) for
-  dashboard widgets, and keyed TanStack queries so a late answer for an old request never lands. DISTILL
-  then pins both states, and E2E page objects wait for `data-widget-status="ready"` rather than mere
+  dashboard widgets, and keyed TanStack queries so a late answer for an old request never lands. The
+  acceptance designer then pins both states, and E2E page objects wait for `data-widget-status="ready"` rather than mere
   visibility. Check it by hand with the browser throttled to a slow connection.
-- **DISTILL writes no nWave scenario tags into the code.** The acceptance-designer's mandate tags every
+- **The acceptance designer writes no nWave scenario tags into the code.** The acceptance-designer's mandate tags every
   scenario (`@us-02b`, `@slice-02b`, `@kpi-OUT-…`, `@contract-shape:…`, `@walking_skeleton`,
   `@driving_port`, `@error`, `@real-io`, `@US-01`, `@BUG-…`). That assumes Gherkin files a runner filters
   on; here they would be comments or title prefixes on Vitest, NUnit and Playwright tests that no tool
@@ -159,8 +168,8 @@ Two standing principles worth keeping visible here because they're easy to skip 
   skeleton or a wire contract; `TestHostUseGuardTest` names any other type that does, and says what to do instead.
 - **Test-writing guidance.** How Lighthouse writes tests, on both stacks, is the skill
   `.claude/skills/test-writing/SKILL.md`, with one half per stack in its `references/` folder.
-- **DISTILL, DELIVER and reviewers load the test-writing skill first.** Every DISTILL and DELIVER dispatch, and every
-  reviewer's, tells the agent to read that skill and the half for its stack with `ctx_read` in full mode and
+- **The acceptance designer, the crafter and reviewers load the test-writing skill first.** Every DELIVER dispatch,
+  the acceptance designer's and every reviewer's included, tells the agent to read that skill and the half for its stack with `ctx_read` in full mode and
   `fresh=true`, and to quote the last line of each file back. Tell every acceptance-designer dispatch so.
 - **Improve the tests you touch.** When a change touches a test class, on either stack, it leaves the class better
   than it found it. On the backend, the rows it touches move down to the service port or to unit level, so a line
