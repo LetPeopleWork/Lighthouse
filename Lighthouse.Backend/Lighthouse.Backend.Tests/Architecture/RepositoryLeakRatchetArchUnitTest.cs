@@ -116,7 +116,7 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Select(site => site[..site.LastIndexOf(':')])
                 .Distinct();
 
-            AssertMatchesBaseline(
+            InlineBaseline.AssertMatches(
                 callers,
                 FilesThatCallGetAllByPredicate,
                 "A repository query belongs inside the repositories folder: add a method to the repository instead of calling GetAllByPredicate from here.");
@@ -127,7 +127,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Assert.That(ApiTypesThatDependOnARepository, Has.Length.EqualTo(23).And.Unique);
 
-            AssertMatchesBaseline(
+            InlineBaseline.AssertMatches(
                 RepositoryDependentsIn(ProductionModule.Value, ApiNamespace),
                 ApiTypesThatDependOnARepository,
                 "The driving adapter asks a service, not a repository: move the data access behind a service.");
@@ -138,14 +138,14 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void AListThatMatchesTheCodeExactly_Passes()
         {
-            Assert.DoesNotThrow(() => AssertMatchesBaseline(["a.cs", "b.cs"], ["a.cs", "b.cs"], "hint"));
+            Assert.DoesNotThrow(() => InlineBaseline.AssertMatches(["a.cs", "b.cs"], ["a.cs", "b.cs"], "hint"));
         }
 
         [Test]
         public void ANewOffenderNotOnTheList_FailsAndNamesIt()
         {
             var failure = Assert.Throws<AssertionException>(
-                () => AssertMatchesBaseline(["a.cs", "Services/NewOne.cs"], ["a.cs"], "Use the repository."));
+                () => InlineBaseline.AssertMatches(["a.cs", "Services/NewOne.cs"], ["a.cs"], "Use the repository."));
 
             Assert.That(
                 failure!.Message,
@@ -157,7 +157,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void AListedEntryThatNoLongerOffends_FailsAndNamesItUntilItIsDeleted()
         {
             var failure = Assert.Throws<AssertionException>(
-                () => AssertMatchesBaseline(["a.cs"], ["a.cs", "Services/Cleaned.cs"], "hint"));
+                () => InlineBaseline.AssertMatches(["a.cs"], ["a.cs", "Services/Cleaned.cs"], "hint"));
 
             Assert.That(failure!.Message, Does.Contain("Services/Cleaned.cs").And.Contain("delete"));
         }
@@ -166,7 +166,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void ANewOffenderAndAStaleEntryAtOnce_AreBothNamedInOneFailure()
         {
             var failure = Assert.Throws<AssertionException>(
-                () => AssertMatchesBaseline(["Services/Newcomer.cs"], ["Services/Gone.cs"], "hint"));
+                () => InlineBaseline.AssertMatches(["Services/Newcomer.cs"], ["Services/Gone.cs"], "hint"));
 
             Assert.That(failure!.Message, Does.Contain("Services/Newcomer.cs").And.Contain("Services/Gone.cs"));
         }
@@ -174,13 +174,13 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void TheOrderOfTheListsAndRepeatedEntries_DoNotMatter()
         {
-            Assert.DoesNotThrow(() => AssertMatchesBaseline(["b.cs", "a.cs", "a.cs"], ["a.cs", "b.cs"], "hint"));
+            Assert.DoesNotThrow(() => InlineBaseline.AssertMatches(["b.cs", "a.cs", "a.cs"], ["a.cs", "b.cs"], "hint"));
         }
 
         [Test]
         public void NothingOffendingAgainstAnEmptyList_Passes()
         {
-            Assert.DoesNotThrow(() => AssertMatchesBaseline([], [], "hint"));
+            Assert.DoesNotThrow(() => InlineBaseline.AssertMatches([], [], "hint"));
         }
 
         // ---- The source scan for GetAllByPredicate callers ----
@@ -346,33 +346,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(IlDependencies.DeclaringTypeOf(typeof(ConstructorDependent).FullName!), Is.EqualTo(typeof(ConstructorDependent).FullName));
         }
 
-        // ---- The two-way comparison and the two scans it is fed from ----
-
-        private static void AssertMatchesBaseline(IEnumerable<string> actual, IEnumerable<string> baseline, string fixHint)
-        {
-            var offending = actual.ToHashSet(StringComparer.Ordinal);
-            var listed = baseline.ToHashSet(StringComparer.Ordinal);
-
-            var newcomers = offending.Except(listed).Order(StringComparer.Ordinal).ToList();
-            var stale = listed.Except(offending).Order(StringComparer.Ordinal).ToList();
-
-            var problems = new List<string>();
-
-            if (newcomers.Count > 0)
-            {
-                problems.Add($"Not on the list, and offending: {string.Join(", ", newcomers)}. {fixHint}");
-            }
-
-            if (stale.Count > 0)
-            {
-                problems.Add($"On the list, but no longer offending: {string.Join(", ", stale)}. Good - delete {(stale.Count == 1 ? "it" : "them")} from the list so it cannot come back unseen.");
-            }
-
-            if (problems.Count > 0)
-            {
-                Assert.Fail(string.Join(Environment.NewLine, problems));
-            }
-        }
+        // ---- The two scans the comparison is fed from ----
 
         // A call is the name reached through a member access, so the declaration on the repository
         // contract (no dot in front of it) never matches. The pattern may span a line break between the
