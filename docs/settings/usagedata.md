@@ -66,11 +66,12 @@ The complete list of events:
 | Several reports were removed at once | Somebody confirmed **Remove** for the reports selected on the **Reports** page and the request went to your server. Each report it removed is also counted as *A report was deleted* | Nothing. **Not how many, not which, not their Teams or Portfolios** |
 | Several reports were exported as one PDF | Somebody chose **Export PDF** for two or more reports selected on the **Reports** page. Counted when chosen, before anything is printed, so it also counts a print dialog that was then cancelled; a **Retry** or **Leave it out** after a report could not be loaded is not counted again. One report selected is counted as *A report was exported as a PDF* | Nothing. **Not how many, not which, not their Teams or Portfolios, and never whether a file was saved** |
 | Parent sources were saved with several entries | Somebody saved the parent sources of a Team, a Portfolio or a connection default with two or more entries, the saved list differs from the one last saved, and your server accepted it. A new order counts as a difference. Saving the same list again, a list of one entry, or switching to follow the default is not counted | Nothing. **Not which fields, not how many, not whose** |
+| Access to all Teams and Portfolios was granted | A System Admin added an SSO group rule under **Settings → Access → SSO Groups** that gives **Viewer on all**, and your server accepted it. **Removing a rule, or adding a System Admin group, is never reported** | Nothing. **Not which group, not who added it, not how many people it reaches** |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.
 
-**Fifteen of the twenty-six carry nothing but the fact that they happened.** That is not a courtesy; each
+**Sixteen of the twenty-seven carry nothing but the fact that they happened.** That is not a courtesy; each
 event in the code says what it is allowed to carry, and one arriving with anything else is refused
 rather than trimmed. So the two tab openings are the only events that can name a page at all.
 

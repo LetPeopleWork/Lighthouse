@@ -1,5 +1,6 @@
 using Lighthouse.Backend.API;
 using Lighthouse.Backend.Models.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -467,7 +468,10 @@ namespace Lighthouse.Backend.Tests.API
             var identity = new ClaimsIdentity([new Claim("sub", subjectClaim)], "TestAuth");
             var principal = new ClaimsPrincipal(identity);
 
-            var controller = new AuthorizationController(rbacAdministrationService.Object)
+            var controller = new AuthorizationController(
+                rbacAdministrationService.Object,
+                Mock.Of<ICurrentUserProfileService>(),
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthorizationController>.Instance)
             {
                 ControllerContext = new ControllerContext
                 {

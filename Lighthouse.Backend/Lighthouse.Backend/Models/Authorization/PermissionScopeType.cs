@@ -5,5 +5,6 @@ namespace Lighthouse.Backend.Models.Authorization
         System = 0,
         Team = 1,
         Portfolio = 2,
+        AllUnits = 3,
     }
 }

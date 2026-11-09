@@ -8,12 +8,14 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
+import CircularProgress from "@mui/material/CircularProgress";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import FormControlLabel from "@mui/material/FormControlLabel";
+import MenuItem from "@mui/material/MenuItem";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -24,18 +26,51 @@ import Typography from "@mui/material/Typography";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import type {
+	CreateRbacGroupMappingRequest,
 	RbacGroupMapping,
 	RbacStatus,
 	RbacUser,
 } from "../../../models/Authorization/RbacModels";
+import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
+import { UsageDataEventName } from "../../../services/Api/UsageDataService";
+import { useTerminology } from "../../../services/TerminologyContext";
+import { useUsageDataReporter } from "../../../services/UsageData/usageDataReporter";
 import { fireAndForget } from "../../../utils/fireAndForget";
+
+type SsoGroupRole = "SystemAdmin" | "ViewerOnAll";
+
+const ssoGroupRoleChoices: { value: SsoGroupRole; label: string }[] = [
+	{ value: "SystemAdmin", label: "System Admin" },
+	{ value: "ViewerOnAll", label: "Viewer on all" },
+];
+
+const mappingFor = (
+	role: SsoGroupRole,
+	groupValue: string,
+): CreateRbacGroupMappingRequest =>
+	role === "ViewerOnAll"
+		? { groupValue, role: "Viewer", scopeType: "AllUnits", scopeId: null }
+		: { groupValue, role: "SystemAdmin", scopeType: "System", scopeId: null };
+
+const isSsoGroupRule = (mapping: RbacGroupMapping): boolean =>
+	(mapping.scopeType === "System" && mapping.role === "SystemAdmin") ||
+	mapping.scopeType === "AllUnits";
+
+const roleLabelOf = (mapping: RbacGroupMapping): string =>
+	mapping.role === "SystemAdmin" ? "System Admin" : mapping.role;
+
+type RulesLoad = "loading" | "failed" | "loaded";
 
 const RbacSettings: React.FC = () => {
 	const { rbacService, authService } = useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
+	const reportUsage = useUsageDataReporter();
 	const [status, setStatus] = useState<RbacStatus>();
 	const [users, setUsers] = useState<RbacUser[]>([]);
 	const [groupMappings, setGroupMappings] = useState<RbacGroupMapping[]>([]);
+	const [rulesLoad, setRulesLoad] = useState<RulesLoad>("loading");
+	const [roleChoice, setRoleChoice] = useState<SsoGroupRole>("SystemAdmin");
 	const [error, setError] = useState<string>();
 	const [showUnassignedOnly, setShowUnassignedOnly] = useState(false);
 	const [groupValueInput, setGroupValueInput] = useState("");
@@ -45,6 +80,16 @@ const RbacSettings: React.FC = () => {
 	);
 	const [currentUserSubject, setCurrentUserSubject] = useState<string>();
 
+	const loadRules = useCallback(async () => {
+		try {
+			const nextGroupMappings = await rbacService.getGroupMappings();
+			setGroupMappings(nextGroupMappings.filter(isSsoGroupRule));
+			setRulesLoad("loaded");
+		} catch {
+			setRulesLoad("failed");
+		}
+	}, [rbacService]);
+
 	const load = useCallback(async () => {
 		setError(undefined);
 		try {
@@ -52,17 +97,11 @@ const RbacSettings: React.FC = () => {
 			setStatus(nextStatus);
 
 			if (nextStatus.hasSystemAdmin) {
-				const [nextUsers, nextGroupMappings] = await Promise.all([
+				const [nextUsers] = await Promise.all([
 					rbacService.getUsers(),
-					rbacService.getGroupMappings(),
+					loadRules(),
 				]);
 				setUsers(nextUsers);
-				setGroupMappings(
-					nextGroupMappings.filter(
-						(mapping) =>
-							mapping.scopeType === "System" && mapping.role === "SystemAdmin",
-					),
-				);
 			} else {
 				setUsers([]);
 				setGroupMappings([]);
@@ -70,7 +109,7 @@ const RbacSettings: React.FC = () => {
 		} catch {
 			setError("Failed to load RBAC configuration.");
 		}
-	}, [rbacService]);
+	}, [rbacService, loadRules]);
 
 	useEffect(() => {
 		fireAndForget(load());
@@ -130,12 +169,12 @@ const RbacSettings: React.FC = () => {
 		}
 
 		try {
-			await rbacService.createGroupMapping({
-				groupValue: normalizedGroupValue,
-				role: "SystemAdmin",
-				scopeType: "System",
-				scopeId: null,
-			});
+			await rbacService.createGroupMapping(
+				mappingFor(roleChoice, normalizedGroupValue),
+			);
+			if (roleChoice === "ViewerOnAll") {
+				reportUsage({ name: UsageDataEventName.SystemWideAccessGranted });
+			}
 			setGroupValueInput("");
 			await load();
 		} catch {
@@ -174,6 +213,11 @@ const RbacSettings: React.FC = () => {
 				(user.email ?? "").toLowerCase().includes(search)
 			);
 		});
+
+	const appliesToLabelOf = (mapping: RbacGroupMapping): string =>
+		mapping.scopeType === "AllUnits"
+			? `All ${getTerm(TERMINOLOGY_KEYS.TEAMS)} and ${getTerm(TERMINOLOGY_KEYS.PORTFOLIOS)}`
+			: "Everything";
 
 	const renderAdminLabel = (user: RbacUser): React.ReactNode => {
 		if (user.isEmergencyAdmin) {
@@ -346,7 +390,7 @@ const RbacSettings: React.FC = () => {
 			{status?.hasSystemAdmin && (
 				<Box sx={{ mt: 4 }}>
 					<Typography variant="h6" sx={{ mb: 1 }}>
-						System Admin SSO Groups
+						SSO Groups
 					</Typography>
 
 					<Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
@@ -357,6 +401,24 @@ const RbacSettings: React.FC = () => {
 							onChange={(event) => setGroupValueInput(event.target.value)}
 							data-testid="rbac-group-mapping-group-value"
 						/>
+						<TextField
+							select
+							id="rbac-group-mapping-role"
+							label="Role"
+							size="small"
+							value={roleChoice}
+							onChange={(event) =>
+								setRoleChoice(event.target.value as SsoGroupRole)
+							}
+							data-testid="rbac-group-mapping-role"
+							sx={{ minWidth: 180 }}
+						>
+							{ssoGroupRoleChoices.map((choice) => (
+								<MenuItem key={choice.value} value={choice.value}>
+									{choice.label}
+								</MenuItem>
+							))}
+						</TextField>
 						<Button
 							variant="contained"
 							onClick={handleCreateGroupMapping}
@@ -366,37 +428,47 @@ const RbacSettings: React.FC = () => {
 						</Button>
 					</Box>
 
-					<Table size="small" data-testid="rbac-group-mappings-table">
-						<TableHead>
-							<TableRow>
-								<TableCell>Group</TableCell>
-								<TableCell>Role</TableCell>
-								<TableCell>Scope</TableCell>
-								<TableCell>Scope ID</TableCell>
-								<TableCell align="right">Actions</TableCell>
-							</TableRow>
-						</TableHead>
-						<TableBody>
-							{groupMappings.map((mapping) => (
-								<TableRow key={mapping.id}>
-									<TableCell>{mapping.groupValue}</TableCell>
-									<TableCell>{mapping.role}</TableCell>
-									<TableCell>{mapping.scopeType}</TableCell>
-									<TableCell>{mapping.scopeId ?? "-"}</TableCell>
-									<TableCell align="right">
-										<Button
-											size="small"
-											color="error"
-											onClick={() => handleRemoveGroupMapping(mapping.id)}
-											data-testid={`rbac-remove-group-mapping-${mapping.id}`}
-										>
-											Remove
-										</Button>
-									</TableCell>
+					{rulesLoad === "loading" && (
+						<Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+							<CircularProgress size={24} />
+						</Box>
+					)}
+					{rulesLoad === "failed" && (
+						<Alert severity="warning">
+							Could not load the SSO group rules. Reload the page to try again.
+						</Alert>
+					)}
+					{rulesLoad === "loaded" && (
+						<Table size="small" data-testid="rbac-group-mappings-table">
+							<TableHead>
+								<TableRow>
+									<TableCell>Group</TableCell>
+									<TableCell>Role</TableCell>
+									<TableCell>Applies to</TableCell>
+									<TableCell align="right">Actions</TableCell>
 								</TableRow>
-							))}
-						</TableBody>
-					</Table>
+							</TableHead>
+							<TableBody>
+								{groupMappings.map((mapping) => (
+									<TableRow key={mapping.id}>
+										<TableCell>{mapping.groupValue}</TableCell>
+										<TableCell>{roleLabelOf(mapping)}</TableCell>
+										<TableCell>{appliesToLabelOf(mapping)}</TableCell>
+										<TableCell align="right">
+											<Button
+												size="small"
+												color="error"
+												onClick={() => handleRemoveGroupMapping(mapping.id)}
+												data-testid={`rbac-remove-group-mapping-${mapping.id}`}
+											>
+												Remove
+											</Button>
+										</TableCell>
+									</TableRow>
+								))}
+							</TableBody>
+						</Table>
+					)}
 				</Box>
 			)}
 

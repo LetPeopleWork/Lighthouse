@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Configuration;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,7 +13,10 @@ namespace Lighthouse.Backend.API
     [Route("api/latest/authorization")]
     [ApiController]
     [Authorize]
-    public class AuthorizationController(IRbacAdministrationService rbacAdministrationService) : ControllerBase
+    public class AuthorizationController(
+        IRbacAdministrationService rbacAdministrationService,
+        ICurrentUserProfileService currentUserProfileService,
+        ILogger<AuthorizationController> logger) : ControllerBase
     {
         [SignedInOnly("Says whether access control is switched on and how far it is set up, naming no user, which the interface needs from every signed-in user to decide what to show.")]
         [HttpGet("status")]
@@ -396,6 +400,12 @@ namespace Lighthouse.Backend.API
 
             if (result.Succeeded)
             {
+                logger.LogInformation(
+                    "SSO group rule added by user profile {ActorProfileId}: group {GroupValue}, role {Role}, scope {ScopeType}",
+                    await ActorProfileIdAsync(cancellationToken),
+                    request.GroupValue.Trim(),
+                    role,
+                    scopeType);
                 return NoContent();
             }
 
@@ -462,9 +472,17 @@ namespace Lighthouse.Backend.API
                 return Forbid();
             }
 
+            var removedLine = (await rbacAdministrationService.GetGroupMappingsAsync(cancellationToken))?
+                .FirstOrDefault(line => line.Id == mappingId);
             var result = await rbacAdministrationService.RemoveGroupMappingAsync(mappingId, cancellationToken);
             if (result.Succeeded)
             {
+                logger.LogInformation(
+                    "SSO group rule removed by user profile {ActorProfileId}: group {GroupValue}, role {Role}, scope {ScopeType}",
+                    await ActorProfileIdAsync(cancellationToken),
+                    removedLine?.GroupValue,
+                    removedLine?.Role,
+                    removedLine?.ScopeType);
                 return NoContent();
             }
 
@@ -474,6 +492,12 @@ namespace Lighthouse.Backend.API
             }
 
             return BadRequest(result.Message);
+        }
+
+        private async Task<int?> ActorProfileIdAsync(CancellationToken cancellationToken)
+        {
+            var actor = await currentUserProfileService.GetOrCreateFromPrincipalAsync(User, cancellationToken);
+            return actor?.Id;
         }
     }
 }

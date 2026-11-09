@@ -48,6 +48,7 @@ export const UsageDataEventName = {
 	ReportBulkRemovalStarted: "ReportBulkRemovalStarted",
 	ReportCombinedPdfExportStarted: "ReportCombinedPdfExportStarted",
 	ParentSourcesSavedWithSeveralEntries: "ParentSourcesSavedWithSeveralEntries",
+	SystemWideAccessGranted: "SystemWideAccessGranted",
 } as const;
 
 export type UsageDataEventName =

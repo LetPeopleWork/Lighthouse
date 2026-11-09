@@ -33,5 +33,7 @@ namespace Lighthouse.Backend.Models.Authorization
         public const string InvalidScopeForRole = "InvalidScopeForRole";
 
         public const string GroupMappingNotFound = "GroupMappingNotFound";
+
+        public const string DuplicateGroupMapping = "DuplicateGroupMapping";
     }
 }

@@ -52,7 +52,11 @@ export interface RbacScopedMemberSummary {
 	role?: ScopedRbacRole | null;
 }
 
-export type GroupMappingScopeType = "System" | "Team" | "Portfolio";
+export type GroupMappingScopeType =
+	| "System"
+	| "Team"
+	| "Portfolio"
+	| "AllUnits";
 
 export type GroupMappingRole = "SystemAdmin" | ScopedRbacRole;
 

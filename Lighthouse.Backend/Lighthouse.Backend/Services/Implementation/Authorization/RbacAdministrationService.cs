@@ -851,11 +851,12 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
         public async Task<IReadOnlyList<RbacGroupMappingSummary>> GetGroupMappingsAsync(CancellationToken cancellationToken = default)
         {
-            return await context.RbacGroupMappings
+            var storedRows = await context.RbacGroupMappings
                 .OrderBy(x => x.GroupValue)
                 .ThenBy(x => x.ScopeType)
                 .ThenBy(x => x.ScopeId)
                 .ThenBy(x => x.Role)
+                .ThenBy(x => x.Id)
                 .Select(x => new RbacGroupMappingSummary
                 {
                     Id = x.Id,
@@ -865,6 +866,10 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     ScopeId = x.ScopeId,
                 })
                 .ToListAsync(cancellationToken);
+
+            return storedRows
+                .DistinctBy(x => (x.GroupValue, x.Role, x.ScopeType, x.ScopeId))
+                .ToList();
         }
 
         public async Task<IReadOnlyList<RbacGroupMappingSummary>> GetTeamGroupMappingsAsync(int teamId, CancellationToken cancellationToken = default)
@@ -923,16 +928,9 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     "Role is invalid for the provided scope.");
             }
 
-            var alreadyExists = await context.RbacGroupMappings.AnyAsync(
-                x => x.GroupValue == normalizedGroupValue
-                    && x.Role == role
-                    && x.ScopeType == scopeType
-                    && x.ScopeId == scopeId,
-                cancellationToken);
-
-            if (alreadyExists)
+            if (await GroupAlreadyHasRoleHereAsync(normalizedGroupValue, role, scopeType, scopeId, cancellationToken))
             {
-                return RbacOperationResult.Success();
+                return GroupAlreadyHasRoleHere();
             }
 
             context.RbacGroupMappings.Add(new RbacGroupMapping
@@ -960,7 +958,16 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                     "Group mapping was not found.");
             }
 
-            context.RbacGroupMappings.Remove(mapping);
+            // Two equal rows can be stored by two System Admins adding the same rule at once, because a unique index
+            // treats a missing unit as distinct. A twin left behind would keep granting the role, so all go together.
+            var equalRows = await context.RbacGroupMappings
+                .Where(x => x.GroupValue == mapping.GroupValue
+                    && x.Role == mapping.Role
+                    && x.ScopeType == mapping.ScopeType
+                    && x.ScopeId == mapping.ScopeId)
+                .ToListAsync(cancellationToken);
+
+            context.RbacGroupMappings.RemoveRange(equalRows);
             await context.SaveChangesAsync(cancellationToken);
 
             return RbacOperationResult.Success();
@@ -987,6 +994,12 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 return RbacOperationResult.Failure(
                     RbacOperationErrorCodes.InvalidScopeForRole,
                     "Role is invalid for the provided scope.");
+            }
+
+            if (role != mapping.Role
+                && await GroupAlreadyHasRoleHereAsync(mapping.GroupValue, role, mapping.ScopeType, mapping.ScopeId, cancellationToken))
+            {
+                return GroupAlreadyHasRoleHere();
             }
 
             mapping.Role = role;
@@ -1046,9 +1059,12 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .Select(permission => new PermissionRule(permission.ScopeType, permission.ScopeId, permission.Role))
                 .ToListAsync(cancellationToken);
 
-            var virtualPermissions = await GetVirtualPermissionsAsync(principal, cancellationToken);
+            var groupRows = (await GetVirtualPermissionsAsync(principal, cancellationToken))
+                .ToLookup(row => AppliesTo.TryFrom(row, out _));
 
-            return EffectiveAccess.Resolve(ExplicitReplacesGroup(virtualPermissions, explicitPermissions));
+            return EffectiveAccess.Resolve(
+                ExplicitReplacesGroup([.. groupRows[false]], explicitPermissions),
+                groupRows[true]);
         }
 
         // A role granted to the person directly replaces whatever their groups give on the same scope,
@@ -1181,10 +1197,36 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 UserRole.SystemAdmin => scopeType == PermissionScopeType.System && !scopeId.HasValue,
                 UserRole.TeamAdmin => scopeType == PermissionScopeType.Team && scopeId.HasValue,
                 UserRole.PortfolioAdmin => scopeType == PermissionScopeType.Portfolio && scopeId.HasValue,
-                UserRole.Viewer => (scopeType == PermissionScopeType.Team || scopeType == PermissionScopeType.Portfolio)
-                    && scopeId.HasValue,
+                UserRole.Viewer => scopeType switch
+                {
+                    PermissionScopeType.Team or PermissionScopeType.Portfolio => scopeId.HasValue,
+                    PermissionScopeType.AllUnits => !scopeId.HasValue,
+                    _ => false,
+                },
                 _ => false,
             };
+        }
+
+        private Task<bool> GroupAlreadyHasRoleHereAsync(
+            string groupValue,
+            UserRole role,
+            PermissionScopeType scopeType,
+            int? scopeId,
+            CancellationToken cancellationToken)
+        {
+            return context.RbacGroupMappings.AnyAsync(
+                x => x.GroupValue == groupValue
+                    && x.Role == role
+                    && x.ScopeType == scopeType
+                    && x.ScopeId == scopeId,
+                cancellationToken);
+        }
+
+        private static RbacOperationResult GroupAlreadyHasRoleHere()
+        {
+            return RbacOperationResult.Failure(
+                RbacOperationErrorCodes.DuplicateGroupMapping,
+                "This group already has this role here.");
         }
 
         private Task<bool> HasSystemAdminAsync(CancellationToken cancellationToken)

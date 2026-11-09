@@ -88,5 +88,11 @@ namespace Lighthouse.Backend.Models.UsageData
         /// fields, not how many, not whose.
         /// </summary>
         ParentSourcesSavedWithSeveralEntries = 25,
+
+        /// <summary>
+        /// A System Admin added an SSO group rule that gives Viewer on every Team and Portfolio. It carries nothing: not
+        /// the group, not who added it, not how many people it reaches.
+        /// </summary>
+        SystemWideAccessGranted = 26,
     }
 }

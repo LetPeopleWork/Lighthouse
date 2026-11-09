@@ -2363,7 +2363,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
         }
 
         [Test]
-        public async Task CreateGroupMappingAsync_DuplicateMapping_ReturnsSuccessIdempotently()
+        public async Task CreateGroupMappingAsync_DuplicateMapping_IsRefusedAndStoresNothing()
         {
             using var context = new LighthouseAppContext(options, cryptoService.Object, appContextLogger.Object);
 
@@ -2387,7 +2387,8 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Authorization
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(result.Succeeded, Is.True);
+                Assert.That(result.Succeeded, Is.False);
+                Assert.That(result.Message, Is.EqualTo("This group already has this role here."));
                 Assert.That(await context.RbacGroupMappings.CountAsync(), Is.EqualTo(1));
             }
         }
