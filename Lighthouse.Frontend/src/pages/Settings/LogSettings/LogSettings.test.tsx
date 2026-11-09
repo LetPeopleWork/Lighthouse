@@ -96,14 +96,13 @@ describe("LogSettings", () => {
 			</MockApiServiceProvider>,
 		);
 
-		// Wait for initial data to load
+		// The select ignores a value it has no option for, so wait until the loaded level is shown,
+		// which needs both the level and the supported levels to have arrived. Waiting only for the
+		// calls let the change fire too early on a loaded machine.
 		await waitFor(() => {
-			expect(mockGetLogs).toHaveBeenCalled();
-			expect(mockGetLogLevel).toHaveBeenCalled();
-			expect(mockGetSupportedLogLevels).toHaveBeenCalled();
+			expect(screen.getByRole("combobox")).toHaveTextContent("info");
 		});
 
-		// Fire event to change the select value
 		const select = screen.getByTestId("select-id");
 		fireEvent.change(select, { target: { value: "warn" } });
 
