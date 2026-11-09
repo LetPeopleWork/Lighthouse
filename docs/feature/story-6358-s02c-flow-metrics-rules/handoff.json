@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 7,
-"F": 164,
+"E": 3,
+"F": 167,
 "K": 2,
 "L": 2,
 "P": 4,
@@ -796,6 +797,31 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F165"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F166"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F167"
+}
+]
+},
 "facts": {
 "F1": "Story 6358 S02 Flow metrics pilot, part C of 3 (DESIGN slices 6, 7 and 9; slice 8 mutation is a host task on frozen code): replace the Metrics type-set rule and the hand-written opcode scanner with namespace rules R1, R3, R4 and R5 read from the compiled IL, each with an inline two-way baseline and a made-up-types fixture that fails on a newcomer and on a stale entry; update the path-string tests; relocate about 35 Flow metrics unit-test files under Lighthouse.Backend.Tests/Modules/FlowMetrics as a pure move; then record the pilot in ADR-270, ARCHITECTURE.md section 4, brief.md and the Epic catalogue. No behaviour change. Design: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (Ratchet design R1 to R7, Slices 6 to 9, SSOT edits pending, DEVOPS).",
 "F10": "The module's Application depends on no EF Core, Data, Adapters or API type and reaches Forecasting only through the listed type; the opcode scanner and the Metrics type-set rule are deleted and the module is found by its namespaces",
@@ -869,6 +895,9 @@
 "F162": "The slice oracle is itself the placement check",
 "F163": "The slice is itself a pure move",
 "F164": "Pure move: each target is an existing test file moved with git mv, namespace and using lines only; nothing is reused, extended or replaced",
+"F165": "Adding a type that reaches into the Flow metrics module from outside its allowed edges, or leaving a listed exception that no longer exists, makes the architecture checks fail and name the type, including when the dependency is used only inside an async method; the module's Domain, Adapters and Application each accept only their listed callers and its Application stays free of EF Core, Data, Adapters and API types.",
+"F166": "The old Metrics type-set rule and the hand-written scanner no longer exist, the Flow metrics module is recognised by its namespaces, and a dependency the old checks would have caught still makes the architecture checks fail.",
+"F167": "The product behaves exactly as before: the full existing test suite passes, the Flow metrics unit tests live under Lighthouse.Backend.Tests/Modules/FlowMetrics with only folder, namespace and using changes, and the database model shows no change.",
 "F17": "Measured baselines (compiled Debug and Release builds of HEAD a40ba3230, identical): R3 Domain inbound = 6 types, same as feature-delta: API.PortfolioController, API.PortfoliosController, API.TeamController, API.TeamsController, Services.Implementation.Reports.Metrics.DailySeriesSummary, Services.Implementation.WorkItems.WorkItemService. R3 Adapters inbound = only Lighthouse.Backend.Program, as designed. R4 Application inbound outside API/Program/Reports/Refinement = 10 entries, feature-delta said 8: adds Services.Implementation.Forecast.ForecastInputs and the nested type Services.Implementation.Forecast.ForecastService+GatheredInputs (IlDependencies reports a hand-written nested type under its own name); the other 8 match (ForecastService, ForecastInputFingerprint, ForecastRealityCheckService, TeamData.TeamDataService, WorkItems.WorkItemService, WriteBackTriggerService, FeatureListActiveWork, DatabaseManagement.DatabaseMaintenanceGate). Legal R4 dependents seen: API ForecastController, ForecastRealityCheckController, PortfolioMetricsController, TeamFeatureSizeMetricsController, TeamMetricsController; Program; Reports PortfolioReportMetricSeries, TeamReportMetricSeries; Refinement RefinementNeedCalculator, SleYardstickResolver. R5 Application outbound to EF Core, Data, module Adapters, API = empty. R5 Forecasting edges = 3 pairs, feature-delta said 1 plus 1 invisible: BaseMetricsService -> Services.Interfaces.Forecast.IForecastService (the service-locator call is visible in IL as the generic argument of GetRequiredService), TeamMetricsService -> Services.Interfaces.Forecast.IForecastFilterRuleService, TeamMetricsService -> Services.Implementation.Forecast.ForecastDataSufficiencyPolicy (not in feature-delta). Recorded lists are the measured ones; feature-delta's open question 5 is answered: no source scan needed.",
 "F18": "Open points taken with the recommended option: (a) Forecasting is matched by the existing ForecastingPattern of ModuleBoundariesArchUnitTest (made internal), Reports and Refinement by its ReportsPattern and RefinementPattern, API and Data by ApplicationCoreRules.TheApi and TheData, EF Core by ^Microsoft\\.EntityFrameworkCore(\\.|$); (b) R4 lists nested hand-written types as IlDependencies reports them, no folding; (c) the path-string tests (OverTimeReconstructionSeamArchUnitTest, RepositoryLeakRatchetArchUnitTest allow-list, CategoryListOwnershipGuardTest) already name Modules/FlowMetrics paths since feature B moved the files, so S3 has nothing to edit there; (d) R1 = FlowMetricsModuleLayoutArchUnitTest from feature B plus the module namespaces added to ModuleBoundariesArchUnitTest.NamedModules_AreNonEmpty; the Metrics type-set rule is MetricsArchitectureTests.MetricsServices_ReadTransitions_OnlyViaRepositoryPorts_NeverViaDbSetDirectly with its opcode scanner, deleted in S3; the two name rules of that file stay (S07b). (e) S4 membership is the 34 unit-test classes whose subject is a module type (list in S4 decision); none is on test-time-budget.json or HostUsersStillToMove, so neither list changes.",
 "F19": "Formal verification: no checker selected. The claims are finite and decidable over the compiled assembly (set equality of a measured dependent list against an inline list; namespace membership); there is no state machine, concurrency, temporal or liveness claim, and no representation change. Their checker is the native NUnit rule run on the real assembly plus exhaustive made-up-type examples (newcomer, stale, both, compliant, async-only, empty). Probe: quint and agda are not installed (which: not found), java present; neither is needed by any selected claim. Liveness: not applicable, the rules are synchronous single-pass reads with no progress obligation.",
