@@ -1,0 +1,1028 @@
+{
+"counters": {
+"D": 7,
+"F": 164,
+"K": 2,
+"L": 2,
+"P": 4,
+"S": 5,
+"Y": 2
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F25",
+"driven_ports": [
+"F24"
+],
+"driving_port": "F23"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F40",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F39"
+},
+{
+"axis": "Inhabitation",
+"basis": "F41",
+"design": "Pass",
+"runtime": "Observed",
+"subject": "F39"
+},
+{
+"axis": "PublicReachability",
+"basis": "F42",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F39"
+},
+{
+"axis": "Liveness",
+"basis": "F43",
+"design": "Pass",
+"runtime": "Observed",
+"subject": "F39"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F21"
+},
+{
+"id": "K2",
+"text": "F22"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F14"
+},
+{
+"id": "D2",
+"text": "F15"
+},
+{
+"id": "D3",
+"text": "F16"
+},
+{
+"id": "D4",
+"text": "F17"
+},
+{
+"id": "D5",
+"text": "F18"
+},
+{
+"id": "D6",
+"text": "F19"
+},
+{
+"id": "D7",
+"text": "F20"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "InlineBaseline",
+"statement": "F28",
+"treatment": {
+"cases": [
+"F29",
+"F30",
+"F31",
+"F32",
+"F33",
+"F34"
+],
+"kind": "Finite",
+"reason": "F35"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Adapter",
+"owner": "IlDependencies",
+"statement": "F36",
+"treatment": {
+"cases": [
+"F37"
+],
+"kind": "Finite",
+"reason": "F38"
+}
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F27",
+"description": "F26",
+"result_type": "NUnit outcome + message"
+}
+],
+"risks": [
+{
+"allowed": "F46",
+"forbidden": "F47",
+"id": "Y1",
+"kind": "Bypass",
+"owner": "architect",
+"preserved": "F45",
+"residue": "F48",
+"source": "F44"
+},
+{
+"allowed": "F51",
+"forbidden": "F52",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "acceptance-designer",
+"preserved": "F50",
+"residue": "F53",
+"source": "F49"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+"move": "F58",
+"preserved": "F59",
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~RepositoryLeakRatchetArchUnitTest"
+]
+},
+"public_oracle": {
+"expected": "F56",
+"falsifier": "F57",
+"promises": [
+"P1"
+],
+"stimulus": "F55"
+},
+"records": {
+"decisions": [
+"F60"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:351",
+"reason": "F64"
+},
+{
+"decision": "Changed",
+"kind": "test support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14",
+"reason": "F65"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F66"
+},
+{
+"analysis": "contract_tests",
+"reason": "F67"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F68"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/IlDependencies.cs:35",
+"reason": "F61",
+"symbol": "DependentsIn"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14",
+"reason": "F62",
+"symbol": "FlowMetricsModuleRules"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:351",
+"reason": "F63",
+"symbol": "AssertMatchesBaseline"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs",
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InlineBaseline.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+"reason": "F54"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsInboundApplicationArchUnitTest.cs",
+"public_oracle": {
+"expected": "F70",
+"falsifier": "F71",
+"promises": [
+"P1"
+],
+"stimulus": "F69"
+},
+"records": {
+"decisions": [
+"F72"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test support",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14",
+"reason": "F75"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F66"
+},
+{
+"analysis": "contract_tests",
+"reason": "F76"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F77"
+},
+{
+"analysis": "prefactoring",
+"reason": "F78"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:351",
+"reason": "F73",
+"symbol": "AssertMatchesBaseline"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs:14",
+"reason": "F74",
+"symbol": "FlowMetricsModuleRules"
+}
+]
+},
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj -c Release --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs",
+"public_oracle": {
+"expected": "F82",
+"falsifier": "F83",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F81"
+},
+"records": {
+"decisions": [
+"F84"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/MetricsArchitectureTests.cs:72",
+"reason": "F88"
+},
+{
+"decision": "Changed",
+"kind": "architecture test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:130",
+"reason": "F89"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F66"
+},
+{
+"analysis": "contract_tests",
+"reason": "F76"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F77"
+},
+{
+"analysis": "prefactoring",
+"reason": "F90"
+}
+],
+"reuse": [
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/MetricsArchitectureTests.cs:72",
+"reason": "F85",
+"symbol": "MetricsServices_ReadTransitions_OnlyViaRepositoryPorts_NeverViaDbSetDirectly"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs:130",
+"reason": "F86",
+"symbol": "NamedModules_AreNonEmpty"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ApplicationCoreRules.cs:22",
+"reason": "F87",
+"symbol": "TheApi"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/MetricsArchitectureTests.cs",
+"reason": "F79"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/ModuleBoundariesArchUnitTest.cs",
+"reason": "F80"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj -c Release --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsUnitTestPlacementTest.cs",
+"public_oracle": {
+"expected": "F125",
+"falsifier": "F126",
+"promises": [
+"P3"
+],
+"stimulus": "F124"
+},
+"records": {
+"decisions": [
+"F127"
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/BaselineValidationServiceTest.cs",
+"reason": "F128"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/PercentileCalculatorTest.cs",
+"reason": "F129"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/SleRiskCalculatorTest.cs",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/XmRCalculatorTest.cs",
+"reason": "F131"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/BaseMetricsServiceNamedCycleTimeTest.cs",
+"reason": "F132"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/BaseMetricsServiceTests.cs",
+"reason": "F133"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/BlockedCountSeriesBuilderTests.cs",
+"reason": "F134"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/GapAskingSeriesQueryTest.cs",
+"reason": "F135"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs",
+"reason": "F136"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsCacheKeyTest.cs",
+"reason": "F137"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/OverTimeGapReconcilerTest.cs",
+"reason": "F138"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PercentileSnapshotWriterTest.cs",
+"reason": "F139"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PortfolioMetricsServiceTests.cs",
+"reason": "F140"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ProcessBehaviorSnapshotWriterTest.cs",
+"reason": "F141"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs",
+"reason": "F142"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs",
+"reason": "F143"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs",
+"reason": "F144"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs",
+"reason": "F145"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs",
+"reason": "F146"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/OverTimeFillTargetTest.cs",
+"reason": "F147"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs",
+"reason": "F148"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/RetentionEdgeTest.cs",
+"reason": "F149"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs",
+"reason": "F150"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs",
+"reason": "F151"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs",
+"reason": "F152"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs",
+"reason": "F153"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs",
+"reason": "F154"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs",
+"reason": "F155"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFillerTest.cs",
+"reason": "F157"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Persistence/BlockedCountSnapshotRepositoryTests.cs",
+"reason": "F158"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Persistence/PercentilesOverTimeSnapshotRepositoryTests.cs",
+"reason": "F159"
+},
+{
+"decision": "Migrated",
+"kind": "test move",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Persistence/ProcessBehaviorSnapshotRepositoryTests.cs",
+"reason": "F160"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F161"
+},
+{
+"analysis": "contract_tests",
+"reason": "F76"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F162"
+},
+{
+"analysis": "prefactoring",
+"reason": "F163"
+},
+{
+"analysis": "reuse",
+"reason": "F164"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/BaselineValidationServiceTest.cs",
+"reason": "F91"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/PercentileCalculatorTest.cs",
+"reason": "F92"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/SleRiskCalculatorTest.cs",
+"reason": "F93"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Domain/XmRCalculatorTest.cs",
+"reason": "F94"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/BaseMetricsServiceNamedCycleTimeTest.cs",
+"reason": "F95"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/BaseMetricsServiceTests.cs",
+"reason": "F96"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/BlockedCountSeriesBuilderTests.cs",
+"reason": "F97"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/GapAskingSeriesQueryTest.cs",
+"reason": "F98"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs",
+"reason": "F99"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsCacheKeyTest.cs",
+"reason": "F100"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/OverTimeGapReconcilerTest.cs",
+"reason": "F101"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PercentileSnapshotWriterTest.cs",
+"reason": "F102"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PortfolioMetricsServiceTests.cs",
+"reason": "F103"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ProcessBehaviorSnapshotWriterTest.cs",
+"reason": "F104"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs",
+"reason": "F105"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs",
+"reason": "F106"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs",
+"reason": "F107"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs",
+"reason": "F108"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs",
+"reason": "F109"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/OverTimeFillTargetTest.cs",
+"reason": "F110"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ReconstructionMemoTest.cs",
+"reason": "F111"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/RetentionEdgeTest.cs",
+"reason": "F112"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs",
+"reason": "F113"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/BlockedCountSnapshotRecordingHandlerTests.cs",
+"reason": "F114"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandlerTests.cs",
+"reason": "F115"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandlerTests.cs",
+"reason": "F116"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PercentilesOverTimeRecordingHandlerTests.cs",
+"reason": "F117"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs",
+"reason": "F118"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/Policies/ProcessBehaviorRecordingHandlerTests.cs",
+"reason": "F119"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFillerTest.cs",
+"reason": "F120"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Persistence/BlockedCountSnapshotRepositoryTests.cs",
+"reason": "F121"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Persistence/PercentilesOverTimeSnapshotRepositoryTests.cs",
+"reason": "F122"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Adapters/Persistence/ProcessBehaviorSnapshotRepositoryTests.cs",
+"reason": "F123"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter FullyQualifiedName~Lighthouse.Backend.Tests.Architecture",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj --filter \"TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration\""
+]
+}
+}
+},
+"facts": {
+"F1": "Story 6358 S02 Flow metrics pilot, part C of 3 (DESIGN slices 6, 7 and 9; slice 8 mutation is a host task on frozen code): replace the Metrics type-set rule and the hand-written opcode scanner with namespace rules R1, R3, R4 and R5 read from the compiled IL, each with an inline two-way baseline and a made-up-types fixture that fails on a newcomer and on a stale entry; update the path-string tests; relocate about 35 Flow metrics unit-test files under Lighthouse.Backend.Tests/Modules/FlowMetrics as a pure move; then record the pilot in ADR-270, ARCHITECTURE.md section 4, brief.md and the Epic catalogue. No behaviour change. Design: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (Ratchet design R1 to R7, Slices 6 to 9, SSOT edits pending, DEVOPS).",
+"F10": "The module's Application depends on no EF Core, Data, Adapters or API type and reaches Forecasting only through the listed type; the opcode scanner and the Metrics type-set rule are deleted and the module is found by its namespaces",
+"F100": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/MetricsCacheKeyTest.cs; namespace and using lines only",
+"F101": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OverTimeGapReconcilerTest.cs; namespace and using lines only",
+"F102": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PercentileSnapshotWriterTest.cs; namespace and using lines only",
+"F103": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs; namespace and using lines only",
+"F104": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/ProcessBehaviorSnapshotWriterTest.cs; namespace and using lines only",
+"F105": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceSnapshotTests.cs; namespace and using lines only",
+"F106": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs; namespace and using lines only",
+"F107": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/ClosedInRangeCharacterisationTest.cs; namespace and using lines only",
+"F108": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/InstanceDayItemBucketingTest.cs; namespace and using lines only",
+"F109": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItemAgeAsOfDateTest.cs; namespace and using lines only",
+"F11": "The Flow metrics unit tests sit under Lighthouse.Backend.Tests/Modules/FlowMetrics, the folder matches each test's namespace, and the whole suite stays green",
+"F110": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/OverTimeFillTargetTest.cs; namespace and using lines only",
+"F111": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/ReconstructionMemoTest.cs; namespace and using lines only",
+"F112": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/RetentionEdgeTest.cs; namespace and using lines only",
+"F113": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs; namespace and using lines only",
+"F114": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandlerTests.cs; namespace and using lines only",
+"F115": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandlerTests.cs; namespace and using lines only",
+"F116": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs; namespace and using lines only",
+"F117": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandlerTests.cs; namespace and using lines only",
+"F118": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs; namespace and using lines only",
+"F119": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs; namespace and using lines only",
+"F120": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/OverTimeHistoryFillerTest.cs; namespace and using lines only",
+"F121": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/BlockedCountSnapshotRepositoryTests.cs; namespace and using lines only",
+"F122": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepositoryTests.cs; namespace and using lines only",
+"F123": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepositoryTests.cs; namespace and using lines only",
+"F124": "Read the compiled test assembly and the test project's source tree for the 33 listed Flow metrics unit-test classes",
+"F125": "Each class lives in Lighthouse.Backend.Tests.Modules.FlowMetrics.<Domain|Application|Application.Policies|Adapters.Background|Adapters.Persistence>, its file sits in the matching folder under Lighthouse.Backend.Tests/Modules/FlowMetrics, no class of that name is left under Lighthouse.Backend.Tests.Services, and the whole filtered suite stays green with the same test count",
+"F126": "A listed class stays under Tests/Services, or its folder and namespace disagree, and the oracle stays green",
+"F127": "S4 is a pure move (git mv; namespace and using lines only; class names unchanged so Stryker FullyQualifiedName~ filters keep matching). Membership, 33 classes. Domain: BaselineValidationServiceTest, PercentileCalculatorTest, SleRiskCalculatorTest, XmRCalculatorTest. Application: BaseMetricsServiceNamedCycleTimeTest, BaseMetricsServiceTests, BlockedCountSeriesBuilderTests, GapAskingSeriesQueryTest, MetricsAsOfGroupNameTest, MetricsCacheKeyTest, OverTimeGapReconcilerTest, PercentileSnapshotWriterTest, PortfolioMetricsServiceTests, ProcessBehaviorSnapshotWriterTest, TeamMetricsServiceSnapshotTests, TeamMetricsServiceTests, ClosedInRangeCharacterisationTest, InstanceDayItemBucketingTest, WorkItemAgeAsOfDateTest, OverTimeFillTargetTest, ReconstructionMemoTest, RetentionEdgeTest. Application/Policies: BlackoutConfigurationChangedMetricsInvalidationHandlerTest, BlockedCountSnapshotRecordingHandlerTests, DemoBlockedHistoryBackfillHandlerTests, DemoPercentilesBackfillHandlerTests, PercentilesOverTimeRecordingHandlerTests, PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest, ProcessBehaviorRecordingHandlerTests. Adapters/Background: OverTimeHistoryFillerTest. Adapters/Persistence: BlockedCount, PercentilesOverTime and ProcessBehavior SnapshotRepositoryTests. Excluded: SnapshotRecordedDayInstanceZoneTest starts a host (IntegrationFixture, on HostUsersStillToMove and TestHostPerFixtureGuardTest), so it is not a unit test and stays. None of the 33 is keyed in test-time-budget.json, HostUsersStillToMove or TestHostPerFixtureGuardTest (git grep), so no list moves.",
+"F128": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaselineValidationServiceTest.cs",
+"F129": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PercentileCalculatorTest.cs",
+"F13": "The ADR-270, ARCHITECTURE.md section 4, brief.md and Epic catalogue edits: nwdes accepts a prose-only slice only under its own doc folders, so these are written in Lighthouse's feature finalize checklist (docs prose and context map), not as a slice",
+"F130": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SleRiskCalculatorTest.cs",
+"F131": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/XmRCalculatorTest.cs",
+"F132": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceNamedCycleTimeTest.cs",
+"F133": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs",
+"F134": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlockedCountSeriesBuilderTests.cs",
+"F135": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/GapAskingSeriesQueryTest.cs",
+"F136": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/MetricsAsOfGroupNameTest.cs",
+"F137": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/MetricsCacheKeyTest.cs",
+"F138": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/OverTimeGapReconcilerTest.cs",
+"F139": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PercentileSnapshotWriterTest.cs",
+"F14": "Design source: docs/feature/story-6358-s02-metrics-pilot/feature-delta.md (Ratchet design R1 to R7, slices 6, 7, 9), recorded, not re-decided. Paradigm object_oriented. Every rule reads the compiled production assembly (Lighthouse.dll) through the existing IlDependencies (Mono.Cecil), never ArchUnitNET's graph, because that graph drops edges written inside async bodies in Release. The module is found by namespace: Lighthouse.Backend.Modules.FlowMetrics.{Domain, Application, Application.Policies, Adapters.Background, Adapters.Persistence}; outside = any type whose namespace does not match ^Lighthouse\\.Backend\\.Modules\\.FlowMetrics(\\.|$); composition root = Lighthouse.Backend.Program. Baselines are inline lists of full type names (R3, R4: outside dependent; R5: 'Dependent -> Target' pairs) compared both ways.",
+"F140": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PortfolioMetricsServiceTests.cs",
+"F141": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/ProcessBehaviorSnapshotWriterTest.cs",
+"F142": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceSnapshotTests.cs",
+"F143": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/TeamMetricsServiceTests.cs",
+"F144": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/ClosedInRangeCharacterisationTest.cs",
+"F145": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/InstanceDayItemBucketingTest.cs",
+"F146": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/WorkItemAgeAsOfDateTest.cs",
+"F147": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/OverTimeFillTargetTest.cs",
+"F148": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/ReconstructionMemoTest.cs",
+"F149": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/RetentionEdgeTest.cs",
+"F15": "Rule owners (test supports): the module rules are added as new static methods on the existing Lighthouse.Backend.Tests/Architecture/FlowMetricsModuleRules.cs, each taking its namespaces as parameters (same shape as KernelRules: one definition run on real and made-up types), returning the existing KernelRuleVerdict carrier where no baseline is involved. The two-way comparison is lifted, not copied, from the private RepositoryLeakRatchetArchUnitTest.AssertMatchesBaseline into a new shared support Lighthouse.Backend.Tests/Architecture/InlineBaseline.cs (internal static, same message: newcomers named with the fix hint, stale entries named with 'delete'); RepositoryLeakRatchetArchUnitTest calls it and keeps its own six comparison tests. S1 creates InlineBaseline.cs and owns it; S2 and S3 only call it.",
+"F150": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/BlackoutConfigurationChangedMetricsInvalidationHandlerTest.cs",
+"F151": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/BlockedCountSnapshotRecordingHandlerTests.cs",
+"F152": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoBlockedHistoryBackfillHandlerTests.cs",
+"F153": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/DemoPercentilesBackfillHandlerTests.cs",
+"F154": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PercentilesOverTimeRecordingHandlerTests.cs",
+"F155": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/PortfolioFeaturesRefreshedMetricsInvalidationHandlerTest.cs",
+"F156": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/DomainEvents/ProcessBehaviorRecordingHandlerTests.cs",
+"F157": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/OverTimeHistoryFillerTest.cs",
+"F158": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/BlockedCountSnapshotRepositoryTests.cs",
+"F159": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/PercentilesOverTimeSnapshotRepositoryTests.cs",
+"F16": "One oracle file per slice (lesson from feature B, where a shared oracle made earlier approvals stale): S1 FlowMetricsInboundDomainAndAdaptersArchUnitTest.cs, S2 FlowMetricsInboundApplicationArchUnitTest.cs, S3 FlowMetricsApplicationOutboundArchUnitTest.cs, S4 FlowMetricsUnitTestPlacementTest.cs, all under Lighthouse.Backend.Tests/Architecture. A later slice adds files; it never edits an earlier slice's oracle. Each oracle holds its rule on the real module with its inline baseline, plus made-up-types fixtures (types declared in the oracle file under Lighthouse.Backend.Modules.FlowMetricsFixtures.* and outside fixture namespaces, read from the test assembly) for: a newcomer fails and is named, a stale baseline entry fails and is named, a compliant twin passes. S2 adds an outside fixture that reaches the Application only inside an async method, run also with -c Release.",
+"F160": "Pure move from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Repositories/ProcessBehaviorSnapshotRepositoryTests.cs",
+"F161": "No shared contract; test files only",
+"F162": "The slice oracle is itself the placement check",
+"F163": "The slice is itself a pure move",
+"F164": "Pure move: each target is an existing test file moved with git mv, namespace and using lines only; nothing is reused, extended or replaced",
+"F17": "Measured baselines (compiled Debug and Release builds of HEAD a40ba3230, identical): R3 Domain inbound = 6 types, same as feature-delta: API.PortfolioController, API.PortfoliosController, API.TeamController, API.TeamsController, Services.Implementation.Reports.Metrics.DailySeriesSummary, Services.Implementation.WorkItems.WorkItemService. R3 Adapters inbound = only Lighthouse.Backend.Program, as designed. R4 Application inbound outside API/Program/Reports/Refinement = 10 entries, feature-delta said 8: adds Services.Implementation.Forecast.ForecastInputs and the nested type Services.Implementation.Forecast.ForecastService+GatheredInputs (IlDependencies reports a hand-written nested type under its own name); the other 8 match (ForecastService, ForecastInputFingerprint, ForecastRealityCheckService, TeamData.TeamDataService, WorkItems.WorkItemService, WriteBackTriggerService, FeatureListActiveWork, DatabaseManagement.DatabaseMaintenanceGate). Legal R4 dependents seen: API ForecastController, ForecastRealityCheckController, PortfolioMetricsController, TeamFeatureSizeMetricsController, TeamMetricsController; Program; Reports PortfolioReportMetricSeries, TeamReportMetricSeries; Refinement RefinementNeedCalculator, SleYardstickResolver. R5 Application outbound to EF Core, Data, module Adapters, API = empty. R5 Forecasting edges = 3 pairs, feature-delta said 1 plus 1 invisible: BaseMetricsService -> Services.Interfaces.Forecast.IForecastService (the service-locator call is visible in IL as the generic argument of GetRequiredService), TeamMetricsService -> Services.Interfaces.Forecast.IForecastFilterRuleService, TeamMetricsService -> Services.Implementation.Forecast.ForecastDataSufficiencyPolicy (not in feature-delta). Recorded lists are the measured ones; feature-delta's open question 5 is answered: no source scan needed.",
+"F18": "Open points taken with the recommended option: (a) Forecasting is matched by the existing ForecastingPattern of ModuleBoundariesArchUnitTest (made internal), Reports and Refinement by its ReportsPattern and RefinementPattern, API and Data by ApplicationCoreRules.TheApi and TheData, EF Core by ^Microsoft\\.EntityFrameworkCore(\\.|$); (b) R4 lists nested hand-written types as IlDependencies reports them, no folding; (c) the path-string tests (OverTimeReconstructionSeamArchUnitTest, RepositoryLeakRatchetArchUnitTest allow-list, CategoryListOwnershipGuardTest) already name Modules/FlowMetrics paths since feature B moved the files, so S3 has nothing to edit there; (d) R1 = FlowMetricsModuleLayoutArchUnitTest from feature B plus the module namespaces added to ModuleBoundariesArchUnitTest.NamedModules_AreNonEmpty; the Metrics type-set rule is MetricsArchitectureTests.MetricsServices_ReadTransitions_OnlyViaRepositoryPorts_NeverViaDbSetDirectly with its opcode scanner, deleted in S3; the two name rules of that file stay (S07b). (e) S4 membership is the 34 unit-test classes whose subject is a module type (list in S4 decision); none is on test-time-budget.json or HostUsersStillToMove, so neither list changes.",
+"F19": "Formal verification: no checker selected. The claims are finite and decidable over the compiled assembly (set equality of a measured dependent list against an inline list; namespace membership); there is no state machine, concurrency, temporal or liveness claim, and no representation change. Their checker is the native NUnit rule run on the real assembly plus exhaustive made-up-type examples (newcomer, stale, both, compliant, async-only, empty). Probe: quint and agda are not installed (which: not found), java present; neither is needed by any selected claim. Liveness: not applicable, the rules are synchronous single-pass reads with no progress obligation.",
+"F2": "The Flow metrics module's dependencies are ratcheted by namespace rules, its tests sit next to its name, and the architecture records say what the pilot taught",
+"F20": "Lighthouse test rules (root context; the test-writing skill wins over nWave's on timing and PBT density): rules run in the fast suite without a host; no nWave scenario tags; comments rare and never cite internal references (R3, D-6, S05f, ADR numbers). Last lines quoted: .claude/skills/test-writing/SKILL.md ends 'End of SKILL.md'; references/backend.md ends 'End of backend.md'. Verification per slice: pwsh Lighthouse.Backend/Test-Fast.ps1 (fast loop) and the Architecture-filtered dotnet test (declared); never live tracker categories or a bare TestCategory=Integration.",
+"F21": "No behaviour change: no production file changes in this feature; EF model unchanged; routes, DTOs, responses unchanged. Baselines are never loosened: an entry leaves the list only when the edge is gone. Old and new layouts coexist.",
+"F22": "Scope out: registration extension for the module; read ports for GetAllByPredicate (S05f); moving entities or DTOs out of Models; renaming *Service roles; moving the Metrics controllers out of API.",
+"F23": "dotnet test over Lighthouse.Backend.Tests, Architecture namespace: the rule reads the compiled production assembly Lighthouse.dll through IlDependencies",
+"F24": "Mono.Cecil ModuleDefinition of Lighthouse.dll and of the test assembly (made-up fixtures)",
+"F25": "Test rules depend on the production assembly's IL; production code depends on nothing in the tests",
+"F26": "Rule verdict: NUnit pass, or failure message naming each newcomer with the fix hint and each stale entry with 'delete'",
+"F27": "Edges invisible in IL: reflection by string name, DI resolution by non-generic Type argument created at runtime",
+"F28": "A baseline check passes iff the set of measured entries equals the set of listed entries; otherwise it fails naming every newcomer and every stale entry in one message; order and duplicates do not matter",
+"F29": "equal lists pass",
+"F3": "Every edge into and out of the Flow metrics module is named: outside types reach its Domain only from the listed types and its Adapters only from the composition root (R3), reach its Application only from API, the composition root, Reports, Refinement and the listed undeclared edges (R4), and its Application depends on no EF Core, Data, Adapters or API type and reaches Forecasting only through the listed types (R5); each rule fails on a new offender and on a stale baseline entry, also for an edge written only inside an async method",
+"F30": "newcomer fails, named",
+"F31": "stale entry fails, named with delete",
+"F32": "newcomer and stale at once, both named",
+"F33": "reordered and repeated entries pass",
+"F34": "both empty pass",
+"F35": "Closed finite case set over a pure set comparison; the existing RepositoryLeakRatchet comparison tests already pin it",
+"F36": "IlDependencies reports an edge written only inside an async method or lambda against the type that wrote it, in Debug and Release",
+"F37": "outside fixture reaching Application only inside an async method is reported",
+"F38": "One discriminating fixture per rule; finite",
+"F39": "namespace rules R1, R3, R4, R5",
+"F4": "The old Metrics type-set rule and the hand-written opcode scanner are gone and nothing they guarded is lost: the module is found by its namespaces, and the stricter namespace rules cover what the scanner checked",
+"F40": "Measured with a Cecil probe mirroring IlDependencies on Debug and Release builds; rules not yet written",
+"F41": "Module namespaces are non-empty in the compiled assembly (Domain 6, Application 34, Policies 7, Background 1, Persistence 3 top-level types)",
+"F42": "Reached through the declared dotnet test Architecture filter",
+"F43": "Not applicable: synchronous single-pass reads, no progress obligation",
+"F44": "Assumption: every edge is visible in IL. Negation: a type resolved by string name or a runtime-built Type",
+"F45": "Every compile-time edge is named",
+"F46": "A reflection-only edge stays unseen",
+"F47": "Claiming the rule covers reflection edges",
+"F48": "Only BaseMetricsService uses a service locator, and its generic call is visible",
+"F49": "Assumption: Debug and Release IL agree. Negation: Release drops or changes an edge",
+"F5": "Nothing a user sees changes: every existing test stays green, the Flow metrics unit tests sit under Lighthouse.Backend.Tests/Modules/FlowMetrics with only folder, namespace and using edits, and the EF model is unchanged",
+"F50": "Same lists in both",
+"F51": "none",
+"F52": "A green Debug run with a red Release CI",
+"F53": "Measured identical today; S2 runs the Architecture filter with -c Release",
+"F54": "Calls the lifted InlineBaseline instead of its private copy",
+"F55": "Read the compiled production assembly and list every type outside Lighthouse.Backend.Modules.FlowMetrics that references a type in its Domain, and every one that references a type in its Adapters; run the same rules on made-up types in the test assembly",
+"F56": "Domain dependents equal the inline list of 6 (API.PortfolioController, API.PortfoliosController, API.TeamController, API.TeamsController, Services.Implementation.Reports.Metrics.DailySeriesSummary, Services.Implementation.WorkItems.WorkItemService); Adapters dependents are only Lighthouse.Backend.Program; a made-up outside newcomer fails and is named; a made-up stale list entry fails and is named with 'delete'; a compliant twin passes",
+"F57": "A new outside type reaches the Domain or Adapters and the rule stays green, or a listed type stops reaching it and the rule stays green",
+"F58": "Lift RepositoryLeakRatchetArchUnitTest.AssertMatchesBaseline into InlineBaseline.cs, behaviour-free, before the new rules use it",
+"F59": "RepositoryLeakRatchetArchUnitTest comparison and ratchet tests green with unchanged messages",
+"F60": "S1 adds DomainIsReachedFromOutsideOnlyBy and AdaptersAreReachedFromOutsideOnlyByTheCompositionRoot (names indicative) to FlowMetricsModuleRules, parameterised by module, outside and target patterns; creates InlineBaseline.cs by lifting AssertMatchesBaseline out of RepositoryLeakRatchetArchUnitTest, which then calls it with unchanged behaviour (its six comparison tests stay green).",
+"F61": "IlDependencies.DependentsIn answers every dependency question from the IL, async bodies included; no change",
+"F62": "Owner of the module's layer rules since feature B; same parameterised shape",
+"F63": "The one two-way comparison; lifted into InlineBaseline so every ratchet shares it, not copied",
+"F64": "Private helper replaced by a call to InlineBaseline; messages and its tests unchanged",
+"F65": "New rule methods added; existing methods unchanged",
+"F66": "No shared contract between deployables changes; test-only rules",
+"F67": "No independently changing producer and consumer; one test assembly",
+"F68": "The slice oracle is itself the architectural test over the compiled assembly",
+"F69": "Read the compiled production assembly (Debug and Release) and list every type outside Lighthouse.Backend.Modules.FlowMetrics, outside API, the composition root, Reports and Refinement, that references a type in the module's Application; run the same rule on made-up types including one that reaches the Application only inside an async method",
+"F7": "A registration extension method for the module (later Story); read ports for the GetAllByPredicate calls (S05f); moving entities or DTOs out of Models; renaming *Service roles; moving the Metrics controllers out of API",
+"F70": "The dependents equal the inline list of 10: Services.Implementation.Forecast.ForecastService, ForecastService+GatheredInputs, ForecastInputs, ForecastInputFingerprint, ForecastRealityCheckService, TeamData.TeamDataService, WorkItems.WorkItemService, WriteBackTriggerService, FeatureListActiveWork, DatabaseManagement.DatabaseMaintenanceGate (all under Lighthouse.Backend.Services.Implementation); a made-up newcomer fails and is named; the async-only made-up newcomer fails and is named in Debug and Release; a stale entry fails and is named with 'delete'",
+"F71": "A new undeclared caller of the Application, or one written only inside an async method, leaves the rule green",
+"F72": "S2 adds ApplicationIsReachedFromOutsideOnlyBy (name indicative) to FlowMetricsModuleRules; legal callers are matched by ApplicationCoreRules.TheApi, the composition root pattern ^Lighthouse\\.Backend\\.Program(\\+|$), ModuleBoundariesArchUnitTest.ReportsPattern and RefinementPattern. Baseline is the measured 10, not feature-delta's 8.",
+"F73": "Lifted by S1 into InlineBaseline.cs; S2 calls it, does not edit it",
+"F74": "Adds the Application inbound rule beside the others",
+"F75": "One new rule method",
+"F76": "No independently changing producer and consumer",
+"F77": "The slice oracle is itself the architectural test",
+"F78": "Builds on S1's lifted baseline helper; nothing else to move first",
+"F79": "Delete the opcode scanner rule",
+"F8": "Outside types reach the module's Domain only from the six listed types and nothing outside reaches its Adapters except the composition root; a made-up newcomer and a stale baseline entry each fail the rule",
+"F80": "Canary of module namespaces; internal ForecastingPattern",
+"F81": "Read the compiled production assembly and list every type in Lighthouse.Backend.Modules.FlowMetrics.Application that references EF Core, Lighthouse.Backend.Data, the module's Adapters, the API, or Forecasting; check the module's namespaces are non-empty; run the same rules on made-up types",
+"F82": "No Application type references EF Core, Data, Adapters or API; the Forecasting edges equal the inline list of 3 pairs (BaseMetricsService -> IForecastService, TeamMetricsService -> IForecastFilterRuleService, TeamMetricsService -> ForecastDataSufficiencyPolicy); made-up newcomer and stale entry each fail and are named; MetricsServices_ReadTransitions_OnlyViaRepositoryPorts_NeverViaDbSetDirectly and its opcode scanner no longer exist; NamedModules_AreNonEmpty names the five module namespaces",
+"F83": "An Application type reaches DbSet, LighthouseAppContext, an adapter, the API or a new Forecasting type and the rule stays green",
+"F84": "S3 adds ApplicationReachesNothingBelowIt and ApplicationReachesForecastingOnlyThrough (names indicative) to FlowMetricsModuleRules; deletes the opcode scanner test and its helpers from MetricsArchitectureTests.cs (the two name rules stay); makes ModuleBoundariesArchUnitTest.ForecastingPattern internal and adds the five FlowMetrics namespaces to NamedModules_AreNonEmpty (R1). The no-EF rule over the whole Application covers what the scanner checked (DbSet of transitions in two services), so nothing is lost. Path-string tests need no edit (already updated in feature B).",
+"F85": "Hand-written opcode scanner over a type set; the IL rule over the whole Application namespace is stricter and simpler",
+"F86": "Existing non-empty canary takes the module's namespaces",
+"F87": "ApplicationCoreRules.TheApi and TheData are the existing API and Data patterns",
+"F88": "Scanner test and helpers deleted; name rules unchanged",
+"F89": "Canary extended; ForecastingPattern made internal",
+"F9": "Outside types reach the module's Application only from API, the composition root, Reports, Refinement and the eight listed undeclared edges; a made-up newcomer, an async-only newcomer and a stale baseline entry each fail the rule",
+"F90": "Deletion and canary extension need no preparatory move",
+"F91": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaselineValidationServiceTest.cs; namespace and using lines only",
+"F92": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/PercentileCalculatorTest.cs; namespace and using lines only",
+"F93": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/SleRiskCalculatorTest.cs; namespace and using lines only",
+"F94": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/XmRCalculatorTest.cs; namespace and using lines only",
+"F95": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceNamedCycleTimeTest.cs; namespace and using lines only",
+"F96": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BaseMetricsServiceTests.cs; namespace and using lines only",
+"F97": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/BlockedCountSeriesBuilderTests.cs; namespace and using lines only",
+"F98": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/GapAskingSeriesQueryTest.cs; namespace and using lines only",
+"F99": "git mv from Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/MetricsAsOfGroupNameTest.cs; namespace and using lines only"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_out": [
+"F7",
+"F13"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F8",
+"promises": [
+"P1"
+]
+},
+{
+"id": "S2",
+"observation": "F9",
+"promises": [
+"P1"
+]
+},
+{
+"id": "S3",
+"observation": "F10",
+"promises": [
+"P1",
+"P2"
+]
+},
+{
+"id": "S4",
+"observation": "F11",
+"promises": [
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6358-s02c-flow-metrics-rules",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
