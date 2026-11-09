@@ -1,11 +1,14 @@
 namespace Lighthouse.Backend.Models.Authorization
 {
     /// <summary>
-    /// A rule that gives a group a role on every Team and Portfolio, as a unit's admin reads it: the role and the group
-    /// that holds it, with no stored line behind it to change.
+    /// A rule that gives a group, or everyone signed in, a role on every Team and Portfolio, as a unit's admin reads it:
+    /// the role and who holds it, with no stored line behind it to change.
     /// </summary>
     public sealed record SystemWideRule(UserRole Role, string Holder)
     {
+        /// <summary>What the everyone-signed-in switch gives while it is on: Viewer, held by everyone signed in.</summary>
+        public static SystemWideRule EveryoneSignedIn { get; } = new(UserRole.Viewer, "everyone signed in");
+
         /// <summary>Reads a stored group mapping as a rule reaching a unit of the given kind. A System Admin group and a rule on one unit are none.</summary>
         public static bool TryReading(RbacGroupMapping mapping, PermissionScopeType unitType, out SystemWideRule rule)
         {

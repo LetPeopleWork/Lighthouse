@@ -65,6 +65,21 @@ export interface SystemWideRule {
 	holder: string;
 }
 
+/** The holder the server names for the reach of the everyone-signed-in switch. */
+export const EVERYONE_SIGNED_IN_HOLDER = "everyone signed in";
+
+/** Who holds a rule, as a unit's admin reads it: everyone signed in, or a named SSO group. */
+export const getHolderLabel = (rule: SystemWideRule): string =>
+	rule.holder === EVERYONE_SIGNED_IN_HOLDER
+		? EVERYONE_SIGNED_IN_HOLDER
+		: `group ${rule.holder}`;
+
+/** Whether everyone signed in can view all Teams and Portfolios, with the token a save must be based on. */
+export interface EveryoneSignedIn {
+	everyoneCanView: boolean;
+	concurrencyToken: string;
+}
+
 const ROLE_LABELS: Record<GroupMappingRole, string> = {
 	SystemAdmin: "System Admin",
 	Viewer: "Viewer",

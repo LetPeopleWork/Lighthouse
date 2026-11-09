@@ -269,6 +269,24 @@ namespace Lighthouse.Backend.Migrations
                     b.ToTable("ApiKeyPermissions");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.EveryoneSignedInSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("EveryoneCanView")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EveryoneSignedInSettings");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.RbacGroupMapping", b =>
                 {
                     b.Property<int>("Id")

@@ -73,6 +73,8 @@ namespace Lighthouse.Backend.Data
 
         public DbSet<RbacGroupMapping> RbacGroupMappings { get; set; } = null!;
 
+        public DbSet<EveryoneSignedInSetting> EveryoneSignedInSettings { get; set; } = null!;
+
         public DbSet<ApiKeyPermission> ApiKeyPermissions { get; set; } = null!;
 
         public DbSet<EmbedSessionToken> EmbedSessionTokens { get; set; } = null!;
@@ -330,6 +332,10 @@ namespace Lighthouse.Backend.Data
 
             modelBuilder.Entity<RbacGroupMapping>()
                 .Property(m => m.ConcurrencyToken)
+                .IsConcurrencyToken();
+
+            modelBuilder.Entity<EveryoneSignedInSetting>()
+                .Property(setting => setting.ConcurrencyToken)
                 .IsConcurrencyToken();
 
             modelBuilder.Entity<ApiKey>()

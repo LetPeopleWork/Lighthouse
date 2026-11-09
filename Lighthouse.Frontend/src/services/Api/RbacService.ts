@@ -1,5 +1,6 @@
 import {
 	type CreateRbacGroupMappingRequest,
+	type EveryoneSignedIn,
 	type RbacGroupMapping,
 	type RbacScopedMemberSummary,
 	type RbacStatus,
@@ -40,6 +41,8 @@ export interface IRbacService {
 	getPortfolioGroupMappings(portfolioId: number): Promise<RbacGroupMapping[]>;
 	getTeamSystemWideRules(teamId: number): Promise<SystemWideRule[]>;
 	getPortfolioSystemWideRules(portfolioId: number): Promise<SystemWideRule[]>;
+	getEveryoneSignedIn(): Promise<EveryoneSignedIn>;
+	setEveryoneSignedIn(setting: EveryoneSignedIn): Promise<void>;
 	createGroupMapping(request: CreateRbacGroupMappingRequest): Promise<void>;
 	removeGroupMapping(mappingId: number): Promise<void>;
 	deleteUser(userId: number): Promise<void>;
@@ -199,6 +202,21 @@ export class RbacService extends BaseApiService implements IRbacService {
 				`/authorization/portfolios/${portfolioId}/system-wide-rules`,
 			);
 			return response.data;
+		});
+	}
+
+	getEveryoneSignedIn(): Promise<EveryoneSignedIn> {
+		return this.withErrorHandling(async () => {
+			const response = await this.apiService.get<EveryoneSignedIn>(
+				"/authorization/everyone-signed-in",
+			);
+			return response.data;
+		});
+	}
+
+	setEveryoneSignedIn(setting: EveryoneSignedIn): Promise<void> {
+		return this.withErrorHandling(async () => {
+			await this.apiService.put("/authorization/everyone-signed-in", setting);
 		});
 	}
 

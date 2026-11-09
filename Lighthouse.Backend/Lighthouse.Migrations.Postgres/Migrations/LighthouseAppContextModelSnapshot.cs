@@ -285,6 +285,26 @@ namespace Lighthouse.Migrations.Postgres.Migrations
                     b.ToTable("ApiKeyPermissions");
                 });
 
+            modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.EveryoneSignedInSetting", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<Guid>("ConcurrencyToken")
+                        .IsConcurrencyToken()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("EveryoneCanView")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EveryoneSignedInSettings");
+                });
+
             modelBuilder.Entity("Lighthouse.Backend.Models.Authorization.RbacGroupMapping", b =>
                 {
                     b.Property<int>("Id")

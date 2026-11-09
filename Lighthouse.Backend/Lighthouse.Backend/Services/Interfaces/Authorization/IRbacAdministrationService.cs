@@ -91,6 +91,14 @@ namespace Lighthouse.Backend.Services.Interfaces.Authorization
 
         Task<IReadOnlyList<SystemWideRule>> GetPortfolioSystemWideRulesAsync(int portfolioId, CancellationToken cancellationToken = default);
 
+        Task<EveryoneSignedInSetting> GetEveryoneSignedInAsync(CancellationToken cancellationToken = default);
+
+        Task<RbacOperationResult> SetEveryoneSignedInAsync(
+            ClaimsPrincipal caller,
+            bool everyoneCanView,
+            Guid? concurrencyToken,
+            CancellationToken cancellationToken = default);
+
         Task<RbacOperationResult> CreateGroupMappingAsync(
             string groupValue,
             UserRole role,

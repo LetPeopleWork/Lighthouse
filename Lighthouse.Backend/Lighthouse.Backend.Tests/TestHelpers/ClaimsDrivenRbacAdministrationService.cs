@@ -180,6 +180,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
         public Task<IReadOnlyList<SystemWideRule>> GetPortfolioSystemWideRulesAsync(int portfolioId, CancellationToken cancellationToken = default)
             => throw new NotSupportedException();
 
+        public Task<EveryoneSignedInSetting> GetEveryoneSignedInAsync(CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
+        public Task<RbacOperationResult> SetEveryoneSignedInAsync(ClaimsPrincipal caller, bool everyoneCanView, Guid? concurrencyToken, CancellationToken cancellationToken = default)
+            => throw new NotSupportedException();
+
         public Task<IReadOnlyList<RbacGroupMappingSummary>> GetTeamGroupMappingsAsync(int teamId, CancellationToken cancellationToken = default)
             => Task.FromResult<IReadOnlyList<RbacGroupMappingSummary>>([]);
 

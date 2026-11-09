@@ -2,11 +2,14 @@ namespace Lighthouse.Backend.Models.Authorization
 {
     /// <summary>
     /// What one person may do: their System role, kept apart, and their role on each Team and Portfolio, which is the
-    /// higher of the role they hold on that unit and the role of every SSO group rule that reaches it. A rule only adds.
-    /// The unit roles are worked out on the first unit question, so asking for the System role never depends on them.
+    /// higher of the role they hold on that unit and the role of every SSO group rule that reaches it, and Viewer on
+    /// every unit while everyone signed in can view. A rule only adds. The unit roles are worked out on the first unit
+    /// question, so asking for the System role never depends on them, nor on the switch.
     /// </summary>
     public sealed class EffectiveAccess
     {
+        private static readonly PermissionRule EveryoneSignedInViewer = new(PermissionScopeType.AllUnits, null, UserRole.Viewer);
+
         private readonly UserRole? systemRole;
         private readonly Lazy<UnitRoles> unitRoles;
 
@@ -20,12 +23,28 @@ namespace Lighthouse.Backend.Models.Authorization
         /// <param name="ruleRows">The rows of the person's SSO groups that apply to a set of units rather than to one.</param>
         public static EffectiveAccess Resolve(IEnumerable<PermissionRule> ownerRows, IEnumerable<PermissionRule> ruleRows)
         {
+            return Resolve(ownerRows, ruleRows, static () => false);
+        }
+
+        /// <param name="ownerRows">The rows the person holds, on the System or on one unit each.</param>
+        /// <param name="ruleRows">The rows of the person's SSO groups that apply to a set of units rather than to one.</param>
+        /// <param name="everyoneSignedInCanView">
+        /// Asks whether everyone signed in can view, for a person whose profile is resolved. It is asked only with the
+        /// first unit question, so a switch that cannot be read fails that question and leaves the System role alone.
+        /// </param>
+        public static EffectiveAccess Resolve(
+            IEnumerable<PermissionRule> ownerRows,
+            IEnumerable<PermissionRule> ruleRows,
+            Func<bool> everyoneSignedInCanView)
+        {
             var owned = ownerRows.ToList();
             var systemRole = owned
                 .Where(row => row is { ScopeType: PermissionScopeType.System, ScopeId: null })
                 .Aggregate((UserRole?)null, (highest, row) => Higher(highest, row.Role));
 
-            return new EffectiveAccess(systemRole, new Lazy<UnitRoles>(() => UnitRoles.From(owned, ruleRows)));
+            return new EffectiveAccess(
+                systemRole,
+                new Lazy<UnitRoles>(() => UnitRoles.From(owned, WithEveryoneSignedIn(ruleRows, everyoneSignedInCanView))));
         }
 
         public bool IsSystemAdmin => systemRole == UserRole.SystemAdmin;
@@ -77,6 +96,12 @@ namespace Lighthouse.Backend.Models.Authorization
         private UserRole? RoleOn(UnitKey unit)
         {
             return unitRoles.Value.RoleOn(unit);
+        }
+
+        // The switch can only give reading, so it joins the rules as one Viewer reach on all units.
+        private static IEnumerable<PermissionRule> WithEveryoneSignedIn(IEnumerable<PermissionRule> ruleRows, Func<bool> everyoneSignedInCanView)
+        {
+            return everyoneSignedInCanView() ? ruleRows.Append(EveryoneSignedInViewer) : ruleRows;
         }
 
         private static UserRole? AdminRoleOn(PermissionScopeType unitType)

@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import { useContext } from "react";
 import {
+	getHolderLabel,
 	getRoleLabel,
 	type SystemWideRule,
 } from "../../../models/Authorization/RbacModels";
@@ -18,7 +19,7 @@ interface SystemWideRulesNoticeProps {
 	readonly unitId: number;
 }
 
-/** Tells a unit's admin which rules for all Teams and Portfolios also reach the unit. Read-only: only a System Admin changes those rules. */
+/** Tells a unit's admin which rules for all Teams and Portfolios, the everyone-signed-in switch among them, also reach the unit. Read-only: only a System Admin changes those rules. */
 const SystemWideRulesNotice: React.FC<SystemWideRulesNoticeProps> = ({
 	unitKind,
 	unitId,
@@ -73,7 +74,7 @@ const SystemWideRulesNotice: React.FC<SystemWideRulesNoticeProps> = ({
 				<Typography
 					variant="body2"
 					key={`${rule.role}:${rule.holder}`}
-				>{`${getRoleLabel(rule.role)}: group ${rule.holder}`}</Typography>
+				>{`${getRoleLabel(rule.role)}: ${getHolderLabel(rule)}`}</Typography>
 			))}
 			<Typography variant="body2">
 				Removing someone below does not take away what these rules give.

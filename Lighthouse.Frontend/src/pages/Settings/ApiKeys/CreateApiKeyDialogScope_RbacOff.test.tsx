@@ -79,6 +79,8 @@ const buildContext = (options: BuildContextOptions = {}) => {
 		getPortfolioGroupMappings: vi.fn().mockResolvedValue([]),
 		getTeamSystemWideRules: vi.fn().mockResolvedValue([]),
 		getPortfolioSystemWideRules: vi.fn().mockResolvedValue([]),
+		getEveryoneSignedIn: vi.fn(),
+		setEveryoneSignedIn: vi.fn(),
 		createGroupMapping: vi.fn(),
 		removeGroupMapping: vi.fn(),
 		deleteUser: vi.fn(),

@@ -930,11 +930,72 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
                 .ThenBy(x => x.Role)
                 .ToListAsync(cancellationToken);
 
-            return storedRows
-                .Select(row => SystemWideRule.TryReading(row, unitType, out var rule) ? rule : null)
-                .OfType<SystemWideRule>()
+            SystemWideRule[] everyoneSignedIn = await TheSwitch.AnyAsync(setting => setting.EveryoneCanView, cancellationToken)
+                ? [SystemWideRule.EveryoneSignedIn]
+                : [];
+
+            return everyoneSignedIn
+                .Concat(storedRows
+                    .Select(row => SystemWideRule.TryReading(row, unitType, out var rule) ? rule : null)
+                    .OfType<SystemWideRule>())
                 .Distinct()
                 .ToList();
+        }
+
+        public async Task<EveryoneSignedInSetting> GetEveryoneSignedInAsync(CancellationToken cancellationToken = default)
+        {
+            return await TheSwitch.FirstOrDefaultAsync(cancellationToken) ?? EveryoneSignedInSetting.Off();
+        }
+
+        public async Task<RbacOperationResult> SetEveryoneSignedInAsync(
+            ClaimsPrincipal caller,
+            bool everyoneCanView,
+            Guid? concurrencyToken,
+            CancellationToken cancellationToken = default)
+        {
+            if (!await CanSatisfyRequirementAsync(caller, RbacGuardRequirement.SystemAdmin, cancellationToken: cancellationToken))
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.NotSystemAdmin,
+                    "Only a System Admin changes whether everyone signed in can view all Teams and Portfolios.");
+            }
+
+            if (concurrencyToken is not { } readToken)
+            {
+                return RbacOperationResult.Failure(
+                    RbacOperationErrorCodes.MissingConcurrencyToken,
+                    "The setting was sent without the token it was read with. Reload the page and try again.");
+            }
+
+            var stored = await context.EveryoneSignedInSettings
+                .OrderBy(setting => setting.Id)
+                .FirstOrDefaultAsync(cancellationToken);
+
+            if (stored is null)
+            {
+                context.EveryoneSignedInSettings.Add(EveryoneSignedInSetting.StoredAs(everyoneCanView));
+            }
+            else
+            {
+                stored.ChangeTo(everyoneCanView);
+                context.ApplyConcurrencyTokenForEdit(stored, readToken);
+            }
+
+            await context.SaveChangesAsync(cancellationToken);
+
+            return RbacOperationResult.Success();
+        }
+
+        // The instance keeps one switch; should a second row ever appear, the oldest is the one read and saved.
+        private IQueryable<EveryoneSignedInSetting> TheSwitch => context.EveryoneSignedInSettings
+            .AsNoTracking()
+            .OrderBy(setting => setting.Id)
+            .Take(1);
+
+        // Read synchronously because the unit roles that need it are worked out lazily, on the first unit question.
+        private bool EveryoneSignedInCanView()
+        {
+            return TheSwitch.Any(setting => setting.EveryoneCanView);
         }
 
         public async Task<RbacOperationResult> CreateGroupMappingAsync(
@@ -1091,7 +1152,8 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             return EffectiveAccess.Resolve(
                 ExplicitReplacesGroup([.. groupRows[false]], explicitPermissions),
-                groupRows[true]);
+                groupRows[true],
+                EveryoneSignedInCanView);
         }
 
         // A role granted to the person directly replaces whatever their groups give on the same scope,

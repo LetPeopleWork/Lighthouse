@@ -42,6 +42,7 @@ namespace Lighthouse.Backend.Tests.Architecture
             ["Lighthouse.Backend.Tests.API.Integration.NamedCycleTimeTrendInfoApiIntegrationTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.Refinement.RefinementAcceptanceTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.ViewerEmbedSessionJourneyTests"] = NeverStartsARefresh,
+            ["Lighthouse.Backend.Tests.Acceptance.SystemWideAccess.RemovedPersonEmbedSkeletonTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.WorkItemAgePercentilesPortfolioReadApiIntegrationTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Integration.WorkItemAgePercentilesReadApiIntegrationTest"] = NeverStartsARefresh,
             ["Lighthouse.Backend.Tests.API.Security.S13_ViewerEmbedHandshakeTests"] = NeverStartsARefresh,

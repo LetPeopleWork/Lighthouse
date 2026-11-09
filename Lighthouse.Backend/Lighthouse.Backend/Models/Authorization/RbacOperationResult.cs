@@ -35,5 +35,9 @@ namespace Lighthouse.Backend.Models.Authorization
         public const string GroupMappingNotFound = "GroupMappingNotFound";
 
         public const string DuplicateGroupMapping = "DuplicateGroupMapping";
+
+        public const string NotSystemAdmin = "NotSystemAdmin";
+
+        public const string MissingConcurrencyToken = "MissingConcurrencyToken";
     }
 }

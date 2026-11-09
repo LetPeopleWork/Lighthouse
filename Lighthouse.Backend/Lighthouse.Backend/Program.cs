@@ -1495,6 +1495,7 @@ namespace Lighthouse.Backend
             builder.Services.AddScoped<ISeeder, ApiKeyOwnerReconciliationSeeder>();
             builder.Services.AddScoped<ISeeder, ForecastInputsForgottenAtStartSeeder>();
             builder.Services.AddScoped<ISeeder, CategoryListNormalisationSeeder>();
+            builder.Services.AddScoped<ISeeder, EveryoneSignedInSeeder>();
 
             // Background Services
             builder.Services.AddHostedService<TeamUpdater>();

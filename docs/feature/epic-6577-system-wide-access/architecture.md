@@ -2619,7 +2619,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/E
 #### Verification
 
 ```text
-dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~Acceptance.SystemWideAccess.EveryoneSignedIn|FullyQualifiedName~Acceptance.SystemWideAccess.RemovedPersonEmbed|FullyQualifiedName~EveryoneSignedInWireContractTest|FullyQualifiedName~ExpandOnlyMigrationGuardTest|FullyQualifiedName~TestHostUseGuardTest"
+dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Tests --filter "FullyQualifiedName~Acceptance.SystemWideAccess.EveryoneSignedIn|FullyQualifiedName~Acceptance.SystemWideAccess.RemovedPersonEmbed|FullyQualifiedName~EveryoneSignedInWireContractTest|FullyQualifiedName~ExpandOnlyMigrationGuardTest|FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~EveryoneSignedInStaleWriteTest"
 pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pages/Settings/Rbac/RbacSettingsEveryoneSignedIn.test.tsx src/components/Common/Authorization/SystemWideRulesNoticeEveryone.test.tsx
 ```
 

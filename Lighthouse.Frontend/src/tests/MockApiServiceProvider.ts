@@ -432,6 +432,10 @@ export const createMockRbacService = (): IRbacService => {
 		getPortfolioGroupMappings: vi.fn().mockResolvedValue([]),
 		getTeamSystemWideRules: vi.fn().mockResolvedValue([]),
 		getPortfolioSystemWideRules: vi.fn().mockResolvedValue([]),
+		getEveryoneSignedIn: vi
+			.fn()
+			.mockResolvedValue({ everyoneCanView: false, concurrencyToken: "" }),
+		setEveryoneSignedIn: vi.fn(),
 		createGroupMapping: vi.fn(),
 		removeGroupMapping: vi.fn(),
 		deleteUser: vi.fn(),

@@ -396,6 +396,48 @@ namespace Lighthouse.Backend.API
             return Ok(await rbacAdministrationService.GetPortfolioSystemWideRulesAsync(portfolioId, cancellationToken));
         }
 
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [HttpGet("everyone-signed-in")]
+        [ProducesResponseType<EveryoneSignedInSetting>(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> GetEveryoneSignedIn(CancellationToken cancellationToken)
+        {
+            return Ok(await rbacAdministrationService.GetEveryoneSignedInAsync(cancellationToken));
+        }
+
+        [RbacGuard(RbacGuardRequirement.SystemAdmin)]
+        [HttpPut("everyone-signed-in")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> SetEveryoneSignedIn(
+            [FromBody] EveryoneSignedInRequest request,
+            CancellationToken cancellationToken)
+        {
+            var result = await rbacAdministrationService.SetEveryoneSignedInAsync(
+                User,
+                request.EveryoneCanView,
+                request.ConcurrencyToken,
+                cancellationToken);
+
+            if (result.Succeeded)
+            {
+                logger.LogInformation(
+                    "Everyone signed in can view all Teams and Portfolios set to {EveryoneCanView} by user profile {ActorProfileId}",
+                    request.EveryoneCanView,
+                    await ActorProfileIdAsync(cancellationToken));
+                return NoContent();
+            }
+
+            if (result.ErrorCode == RbacOperationErrorCodes.NotSystemAdmin)
+            {
+                return Forbid();
+            }
+
+            return BadRequest(result.Message);
+        }
+
         [CheckedInHandler("Refuses unless the caller may manage access for the whole instance.")]
         [HttpPost("group-mappings")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]

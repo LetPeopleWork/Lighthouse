@@ -1,14 +1,14 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
-using Lighthouse.Backend.Tests.Integration.Containers;
+using Lighthouse.Backend.Tests.Acceptance.SystemWideAccess;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using static Lighthouse.Backend.Tests.Acceptance.SystemWideAccess.EveryoneSignedInScenario;
 
-namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
+namespace Lighthouse.Backend.Tests.Integration.Containers
 {
     /// <summary>
     /// L11: two System Admins who read the switch at the same moment both save, on each real database the product

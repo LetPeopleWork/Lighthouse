@@ -30,6 +30,8 @@ describe("RbacSettings", () => {
 		getPortfolioGroupMappings: vi.fn(),
 		getTeamSystemWideRules: vi.fn().mockResolvedValue([]),
 		getPortfolioSystemWideRules: vi.fn().mockResolvedValue([]),
+		getEveryoneSignedIn: vi.fn(),
+		setEveryoneSignedIn: vi.fn(),
 		createGroupMapping: vi.fn(),
 		removeGroupMapping: vi.fn(),
 	};
