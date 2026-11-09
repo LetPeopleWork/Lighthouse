@@ -1,0 +1,200 @@
+An example execution:
+
+[State 0]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> false, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 1]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> false, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 2]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 3]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 4]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 5]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 6]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 7]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 8]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 9]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: false,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 1
+}
+
+[State 10]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: true,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> true),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 1
+}
+
+[State 11]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: false,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 1,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 1
+}
+
+[State 12]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: false,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 2,
+  sawAbsent: Map("a" -> false, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 1
+}
+
+[State 13]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: false,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 2,
+  sawAbsent: Map("a" -> false, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 1
+}
+
+[State 14]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: true,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 1,
+  sawAbsent: Map("a" -> false, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 1
+}
+
+[violation] Found an issue (18ms at 3833 traces/second).
+Use --verbosity=3 to show executions.
+Use --seed=0x2a815b --backend=rust to reproduce.

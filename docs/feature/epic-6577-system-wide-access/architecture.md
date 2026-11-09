@@ -56,12 +56,6 @@ Verification output: the host reads runner-derived counts from the dotnet test s
 Code facts: code-fact query.reads-of PermissionScopeKey answered from textsearch at noisy confidence over live source (AST provider did not answer), 22 sites, all inside RbacAdministrationService.cs; it may miss indirect uses, so ADR-280 list of 13 or more readers plus deletion of the type (a missed reader cannot compile) carry the closure. typesafe: unavailable, Jev is unauthorized in ~/.nwave/config.json.
 ```
 
-#### D9
-
-```text
-Waived claims noLostSwitchWrite and removalLeavesNoTwin, proof INDETERMINATE. Maintainer waiver 2026-11-09, temporary: the Quint model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt is to be typechecked, mutant-killed and verified once the maintainer allows quint, before slice S4 oracle and before the whole-candidate review; until then the S4 stale-write test on SQLite and PostgreSQL and the S1 twin-removal tests are the checks.
-```
-
 #### D10
 
 ```text
@@ -71,7 +65,13 @@ Authority: the DESIGN of feature-delta.md (DDD-1 to DDD-18, Reuse Analysis, Driv
 #### D11
 
 ```text
-Claim-to-checker. EffectiveAccess, AppliesTo, the valid-pairs table and the key intersection are total functions over the closed enums UserRole and PermissionScopeType: totality is checked by the C# compiler (a switch over the enum without a default fails the build under TreatWarningsAsErrors) and the laws by exhaustive NUnit tables over every pair; no formal checker is selected for them because the domain is finite and exhaustively enumerated. The two concurrent write protocols, noLostSwitchWrite (switch PUT under its concurrency token including the no-row upsert) and removalLeavesNoTwin (rule creation racing with removal of all twins), are state-model safety claims: Quint is selected, model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt. Both stay INDETERMINATE under the recorded maintainer waiver until the model is run. Agda is not selected (no proof beyond finite tables). TLA+ and TLC are not selected: no liveness or fairness claim exists.
+Claim-to-checker. EffectiveAccess, AppliesTo, the valid-pairs table and the key intersection are total functions over the closed enums UserRole and PermissionScopeType: totality is checked by the C# compiler (a switch over the enum without a default fails the build under TreatWarningsAsErrors) and the laws by exhaustive NUnit tables over every pair; no formal checker is selected for them because the domain is finite and exhaustively enumerated. The two concurrent write protocols, noLostSwitchWrite (switch PUT under its concurrency token including the no-row upsert) and removalLeavesNoTwin (rule creation racing with removal of all twins), are state-model safety claims checked with Quint (simulation, then quint verify with the TLC backend) on docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt; the check is bounded to two writers and four accepted writes, and runtime still rests on the S4 stale-write tests on SQLite and PostgreSQL and the S1 twin-removal tests. Agda is not selected (no proof beyond finite tables). TLA+ written by hand is not needed: no liveness or fairness claim exists.
+```
+
+#### D12
+
+```text
+The temporary maintainer waiver of 2026-11-09 for noLostSwitchWrite and removalLeavesNoTwin is lifted the same day: the Quint model typechecks and both properties pass quint run and exhaustive quint verify with the TLC backend on two writers with at most four accepted switch writes, and each recorded mutant is killed by a quint run counterexample. Receipts under docs/feature/epic-6577-system-wide-access/models/receipts/, re-run with models/run_checks.sh.
 ```
 
 ### Constraints
@@ -372,7 +372,7 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorizatio
 
 Action
 
-put
+putSwitch
 
 RbacAdministrationService switch update \(designed\, not built\)
 
@@ -406,6 +406,16 @@ Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorizatio
 Check and insert are separate statements; the race is modelled
 ```
 
+Constant
+
+MAX\_WRITES
+
+bound of the checked instance
+
+docs\/feature\/epic\-6577\-system\-wide\-access\/models\/system\_wide\_access\_writes\.qnt\:7
+
+None.
+
 ##### Assumptions
 
 ```text
@@ -416,22 +426,26 @@ The database applies a conditional update or insert atomically (EF concurrency t
 Two concurrent writers bound the race; more writers add no new interleaving class
 ```
 
+```text
+MAX_WRITES = 4: at most four accepted switch writes, which bounds the token counter so the state space is finite for exhaustive checking
+```
+
 ##### Mutants
 
-###### N1
+###### N3
 
 ```text
-put accepts without comparing the token read with the stored token
+putSwitch accepts without comparing the token read with the stored token (models/mutants/mutant_put_ignores_token.qnt, sha256 58de44dd8a45f9dfd7e19a6adb329d0361a0c2036522e95d90f71ebd0c231c7a); killed by quint run, receipt models/receipts/mutant_put_ignores_token.txt
 ```
 
 ###### Kills
 
 noLostSwitchWrite
 
-###### N2
+###### N4
 
 ```text
-removeRule deletes one row instead of every twin
+removeRule deletes one row instead of every twin (models/mutants/mutant_remove_deletes_one_row.qnt, sha256 3933163bad2cfa8baedbe4c8884a1d8fb460bdb2137003e213868eeb8d149b4b); killed by quint run, receipt models/receipts/mutant_remove_deletes_one_row.txt
 ```
 
 ###### Kills
@@ -446,17 +460,27 @@ Switch write under its token and rule removal with twins
 
 Safety
 
-Blocked
+Pass
 
 DesignedNotBuilt
 
 ```text
-Quint selected, model not yet executed; INDETERMINATE under the temporary maintainer waiver of 2026-11-09
+quint 0.33.1: noLostSwitchWrite and removalLeavesNoTwin hold under quint run (seed 0x2a6577, 15 steps, 20000 samples) and exhaustive quint verify --backend=tlc (972 distinct states, depth 14) on two writers with MAX_WRITES = 4; each mutant violates its property
 ```
 
 ##### Evidence
 
-None.
+docs\/feature\/epic\-6577\-system\-wide\-access\/models\/receipts\/run\_noLostSwitchWrite\.txt
+
+docs\/feature\/epic\-6577\-system\-wide\-access\/models\/receipts\/run\_removalLeavesNoTwin\.txt
+
+docs\/feature\/epic\-6577\-system\-wide\-access\/models\/receipts\/verify\_tlc\_noLostSwitchWrite\.txt
+
+docs\/feature\/epic\-6577\-system\-wide\-access\/models\/receipts\/verify\_tlc\_removalLeavesNoTwin\.txt
+
+docs\/feature\/epic\-6577\-system\-wide\-access\/models\/receipts\/mutant\_put\_ignores\_token\.txt
+
+docs\/feature\/epic\-6577\-system\-wide\-access\/models\/receipts\/mutant\_remove\_deletes\_one\_row\.txt
 
 ### Risks
 
@@ -891,16 +915,6 @@ Extend
 One appended value carries the applies-to part; no column
 ```
 
-PermissionScopeKey
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorization\/RbacAdministrationService\.cs\:1352
-
-Replace
-
-```text
-Deleted as a readable type so a missed reader cannot compile
-```
-
 AppliesTo
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/RbacGroupMapping\.cs\:1
@@ -919,16 +933,6 @@ Extend
 
 ```text
 Serves create and update; gains the AllUnits pairs
-```
-
-GetOwnerEffectivePermissionsAsync
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorization\/RbacAdministrationService\.cs\:1053
-
-Extend
-
-```text
-Keeps the explicit-replaces-group merge on unit keys, then builds EffectiveAccess
 ```
 
 GetAuthorizationSummaryAsync
@@ -969,26 +973,6 @@ Extend
 
 ```text
 Existing section; layout of ScopedGroupMappingManager reused
-```
-
-HasTeamReadPermission
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorization\/RbacAdministrationService\.cs\:1257
-
-Replace
-
-```text
-The private dictionary and its Has*Permission helpers are exact-key lookups that cannot express reach; 13 or more readers need one higher-role rule, so EffectiveAccess replaces them
-```
-
-IntersectWithApiKeyScope
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorization\/RbacAdministrationService\.cs\:1097
-
-Extend
-
-```text
-With OwnerCoversScope: coverage asks RoleOn for the key unit; the result stays the key exact rows
 ```
 
 GetTeamGroupMappingsAsync
@@ -1039,6 +1023,46 @@ CreateNew
 
 ```text
 Replaces the private exact-key dictionary; one owner for the higher-role rule
+```
+
+UnitKey
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/EffectiveAccess\.cs\:115
+
+Replace
+
+```text
+The S1 prefactoring deleted PermissionScopeKey; unit keys are now private to EffectiveAccess, so a missed reader cannot compile
+```
+
+GetOwnerEffectiveAccessAsync
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorization\/RbacAdministrationService\.cs\:1039
+
+Extend
+
+```text
+Keeps the explicit-replaces-group merge on unit keys, then resolves EffectiveAccess; S1 adds rule reach
+```
+
+CanRead
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/EffectiveAccess\.cs\:40
+
+Extend
+
+```text
+The prefactoring replaced the Has*Permission helpers with CanRead and CanWrite; S1 adds the higher-role rule over reach here
+```
+
+LimitedTo
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Models\/Authorization\/EffectiveAccess\.cs\:60
+
+Extend
+
+```text
+Key intersection: coverage asks the owner role on the key unit; the result stays the key exact rows
 ```
 
 ##### Impact
@@ -2555,16 +2579,6 @@ Reuse
 Idempotent start-up rows, also after a restore
 ```
 
-GetOwnerEffectivePermissionsAsync
-
-Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorization\/RbacAdministrationService\.cs\:1053
-
-Extend
-
-```text
-Adds the switch reach after a profile is resolved
-```
-
 CurrentUserProfileService
 
 Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Auth\/CurrentUserProfileService\.cs\:10
@@ -2703,6 +2717,16 @@ CreateNew
 
 ```text
 Created by S3 within this feature; S4 extends it with the everyone line
+```
+
+GetOwnerEffectiveAccessAsync
+
+Lighthouse\.Backend\/Lighthouse\.Backend\/Services\/Implementation\/Authorization\/RbacAdministrationService\.cs\:1039
+
+Extend
+
+```text
+Adds the switch reach after a profile is resolved
 ```
 
 ##### Impact

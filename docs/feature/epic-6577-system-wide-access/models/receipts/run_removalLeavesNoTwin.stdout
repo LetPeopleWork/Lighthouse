@@ -1,0 +1,215 @@
+An example execution:
+
+[State 0]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> false, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 1]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: true,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> false, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 2]
+{
+  accepted: Set(),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 1,
+  rowExists: false,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 0
+}
+
+[State 3]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: false,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 0, "b" -> 0),
+  token: 1
+}
+
+[State 4]
+{
+  accepted: Set((0, 1)),
+  everyone: true,
+  lastWasRemove: false,
+  nextToken: 2,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 0),
+  token: 1
+}
+
+[State 5]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 0),
+  token: 2
+}
+
+[State 6]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: true,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 0),
+  token: 2
+}
+
+[State 7]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 8]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: true,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 9]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: true,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 10]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 11]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: true,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 12]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: true,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 13]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 14]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 1, "b" -> 2),
+  token: 2
+}
+
+[State 15]
+{
+  accepted: Set((0, 1), (1, 2)),
+  everyone: false,
+  lastWasRemove: false,
+  nextToken: 3,
+  rowExists: true,
+  ruleRows: 0,
+  sawAbsent: Map("a" -> true, "b" -> false),
+  seen: Map("a" -> 2, "b" -> 2),
+  token: 2
+}
+
+[ok] No violation found (3177ms at 6295 traces/second).
+Trace length statistics: max=16, min=16, average=16.00
+You may increase --max-samples and --max-steps.
+Use --verbosity to produce more (or less) output.
+Use --seed=0x4a702e --backend=rust to reproduce.

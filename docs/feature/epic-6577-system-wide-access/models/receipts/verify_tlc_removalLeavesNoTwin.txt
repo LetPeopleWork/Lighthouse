@@ -1,0 +1,4 @@
+argv: quint verify system_wide_access_writes.qnt --backend=tlc --invariant=removalLeavesNoTwin
+quint: 0.33.1
+model sha256: c3ad57a7bb88432a22a3cb2ce82667b1e03c32ceb63dedb33cf58c5545471288
+exit: 0

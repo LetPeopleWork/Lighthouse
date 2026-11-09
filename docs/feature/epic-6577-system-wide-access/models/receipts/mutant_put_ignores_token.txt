@@ -1,0 +1,5 @@
+argv: quint run mutants/mutant_put_ignores_token.qnt --invariant=noLostSwitchWrite --max-steps=15 --max-samples=20000 --seed=0x2a6577
+quint: 0.33.1
+model sha256: c3ad57a7bb88432a22a3cb2ce82667b1e03c32ceb63dedb33cf58c5545471288
+mutant sha256: 58de44dd8a45f9dfd7e19a6adb329d0361a0c2036522e95d90f71ebd0c231c7a
+exit: 1

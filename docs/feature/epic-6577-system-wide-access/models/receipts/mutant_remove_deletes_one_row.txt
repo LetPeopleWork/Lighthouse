@@ -1,0 +1,5 @@
+argv: quint run mutants/mutant_remove_deletes_one_row.qnt --invariant=removalLeavesNoTwin --max-steps=15 --max-samples=20000 --seed=0x2a6577
+quint: 0.33.1
+model sha256: c3ad57a7bb88432a22a3cb2ce82667b1e03c32ceb63dedb33cf58c5545471288
+mutant sha256: 3933163bad2cfa8baedbe4c8884a1d8fb460bdb2137003e213868eeb8d149b4b
+exit: 1

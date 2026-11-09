@@ -197,11 +197,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Code facts: code-fact query.reads-of PermissionScopeKey answered from textsearch at noisy confidence over live source (AST provider did not answer), 22 sites, all inside RbacAdministrationService.cs; it may miss indirect uses, so ADR-280 list of 13 or more readers plus deletion of the type (a missed reader cannot compile) carry the closure. typesafe: unavailable, Jev is unauthorized in ~/.nwave/config.json.
 </code></pre>
 
-<h4>D9</h4>
-
-<pre><code>Waived claims noLostSwitchWrite and removalLeavesNoTwin, proof INDETERMINATE. Maintainer waiver 2026-11-09, temporary: the Quint model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt is to be typechecked, mutant-killed and verified once the maintainer allows quint, before slice S4 oracle and before the whole-candidate review; until then the S4 stale-write test on SQLite and PostgreSQL and the S1 twin-removal tests are the checks.
-</code></pre>
-
 <h4>D10</h4>
 
 <pre><code>Authority: the DESIGN of feature-delta.md (DDD-1 to DDD-18, Reuse Analysis, Driving and Driven Ports, Loading and Failure Looks), ADR-280 and ADR-281, with the DELIVER sections Sketch Review (M-S1 to M-S4, binding UI copy), Rigor Profile and Architecture Review R-1 to R-6. Where R-1 to R-6 differ from the earlier DESIGN text they win: the seven readers are 13 or more; the key coverage change and the key-limit tests both live in S1, which now covers P1 and P2 (the product merged the former key-limit slice into S1); DDD-15 is conditional on R-3. All maintainer decisions M1 to M4 are confirmed unchanged.
@@ -209,7 +204,12 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D11</h4>
 
-<pre><code>Claim-to-checker. EffectiveAccess, AppliesTo, the valid-pairs table and the key intersection are total functions over the closed enums UserRole and PermissionScopeType: totality is checked by the C# compiler (a switch over the enum without a default fails the build under TreatWarningsAsErrors) and the laws by exhaustive NUnit tables over every pair; no formal checker is selected for them because the domain is finite and exhaustively enumerated. The two concurrent write protocols, noLostSwitchWrite (switch PUT under its concurrency token including the no-row upsert) and removalLeavesNoTwin (rule creation racing with removal of all twins), are state-model safety claims: Quint is selected, model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt. Both stay INDETERMINATE under the recorded maintainer waiver until the model is run. Agda is not selected (no proof beyond finite tables). TLA+ and TLC are not selected: no liveness or fairness claim exists.
+<pre><code>Claim-to-checker. EffectiveAccess, AppliesTo, the valid-pairs table and the key intersection are total functions over the closed enums UserRole and PermissionScopeType: totality is checked by the C# compiler (a switch over the enum without a default fails the build under TreatWarningsAsErrors) and the laws by exhaustive NUnit tables over every pair; no formal checker is selected for them because the domain is finite and exhaustively enumerated. The two concurrent write protocols, noLostSwitchWrite (switch PUT under its concurrency token including the no-row upsert) and removalLeavesNoTwin (rule creation racing with removal of all twins), are state-model safety claims checked with Quint (simulation, then quint verify with the TLC backend) on docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt; the check is bounded to two writers and four accepted writes, and runtime still rests on the S4 stale-write tests on SQLite and PostgreSQL and the S1 twin-removal tests. Agda is not selected (no proof beyond finite tables). TLA+ written by hand is not needed: no liveness or fairness claim exists.
+</code></pre>
+
+<h4>D12</h4>
+
+<pre><code>The temporary maintainer waiver of 2026-11-09 for noLostSwitchWrite and removalLeavesNoTwin is lifted the same day: the Quint model typechecks and both properties pass quint run and exhaustive quint verify with the TLC backend on two writers with at most four accepted switch writes, and each recorded mutant is killed by a quint run counterexample. Receipts under docs/feature/epic-6577-system-wide-access/models/receipts/, re-run with models/run_checks.sh.
 </code></pre>
 
 <h3>Constraints</h3>
@@ -479,7 +479,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Action</p>
 
-<p>put</p>
+<p>putSwitch</p>
 
 <p>RbacAdministrationService switch update (designed, not built)</p>
 
@@ -510,6 +510,16 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Check and insert are separate statements; the race is modelled
 </code></pre>
 
+<p>Constant</p>
+
+<p>MAX_WRITES</p>
+
+<p>bound of the checked instance</p>
+
+<p>docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt:7</p>
+
+<p>None.</p>
+
 <h5>Assumptions</h5>
 
 <pre><code>The database applies a conditional update or insert atomically (EF concurrency token check, primary key on the one switch row)
@@ -518,20 +528,23 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Two concurrent writers bound the race; more writers add no new interleaving class
 </code></pre>
 
+<pre><code>MAX_WRITES = 4: at most four accepted switch writes, which bounds the token counter so the state space is finite for exhaustive checking
+</code></pre>
+
 <h5>Mutants</h5>
 
-<h6>N1</h6>
+<h6>N3</h6>
 
-<pre><code>put accepts without comparing the token read with the stored token
+<pre><code>putSwitch accepts without comparing the token read with the stored token (models/mutants/mutant_put_ignores_token.qnt, sha256 58de44dd8a45f9dfd7e19a6adb329d0361a0c2036522e95d90f71ebd0c231c7a); killed by quint run, receipt models/receipts/mutant_put_ignores_token.txt
 </code></pre>
 
 <h6>Kills</h6>
 
 <p>noLostSwitchWrite</p>
 
-<h6>N2</h6>
+<h6>N4</h6>
 
-<pre><code>removeRule deletes one row instead of every twin
+<pre><code>removeRule deletes one row instead of every twin (models/mutants/mutant_remove_deletes_one_row.qnt, sha256 3933163bad2cfa8baedbe4c8884a1d8fb460bdb2137003e213868eeb8d149b4b); killed by quint run, receipt models/receipts/mutant_remove_deletes_one_row.txt
 </code></pre>
 
 <h6>Kills</h6>
@@ -545,16 +558,26 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Safety</p>
 
-<p>Blocked</p>
+<p>Pass</p>
 
 <p>DesignedNotBuilt</p>
 
-<pre><code>Quint selected, model not yet executed; INDETERMINATE under the temporary maintainer waiver of 2026-11-09
+<pre><code>quint 0.33.1: noLostSwitchWrite and removalLeavesNoTwin hold under quint run (seed 0x2a6577, 15 steps, 20000 samples) and exhaustive quint verify --backend=tlc (972 distinct states, depth 14) on two writers with MAX_WRITES = 4; each mutant violates its property
 </code></pre>
 
 <h5>Evidence</h5>
 
-<p>None.</p>
+<p>docs/feature/epic-6577-system-wide-access/models/receipts/run_noLostSwitchWrite.txt</p>
+
+<p>docs/feature/epic-6577-system-wide-access/models/receipts/run_removalLeavesNoTwin.txt</p>
+
+<p>docs/feature/epic-6577-system-wide-access/models/receipts/verify_tlc_noLostSwitchWrite.txt</p>
+
+<p>docs/feature/epic-6577-system-wide-access/models/receipts/verify_tlc_removalLeavesNoTwin.txt</p>
+
+<p>docs/feature/epic-6577-system-wide-access/models/receipts/mutant_put_ignores_token.txt</p>
+
+<p>docs/feature/epic-6577-system-wide-access/models/receipts/mutant_remove_deletes_one_row.txt</p>
 
 <h3>Risks</h3>
 
@@ -921,15 +944,6 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <pre><code>One appended value carries the applies-to part; no column
 </code></pre>
 
-<p>PermissionScopeKey</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1352</p>
-
-<p>Replace</p>
-
-<pre><code>Deleted as a readable type so a missed reader cannot compile
-</code></pre>
-
 <p>AppliesTo</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGroupMapping.cs:1</p>
@@ -946,15 +960,6 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <p>Extend</p>
 
 <pre><code>Serves create and update; gains the AllUnits pairs
-</code></pre>
-
-<p>GetOwnerEffectivePermissionsAsync</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1053</p>
-
-<p>Extend</p>
-
-<pre><code>Keeps the explicit-replaces-group merge on unit keys, then builds EffectiveAccess
 </code></pre>
 
 <p>GetAuthorizationSummaryAsync</p>
@@ -991,24 +996,6 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <p>Extend</p>
 
 <pre><code>Existing section; layout of ScopedGroupMappingManager reused
-</code></pre>
-
-<p>HasTeamReadPermission</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1257</p>
-
-<p>Replace</p>
-
-<pre><code>The private dictionary and its Has*Permission helpers are exact-key lookups that cannot express reach; 13 or more readers need one higher-role rule, so EffectiveAccess replaces them
-</code></pre>
-
-<p>IntersectWithApiKeyScope</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1097</p>
-
-<p>Extend</p>
-
-<pre><code>With OwnerCoversScope: coverage asks RoleOn for the key unit; the result stays the key exact rows
 </code></pre>
 
 <p>GetTeamGroupMappingsAsync</p>
@@ -1054,6 +1041,42 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <p>CreateNew</p>
 
 <pre><code>Replaces the private exact-key dictionary; one owner for the higher-role rule
+</code></pre>
+
+<p>UnitKey</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:115</p>
+
+<p>Replace</p>
+
+<pre><code>The S1 prefactoring deleted PermissionScopeKey; unit keys are now private to EffectiveAccess, so a missed reader cannot compile
+</code></pre>
+
+<p>GetOwnerEffectiveAccessAsync</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1039</p>
+
+<p>Extend</p>
+
+<pre><code>Keeps the explicit-replaces-group merge on unit keys, then resolves EffectiveAccess; S1 adds rule reach
+</code></pre>
+
+<p>CanRead</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:40</p>
+
+<p>Extend</p>
+
+<pre><code>The prefactoring replaced the Has*Permission helpers with CanRead and CanWrite; S1 adds the higher-role rule over reach here
+</code></pre>
+
+<p>LimitedTo</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:60</p>
+
+<p>Extend</p>
+
+<pre><code>Key intersection: coverage asks the owner role on the key unit; the result stays the key exact rows
 </code></pre>
 
 <h5>Impact</h5>
@@ -2401,15 +2424,6 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <pre><code>Idempotent start-up rows, also after a restore
 </code></pre>
 
-<p>GetOwnerEffectivePermissionsAsync</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1053</p>
-
-<p>Extend</p>
-
-<pre><code>Adds the switch reach after a profile is resolved
-</code></pre>
-
 <p>CurrentUserProfileService</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Auth/CurrentUserProfileService.cs:10</p>
@@ -2534,6 +2548,15 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <p>CreateNew</p>
 
 <pre><code>Created by S3 within this feature; S4 extends it with the everyone line
+</code></pre>
+
+<p>GetOwnerEffectiveAccessAsync</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1039</p>
+
+<p>Extend</p>
+
+<pre><code>Adds the switch reach after a profile is resolved
 </code></pre>
 
 <h5>Impact</h5>

@@ -3,6 +3,8 @@
 module system_wide_access_writes {
   pure val CLIENTS = Set("a", "b")
   pure val NO_ROW = 0
+  // Bounds the instance for exhaustive checking: at most this many accepted switch writes
+  pure val MAX_WRITES = 4
 
   // EveryoneSignedInSetting row
   var rowExists: bool
@@ -45,7 +47,7 @@ module system_wide_access_writes {
   }
 
   // GET everyone-signed-in: a missing row reads as off with the empty token
-  action read(c: str): bool = all {
+  action readSwitch(c: str): bool = all {
     seen' = seen.set(c, if (rowExists) token else NO_ROW),
     rowExists' = rowExists,
     everyone' = everyone,
@@ -56,10 +58,11 @@ module system_wide_access_writes {
   }
 
   // PUT everyone-signed-in: update under the token, or insert when no row exists; anything else is a 409 (no state change)
-  action put(c: str, v: bool): bool = {
+  action putSwitch(c: str, v: bool): bool = {
     val fresh = if (rowExists) seen.get(c) == token else seen.get(c) == NO_ROW
     all {
       fresh,
+      nextToken <= MAX_WRITES,
       rowExists' = true,
       everyone' = v,
       token' = nextToken,
@@ -98,8 +101,8 @@ module system_wide_access_writes {
     nondet c = CLIENTS.oneOf()
     nondet v = Set(true, false).oneOf()
     any {
-      read(c),
-      put(c, v),
+      readSwitch(c),
+      putSwitch(c, v),
       checkRule(c),
       insertRule(c),
       removeRule,

@@ -321,12 +321,12 @@
 "counters": {
 "B": 10,
 "C": 2,
-"D": 11,
+"D": 12,
 "E": 9,
-"F": 482,
+"F": 492,
 "K": 9,
 "L": 14,
-"N": 2,
+"N": 4,
 "P": 5,
 "S": 5,
 "T": 3,
@@ -385,8 +385,16 @@
 "closure": [
 {
 "axis": "Safety",
-"basis": "F69",
-"design": "Blocked",
+"basis": "F488",
+"design": "Pass",
+"evidence": [
+"docs/feature/epic-6577-system-wide-access/models/receipts/run_noLostSwitchWrite.txt",
+"docs/feature/epic-6577-system-wide-access/models/receipts/run_removalLeavesNoTwin.txt",
+"docs/feature/epic-6577-system-wide-access/models/receipts/verify_tlc_noLostSwitchWrite.txt",
+"docs/feature/epic-6577-system-wide-access/models/receipts/verify_tlc_removalLeavesNoTwin.txt",
+"docs/feature/epic-6577-system-wide-access/models/receipts/mutant_put_ignores_token.txt",
+"docs/feature/epic-6577-system-wide-access/models/receipts/mutant_remove_deletes_one_row.txt"
+],
 "runtime": "DesignedNotBuilt",
 "subject": "F68"
 }
@@ -463,29 +471,30 @@
 "text": "F26"
 },
 {
-"id": "D9",
-"text": "F27"
-},
-{
 "id": "D10",
 "text": "F28"
 },
 {
 "id": "D11",
-"text": "F29"
+"text": "F483"
+},
+{
+"id": "D12",
+"text": "F484"
 }
 ],
 "models": [
 {
 "assumptions": [
 "F64",
-"F65"
+"F65",
+"F485"
 ],
 "atoms": [
 {
 "atomicity": "F61",
 "kind": "Action",
-"name": "put",
+"name": "putSwitch",
 "site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:16",
 "symbol": "RbacAdministrationService switch update (designed, not built)"
 },
@@ -502,20 +511,26 @@
 "name": "checkRule",
 "site": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:916",
 "symbol": "RbacAdministrationService.CreateGroupMappingAsync"
+},
+{
+"kind": "Constant",
+"name": "MAX_WRITES",
+"site": "docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt:7",
+"symbol": "bound of the checked instance"
 }
 ],
 "language": "Quint",
 "mutants": [
 {
-"description": "F66",
-"id": "N1",
+"description": "F486",
+"id": "N3",
 "kills": [
 "noLostSwitchWrite"
 ]
 },
 {
-"description": "F67",
-"id": "N2",
+"description": "F487",
+"id": "N4",
 "kills": [
 "removalLeavesNoTwin"
 ]
@@ -1051,12 +1066,6 @@
 "symbol": "PermissionScopeType"
 },
 {
-"decision": "Replace",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1352",
-"reason": "F132",
-"symbol": "PermissionScopeKey"
-},
-{
 "decision": "CreateNew",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/RbacGroupMapping.cs:1",
 "reason": "F133",
@@ -1067,12 +1076,6 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1289",
 "reason": "F134",
 "symbol": "IsValidGroupMappingScope"
-},
-{
-"decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1053",
-"reason": "F135",
-"symbol": "GetOwnerEffectivePermissionsAsync"
 },
 {
 "decision": "Extend",
@@ -1097,18 +1100,6 @@
 "locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
 "reason": "F139",
 "symbol": "RbacSettings"
-},
-{
-"decision": "Replace",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1257",
-"reason": "F140",
-"symbol": "HasTeamReadPermission"
-},
-{
-"decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1097",
-"reason": "F141",
-"symbol": "IntersectWithApiKeyScope"
 },
 {
 "decision": "Reuse",
@@ -1139,6 +1130,30 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:1",
 "reason": "F145",
 "symbol": "EffectiveAccess"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:115",
+"reason": "F489",
+"symbol": "UnitKey"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1039",
+"reason": "F490",
+"symbol": "GetOwnerEffectiveAccessAsync"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:40",
+"reason": "F491",
+"symbol": "CanRead"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs:60",
+"reason": "F492",
+"symbol": "LimitedTo"
 }
 ]
 },
@@ -1839,12 +1854,6 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1053",
-"reason": "F295",
-"symbol": "GetOwnerEffectivePermissionsAsync"
-},
-{
-"decision": "Extend",
 "locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Auth/CurrentUserProfileService.cs:10",
 "reason": "F296",
 "symbol": "CurrentUserProfileService"
@@ -1926,6 +1935,12 @@
 "locator": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNotice.tsx:1",
 "reason": "F305",
 "symbol": "SystemWideRulesNotice"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Authorization/RbacAdministrationService.cs:1039",
+"reason": "F295",
+"symbol": "GetOwnerEffectiveAccessAsync"
 }
 ]
 },
@@ -2373,16 +2388,12 @@
 "F129": "Every existing read, write, summary and key-intersection answer",
 "F130": "S1 covers P1 and P2 (the former key-limit slice is merged in): LimitedKeyUnderRuleAtThePortTest is S1 own oracle file, written with the Viewer-on-all scenarios and observed RED with them on the original source.",
 "F131": "One appended value carries the applies-to part; no column",
-"F132": "Deleted as a readable type so a missed reader cannot compile",
 "F133": "No existing type answers whether a rule reaches a unit; RbacGroupMapping stays a row",
 "F134": "Serves create and update; gains the AllUnits pairs",
-"F135": "Keeps the explicit-replaces-group merge on unit keys, then builds EffectiveAccess",
 "F136": "Admin lists filled through Reaches over existing unit ids",
 "F137": "Existing access endpoints accept the new scope",
 "F138": "Next integer appended",
 "F139": "Existing section; layout of ScopedGroupMappingManager reused",
-"F140": "The private dictionary and its Has*Permission helpers are exact-key lookups that cannot express reach; 13 or more readers need one higher-role rule, so EffectiveAccess replaces them",
-"F141": "With OwnerCoversScope: coverage asks RoleOn for the key unit; the result stays the key exact rows",
 "F142": "Not reused for rules (rule rows would land beside a Remove button); left unchanged",
 "F143": "Same RBAC unions gain AllUnits",
 "F144": "One table row for the new event",
@@ -2524,7 +2535,6 @@
 "F267": "twin rows: one line",
 "F268": "System Admin group: absent",
 "F269": "no rule: empty",
-"F27": "Waived claims noLostSwitchWrite and removalLeavesNoTwin, proof INDETERMINATE. Maintainer waiver 2026-11-09, temporary: the Quint model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt is to be typechecked, mutant-killed and verified once the maintainer allows quint, before slice S4 oracle and before the whole-candidate review; until then the S4 stale-write test on SQLite and PostgreSQL and the S1 twin-removal tests are the checks.",
 "F270": "Unit rules notice",
 "F271": "RbacGroupMappings -> unit rules read -> GET route -> RbacService -> SystemWideRulesNotice on TeamDetail and PortfolioDetail",
 "F272": "Every controller action, including the two new ones, declares its access",
@@ -2546,7 +2556,6 @@
 "F287": "Event row extended to the switch",
 "F288": "Through IRbacAdministrationService on a fresh harness database after the seeder ran: GET the switch; a person with a profile and no group asks to read a Team and a Portfolio; a System Admin PUTs on with the token read; the person asks again, asks to write, and their key reads; a principal with no profile asks; a second PUT with the old token and one with no token; a non System Admin PUTs; the switch read is made to throw while a System Admin asks to manage RBAC and the person asks to read; the switch is turned off and the person asks again",
 "F289": "Off with a token by default; refused before; read allowed on every Team and Portfolio after, write refused, key reads; no-profile principal refused; stale token 409, missing token refused, row unchanged; non System Admin refused; with the read throwing System Admin still manages RBAC and the unit read is an error, not a grant; after off the person is refused and real roles are unchanged",
-"F29": "Claim-to-checker. EffectiveAccess, AppliesTo, the valid-pairs table and the key intersection are total functions over the closed enums UserRole and PermissionScopeType: totality is checked by the C# compiler (a switch over the enum without a default fails the build under TreatWarningsAsErrors) and the laws by exhaustive NUnit tables over every pair; no formal checker is selected for them because the domain is finite and exhaustively enumerated. The two concurrent write protocols, noLostSwitchWrite (switch PUT under its concurrency token including the no-row upsert) and removalLeavesNoTwin (rule creation racing with removal of all twins), are state-model safety claims: Quint is selected, model docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt. Both stay INDETERMINATE under the recorded maintainer waiver until the model is run. Agda is not selected (no proof beyond finite tables). TLA+ and TLC are not selected: no liveness or fairness claim exists.",
 "F290": "Switch on by default or on with a missing row; a stale write accepted; the switch grants write; System Admin lost or a unit read granted when the switch read throws; a no-profile principal reads",
 "F291": "R-3 taken: RemovedPersonEmbedSkeletonTest is written first as a named skeleton on the embed flow (it needs the host cookie validation in Program.cs) and run on the original source; if GREEN, CurrentUserProfileService is not changed and the test stays as a pin; if RED, the guard widens to embed principals and LastSeenAt for embed viewers is kept. The stale-write test runs on SQLite and on PostgreSQL through SharedPostgresContainer because EF InMemory does not enforce the token. Program.cs gains the seeder registration, so the full backend integration suite runs before push.",
 "F292": "No existing record has a token and belongs to Access; implements IConcurrencyTokenEntity",
@@ -2761,7 +2770,17 @@
 "F480": "A spinner where the table goes while loading; Could not load the SSO group rules. Reload the page to try again. in place of the table on failure; no empty table either time",
 "F481": "A slow or failed load never looks like no rules",
 "F482": "The previous rules stay shown undimmed beside the spinner on a reload",
+"F483": "Claim-to-checker. EffectiveAccess, AppliesTo, the valid-pairs table and the key intersection are total functions over the closed enums UserRole and PermissionScopeType: totality is checked by the C# compiler (a switch over the enum without a default fails the build under TreatWarningsAsErrors) and the laws by exhaustive NUnit tables over every pair; no formal checker is selected for them because the domain is finite and exhaustively enumerated. The two concurrent write protocols, noLostSwitchWrite (switch PUT under its concurrency token including the no-row upsert) and removalLeavesNoTwin (rule creation racing with removal of all twins), are state-model safety claims checked with Quint (simulation, then quint verify with the TLC backend) on docs/feature/epic-6577-system-wide-access/models/system_wide_access_writes.qnt; the check is bounded to two writers and four accepted writes, and runtime still rests on the S4 stale-write tests on SQLite and PostgreSQL and the S1 twin-removal tests. Agda is not selected (no proof beyond finite tables). TLA+ written by hand is not needed: no liveness or fairness claim exists.",
+"F484": "The temporary maintainer waiver of 2026-11-09 for noLostSwitchWrite and removalLeavesNoTwin is lifted the same day: the Quint model typechecks and both properties pass quint run and exhaustive quint verify with the TLC backend on two writers with at most four accepted switch writes, and each recorded mutant is killed by a quint run counterexample. Receipts under docs/feature/epic-6577-system-wide-access/models/receipts/, re-run with models/run_checks.sh.",
+"F485": "MAX_WRITES = 4: at most four accepted switch writes, which bounds the token counter so the state space is finite for exhaustive checking",
+"F486": "putSwitch accepts without comparing the token read with the stored token (models/mutants/mutant_put_ignores_token.qnt, sha256 58de44dd8a45f9dfd7e19a6adb329d0361a0c2036522e95d90f71ebd0c231c7a); killed by quint run, receipt models/receipts/mutant_put_ignores_token.txt",
+"F487": "removeRule deletes one row instead of every twin (models/mutants/mutant_remove_deletes_one_row.qnt, sha256 3933163bad2cfa8baedbe4c8884a1d8fb460bdb2137003e213868eeb8d149b4b); killed by quint run, receipt models/receipts/mutant_remove_deletes_one_row.txt",
+"F488": "quint 0.33.1: noLostSwitchWrite and removalLeavesNoTwin hold under quint run (seed 0x2a6577, 15 steps, 20000 samples) and exhaustive quint verify --backend=tlc (972 distinct states, depth 14) on two writers with MAX_WRITES = 4; each mutant violates its property",
+"F489": "The S1 prefactoring deleted PermissionScopeKey; unit keys are now private to EffectiveAccess, so a missed reader cannot compile",
 "F49": "IRbacAdministrationService, reached through AuthorizationController routes under api/latest and api/v1 and through RbacGuard for every unit route",
+"F490": "Keeps the explicit-replaces-group merge on unit keys, then resolves EffectiveAccess; S1 adds rule reach",
+"F491": "The prefactoring replaced the Has*Permission helpers with CanRead and CanWrite; S1 adds the higher-role rule over reach here",
+"F492": "Key intersection: coverage asks the owner role on the key unit; the result stays the key exact rows",
 "F5": "A Team or Portfolio Admin sees on the Access tab, read-only, which system-wide rules also reach the unit; Settings shows No direct role instead of Unassigned",
 "F50": "LighthouseAppContext on SQLite and PostgreSQL",
 "F51": "ILogger",
@@ -2780,10 +2799,7 @@
 "F63": "Check and insert are separate statements; the race is modelled",
 "F64": "The database applies a conditional update or insert atomically (EF concurrency token check, primary key on the one switch row)",
 "F65": "Two concurrent writers bound the race; more writers add no new interleaving class",
-"F66": "put accepts without comparing the token read with the stored token",
-"F67": "removeRule deletes one row instead of every twin",
 "F68": "Switch write under its token and rule removal with twins",
-"F69": "Quint selected, model not yet executed; INDETERMINATE under the temporary maintainer waiver of 2026-11-09",
 "F7": "Admin on all lets a group's members edit settings and members on every Team and Portfolio, while every System-Admin-only action stays refused",
 "F70": "Assumption: the group claim is present and current",
 "F71": "Rules give nothing to a person without the group; the switch still works",
