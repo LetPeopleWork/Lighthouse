@@ -929,6 +929,9 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <pre><code>S1 covers P1 and P2 (the former key-limit slice is merged in): LimitedKeyUnderRuleAtThePortTest is S1 own oracle file, written with the Viewer-on-all scenarios and observed RED with them on the original source.
 </code></pre>
 
+<pre><code>The equal-row refusal is new behaviour, not an existing message: today CreateGroupMappingAsync answers Success for an equal row and the update path has no such check. Creating or updating a mapping onto an equal existing row (same group, role, scope and unit) returns a validation failure with the message This group already has this role here. and leaves the rows unchanged. Concurrent creates can still store twins, which removal deletes together. Root decision taken autonomously, logged for the maintainer.
+</code></pre>
+
 <h5>Constraints</h5>
 
 <p>None.</p>
@@ -1241,12 +1244,12 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 
 <p>####### B2</p>
 
-<pre><code>Equal rule already exists on update
+<pre><code>Creating or updating a mapping onto an equal existing row (same group, role, scope and unit)
 </code></pre>
 
 <p>Refusal</p>
 
-<pre><code>Existing duplicate message
+<pre><code>New validation failure with the message: This group already has this role here. Rows unchanged
 </code></pre>
 
 <p>####### B3</p>
@@ -1456,7 +1459,7 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 
 <h6>L6</h6>
 
-<pre><code>Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope
+<pre><code>Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope; creating or updating a mapping onto an equal existing row is refused with the new message This group already has this role here. and leaves the rows unchanged
 </code></pre>
 
 <p>Invariant</p>
@@ -1477,7 +1480,10 @@ pnpm --dir /storage/repos/Lighthouse/Lighthouse.Frontend exec vitest run src/pag
 <pre><code>two twin rows listed: one line
 </code></pre>
 
-<pre><code>update role onto an existing equal row: refused with the duplicate message
+<pre><code>create a mapping equal to an existing row: refused with This group already has this role here. rows unchanged
+</code></pre>
+
+<pre><code>update a mapping role onto an existing equal row: refused with This group already has this role here. rows unchanged
 </code></pre>
 
 <pre><code>Finite

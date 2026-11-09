@@ -323,7 +323,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 492,
+"F": 498,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -755,9 +755,9 @@
 "outcome": "Refusal"
 },
 {
-"condition": "F165",
+"condition": "F494",
 "id": "B2",
-"observation": "F166",
+"observation": "F495",
 "outcome": "Refusal"
 },
 {
@@ -828,7 +828,8 @@
 }
 ],
 "decisions": [
-"F130"
+"F130",
+"F493"
 ],
 "equality": [
 {
@@ -999,12 +1000,13 @@
 "kind": "Invariant",
 "layer": "Application",
 "owner": "RbacAdministrationService",
-"statement": "F195",
+"statement": "F496",
 "treatment": {
 "cases": [
 "F196",
 "F197",
-"F198"
+"F497",
+"F498"
 ],
 "kind": "Finite",
 "reason": "F187"
@@ -2419,8 +2421,6 @@
 "F162": "Controllers and RbacGuard -> IRbacAdministrationService -> Models/Authorization values and LighthouseAppContext; frontend through RbacService.ts and useRbac()",
 "F163": "Invalid role and scope pair",
 "F164": "RbacOperationResult failure, no row written",
-"F165": "Equal rule already exists on update",
-"F166": "Existing duplicate message",
 "F167": "Caller is not System Admin",
 "F168": "Refused as today",
 "F169": "Reading rule rows throws",
@@ -2452,10 +2452,8 @@
 "F192": "owner reaches unit through a rule",
 "F193": "owner reaches nothing",
 "F194": "owner Viewer through rule, key asks TeamAdmin: refused",
-"F195": "Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope",
 "F196": "two twin rows then remove: none left",
 "F197": "two twin rows listed: one line",
-"F198": "update role onto an existing equal row: refused with the duplicate message",
 "F199": "Permission lookups for a list do not grow with the number of units, my-summary included",
 "F2": "An organisation gives broad read or admin rights with one rule instead of granting each Team and Portfolio or making people System Admin, and stays private by default.",
 "F20": "Carriers and owners. Decisions: EffectiveAccess and AppliesTo in Models/Authorization. Effects: rows through LighthouseAppContext (mappings, permissions, keys, the switch row), one Information line per rule add, rule remove and switch change through ILogger in AuthorizationController, and the name-only usage-data event SystemWideAccessGranted = 26 through the existing usage-data sender. Errors: RbacOperationResult for refusals (invalid pair, duplicate, not System Admin), DbUpdateConcurrencyException mapped to 409 by ConcurrencyConflictExceptionFilter, and any failed read of rules or the switch surfaces as an error, never a grant. Per-process state: none; no cache, so every request re-reads.",
@@ -2781,6 +2779,12 @@
 "F490": "Keeps the explicit-replaces-group merge on unit keys, then resolves EffectiveAccess; S1 adds rule reach",
 "F491": "The prefactoring replaced the Has*Permission helpers with CanRead and CanWrite; S1 adds the higher-role rule over reach here",
 "F492": "Key intersection: coverage asks the owner role on the key unit; the result stays the key exact rows",
+"F493": "The equal-row refusal is new behaviour, not an existing message: today CreateGroupMappingAsync answers Success for an equal row and the update path has no such check. Creating or updating a mapping onto an equal existing row (same group, role, scope and unit) returns a validation failure with the message This group already has this role here. and leaves the rows unchanged. Concurrent creates can still store twins, which removal deletes together. Root decision taken autonomously, logged for the maintainer.",
+"F494": "Creating or updating a mapping onto an equal existing row (same group, role, scope and unit)",
+"F495": "New validation failure with the message: This group already has this role here. Rows unchanged",
+"F496": "Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope; creating or updating a mapping onto an equal existing row is refused with the new message This group already has this role here. and leaves the rows unchanged",
+"F497": "create a mapping equal to an existing row: refused with This group already has this role here. rows unchanged",
+"F498": "update a mapping role onto an existing equal row: refused with This group already has this role here. rows unchanged",
 "F5": "A Team or Portfolio Admin sees on the Access tab, read-only, which system-wide rules also reach the unit; Settings shows No direct role instead of Unassigned",
 "F50": "LighthouseAppContext on SQLite and PostgreSQL",
 "F51": "ILogger",

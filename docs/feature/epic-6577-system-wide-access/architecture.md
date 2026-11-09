@@ -899,6 +899,10 @@ dotnet test /storage/repos/Lighthouse/Lighthouse.Backend/Lighthouse.Backend.Test
 S1 covers P1 and P2 (the former key-limit slice is merged in): LimitedKeyUnderRuleAtThePortTest is S1 own oracle file, written with the Viewer-on-all scenarios and observed RED with them on the original source.
 ```
 
+```text
+The equal-row refusal is new behaviour, not an existing message: today CreateGroupMappingAsync answers Success for an equal row and the update path has no such check. Creating or updating a mapping onto an equal existing row (same group, role, scope and unit) returns a validation failure with the message This group already has this role here. and leaves the rows unchanged. Concurrent creates can still store twins, which removal deletes together. Root decision taken autonomously, logged for the maintainer.
+```
+
 ##### Constraints
 
 None.
@@ -1248,13 +1252,13 @@ RbacOperationResult failure, no row written
 ####### B2
 
 ```text
-Equal rule already exists on update
+Creating or updating a mapping onto an equal existing row (same group, role, scope and unit)
 ```
 
 Refusal
 
 ```text
-Existing duplicate message
+New validation failure with the message: This group already has this role here. Rows unchanged
 ```
 
 ####### B3
@@ -1494,7 +1498,7 @@ None.
 ###### L6
 
 ```text
-Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope
+Removing a rule deletes every row with the same group, role and scope; the list shows one line per group, role and scope; creating or updating a mapping onto an equal existing row is refused with the new message This group already has this role here. and leaves the rows unchanged
 ```
 
 Invariant
@@ -1518,7 +1522,11 @@ two twin rows listed: one line
 ```
 
 ```text
-update role onto an existing equal row: refused with the duplicate message
+create a mapping equal to an existing row: refused with This group already has this role here. rows unchanged
+```
+
+```text
+update a mapping role onto an existing equal row: refused with This group already has this role here. rows unchanged
 ```
 
 ```text
