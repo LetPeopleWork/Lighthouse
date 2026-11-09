@@ -960,11 +960,7 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
 
             // Two equal rows can be stored by two System Admins adding the same rule at once, because a unique index
             // treats a missing unit as distinct. A twin left behind would keep granting the role, so all go together.
-            var equalRows = await context.RbacGroupMappings
-                .Where(x => x.GroupValue == mapping.GroupValue
-                    && x.Role == mapping.Role
-                    && x.ScopeType == mapping.ScopeType
-                    && x.ScopeId == mapping.ScopeId)
+            var equalRows = await RowsGivingGroupRole(mapping.GroupValue, mapping.Role, mapping.ScopeType, mapping.ScopeId)
                 .ToListAsync(cancellationToken);
 
             context.RbacGroupMappings.RemoveRange(equalRows);
@@ -1214,12 +1210,20 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
             int? scopeId,
             CancellationToken cancellationToken)
         {
-            return context.RbacGroupMappings.AnyAsync(
+            return RowsGivingGroupRole(groupValue, role, scopeType, scopeId).AnyAsync(cancellationToken);
+        }
+
+        private IQueryable<RbacGroupMapping> RowsGivingGroupRole(
+            string groupValue,
+            UserRole role,
+            PermissionScopeType scopeType,
+            int? scopeId)
+        {
+            return context.RbacGroupMappings.Where(
                 x => x.GroupValue == groupValue
                     && x.Role == role
                     && x.ScopeType == scopeType
-                    && x.ScopeId == scopeId,
-                cancellationToken);
+                    && x.ScopeId == scopeId);
         }
 
         private static RbacOperationResult GroupAlreadyHasRoleHere()

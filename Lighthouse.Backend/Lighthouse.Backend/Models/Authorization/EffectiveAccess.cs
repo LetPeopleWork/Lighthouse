@@ -167,6 +167,14 @@ namespace Lighthouse.Backend.Models.Authorization
                     .Aggregate(held, (highest, reach) => HigherOn(unit.ScopeType, highest, reach.Role));
             }
 
+            public List<int> AdministeredUnitIds(PermissionScopeType unitType)
+            {
+                return heldOnUnits
+                    .Where(entry => entry.Key.ScopeType == unitType && entry.Value == AdminRoleOn(unitType))
+                    .Select(entry => entry.Key.UnitId)
+                    .ToList();
+            }
+
             // On a unit, a role that does not belong to that unit type, such as Portfolio Admin on a Team, gives
             // nothing there, so it must not hide a Viewer rule that reaches the unit.
             private static UserRole HigherOn(PermissionScopeType unitType, UserRole? current, UserRole candidate)
@@ -177,14 +185,6 @@ namespace Lighthouse.Backend.Models.Authorization
             private static int PriorityOn(PermissionScopeType unitType, UserRole role)
             {
                 return role == UserRole.Viewer || role == AdminRoleOn(unitType) ? Priority(role) : 0;
-            }
-
-            public List<int> AdministeredUnitIds(PermissionScopeType unitType)
-            {
-                return heldOnUnits
-                    .Where(entry => entry.Key.ScopeType == unitType && entry.Value == AdminRoleOn(unitType))
-                    .Select(entry => entry.Key.UnitId)
-                    .ToList();
             }
         }
     }
