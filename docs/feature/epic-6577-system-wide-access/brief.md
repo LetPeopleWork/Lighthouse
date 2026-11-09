@@ -120,7 +120,13 @@ Leaders read everything without System Admin, and limited keys follow their owne
 
 ##### Rework
 
-None.
+```text
+1
+```
+
+```text
+Admin on all is a valid role and scope pair once S5 adds it
+```
 
 ### S3
 

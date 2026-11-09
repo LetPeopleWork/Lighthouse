@@ -1462,6 +1462,526 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S5</h3>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A System Admin adds Admin on all for the group team-admins, then adds the same rule again
+</code></pre>
+
+<pre><code>The rule is stored and listed once as Admin on all for every Team and Portfolio; the second add is refused with: This group already has this role here.
+</code></pre>
+
+<pre><code>The System Admin sees the new rule once and is told when a group already has it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_System_Admin_adds_Admin_on_all_for_a_group_the_rules_list_shows_it_once_and_adding_it_again_is_refused</p>
+
+<pre><code>Admin on all stored under another role number, or a second equal row stored silently
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A System Admin asks for Admin on all on the System, on one Team, on one Portfolio or naming a unit, and for System Admin, Team Admin or Portfolio Admin on all units
+</code></pre>
+
+<pre><code>Every such rule is refused and nothing is stored
+</code></pre>
+
+<pre><code>A rule for all units can only be Viewer on all or Admin on all, and Admin on all only covers every unit
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::Admin_on_all_applies_only_to_every_Team_and_Portfolio_and_no_other_role_applies_to_all_of_them_but_Viewer</p>
+
+<pre><code>Admin on all accepted on one unit while the other pairs stay refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A member of team-admins with no other role asks to change Team Zenith, a Team created after the rule, and Portfolio Ocean Explorer, and to read them
+</code></pre>
+
+<pre><code>Every change and read is allowed, the later Team included
+</code></pre>
+
+<pre><code>Delivery leads edit the settings of every Team and Portfolio, including new ones, without being given each one
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_member_changes_every_Team_and_Portfolio_including_a_Team_created_after_the_rule</p>
+
+<pre><code>the reach copied to the units that existed when the rule was added
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The member asks to manage the members of Team Zenith and of the Portfolio, and adds Morgan as Viewer on Team Zenith
+</code></pre>
+
+<pre><code>Both are allowed, the add succeeds and Morgan then reads Team Zenith
+</code></pre>
+
+<pre><code>Delivery leads manage a unit&#x27;s members on its Access tab
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_member_adds_someone_as_Viewer_on_a_Team_and_that_person_then_reads_it</p>
+
+<pre><code>Team membership allowed but Portfolio membership refused
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>After a Team is created later, the member reads her authorization summary
+</code></pre>
+
+<pre><code>Administered Teams are every stored Team including the later one, administered Portfolios are every stored Portfolio, she is not System Admin and may not create Teams or Portfolios
+</code></pre>
+
+<pre><code>The browser shows Settings and Access tabs on every unit and no Add Team or Add Portfolio
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_members_summary_lists_every_Team_and_Portfolio_as_administered_and_offers_nothing_a_System_Admin_does</p>
+
+<pre><code>the lists filled from rules but missing a unit created after the rule
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The member passes each check that lets an admin change a unit: Team and Portfolio write, the route guards, the writable Portfolios of a Feature list, moving a Feature, writing a Team or Portfolio report, reading connection names for settings, managing members of a Team and a Portfolio, and the administered lists of her summary
+</code></pre>
+
+<pre><code>Every one of these checks lets her through on a Team created later and on the Portfolio
+</code></pre>
+
+<pre><code>Every page, report and list that lets a Team or Portfolio Admin change a unit works the same for delivery leads
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::Every_check_that_lets_an_admin_change_a_unit_lets_a_member_through</p>
+
+<pre><code>one consumer still reading only roles held on a unit
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The member also holds Viewer directly on Team Zenith and is in a group with Viewer on all, and asks to change Team Zenith
+</code></pre>
+
+<pre><code>She may change Team Zenith and her summary lists it as administered
+</code></pre>
+
+<pre><code>A smaller role held on a unit never takes Admin on all away there
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::An_explicit_Viewer_role_on_a_Team_and_a_Viewer_rule_do_not_narrow_Admin_on_all_there</p>
+
+<pre><code>the direct Viewer role replacing the rule on that unit
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The member limits a key to Team Admin on Team Zenith; the key asks to change Team Zenith, Team Apollo and the Portfolio and to read Team Apollo
+</code></pre>
+
+<pre><code>She may issue the key; it changes Team Zenith only and reads nothing else
+</code></pre>
+
+<pre><code>A delivery lead&#x27;s limited key works on its one Team and nowhere else
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_key_limited_to_Team_Admin_on_Team_Zenith_writes_Team_Zenith_and_nothing_else</p>
+
+<pre><code>the key taking over the owner&#x27;s reach on every Team
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Admin on all for team-admins was stored twice; the System Admin removes the one listed line and the member asks again
+</code></pre>
+
+<pre><code>Before: she changes Team Zenith and one line is listed. After: she is refused and her summary lists no administered unit
+</code></pre>
+
+<pre><code>Removing the rule takes the admin rights away on the next request
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::Removing_the_rule_ends_the_members_admin_reach_on_the_next_request_twins_included</p>
+
+<pre><code>one of two equal rows left behind and still granting
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Everyone signed in is turned on; Morgan, with no role and no group, passes each check that lets an admin change a unit
+</code></pre>
+
+<pre><code>Morgan reads Team Zenith and is refused by every one of these checks
+</code></pre>
+
+<pre><code>Turning everyone signed in on never makes anyone an admin
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::With_everyone_signed_in_on_a_person_with_no_role_still_passes_no_check_that_changes_a_unit</p>
+
+<pre><code>the switch giving admin through one consumer only
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A rule for all units with the role Team Admin, Portfolio Admin or System Admin is stored for team-admins; the member asks to read and change units and reads her summary
+</code></pre>
+
+<pre><code>She reads and changes nothing, administers nothing and is not System Admin
+</code></pre>
+
+<pre><code>Only Viewer on all and Admin on all rules give anything on every unit
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_stored_rule_for_all_units_with_a_role_other_than_Viewer_or_Admin_on_all_gives_nothing</p>
+
+<pre><code>a stored Team Admin row for all units read as Admin on all on Teams
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The member with Admin on all asks to edit connections, system settings or terminology, install an update or update all Teams, create or clone a Team or Portfolio, delete a unit, and import or clear the licence
+</code></pre>
+
+<pre><code>Each is refused while she can still change Team Zenith
+</code></pre>
+
+<pre><code>Delivery leads cannot do what stays with System Admins
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::A_member_with_Admin_on_all_is_refused_what_stays_with_System_Admins</p>
+
+<pre><code>Admin on all read as the System role for one requirement
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The member with Admin on all asks to manage Settings &gt; Access and asks for the licence status
+</code></pre>
+
+<pre><code>She may not manage access and the licence owner details are withheld
+</code></pre>
+
+<pre><code>Delivery leads see no Settings &gt; Access and no licence owner
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::A_member_with_Admin_on_all_does_not_administer_access_or_see_the_licence_owner</p>
+
+<pre><code>access management refused but licence owner shown
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>The member with Admin on all tries to turn everyone signed in on
+</code></pre>
+
+<pre><code>The save is refused and the switch stays off
+</code></pre>
+
+<pre><code>Only a System Admin changes system-wide rules and the switch
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::A_member_with_Admin_on_all_cannot_turn_everyone_signed_in_on</p>
+
+<pre><code>the save refused but the switch stored on anyway
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Someone tries to make Morgan an Admin-on-all member of Team Zenith, and the member asks for a key limited to Admin on all on all units and on one Team
+</code></pre>
+
+<pre><code>The member role is refused and Morgan reads nothing; both keys are refused as invalid
+</code></pre>
+
+<pre><code>Admin on all is only a group rule a System Admin adds, never a member role or a key limit
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::Admin_on_all_is_neither_a_member_role_on_a_Team_nor_a_key_limit</p>
+
+<pre><code>an Admin-on-all key accepted on one Team
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A System Admin opens the Role choice of SSO Groups on Settings &gt; Access
+</code></pre>
+
+<pre><code>The choices are exactly System Admin, Viewer on all and Admin on all
+</code></pre>
+
+<pre><code>The System Admin can pick Admin on all for a group
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx::offers System Admin, Viewer on all and Admin on all as the roles of a group</p>
+
+<pre><code>Admin on all offered but a choice dropped or reordered
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A System Admin adds Admin on all for delivery-leads-2
+</code></pre>
+
+<pre><code>The page sends the group with role UnitAdmin, scope AllUnits and no unit, and reports SystemWideAccessGranted once with no group
+</code></pre>
+
+<pre><code>The rule is added, and usage data counts that a system-wide rule was granted without saying for whom
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx::adds Admin on all for a group and reports that it was granted, never which group</p>
+
+<pre><code>the request sent but no usage event, or the event carrying the group
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>Settings &gt; Access lists an Admin-on-all rule for delivery-leads, with Teams and Portfolios renamed Squads and Programs
+</code></pre>
+
+<pre><code>Its line reads delivery-leads, Admin, All Squads and Programs
+</code></pre>
+
+<pre><code>The System Admin reads the rule in the organisation&#x27;s words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx::lists an Admin-on-all rule as Admin on all Teams and Portfolios, in the organisation&#x27;s words</p>
+
+<pre><code>the role shown as the stored name UnitAdmin
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Team&#x27;s Access tab loads the rules reaching it: Viewer for team-readers and Admin on all for delivery-leads
+</code></pre>
+
+<pre><code>The notice reads Admin: group delivery-leads, never Viewer, Team Admin, Portfolio Admin or System Admin for it, beside Viewer: group team-readers
+</code></pre>
+
+<pre><code>A Team Admin learns which group also administers the Team
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeAdmin.test.tsx::names the group as Admin on a Team, beside a Viewer rule</p>
+
+<pre><code>the label Team Admin shown for the rule
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A Portfolio&#x27;s Access tab loads Admin on all for delivery-leads as its only rule
+</code></pre>
+
+<pre><code>The notice is shown, headed Also reachable through access to all Squads and Programs, with the line Admin: group delivery-leads
+</code></pre>
+
+<pre><code>A Portfolio Admin learns which group also administers the Portfolio
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeAdmin.test.tsx::names the group as Admin on a Portfolio too</p>
+
+<pre><code>the label Portfolio Admin shown for the rule
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

@@ -756,6 +756,290 @@
 "stimulus": "F634",
 "user_result": "F636"
 }
+],
+"S5": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F641",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_System_Admin_adds_Admin_on_all_for_a_group_the_rules_list_shows_it_once_and_adding_it_again_is_refused"
+},
+"expected": "F639",
+"stimulus": "F638",
+"user_result": "F640"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F645",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::Admin_on_all_applies_only_to_every_Team_and_Portfolio_and_no_other_role_applies_to_all_of_them_but_Viewer"
+},
+"expected": "F643",
+"stimulus": "F642",
+"user_result": "F644"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L14/F384",
+"L14/F385"
+],
+"still_passes_if": "F649",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_member_changes_every_Team_and_Portfolio_including_a_Team_created_after_the_rule"
+},
+"expected": "F647",
+"stimulus": "F646",
+"user_result": "F648"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F653",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_member_adds_someone_as_Viewer_on_a_Team_and_that_person_then_reads_it"
+},
+"expected": "F651",
+"stimulus": "F650",
+"user_result": "F652"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L14/F384",
+"L14/F385",
+"L14/F386"
+],
+"still_passes_if": "F657",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_members_summary_lists_every_Team_and_Portfolio_as_administered_and_offers_nothing_a_System_Admin_does"
+},
+"expected": "F655",
+"stimulus": "F654",
+"user_result": "F656"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L14/F384",
+"L14/F385"
+],
+"still_passes_if": "F661",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::Every_check_that_lets_an_admin_change_a_unit_lets_a_member_through"
+},
+"expected": "F659",
+"stimulus": "F658",
+"user_result": "F660"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L14/F387"
+],
+"still_passes_if": "F665",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::An_explicit_Viewer_role_on_a_Team_and_a_Viewer_rule_do_not_narrow_Admin_on_all_there"
+},
+"expected": "F663",
+"stimulus": "F662",
+"user_result": "F664"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F669",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_key_limited_to_Team_Admin_on_Team_Zenith_writes_Team_Zenith_and_nothing_else"
+},
+"expected": "F667",
+"stimulus": "F666",
+"user_result": "F668"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F673",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::Removing_the_rule_ends_the_members_admin_reach_on_the_next_request_twins_included"
+},
+"expected": "F671",
+"stimulus": "F670",
+"user_result": "F672"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F677",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::With_everyone_signed_in_on_a_person_with_no_role_still_passes_no_check_that_changes_a_unit"
+},
+"expected": "F675",
+"stimulus": "F674",
+"user_result": "F676"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F681",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllAtThePortTest.cs::A_stored_rule_for_all_units_with_a_role_other_than_Viewer_or_Admin_on_all_gives_nothing"
+},
+"expected": "F679",
+"stimulus": "F678",
+"user_result": "F680"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L14/F386"
+],
+"still_passes_if": "F685",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::A_member_with_Admin_on_all_is_refused_what_stays_with_System_Admins"
+},
+"expected": "F683",
+"stimulus": "F682",
+"user_result": "F684"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L14/F386"
+],
+"still_passes_if": "F689",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::A_member_with_Admin_on_all_does_not_administer_access_or_see_the_licence_owner"
+},
+"expected": "F687",
+"stimulus": "F686",
+"user_result": "F688"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F693",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::A_member_with_Admin_on_all_cannot_turn_everyone_signed_in_on"
+},
+"expected": "F691",
+"stimulus": "F690",
+"user_result": "F692"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F697",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/AdminOnAllSystemOnlyRefusalsTest.cs::Admin_on_all_is_neither_a_member_role_on_a_Team_nor_a_key_limit"
+},
+"expected": "F695",
+"stimulus": "F694",
+"user_result": "F696"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F701",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx::offers System Admin, Viewer on all and Admin on all as the roles of a group"
+},
+"expected": "F699",
+"stimulus": "F698",
+"user_result": "F700"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F705",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx::adds Admin on all for a group and reports that it was granted, never which group"
+},
+"expected": "F703",
+"stimulus": "F702",
+"user_result": "F704"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F709",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsAdminOnAll.test.tsx::lists an Admin-on-all rule as Admin on all Teams and Portfolios, in the organisation's words"
+},
+"expected": "F707",
+"stimulus": "F706",
+"user_result": "F708"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F713",
+"test": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeAdmin.test.tsx::names the group as Admin on a Team, beside a Viewer rule"
+},
+"expected": "F711",
+"stimulus": "F710",
+"user_result": "F712"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F717",
+"test": "Lighthouse.Frontend/src/components/Common/Authorization/SystemWideRulesNoticeAdmin.test.tsx::names the group as Admin on a Portfolio too"
+},
+"expected": "F715",
+"stimulus": "F714",
+"user_result": "F716"
+}
 ]
 },
 "counters": {
@@ -763,7 +1047,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 637,
+"F": 719,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -3438,12 +3722,94 @@
 "F635": "The removed-person embedded-session check is listed as a named skeleton with its user flow, and no other host user is added",
 "F636": "The one end-to-end check of a removed person's embedded session stays an accepted exception, so fast tests stay at the service port",
 "F637": "A skeleton listed under a user flow it does not walk; the guard checks the listing, review checks the wording",
+"F638": "A System Admin adds Admin on all for the group team-admins, then adds the same rule again",
+"F639": "The rule is stored and listed once as Admin on all for every Team and Portfolio; the second add is refused with: This group already has this role here.",
 "F64": "The database applies a conditional update or insert atomically (EF concurrency token check, primary key on the one switch row)",
+"F640": "The System Admin sees the new rule once and is told when a group already has it",
+"F641": "Admin on all stored under another role number, or a second equal row stored silently",
+"F642": "A System Admin asks for Admin on all on the System, on one Team, on one Portfolio or naming a unit, and for System Admin, Team Admin or Portfolio Admin on all units",
+"F643": "Every such rule is refused and nothing is stored",
+"F644": "A rule for all units can only be Viewer on all or Admin on all, and Admin on all only covers every unit",
+"F645": "Admin on all accepted on one unit while the other pairs stay refused",
+"F646": "A member of team-admins with no other role asks to change Team Zenith, a Team created after the rule, and Portfolio Ocean Explorer, and to read them",
+"F647": "Every change and read is allowed, the later Team included",
+"F648": "Delivery leads edit the settings of every Team and Portfolio, including new ones, without being given each one",
+"F649": "the reach copied to the units that existed when the rule was added",
 "F65": "Two concurrent writers bound the race; more writers add no new interleaving class",
+"F650": "The member asks to manage the members of Team Zenith and of the Portfolio, and adds Morgan as Viewer on Team Zenith",
+"F651": "Both are allowed, the add succeeds and Morgan then reads Team Zenith",
+"F652": "Delivery leads manage a unit's members on its Access tab",
+"F653": "Team membership allowed but Portfolio membership refused",
+"F654": "After a Team is created later, the member reads her authorization summary",
+"F655": "Administered Teams are every stored Team including the later one, administered Portfolios are every stored Portfolio, she is not System Admin and may not create Teams or Portfolios",
+"F656": "The browser shows Settings and Access tabs on every unit and no Add Team or Add Portfolio",
+"F657": "the lists filled from rules but missing a unit created after the rule",
+"F658": "The member passes each check that lets an admin change a unit: Team and Portfolio write, the route guards, the writable Portfolios of a Feature list, moving a Feature, writing a Team or Portfolio report, reading connection names for settings, managing members of a Team and a Portfolio, and the administered lists of her summary",
+"F659": "Every one of these checks lets her through on a Team created later and on the Portfolio",
+"F660": "Every page, report and list that lets a Team or Portfolio Admin change a unit works the same for delivery leads",
+"F661": "one consumer still reading only roles held on a unit",
+"F662": "The member also holds Viewer directly on Team Zenith and is in a group with Viewer on all, and asks to change Team Zenith",
+"F663": "She may change Team Zenith and her summary lists it as administered",
+"F664": "A smaller role held on a unit never takes Admin on all away there",
+"F665": "the direct Viewer role replacing the rule on that unit",
+"F666": "The member limits a key to Team Admin on Team Zenith; the key asks to change Team Zenith, Team Apollo and the Portfolio and to read Team Apollo",
+"F667": "She may issue the key; it changes Team Zenith only and reads nothing else",
+"F668": "A delivery lead's limited key works on its one Team and nowhere else",
+"F669": "the key taking over the owner's reach on every Team",
+"F670": "Admin on all for team-admins was stored twice; the System Admin removes the one listed line and the member asks again",
+"F671": "Before: she changes Team Zenith and one line is listed. After: she is refused and her summary lists no administered unit",
+"F672": "Removing the rule takes the admin rights away on the next request",
+"F673": "one of two equal rows left behind and still granting",
+"F674": "Everyone signed in is turned on; Morgan, with no role and no group, passes each check that lets an admin change a unit",
+"F675": "Morgan reads Team Zenith and is refused by every one of these checks",
+"F676": "Turning everyone signed in on never makes anyone an admin",
+"F677": "the switch giving admin through one consumer only",
+"F678": "A rule for all units with the role Team Admin, Portfolio Admin or System Admin is stored for team-admins; the member asks to read and change units and reads her summary",
+"F679": "She reads and changes nothing, administers nothing and is not System Admin",
 "F68": "Switch write under its token and rule removal with twins",
+"F680": "Only Viewer on all and Admin on all rules give anything on every unit",
+"F681": "a stored Team Admin row for all units read as Admin on all on Teams",
+"F682": "The member with Admin on all asks to edit connections, system settings or terminology, install an update or update all Teams, create or clone a Team or Portfolio, delete a unit, and import or clear the licence",
+"F683": "Each is refused while she can still change Team Zenith",
+"F684": "Delivery leads cannot do what stays with System Admins",
+"F685": "Admin on all read as the System role for one requirement",
+"F686": "The member with Admin on all asks to manage Settings > Access and asks for the licence status",
+"F687": "She may not manage access and the licence owner details are withheld",
+"F688": "Delivery leads see no Settings > Access and no licence owner",
+"F689": "access management refused but licence owner shown",
+"F690": "The member with Admin on all tries to turn everyone signed in on",
+"F691": "The save is refused and the switch stays off",
+"F692": "Only a System Admin changes system-wide rules and the switch",
+"F693": "the save refused but the switch stored on anyway",
+"F694": "Someone tries to make Morgan an Admin-on-all member of Team Zenith, and the member asks for a key limited to Admin on all on all units and on one Team",
+"F695": "The member role is refused and Morgan reads nothing; both keys are refused as invalid",
+"F696": "Admin on all is only a group rule a System Admin adds, never a member role or a key limit",
+"F697": "an Admin-on-all key accepted on one Team",
+"F698": "A System Admin opens the Role choice of SSO Groups on Settings > Access",
+"F699": "The choices are exactly System Admin, Viewer on all and Admin on all",
 "F7": "Admin on all lets a group's members edit settings and members on every Team and Portfolio, while every System-Admin-only action stays refused",
 "F70": "Assumption: the group claim is present and current",
+"F700": "The System Admin can pick Admin on all for a group",
+"F701": "Admin on all offered but a choice dropped or reordered",
+"F702": "A System Admin adds Admin on all for delivery-leads-2",
+"F703": "The page sends the group with role UnitAdmin, scope AllUnits and no unit, and reports SystemWideAccessGranted once with no group",
+"F704": "The rule is added, and usage data counts that a system-wide rule was granted without saying for whom",
+"F705": "the request sent but no usage event, or the event carrying the group",
+"F706": "Settings > Access lists an Admin-on-all rule for delivery-leads, with Teams and Portfolios renamed Squads and Programs",
+"F707": "Its line reads delivery-leads, Admin, All Squads and Programs",
+"F708": "The System Admin reads the rule in the organisation's words",
+"F709": "the role shown as the stored name UnitAdmin",
 "F71": "Rules give nothing to a person without the group; the switch still works",
+"F710": "A Team's Access tab loads the rules reaching it: Viewer for team-readers and Admin on all for delivery-leads",
+"F711": "The notice reads Admin: group delivery-leads, never Viewer, Team Admin, Portfolio Admin or System Admin for it, beside Viewer: group team-readers",
+"F712": "A Team Admin learns which group also administers the Team",
+"F713": "the label Team Admin shown for the rule",
+"F714": "A Portfolio's Access tab loads Admin on all for delivery-leads as its only rule",
+"F715": "The notice is shown, headed Also reachable through access to all Squads and Programs, with the line Admin: group delivery-leads",
+"F716": "A Portfolio Admin learns which group also administers the Portfolio",
+"F717": "the label Portfolio Admin shown for the rule",
+"F718": "1",
+"F719": "Admin on all is a valid role and scope pair once S5 adds it",
 "F72": "A key snapshot stays stale until its owner signs in again",
 "F73": "A grant from a missing or malformed claim",
 "F74": "Stale key snapshot accepted by P11",
@@ -3519,6 +3885,10 @@
 "P2"
 ],
 "work": {
+"rework": {
+"delta": "F718",
+"reason": "F719"
+},
 "size": "L",
 "value": "F18"
 }

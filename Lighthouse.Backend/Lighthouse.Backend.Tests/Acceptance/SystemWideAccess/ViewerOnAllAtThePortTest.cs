@@ -228,6 +228,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
                 (UserRole.Viewer, "Team", true) => true,
                 (UserRole.Viewer, "Portfolio", true) => true,
                 (UserRole.Viewer, "AllUnits", false) => true,
+                (var r, "AllUnits", false) when r.ToString() == "UnitAdmin" => true,
                 _ => false,
             };
     }
