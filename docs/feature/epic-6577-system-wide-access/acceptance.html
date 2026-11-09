@@ -151,6 +151,550 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A System Admin adds Viewer on all for the group team-readers, then opens the rules list
+</code></pre>
+
+<pre><code>The rule is accepted and the list holds exactly one line: team-readers, Viewer, applies to all Teams and Portfolios
+</code></pre>
+
+<pre><code>The System Admin sees the rule they added, once
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_System_Admin_adds_Viewer_on_all_for_a_group_and_the_rules_list_shows_it_once</p>
+
+<pre><code>The rule is stored as a Team or Portfolio mapping with some unit number instead of applying to all units
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A person whose only access is the group team-readers asks to read Team Zenith, a Team first seen after the rule, and a Portfolio
+</code></pre>
+
+<pre><code>All three reads are allowed
+</code></pre>
+
+<pre><code>A group member reads every Team and Portfolio, including ones created later, without being added to any
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_member_of_the_group_reads_every_Team_and_Portfolio_including_one_created_after_the_rule</p>
+
+<pre><code>The rule is expanded into rows for the units that exist when it is added and a later unit is covered only because the read check never looks at units
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The group member asks for her lists of Teams and Portfolios
+</code></pre>
+
+<pre><code>The Team list holds every Team asked about and the Portfolio list every Portfolio
+</code></pre>
+
+<pre><code>The Overview lists every Team and Portfolio for her
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_members_lists_hold_every_Team_and_Portfolio_asked_about</p>
+
+<pre><code>Lists are filtered by a second path that matches the single read checks only for the units named in the test
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The group member asks to change a Team and a Portfolio, asks whether she may manage access, and loads her summary
+</code></pre>
+
+<pre><code>Both writes refused, no access management, summary says no System Admin and lists no administered units
+</code></pre>
+
+<pre><code>Reading through the rule changes nothing and gives no admin pages
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_member_reading_through_the_rule_changes_nothing_and_does_not_administer_access</p>
+
+<pre><code>Viewer on all grants write on units not asked about here
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A person in finance-staff only asks to read Team Zenith, lists Teams and asks to read the Portfolio after the rule exists
+</code></pre>
+
+<pre><code>Every read refused and the list is empty
+</code></pre>
+
+<pre><code>Someone outside the group sees nothing new
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Someone_outside_the_group_gains_nothing_from_the_rule</p>
+
+<pre><code>The rule applies to a group whose value differs only in case
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The group member&#x27;s API key without a limit asks to read Team Zenith and the Portfolio
+</code></pre>
+
+<pre><code>Both reads allowed
+</code></pre>
+
+<pre><code>An unlimited key reads what its owner reads through the rule
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_members_unlimited_key_reads_what_the_member_reads</p>
+
+<pre><code>The key reads through live group claims it does not carry while the stored group snapshot is ignored
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The group member reads Team Zenith, then the System Admin removes the rule and she asks again
+</code></pre>
+
+<pre><code>Allowed before the removal, refused on the next request after it
+</code></pre>
+
+<pre><code>Removing the rule takes the access away at once
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_the_rule_ends_the_members_reach_on_the_next_request</p>
+
+<pre><code>Access is cached for longer than the two requests in the test
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Viewer on all for team-readers is stored twice; the System Admin lists the rules and removes the one line
+</code></pre>
+
+<pre><code>One line is listed and afterwards no row for the group is left
+</code></pre>
+
+<pre><code>One rule shows once and one Remove ends it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_rule_stored_twice_removes_both_and_the_list_shows_it_once</p>
+
+<pre><code>Removal deletes twins only for the AllUnits scope while twins on another scope stay
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Team Zenith has a Viewer and a Team Admin mapping for the same group; the System Admin changes the Team Admin line to Viewer
+</code></pre>
+
+<pre><code>The change is refused and both lines stay as they were
+</code></pre>
+
+<pre><code>A change that would make two equal rules is refused
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Changing_a_role_onto_an_equal_rule_that_already_exists_is_refused</p>
+
+<pre><code>The refusal carries any message rather than the existing duplicate message
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The System Admin adds a mapping for every role, every scope, with and without a unit
+</code></pre>
+
+<pre><code>Accepted exactly for System Admin on System without unit, Team Admin on Team, Portfolio Admin on Portfolio, Viewer on Team or Portfolio with a unit, and Viewer on all without unit; a refusal stores no row
+</code></pre>
+
+<pre><code>Only meaningful rules can be added
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_rule_is_accepted_for_exactly_the_valid_pairs_of_role_and_scope</p>
+
+<pre><code>A pair is refused by the service but still saved by a later write
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>With the rule, the group member lists 2 stored Teams and loads her summary, and again with 200 stored Teams
+</code></pre>
+
+<pre><code>Both lists are complete and the database commands sent are the same count for 200 Teams as for 2
+</code></pre>
+
+<pre><code>Large organisations do not pay a lookup per Team
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllListCostTest.cs::A_members_Team_list_and_summary_cost_the_same_for_200_Teams_as_for_2</p>
+
+<pre><code>Cost grows only past 200 Teams through batching
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The group member asks whether she may issue a key limited to Viewer on Team Zenith
+</code></pre>
+
+<pre><code>Admitted
+</code></pre>
+
+<pre><code>She can create a key for one Team she reads through the rule
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_member_may_limit_a_key_to_Viewer_on_a_Team_she_reaches_through_the_rule</p>
+
+<pre><code>The issuing check admits Viewer on any unit number, existing or not
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Her key limited to Viewer on Team Zenith asks to read Team Zenith, Team Apollo and a Portfolio, to change Team Zenith, and lists Teams
+</code></pre>
+
+<pre><code>Reads Team Zenith only, writes nothing, its Team list is Team Zenith alone
+</code></pre>
+
+<pre><code>A limited key works at its exact scope and nothing beyond
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_key_limited_to_Viewer_on_one_Team_reads_that_Team_and_nothing_else</p>
+
+<pre><code>The key widens to Portfolios other than the one asked about
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The group member asks for a key with Team Admin on Team Zenith
+</code></pre>
+
+<pre><code>Refused with Cannot issue API key with broader scope than your own permissions.
+</code></pre>
+
+<pre><code>A key cannot claim more than its owner has; the message is unchanged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_member_asking_for_a_key_as_Team_Admin_is_refused_with_the_existing_message</p>
+
+<pre><code>Team Admin is refused but Portfolio Admin on a Portfolio is admitted
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Her limited key reads Team Zenith, then the System Admin removes the rule and the key asks again
+</code></pre>
+
+<pre><code>Allowed before, refused on the next request
+</code></pre>
+
+<pre><code>Removing the rule stops the key at once
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::Removing_the_rule_stops_the_limited_key_on_its_next_request</p>
+
+<pre><code>Coverage is cached per key for longer than the test spans
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A key of the outsider limited to Viewer on Team Zenith asks to read it
+</code></pre>
+
+<pre><code>Refused
+</code></pre>
+
+<pre><code>A key never exceeds an owner who reaches nothing
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_key_whose_owner_reaches_nothing_reads_nothing</p>
+
+<pre><code>A key is covered by a rule of a group its owner left after the snapshot
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Access is worked out from a person&#x27;s own rows and their groups&#x27; rules: none; Viewer on all alone; Team Admin on Team A plus the rule; Viewer on Team A plus the rule; every Team or Portfolio role with and without the rule; a System Admin with and without the rule
+</code></pre>
+
+<pre><code>None gives nothing; the rule reads every unit and writes none; Team Admin keeps the write on A and reads elsewhere; Viewer stays Viewer; adding the rule never lowers an answer; the System role stays exactly as the System row says
+</code></pre>
+
+<pre><code>A rule only adds and never makes anyone System Admin
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Authorization/EffectiveAccessTest.cs</p>
+
+<pre><code>Priority ties between Team Admin and Portfolio Admin are broken differently on a unit of the other kind
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The compiled production code is scanned for every type that reads the permission or group rule tables
+</code></pre>
+
+<pre><code>The access service is found, and no other type besides the database context reads them
+</code></pre>
+
+<pre><code>No part of Lighthouse decides access around the rules
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessTablesSingleReaderArchUnitTest.cs::Only_the_access_service_reads_the_permission_and_group_rule_tables</p>
+
+<pre><code>A type reads the tables through raw SQL text
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A System Admin opens Settings, Access with a System Admin group and Viewer on all for team-readers, in an organisation calling Teams Squads and Portfolios Programs
+</code></pre>
+
+<pre><code>Section headed SSO Groups; columns Group, Role, Applies to, Actions; team-readers, Viewer, All Squads and Programs; lh-system-admins, System Admin, Everything
+</code></pre>
+
+<pre><code>The System Admin sees who reaches what in their own words
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::lists each rule with the group, its role and what it applies to, in the organisation&#x27;s words</p>
+
+<pre><code>The Applies to text is right but the Role column shows the stored code name for System Admin elsewhere on the page
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The System Admin enters team-readers, picks Viewer on all and adds the mapping; separately adds a System Admin group
+</code></pre>
+
+<pre><code>Viewer on all is sent as Viewer on AllUnits with no unit and one usage event SystemWideAccessGranted with nothing else is reported; the System Admin group is sent as before and reports nothing
+</code></pre>
+
+<pre><code>The rule can be added on the page, and the product learns only that it was used
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::offers Viewer on all, adds it for a group and reports that it was granted, never which group</p>
+
+<pre><code>The event is reported before the server accepted the rule
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The System Admin opens Settings, Access while the rules are on their way, and again when they cannot be loaded
+</code></pre>
+
+<pre><code>A spinner where the table goes while loading; Could not load the SSO group rules. Reload the page to try again. in place of the table on failure; no empty table either time
+</code></pre>
+
+<pre><code>A slow or failed load never looks like no rules
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::shows a spinner where the rules table goes while the rules load</p>
+
+<pre><code>The previous rules stay shown undimmed beside the spinner on a reload
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>

@@ -1,10 +1,329 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F402",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_System_Admin_adds_Viewer_on_all_for_a_group_and_the_rules_list_shows_it_once"
+},
+"expected": "F400",
+"stimulus": "F399",
+"user_result": "F401"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F406",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_member_of_the_group_reads_every_Team_and_Portfolio_including_one_created_after_the_rule"
+},
+"expected": "F404",
+"stimulus": "F403",
+"user_result": "F405"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F410",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_members_lists_hold_every_Team_and_Portfolio_asked_about"
+},
+"expected": "F408",
+"stimulus": "F407",
+"user_result": "F409"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F414",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_member_reading_through_the_rule_changes_nothing_and_does_not_administer_access"
+},
+"expected": "F412",
+"stimulus": "F411",
+"user_result": "F413"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F418",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Someone_outside_the_group_gains_nothing_from_the_rule"
+},
+"expected": "F416",
+"stimulus": "F415",
+"user_result": "F417"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F422",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_members_unlimited_key_reads_what_the_member_reads"
+},
+"expected": "F420",
+"stimulus": "F419",
+"user_result": "F421"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F426",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_the_rule_ends_the_members_reach_on_the_next_request"
+},
+"expected": "F424",
+"stimulus": "F423",
+"user_result": "F425"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F196",
+"L6/F197"
+],
+"still_passes_if": "F430",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Removing_a_rule_stored_twice_removes_both_and_the_list_shows_it_once"
+},
+"expected": "F428",
+"stimulus": "F427",
+"user_result": "F429"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F198"
+],
+"still_passes_if": "F434",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::Changing_a_role_onto_an_equal_rule_that_already_exists_is_refused"
+},
+"expected": "F432",
+"stimulus": "F431",
+"user_result": "F433"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F189"
+],
+"still_passes_if": "F438",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllAtThePortTest.cs::A_rule_is_accepted_for_exactly_the_valid_pairs_of_role_and_scope"
+},
+"expected": "F436",
+"stimulus": "F435",
+"user_result": "F437"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F200"
+],
+"still_passes_if": "F442",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/ViewerOnAllListCostTest.cs::A_members_Team_list_and_summary_cost_the_same_for_200_Teams_as_for_2"
+},
+"expected": "F440",
+"stimulus": "F439",
+"user_result": "F441"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F192"
+],
+"still_passes_if": "F446",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_member_may_limit_a_key_to_Viewer_on_a_Team_she_reaches_through_the_rule"
+},
+"expected": "F444",
+"stimulus": "F443",
+"user_result": "F445"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8/F203"
+],
+"still_passes_if": "F450",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_key_limited_to_Viewer_on_one_Team_reads_that_Team_and_nothing_else"
+},
+"expected": "F448",
+"stimulus": "F447",
+"user_result": "F449"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F194",
+"L8/F204"
+],
+"still_passes_if": "F454",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_member_asking_for_a_key_as_Team_Admin_is_refused_with_the_existing_message"
+},
+"expected": "F452",
+"stimulus": "F451",
+"user_result": "F453"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L8/F205"
+],
+"still_passes_if": "F458",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::Removing_the_rule_stops_the_limited_key_on_its_next_request"
+},
+"expected": "F456",
+"stimulus": "F455",
+"user_result": "F457"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F193"
+],
+"still_passes_if": "F462",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Acceptance/SystemWideAccess/LimitedKeyUnderRuleAtThePortTest.cs::A_key_whose_owner_reaches_nothing_reads_nothing"
+},
+"expected": "F460",
+"stimulus": "F459",
+"user_result": "F461"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F175",
+"L1/F176",
+"L1/F177",
+"L1/F178",
+"L1/F179",
+"L2/F182",
+"L3/F185",
+"L3/F186"
+],
+"still_passes_if": "F466",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Authorization/EffectiveAccessTest.cs"
+},
+"expected": "F464",
+"stimulus": "F463",
+"user_result": "F465"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F470",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/AccessTablesSingleReaderArchUnitTest.cs::Only_the_access_service_reads_the_permission_and_group_rule_tables"
+},
+"expected": "F468",
+"stimulus": "F467",
+"user_result": "F469"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F474",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::lists each rule with the group, its role and what it applies to, in the organisation's words"
+},
+"expected": "F472",
+"stimulus": "F471",
+"user_result": "F473"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F478",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::offers Viewer on all, adds it for a group and reports that it was granted, never which group"
+},
+"expected": "F476",
+"stimulus": "F475",
+"user_result": "F477"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F482",
+"test": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettingsViewerOnAll.test.tsx::shows a spinner where the rules table goes while the rules load"
+},
+"expected": "F480",
+"stimulus": "F479",
+"user_result": "F481"
+}
+]
+},
 "counters": {
 "B": 10,
 "C": 2,
 "D": 11,
 "E": 9,
-"F": 398,
+"F": 482,
 "K": 9,
 "L": 14,
 "N": 2,
@@ -2348,16 +2667,100 @@
 "F396": "After it is confirmed on, every signed-in person with a profile reads every Team and Portfolio, including ones created later; turning it off removes that reach again.",
 "F397": "Admin on all lets members of the chosen group edit settings and members on every Team and Portfolio, including ones created later.",
 "F398": "Holders of Admin on all are still refused every System-Admin-only action (for example system settings and managing system-wide rules).",
+"F399": "A System Admin adds Viewer on all for the group team-readers, then opens the rules list",
 "F4": "A limited API key whose owner reaches its unit through a rule works at the key's exact scope and reaches nothing beyond its limit",
 "F40": "Already returns group mapping rows for the principal, including AllUnits rows once they exist",
+"F400": "The rule is accepted and the list holds exactly one line: team-readers, Viewer, applies to all Teams and Portfolios",
+"F401": "The System Admin sees the rule they added, once",
+"F402": "The rule is stored as a Team or Portfolio mapping with some unit number instead of applying to all units",
+"F403": "A person whose only access is the group team-readers asks to read Team Zenith, a Team first seen after the rule, and a Portfolio",
+"F404": "All three reads are allowed",
+"F405": "A group member reads every Team and Portfolio, including ones created later, without being added to any",
+"F406": "The rule is expanded into rows for the units that exist when it is added and a later unit is covered only because the read check never looks at units",
+"F407": "The group member asks for her lists of Teams and Portfolios",
+"F408": "The Team list holds every Team asked about and the Portfolio list every Portfolio",
+"F409": "The Overview lists every Team and Portfolio for her",
 "F41": "Maps a stale switch write to 409 as for other configuration",
+"F410": "Lists are filtered by a second path that matches the single read checks only for the units named in the test",
+"F411": "The group member asks to change a Team and a Portfolio, asks whether she may manage access, and loads her summary",
+"F412": "Both writes refused, no access management, summary says no System Admin and lists no administered units",
+"F413": "Reading through the rule changes nothing and gives no admin pages",
+"F414": "Viewer on all grants write on units not asked about here",
+"F415": "A person in finance-staff only asks to read Team Zenith, lists Teams and asks to read the Portfolio after the rule exists",
+"F416": "Every read refused and the list is empty",
+"F417": "Someone outside the group sees nothing new",
+"F418": "The rule applies to a group whose value differs only in case",
+"F419": "The group member's API key without a limit asks to read Team Zenith and the Portfolio",
 "F42": "Rejected as the switch carrier: no concurrency token and not owned by Access (ADR-281); EveryoneSignedInSetting is created instead",
+"F420": "Both reads allowed",
+"F421": "An unlimited key reads what its owner reads through the rule",
+"F422": "The key reads through live group claims it does not carry while the stored group snapshot is ignored",
+"F423": "The group member reads Team Zenith, then the System Admin removes the rule and she asks again",
+"F424": "Allowed before the removal, refused on the next request after it",
+"F425": "Removing the rule takes the access away at once",
+"F426": "Access is cached for longer than the two requests in the test",
+"F427": "Viewer on all for team-readers is stored twice; the System Admin lists the rules and removes the one line",
+"F428": "One line is listed and afterwards no row for the group is left",
+"F429": "One rule shows once and one Remove ends it",
 "F43": "Accepts and returns AllUnits and UnitAdmin",
+"F430": "Removal deletes twins only for the AllUnits scope while twins on another scope stay",
+"F431": "Team Zenith has a Viewer and a Team Admin mapping for the same group; the System Admin changes the Team Admin line to Viewer",
+"F432": "The change is refused and both lines stay as they were",
+"F433": "A change that would make two equal rules is refused",
+"F434": "The refusal carries any message rather than the existing duplicate message",
+"F435": "The System Admin adds a mapping for every role, every scope, with and without a unit",
+"F436": "Accepted exactly for System Admin on System without unit, Team Admin on Team, Portfolio Admin on Portfolio, Viewer on Team or Portfolio with a unit, and Viewer on all without unit; a refusal stores no row",
+"F437": "Only meaningful rules can be added",
+"F438": "A pair is refused by the service but still saved by a later write",
+"F439": "With the rule, the group member lists 2 stored Teams and loads her summary, and again with 200 stored Teams",
 "F44": "Unions gain AllUnits and UnitAdmin in the same commit",
+"F440": "Both lists are complete and the database commands sent are the same count for 200 Teams as for 2",
+"F441": "Large organisations do not pay a lookup per Team",
+"F442": "Cost grows only past 200 Teams through batching",
+"F443": "The group member asks whether she may issue a key limited to Viewer on Team Zenith",
+"F444": "Admitted",
+"F445": "She can create a key for one Team she reads through the rule",
+"F446": "The issuing check admits Viewer on any unit number, existing or not",
+"F447": "Her key limited to Viewer on Team Zenith asks to read Team Zenith, Team Apollo and a Portfolio, to change Team Zenith, and lists Teams",
+"F448": "Reads Team Zenith only, writes nothing, its Team list is Team Zenith alone",
+"F449": "A limited key works at its exact scope and nothing beyond",
 "F45": "Clients neither list nor create mappings (DISCUSS house checklist)",
+"F450": "The key widens to Portfolios other than the one asked about",
+"F451": "The group member asks for a key with Team Admin on Team Zenith",
+"F452": "Refused with Cannot issue API key with broader scope than your own permissions.",
+"F453": "A key cannot claim more than its owner has; the message is unchanged",
+"F454": "Team Admin is refused but Portfolio Admin on a Portfolio is admitted",
+"F455": "Her limited key reads Team Zenith, then the System Admin removes the rule and the key asks again",
+"F456": "Allowed before, refused on the next request",
+"F457": "Removing the rule stops the key at once",
+"F458": "Coverage is cached per key for longer than the test spans",
+"F459": "A key of the outsider limited to Viewer on Team Zenith asks to read it",
 "F46": "Same fields; adminTeamIds and adminPortfolioIds are fuller for an admin reach",
+"F460": "Refused",
+"F461": "A key never exceeds an owner who reaches nothing",
+"F462": "A key is covered by a rule of a group its owner left after the snapshot",
+"F463": "Access is worked out from a person's own rows and their groups' rules: none; Viewer on all alone; Team Admin on Team A plus the rule; Viewer on Team A plus the rule; every Team or Portfolio role with and without the rule; a System Admin with and without the rule",
+"F464": "None gives nothing; the rule reads every unit and writes none; Team Admin keeps the write on A and reads elsewhere; Viewer stays Viewer; adding the rule never lowers an answer; the System role stays exactly as the System row says",
+"F465": "A rule only adds and never makes anyone System Admin",
+"F466": "Priority ties between Team Admin and Portfolio Admin are broken differently on a unit of the other kind",
+"F467": "The compiled production code is scanned for every type that reads the permission or group rule tables",
+"F468": "The access service is found, and no other type besides the database context reads them",
+"F469": "No part of Lighthouse decides access around the rules",
 "F47": "Reads the same lists",
+"F470": "A type reads the tables through raw SQL text",
+"F471": "A System Admin opens Settings, Access with a System Admin group and Viewer on all for team-readers, in an organisation calling Teams Squads and Portfolios Programs",
+"F472": "Section headed SSO Groups; columns Group, Role, Applies to, Actions; team-readers, Viewer, All Squads and Programs; lh-system-admins, System Admin, Everything",
+"F473": "The System Admin sees who reaches what in their own words",
+"F474": "The Applies to text is right but the Role column shows the stored code name for System Admin elsewhere on the page",
+"F475": "The System Admin enters team-readers, picks Viewer on all and adds the mapping; separately adds a System Admin group",
+"F476": "Viewer on all is sent as Viewer on AllUnits with no unit and one usage event SystemWideAccessGranted with nothing else is reported; the System Admin group is sent as before and reports nothing",
+"F477": "The rule can be added on the page, and the product learns only that it was used",
+"F478": "The event is reported before the server accepted the rule",
+"F479": "The System Admin opens Settings, Access while the rules are on their way, and again when they cannot be loaded",
 "F48": "Every producer and consumer of the changed contracts ships in one build of one deployable (backend plus bundled frontend in the same commit); lighthouse-clients consumes none of them. The JSON names of the new endpoints are pinned by a Lighthouse wire contract inside the slice that adds them.",
+"F480": "A spinner where the table goes while loading; Could not load the SSO group rules. Reload the page to try again. in place of the table on failure; no empty table either time",
+"F481": "A slow or failed load never looks like no rules",
+"F482": "The previous rules stay shown undimmed beside the spinner on a reload",
 "F49": "IRbacAdministrationService, reached through AuthorizationController routes under api/latest and api/v1 and through RbacGuard for every unit route",
 "F5": "A Team or Portfolio Admin sees on the Access tab, read-only, which system-wide rules also reach the unit; Settings shows No direct role instead of Unassigned",
 "F50": "LighthouseAppContext on SQLite and PostgreSQL",
