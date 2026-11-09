@@ -11,6 +11,10 @@
     {
       "name": "metrics-answers-compare",
       "path": "Scripts/examine/bin/metrics-answers-compare"
+    },
+    {
+      "name": "backend-tests",
+      "path": "Scripts/examine/bin/backend-tests"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"

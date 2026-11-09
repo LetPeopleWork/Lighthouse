@@ -5,12 +5,15 @@
 set -euo pipefail
 repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd -P)"
 out="$repo/Scripts/examine/bin"
+home="$HOME"
 mkdir -p "$out"
 cat > "$out/architecture-rules" <<EOF
 #!/usr/bin/env bash
 # Runs the backend architecture rules and prints NUnit's per-test results.
 # Usage: architecture-rules [name-fragment]
 set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 filter="FullyQualifiedName~Lighthouse.Backend.Tests.Architecture"
 if [ \$# -gt 0 ] && [ -n "\$1" ]; then
   filter="\${filter}&FullyQualifiedName~\$1"
@@ -25,6 +28,8 @@ cat > "$out/ef-model-unchanged" <<EOF
 # Asks EF Core, for both database providers, whether the code's data model differs from the last migration.
 # Prints "No changes have been made to the model since the last migration." per provider when it does not.
 set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 cd "$repo/Lighthouse.Backend"
 dotnet build Lighthouse.Migrations.Sqlite >/dev/null
 dotnet build Lighthouse.Migrations.Postgres >/dev/null
@@ -44,6 +49,8 @@ cat > "$out/metrics-answers-compare" <<EOF
 # Usage: metrics-answers-compare [base-revision [candidate-revision]]   (takes about 5 to 10 minutes)
 # With no arguments it compares the last revision before the Flow metrics move (7ec328cb6) with the checkout's HEAD.
 set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 base="\${1:-7ec328cb6}"
 candidate="\${2:-\$(git -C "$repo" rev-parse HEAD)}"
 echo "comparing base \$base with candidate \$candidate"
@@ -56,3 +63,21 @@ echo "candidate manifest:"; cat "\$work/candidate/_manifest.txt"
 "\$cap/compare.sh" "\$work/base" "\$work/candidate"
 EOF
 chmod +x "$out/metrics-answers-compare"
+
+cat > "$out/backend-tests" <<EOF
+#!/usr/bin/env bash
+# Runs the whole backend test suite except the tests that talk to real Jira, Linear, Azure DevOps, ServiceNow
+# and GitHub instances, and prints the totals plus the name of every failing test. Takes about 7 minutes.
+# Usage: backend-tests [name-fragment]   (a fragment narrows the run to tests whose full name contains it,
+# for example DomainEventHandlerOrderPin for the check that event handlers keep their order)
+set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+filter="TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
+if [ \$# -gt 0 ] && [ -n "\$1" ]; then
+  filter="\${filter}&FullyQualifiedName~\$1"
+fi
+dotnet test "$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj" --filter "\$filter" \\
+  --logger "console;verbosity=normal" 2>&1 | grep -E "^Test Run|^Total tests|^ +(Passed|Failed|Skipped):|^  Failed |: error " || true
+EOF
+chmod +x "$out/backend-tests"
