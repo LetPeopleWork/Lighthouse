@@ -19,3 +19,40 @@ exec dotnet test "$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.B
   --filter "\$filter" --logger "console;verbosity=normal"
 EOF
 chmod +x "$out/architecture-rules"
+
+cat > "$out/ef-model-unchanged" <<EOF
+#!/usr/bin/env bash
+# Asks EF Core, for both database providers, whether the code's data model differs from the last migration.
+# Prints "No changes have been made to the model since the last migration." per provider when it does not.
+set -euo pipefail
+cd "$repo/Lighthouse.Backend"
+dotnet build Lighthouse.Migrations.Sqlite >/dev/null
+dotnet build Lighthouse.Migrations.Postgres >/dev/null
+dotnet build Lighthouse.Backend >/dev/null
+for provider in Sqlite Postgres; do
+  echo "== \$provider"
+  dotnet ef migrations has-pending-model-changes --no-build --project "Lighthouse.Migrations.\$provider" \\
+    --startup-project Lighthouse.Backend --context LighthouseAppContext
+done
+EOF
+chmod +x "$out/ef-model-unchanged"
+
+cat > "$out/metrics-answers-compare" <<EOF
+#!/usr/bin/env bash
+# Captures every Flow metrics API answer on two git revisions, back to back on the same backup database,
+# and compares them. Exit 0 and "identical" mean every answer and the snapshot tables match.
+# Usage: metrics-answers-compare [base-revision [candidate-revision]]   (takes about 5 to 10 minutes)
+# With no arguments it compares the last revision before the Flow metrics move (7ec328cb6) with the checkout's HEAD.
+set -euo pipefail
+base="\${1:-7ec328cb6}"
+candidate="\${2:-\$(git -C "$repo" rev-parse HEAD)}"
+echo "comparing base \$base with candidate \$candidate"
+cap="$repo/docs/feature/story-6358-s02-metrics-pilot/capture"
+work="\$(mktemp -d)"
+"\$cap/capture-metrics.sh" "\$base" "\$work/base" >"\$work/base.log" 2>&1 || { tail -20 "\$work/base.log"; exit 1; }
+"\$cap/capture-metrics.sh" "\$candidate" "\$work/candidate" >"\$work/candidate.log" 2>&1 || { tail -20 "\$work/candidate.log"; exit 1; }
+echo "base manifest:"; cat "\$work/base/_manifest.txt"
+echo "candidate manifest:"; cat "\$work/candidate/_manifest.txt"
+"\$cap/compare.sh" "\$work/base" "\$work/candidate"
+EOF
+chmod +x "$out/metrics-answers-compare"

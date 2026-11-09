@@ -1,6 +1,17 @@
 {
   "commands": [
-    { "name": "architecture-rules", "path": "Scripts/examine/bin/architecture-rules" }
+    {
+      "name": "architecture-rules",
+      "path": "Scripts/examine/bin/architecture-rules"
+    },
+    {
+      "name": "ef-model-unchanged",
+      "path": "Scripts/examine/bin/ef-model-unchanged"
+    },
+    {
+      "name": "metrics-answers-compare",
+      "path": "Scripts/examine/bin/metrics-answers-compare"
+    }
   ],
   "build": "Scripts/examine/build-examine-commands"
 }
