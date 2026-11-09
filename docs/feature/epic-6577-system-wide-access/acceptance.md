@@ -1233,6 +1233,256 @@ Showing the form while the person's own access is still loading or after the loa
 
 None.
 
+### S4
+
+##### Covers
+
+P4
+
+```text
+The instance starts twice on a database holding no switch, a switch on, or a switch off
+```
+
+```text
+Exactly one switch afterwards: off when none was stored, otherwise unchanged, with the same token after the second start
+```
+
+```text
+An install, upgrade or restore never opens the instance to everyone, and never turns off what a System Admin turned on
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/EveryoneSignedInSeederTest\.cs
+
+```text
+A seeder that rewrites the existing row with its own value on every start; caught by the unchanged-token assertion
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P4
+
+```text
+On a migrated SQLite and a migrated PostgreSQL database two System Admins read the switch, then both save on that token; on a database with no switch stored a System Admin saves on the token read
+```
+
+```text
+The first save kept, the second a conflict leaving the kept value; with no row the read is off and the save inserts exactly one row
+```
+
+```text
+Two System Admins changing the switch at once never undo each other unseen, on either supported database
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/EveryoneSignedInStaleWriteTest\.cs
+
+```text
+A token compared in application code before an unconditional update would pass these sequential saves; the true race is the Quint model claim
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P4
+
+```text
+A Team and a Portfolio Admin open the Access tab while the unit's rules include everyone signed in as Viewer
+```
+
+```text
+The notice shows the line Viewer: everyone signed in, never as a group, beside group lines, also when it is the only rule
+```
+
+```text
+A unit's admin sees that everyone signed in reads their unit
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/components\/Common\/Authorization\/SystemWideRulesNoticeEveryone\.test\.tsx
+
+```text
+A notice that drops the group word for every holder; caught by the group line still expected as Viewer: group team-readers
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P4
+
+```text
+After start-up a System Admin reads the switch; a person with a profile and no group asks to read a Team and a Portfolio; the System Admin turns it on with the token read; the person, their key, a stranger with no profile and a Team Admin ask to read and write; a save on an old token and one with no token; a Team Admin and a person with no role try to save; the switch read fails while the System Admin asks to manage access and the person reads; the switch is turned off; a unit's rules are read; the same with no group claim configured
+```
+
+```text
+Off with a token by default and a missing switch reads as off; refused before; on: every Team and Portfolio read, including a later one, lists full, writes and access management refused, the key reads as its owner, no-profile principals read nothing, a Team Admin keeps admin on their Team only; the old-token save is a conflict and the tokenless save refused, both leaving the switch as it was; non System Admin saves refused; with the read failing the System Admin still manages access and unit reads are errors; off ends the reach and keeps real roles; a unit's rules name everyone signed in as Viewer only while on; works with no group claim
+```
+
+```text
+A System Admin opens every Team and Portfolio to everyone signed in by choice, never by upgrade, only for reading, and can close it again without touching anyone's real role
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/EveryoneSignedInAtThePortTest\.cs
+
+```text
+A switch reach applied only to people with no unit role, so a Team Admin would not read another Team; caught by the L10 Team Admin row expecting Apollo readable
+```
+
+###### Obligations
+
+
+
+
+
+
+
+
+
+
+##### Covers
+
+P4
+
+```text
+With everyone signed in turned on, a person with no role reads a Team in a session embedded in another tool; a System Admin removes them; the session makes two more requests
+```
+
+```text
+Read before removal; both later requests unauthorised; the person is not in the user list again
+```
+
+```text
+Someone removed from Users stops reading through an embedded session on the very next request, even with everyone signed in on
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Acceptance\/SystemWideAccess\/RemovedPersonEmbedSkeletonTest\.cs
+
+```text
+An embed principal that never gets the switch reach at all; caught by the before-removal read expecting 200
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P4
+
+```text
+A browser reads the switch on both route versions, saves it on the token read, saves again on the old token, saves with no token, and the start-up seeders run; a Team Admin reads and saves
+```
+
+```text
+200 with exactly everyoneCanView false and concurrencyToken; the save kept; the old-token save 409 with the conflict code; the tokenless save 400 changing nothing; the seeders store one switch off; the Team Admin answered 403 on both
+```
+
+```text
+Settings and the browser agree on how the switch is read, saved and refused
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Authorization\/EveryoneSignedInWireContractTest\.cs
+
+```text
+A route answering 403 for any unknown path: the Team Admin refusal already passes on the current source, so it pins the guard rather than proving it
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+A System Admin opens Settings > Access while the switch loads, fails to load, is off or on; turns it on and cancels, turns it on and confirms, turns it off, meets a conflict; and an instance with no System Admin yet
+```
+
+```text
+Loading: disabled under a spinner, never shown off; failure: Could not load this setting. Reload the page to try again.; off with its heading and helper text; turning on asks first naming every Team and Portfolio in the organisation's words and Cancel changes nothing; Turn on saves with the token read, shows on and reports SystemWideAccessGranted once; off saves with no question and reports nothing; a conflict reloads and says someone else changed it; no switch before the first System Admin
+```
+
+```text
+A System Admin sees the switch's real state, confirms before opening the instance, and is told when someone else changed it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Rbac\/RbacSettingsEveryoneSignedIn\.test\.tsx
+
+```text
+A switch that saves on the click and shows the dialog afterwards; caught by Cancel asserting no save
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P4
+
+```text
+Every migration of both databases, including the one adding the switch's table, is read
+```
+
+```text
+Each one only adds: no drop, rename or narrowing
+```
+
+```text
+Upgrading never loses data and a release one back still runs, with the switch simply off
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/ExpandOnlyMigrationGuardTest\.cs
+
+```text
+A migration that adds the table and also alters an unrelated column in a way the guard does not classify; the guard owns that boundary
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows
