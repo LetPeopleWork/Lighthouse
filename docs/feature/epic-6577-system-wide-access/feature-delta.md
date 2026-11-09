@@ -1181,3 +1181,31 @@ render through Terminology in all copy below. These settle P8, P12 and DESIGN's 
 | 05 One group administers every unit | thorough | opus | sonnet |
 
 The architecture review owed since DESIGN, the whole-candidate review and EXAMINE use sonnet.
+
+## Wave: DELIVER / [REF] Architecture Review (owed since DESIGN), 2026-11-09
+
+Reviewer: `nw-solution-architect-reviewer`, sonnet. Verdict **APPROVED WITH CHANGES**, no blocker. Confirmed sound: Admin on all
+cannot reach System-Admin-only actions (`CanManageRbacAsync` reads only the `(System, null)` key); member and API-key writers
+allow-list their roles; no cache, so NFR-2 holds; enums stored as ints, so a rollback fails closed. Citations for F1, F2 and F4
+were spot-checked against the code by the root. Each finding below is taken as the reviewer recommended (engineering choices,
+nothing a user sees changes):
+
+- **R-1 (F1, High) The System role never depends on the switch or on rules.** `CanManageRbac` and the System-role check resolve
+  the System role only; `EffectiveAccess` splits into the System role and the unit reach, with the reach built lazily. A failed
+  switch or rule read leaves System Admin true and makes unit reads errors, never grants. Slice 04 adds the test with the switch
+  read throwing; slice 01 builds the split.
+- **R-2 (F2, Medium) Every reader moves, and a missed one cannot compile.** There are 13+ readers, not seven (listed in ADR-280,
+  corrected). Slice 01 deletes the private dictionary and `PermissionScopeKey` as a readable type, and adds a rule-only-person
+  test per consumer it covers; slice 05 covers the write-side consumers. The "seven" in this document (Reuse Analysis, Changed
+  Assumptions) reads as "13+" from here.
+- **R-3 (F3, Medium) Prove the embed threat before widening the guard.** `Program.cs` already rejects an embed principal whose
+  profile is gone (`RejectEmbedPrincipalWhoseIdentityIsGone`, through `IUserProfileLookup`). Slice 04's oracle first states the
+  removed-person-with-embed-cookie case; if it is already GREEN on the original source, DDD-15 is dropped (no guard change, no
+  `LastSeenAt` regression, no `Program.cs` edit) and the test stays as a pin. Only if RED is the guard widened.
+- **R-4 (F4, Medium) Slice 01 ships alone safely.** The `OwnerCoversScope`/key-coverage change moves into slice 01, so a key
+  issued after slice 01 reads what its owner reaches. Slice 02 keeps the key-limit tests (no wider than its limit, refusal
+  unchanged). This makes the per-slice push safe after slice 01.
+- **R-5 (F5, Low-Medium) Twins.** Removal deletes every twin (DDD-13); the rule list dedupes by group, role and scope; updating a
+  role onto an existing equal row is refused with the existing duplicate message. No index change. Slice 01 (slice 05 for Admin).
+- **R-6 (F6, Low)** The switch `PUT` with no row upserts under the concurrency token (slice 04). The NFR-1 query-count test
+  includes `my-summary` (slice 01). ADR-002's correcting note was not cross-checked by the reviewer; checked at finalize.

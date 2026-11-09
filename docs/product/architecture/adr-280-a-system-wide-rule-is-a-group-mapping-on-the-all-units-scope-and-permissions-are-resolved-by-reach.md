@@ -21,8 +21,10 @@ Three facts about the code shaped the answer.
 
 - `RbacGroupMapping` already holds group, role, scope type and scope id, and `GetVirtualPermissionsAsync` already returns
   every mapping of the caller's groups.
-- Effective permissions are a private dictionary keyed by exact scope, and seven places in `RbacAdministrationService`
-  read it. No caller outside the class sees it.
+- Effective permissions are a private dictionary keyed by exact scope, and thirteen or more places in `RbacAdministrationService`
+  read it: the readable and writable id lists, the four `Can{Read,Write}{Team,Portfolio}` checks, the scoped-admin and
+  summary reads, `CanManageRbac`, the two membership checks, and the API-key coverage and intersection. No caller outside
+  the class sees it. (Corrected 2026-11-09: DESIGN first counted seven.)
 - `UserRole` has no value that means admin of both unit types.
 
 ## Decision
@@ -77,7 +79,7 @@ filters them out. People reached only through a rule lose that reach until the n
 - **Two rows, one per unit type.** Rejected: two "applies to" values and two table rows for what the maintainer decided is
   one generic scope.
 - **Expand rules into per-unit keys when resolving.** Rejected: every permission check, including the System Admin check,
-  would read the unit tables, and its work would grow with the units. It would have left the seven readers untouched, but
+  would read the unit tables, and its work would grow with the units. It would have left those readers untouched, but
   they are all in one class, and the higher-role rule belongs in one value either way.
 - **A flag such as `adminOnAll` on `my-summary`.** Rejected: a second gating path in the browser that a later "applies to"
   value would have to replace, and a limited key would need its own exception.
