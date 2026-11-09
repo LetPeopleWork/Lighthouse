@@ -1,4 +1,4 @@
-import { fireEvent, screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { Portfolio } from "../../../models/Portfolio/Portfolio";
@@ -43,7 +43,10 @@ vi.mock("../../../services/TerminologyContext", () => ({
 	}),
 }));
 
-const openTheAccessTabAs = async (isSystemAdmin: boolean) => {
+const openTheAccessTabAs = (
+	isSystemAdmin: boolean,
+	summaryAnswer?: Promise<unknown>,
+) => {
 	const portfolio = new Portfolio();
 	portfolio.id = 1;
 	portfolio.name = "Ocean Explorer";
@@ -54,15 +57,26 @@ const openTheAccessTabAs = async (isSystemAdmin: boolean) => {
 		.fn()
 		.mockResolvedValue({ id: 1, name: "Ocean Explorer" });
 	const rbacService = createMockRbacService();
-	rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
-		isRbacEnabled: true,
-		isSystemAdmin,
-		canCreateTeam: false,
-		canCreatePortfolio: !isSystemAdmin,
-		adminPortfolioIds: isSystemAdmin ? [] : [1],
-	});
+	rbacService.getAuthorizationSummary = vi.fn().mockReturnValue(
+		summaryAnswer ??
+			Promise.resolve({
+				isRbacEnabled: true,
+				isSystemAdmin,
+				canCreateTeam: false,
+				canCreatePortfolio: !isSystemAdmin,
+				adminPortfolioIds: isSystemAdmin ? [] : [1],
+			}),
+	);
 	rbacService.getPortfolioMembers = vi.fn().mockResolvedValue([]);
-	rbacService.getPortfolioGroupMappings = vi.fn().mockResolvedValue([]);
+	rbacService.getPortfolioGroupMappings = vi.fn().mockResolvedValue([
+		{
+			id: 5,
+			groupValue: "zenith-leads",
+			role: "PortfolioAdmin",
+			scopeType: "Portfolio",
+			scopeId: 1,
+		},
+	]);
 	Object.assign(rbacService, {
 		getPortfolioSystemWideRules: vi
 			.fn()
@@ -77,7 +91,7 @@ const openTheAccessTabAs = async (isSystemAdmin: boolean) => {
 				updateSubscriptionService: createMockUpdateSubscriptionService(),
 			})}
 		>
-			<MemoryRouter initialEntries={["/portfolios/1"]}>
+			<MemoryRouter initialEntries={["/portfolios/1/access"]}>
 				<Routes>
 					<Route path="/portfolios/:id" element={<PortfolioDetail />} />
 					<Route path="/portfolios/:id/:tab" element={<PortfolioDetail />} />
@@ -85,7 +99,6 @@ const openTheAccessTabAs = async (isSystemAdmin: boolean) => {
 			</MemoryRouter>
 		</ApiServiceContext.Provider>,
 	);
-	fireEvent.click(await screen.findByRole("tab", { name: "Access" }));
 };
 
 describe("The Access tab of a Portfolio", () => {
@@ -94,7 +107,7 @@ describe("The Access tab of a Portfolio", () => {
 	});
 
 	it("shows a Portfolio Admin which rules for all Teams and Portfolios reach the Portfolio, and offers no form to add a group", async () => {
-		await openTheAccessTabAs(false);
+		openTheAccessTabAs(false);
 
 		expect(
 			await screen.findByText(
@@ -112,7 +125,7 @@ describe("The Access tab of a Portfolio", () => {
 	});
 
 	it("offers a System Admin the form to add a group, next to the same notice", async () => {
-		await openTheAccessTabAs(true);
+		openTheAccessTabAs(true);
 
 		expect(await screen.findByLabelText(/^Group value$/)).toBeInTheDocument();
 		expect(
@@ -124,4 +137,25 @@ describe("The Access tab of a Portfolio", () => {
 			),
 		).toBeInTheDocument();
 	});
+
+	it.each([
+		["is still being read", () => new Promise<unknown>(() => undefined)],
+		["could not be read", () => Promise.reject(new Error("down"))],
+	])(
+		"offers no way to add or remove a group while the person's own access is checked",
+		async (_when, answer) => {
+			openTheAccessTabAs(false, answer());
+
+			await waitFor(() =>
+				expect(screen.getByText("zenith-leads")).toBeInTheDocument(),
+			);
+			expect(screen.queryByLabelText(/^Group value$/)).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /^Add Group Mapping$/ }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /^Remove$/ }),
+			).not.toBeInTheDocument();
+		},
+	);
 });

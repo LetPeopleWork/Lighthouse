@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -64,19 +64,33 @@ const zenith = {
 	throughputEndDate: new Date(),
 };
 
-const openTheAccessTabAs = (isSystemAdmin: boolean) => {
+const openTheAccessTabAs = (
+	isSystemAdmin: boolean,
+	summaryAnswer?: Promise<unknown>,
+) => {
 	const teamService = createMockTeamService();
 	teamService.getTeam = vi.fn().mockResolvedValue(zenith);
 	const rbacService = createMockRbacService();
-	rbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
-		isRbacEnabled: true,
-		isSystemAdmin,
-		canCreateTeam: false,
-		canCreatePortfolio: false,
-		adminTeamIds: isSystemAdmin ? [] : [1],
-	});
+	rbacService.getAuthorizationSummary = vi.fn().mockReturnValue(
+		summaryAnswer ??
+			Promise.resolve({
+				isRbacEnabled: true,
+				isSystemAdmin,
+				canCreateTeam: false,
+				canCreatePortfolio: false,
+				adminTeamIds: isSystemAdmin ? [] : [1],
+			}),
+	);
 	rbacService.getTeamMembers = vi.fn().mockResolvedValue([]);
-	rbacService.getTeamGroupMappings = vi.fn().mockResolvedValue([]);
+	rbacService.getTeamGroupMappings = vi.fn().mockResolvedValue([
+		{
+			id: 5,
+			groupValue: "zenith-leads",
+			role: "TeamAdmin",
+			scopeType: "Team",
+			scopeId: 1,
+		},
+	]);
 	Object.assign(rbacService, {
 		getTeamSystemWideRules: vi
 			.fn()
@@ -133,4 +147,25 @@ describe("The Access tab of a Team", () => {
 			),
 		).toBeInTheDocument();
 	});
+
+	it.each([
+		["is still being read", () => new Promise<unknown>(() => undefined)],
+		["could not be read", () => Promise.reject(new Error("down"))],
+	])(
+		"offers no way to add or remove a group while the person's own access is checked",
+		async (_when, answer) => {
+			openTheAccessTabAs(false, answer());
+
+			await waitFor(() =>
+				expect(screen.getByText("zenith-leads")).toBeInTheDocument(),
+			);
+			expect(screen.queryByLabelText(/^Group value$/)).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /^Add Group Mapping$/ }),
+			).not.toBeInTheDocument();
+			expect(
+				screen.queryByRole("button", { name: /^Remove$/ }),
+			).not.toBeInTheDocument();
+		},
+	);
 });

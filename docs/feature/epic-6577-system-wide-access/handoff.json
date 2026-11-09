@@ -582,6 +582,32 @@
 "expected": "F587",
 "stimulus": "F586",
 "user_result": "F588"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F598",
+"test": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx"
+},
+"expected": "F596",
+"stimulus": "F595",
+"user_result": "F597"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F598",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx"
+},
+"expected": "F596",
+"stimulus": "F599",
+"user_result": "F597"
 }
 ]
 },
@@ -590,7 +616,7 @@
 "C": 2,
 "D": 12,
 "E": 9,
-"F": 594,
+"F": 599,
 "K": 9,
 "L": 14,
 "N": 4,
@@ -3214,6 +3240,11 @@
 "F592": "Existing settings test; its label was Show unassigned users only and becomes Show users with no direct role only",
 "F593": "Four members: GetTeamSystemWideRulesAsync, GetPortfolioSystemWideRulesAsync, and TeamExistsAsync and PortfolioExistsAsync for the unknown-unit 404",
 "F594": "In S3 the rules of a unit are the distinct role and holder pairs of every non System Admin group rule whose AppliesTo reaches the unit; S3 covers group rules only, and S4 adds the everyone signed in line when the switch is on",
+"F595": "A Team Admin, and a Portfolio Admin, open the Access tab while the check of their own access is still on its way, and again after it failed",
+"F596": "The list of groups is shown; no Group value field, no Add Group Mapping button and no Remove button",
+"F597": "Nobody is offered a form or a Remove button for group mappings until it is known they are a System Admin",
+"F598": "Showing the form while the person's own access is still loading or after the load failed",
+"F599": "A Portfolio Admin opens the Access tab while the check of their own access is on its way, and again after it failed",
 "F6": "A System Admin turns on Everyone signed in, after a confirm, and every signed-in person with a profile reads every Team and Portfolio; off by default and no change without opting in",
 "F60": "Right after a rule removal no row with that group, role and scope remains",
 "F61": "One SaveChanges under the token; insert when no row exists",

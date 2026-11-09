@@ -1173,6 +1173,66 @@ Answering an empty list for an unknown unit
 
 None.
 
+##### Covers
+
+P3
+
+```text
+A Team Admin, and a Portfolio Admin, open the Access tab while the check of their own access is still on its way, and again after it failed
+```
+
+```text
+The list of groups is shown; no Group value field, no Add Group Mapping button and no Remove button
+```
+
+```text
+Nobody is offered a form or a Remove button for group mappings until it is known they are a System Admin
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/TeamDetailAccessTab\.test\.tsx
+
+```text
+Showing the form while the person's own access is still loading or after the load failed
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+A Portfolio Admin opens the Access tab while the check of their own access is on its way, and again after it failed
+```
+
+```text
+The list of groups is shown; no Group value field, no Add Group Mapping button and no Remove button
+```
+
+```text
+Nobody is offered a form or a Remove button for group mappings until it is known they are a System Admin
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/PortfolioDetailAccessTab\.test\.tsx
+
+```text
+Showing the form while the person's own access is still loading or after the load failed
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows
