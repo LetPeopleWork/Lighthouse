@@ -11274,3 +11274,37 @@ services stay until S07b removes `BaseMetricsService`.
 
 ADR-270 (layout, settled folder names, measured edges, lessons and the gate recommendation), ADR-268 (ratchet
 convention).
+
+## Application Architecture — story-6374 s05f metrics reads
+
+Feature: S05f Move the two metrics services off `GetAllByPredicate`, Epic 6507. Waves: DESIGN to DELIVER and finalize.
+Date: 2026-11-10. Paradigm: OOP, behaviour-free refactoring. Workspaces: `docs/feature/story-6374-s05f-metrics-services-off-getallbypredicate/`
+(design), `story-6374-s05f-a-team-reads`, `story-6374-s05f-b-portfolio-reads`. Record:
+`docs/evolution/story-6374-s05f-metrics-reads/evolution.md`.
+
+### Shape
+
+The 27 `GetAllByPredicate` calls in `TeamMetricsService` and `PortfolioMetricsService` became 13 named reads on the
+owner repositories, one read per state-category set, each keeping today's predicate word for word:
+
+| Owner port | Reads |
+|---|---|
+| `IWorkItemRepository` | `DoneItemsOfTeam`, `DoingOrDoneItemsOfTeam`, `ToDoOrDoingItemsOfTeam`, `CountToDoOrDoingItemsOfTeam` (a database count), `ItemsOfTeam`; one private helper holds `Include(Team)` |
+| `IFeatureRepository` | `FeaturesWithRealWorkForTeam`, `DoneFeaturesOfPortfolio`, `DoingOrDoneFeaturesOfPortfolio`, `ToDoOrDoingFeaturesOfPortfolio`, `ToDoDoingOrDoneFeaturesOfPortfolio`, `EveryFeatureOfPortfolio`; one private helper loads a Feature whole, tracked and ordered, exactly as `GetAllByPredicate` did |
+| `IWorkItemStateTransitionRepository`, `IFeatureStateTransitionRepository` | `TransitionsOfWorkItems`, `TransitionsOfFeatures` |
+
+`PortfolioMetricsService` takes `IFeatureRepository` instead of `IRepository<Feature>`; both resolve to the same scoped
+repository. Rejected: Flow-metrics ports in the module with their own EF adapters (a second reader of Work Items'
+tables, and a way round the allow-list), a category set as a parameter (it changes `OR` into `IN` and may reorder the
+rows the run charts serialise), and reusing `FeaturesOfPortfolio` (untracked, loads less, would change start dates).
+
+### Enforcement
+
+The S05a allow-list (`RepositoryLeakRatchetArchUnitTest`) goes 15 → 13. Two parity classes in
+`Integration/Containers` compare each named read with the predicate it replaces on SQLite and Postgres: ids in order,
+loaded collections, tracking state. `RealityCheckQueryCountTest` pins the Team answers' statement count; no test pins
+the Portfolio answers' count yet.
+
+### ADR references
+
+ADR-270 Decision 8 (reads go through the owner's contract), ADR-268 (ratchet convention), ADR-163.

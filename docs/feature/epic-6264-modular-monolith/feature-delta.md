@@ -851,6 +851,17 @@ item changes the plan for the others.
   - Mutation cannot rise in a move: the bar is "no file lower than its baseline".
   - Gate: **go-with-changes, decided by the maintainer on 2026-11-09** (ADR-270, "Gate decision"). Changes 1, 2 and 4 apply to every S03* from its start; the next Story that touches the module rules lifts them into a shared class first; S03b decides the Work Items → Flow metrics edge and S03c the Flow metrics ↔ Forecasting cycle. Open: questions 3 and 4 of S02's design (a migration spike for the snapshot entities before S04b; `UpdateTeamMetrics` writing through `IWorkItemRepository.Save`), survivor-killing for the metrics services.
 
+### 2026-11-10 — S05f #6374 Move the two metrics services off `GetAllByPredicate` — Done
+- Commits: `a86e3f8b4` (pick-up) `..898c5a8b2`, in two nwdes features: A Team reads, B Portfolio reads · workspace: `docs/feature/story-6374-s05f-metrics-services-off-getallbypredicate/` · archive: `docs/evolution/story-6374-s05f-metrics-reads/evolution.md`
+- Ratchet: the `GetAllByPredicate` allow-list **15 → 13** files; two parity classes prove each of the 13 named reads equal to the predicate it replaces on SQLite and Postgres.
+- KPIs re-measured: KPI 4 15 → **13** files (calls outside the persistence adapters 55 → 28); KPI 12: new reads 97.4 % / 94.7 %, `TeamMetricsService` 31.67 % (baseline 30.58 %), `PortfolioMetricsService` 22.17 % (baseline 27.60 %, its well-covered predicates moved out; no survivor or no-coverage mutant added).
+- Changes the plan:
+  - The 27 calls collapsed to 13 named reads on the owner repositories (ADR-270 Decision 8), not Flow-metrics ports and not a query object per capability. S05g inherits two surviving mutants, a Portfolio query-count test, one shared helper for the two parity classes, and `WorkItemRepository.GetAllByPredicate` still spelling its own `Include(Team)`.
+  - S02 open question 4 (`UpdateTeamMetrics` writing through `IWorkItemRepository.Save`) stays with S07b or S03b.
+  - Lesson: two nwdes features that edit one oracle file (here the allow-list) force a re-approval of the first one's oracle at candidate review; give each feature its own oracle file.
+  - Lesson for the mutation bar of a move: "no file lower than its baseline" fails when better-covered code moves out of a file; "no survivor or no-coverage mutant added" is the bar that measures what a move can lose (maintainer to confirm).
+  - EXAMINE ran in WSL; `metrics-answers-compare` needs a production-like `DB_Backup` database that is on neither the laptop nor the WSL clone, so feature B's "answers and query count unchanged" stayed an observation gap.
+
 ## Wave: DISCUSS / [REF] Split into improvement Epics (2026-11-03)
 
 Epic 6264 grew to 46 Stories with five separate goals, so the maintainer split it. ADO #6264 is Closed with no

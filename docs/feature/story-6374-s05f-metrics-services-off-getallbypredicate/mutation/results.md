@@ -2,7 +2,7 @@
 
 Run on 2026-11-10, Stryker.NET 4.16.0 under the side-by-side x64 SDK
 (`docs/feature/epic-5511-task-manager/mutation/run-backend-x64.ps1`), config [`stryker.s05f.json`](stryker.s05f.json),
-code at `25d80411e` (both features delivered, after both refactors). 402 mutants tested, 12 min 19 s.
+code at `c7db8467d` (both features delivered, after both refactors). 402 mutants tested, 12 min 19 s.
 
 ## The bar
 

@@ -201,6 +201,7 @@ Not full CQRS — **command/query separation on one store** (ADR-027 D6):
 
 - **Write path** — `*Updater` services + repositories mutate aggregates.
 - **Read path** — metrics services (`BaseMetricsService` and subclasses) compute and serve **cached DTOs**; cache invalidation is a *subscriber* to the relevant refresh event (structurally fixing the historical "scattered remembered invalidation" bug class), not a remembered imperative call.
+- **Reads go through the owner's named reads, not ad-hoc predicates** — the Team and Portfolio metrics services read work items, Features and their transitions through named methods on the owning repositories (`IWorkItemRepository`, `IFeatureRepository` and the two state-transition repositories), each keeping one fixed query that is proven to give the same rows, order, loaded data and tracking on SQLite and Postgres. A caller-supplied `GetAllByPredicate` lambda is allowed only from the files on an inline allow-list (`RepositoryLeakRatchetArchUnitTest`, 13 files, shrinking toward none), because EF's in-memory provider runs any lambda while SQLite or Postgres may fail to translate it.
 
 A separate read store was rejected: there is no read-throughput bottleneck at this scale, and a second store would fight the no-fork / standalone goals.
 
