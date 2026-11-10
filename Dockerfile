@@ -55,7 +55,7 @@ USER root
 RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
 	&& apt-get update \
 	&& apt-get install -y --no-install-recommends curl gnupg \
-	&& curl --proto '=https' -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 20 \
+	&& curl --proto "=https" -fsS --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 20 \
 	-o /tmp/postgresql.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
 	&& gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg /tmp/postgresql.asc \
 	&& rm /tmp/postgresql.asc \
