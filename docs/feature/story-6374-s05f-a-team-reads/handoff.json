@@ -1,0 +1,946 @@
+{
+"counters": {
+"C": 1,
+"F": 163,
+"L": 4,
+"P": 3,
+"S": 1,
+"T": 2,
+"Y": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs",
+"move": "F25",
+"preserved": "F26",
+"verification": [
+"pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1",
+"dotnet test Lighthouse.Backend/Lighthouse.sln --filter 'TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration'"
+]
+},
+"public_oracle": {
+"expected": "F23",
+"falsifier": "F24",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F22"
+},
+"records": {
+"agreement": [
+{
+"contract": "IWorkItemRepository read members",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemRepository.cs:9",
+"party": "Producer",
+"reason": "F73"
+},
+{
+"contract": "IWorkItemRepository read members",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/CapturedWorkItemWrites.cs:59",
+"party": "Producer",
+"reason": "F74"
+},
+{
+"contract": "IWorkItemRepository read members",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:14",
+"party": "Consumer",
+"reason": "F75"
+},
+{
+"contract": "IWorkItemRepository read members",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Refinement/RefinementList.cs:7",
+"party": "Consumer",
+"reason": "F76"
+},
+{
+"contract": "IWorkItemStateTransitionRepository read members",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs:7",
+"party": "Producer",
+"reason": "F77"
+},
+{
+"contract": "IWorkItemStateTransitionRepository read members",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:14",
+"party": "Consumer",
+"reason": "F78"
+},
+{
+"contract": "IFeatureRepository read members",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:11",
+"party": "Producer",
+"reason": "F79"
+},
+{
+"contract": "IFeatureRepository read members",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:14",
+"party": "Consumer",
+"reason": "F80"
+},
+{
+"contract": "IFeatureRepository read members",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/InProgressFeatureResolution.cs:13",
+"party": "Consumer",
+"reason": "F81"
+}
+],
+"architectural_tests": [
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~RepositoryLeakRatchetArchUnitTest",
+"id": "T1",
+"obligation": "F162",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs"
+},
+{
+"command": "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Release --filter FullyQualifiedName~Architecture",
+"id": "T2",
+"obligation": "F163",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs"
+}
+],
+"boundaries": {
+"dependency_direction": "F87",
+"driven_ports": [
+"F84",
+"F85",
+"F86"
+],
+"driving_port": "F83"
+},
+"claims": [
+{
+"admitted_input": "F124",
+"bypass": "F126",
+"constructor": "the seven named reads",
+"consumer": "TeamMetricsService",
+"harm": "F123",
+"id": "C1",
+"owner": "IWorkItemRepository, IWorkItemStateTransitionRepository, IFeatureRepository",
+"proposition": "F122",
+"public_observation": "F125"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F131",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F130"
+},
+{
+"axis": "Inhabitation",
+"basis": "F133",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+},
+{
+"axis": "PublicReachability",
+"basis": "F135",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F134"
+},
+{
+"axis": "Liveness",
+"basis": "F136",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F132"
+}
+],
+"constraints": [
+"F36",
+"F37",
+"F38",
+"F39",
+"F40"
+],
+"constructors": [
+{
+"name": "DoneItemsOfTeam",
+"signature": "IReadOnlyList<WorkItem> DoneItemsOfTeam(int teamId)"
+},
+{
+"name": "DoingOrDoneItemsOfTeam",
+"signature": "IReadOnlyList<WorkItem> DoingOrDoneItemsOfTeam(int teamId)"
+},
+{
+"name": "ToDoOrDoingItemsOfTeam",
+"signature": "IReadOnlyList<WorkItem> ToDoOrDoingItemsOfTeam(int teamId)"
+},
+{
+"name": "CountToDoOrDoingItemsOfTeam",
+"signature": "int CountToDoOrDoingItemsOfTeam(int teamId)"
+},
+{
+"name": "ItemsOfTeam",
+"signature": "IReadOnlyList<WorkItem> ItemsOfTeam(int teamId)"
+},
+{
+"name": "TransitionsOfWorkItems",
+"signature": "IReadOnlyList<WorkItemStateTransition> TransitionsOfWorkItems(IReadOnlyCollection<int> workItemIds)"
+},
+{
+"name": "FeaturesWithRealWorkForTeam",
+"signature": "IReadOnlyList<Feature> FeaturesWithRealWorkForTeam(int teamId, StateCategories? onlyIn)"
+}
+],
+"decisions": [
+"F27",
+"F28",
+"F29",
+"F30",
+"F31",
+"F32",
+"F33",
+"F34",
+"F35"
+],
+"equality": [
+{
+"definition": "F96",
+"under": "named read vs today's predicate"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemRepository.cs:5",
+"reason": "F58"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemRepository.cs:18",
+"reason": "F59"
+},
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemStateTransitionRepository.cs:5",
+"reason": "F60"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs:7",
+"reason": "F61"
+},
+{
+"decision": "Changed",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs:5",
+"reason": "F60"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:153",
+"reason": "F62"
+},
+{
+"decision": "Changed",
+"kind": "implementation",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:14",
+"reason": "F63"
+},
+{
+"decision": "Migrated",
+"kind": "test-helper",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/CapturedWorkItemWrites.cs:59",
+"reason": "F64"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs:61",
+"reason": "F65"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs:1",
+"reason": "F66"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs:1",
+"reason": "F66"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs:1",
+"reason": "F66"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs:1",
+"reason": "F66"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs:1",
+"reason": "F66"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastFilterFeatureForecastIntegrationTest.cs:66",
+"reason": "F67"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs:42",
+"reason": "F68"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/InstantsUnaffectedByZoneTest.cs:1",
+"reason": "F69"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/TeamMetricsControllerTest.cs:1966",
+"reason": "F70"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "composition-root",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1",
+"reason": "F71"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "interface",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/ITeamMetricsService.cs:11",
+"reason": "F72"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RepositoryLeakRatchetArchUnitTest",
+"statement": "F97",
+"treatment": {
+"cases": [
+"F98",
+"F99"
+],
+"kind": "Finite",
+"reason": "F100"
+}
+},
+{
+"id": "L2",
+"kind": "Refinement",
+"layer": "Adapter",
+"owner": "TeamMetricsReadsParityOnBothProvidersTests",
+"statement": "F101",
+"treatment": {
+"cases": [
+"F102",
+"F103",
+"F104",
+"F105"
+],
+"kind": "Finite",
+"reason": "F106"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RealityCheckQueryCountTest",
+"statement": "F107",
+"treatment": {
+"cases": [
+"F108"
+],
+"kind": "Finite",
+"reason": "F109"
+}
+},
+{
+"id": "L4",
+"kind": "Refinement",
+"layer": "Application",
+"owner": "metrics-answers-compare",
+"statement": "F110",
+"treatment": {
+"cases": [
+"F111"
+],
+"kind": "Finite",
+"reason": "F112"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F82"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F89",
+"description": "F88",
+"result_type": "set of file paths"
+},
+{
+"cannot_distinguish": "F91",
+"description": "F90",
+"result_type": "ordered id list plus loaded-graph facts"
+},
+{
+"cannot_distinguish": "F93",
+"description": "F92",
+"result_type": "int"
+},
+{
+"cannot_distinguish": "F95",
+"description": "F94",
+"result_type": "identical or a byte diff"
+}
+],
+"refuted": [
+{
+"cause": "F114",
+"counterexample": "F115",
+"statement": "F113"
+},
+{
+"cause": "F117",
+"counterexample": "F118",
+"statement": "F116"
+},
+{
+"cause": "F120",
+"counterexample": "F121",
+"statement": "F119"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemRepository.cs:5",
+"reason": "F41",
+"symbol": "IWorkItemRepository"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemRepository.cs:18",
+"reason": "F42",
+"symbol": "GetAllByPredicate"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemStateTransitionRepository.cs:5",
+"reason": "F43",
+"symbol": "IWorkItemStateTransitionRepository"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs:7",
+"reason": "F44",
+"symbol": "WorkItemStateTransitionRepository"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs:5",
+"reason": "F45",
+"symbol": "IFeatureRepository"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:153",
+"reason": "F46",
+"symbol": "GetFeatures"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:106",
+"reason": "F47",
+"symbol": "FeatureRepository.FeaturesOfTeam"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs:86",
+"reason": "F48",
+"symbol": "FeatureRepository.FeaturesWorkedOnBy"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs:14",
+"reason": "F49",
+"symbol": "TeamMetricsService"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs:35",
+"reason": "F50",
+"symbol": "FilesThatCallGetAllByPredicate"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/FeatureListParityOnPostgresTests.cs:24",
+"reason": "F51",
+"symbol": "FeatureListParityOnPostgresTests"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs:42",
+"reason": "F52",
+"symbol": "RealityCheckQueryCountTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/CapturedWorkItemWrites.cs:59",
+"reason": "F53",
+"symbol": "WriteRecordingWorkItemRepository"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs:17",
+"reason": "F54",
+"symbol": "TeamMetricsServiceTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs:18",
+"reason": "F55",
+"symbol": "TeamMetricsServiceSnapshotTests"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs:27",
+"reason": "F56",
+"symbol": "TeamWorkItemAgeAsOfDateTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs:18",
+"reason": "F55",
+"symbol": "MetricsAsOfGroupNameTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs:19",
+"reason": "F55",
+"symbol": "InstanceDayItemBucketingTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs:31",
+"reason": "F55",
+"symbol": "ClosedInRangeCharacterisationTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastFilterFeatureForecastIntegrationTest.cs:21",
+"reason": "F57",
+"symbol": "ForecastFilterFeatureForecastIntegrationTest"
+}
+],
+"risks": [
+{
+"allowed": "F139",
+"forbidden": "F140",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "host",
+"preserved": "F138",
+"residue": "F141",
+"source": "F137"
+},
+{
+"allowed": "F144",
+"forbidden": "F145",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "host",
+"preserved": "F143",
+"residue": "F146",
+"source": "F142"
+},
+{
+"allowed": "F149",
+"forbidden": "F150",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "host",
+"preserved": "F148",
+"residue": "F151",
+"source": "F147"
+},
+{
+"allowed": "F154",
+"forbidden": "F155",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "S05g",
+"preserved": "F153",
+"residue": "F156",
+"source": "F152"
+},
+{
+"allowed": "F159",
+"forbidden": "F160",
+"id": "Y5",
+"kind": "Bypass",
+"owner": "reviewer",
+"preserved": "F158",
+"residue": "F161",
+"source": "F157"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "TeamMetricsService",
+"state": "F127"
+},
+{
+"kind": "Excluded",
+"owner": "RepositoryLeakRatchetArchUnitTest",
+"state": "F128"
+},
+{
+"kind": "Unknown",
+"owner": "host",
+"state": "F129"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/TeamMetricsReadsParityOnBothProvidersTests.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemRepository.cs",
+"reason": "F11"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemRepository.cs",
+"reason": "F12"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IWorkItemStateTransitionRepository.cs",
+"reason": "F13"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs",
+"reason": "F14"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Interfaces/Repositories/IFeatureRepository.cs",
+"reason": "F15"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Repositories/FeatureRepository.cs",
+"reason": "F16"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/CapturedWorkItemWrites.cs",
+"reason": "F17"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Application/TeamMetricsService.cs",
+"reason": "F18"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs",
+"reason": "F19"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceSnapshotTests.cs",
+"reason": "F20"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/WorkItemAgeAsOfDateTest.cs",
+"reason": "F20"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/MetricsAsOfGroupNameTest.cs",
+"reason": "F20"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/InstanceDayItemBucketingTest.cs",
+"reason": "F20"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/ClosedInRangeCharacterisationTest.cs",
+"reason": "F20"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Forecast/ForecastFilterFeatureForecastIntegrationTest.cs",
+"reason": "F21"
+}
+],
+"verification": [
+"pwsh -NoProfile -File Lighthouse.Backend/Test-Fast.ps1",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter 'FullyQualifiedName~RepositoryLeakRatchetArchUnitTest|FullyQualifiedName~ParityOnBothProviders|FullyQualifiedName~RealityCheckQueryCountTest'",
+"dotnet build Lighthouse.Backend/Lighthouse.sln",
+"dotnet test Lighthouse.Backend/Lighthouse.sln --filter 'TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration'",
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Release --filter FullyQualifiedName~Architecture"
+]
+}
+}
+},
+"facts": {
+"F1": "S05f #6374, part A: TeamMetricsService stops calling GetAllByPredicate and reads through named reads on the owner repositories, behaviour-free, and leaves the GetAllByPredicate allow-list (15 -> 14). Design: docs/feature/story-6374-s05f-metrics-services-off-getallbypredicate/feature-delta.md",
+"F10": "TeamMetricsService reads only through named reads on the owner repositories, and the allow-list drops it",
+"F100": "A source scan over a finite file set; no generated input domain.",
+"F101": "Each named read equals today's predicate run through the same base query (id sequence, loaded graph, tracking) on SQLite and on Postgres; W4 equals the length of W3; Done-or-Doing and Doing-or-Done spellings return the same sequence.",
+"F102": "Two Teams with items in all four categories, Unknown included",
+"F103": "Transitions for several item ids, read through T1",
+"F104": "Features with a default size, FeatureWork total 0 and above 0, a Feature in two Portfolios, F1 with onlyIn null and with a category",
+"F105": "Both OR spellings of W2",
+"F106": "Closed fixture over the four state categories and the F1 filter branches; the law is an equivalence across two engines on a fixed data set, not a broad generated domain. The Lighthouse test-writing skill governs density.",
+"F107": "The number of SQL statements per Reality Check answer is unchanged (20 and 24) after the switch to named reads.",
+"F108": "Existing RealityCheckQueryCountTest rows, assertion unchanged",
+"F109": "Existing finite statement-count test.",
+"F11": "Prefactoring: W1-W5 declared, no caller yet.",
+"F110": "Every Team metrics answer serialized from the instance backup is identical between the base revision a86e3f8b4 and the candidate.",
+"F111": "Scripts/examine/bin/metrics-answers-compare a86e3f8b4 <candidate>, exit 0, identical",
+"F112": "Captured comparison over one real data set, run at EXAMINE.",
+"F113": "A category set passed as a parameter (one read per owner) is behaviour-free.",
+"F114": "It changes OR to IN over a parameter collection; row order is unspecified and visible in per-day item lists.",
+"F115": "Per-day WorkItemsPerUnitOfTime list serialised in a different order under a new plan.",
+"F116": "IFeatureListReader.FeaturesOfTeam can serve F1.",
+"F117": "No tracking and only the Feature's own start forecast loaded.",
+"F118": "Per-Team start forecasts missing, so start dates in Feature answers change.",
+"F119": "A work-item read without Include(Team) is equivalent because the mocked unit tests stay green.",
+"F12": "Prefactoring: W1-W5 over a private helper with Include(Team), tracked, materialised once; W4 server-side Count().",
+"F120": "Mocks never see the missing navigation.",
+"F121": "AssociateSyncedTransitions builds new WorkItem(item, item.Team) with a null Team; the parity support asserts the loaded Team.",
+"F122": "TeamMetricsService cannot compose a further query on a read: every new read returns a materialised IReadOnlyList or int, never IQueryable, Expression or Func.",
+"F123": "A chained operator would run where the provider cannot translate it, or in LINQ to Objects, unseen by EF InMemory tests.",
+"F124": "int teamId, StateCategories? onlyIn, IReadOnlyCollection<int> ids",
+"F125": "ITeamMetricsService answers through the metrics controllers",
+"F126": "GetAllByPredicate stays public on IRepository until S05g; the S05a guard is the remaining check. C# static types, no proof of the predicate's meaning.",
+"F127": "TeamMetricsService reads work items, transitions and Features only through the seven named reads",
+"F128": "TeamMetricsService calls GetAllByPredicate (excluded by the S05a guard, extrinsic)",
+"F129": "SQLite or Postgres plan order for OR spellings on data much larger than the fixture",
+"F13": "Prefactoring: T1 declared.",
+"F130": "TeamMetricsService off GetAllByPredicate",
+"F131": "S05a guard scans every production file; list edit to 14 is the oracle.",
+"F132": "named Team reads",
+"F133": "int teamId and an id collection, already held by the service, construct every read; the parity fixture builds each one on both providers.",
+"F134": "Team metrics answers",
+"F135": "metrics controllers, policies and hosted filler -> ITeamMetricsService -> TeamMetricsService -> named reads -> EF repositories; no new seam, so the existing wiring reaches them.",
+"F136": "Not applicable: synchronous, request-scoped reads with no wait, retry, queue or progress claim.",
+"F137": "Assumption 'same predicate gives same plan and order' negated: the plan order of OR spellings differs on large data",
+"F138": "Same rows per read",
+"F139": "None in the fixture",
+"F14": "Prefactoring: T1 as Where(ids.Contains(WorkItemId)).ToList().",
+"F140": "A changed order in a serialized per-day item list",
+"F141": "Shown on the fixture, not proven for large SQLite data; the backup comparison covers one real data set",
+"F142": "Assumption 'Docker is present' negated",
+"F143": "Fast loop and unit tests",
+"F144": "Parity support skipped locally",
+"F145": "Merging without the parity class green in CI",
+"F146": "A developer without Docker relies on CI",
+"F147": "Assumption 'the instance backup exists in the examiner environment' negated",
+"F148": "Parity, guard and statement-count evidence",
+"F149": "metrics-answers-compare INDETERMINATE",
+"F15": "Prefactoring: F1 declared.",
+"F150": "Reporting that comparison as met",
+"F151": "That EXAMINE expectation stays INDETERMINATE",
+"F152": "GetAllByPredicate remains public on IRepository",
+"F153": "TeamMetricsService off the allow-list",
+"F154": "Other listed callers keep it",
+"F155": "A new unlisted caller",
+"F156": "S05a guard catches any new caller; S05g makes it protected",
+"F157": "Loose Moq returns an empty list for a named read nobody set up",
+"F158": "Unchanged Asserts",
+"F159": "Arrange retargeting",
+"F16": "Prefactoring: F1 as featureOrdering.Order(GetFeatures().Where(today's predicate).AsEnumerable()).ToList(); never the ListRead.",
+"F160": "A test green because a read returns nothing",
+"F161": "A missed set-up turns the test red, not falsely green; review checks the diff shows no changed Assert, Is. or Verify line",
+"F162": "Only the files on the inline list call GetAllByPredicate; TeamMetricsService is no longer on it (15 to 14), scanned over every production source file, including later ones.",
+"F163": "Flow metrics module rules R2-R6 hold with unchanged baselines: no edge from the module's Application to EF Core or Data, no newcomer on the inbound lists, in CI's Release configuration.",
+"F17": "Compile-forced: WriteRecordingWorkItemRepository implements IWorkItemRepository, so W1-W5 are added as plain delegations to inner; no recording or assertion change.",
+"F18": "Value slice: the 14 GetAllByPredicate calls switch to the seven named reads; constructor unchanged; the size chart's in-memory filter stays in the service.",
+"F19": "Arrange stubs retarget through one helper; Asserts byte-identical; the Times.Never Verify on Features retargets to F1.",
+"F2": "The Team metrics read work items, transitions and features through named, provider-translatable reads, with every metrics answer unchanged",
+"F20": "Arrange stubs retarget only.",
+"F21": "Arrange stubs retarget, keeping today's per-read filtering of the in-memory list; Asserts unchanged.",
+"F22": "Run RepositoryLeakRatchetArchUnitTest.GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList with Modules/FlowMetrics/Application/TeamMetricsService.cs removed from FilesThatCallGetAllByPredicate and Has.Length set to 14; with it, the parity support on SQLite and Postgres and RealityCheckQueryCountTest.",
+"F23": "RED on the base: the guard fails naming TeamMetricsService.cs as a caller not on the list. GREEN on the candidate: the guard passes with 14 entries, every named Team read returns the same id sequence, graph and tracking as today's predicate on both providers, W4 equals the length of W3, the statement counts stay 20 and 24, and every existing metrics Assert passes unchanged.",
+"F24": "Put one GetAllByPredicate call back in TeamMetricsService: the guard goes red and names the file. Drop Doing from W2 or Include(Team) from a work-item read: the parity support goes red on both providers. Make W1 read twice: RealityCheckQueryCountTest goes red.",
+"F25": "Add the seven named reads W1-W5, T1 and F1 to the three owner repository interfaces and classes, each keeping today's predicate, include, tracking and ordering, with no caller yet; add the five plain delegations to WriteRecordingWorkItemRepository; land the parity support TeamMetricsReadsParityOnBothProvidersTests, proven by a deliberate break. This makes the value slice's switch of TeamMetricsService a call-site-only edit.",
+"F26": "Every existing test stays green unchanged before and after the move; no production caller changes; GetAllByPredicate and the S05a list (15) unchanged.",
+"F27": "Read model: TeamMetricsService reads through seven named reads on the owner repositories, not a query object per capability and not Flow-metrics ports in the module. W1 DoneItemsOfTeam(teamId), W2 DoingOrDoneItemsOfTeam(teamId), W3 ToDoOrDoingItemsOfTeam(teamId), W4 CountToDoOrDoingItemsOfTeam(teamId), W5 ItemsOfTeam(teamId) on IWorkItemRepository; T1 TransitionsOfWorkItems(IReadOnlyCollection<int> ids) on IWorkItemStateTransitionRepository; F1 FeaturesWithRealWorkForTeam(teamId, StateCategories? onlyIn) on IFeatureRepository. Reading goes through the owner's contract, so the owner keeps its one definition of how a Feature is read whole; no new dependency edge, no Program.cs edit, TeamMetricsService keeps its constructor. Names are working names; the crafter may improve them, but no new read may be called FeaturesOfTeam or FeaturesOfPortfolio.",
+"F28": "Shape of a read: one named read per state-category set, each keeping today's predicate literally (Done; Doing or Done; ToDo or Doing; team only), with one private helper per repository holding the shared include and ordering code. A category set passed as a parameter or a StateCategorySet value object is rejected: it turns OR into IN over a parameter collection, and the row order of work-item reads is unspecified yet serialised per day in RunChartDataDto.WorkItemsPerUnitOfTime, so a new plan may reorder visible answers. W2 serves call sites written Done-or-Doing and Doing-or-Done.",
+"F29": "Carriers and owners. Work-item reads (owner WorkItemRepository): Context.WorkItems.Include(Team).Where(today's predicate).ToList(), tracked, returned as IReadOnlyList<WorkItem>; W4 is a server-side Count() on the same query, returned as int, never load-and-count. Transition read (owner WorkItemStateTransitionRepository): Where(ids.Contains(WorkItemId)).ToList(), IReadOnlyList<WorkItemStateTransition>. Feature read (owner FeatureRepository): featureOrdering.Order(GetFeatures().Where(today's predicate).AsEnumerable()).ToList(), tracked, all five includes of GetFeatures(), IReadOnlyList<Feature>; F1 with onlyIn null serves the size chart, whose Done/ToDo/Doing filter stays in the service, in memory. No IQueryable, Expression or Func in a new signature. Tracking stays on, so identity and the Save in UpdateTeamMetrics see the same instances. Errors: a provider exception propagates unchanged; no new error type, retry or per-process state.",
+"F3": "TeamMetricsService no longer calls GetAllByPredicate, and the GetAllByPredicate allow-list no longer names it",
+"F30": "Cross-layer algebra. Domain: unchanged (WorkItem, Feature, WorkItemStateTransition; no new state or transition). Application (TeamMetricsService): operations are the existing ITeamMetricsService members; observation is each metrics answer; the change replaces each GetAllByPredicate composition by the named read with the same predicate. Adapter (the three EF repositories): operation = named read; observation = returned id sequence, loaded navigations and tracking state, statement count. Infrastructure: SQLite and Postgres through EF Core 10.0.14 / Npgsql 10.0.3; no timeout, retry, recovery or new failure path.",
+"F31": "Behaviour-free oracle: the value slice's semantic RED is the S05a allow-list edit (remove Modules/FlowMetrics/Application/TeamMetricsService.cs from FilesThatCallGetAllByPredicate and set Has.Length to 14) while the service still calls GetAllByPredicate. Existing metrics tests keep every Assert, Is. and Verify line byte-identical; only Arrange lines that stubbed GetAllByPredicate retarget to the named reads through one test helper per service ('every read of this Team returns this list'). One stated exception: the Verify in TeamMetricsServiceTests that GetAllByPredicate was never called on Features retargets to F1 with the same Times.Never. RealityCheckQueryCountTest stays green with its assertion unchanged.",
+"F32": "Prefactoring before the value slice: the seven named reads land first on the owner repositories with no caller, together with the provider parity support TeamMetricsReadsParityOnBothProvidersTests (SQLite file and SharedPostgresContainer on IntegrationFixture, shaped like FeatureListParityOnPostgresTests), proven by a deliberate break. The slice commit then switches the callers. Moves separate from edits.",
+"F33": "Formal verification: claim-to-checker mapping. Claims: (1) each named read returns the same rows, in the same order, with the same loaded graph as today's predicate on SQLite and Postgres; (2) no extra statements; (3) the S05a list shrinks. None is a state-transition, concurrency, liveness or recovery claim, so Quint and TLA+/TLC have nothing to model but a restatement, and an Agda proof would be about a model of LINQ, not EF's translation. Checker availability is INDETERMINATE: quint, java and agda were refused by the session shell allowlist (exit 126). Human waiver recorded by the maintainer at the DESIGN hold (2026-11-10): formal verification waived for claims (1)-(3); they stay INDETERMINATE as proofs; the executable evidence is the provider parity tests, RealityCheckQueryCountTest, the S05a guard and the metrics answer comparison. Install route if wanted: npm install -g @informalsystems/quint after allowing quint in the lean-ctx allowlist.",
+"F34": "Left as is: the Save call in UpdateTeamMetrics through IWorkItemRepository (a unit-of-work write, decided by S07b or S03b), Team's featureRepository.GetAll() (in memory, not a GetAllByPredicate call), InProgressFeatureResolution, GetAllByPredicate itself (public until S05g), and the other allow-list callers (BlockedCountSeriesBuilder, OverTimeFillTarget, the demo backfill handlers, TeamMetricsController).",
+"F35": "Mutation bar at the end of the nwdes feature, on frozen code: TeamMetricsService not lower than 30.58 percent; the new read methods at 80 percent or more, killed by the parity class, so the Stryker test-case-filter names TeamMetricsReadsParityOnBothProviders and the Team metrics unit tests. Killing the service's old survivors is a separate improvement item.",
+"F36": "Behaviour-free: routes, ITeamMetricsService, DTO shapes, serialized answers, row order, loaded graphs, tracking and the number of database statements per answer do not change.",
+"F37": "Ratchet: FilesThatCallGetAllByPredicate goes from 15 to 14 entries in the same commit that makes TeamMetricsService pass; inline list; no rule loosened; ApiTypesThatDependOnARepository (23) and the Flow metrics module rules R2-R6 unchanged; no baseline grows.",
+"F38": "Input bounds: teamId is an int Team id and onlyIn a nullable StateCategories, both as today; the transition id collection is unbounded, exactly as today's captured HashSet<int>; the design adds no bound and no validation.",
+"F39": "Program.cs, EF model, migrations, BaseMetricsService, controllers and DTOs are not touched; no new package.",
+"F4": "Each named Team read returns the same items, in the same order, with the same related data loaded and tracked, as the predicate it replaces, on SQLite and on Postgres",
+"F40": "Test placement: the parity class is integration tier (Docker, Testcontainers Postgres plus a SQLite file), not in Test-Fast.ps1, within the backend per-class budget of 34 s, starts no web host, no allow-list entry. The Lighthouse test-writing skill governs where nWave's per-test timing and PBT density rules disagree. No nWave scenario tags or internal ids in test names or comments.",
+"F41": "Owner contract of work items; gains W1-W5. Reading goes through the owner's contract.",
+"F42": "WorkItemRepository's override: its Include(Team) plus tracked Where is exactly the base of W1-W5; the class gains the five reads over one private helper holding that include.",
+"F43": "Owner contract of work-item transitions, empty today; gains T1.",
+"F44": "Adds nothing to RepositoryBase today (no include, no order); T1 is a plain Where(ids.Contains) materialised once.",
+"F45": "Owner contract of Features; gains F1.",
+"F46": "FeatureRepository.GetFeatures is the one definition of how a Feature is read whole (five includes, tracked); with IFeatureOrdering it makes F1 Order(GetFeatures().Where(p)), the same as today's GetAllByPredicate override.",
+"F47": "Rejected for F1: a list read with no tracking and only the Feature's own start forecast; reusing it changes start dates in answers. Coincidental similarity, not the same fact, so F1 is a new read.",
+"F48": "Rejected for F1: no TotalWorkItems above zero, no default-size exclusion, no simulation results.",
+"F49": "Its 14 GetAllByPredicate calls switch to the seven named reads; constructor and ITeamMetricsService unchanged.",
+"F5": "Every Team metrics answer and the number of database queries per answer are unchanged",
+"F50": "The S05a guard already scans every caller; the slice oracle shrinks its inline list by one entry and the count to 14.",
+"F51": "Provider parity shape (SQLite file plus SharedPostgresContainer on IntegrationFixture) reused by the new parity support.",
+"F52": "Real SQLite, real WorkItemRepository, counts statements; pins that materialising inside the repository adds none. Unmodified.",
+"F53": "Decorator implementing IWorkItemRepository; gains five plain delegations to inner so it still compiles.",
+"F54": "Existing test of TeamMetricsService; only the Arrange stubs of GetAllByPredicate retarget to the named reads through one per-service helper; Asserts unchanged. The Times.Never Verify on Features retargets to F1.",
+"F55": "Existing test of TeamMetricsService; only the Arrange stubs of GetAllByPredicate retarget to the named reads through one per-service helper; Asserts unchanged.",
+"F56": "Existing test of TeamMetricsService; only the Arrange stubs of GetAllByPredicate retarget to the named reads through one per-service helper; Asserts unchanged. The Portfolio class in the same file is feature B's.",
+"F57": "Existing test of TeamMetricsService; only the Arrange stubs of GetAllByPredicate retarget to the named reads through one per-service helper; Asserts unchanged. Its stub compiles the predicate over an in-memory list, so the retargeted stubs keep the same per-read filtering.",
+"F58": "Five new read members, additive.",
+"F59": "Implements W1-W5 over a private helper; GetAllByPredicate unchanged.",
+"F6": "TeamMetricsService's 14 GetAllByPredicate calls become 7 named reads on IWorkItemRepository, IFeatureRepository and the work-item state-transition repository",
+"F60": "One new read member, additive.",
+"F61": "Implements T1.",
+"F62": "Implements F1 over GetFeatures() and featureOrdering.",
+"F63": "14 call sites switch to named reads.",
+"F64": "WriteRecordingWorkItemRepository implements IWorkItemRepository, so the five new members must be added as plain delegations to inner, or the test project does not compile. No recording, no assertion change.",
+"F65": "Arrange stubs retarget to the named reads; Asserts unchanged; the Times.Never Verify at line 194 retargets to F1.",
+"F66": "Arrange stubs retarget; Asserts unchanged.",
+"F67": "Builds TeamMetricsService with new and stubs GetAllByPredicate by compiling the predicate over an in-memory list; the retargeted stubs must keep the same per-read filtering so its Asserts stay unchanged.",
+"F68": "Runs the real repositories on SQLite; its statement-count assertion is unchanged and must stay green.",
+"F69": "Builds TeamMetricsService with new but stubs no GetAllByPredicate; constructor unchanged.",
+"F7": "PortfolioMetricsService (feature B of this Story)",
+"F70": "Its GetAllByPredicate stubs serve TeamMetricsController's own call and the snapshot repository, both out of scope; ITeamMetricsService unchanged.",
+"F71": "Registrations unchanged: no new type, constructor unchanged.",
+"F72": "Driving port unchanged; its consumers (controllers, refresh policies, hosted filler, Forecasting) are unaffected.",
+"F73": "Implements W1-W5 in the same commit as the interface.",
+"F74": "Decorator implementing the interface; delegates the new members to inner.",
+"F75": "Switches to the named reads in the value slice.",
+"F76": "Additive members only; existing members unchanged.",
+"F77": "Implements T1 in the same commit as the interface.",
+"F78": "Switches its two transition reads to T1.",
+"F79": "Implements F1 in the same commit as the interface; sole production implementer.",
+"F8": "The other Flow metrics callers on the allow-list (BlockedCountSeriesBuilder, OverTimeFillTarget, the two demo backfill handlers), left for S05g",
+"F80": "Switches its Feature read to F1.",
+"F81": "Additive member only.",
+"F82": "No parties that change apart: the repositories, their interfaces and TeamMetricsService ship in one deployable and change in the same commit; no wire or persisted format changes. The primary oracle and the parity support cover the agreement.",
+"F83": "ITeamMetricsService (unchanged), reached by the metrics controllers, refresh-event policies, the hosted filler and Forecasting",
+"F84": "IWorkItemRepository (+W1-W5)",
+"F85": "IWorkItemStateTransitionRepository (+T1)",
+"F86": "IFeatureRepository (+F1)",
+"F87": "Flow metrics Application depends on the owner repository interfaces in Services/Interfaces/Repositories, implemented by the EF repositories over LighthouseAppContext; no edge added or removed.",
+"F88": "The S05a guard's set of production files that call GetAllByPredicate, compared with the inline list and its length",
+"F89": "A call written through reflection or a delegate; a named read that internally builds a different predicate.",
+"F9": "The Save call in UpdateTeamMetrics (S07b or S03b), any behaviour, SQL-shape or speed change",
+"F90": "Per named read and per provider (SQLite file, Postgres container): the returned id sequence, the loaded navigations (WorkItem.Team; Feature Portfolios, FeatureWork with Team, Forecasts and StartForecasts with SimulationResults, DependsOnReferences) and that entities are tracked; W4 compared with the length of W3",
+"F91": "Plan-dependent row order on data much larger than the fixture; W4 loading rows and counting in memory (same number, a review item).",
+"F92": "Number of SQL statements per Reality Check answer on real SQLite with the real WorkItemRepository",
+"F93": "Which statement changed shape, as long as the count is equal.",
+"F94": "Every metrics answer of the instance backup, serialized, base revision against candidate (metrics-answers-compare)",
+"F95": "Behaviour on data shapes absent from the backup.",
+"F96": "Equal when, on the same provider and data, both return the same ids in the same sequence, with the same navigations loaded and the entities tracked; for W4, the same integer.",
+"F97": "TeamMetricsService.cs is absent from the production callers of GetAllByPredicate, and the allow-list has exactly 14 unique entries equal to the scanned caller set.",
+"F98": "Candidate source: guard green with 14 entries",
+"F99": "One GetAllByPredicate call put back in TeamMetricsService: guard red, naming the file"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"scope_in": [
+"F6"
+],
+"scope_out": [
+"F7",
+"F8",
+"F9"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F10",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6374-s05f-a-team-reads",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
