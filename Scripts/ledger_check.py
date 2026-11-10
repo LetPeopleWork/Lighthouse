@@ -70,8 +70,10 @@ def load_checks(ledger_path):
             compiled = re.compile(pattern)
         except re.error:
             continue
-        extensions = tuple(f".{ext.strip().lstrip('.')}" for ext in exts.split(","))
-        checks.append((rule, extensions, compiled, hint))
+        names = tuple(ext.strip().lstrip(".") for ext in exts.split(","))
+        extensions = tuple(f".{name}" for name in names)
+        # An entry also matches a file of that exact name, for files such as Dockerfile that have no extension.
+        checks.append((rule, extensions, names, compiled, hint))
     return checks
 
 
@@ -142,8 +144,8 @@ def main():
     for path, lineno, content in added_lines(staged_diff(project, command)):
         if not path or any(fragment in path for fragment in SKIP_PATH_FRAGMENTS):
             continue
-        for rule, extensions, compiled, hint in checks:
-            if not path.endswith(extensions):
+        for rule, extensions, names, compiled, hint in checks:
+            if not path.endswith(extensions) and os.path.basename(path) not in names:
                 continue
             if compiled.search(content):
                 findings.append((path, lineno, rule, hint, content.strip()))
