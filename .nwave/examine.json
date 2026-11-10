@@ -15,6 +15,10 @@
     {
       "name": "backend-tests",
       "path": "Scripts/examine/bin/backend-tests"
+    },
+    {
+      "name": "frontend-tests",
+      "path": "Scripts/examine/bin/frontend-tests"
     }
   ],
   "build": "Scripts/examine/build-examine-commands"

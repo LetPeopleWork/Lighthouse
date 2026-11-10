@@ -75,15 +75,36 @@ cat > "$out/backend-tests" <<EOF
 # Runs the whole backend test suite except the tests that talk to real Jira, Linear, Azure DevOps, ServiceNow
 # and GitHub instances, and prints the totals plus the name of every failing test. Takes about 7 minutes.
 # Usage: backend-tests [name-fragment]   (a fragment narrows the run to tests whose full name contains it,
-# for example DomainEventHandlerOrderPin for the check that event handlers keep their order)
+# for example DomainEventHandlerOrderPin for the check that event handlers keep their order; a narrowed run
+# also prints every passing test by name, so you can see which scenarios ran)
 set -euo pipefail
 # The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
 export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
 filter="TestCategory!=JiraIntegration&TestCategory!=LinearIntegration&TestCategory!=AdoIntegration&TestCategory!=ServiceNowIntegration&TestCategory!=GithubIntegration"
+lines="^Test Run|^Total tests|^ +(Passed|Failed|Skipped):|^  Failed |: error "
 if [ \$# -gt 0 ] && [ -n "\$1" ]; then
   filter="\${filter}&FullyQualifiedName~\$1"
+  lines="\${lines}|^  Passed "
 fi
 dotnet test "$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj" --filter "\$filter" \\
-  --logger "console;verbosity=normal" 2>&1 | grep -E "^Test Run|^Total tests|^ +(Passed|Failed|Skipped):|^  Failed |: error " || true
+  --logger "console;verbosity=normal" 2>&1 | grep -E "\$lines" || true
 EOF
 chmod +x "$out/backend-tests"
+
+node_bin="$(dirname "$(command -v node)")"
+cat > "$out/frontend-tests" <<EOF
+#!/usr/bin/env bash
+# Runs the frontend tests and prints every test by name with its result, plus the totals.
+# Usage: frontend-tests [path-fragment [name-fragment]]
+#   path-fragment  runs only the spec files whose path contains it, for example Settings/Rbac
+#   name-fragment  runs only the tests whose name contains it, for example "No direct role"
+set -euo pipefail
+# The examiner runs commands in a bare environment; Node and pnpm live under the user's home.
+export HOME="$home" PATH="$node_bin:/usr/bin:/bin" CI=true NO_COLOR=1 FORCE_COLOR=0
+cd "$repo/Lighthouse.Frontend"
+args=(run --reporter=verbose)
+if [ \$# -gt 0 ] && [ -n "\$1" ]; then args+=("\$1"); fi
+if [ \$# -gt 1 ] && [ -n "\$2" ]; then args+=(-t "\$2"); fi
+pnpm exec vitest "\${args[@]}" 2>&1 | grep -E "^ +(✓|×|↓) |^ +(Test Files|Tests) |FAIL " || true
+EOF
+chmod +x "$out/frontend-tests"
