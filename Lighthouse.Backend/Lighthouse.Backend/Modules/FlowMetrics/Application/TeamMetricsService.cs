@@ -642,7 +642,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             logger.LogDebug("Getting All Features For Size Chart for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var teamFeatures = FeaturesTheTeamHasARealShareOf(team)
+            var teamFeatures = featureRepository.FeaturesWithRealWorkForTeam(team.Id, onlyIn: null)
                 .Where(f =>
                     f.StateCategory == StateCategories.Done ||
                     f.StateCategory == StateCategories.ToDo ||
@@ -656,7 +656,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             logger.LogDebug("Getting Size Percentiles for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var doneFeatures = FeaturesTheTeamHasARealShareOf(team, onlyIn: StateCategories.Done).ToList();
+            var doneFeatures = featureRepository.FeaturesWithRealWorkForTeam(team.Id, onlyIn: StateCategories.Done);
 
             var sizes = ClosedInDateRange(doneFeatures, startDate, endDate)
                 .Select(f => f.SizeFor(team.Id))
@@ -677,9 +677,6 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return BuildFeatureSizePercentilesInfoDto(currentPercentiles, previousPercentiles, currentStart: startDate, currentEnd: endDate, previousStart: previousStart, previousEnd: previousEnd);
         }
-
-        private IReadOnlyList<Feature> FeaturesTheTeamHasARealShareOf(Team team, StateCategories? onlyIn = null) =>
-            featureRepository.FeaturesWithRealWorkForTeam(team.Id, onlyIn);
 
         public IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate)
         {
