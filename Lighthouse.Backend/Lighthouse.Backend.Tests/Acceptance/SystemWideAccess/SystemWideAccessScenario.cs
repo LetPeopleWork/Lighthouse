@@ -147,13 +147,18 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         public Task<RbacOperationResult> AlexChangesTheRole(int mappingId, UserRole role) => Port(port => port.UpdateGroupMappingRoleAsync(mappingId, role, null));
 
         /// <summary>Two equal rows, as two System Admins adding the same rule at the same moment can leave behind.</summary>
-        public void TwoEqualRowsWereStored(string group, UserRole role, PermissionScopeType scope, int? scopeId)
+        /// <returns>The numbers the two rows were stored under, the first one stored first.</returns>
+        public int[] TwoEqualRowsWereStored(string group, UserRole role, PermissionScopeType scope, int? scopeId)
         {
             using var scope_ = harness.NewScope();
             var context = scope_.ServiceProvider.GetRequiredService<LighthouseAppContext>();
-            context.RbacGroupMappings.Add(new RbacGroupMapping { GroupValue = group, Role = role, ScopeType = scope, ScopeId = scopeId });
-            context.RbacGroupMappings.Add(new RbacGroupMapping { GroupValue = group, Role = role, ScopeType = scope, ScopeId = scopeId });
+            var first = new RbacGroupMapping { GroupValue = group, Role = role, ScopeType = scope, ScopeId = scopeId };
+            context.RbacGroupMappings.Add(first);
             context.SaveChanges();
+            var second = new RbacGroupMapping { GroupValue = group, Role = role, ScopeType = scope, ScopeId = scopeId };
+            context.RbacGroupMappings.Add(second);
+            context.SaveChanges();
+            return [first.Id, second.Id];
         }
 
         public int StoredRowsFor(string group)

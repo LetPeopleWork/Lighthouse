@@ -82,7 +82,7 @@ namespace Lighthouse.Backend.Tests.Integration.Containers
         private static async Task<SwitchState> Read(ServiceProvider services)
         {
             using var scope = services.CreateScope();
-            return await TheSwitch.Read(scope.ServiceProvider.GetRequiredService<IRbacAdministrationService>(), Alex_SignedIn());
+            return await TheSwitch.Read(scope.ServiceProvider.GetRequiredService<IRbacAdministrationService>());
         }
 
         private static async Task<SaveAnswer> Save(ServiceProvider services, bool on, Guid token)

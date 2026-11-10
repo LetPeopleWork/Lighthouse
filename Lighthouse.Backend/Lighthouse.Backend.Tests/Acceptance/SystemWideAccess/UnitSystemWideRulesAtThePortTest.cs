@@ -112,6 +112,35 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             }
         }
 
+        [Test]
+        public async Task A_units_rules_are_listed_by_group_and_then_by_role()
+        {
+            scenario.ARuleForEveryUnitIsStored(FinanceStaff, UserRole.Viewer);
+            scenario.ARuleForEveryUnitIsStored(TeamReaders, UserRole.UnitAdmin);
+            scenario.ARuleForEveryUnitIsStored(TeamReaders, UserRole.Viewer);
+
+            var rules = await scenario.TheRulesReachingTeam(TeamZenith);
+
+            Assert.That(
+                rules.Lines,
+                Is.EqualTo(new[] { (UserRole.Viewer, FinanceStaff), (UserRole.Viewer, TeamReaders), (UserRole.UnitAdmin, TeamReaders) }),
+                "WHAT: a unit's rules are not in a stable order. WHY: the Access tab shows the same list on every reload, a group's rules together. HOW: order the rules by group and then by role.");
+        }
+
+        [Test]
+        public async Task A_Team_or_Portfolio_is_known_only_when_it_is_stored()
+        {
+            var (team, portfolio) = scenario.ATeamAndAPortfolioAreStored();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(await scenario.TheTeamExists(team), Is.True, "WHAT: a stored Team is said not to exist. WHY: its rules are asked for by its number, and a missing Team answers not found. HOW: look the Team up by its number.");
+                Assert.That(await scenario.TheTeamExists(team + 1000), Is.False, "WHAT: a Team that is not stored is said to exist. WHY: as above. HOW: as above.");
+                Assert.That(await scenario.ThePortfolioExists(portfolio), Is.True, "WHAT: a stored Portfolio is said not to exist. WHY: as for a Team. HOW: look the Portfolio up by its number.");
+                Assert.That(await scenario.ThePortfolioExists(portfolio + 1000), Is.False, "WHAT: a Portfolio that is not stored is said to exist. WHY: as above. HOW: as above.");
+            }
+        }
+
         [TestCase(UnitRulesScenario.Zoe, true, TestName = "A_Team_Admin_of_the_Team_may_ask_for_its_rules")]
         [TestCase(UnitRulesScenario.Alex, true, TestName = "A_System_Admin_may_ask_for_a_Teams_rules")]
         [TestCase(UnitRulesScenario.Noor, false, TestName = "A_member_who_only_reads_through_the_rule_is_refused_a_Teams_rules")]
@@ -187,7 +216,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             }
 
             public void ARuleForEveryUnitIsStored(string group, UserRole role)
-                => AMappingIsStored(group, role, AllUnits(), null);
+                => AMappingIsStored(group, role, PermissionScopeType.AllUnits, null);
 
             public void TwoEqualRowsAreStored(string group, UserRole role)
             {
@@ -206,9 +235,25 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
                 context.SaveChanges();
             }
 
-            public Task<TheRules> TheRulesReachingTeam(int teamId) => ReadRules("GetTeamSystemWideRulesAsync", teamId);
+            public Task<TheRules> TheRulesReachingTeam(int teamId) => ReadRules(port => port.GetTeamSystemWideRulesAsync(teamId));
 
-            public Task<TheRules> TheRulesReachingPortfolio(int portfolioId) => ReadRules("GetPortfolioSystemWideRulesAsync", portfolioId);
+            public Task<TheRules> TheRulesReachingPortfolio(int portfolioId) => ReadRules(port => port.GetPortfolioSystemWideRulesAsync(portfolioId));
+
+            public (int Team, int Portfolio) ATeamAndAPortfolioAreStored()
+            {
+                using var scopeOfWork = harness.NewScope();
+                var context = scopeOfWork.ServiceProvider.GetRequiredService<LighthouseAppContext>();
+                var team = new Team { Name = "Team Zenith", WorkTrackingSystemConnection = AConnection("Team Zenith"), DataRetrievalValue = "project = ZENITH" };
+                var portfolio = new Portfolio { Name = "Ocean Explorer", WorkTrackingSystemConnection = AConnection("Ocean Explorer") };
+                context.Teams.Add(team);
+                context.Portfolios.Add(portfolio);
+                context.SaveChanges();
+                return (team.Id, portfolio.Id);
+            }
+
+            public Task<bool> TheTeamExists(int teamId) => Port(port => port.TeamExistsAsync(teamId));
+
+            public Task<bool> ThePortfolioExists(int portfolioId) => Port(port => port.PortfolioExistsAsync(portfolioId));
 
             public Task<bool> MayManageTheMembersOfTeam(string who, int teamId)
                 => Port(port => port.CanManageTeamMembershipAsync(SignedIn(who), teamId));
@@ -218,14 +263,8 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
 
             public void Dispose() => harness.Dispose();
 
-            private static PermissionScopeType AllUnits()
-            {
-                Assert.That(
-                    Enum.TryParse<PermissionScopeType>("AllUnits", out var allUnits),
-                    Is.True,
-                    "WHAT: there is no scope named AllUnits. WHY: a rule for every Team and Portfolio is a group mapping on that scope. HOW: append AllUnits to the scopes a permission can have.");
-                return allUnits;
-            }
+            private static WorkTrackingSystemConnection AConnection(string name)
+                => new() { Name = $"{name} connection", WorkTrackingSystem = WorkTrackingSystems.Jira };
 
             private static ClaimsPrincipal SignedIn(string subject)
             {
@@ -235,26 +274,11 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
                 return new ClaimsPrincipal(new ClaimsIdentity(claims, "oidc"));
             }
 
-            private async Task<TheRules> ReadRules(string member, int unitId)
+            private async Task<TheRules> ReadRules(Func<IRbacAdministrationService, Task<IReadOnlyList<SystemWideRule>>> read)
             {
-                using var scope = harness.NewScope();
-                var port = scope.ServiceProvider.GetRequiredService<IRbacAdministrationService>();
-                var read = typeof(IRbacAdministrationService).GetMethod(member);
-                if (read is null)
-                {
-                    Assert.Fail($"WHAT: the access service has no {member}. WHY: a Team or Portfolio Admin must be able to ask which rules for all Teams and Portfolios also reach their unit. HOW: add {member}(int unitId, CancellationToken) to IRbacAdministrationService, answering a list of rules with a Role and a Holder.");
-                }
-
-                var task = (Task)read!.Invoke(port, [unitId, CancellationToken.None])!;
-                await task;
-                var answer = ((System.Collections.IEnumerable)task.GetType().GetProperty("Result")!.GetValue(task)!).Cast<object>().ToList();
-                var members = answer.Count == 0
-                    ? (IReadOnlyList<string>)(new[] { "Role", "Holder" })
-                    : [.. answer[0].GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(property => property.Name)];
-                var lines = answer.Select(rule => (
-                    (UserRole)rule.GetType().GetProperty("Role")!.GetValue(rule)!,
-                    (string)rule.GetType().GetProperty("Holder")!.GetValue(rule)!)).ToList();
-                return new TheRules(lines, members);
+                var answer = await Port(read);
+                var members = typeof(SystemWideRule).GetProperties(BindingFlags.Public | BindingFlags.Instance).Select(property => property.Name).ToList();
+                return new TheRules([.. answer.Select(rule => (rule.Role, rule.Holder))], members);
             }
 
             private async Task<T> Port<T>(Func<IRbacAdministrationService, Task<T>> step)

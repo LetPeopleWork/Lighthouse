@@ -189,6 +189,55 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             }
         }
 
+        [Test]
+        public async Task Saving_a_rule_with_the_role_it_already_has_is_accepted_and_changes_nothing()
+        {
+            await scenario.AlexAddsAMapping(TeamReaders, UserRole.Viewer, PermissionScopeType.Team, TeamZenith);
+            var line = (await scenario.TheRulesList()).Single();
+
+            var saved = await scenario.AlexChangesTheRole(line.Id, UserRole.Viewer);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(saved.Succeeded, Is.True, $"WHAT: saving a rule with its own role was refused ({saved.Message}). WHY: the rule is not a duplicate of itself, and the page saves a row whose role was left as it was. HOW: look for an equal rule only when the role changes.");
+                Assert.That(scenario.StoredRowsFor(TeamReaders), Is.EqualTo(1), "WHAT: saving a rule with its own role changed the stored rows. WHY: nothing changed. HOW: as above.");
+            }
+        }
+
+        [Test]
+        public async Task The_rules_list_is_ordered_by_group_then_scope_then_unit_then_role()
+        {
+            await scenario.AlexAddsAMapping("delivery-leads", UserRole.Viewer, AllUnits, null);
+            await scenario.AlexAddsAMapping("delivery-leads", UserRole.Viewer, PermissionScopeType.Team, TeamApollo);
+            await scenario.AlexAddsAMapping("delivery-leads", UserRole.Viewer, PermissionScopeType.Team, TeamZenith);
+            await scenario.AlexAddsAMapping("delivery-leads", UserRole.TeamAdmin, PermissionScopeType.Team, TeamZenith);
+            await scenario.AlexAddsAMapping("agile-coaches", UserRole.Viewer, AllUnits, null);
+
+            var lines = await scenario.TheRulesList();
+
+            Assert.That(
+                lines.Select(line => (line.GroupValue, line.Role, line.ScopeType, line.ScopeId)),
+                Is.EqualTo(new[]
+                {
+                    ("agile-coaches", UserRole.Viewer, AllUnits, (int?)null),
+                    ("delivery-leads", UserRole.TeamAdmin, PermissionScopeType.Team, (int?)TeamZenith),
+                    ("delivery-leads", UserRole.Viewer, PermissionScopeType.Team, (int?)TeamZenith),
+                    ("delivery-leads", UserRole.Viewer, PermissionScopeType.Team, (int?)TeamApollo),
+                    ("delivery-leads", UserRole.Viewer, AllUnits, (int?)null),
+                }),
+                "WHAT: the rules list is not in a stable order. WHY: the System Admin finds a group's rules together and the list does not jump between reloads. HOW: order by group, then scope, then unit, then role.");
+        }
+
+        [Test]
+        public async Task Of_a_rule_stored_twice_the_list_shows_the_row_stored_first()
+        {
+            var storedAs = scenario.TwoEqualRowsWereStored(TeamReaders, UserRole.Viewer, AllUnits, null);
+
+            var line = (await scenario.TheRulesList()).Single(listed => listed.GroupValue == TeamReaders);
+
+            Assert.That(line.Id, Is.EqualTo(storedAs[0]), "WHAT: the list shows the twin stored later. WHY: the line a System Admin sees must not change from one reload to the next. HOW: keep the first stored row of equal rows.");
+        }
+
         private async Task TheTwinsAreListedOnceAndRemovedTogether(string group)
         {
             var lines = (await scenario.TheRulesList()).Where(line => line.GroupValue == group).ToList();
@@ -199,7 +248,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             Assert.That(scenario.StoredRowsFor(group), Is.Zero, "WHAT: a twin of the removed rule is still stored. WHY: it would keep granting its role after the System Admin removed the rule. HOW: on removal delete every row with the same group, role and scope.");
         }
 
-        /// <summary>L4: a mapping is accepted for exactly the valid pairs of role, scope and unit; every role and scope the server knows is tried, so a value added later fails here until it is placed.</summary>
+        /// <summary>A mapping is accepted for exactly the valid pairs of role, scope and unit; every role and scope the server knows is tried, so a value added later fails here until it is placed.</summary>
         [TestCaseSource(nameof(EveryRoleScopeAndUnit))]
         public async Task A_rule_is_accepted_for_exactly_the_valid_pairs_of_role_and_scope(UserRole role, PermissionScopeType scope, int? unit)
         {
@@ -220,15 +269,15 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
                select new TestCaseData(role, scope, unit);
 
         private static bool IsAValidPair(UserRole role, PermissionScopeType scope, int? unit)
-            => (role, scope.ToString(), unit.HasValue) switch
+            => (role, scope, unit.HasValue) switch
             {
-                (UserRole.SystemAdmin, "System", false) => true,
-                (UserRole.TeamAdmin, "Team", true) => true,
-                (UserRole.PortfolioAdmin, "Portfolio", true) => true,
-                (UserRole.Viewer, "Team", true) => true,
-                (UserRole.Viewer, "Portfolio", true) => true,
-                (UserRole.Viewer, "AllUnits", false) => true,
-                (var r, "AllUnits", false) when r.ToString() == "UnitAdmin" => true,
+                (UserRole.SystemAdmin, PermissionScopeType.System, false) => true,
+                (UserRole.TeamAdmin, PermissionScopeType.Team, true) => true,
+                (UserRole.PortfolioAdmin, PermissionScopeType.Portfolio, true) => true,
+                (UserRole.Viewer, PermissionScopeType.Team, true) => true,
+                (UserRole.Viewer, PermissionScopeType.Portfolio, true) => true,
+                (UserRole.Viewer, PermissionScopeType.AllUnits, false) => true,
+                (UserRole.UnitAdmin, PermissionScopeType.AllUnits, false) => true,
                 _ => false,
             };
     }

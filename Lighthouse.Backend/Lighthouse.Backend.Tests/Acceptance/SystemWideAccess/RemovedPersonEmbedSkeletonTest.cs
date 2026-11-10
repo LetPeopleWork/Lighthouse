@@ -60,12 +60,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             using var scope = host.AuthEnabled.Services.CreateScope();
             var port = scope.ServiceProvider.GetRequiredService<IRbacAdministrationService>();
             var admin = SystemWideAccessScenario.SignedIn(ViewerEmbedTestHost.SystemAdminSubject);
-            if (typeof(IRbacAdministrationService).GetMethod("SetEveryoneSignedInAsync") is null)
-            {
-                return "the access service cannot save the switch yet";
-            }
-
-            var read = await TheSwitch.Read(port, admin);
+            var read = await TheSwitch.Read(port);
             var saved = await TheSwitch.Save(port, admin, true, read.Token);
             return saved.Accepted ? "accepted" : saved.ToString();
         }

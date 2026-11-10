@@ -1,9 +1,11 @@
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System.Security.Claims;
 
@@ -12,12 +14,23 @@ namespace Lighthouse.Backend.Tests.API
     [TestFixture]
     public class AuthorizationControllerTest
     {
+        private const int ActorProfileId = 42;
+
         private Mock<IRbacAdministrationService> rbacAdministrationService;
+
+        private Mock<ILogger<AuthorizationController>> logger;
+
+        private Mock<ICurrentUserProfileService> currentUserProfileService;
 
         [SetUp]
         public void SetUp()
         {
             rbacAdministrationService = new Mock<IRbacAdministrationService>();
+            logger = new Mock<ILogger<AuthorizationController>>();
+            currentUserProfileService = new Mock<ICurrentUserProfileService>();
+            currentUserProfileService
+                .Setup(s => s.GetOrCreateFromPrincipalAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new UserProfile { Id = ActorProfileId });
         }
 
         [Test]
@@ -463,6 +476,182 @@ namespace Lighthouse.Backend.Tests.API
             }
         }
 
+        [Test]
+        public async Task CreateGroupMapping_WhenAdded_LogsWhoAddedWhichRule()
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            rbacAdministrationService
+                .Setup(s => s.CreateGroupMappingAsync(" delivery-leads ", UserRole.Viewer, PermissionScopeType.AllUnits, null, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Success());
+
+            var subject = CreateSubjectWithUser("auth0|system-admin");
+
+            await subject.CreateGroupMapping(
+                new RbacGroupMappingRequest { GroupValue = " delivery-leads ", Role = "Viewer", ScopeType = "AllUnits" },
+                CancellationToken.None);
+
+            AssertLoggedOnce("SSO group rule added by user profile 42: group delivery-leads, role Viewer, scope AllUnits");
+        }
+
+        [Test]
+        public async Task RemoveGroupMapping_WhenRemoved_LogsWhoRemovedTheRuleWithThatId()
+        {
+            AnAdminWhoRemovesAndTheListShows(
+                new RbacGroupMappingSummary { Id = 13, GroupValue = "team-12-viewers", Role = UserRole.Viewer, ScopeType = PermissionScopeType.Team, ScopeId = 12 },
+                new RbacGroupMappingSummary { Id = 14, GroupValue = "delivery-leads", Role = UserRole.UnitAdmin, ScopeType = PermissionScopeType.AllUnits });
+
+            var result = await CreateSubjectWithUser("auth0|system-admin").RemoveGroupMapping(14, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<NoContentResult>());
+            AssertLoggedOnce("SSO group rule removed by user profile 42: group delivery-leads, role UnitAdmin, scope AllUnits");
+        }
+
+        [Test]
+        public async Task RemoveGroupMapping_OfATwinTheListDoesNotShow_IsRemovedAndLoggedWithoutItsRule()
+        {
+            AnAdminWhoRemovesAndTheListShows(
+                new RbacGroupMappingSummary { Id = 13, GroupValue = "delivery-leads", Role = UserRole.Viewer, ScopeType = PermissionScopeType.AllUnits });
+
+            var result = await CreateSubjectWithUser("auth0|system-admin").RemoveGroupMapping(14, CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<NoContentResult>());
+            AssertLoggedOnce("SSO group rule removed by user profile 42: group (null), role (null), scope (null)");
+        }
+
+        [Test]
+        public async Task GetTeamSystemWideRules_ForAStoredTeam_ReturnsOkWithItsRules()
+        {
+            var rules = new[] { new SystemWideRule(UserRole.Viewer, "delivery-leads") };
+            rbacAdministrationService.Setup(s => s.TeamExistsAsync(12, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            rbacAdministrationService.Setup(s => s.GetTeamSystemWideRulesAsync(12, It.IsAny<CancellationToken>())).ReturnsAsync(rules);
+
+            var result = await CreateSubjectWithUser("auth0|team-admin").GetTeamSystemWideRules(12, CancellationToken.None);
+
+            Assert.That((result as OkObjectResult)?.Value, Is.SameAs(rules));
+        }
+
+        [Test]
+        public async Task GetTeamSystemWideRules_ForATeamNotStored_ReturnsNotFoundNamingIt()
+        {
+            rbacAdministrationService.Setup(s => s.TeamExistsAsync(12, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+            var result = await CreateSubjectWithUser("auth0|team-admin").GetTeamSystemWideRules(12, CancellationToken.None);
+
+            Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Team 12 does not exist."));
+        }
+
+        [Test]
+        public async Task GetPortfolioSystemWideRules_ForAStoredPortfolio_ReturnsOkWithItsRules()
+        {
+            var rules = new[] { SystemWideRule.EveryoneSignedIn };
+            rbacAdministrationService.Setup(s => s.PortfolioExistsAsync(9, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            rbacAdministrationService.Setup(s => s.GetPortfolioSystemWideRulesAsync(9, It.IsAny<CancellationToken>())).ReturnsAsync(rules);
+
+            var result = await CreateSubjectWithUser("auth0|portfolio-admin").GetPortfolioSystemWideRules(9, CancellationToken.None);
+
+            Assert.That((result as OkObjectResult)?.Value, Is.SameAs(rules));
+        }
+
+        [Test]
+        public async Task GetPortfolioSystemWideRules_ForAPortfolioNotStored_ReturnsNotFoundNamingIt()
+        {
+            rbacAdministrationService.Setup(s => s.PortfolioExistsAsync(9, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+
+            var result = await CreateSubjectWithUser("auth0|portfolio-admin").GetPortfolioSystemWideRules(9, CancellationToken.None);
+
+            Assert.That((result as NotFoundObjectResult)?.Value, Is.EqualTo("Portfolio 9 does not exist."));
+        }
+
+        [Test]
+        public async Task GetEveryoneSignedIn_ReturnsOkWithTheStoredSwitch()
+        {
+            var stored = EveryoneSignedInSetting.StoredAs(true);
+            rbacAdministrationService.Setup(s => s.GetEveryoneSignedInAsync(It.IsAny<CancellationToken>())).ReturnsAsync(stored);
+
+            var result = await CreateSubjectWithUser("auth0|system-admin").GetEveryoneSignedIn(CancellationToken.None);
+
+            Assert.That((result as OkObjectResult)?.Value, Is.SameAs(stored));
+        }
+
+        [Test]
+        public async Task SetEveryoneSignedIn_WhenSaved_ReturnsNoContentAndLogsWhoTurnedItOn()
+        {
+            var token = Guid.NewGuid();
+            rbacAdministrationService
+                .Setup(s => s.SetEveryoneSignedInAsync(It.IsAny<ClaimsPrincipal>(), true, token, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Success());
+
+            var result = await CreateSubjectWithUser("auth0|system-admin").SetEveryoneSignedIn(
+                new EveryoneSignedInRequest { EveryoneCanView = true, ConcurrencyToken = token },
+                CancellationToken.None);
+
+            Assert.That(result, Is.InstanceOf<NoContentResult>());
+            AssertLoggedOnce("Everyone signed in can view all Teams and Portfolios set to True by user profile 42");
+        }
+
+        [Test]
+        public async Task SetEveryoneSignedIn_ByACallerWhoIsNoSystemAdmin_ReturnsForbidAndLogsNothing()
+        {
+            ASaveOfTheSwitchAnswers(RbacOperationResult.Failure(RbacOperationErrorCodes.NotSystemAdmin, "Only a System Admin changes it."));
+
+            var result = await CreateSubjectWithUser("auth0|team-admin").SetEveryoneSignedIn(
+                new EveryoneSignedInRequest { EveryoneCanView = true, ConcurrencyToken = Guid.NewGuid() },
+                CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(result, Is.InstanceOf<ForbidResult>());
+                Assert.That(logger.Invocations, Is.Empty, "A refused save changed nothing, so there is nothing to record.");
+            }
+        }
+
+        [Test]
+        public async Task SetEveryoneSignedIn_WithNoToken_ReturnsBadRequestWithTheServicesMessage()
+        {
+            ASaveOfTheSwitchAnswers(RbacOperationResult.Failure(RbacOperationErrorCodes.MissingConcurrencyToken, "Reload the page and try again."));
+
+            var result = await CreateSubjectWithUser("auth0|system-admin").SetEveryoneSignedIn(
+                new EveryoneSignedInRequest { EveryoneCanView = false },
+                CancellationToken.None);
+
+            Assert.That((result as BadRequestObjectResult)?.Value, Is.EqualTo("Reload the page and try again."));
+        }
+
+        private void ASaveOfTheSwitchAnswers(RbacOperationResult answer)
+        {
+            rbacAdministrationService
+                .Setup(s => s.SetEveryoneSignedInAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<bool>(), It.IsAny<Guid?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(answer);
+        }
+
+        private void AnAdminWhoRemovesAndTheListShows(params RbacGroupMappingSummary[] listed)
+        {
+            rbacAdministrationService
+                .Setup(s => s.CanManageRbacAsync(It.IsAny<ClaimsPrincipal>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            rbacAdministrationService
+                .Setup(s => s.GetGroupMappingsAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(listed);
+            rbacAdministrationService
+                .Setup(s => s.RemoveGroupMappingAsync(14, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(RbacOperationResult.Success());
+        }
+
+        private void AssertLoggedOnce(string message)
+        {
+            logger.Verify(
+                l => l.Log(
+                    LogLevel.Information,
+                    It.IsAny<EventId>(),
+                    It.Is<It.IsAnyType>((state, _) => state.ToString() == message),
+                    It.IsAny<Exception?>(),
+                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                Times.Once,
+                $"An access change is recorded with who made it and what changed: expected the line '{message}'.");
+        }
+
         private AuthorizationController CreateSubjectWithUser(string subjectClaim)
         {
             var identity = new ClaimsIdentity([new Claim("sub", subjectClaim)], "TestAuth");
@@ -470,8 +659,8 @@ namespace Lighthouse.Backend.Tests.API
 
             var controller = new AuthorizationController(
                 rbacAdministrationService.Object,
-                Mock.Of<ICurrentUserProfileService>(),
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthorizationController>.Instance)
+                currentUserProfileService.Object,
+                logger.Object)
             {
                 ControllerContext = new ControllerContext
                 {

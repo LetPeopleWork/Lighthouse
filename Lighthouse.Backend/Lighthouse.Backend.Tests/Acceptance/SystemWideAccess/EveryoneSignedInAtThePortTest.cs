@@ -1,6 +1,4 @@
 using System.Data.Common;
-using System.Reflection;
-using System.Runtime.ExceptionServices;
 using System.Security.Claims;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
@@ -8,10 +6,10 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Authorization;
 using Lighthouse.Backend.Services.Implementation.Authorization;
+using Lighthouse.Backend.Services.Implementation.Seeding;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
-using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
@@ -119,6 +117,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             {
                 Assert.That(staleSave.Conflict, Is.True, $"WHAT: turning the switch off on a token read before the last save answered {staleSave}. WHY: a System Admin who saves on an old reading would undo another's change unseen; the browser shows the conflict message from a 409. HOW: apply the token read as the original token, so the save throws DbUpdateConcurrencyException.");
                 Assert.That(saveWithNoToken.Refused, Is.True, $"WHAT: a save with no token answered {saveWithNoToken}. WHY: this setting has required its token since it first shipped, so a save without one cannot say what it was based on. HOW: refuse a save whose token is missing, before writing.");
+                Assert.That(saveWithNoToken.Detail, Is.EqualTo("The setting was sent without the token it was read with. Reload the page and try again."), "WHAT: the refusal of a save with no token does not tell the System Admin what to do. WHY: the page shows this message. HOW: answer the reload message.");
                 Assert.That(scenario.TheStoredSwitch(), Is.EqualTo(stored), "WHAT: the stored switch changed after a refused save. WHY: a refused save must leave the setting as it was. HOW: write nothing when the token is missing or stale.");
             }
         }
@@ -135,6 +134,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             using (Assert.EnterMultipleScope())
             {
                 Assert.That(byATeamAdmin.Refused, Is.True, $"WHAT: a Team Admin's save answered {byATeamAdmin}. WHY: only a System Admin opens every Team and Portfolio to everyone. HOW: refuse the save unless the caller may manage access for the whole instance.");
+                Assert.That(byATeamAdmin.Detail, Is.EqualTo("Only a System Admin changes whether everyone signed in can view all Teams and Portfolios."), "WHAT: the refusal does not say who may change the switch. WHY: a refusal says why. HOW: answer the System Admin message.");
                 Assert.That(byAPersonWithNoRole.Refused, Is.True, $"WHAT: a save by a person with no role answered {byAPersonWithNoRole}. WHY: only a System Admin changes the switch. HOW: refuse the save unless the caller may manage access.");
                 Assert.That(scenario.TheStoredSwitch().On, Is.False, "WHAT: the switch is on after only refused saves. WHY: a refused save changes nothing. HOW: check the caller before writing.");
             }
@@ -192,6 +192,22 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             var readsZenith = await withoutGroups.CanReadTeam(Morgan_SignedIn(), TeamZenith);
 
             Assert.That(readsZenith, Is.True, "WHAT: with no group claim configured, Morgan cannot read Team Zenith while the switch is on. WHY: the switch is for instances that need no group at all. HOW: read the switch after the profile is resolved, outside the path that stops when there are no group values.");
+        }
+
+        [Test]
+        public async Task Should_a_second_switch_be_stored_the_one_stored_first_decides()
+        {
+            scenario.TheSwitchIsStored(on: false);
+            scenario.TheSwitchIsStored(on: true);
+
+            var theSwitch = await scenario.TheSwitchAsReadByAlex();
+            var morganReadsZenith = await scenario.CanReadTeam(Morgan_SignedIn(), TeamZenith);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(theSwitch.On, Is.False, "WHAT: with two switches stored, the one stored later was read. WHY: one switch decides, the same one every time, and it is the one the instance has always had. HOW: read the switch stored first.");
+                Assert.That(morganReadsZenith, Is.False, "WHAT: a person with no role reads Team Zenith through the switch stored later. WHY: the read checks and the read of the switch must agree on which switch decides. HOW: as above.");
+            }
         }
 
         [Test]
@@ -354,7 +370,7 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
             }
         }
 
-        public Task<SwitchState> TheSwitchAsReadByAlex() => Port(port => TheSwitch.Read(port, Alex_SignedIn()));
+        public Task<SwitchState> TheSwitchAsReadByAlex() => Port(TheSwitch.Read);
 
         public Task<SaveAnswer> WhatASaveAnswers(ClaimsPrincipal who, bool on, Guid? token)
             => Port(port => TheSwitch.Save(port, who, on, token));
@@ -497,42 +513,22 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
     }
 
     /// <summary>
-    /// Reaches the switch the product does not have yet through the names its design gives it, so a missing piece is a
-    /// failed expectation with a message rather than a build error that hides every other test. The access service
-    /// reads it with GetEveryoneSignedInAsync and saves it with SetEveryoneSignedInAsync; it is stored as the record
-    /// EveryoneSignedInSetting, written at start-up by EveryoneSignedInSeeder.
+    /// The switch as the access service reads and saves it, as the start-up seeder stores it, and as the database
+    /// holds it, so every scenario speaks of it in the same words.
     /// </summary>
     public static class TheSwitch
     {
-        private const string ReadMember = "GetEveryoneSignedInAsync";
-
-        private const string SaveMember = "SetEveryoneSignedInAsync";
-
-        private const string RecordName = "Lighthouse.Backend.Models.Authorization.EveryoneSignedInSetting";
-
-        private const string SeederName = "Lighthouse.Backend.Services.Implementation.Seeding.EveryoneSignedInSeeder";
-
-        private static readonly Assembly TheProduct = typeof(LighthouseAppContext).Assembly;
-
-        public static async Task<SwitchState> Read(IRbacAdministrationService port, ClaimsPrincipal reader)
+        public static async Task<SwitchState> Read(IRbacAdministrationService port)
         {
-            var member = MemberOfThePort(ReadMember, "(CancellationToken), System Admin only on the wire, answering the stored switch with EveryoneCanView and ConcurrencyToken, or off when no row is stored");
-            var answer = await Invoke(member, port, reader, on: null, token: null);
-            return new SwitchState(ValueOf<bool>(answer, "EveryoneCanView"), ValueOf<Guid>(answer, "ConcurrencyToken"));
+            var stored = await port.GetEveryoneSignedInAsync();
+            return new SwitchState(stored.EveryoneCanView, stored.ConcurrencyToken);
         }
 
         public static async Task<SaveAnswer> Save(IRbacAdministrationService port, ClaimsPrincipal caller, bool on, Guid? token)
         {
-            var member = MemberOfThePort(SaveMember, "(ClaimsPrincipal caller, bool everyoneCanView, Guid? concurrencyToken, CancellationToken) answering an RbacOperationResult");
             try
             {
-                var answer = await Invoke(member, port, caller, on, token);
-                if (answer is not RbacOperationResult result)
-                {
-                    Assert.Fail($"WHAT: {SaveMember} answered {answer?.GetType().Name ?? "nothing"}. WHY: a refused save must say why, as other access changes do. HOW: answer an RbacOperationResult.");
-                    return null!;
-                }
-
+                var result = await port.SetEveryoneSignedInAsync(caller, on, token);
                 return new SaveAnswer(result.Succeeded, !result.Succeeded, false, result.Message ?? "accepted");
             }
             catch (DbUpdateConcurrencyException conflict)
@@ -542,127 +538,19 @@ namespace Lighthouse.Backend.Tests.Acceptance.SystemWideAccess
         }
 
         public static async Task StartUpSeederRuns(IServiceProvider services)
-        {
-            var seederType = TheProduct.GetType(SeederName);
-            if (seederType is null || !typeof(ISeeder).IsAssignableFrom(seederType))
-            {
-                Assert.Fail($"WHAT: there is no start-up seeder {SeederName}. WHY: the switch must be stored off after install and after a restore from an older backup. HOW: add an idempotent ISeeder that stores the switch off when no row exists, and register it in Program.cs.");
-            }
-
-            var seeder = (ISeeder)ActivatorUtilities.CreateInstance(services, seederType!);
-            await seeder.Seed();
-        }
+            => await ActivatorUtilities.CreateInstance<EveryoneSignedInSeeder>(services).Seed();
 
         public static IReadOnlyList<SwitchState> StoredRows(LighthouseAppContext context)
-        {
-            var rows = (System.Collections.IEnumerable)SetOf(context);
-            return [.. rows.Cast<object>().Select(row => new SwitchState(ValueOf<bool>(row, "EveryoneCanView"), ValueOf<Guid>(row, "ConcurrencyToken")))];
-        }
+            => [.. context.EveryoneSignedInSettings.AsNoTracking().OrderBy(row => row.Id).Select(row => new SwitchState(row.EveryoneCanView, row.ConcurrencyToken))];
 
         public static void StoreARow(LighthouseAppContext context, bool on)
         {
-            var row = Activator.CreateInstance(TheRecord())!;
-            TheRecord().GetProperty("EveryoneCanView")!.SetValue(row, on);
-            context.Add(row);
+            context.EveryoneSignedInSettings.Add(EveryoneSignedInSetting.StoredAs(on));
             context.SaveChanges();
         }
 
         public static string TableName(LighthouseAppContext context)
-        {
-            var entity = context.Model.FindEntityType(TheRecord());
-            if (entity?.GetTableName() is not { } table)
-            {
-                Assert.Fail($"WHAT: {RecordName} is not stored by the database context. WHY: the switch is one row of its own table. HOW: add one DbSet for it to LighthouseAppContext, with its concurrency token configured.");
-                return string.Empty;
-            }
-
-            return table;
-        }
-
-        private static object SetOf(LighthouseAppContext context)
-        {
-            TableName(context);
-            var set = typeof(DbContext).GetMethods().Single(method => method.Name == nameof(DbContext.Set) && method.GetParameters().Length == 0);
-            return set.MakeGenericMethod(TheRecord()).Invoke(context, null)!;
-        }
-
-        private static Type TheRecord()
-        {
-            var record = TheProduct.GetType(RecordName);
-            if (record is null || !typeof(IConcurrencyTokenEntity).IsAssignableFrom(record))
-            {
-                Assert.Fail($"WHAT: there is no record {RecordName} with a concurrency token. WHY: the switch is its own one-row record, saved under the stale-edit rule of other configuration. HOW: add the record with one boolean EveryoneCanView, implementing IConcurrencyTokenEntity.");
-            }
-
-            return record!;
-        }
-
-        private static MethodInfo MemberOfThePort(string name, string signature)
-        {
-            var member = typeof(IRbacAdministrationService).GetMethod(name);
-            if (member is null)
-            {
-                Assert.Fail($"WHAT: the access service has no {name}. WHY: a System Admin reads and saves the switch through the one access service. HOW: add {name}{signature} to IRbacAdministrationService.");
-            }
-
-            return member!;
-        }
-
-        private static async Task<object?> Invoke(MethodInfo member, IRbacAdministrationService port, ClaimsPrincipal who, bool? on, Guid? token)
-        {
-            var arguments = member.GetParameters().Select(parameter => ArgumentFor(member, parameter, who, on, token)).ToArray();
-            Task task;
-            try
-            {
-                task = (Task)member.Invoke(port, arguments)!;
-            }
-            catch (TargetInvocationException thrown) when (thrown.InnerException is not null)
-            {
-                ExceptionDispatchInfo.Capture(thrown.InnerException).Throw();
-                throw;
-            }
-
-            await task;
-            return task.GetType().GetProperty(nameof(Task<object>.Result))?.GetValue(task);
-        }
-
-        private static object? ArgumentFor(MethodInfo member, ParameterInfo parameter, ClaimsPrincipal who, bool? on, Guid? token)
-        {
-            var type = parameter.ParameterType;
-            if (type == typeof(ClaimsPrincipal))
-            {
-                return who;
-            }
-
-            if (type == typeof(CancellationToken))
-            {
-                return CancellationToken.None;
-            }
-
-            if (type == typeof(bool) && on is not null)
-            {
-                return on.Value;
-            }
-
-            if (type == typeof(Guid?))
-            {
-                return token;
-            }
-
-            Assert.Fail($"WHAT: {member.Name} takes {parameter.Name} of type {type.Name}, which the scenario cannot fill. WHY: the save carries the caller, the value and the token the browser sends, and the token may be missing on the wire. HOW: take a ClaimsPrincipal, a bool and a Guid? token on the save, and only a CancellationToken (and at most the caller) on the read.");
-            return null;
-        }
-
-        private static T ValueOf<T>(object? answer, string name)
-        {
-            var property = answer?.GetType().GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
-            if (property is null || property.PropertyType != typeof(T))
-            {
-                Assert.Fail($"WHAT: {answer?.GetType().Name ?? "the answer"} has no {typeof(T).Name} {name}. WHY: the browser reads everyoneCanView and concurrencyToken to show the switch and to save it. HOW: carry {name} as {typeof(T).Name}.");
-            }
-
-            return (T)property!.GetValue(answer)!;
-        }
+            => context.Model.FindEntityType(typeof(EveryoneSignedInSetting))!.GetTableName()!;
     }
 
     /// <summary>Makes every read of one table fail, as a database that cannot answer for that table would.</summary>
