@@ -152,6 +152,74 @@ namespace Lighthouse.Backend.Tests.Models.Authorization
             }
         }
 
+        // A role stored on a unit of the other kind, or System Admin stored on a unit, gives nothing on that unit, so a
+        // key its holder limits to that unit must get nothing there either, however high the stored role ranks.
+        [TestCase(PermissionScopeType.Team, UserRole.PortfolioAdmin, UserRole.Viewer, false, false)]
+        [TestCase(PermissionScopeType.Team, UserRole.PortfolioAdmin, UserRole.TeamAdmin, false, false)]
+        [TestCase(PermissionScopeType.Team, UserRole.SystemAdmin, UserRole.Viewer, false, false)]
+        [TestCase(PermissionScopeType.Team, UserRole.SystemAdmin, UserRole.TeamAdmin, false, false)]
+        [TestCase(PermissionScopeType.Team, UserRole.TeamAdmin, UserRole.Viewer, true, false)]
+        [TestCase(PermissionScopeType.Team, UserRole.TeamAdmin, UserRole.TeamAdmin, true, true)]
+        [TestCase(PermissionScopeType.Portfolio, UserRole.TeamAdmin, UserRole.Viewer, false, false)]
+        [TestCase(PermissionScopeType.Portfolio, UserRole.TeamAdmin, UserRole.PortfolioAdmin, false, false)]
+        [TestCase(PermissionScopeType.Portfolio, UserRole.SystemAdmin, UserRole.Viewer, false, false)]
+        [TestCase(PermissionScopeType.Portfolio, UserRole.SystemAdmin, UserRole.PortfolioAdmin, false, false)]
+        [TestCase(PermissionScopeType.Portfolio, UserRole.PortfolioAdmin, UserRole.Viewer, true, false)]
+        [TestCase(PermissionScopeType.Portfolio, UserRole.PortfolioAdmin, UserRole.PortfolioAdmin, true, true)]
+        public void A_key_reaches_a_unit_only_as_far_as_its_owners_role_there_gives(PermissionScopeType unit, UserRole ownerRole, UserRole keyRole, bool keyReads, bool keyWrites)
+        {
+            var key = KeyOf([new PermissionRule(unit, TeamA, ownerRole)], new PermissionRule(unit, TeamA, keyRole));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(key.CanRead(unit, TeamA), Is.EqualTo(keyReads), $"WHAT: a key limited to {keyRole} on a {unit}, whose owner holds {ownerRole} there, answers read={!keyReads}. WHY: a key reaches a unit only at a role its owner's role on that unit gives there, and {ownerRole} on a {unit} gives {(keyReads ? "at least" : "nothing toward")} {keyRole}. HOW: judge the owner's role on the unit by what it gives on that kind of unit, as the owner's own read is judged, not by its general rank.");
+                Assert.That(key.CanWrite(unit, TeamA), Is.EqualTo(keyWrites), $"WHAT: a key limited to {keyRole} on a {unit}, whose owner holds {ownerRole} there, answers write={!keyWrites}. WHY: a key never administers a unit its owner does not administer, and never loses what its owner covers. HOW: as above.");
+            }
+        }
+
+        [Test]
+        public void The_same_key_follows_its_owners_role_on_the_Team_as_it_changes()
+        {
+            var keyRow = new PermissionRule(PermissionScopeType.Team, TeamA, UserRole.TeamAdmin);
+
+            var whileOwnerAdministers = KeyOf([new PermissionRule(PermissionScopeType.Team, TeamA, UserRole.TeamAdmin)], keyRow);
+            var afterOwnerIsLoweredToViewer = KeyOf([new PermissionRule(PermissionScopeType.Team, TeamA, UserRole.Viewer)], keyRow);
+            var afterOwnerLosesTheTeam = KeyOf([], keyRow);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(whileOwnerAdministers.CanWrite(PermissionScopeType.Team, TeamA), Is.True, "WHAT: a Team Admin key of a Team Admin owner cannot write the Team. WHY: the owner's role covers the key. HOW: keep a key row the owner's role on that unit gives.");
+                Assert.That(afterOwnerIsLoweredToViewer.CanWrite(PermissionScopeType.Team, TeamA), Is.False, "WHAT: a Team Admin key still writes after its owner was lowered to Viewer. WHY: a key never acts above its owner's current role on the unit. HOW: judge the key against the owner's role as it is now.");
+                Assert.That(afterOwnerLosesTheTeam.CanRead(PermissionScopeType.Team, TeamA), Is.False, "WHAT: a key still reads a Team its owner no longer holds. WHY: a key reaches nothing its owner does not. HOW: drop a key row on a unit the owner holds nothing on.");
+            }
+        }
+
+        [TestCaseSource(nameof(EveryOwnerAndKeyRoleOnAUnit))]
+        public void A_key_never_reads_or_writes_a_unit_its_owner_cannot(PermissionScopeType unit, UserRole? ownerRole, UserRole keyRole)
+        {
+            PermissionRule[] ownerRows = ownerRole is { } role ? [new PermissionRule(unit, TeamA, role)] : [];
+            var owner = EffectiveAccess.Resolve(ownerRows, []);
+
+            var key = owner.LimitedTo([new PermissionRule(unit, TeamA, keyRole)]);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(!key.CanRead(unit, TeamA) || owner.CanRead(unit, TeamA), Is.True, $"WHAT: a key limited to {keyRole} on a {unit} reads it while its owner, holding {ownerRole?.ToString() ?? "nothing"} there, cannot. WHY: a key never reaches beyond its owner. HOW: judge the owner's role on the unit by what it gives on that kind of unit.");
+                Assert.That(!key.CanWrite(unit, TeamA) || owner.CanWrite(unit, TeamA), Is.True, $"WHAT: a key limited to {keyRole} on a {unit} writes it while its owner, holding {ownerRole?.ToString() ?? "nothing"} there, cannot. WHY: a key never reaches beyond its owner. HOW: as above.");
+            }
+        }
+
+        private static EffectiveAccess KeyOf(PermissionRule[] ownerRows, PermissionRule keyRow)
+        {
+            return EffectiveAccess.Resolve(ownerRows, []).LimitedTo([keyRow]);
+        }
+
+        private static IEnumerable<TestCaseData> EveryOwnerAndKeyRoleOnAUnit()
+            => from unit in new[] { PermissionScopeType.Team, PermissionScopeType.Portfolio }
+               from ownerRole in Enum.GetValues<UserRole>().Select(role => (UserRole?)role).Append(null)
+               from keyRole in Enum.GetValues<UserRole>()
+               select new TestCaseData(unit, ownerRole, keyRole);
+
         private static IEnumerable<TestCaseData> EveryUnitRole()
             => from unit in new[] { PermissionScopeType.Team, PermissionScopeType.Portfolio }
                from role in Enum.GetValues<UserRole>().Where(role => role != UserRole.SystemAdmin)

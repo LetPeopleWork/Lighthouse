@@ -1,7 +1,50 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F14",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Authorization/EffectiveAccessTest.cs::A_key_reaches_a_unit_only_as_far_as_its_owners_role_there_gives"
+},
+"expected": "F12",
+"stimulus": "F11",
+"user_result": "F13"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F18",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Authorization/EffectiveAccessTest.cs::The_same_key_follows_its_owners_role_on_the_Team_as_it_changes"
+},
+"expected": "F16",
+"stimulus": "F15",
+"user_result": "F17"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F22",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Authorization/EffectiveAccessTest.cs::A_key_never_reads_or_writes_a_unit_its_owner_cannot"
+},
+"expected": "F20",
+"stimulus": "F19",
+"user_result": "F21"
+}
+]
+},
 "counters": {
 "E": 3,
-"F": 10,
+"F": 22,
 "P": 1,
 "S": 1
 },
@@ -58,7 +101,19 @@
 "facts": {
 "F1": "Bug 6603: A limited API key can pass for an owner whose role on that unit does not apply to it. EffectiveAccess.Covers compares the owner's and the key's roles by general rank (Priority), while the owner's role on a unit only counts if it belongs to that kind of unit (PriorityOn). An owner whose only row on Team 5 is Portfolio Admin cannot read Team 5, yet a key limited to Viewer on Team 5 reads it, and a key limited to Team Admin on Team 5 administers it. Only reachable through a row written outside Lighthouse; every write path refuses it.",
 "F10": "When the owner role on a unit changes (raised, lowered or removed), the key follows the owner role on its next use, with no new key needed.",
+"F11": "Quoted last lines: \"End of SKILL.md\" and \"End of backend.md\". An owner holds one role on a Team or a Portfolio and limits a key to Viewer, or to the admin role of that unit, on the same unit; the key asks to read and to write it. Owners whose role gives nothing there: Portfolio Admin on a Team, Team Admin on a Portfolio, System Admin stored on either. Controls: Team Admin on the Team, Portfolio Admin on the Portfolio.",
+"F12": "Keys of owners whose role gives nothing on the unit are refused read and write there. The control owners Viewer key reads but does not write, and their admin key reads and writes.",
+"F13": "A limited key cannot read or administer a Team or Portfolio its owner cannot; keys of owners who administer the unit keep working.",
+"F14": "A fix that refuses only the stored roles in the table but still lets a misplaced role pass through another path, such as an owner Viewer row from a group rule combined with a misplaced admin row; that path already resolves to Viewer and is refused today.",
+"F15": "One key limited to Team Admin on a Team is judged against its owner while the owner is Team Admin there, after the owner is lowered to Viewer, and after the owner loses the Team.",
+"F16": "The key writes while the owner is Team Admin, no longer writes once the owner is Viewer, and cannot read once the owner holds nothing there.",
+"F17": "A key follows its owner role on the unit as that role changes, with no new key.",
+"F18": "A service that caches the owner access between requests; that re-reading per use lives in the service and is not observed at this level.",
+"F19": "For every unit kind (Team, Portfolio), every owner role stored on the unit or none, and every role a key can be limited to on that unit, the key asks to read and to write the unit.",
 "F2": "A limited API key reaches a unit only at a role its owner's role on that unit actually gives, judged the same way as the owner's own reads.",
+"F20": "The key never reads a unit its owner cannot read, and never writes a unit its owner cannot write.",
+"F21": "No limited key ever reaches beyond its owner on a unit.",
+"F22": "A fix that refuses every key row, so keys of admin owners lose access; the table test pins that the control keys keep their access.",
 "F3": "A limited API key reaches a unit only at a role its owner's role on that unit gives there",
 "F4": "A key limited to a Team or Portfolio reads or administers it only when its owner's role on that unit gives at least that role there",
 "F5": "An owner whose only row on a Team is Portfolio Admin (a role that gives nothing on a Team) limits a key to Viewer, and another key to Team Admin, on that Team; both keys ask to read and to write the Team. Control: an owner who is Team Admin on the Team does the same.",
