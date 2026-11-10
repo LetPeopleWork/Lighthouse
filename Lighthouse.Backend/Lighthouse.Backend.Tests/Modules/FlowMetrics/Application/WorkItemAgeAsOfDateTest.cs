@@ -5,6 +5,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -61,6 +62,9 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             forecastFilterRuleServiceMock.Setup(s => s.GetEffectiveRuleSet(It.IsAny<Team>()))
                 .Returns((Lighthouse.Backend.Models.WorkItemRules.WorkItemRuleSet?)null);
 
+            var transitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
+            transitionRepositoryMock.AnswersTransitionReadsFrom([]);
+
             testTeam = new Team { Id = 1, Name = "Test Team", ThroughputHistory = 30 };
             subject = new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
@@ -70,13 +74,11 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 serviceProvider.Object,
                 blackoutPeriodServiceMock.Object,
                 forecastFilterRuleServiceMock.Object,
-                Mock.Of<IWorkItemStateTransitionRepository>(),
+                transitionRepositoryMock.Object,
                 TestToday.Clock);
 
             workItems = new List<WorkItem>();
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns((Expression<Func<WorkItem, bool>> pred) => workItems.Where(pred.Compile()).AsQueryable());
+            workItemRepositoryMock.AnswersTeamReadsFrom(workItems);
         }
 
         [TearDown]

@@ -5,6 +5,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -40,11 +41,9 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var transitions = new List<WorkItemStateTransition> { new() { Id = 1, WorkItemId = 1, ToState = "Review", TransitionedAt = Day5 } };
 
             var workItemRepository = new Mock<IWorkItemRepository>();
-            workItemRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
+            workItemRepository.AnswersTeamReadsFrom(workItems);
             var transitionRepository = new Mock<IWorkItemStateTransitionRepository>();
-            transitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItemStateTransition, bool>>>()))
-                .Returns((Expression<Func<WorkItemStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+            transitionRepository.AnswersTransitionReadsFrom(transitions);
             var appSettings = new Mock<IAppSettingService>();
             appSettings.Setup(x => x.GetTeamDataRefreshSettings()).Returns(new RefreshSettings { Interval = 1 });
             var blackouts = new Mock<IBlackoutPeriodService>();

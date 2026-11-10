@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
@@ -11,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NUnit.Framework;
@@ -63,8 +63,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.Forecast
                 .Returns(forecastServiceMock.Object);
 
             workItems = new List<WorkItem>();
-            workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
+            workItemRepositoryMock.AnswersTeamReadsFrom(workItems);
 
             subject = new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),

@@ -100,6 +100,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return featureOrdering.Order(features).ToList();
         }
 
+        // A Feature sized by its Portfolio's default carries made-up work for Teams that never had any,
+        // so it is left out explicitly rather than trusted to show this Team a share of zero. The state
+        // goes into the same query because every match is loaded whole, forecasts included.
         public IReadOnlyList<Feature> FeaturesWithRealWorkForTeam(int teamId, StateCategories? onlyIn)
             => featureOrdering.Order(GetFeatures().Where(f =>
                     (onlyIn == null || f.StateCategory == onlyIn) &&

@@ -77,10 +77,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             var currentWipCount = GetWipSnapshotForTeam(team, Clock.TodayAsUtcMidnight).Count();
 
-            var backlogCount = workItemRepository
-                .GetAllByPredicate(i => i.TeamId == team.Id &&
-                    (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.ToDo))
-                .Count();
+            var backlogCount = workItemRepository.CountToDoOrDoingItemsOfTeam(team.Id);
 
             var features = featureRepository.GetAll()
                 .Where(f => f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.RemainingWorkItems > 0))
@@ -139,7 +136,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(team, $"Throughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done);
+                var closedItemsOfTeam = workItemRepository.DoneItemsOfTeam(team.Id);
                 return new RunChartData(GenerateThroughputRunChart(startDate, endDate, closedItemsOfTeam));
             }, logger);
         }
@@ -226,7 +223,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(team, $"StartedItems_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                var startedItems = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Done || i.StateCategory == StateCategories.Doing));
+                var startedItems = workItemRepository.DoingOrDoneItemsOfTeam(team.Id);
                 return new RunChartData(GenerateStartedRunChart(startDate, endDate, startedItems));
             }, logger);
         }
@@ -248,7 +245,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
                          {
                              var includedWorkItems = workItemTypes.Select(itemTypes => itemTypes.ToLowerInvariant()).ToList();
 
-                             var allItemsForTeam = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
+                             var allItemsForTeam = workItemRepository.ItemsOfTeam(team.Id);
                              var creationRunChart = GenerateCreationRunChart(startDate, endDate, allItemsForTeam.Where(item => includedWorkItems.Contains(item.Type.ToLowerInvariant())));
 
                              var throughput = new RunChartData(creationRunChart);
@@ -263,7 +260,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(team, $"WipOverTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
+                var itemsFromTeam = workItemRepository.DoingOrDoneItemsOfTeam(team.Id);
                 return new RunChartData(GenerateWorkInProgressByDay(startDate, endDate, itemsFromTeam));
             }, logger);
         }
@@ -276,7 +273,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             logger.LogDebug("Getting Total Work Item Age for over Time for Team {TeamName} between {StartDate} and {EndDate}", team.Name, startDate.Date, endDate.Date);
 
-            var itemsFromTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
+            var itemsFromTeam = workItemRepository.DoingOrDoneItemsOfTeam(team.Id);
             var wiaOverTime = GenerateTotalWorkItemAgeByDay(startDate, endDate, itemsFromTeam);
 
             logger.LogDebug("Finished updating Total Work Item Age Over Time for Team {TeamName}", team.Name);
@@ -526,7 +523,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         private List<WorkItem> ResolveCumulativeStateTimeCandidates(Team team, DateTime startDate, DateTime endDate)
         {
-            var teamItems = workItemRepository.GetAllByPredicate(item => item.TeamId == team.Id).ToList();
+            var teamItems = workItemRepository.ItemsOfTeam(team.Id);
             var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(team, teamItems);
 
             return itemsWithTransitions
@@ -539,8 +536,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             var itemIds = items.Select(item => item.Id).ToHashSet();
             var transitionsByItem = GroupTransitionsByItem(workItemStateTransitionRepository
-                .GetAllByPredicate(transition => itemIds.Contains(transition.WorkItemId))
-                .AsEnumerable()
+                .TransitionsOfWorkItems(itemIds)
                 .Select(transition => (transition.WorkItemId, transition)));
 
             // Team can be unpopulated on items that were not loaded through the navigation property;
@@ -602,8 +598,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             var completedItemIds = completedItems.Select(item => item.Id).ToHashSet();
             var transitionsByItem = GroupTransitionsByItem(workItemStateTransitionRepository
-                .GetAllByPredicate(transition => completedItemIds.Contains(transition.WorkItemId))
-                .AsEnumerable()
+                .TransitionsOfWorkItems(completedItemIds)
                 .Select(transition => (transition.WorkItemId, transition)));
 
             return completedItems
@@ -633,9 +628,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             var totalWorkItemAge = GetFromCacheIfExists(team, $"TotalWorkItemAge_{endDate:yyyy-MM-dd}", () =>
             {
 
-                var items = workItemRepository.GetAllByPredicate(
-                    i => i.TeamId == team.Id &&
-                         (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done));
+                var items = workItemRepository.DoingOrDoneItemsOfTeam(team.Id);
 
                 var (values, _) = GenerateTotalWorkItemAgeByDay(endDate, endDate, items);
                 return new InfoMetric(values[0]);
@@ -685,15 +678,8 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             return BuildFeatureSizePercentilesInfoDto(currentPercentiles, previousPercentiles, currentStart: startDate, currentEnd: endDate, previousStart: previousStart, previousEnd: previousEnd);
         }
 
-        // A Feature sized by its Portfolio's default carries made-up work for Teams that never had any,
-        // so it is left out explicitly rather than trusted to show this Team a share of zero. The state
-        // goes into the same query because the repository loads every match, forecasts included,
-        // before anything else can filter it.
-        private IQueryable<Feature> FeaturesTheTeamHasARealShareOf(Team team, StateCategories? onlyIn = null) =>
-            featureRepository.GetAllByPredicate(f =>
-                (onlyIn == null || f.StateCategory == onlyIn) &&
-                !f.IsUsingDefaultFeatureSize &&
-                f.FeatureWork.Any(fw => fw.TeamId == team.Id && fw.TotalWorkItems > 0));
+        private IReadOnlyList<Feature> FeaturesTheTeamHasARealShareOf(Team team, StateCategories? onlyIn = null) =>
+            featureRepository.FeaturesWithRealWorkForTeam(team.Id, onlyIn);
 
         public IEnumerable<WorkItem> GetWipSnapshotForTeam(Team team, DateTime endDate)
         {
@@ -701,9 +687,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(team, $"WipSnapshot_{endDate:yyyy-MM-dd}", () =>
             {
-                var items = workItemRepository.GetAllByPredicate(
-                    i => i.TeamId == team.Id &&
-                         (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done));
+                var items = workItemRepository.DoingOrDoneItemsOfTeam(team.Id);
 
                 var snapshot = GenerateWorkInProgressByDay(endDate, endDate, items)[0].OfType<WorkItem>().ToList();
 
@@ -757,10 +741,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             // Blocked items are those in an open state category (To Do OR Doing) — an item can be
             // stuck in To Do precisely because it is blocked, so it must be eligible. Done/Unknown
             // are excluded. The blocked-rule match itself is applied by the caller via IBlockedItemService.
-            return workItemRepository.GetAllByPredicate(
-                i => i.TeamId == team.Id &&
-                     (i.StateCategory == StateCategories.ToDo || i.StateCategory == StateCategories.Doing))
-                .ToList();
+            return workItemRepository.ToDoOrDoingItemsOfTeam(team.Id);
         }
 
         public ThroughputInfoDto GetThroughputInfoForTeam(Team team, DateTime startDate, DateTime endDate)
@@ -911,7 +892,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         private IEnumerable<WorkItem> GetWorkItemsClosedInDateRange(Team team, DateTime startDate, DateTime endDate)
         {
-            var closedItemsOfTeam = workItemRepository.GetAllByPredicate(i => i.TeamId == team.Id && i.StateCategory == StateCategories.Done).ToList();
+            var closedItemsOfTeam = workItemRepository.DoneItemsOfTeam(team.Id);
 
             return ClosedInDateRange(closedItemsOfTeam, startDate, endDate);
         }

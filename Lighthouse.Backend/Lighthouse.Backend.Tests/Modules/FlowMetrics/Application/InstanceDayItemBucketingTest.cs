@@ -5,6 +5,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -226,9 +227,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         private TeamMetricsService BuildTeamMetricsService()
         {
             var workItemRepository = new Mock<IWorkItemRepository>();
-            workItemRepository
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
+            workItemRepository.AnswersTeamReadsFrom(workItems);
 
             var appSettingService = new Mock<IAppSettingService>();
             appSettingService.Setup(x => x.GetTeamDataRefreshSettings()).Returns(new RefreshSettings { Interval = 1 });

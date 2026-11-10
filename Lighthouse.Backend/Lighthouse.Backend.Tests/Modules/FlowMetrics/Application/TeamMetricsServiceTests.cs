@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Forecast;
@@ -38,6 +37,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             forecastServiceMock = new Mock<IForecastService>();
             blackoutPeriodServiceMock = new Mock<IBlackoutPeriodService>();
             workItemStateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
+            workItemStateTransitionRepositoryMock.AnswersTransitionReadsFrom([]);
             SetupEffectiveBlackoutDays();
 
             var appSettingsServiceMock = new Mock<IAppSettingService>();
@@ -58,8 +58,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 
             workItems = new List<WorkItem>();
 
-            workItemRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-            .Returns((Expression<Func<WorkItem, bool>> predicate) => workItems.Where(predicate.Compile()).AsQueryable());
+            workItemRepositoryMock.AnswersTeamReadsFrom(workItems);
         }
 
         private void SetupEffectiveBlackoutDays(params BlackoutPeriod[] periods)
@@ -191,7 +190,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 Assert.That(workedOn.Count, Is.EqualTo(2));
                 featureRepositoryMock.Verify(r => r.FeaturesWithReferenceIds(It.IsAny<IReadOnlyCollection<string>>()), Times.Never);
                 featureRepositoryMock.Verify(r => r.GetAll(), Times.Never);
-                featureRepositoryMock.Verify(r => r.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()), Times.Never);
+                featureRepositoryMock.Verify(r => r.FeaturesWithRealWorkForTeam(It.IsAny<int>(), It.IsAny<StateCategories?>()), Times.Never);
                 featureRepositoryMock.Verify(r => r.WholeGraphWithoutHistograms(), Times.Never);
                 featureRepositoryMock.VerifyNoOtherCalls();
             }
@@ -2755,8 +2754,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 new() { WorkItemId = item.Id, FromState = Building, ToState = Review, TransitionedAt = started.AddDays(15) },
                 new() { WorkItemId = item.Id, FromState = Review, ToState = "Done", TransitionedAt = started.AddDays(30) },
             ];
-            workItemStateTransitionRepositoryMock.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItemStateTransition, bool>>>()))
-                .Returns((Expression<Func<WorkItemStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+            workItemStateTransitionRepositoryMock.AnswersTransitionReadsFrom(transitions);
 
             return team;
         }

@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.Metrics;
@@ -6,6 +5,7 @@ using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
+using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -60,10 +60,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 
             stateTransitions = new List<WorkItemStateTransition>();
             stateTransitionRepositoryMock = new Mock<IWorkItemStateTransitionRepository>();
-            stateTransitionRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItemStateTransition, bool>>>()))
-                .Returns((Expression<Func<WorkItemStateTransition, bool>> pred) =>
-                    stateTransitions.Where(pred.Compile()).AsQueryable());
+            stateTransitionRepositoryMock.AnswersTransitionReadsFrom(stateTransitions);
 
             subject = new TeamMetricsService(
                 Mock.Of<ILogger<TeamMetricsService>>(),
@@ -78,10 +75,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 
             workItems = new List<WorkItem>();
             features = new List<Feature>();
-            workItemRepositoryMock
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
-                .Returns((Expression<Func<WorkItem, bool>> pred) =>
-                    workItems.Where(pred.Compile()).AsQueryable());
+            workItemRepositoryMock.AnswersTeamReadsFrom(workItems);
             featureRepositoryMock
                 .Setup(x => x.GetByPredicate(It.IsAny<Func<Feature, bool>>()))
                 .Returns((Func<Feature, bool> pred) =>

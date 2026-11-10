@@ -34,6 +34,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
             repository
                 .Setup(r => r.FeaturesWithReferenceIds(It.IsAny<IReadOnlyCollection<string>>()))
                 .Returns((IReadOnlyCollection<string> referenceIds) => held.Where(feature => referenceIds.Contains(feature.ReferenceId)).ToList());
+            repository
+                .Setup(r => r.FeaturesWithRealWorkForTeam(It.IsAny<int>(), It.IsAny<StateCategories?>()))
+                .Returns((int teamId, StateCategories? onlyIn) => held.Where(feature =>
+                    (onlyIn == null || feature.StateCategory == onlyIn) &&
+                    !feature.IsUsingDefaultFeatureSize &&
+                    feature.FeatureWork.Any(work => work.TeamId == teamId && work.TotalWorkItems > 0)).ToList());
         }
     }
 }
