@@ -420,3 +420,24 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - `AsNoTracking` or projections for speed: rejected; they change identity semantics and need a measured payoff (S13's territory).
 - Unit of work for `UpdateTeamMetrics`: not here (D-8).
 - Domain events, outbox, optimistic concurrency, strategy: not needed (no cross-context reaction, no write, no new variation).
+
+## Wave: DEVOPS / [REF] Platform lens (2026-11-10)
+
+Platform risk is low: S05f moves 27 reads into named methods on four existing repositories. It changes no route,
+schema, configuration, environment or deployment. The lens is answered item by item, so nothing is skipped silently;
+no platform-architect dispatch or operational review ran, because nothing below needs a design decision.
+
+| Item | Answer |
+|---|---|
+| Environments and toolchain | Unchanged: .NET 10 SDK, the existing test project, no new package. The parity tests reuse the Testcontainers Postgres and SQLite set-up of `Integration/Containers/FeatureListParityOnPostgresTests`, so Docker is needed locally and in CI, as it already is. |
+| Deployment and rollback | No migration, no `appsettings` key, no Docker or installer change; the EF model does not change (`ef-model-unchanged` EXAMINE command). Rollback is a plain revert of the commit range. |
+| Observability | Unchanged: no type moves namespace, so log categories stay the same. The SQL each read sends is the same as today (same predicate per read, D-2); `RealityCheckQueryCountTest` pins the number of statements. |
+| Recovery and failure modes | Unchanged: the reads keep their tracking, includes and in-memory ordering (D-4), and add no retry, timeout or new exception path. |
+| CI cost | The touched files (`Services/Interfaces/Repositories`, `Services/Implementation/Repositories`, `Modules/FlowMetrics/Application`, tests) match `BACKEND_REGEX` and none matches `SHARED_REGEX`, so a push runs the backend selection without the live connector suites. No `Program.cs` edit. |
+| Release-build rules | The S05a guard is a source scan and the R3–R5 rules read the IL; neither changes shape. The Architecture tests run once with `-c Release` at the end of each nwdes feature. |
+| Test-time budgets and test lists | The two new parity classes are integration tier (container). They must stay under the backend per-class budget of 34 s (`Scripts/test-timings/test-time-budget.json`); no ledger entry is planned. `TestHostUseGuardTest.HostUsersStillToMove` is not touched: the parity tests start no web host. |
+| Mutation (finalize) | Stryker.NET, whole-file `mutate` entries for the two services and the four repositories; the test filter names the metrics unit tests and the two parity classes. Bar: no file lower than its baseline (D-9); the new read methods at 80 % or more. Prove the scope from `reports/mutation-report.json`. |
+| Usage-data event | N/A, because no feature becomes usable or used differently: the answers are byte-identical by design. Nothing is added to `UsageDataEventName` or `docs/settings/usagedata.md`. |
+| Verification commands | `Lighthouse.Backend/Test-Fast.ps1` (fast loop); the slice's parity test class; `dotnet build` (zero warnings); the filtered `dotnet test` from CLAUDE.md (gate); `dotnet test -c Release --filter FullyQualifiedName~Architecture`. No frontend command: no frontend file changes. |
+
+DEVOPS hands DELIVER no new constraint beyond Docker for the parity tests and their 34 s per-class budget.
