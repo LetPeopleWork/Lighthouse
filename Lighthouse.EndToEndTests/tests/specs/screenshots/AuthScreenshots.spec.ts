@@ -87,6 +87,9 @@ test.describe("@screenshot @auth", () => {
 			const settingsPage = await overview.lightHousePage.goToSettings();
 			const rbac = await settingsPage.goToRbacSettings();
 
+			await expect(
+				rbac.bootstrapBanner.or(rbac.addGroupMappingButton),
+			).toBeVisible();
 			if (await rbac.bootstrapBanner.isVisible()) {
 				await rbac.becomeFirstSystemAdmin();
 				await expect(rbac.usersTable).toBeVisible();
