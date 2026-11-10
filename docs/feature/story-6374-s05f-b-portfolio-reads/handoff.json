@@ -1,7 +1,8 @@
 {
 "counters": {
 "C": 1,
-"F": 153,
+"E": 3,
+"F": 156,
 "L": 4,
 "P": 3,
 "S": 1,
@@ -623,6 +624,31 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F154"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F155"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F156"
+}
+]
+},
 "facts": {
 "F1": "S05f #6374, part B: PortfolioMetricsService stops calling GetAllByPredicate and reads through named reads on the owner repositories, behaviour-free, and leaves the GetAllByPredicate allow-list (14 -> 13). Design: docs/feature/story-6374-s05f-metrics-services-off-getallbypredicate/feature-delta.md",
 "F10": "PortfolioMetricsService reads only through named reads on the owner repositories, and the allow-list drops it",
@@ -685,6 +711,9 @@
 "F151": "A missed set-up throws, so the test goes red, not falsely green; review checks the diff shows no changed Assert, Is. or Verify line",
 "F152": "Only the files on the inline list call GetAllByPredicate; PortfolioMetricsService is no longer on it (14 to 13), scanned over every production source file, including later ones.",
 "F153": "Flow metrics module rules R2-R6 hold with unchanged baselines: no edge from the module's Application to EF Core or Data, no newcomer on the inbound lists, in CI's Release configuration.",
+"F154": "A maintainer reading the Portfolio metrics code and the GetAllByPredicate allow-list finds no remaining use of GetAllByPredicate by the Portfolio metrics service, and no allow-list entry naming it.",
+"F155": "For each named Portfolio read, a user comparing it with the predicate it replaced sees the same features or transitions, in the same order, with the same related data loaded and tracked, on both SQLite and Postgres.",
+"F156": "A user viewing Portfolio metrics sees exactly the same answers as before, and each answer costs the same number of database queries.",
 "F16": "Portfolio read answers with each read's own predicate over a list read at each call; a T2 answer for the transition mock.",
 "F17": "Mock type and Arrange stubs retarget; transition mock answers empty by default; Asserts byte-identical.",
 "F18": "Portfolio class: Arrange stubs retarget, explicit empty T2 answer.",
