@@ -50,11 +50,15 @@ WORKDIR /app
 
 # Install the latest PostgreSQL client tools from the PGDG apt repository.
 # pg_dump is backwards compatible, so the latest client works with any supported server version.
+# Both downloads retry: a single dropped connection to postgresql.org used to fail the whole image build.
 USER root
-RUN apt-get update \
+RUN echo 'Acquire::Retries "5";' > /etc/apt/apt.conf.d/80-retries \
+	&& apt-get update \
 	&& apt-get install -y --no-install-recommends curl gnupg \
-	&& curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc \
-	| gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg \
+	&& curl -fsSL --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 20 \
+	-o /tmp/postgresql.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+	&& gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg /tmp/postgresql.asc \
+	&& rm /tmp/postgresql.asc \
 	&& echo "deb [signed-by=/etc/apt/trusted.gpg.d/postgresql.gpg] https://apt.postgresql.org/pub/repos/apt \
 	$(. /etc/os-release && echo "$VERSION_CODENAME")-pgdg main" \
 	> /etc/apt/sources.list.d/pgdg.list \
