@@ -104,6 +104,25 @@ const openAccessSettings = () =>
 
 const theRulesTable = () => screen.findByTestId("rbac-group-mappings-table");
 
+const theSsoGroupsSection = async () => {
+	const heading = await screen.findByRole("heading", { name: /^SSO Groups$/ });
+	if (heading.parentElement === null) {
+		throw new Error("The SSO Groups heading has no section around it");
+	}
+	return heading.parentElement;
+};
+
+const rulesThatBelongElsewhere = [
+	{ id: 7, groupValue: "team-7-admins", role: "TeamAdmin", scopeType: "Team" },
+	{ id: 8, groupValue: "system-viewers", role: "Viewer", scopeType: "System" },
+	{
+		id: 9,
+		groupValue: "team-admins-as-sa",
+		role: "SystemAdmin",
+		scopeType: "Team",
+	},
+] as unknown as RbacGroupMapping[];
+
 const chooseRole = async (option: string) => {
 	fireEvent.mouseDown(await screen.findByRole("combobox", { name: /^Role$/ }));
 	fireEvent.click(
@@ -152,13 +171,24 @@ describe("Settings > Access, SSO group rules for all Teams and Portfolios", () =
 		vi.restoreAllMocks();
 	});
 
-	it("lists each rule with the group, its role and what it applies to, in the organisation's words", async () => {
+	it("lists each rule with the group, its role and what it applies to, in the organisation's words, and nothing else", async () => {
+		rbacService.getGroupMappings.mockResolvedValue([
+			systemAdminsGroup,
+			viewerOnAllForTeamReaders,
+			...rulesThatBelongElsewhere,
+		]);
 		openAccessSettings();
 
 		const table = await theRulesTable();
+		const section = await theSsoGroupsSection();
+		expect(within(section).queryByRole("progressbar")).not.toBeInTheDocument();
+		expect(within(section).queryByRole("alert")).not.toBeInTheDocument();
 		expect(
-			screen.getByRole("heading", { name: /^SSO Groups$/ }),
-		).toBeInTheDocument();
+			within(table)
+				.getAllByRole("row")
+				.slice(1)
+				.map((row) => within(row).getAllByRole("cell")[0].textContent),
+		).toEqual(["lh-system-admins", "team-readers"]);
 		expect(
 			within(table)
 				.getAllByRole("columnheader")
@@ -224,7 +254,8 @@ describe("Settings > Access, SSO group rules for all Teams and Portfolios", () =
 
 		openAccessSettings();
 
-		expect(await screen.findByRole("progressbar")).toBeInTheDocument();
+		const section = await theSsoGroupsSection();
+		expect(within(section).getByRole("progressbar")).toBeInTheDocument();
 		expect(
 			screen.queryByTestId("rbac-group-mappings-table"),
 		).not.toBeInTheDocument();

@@ -1,10 +1,12 @@
 import axios from "axios";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type {
+	EveryoneSignedIn,
 	RbacGroupMapping,
 	RbacScopedMemberSummary,
 	RbacStatus,
 	RbacUser,
+	SystemWideRule,
 	UserAuthorizationSummary,
 } from "../../models/Authorization/RbacModels";
 import { ApiError } from "./ApiError";
@@ -272,6 +274,59 @@ describe("RbacService", () => {
 		expect(result).toEqual(mockMappings);
 		expect(mockedAxios.get).toHaveBeenCalledWith(
 			"/authorization/portfolios/9/group-mappings",
+		);
+	});
+
+	it("should fetch the system-wide rules that reach a team", async () => {
+		const rules: SystemWideRule[] = [{ role: "Viewer", holder: "Readers" }];
+		mockedAxios.get.mockResolvedValueOnce({ data: rules });
+
+		const result = await subject.getTeamSystemWideRules(12);
+
+		expect(result).toEqual(rules);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/teams/12/system-wide-rules",
+		);
+	});
+
+	it("should fetch the system-wide rules that reach a portfolio", async () => {
+		const rules: SystemWideRule[] = [{ role: "UnitAdmin", holder: "Admins" }];
+		mockedAxios.get.mockResolvedValueOnce({ data: rules });
+
+		const result = await subject.getPortfolioSystemWideRules(9);
+
+		expect(result).toEqual(rules);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/portfolios/9/system-wide-rules",
+		);
+	});
+
+	it("should fetch the everyone-signed-in switch with its token", async () => {
+		const setting: EveryoneSignedIn = {
+			everyoneCanView: true,
+			concurrencyToken: "token-1",
+		};
+		mockedAxios.get.mockResolvedValueOnce({ data: setting });
+
+		const result = await subject.getEveryoneSignedIn();
+
+		expect(result).toEqual(setting);
+		expect(mockedAxios.get).toHaveBeenCalledWith(
+			"/authorization/everyone-signed-in",
+		);
+	});
+
+	it("should save the everyone-signed-in switch with the token it was read with", async () => {
+		mockedAxios.put.mockResolvedValueOnce({ data: {} });
+
+		await subject.setEveryoneSignedIn({
+			everyoneCanView: false,
+			concurrencyToken: "token-1",
+		});
+
+		expect(mockedAxios.put).toHaveBeenCalledWith(
+			"/authorization/everyone-signed-in",
+			{ everyoneCanView: false, concurrencyToken: "token-1" },
 		);
 	});
 

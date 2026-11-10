@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { BrowserRouter } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -134,13 +134,21 @@ describe("The Access tab of a Team", () => {
 		).not.toBeInTheDocument();
 	});
 
-	it("offers a System Admin the form to add a group, next to the same notice", async () => {
+	it("offers a System Admin the form to add a group as Team Admin or Viewer, next to the same notice", async () => {
 		openTheAccessTabAs(true);
 
 		expect(await screen.findByLabelText(/^Group value$/)).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: /^Add Group Mapping$/ }),
 		).toBeInTheDocument();
+		fireEvent.mouseDown(
+			within(screen.getByTestId("scoped-group-role-input")).getByRole(
+				"combobox",
+			),
+		);
+		expect(
+			screen.getAllByRole("option").map((option) => option.textContent),
+		).toEqual(["Team Admin", "Viewer"]);
 		expect(
 			await screen.findByText(
 				/^Also reachable through access to all Teams and Portfolios$/,

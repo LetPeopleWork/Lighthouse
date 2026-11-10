@@ -170,7 +170,7 @@ describe("Settings > Access, everyone signed in can view all Teams and Portfolio
 		expect(screen.queryByLabelText(theSwitchLabel)).not.toBeInTheDocument();
 	});
 
-	it("asks first, naming the reach in the organisation's words, and Cancel changes nothing", async () => {
+	it("asks first, naming the reach in the organisation's words, and Escape or Cancel changes nothing", async () => {
 		openAccessSettings();
 
 		fireEvent.click(await theSwitchOnceKnown());
@@ -178,6 +178,13 @@ describe("Settings > Access, everyone signed in can view all Teams and Portfolio
 		expect(confirmation).toHaveTextContent(
 			/Everyone who can sign in, now and later, can read every Squad and Program, and can vote and comment on Refinement\./,
 		);
+		fireEvent.keyDown(confirmation, { key: "Escape" });
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+
+		fireEvent.click(await theSwitch());
+		await theConfirmation();
 		fireEvent.click(screen.getByRole("button", { name: /^Cancel$/ }));
 
 		await waitFor(() =>
@@ -205,12 +212,26 @@ describe("Settings > Access, everyone signed in can view all Teams and Portfolio
 			}),
 		);
 		await waitFor(async () => expect(await theSwitch()).toBeChecked());
+		await waitFor(() =>
+			expect(screen.queryByRole("dialog")).not.toBeInTheDocument(),
+		);
+		expect(
+			screen.getByText(
+				/^On: everyone signed in can view all Squads and Programs\.$/,
+			),
+		).toBeInTheDocument();
 		expect(reportUsage.mock.calls).toEqual([
 			[{ name: "SystemWideAccessGranted" }],
 		]);
 	});
 
-	it("turns it off with no question and reports nothing", async () => {
+	it("turns it off with no question, keeps the switch disabled while it saves and reports nothing", async () => {
+		let finishTheSave: () => void = () => undefined;
+		rbacService.setEveryoneSignedIn.mockReturnValue(
+			new Promise<void>((resolve) => {
+				finishTheSave = resolve;
+			}),
+		);
 		rbacService.getEveryoneSignedIn
 			.mockResolvedValueOnce(onWithANewToken)
 			.mockResolvedValue({
@@ -230,7 +251,38 @@ describe("Settings > Access, everyone signed in can view all Teams and Portfolio
 			}),
 		);
 		expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+		expect(await theSwitch()).toBeDisabled();
+
+		finishTheSave();
+
+		await waitFor(async () => expect(await theSwitch()).not.toBeChecked());
+		await waitFor(async () => expect(await theSwitch()).toBeEnabled());
 		expect(reportUsage).not.toHaveBeenCalled();
+	});
+
+	it("says the save failed, not that someone else changed it, when it fails for another reason, and clears that once a save goes through", async () => {
+		rbacService.getEveryoneSignedIn.mockResolvedValue(onWithANewToken);
+		rbacService.setEveryoneSignedIn
+			.mockRejectedValueOnce(new ApiError(500, "Server error"))
+			.mockResolvedValue(undefined);
+		openAccessSettings();
+
+		const control = await theSwitchOnceKnown();
+		await waitFor(() => expect(control).toBeChecked());
+		fireEvent.click(control);
+
+		expect(await screen.findByRole("alert")).toHaveTextContent(
+			/^Could not save this setting\. Reload the page to try again\.$/,
+		);
+
+		fireEvent.click(await theSwitchOnceKnown());
+
+		await waitFor(() =>
+			expect(rbacService.setEveryoneSignedIn).toHaveBeenCalledTimes(2),
+		);
+		await waitFor(() =>
+			expect(screen.queryByRole("alert")).not.toBeInTheDocument(),
+		);
 	});
 
 	it("reloads the switch and says someone else changed it when the save is a conflict", async () => {

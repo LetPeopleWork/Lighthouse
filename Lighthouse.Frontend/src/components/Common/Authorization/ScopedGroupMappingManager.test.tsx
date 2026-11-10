@@ -88,6 +88,9 @@ describe("ScopedGroupMappingManager", () => {
 				expect(screen.getByTestId("scoped-group-row-11")).toBeInTheDocument();
 			});
 			expect(screen.getByTestId("scoped-group-row-12")).toBeInTheDocument();
+			expect(
+				screen.getAllByRole("columnheader").map((header) => header.textContent),
+			).toEqual(["Group", "Role", "Actions"]);
 			expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 			expect(fetcher).toHaveBeenCalledTimes(1);
 		});
