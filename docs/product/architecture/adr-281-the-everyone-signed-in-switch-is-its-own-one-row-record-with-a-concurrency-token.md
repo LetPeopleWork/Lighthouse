@@ -1,6 +1,6 @@
 # ADR-281: The everyone signed in switch is its own one-row record with a concurrency token, and it can only say "view"
 
-**Status**: Accepted (decided 2026-11-07, not yet shipped, Epic 6577)
+**Status**: Accepted (decided 2026-11-07, shipped on `main` 2026-11-09, Epic 6577)
 **Date**: 2026-11-07
 **Feature**: `docs/feature/epic-6577-system-wide-access/`
 

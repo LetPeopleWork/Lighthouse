@@ -1,6 +1,6 @@
 # ADR-280: A system-wide rule is a group mapping on the AllUnits scope, Admin on all is one generic UnitAdmin role, and permissions are resolved by reach in one pure value
 
-**Status**: Accepted (decided 2026-11-07, not yet shipped, Epic 6577)
+**Status**: Accepted (decided 2026-11-07, shipped on `main` 2026-11-09, Epic 6577)
 **Date**: 2026-11-07
 **Feature**: `docs/feature/epic-6577-system-wide-access/`
 

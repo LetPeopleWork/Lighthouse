@@ -54,7 +54,7 @@ levels exist (Epic 6455); until then a change to one page keeps the two pages pa
 | Surface | Holds | Context | Today |
 |---|---|---|---|
 | **Organisation** | Terminology; levels and their names; calendar (blackout periods); Feature ordering policy; refresh cadence; the connection mapping: per connection and level, its item types, parent sources, dependencies and shared defaults | Organisation set-up | System Settings → Configuration, connection defaults, per-unit settings |
-| **Access** | System Admins, roles, members per unit, IdP group mappings, API keys | Access | System Settings → System Admins, API Keys; unit settings |
+| **Access** | System Admins, roles, members per unit, IdP group mappings, system-wide rules (Viewer on all, Admin on all, the everyone signed in switch), API keys | Access | System Settings → Access (SSO Groups and the everyone signed in switch), System Admins, API Keys; unit settings; a unit's Access tab lists, read-only, the system-wide rules that also reach it |
 | **System** | Connections (credentials, health), database and backups, encryption, demo data, log level, usage data, system info, licence | Tracker integration (connections), Licensing, platform lane | System Settings tabs |
 
 A unit's own Settings tab holds only its overrides and its local-only settings (Feature WIP, throughput window).

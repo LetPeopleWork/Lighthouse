@@ -137,7 +137,7 @@ jobs:
       I want to manage which users are Viewers or Admins for my scope independently,
       so I can onboard or remove colleagues without waiting for the System Admin.
     dimensions:
-      functional: Assign/remove Viewer and TeamAdmin roles for my team; configure SSO group mappings for my team
+      functional: Assign/remove Viewer and TeamAdmin roles for my team; see which SSO groups reach my team, through a mapping on the team or a system-wide rule (read-only; only a System Admin adds or removes a group mapping)
       emotional: Feel autonomous and unblocked; avoid feeling dependent on a central gatekeeper for routine changes
       social: Be seen as a self-sufficient team lead who handles their own access governance
     forces:

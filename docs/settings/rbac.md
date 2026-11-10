@@ -17,7 +17,7 @@ RBAC is a **Premium** feature. A valid Premium license is required, [OIDC authen
 
 ## Overview
 
-By default — with authentication enabled but RBAC not enabled or not yet bootstrapped — every signed-in user has full access. RBAC narrows that down: each user holds one or more **role assignments**, and each role grants a specific set of capabilities scoped to a specific entity (the whole system, a single team, or a single portfolio).
+By default — with authentication enabled but RBAC not enabled or not yet bootstrapped — every signed-in user has full access. RBAC narrows that down: each user holds one or more **role assignments**, and each role grants a specific set of capabilities scoped to a specific entity (the whole system, a single team, a single portfolio, or every team and portfolio at once through a [system-wide rule](#system-wide-rules)).
 
 ```mermaid
 %%{init: {'theme': 'neutral'}}%%
@@ -30,7 +30,7 @@ flowchart LR
     E -->|gates| A[What the user can read / edit]
 ```
 
-A user's **effective permissions** are the merged set of their direct assignments and any roles inherited from SSO group memberships. When the two overlap, the higher role wins.
+A user's **effective permissions** are the merged set of their direct assignments and any roles inherited from SSO group memberships. When the two overlap on the same team or portfolio, a role given directly to a person replaces a role from a group. A [system-wide rule](#system-wide-rules) is never replaced: where it reaches, the person gets the higher of the two.
 
 ![RBAC Settings](../assets/settings/rbac.png)
 
@@ -38,21 +38,23 @@ A user's **effective permissions** are the merged set of their direct assignment
 
 ## Roles
 
-Lighthouse defines four roles. Each role is scoped to either the whole system, a single team, or a single portfolio.
+Lighthouse defines four roles. Each role is scoped to the whole system, to a single team, or to a single portfolio. Viewer and Admin can also be given for every team and portfolio at once, through a [system-wide rule](#system-wide-rules).
 
 | Role | Scope | What it grants |
 |---|---|---|
 | **System Admin** | System-wide | Full read / edit / delete on every team and portfolio, plus management of users, group mappings, work tracking system connections, and system settings. **Creates new teams and portfolios.** Clones and deletes existing ones. |
-| **Team Admin** | A specific team | Read and **edit** the team's settings, throughput, features, and metrics. Cannot create, clone, or delete teams; cannot manage any portfolio. |
-| **Portfolio Admin** | A specific portfolio | Read and **edit** the portfolio's features, settings, and metrics. Cannot create, clone, or delete portfolios; cannot manage any team. |
-| **Viewer** | A specific team **or** a specific portfolio | Read-only access to the assigned entity. Cannot edit, delete, or create. |
+| **Team Admin** | A specific team. As **Admin on all**: every team and portfolio | Read and **edit** the team's settings, throughput, features, and metrics. Cannot create, clone, or delete teams; cannot manage any portfolio. |
+| **Portfolio Admin** | A specific portfolio. As **Admin on all**: every team and portfolio | Read and **edit** the portfolio's features, settings, and metrics. Cannot create, clone, or delete portfolios; cannot manage any team. |
+| **Viewer** | A specific team **or** a specific portfolio. As **Viewer on all**: every team and portfolio | Read-only access to the assigned entity, or to every team and portfolio. Cannot edit, delete, or create. Can still vote and comment in a team's Refinement. |
 
 A single user can hold multiple role assignments — for example, *Team Admin on Team Alpha*, *Viewer on Portfolio Vision*, and *Portfolio Admin on Portfolio Horizon* at the same time.
 
 {: .important}
-The System Admin role is the only role that is **not** scoped to a specific team or portfolio. Every other role is bound to exactly one entity.
+System Admin is the only role that gives access to the whole system. Without a system-wide rule, every other role is bound to exactly one team or portfolio. With one, Viewer and Admin reach every team and portfolio, but never the system itself.
 
 ### Capability matrix at a glance
+
+Read "own scope" as the team or portfolio the role was given for, or every team and portfolio when the role comes from a system-wide rule. **Admin on all** has the same rights as Team Admin and Portfolio Admin here, on every team and portfolio. **Viewer on all** has the same rights as Viewer.
 
 |  | System Admin | Team Admin (scope) | Portfolio Admin (scope) | Viewer (scope) |
 |---|---|---|---|---|
@@ -71,6 +73,8 @@ The System Admin role is the only role that is **not** scoped to a specific team
 | [Remove several reports](../reports/reports.html#removing-several-reports): only when you may delete every selected report | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
 | [Export several reports as one PDF](../reports/reports.html#a-pdf-of-several-reports): anyone who can read the reports | ✅ | ✅ (own scope) | ✅ (own scope) | ✅ (own scope) |
 | Manage users / group mappings | ✅ | ❌ | ❌ | ❌ |
+| Add or remove a [system-wide rule](#system-wide-rules), and turn **Everyone signed in** on or off | ✅ | ❌ | ❌ | ❌ |
+| See which system-wide rules also reach a team or portfolio (read-only) | ✅ | ✅ (own scope) | ✅ (own scope) | ❌ |
 | Manage work tracking system connections | ✅ | ❌ | ❌ | ❌ |
 | Read connection names and the fields the settings need (never secrets or credentials) | ✅ | ✅ | ✅ | ❌ |
 | Install a Lighthouse update from within the app | ✅ | ❌ | ❌ | ❌ |
@@ -133,7 +137,7 @@ When RBAC is enabled for the first time on a fresh database, **no System Admin e
 2. Sign in to Lighthouse as the user you want to become the first System Admin. (Note: license upload is allowed in bootstrap mode — see below.)
 3. Go to **Settings → Access**.
 4. A yellow banner shows **You have not been granted a System Admin role yet**. Click **Become First System Admin**.
-5. You are now the first System Admin. The banner disappears and the Users / Group Mappings tables become editable.
+5. You are now the first System Admin. The banner disappears and the Users table and SSO Groups become editable.
 
 ### Bootstrap flow on a fresh install
 
@@ -181,13 +185,19 @@ For the **license-upload bootstrap path**, the Emergency Admin does NOT count as
 
 ## Granting roles to users
 
-Once you are a System Admin, you can grant roles from **Settings → Access → Users**:
+Once you are a System Admin, you can grant roles from two places.
+
+**System Admin** is granted in **Settings → Access**, in the Users table:
 
 1. Sign-in events automatically create a user row the first time someone authenticates. If a user has not signed in yet, ask them to sign in once so their row appears.
-2. Click the **Edit** icon next to the user's row.
-3. Choose a role and (for Team Admin / Portfolio Admin / Viewer) the team or portfolio to scope it to. Role changes apply immediately — there is no separate Save step.
+2. Click **Grant** next to the user's row. **Revoke** takes the role away again.
 
-To revoke access, click the **Trash** icon. Removing the last role assignment for a user takes their permissions back to nothing — they will still be able to sign in, but Lighthouse will not show them any teams or portfolios.
+**Team Admin, Portfolio Admin and Viewer** are granted on the team or portfolio itself, on its **Access** tab:
+
+1. Open the team or portfolio and choose the **Access** tab. Only an admin of that team or portfolio (and a System Admin) sees it.
+2. Find the person in the list, and choose their role. Role changes apply immediately — there is no separate Save step.
+
+To take a role away, remove the person from that **Access** tab. To remove a user from Lighthouse altogether, click **Remove** in the Users table in **Settings → Access**. A user who has lost every role can still sign in, but Lighthouse shows them no teams or portfolios, unless a [system-wide rule](#system-wide-rules) reaches them.
 
 {: .note}
 You cannot revoke your own System Admin role if you are the only System Admin remaining. Lighthouse keeps at least one System Admin at all times.
@@ -196,20 +206,79 @@ You cannot revoke your own System Admin role if you are the only System Admin re
 
 ## SSO group mappings
 
-If your identity provider issues group claims, you can grant roles to entire groups instead of one user at a time. Group-derived roles behave **exactly** like direct grants — they merge into the user's effective permissions on every request.
+If your identity provider issues group claims, you can grant roles to entire groups instead of one user at a time. Group-derived roles merge into the user's effective permissions on every request. No database row is created for the user: the role is computed from the claim.
 
-1. Go to **Settings → Access → Group Mappings**.
-2. Click **Add Group Mapping**.
-3. Enter the **Group value** as it appears in the user's token claims (case-sensitive — copy/paste from your IdP).
-4. Choose the **Role** and the scope (System / a specific team / a specific portfolio).
-5. The mapping applies immediately.
+A group can get a role in three ways:
+
+- **System Admin**, in **Settings → Access → SSO Groups**.
+- **Viewer on all** or **Admin on all**, also in **SSO Groups**. These are [system-wide rules](#system-wide-rules).
+- **Team Admin, Portfolio Admin or Viewer on one team or portfolio**, on that team's or portfolio's **Access** tab, under **Add Group Mapping**. Only a System Admin can add or remove these. A team or portfolio admin sees the list but not the form.
+
+To add a group in **SSO Groups**:
+
+1. Go to **Settings → Access** and find **SSO Groups**.
+2. Enter the **Group value** as it appears in the user's token claims (case-sensitive — copy/paste from your IdP).
+3. Choose the **Role**: **System Admin**, **Viewer on all** or **Admin on all**.
+4. Click **Add Mapping**. The mapping applies immediately.
 
 ![Group Mapping Controls](../assets/settings/rbac_groupmapping.png)
 
-The next time a user from that group signs in (or refreshes their session), they will automatically have the mapped role. No database row is created — the role is computed from the claim on every request.
+The next time a user from that group signs in (or refreshes their session), they will automatically have the mapped role.
 
 {: .important}
 The group claim name Lighthouse reads is the IdP-configured claim that lists group memberships. For most providers this is `groups`, but Keycloak, Entra ID, and Auth0 may require a mapper / claim configuration step in the IdP to actually include the groups in the token. See your IdP's documentation if Lighthouse does not recognise a user's group membership.
+
+---
+
+## System-wide rules
+
+Without a system-wide rule, a person sees a team or portfolio only when someone gave them a role on it. A **system-wide rule** gives a role on **every** team and portfolio at once, including ones created later. Only a System Admin adds or removes one, in **Settings → Access**. Rules need RBAC [enabled](#enabling-rbac) and a first System Admin in place.
+
+There are three kinds:
+
+| Rule | Who gets it | What it grants |
+|---|---|---|
+| **Viewer on all** | The members of one SSO group | Read access to every team and portfolio, like Viewer on each of them. They can also vote and comment in a team's Refinement. |
+| **Admin on all** | The members of one SSO group | The admin role on every team and portfolio: edit their settings and manage who has access to each. |
+| **Everyone signed in** | Every person who can sign in, now and later | Viewer on all. It can only give read access. |
+
+### Viewer on all and Admin on all
+
+Add them under **Settings → Access → SSO Groups**: enter the group value, choose **Viewer on all** or **Admin on all**, and click **Add Mapping**. The table lists each rule with the group, the role, and **Applies to**, which reads *All Teams and Portfolios*. Click **Remove** to take a rule away.
+
+**Admin on all** is for someone who looks after every team's settings and should not run the instance. It can **not**:
+
+- create, clone or delete a team or portfolio;
+- edit work tracking system connections, system settings or terminology;
+- install a Lighthouse update, or update all teams at once;
+- upload or clear the license;
+- manage **Settings → Access**, add or remove a system-wide rule, or turn **Everyone signed in** on.
+
+All of that stays with System Admin.
+
+### Everyone signed in
+
+Under **Settings → Access**, the **Everyone signed in** section holds one switch, **Everyone signed in can view all Teams and Portfolios**. It is **off** after install. While it is off, people see only what they are given.
+
+When you turn it on, Lighthouse asks first: *Let everyone signed in view all Teams and Portfolios?* Everyone who can sign in, now and later, can read every team and portfolio, and can vote and comment in Refinement. Click **Turn on** to confirm. Turning it off does not ask.
+
+{: .important}
+Turn this on only if everyone who can sign in to Lighthouse may see all your teams and portfolios. A person removed from Lighthouse who signs in again gets a new profile and, with the switch on, sees everything. To keep someone out, block them in your identity provider.
+
+### Where people see a rule
+
+A team's or portfolio's **Access** tab shows, read-only, under **Also reachable through access to all Teams and Portfolios**, every rule that also reaches it: the role and the group, or *everyone signed in*. Removing someone from the list below does not take away what these rules give, and only a System Admin changes them. While the tab checks, it shows *Checking access to all Teams and Portfolios…*. If the check fails, it says more people may reach the team than listed, and asks you to reload.
+
+In **Settings → Access**, the Users table column and filter **No direct role** mean a person has no role of their own. Such a person may still read through a system-wide rule.
+
+### When a change takes effect
+
+- **A rule you remove** stops working at once.
+- **A person who leaves the group** in your identity provider keeps their rule in a browser session until the token refreshes or they sign in again. Their [API key](#api-keys-interplay) keeps it until their next sign-in. To cut a person off sooner, remove the rule, or remove the user.
+- **Turning Everyone signed in on or off** takes effect for the next request.
+
+{: .note}
+With authentication or RBAC off, everyone has full access and rules are stored but do nothing.
 
 ---
 
@@ -225,14 +294,16 @@ Behaviour of the buttons and row actions on the Overview page:
 | Team Admin on Team X | Both hidden | Edit on Team X only; no Delete / Clone anywhere |
 | Portfolio Admin on Portfolio Y | Both hidden | Edit on Portfolio Y only; no Delete / Clone anywhere |
 | Viewer on Team X (or Portfolio Y) | Both hidden | Detail action only on the assigned entity |
+| Viewer on all, or everyone signed in | Both hidden | Detail action on every team and portfolio |
+| Admin on all | Both hidden | Edit on every team and portfolio; no Delete / Clone anywhere |
 
 ---
 
 ## API Keys interplay
 
-[API Keys](./apikeys.html) are an alternative authentication path for non-browser clients (CLI, MCP servers). When RBAC is enabled, an API key inherits the role assignments of the user who created it. Treat API keys as a credential for that user: an unrestricted key can do exactly what the owning user can do, no more and no less.
+[API Keys](./apikeys.html) are an alternative authentication path for non-browser clients (CLI, MCP servers). When RBAC is enabled, an API key inherits the role assignments of the user who created it, including what the owner reaches through a [system-wide rule](#system-wide-rules). Treat API keys as a credential for that user: an unrestricted key can do exactly what the owning user can do, no more and no less.
 
-To restrict what a key can reach, give it [scopes](./apikeys.html) when you create it. A key can never do more than its owner, whatever its scopes say. A key with scopes cannot create a key without them, so it cannot be used to widen its own access.
+To restrict what a key can reach, give it [scopes](./apikeys.html) when you create it. A key can never do more than its owner, whatever its scopes say. A key limited to one team keeps working when its owner reads that team through a rule, and reaches only that team. A key cannot be limited to "all teams and portfolios". A key stops following a rule when its owner no longer has it, as described under [When a change takes effect](#when-a-change-takes-effect). A key with scopes cannot create a key without them, so it cannot be used to widen its own access.
 
 ---
 
@@ -241,18 +312,23 @@ To restrict what a key can reach, give it [scopes](./apikeys.html) when you crea
 ### Grant Team Admin to a specific user
 
 1. Ask the user to sign in once (so their row appears in the Users table).
-2. **Settings → Access → Users → Edit** that user → choose **Team Admin** + the team. Change applies immediately.
+2. Open the team, choose the **Access** tab, find the user, and choose **Team Admin**. Change applies immediately.
 
 ### Map an SSO group to Portfolio Admin
 
-1. **Settings → Access → Group Mappings → Add Group Mapping**.
-2. Enter the group value (case-sensitive, as it appears in the user's IdP token).
-3. Choose **Portfolio Admin** + the portfolio.
+1. Open the portfolio and choose the **Access** tab. You must be a System Admin to add a mapping.
+2. Under **Add Group Mapping**, enter the group value (case-sensitive, as it appears in the user's IdP token).
+3. Choose **Portfolio Admin** and add the mapping.
+
+### Let a group read every team and portfolio
+
+1. **Settings → Access → SSO Groups**.
+2. Enter the group value, choose **Viewer on all**, and click **Add Mapping**.
 
 ### Revoke a user's access entirely
 
-1. **Settings → Access → Users**, find the user.
-2. Click **Edit** → remove each role. The user can still sign in, but Lighthouse will not show them any teams or portfolios.
+1. Remove the user from the **Access** tab of each team and portfolio where they have a role.
+2. Check that no [system-wide rule](#system-wide-rules) reaches them: their group, or **Everyone signed in**. The user can still sign in, but Lighthouse shows them no teams or portfolios unless a rule reaches them.
 
 ### Recover access when locked out
 
@@ -270,7 +346,7 @@ Portfolios require at least one team to exist anywhere in the system. Create a t
 
 ### I'm a Team Admin and can't see Add Team / Add Portfolio
 
-Under v1 of RBAC, only System Admin can create teams or portfolios. Team Admin and Portfolio Admin can edit their assigned scope but not create new entities. Ask your System Admin to create the team or portfolio and grant you the corresponding role.
+Under v1 of RBAC, only System Admin can create teams or portfolios. Team Admin, Portfolio Admin and Admin on all can edit their scope but not create new entities. Ask your System Admin to create the team or portfolio and grant you the corresponding role.
 
 ### A user signed in but does not appear in the Users table
 
