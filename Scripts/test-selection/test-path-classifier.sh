@@ -110,6 +110,8 @@ assert "backend: backend tests=true"     "$(classify_backend "$diff_linear_only"
 assert "backend: test-timings=true"      "$(classify_backend $'Scripts/test-timings/merge.sh')" "true"
 assert "backend: docs+frontend=false"    "$(classify_backend "$diff_docs_only")"    "false"
 assert "backend: .github/actions=true"   "$(classify_backend $'.github/actions/publish/action.yml')" "true"
+assert "backend: root Dockerfile=true"   "$(classify_backend $'Dockerfile')" "true"
+assert "backend: other Dockerfile=false" "$(classify_backend $'examples/keycloak/Dockerfile')" "false"
 
 # Scenario 17: a change only under .github/actions/ runs the backend suite but no connector suite
 diff_actions_only=$'.github/actions/build-backend/action.yml'

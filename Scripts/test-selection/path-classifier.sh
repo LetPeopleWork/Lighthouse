@@ -5,7 +5,8 @@
 # function takes a newline-separated list of changed paths (as
 # `git diff --name-only` would emit) and echoes "true" or "false".
 
-BACKEND_REGEX='^(Lighthouse.Backend(/|.Tests/)|Scripts/test-timings/|\.github/actions/)'
+# The root Dockerfile counts as backend: the backend's SonarCloud analysis is what scans it.
+BACKEND_REGEX='^(Lighthouse.Backend(/|.Tests/)|Scripts/test-timings/|\.github/actions/|Dockerfile$)'
 # The parent-source code decides what the Jira connector reads, so a change to it needs the live Jira suite.
 # Its tests and busier neighbours (WorkItemBase, WorkTrackingSystemOptionsOwner) stay out: each run spends live
 # Jira quota, and those change far more often than what the connector reads does.
