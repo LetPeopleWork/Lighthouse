@@ -7,5 +7,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     public class FeatureStateTransitionRepository(LighthouseAppContext context, ILogger<FeatureStateTransitionRepository> logger)
         : RepositoryBase<FeatureStateTransition>(context, (lighthouseAppContext) => lighthouseAppContext.FeatureStateTransitions, logger), IFeatureStateTransitionRepository
     {
+        public IReadOnlyList<FeatureStateTransition> TransitionsOfFeatures(IReadOnlyCollection<int> featureIds)
+            => Context.FeatureStateTransitions
+                .Where(transition => featureIds.Contains(transition.FeatureId))
+                .ToList();
     }
 }

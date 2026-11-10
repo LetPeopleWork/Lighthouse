@@ -110,6 +110,34 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
                     f.FeatureWork.Any(fw => fw.TeamId == teamId && fw.TotalWorkItems > 0))
                 .AsEnumerable()).ToList();
 
+        public IReadOnlyList<Feature> DoneFeaturesOfPortfolio(int portfolioId)
+            => WholeFeaturesWhere(f =>
+                f.Portfolios.Any(p => p.Id == portfolioId) &&
+                f.StateCategory == StateCategories.Done);
+
+        public IReadOnlyList<Feature> DoingOrDoneFeaturesOfPortfolio(int portfolioId)
+            => WholeFeaturesWhere(f =>
+                f.Portfolios.Any(p => p.Id == portfolioId) &&
+                (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done));
+
+        public IReadOnlyList<Feature> ToDoOrDoingFeaturesOfPortfolio(int portfolioId)
+            => WholeFeaturesWhere(f =>
+                f.Portfolios.Any(p => p.Id == portfolioId) &&
+                (f.StateCategory == StateCategories.ToDo || f.StateCategory == StateCategories.Doing));
+
+        public IReadOnlyList<Feature> ToDoDoingOrDoneFeaturesOfPortfolio(int portfolioId)
+            => WholeFeaturesWhere(f =>
+                f.Portfolios.Any(p => p.Id == portfolioId) &&
+                (f.StateCategory == StateCategories.Done ||
+                 f.StateCategory == StateCategories.ToDo ||
+                 f.StateCategory == StateCategories.Doing));
+
+        public IReadOnlyList<Feature> EveryFeatureOfPortfolio(int portfolioId)
+            => WholeFeaturesWhere(f => f.Portfolios.Any(p => p.Id == portfolioId));
+
+        private List<Feature> WholeFeaturesWhere(Expression<Func<Feature, bool>> predicate)
+            => featureOrdering.Order(GetFeatures().Where(predicate).AsEnumerable()).ToList();
+
         public IReadOnlyList<Feature> FeaturesOfPortfolio(int portfolioId)
             => ListRead(Context.Features.Where(feature => feature.Portfolios.Any(portfolio => portfolio.Id == portfolioId)));
 

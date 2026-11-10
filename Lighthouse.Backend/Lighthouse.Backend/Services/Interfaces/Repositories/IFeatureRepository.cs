@@ -43,6 +43,37 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyList<Feature> FeaturesWithRealWorkForTeam(int teamId, StateCategories? onlyIn);
 
         /// <summary>
+        /// The Done Features of this Portfolio, in forecast order, each read whole as
+        /// <see cref="IRepository{T}.GetAll"/> reads it and tracked.
+        /// </summary>
+        IReadOnlyList<Feature> DoneFeaturesOfPortfolio(int portfolioId);
+
+        /// <summary>
+        /// The Doing or Done Features of this Portfolio, in forecast order, each read whole as
+        /// <see cref="IRepository{T}.GetAll"/> reads it and tracked.
+        /// </summary>
+        IReadOnlyList<Feature> DoingOrDoneFeaturesOfPortfolio(int portfolioId);
+
+        /// <summary>
+        /// The To Do or Doing Features of this Portfolio, in forecast order, each read whole as
+        /// <see cref="IRepository{T}.GetAll"/> reads it and tracked.
+        /// </summary>
+        IReadOnlyList<Feature> ToDoOrDoingFeaturesOfPortfolio(int portfolioId);
+
+        /// <summary>
+        /// The Features of this Portfolio in any of the To Do, Doing or Done categories, in forecast order,
+        /// each read whole as <see cref="IRepository{T}.GetAll"/> reads it and tracked.
+        /// </summary>
+        IReadOnlyList<Feature> ToDoDoingOrDoneFeaturesOfPortfolio(int portfolioId);
+
+        /// <summary>
+        /// Every Feature of this Portfolio, in forecast order, each read whole as
+        /// <see cref="IRepository{T}.GetAll"/> reads it and tracked. Unlike the list read of the same
+        /// Portfolio, it carries every start forecast and the change tracker sees it.
+        /// </summary>
+        IReadOnlyList<Feature> EveryFeatureOfPortfolio(int portfolioId);
+
+        /// <summary>
         /// Marks the forecasts of these Features as confirmed current at the given moment, leaving every
         /// forecast value as it is. One statement, because a large Portfolio holds thousands of forecasts.
         /// A forecast that already reads a later time keeps it, so an overlapping round that stamps last
