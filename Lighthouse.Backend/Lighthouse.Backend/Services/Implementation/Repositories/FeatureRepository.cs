@@ -104,11 +104,10 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
         // so it is left out explicitly rather than trusted to show this Team a share of zero. The state
         // goes into the same query because every match is loaded whole, forecasts included.
         public IReadOnlyList<Feature> FeaturesWithRealWorkForTeam(int teamId, StateCategories? onlyIn)
-            => featureOrdering.Order(GetFeatures().Where(f =>
-                    (onlyIn == null || f.StateCategory == onlyIn) &&
-                    !f.IsUsingDefaultFeatureSize &&
-                    f.FeatureWork.Any(fw => fw.TeamId == teamId && fw.TotalWorkItems > 0))
-                .AsEnumerable()).ToList();
+            => WholeFeaturesWhere(f =>
+                (onlyIn == null || f.StateCategory == onlyIn) &&
+                !f.IsUsingDefaultFeatureSize &&
+                f.FeatureWork.Any(fw => fw.TeamId == teamId && fw.TotalWorkItems > 0));
 
         public IReadOnlyList<Feature> DoneFeaturesOfPortfolio(int portfolioId)
             => WholeFeaturesWhere(f =>
