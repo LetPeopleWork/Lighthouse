@@ -151,7 +151,191 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Scan every production source file for calls to the general predicate read, with the Team metrics service taken off the allow-list and the list held at 14 entries
+</code></pre>
+
+<pre><code>Fails while the Team metrics service still calls the general predicate read, naming that file as a caller not on the list; passes once it reads only through the named reads and the scanned callers equal the 14 listed files
+</code></pre>
+
+<pre><code>Team metrics read their data only through the named reads of the repositories that own it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs::GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList</p>
+
+<pre><code>The service reaches the general predicate read through a delegate or reflection, or a named read builds a different predicate internally; the latter is caught by the provider parity rows
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On a migrated SQLite file with two Teams holding items in all four state categories, transitions for several items, and Features with a default size, zero and non-zero Team work and two Portfolios, run each named read and the predicate it replaces, each in a fresh context
+</code></pre>
+
+<pre><code>For each Team and each read: the same item ids in the same sequence, the Team loaded and the items tracked; the count equals the predicate&#x27;s count and the length of the to-do-or-doing read; both spellings of doing-or-done give the same sequence; the transitions of the chosen items match; the Features read matches with all related data loaded, for any state and for each single state
+</code></pre>
+
+<pre><code>Team metrics computed from the named reads count and order the same items as today on SQLite
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/TeamMetricsReadsParityOnBothProvidersTests.cs::Every_named_Team_read_gives_what_its_predicate_gives_on_Sqlite</p>
+
+<pre><code>A row-order difference that only appears on data much larger than the fixture, or the count read loading rows and counting them in memory (same number)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The same seeded instance and the same read-by-read comparison on a Postgres database in a container
+</code></pre>
+
+<pre><code>Every named read gives the same ids in the same sequence, the same loaded related data and tracking, and the same count as the predicate it replaces, on Postgres
+</code></pre>
+
+<pre><code>Team metrics computed from the named reads count and order the same items as today on Postgres
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/TeamMetricsReadsParityOnBothProvidersTests.cs::Every_named_Team_read_gives_what_its_predicate_gives_on_Postgres</p>
+
+<pre><code>A plan-dependent row order on Postgres that only shows on data much larger than the fixture
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Ask the Forecast Reality Check for its answers on real SQLite with the real work-item repository, counting database statements
+</code></pre>
+
+<pre><code>The statement count per answer stays 20 and 24, with the assertion unchanged
+</code></pre>
+
+<pre><code>The Reality Check and the Team metrics it reads do not get slower through extra database round trips
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs::One_check_on_a_cold_cache_reads_the_Teams_finished_work_once_per_window_it_asks_about</p>
+
+<pre><code>A statement that changed shape while the count stays equal
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the existing Team metrics tests with only their read stubs retargeted to the named reads
+</code></pre>
+
+<pre><code>Every existing Assert, Is and Verify line passes unchanged; the check that no Features are read where none should be now names the Features read with the same never
+</code></pre>
+
+<pre><code>Every Team metrics answer the existing tests pin stays the same
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs</p>
+
+<pre><code>A named read that the mock stubs regardless of its predicate or include; the provider parity rows catch that
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Serialize every Team metrics answer from the instance backup on the base revision and on the candidate, and compare
+</code></pre>
+
+<pre><code>Identical answers, exit 0
+</code></pre>
+
+<pre><code>Every Team metrics answer a real instance shows is unchanged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/bin/metrics-answers-compare</p>
+
+<pre><code>A changed answer on a data shape absent from the backup; the comparison stays INDETERMINATE when the backup is absent in the examiner environment
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Flow metrics module architecture rules in the Release configuration
+</code></pre>
+
+<pre><code>The module&#x27;s application layer still has no edge to EF Core or the data layer and no newcomer on the inbound lists, with unchanged baselines
+</code></pre>
+
+<pre><code>Reading through the owner repositories adds no new dependency to the Flow metrics module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs</p>
+
+<pre><code>A dependency added through a type the rules do not scan
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

@@ -1,8 +1,129 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F98",
+"L1/F99",
+"T1"
+],
+"still_passes_if": "F170",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs::GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList"
+},
+"expected": "F168",
+"stimulus": "F167",
+"user_result": "F169"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F102",
+"L2/F103",
+"L2/F104",
+"L2/F105"
+],
+"still_passes_if": "F174",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/TeamMetricsReadsParityOnBothProvidersTests.cs::Every_named_Team_read_gives_what_its_predicate_gives_on_Sqlite"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F102",
+"L2/F103",
+"L2/F104",
+"L2/F105"
+],
+"still_passes_if": "F178",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/TeamMetricsReadsParityOnBothProvidersTests.cs::Every_named_Team_read_gives_what_its_predicate_gives_on_Postgres"
+},
+"expected": "F176",
+"stimulus": "F175",
+"user_result": "F177"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F108"
+],
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/ForecastRealityCheck/RealityCheckQueryCountTest.cs::One_check_on_a_cold_cache_reads_the_Teams_finished_work_once_per_window_it_asks_about"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F111"
+],
+"still_passes_if": "F195",
+"test": "Scripts/examine/bin/metrics-answers-compare"
+},
+"expected": "F192",
+"stimulus": "F191",
+"user_result": "F193"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F190",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs"
+},
+"expected": "F188",
+"stimulus": "F187",
+"user_result": "F189"
+}
+]
+},
 "counters": {
 "C": 1,
 "E": 3,
-"F": 166,
+"F": 195,
 "L": 4,
 "P": 3,
 "S": 1,
@@ -831,9 +952,37 @@
 "F164": "A user reading Team metrics gets the same behavior as before, while the Team reads no longer go through the generic predicate lookup; the generic predicate allow-list no longer lists the Team metrics service.",
 "F165": "Each Team read returns the same items, in the same order, with the same related data and the same change-tracking behavior as the predicate read it replaces, on both SQLite and Postgres.",
 "F166": "Every Team metrics answer a user sees is identical to before, and each answer costs the same number of database queries.",
+"F167": "Scan every production source file for calls to the general predicate read, with the Team metrics service taken off the allow-list and the list held at 14 entries",
+"F168": "Fails while the Team metrics service still calls the general predicate read, naming that file as a caller not on the list; passes once it reads only through the named reads and the scanned callers equal the 14 listed files",
+"F169": "Team metrics read their data only through the named reads of the repositories that own it",
 "F17": "Compile-forced: WriteRecordingWorkItemRepository implements IWorkItemRepository, so W1-W5 are added as plain delegations to inner; no recording or assertion change.",
+"F170": "The service reaches the general predicate read through a delegate or reflection, or a named read builds a different predicate internally; the latter is caught by the provider parity rows",
+"F171": "On a migrated SQLite file with two Teams holding items in all four state categories, transitions for several items, and Features with a default size, zero and non-zero Team work and two Portfolios, run each named read and the predicate it replaces, each in a fresh context",
+"F172": "For each Team and each read: the same item ids in the same sequence, the Team loaded and the items tracked; the count equals the predicate's count and the length of the to-do-or-doing read; both spellings of doing-or-done give the same sequence; the transitions of the chosen items match; the Features read matches with all related data loaded, for any state and for each single state",
+"F173": "Team metrics computed from the named reads count and order the same items as today on SQLite",
+"F174": "A row-order difference that only appears on data much larger than the fixture, or the count read loading rows and counting them in memory (same number)",
+"F175": "The same seeded instance and the same read-by-read comparison on a Postgres database in a container",
+"F176": "Every named read gives the same ids in the same sequence, the same loaded related data and tracking, and the same count as the predicate it replaces, on Postgres",
+"F177": "Team metrics computed from the named reads count and order the same items as today on Postgres",
+"F178": "A plan-dependent row order on Postgres that only shows on data much larger than the fixture",
+"F179": "Ask the Forecast Reality Check for its answers on real SQLite with the real work-item repository, counting database statements",
 "F18": "Value slice: the 14 GetAllByPredicate calls switch to the seven named reads; constructor unchanged; the size chart's in-memory filter stays in the service.",
+"F180": "The statement count per answer stays 20 and 24, with the assertion unchanged",
+"F181": "The Reality Check and the Team metrics it reads do not get slower through extra database round trips",
+"F182": "A statement that changed shape while the count stays equal",
+"F183": "Run the existing Team metrics tests with only their read stubs retargeted to the named reads",
+"F184": "Every existing Assert, Is and Verify line passes unchanged; the check that no Features are read where none should be now names the Features read with the same never",
+"F185": "Every Team metrics answer the existing tests pin stays the same",
+"F186": "A named read that the mock stubs regardless of its predicate or include; the provider parity rows catch that",
+"F187": "Run the Flow metrics module architecture rules in the Release configuration",
+"F188": "The module's application layer still has no edge to EF Core or the data layer and no newcomer on the inbound lists, with unchanged baselines",
+"F189": "Reading through the owner repositories adds no new dependency to the Flow metrics module",
 "F19": "Arrange stubs retarget through one helper; Asserts byte-identical; the Times.Never Verify on Features retargets to F1.",
+"F190": "A dependency added through a type the rules do not scan",
+"F191": "Serialize every Team metrics answer from the instance backup on the base revision and on the candidate, and compare",
+"F192": "Identical answers, exit 0",
+"F193": "Every Team metrics answer a real instance shows is unchanged",
+"F195": "A changed answer on a data shape absent from the backup; the comparison stays INDETERMINATE when the backup is absent in the examiner environment",
 "F2": "The Team metrics read work items, transitions and features through named, provider-translatable reads, with every metrics answer unchanged",
 "F20": "Arrange stubs retarget only.",
 "F21": "Arrange stubs retarget, keeping today's per-read filtering of the in-memory list; Asserts unchanged.",

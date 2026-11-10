@@ -41,7 +41,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Modules/FlowMetrics/Application/Policies/DemoBlockedHistoryBackfillHandler.cs",
             "Modules/FlowMetrics/Application/Policies/DemoPercentilesBackfillHandler.cs",
             "Modules/FlowMetrics/Application/PortfolioMetricsService.cs",
-            "Modules/FlowMetrics/Application/TeamMetricsService.cs",
             "Services/Implementation/Connections/ConnectionSaveService.cs",
             "Services/Implementation/Refinement/RefinementList.cs",
             "Services/Implementation/RefreshLogService.cs",
@@ -110,7 +109,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList()
         {
-            Assert.That(FilesThatCallGetAllByPredicate, Has.Length.EqualTo(15).And.Unique);
+            Assert.That(FilesThatCallGetAllByPredicate, Has.Length.EqualTo(14).And.Unique);
 
             var callers = GetAllByPredicateCallSites(ProductionSource.Files())
                 .Select(site => site[..site.LastIndexOf(':')])
