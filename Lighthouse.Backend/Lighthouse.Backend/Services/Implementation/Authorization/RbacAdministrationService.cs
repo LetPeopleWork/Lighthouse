@@ -1104,9 +1104,10 @@ namespace Lighthouse.Backend.Services.Implementation.Authorization
         /// Computes the effective access of the current principal. When an
         /// <c>api_key_id</c> claim is present (request authenticated via API key), the
         /// owner's access is limited to the per-key <see cref="ApiKeyPermission"/> rows the
-        /// owner covers: a row counts only when the owner holds the same scope with a role of
-        /// equal-or-broader priority (SystemAdmin reaches every scope; TeamAdmin/PortfolioAdmin
-        /// reach their own scope; Viewer covers only Viewer). When the API key has zero
+        /// owner covers: a row counts only when the owner's role on that unit gives at least the
+        /// row's role there (SystemAdmin reaches every scope; TeamAdmin on a Team and PortfolioAdmin
+        /// on a Portfolio cover their unit; Viewer covers only Viewer; a role that does not belong to
+        /// that kind of unit covers nothing). When the API key has zero
         /// <see cref="ApiKeyPermission"/> rows, the owner's access is returned unchanged
         /// (backwards-compatibility for legacy keys issued before per-key scoping).
         /// </summary>

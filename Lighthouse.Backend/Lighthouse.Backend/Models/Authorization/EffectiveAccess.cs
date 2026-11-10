@@ -97,8 +97,8 @@ namespace Lighthouse.Backend.Models.Authorization
                 return false;
             }
 
-            var ownerRole = RoleOn(unit);
-            return ownerRole is not null && Priority(ownerRole.Value) >= Priority(keyRow.Role);
+            var ownerGives = RoleOn(unit) is { } ownerRole ? PriorityOn(unit.ScopeType, ownerRole) : 0;
+            return ownerGives > 0 && ownerGives >= PriorityOn(unit.ScopeType, keyRow.Role);
         }
 
         private UserRole? RoleOn(UnitKey unit)
@@ -137,6 +137,12 @@ namespace Lighthouse.Backend.Models.Authorization
                 UserRole.Viewer => 2,
                 _ => 0,
             };
+        }
+
+        // On a unit, only Viewer and the admin role of that kind of unit give anything there.
+        private static int PriorityOn(PermissionScopeType unitType, UserRole role)
+        {
+            return role == UserRole.Viewer || role == AdminRoleOn(unitType) ? Priority(role) : 0;
         }
 
         private readonly record struct UnitKey(PermissionScopeType ScopeType, int UnitId)
@@ -232,11 +238,6 @@ namespace Lighthouse.Backend.Models.Authorization
             private static UserRole HigherOn(PermissionScopeType unitType, UserRole? current, UserRole candidate)
             {
                 return current is null || PriorityOn(unitType, candidate) > PriorityOn(unitType, current.Value) ? candidate : current.Value;
-            }
-
-            private static int PriorityOn(PermissionScopeType unitType, UserRole role)
-            {
-                return role == UserRole.Viewer || role == AdminRoleOn(unitType) ? Priority(role) : 0;
             }
         }
     }
