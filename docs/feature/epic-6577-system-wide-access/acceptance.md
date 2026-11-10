@@ -2213,4 +2213,104 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests SystemWide: 157/157 passed; named scenarios show Viewer-on-all rule listed once, member of group reads existing and later Team/Portfolio, outsider gains nothing, removing rule ends reach next request, rule validity matrix (Viewer/UnitAdmin AllUnits accepted; SystemAdmin/TeamAdmin/PortfolioAdmin AllUnits refused).
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests Limited: 9/9 passed incl. key limited to Viewer on one Team reads that Team and nothing else; Team Admin key writes the Team its owner administers while Viewer key only reads; Team Admin key of owner who only reads through the rule writes nothing; member asking TeamAdmin key refused with existing message; removing the rule stops the limited key on next request. AdminOnAll run (49/49): key limited to Team Admin on Zenith writes Zenith and nothing else.
+```
+
+```text
+Probe backend-tests SystemWide: 157/157 passed; named scenarios show Viewer-on-all rule listed once, member of group reads existing and later Team/Portfolio, outsider gains nothing, removing rule ends reach next request, rule validity matrix (Viewer/UnitAdmin AllUnits accepted; SystemAdmin/TeamAdmin/PortfolioAdmin AllUnits refused).
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests Limited: 9/9 passed incl. key limited to Viewer on one Team reads that Team and nothing else; Team Admin key writes the Team its owner administers while Viewer key only reads; Team Admin key of owner who only reads through the rule writes nothing; member asking TeamAdmin key refused with existing message; removing the rule stops the limited key on next request. AdminOnAll run (49/49): key limited to Team Admin on Zenith writes Zenith and nothing else.
+```
+
+```text
+Probe backend-tests AdminOnAll (49/49): member with Admin on all changes every Team and Portfolio incl. Team created later; refused create/clone Team or Portfolio, delete unit, edit connections/system settings/terminology/update/update all Teams, import or clear licence, turn everyone-signed-in on, administer access; summary lists every unit as administered. Rule validity: Admin on all only valid as AllUnits.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests SystemWideRule: unit rules endpoint allowed for System Admin and Admin of that unit, refused for member who only reads through rule, Team Admin of another Team, no-role person; System Admin group left out; unknown unit not found. Frontend names SystemWideRulesNotice tests: spinner and checking message while loading, warning on failure, Viewer rule with group listed, nothing once answer arrives with no rule, late answer for other unit never lands; RbacSettingsNoDirectRole test: No direct role in column, chip and filter, never Unassigned. CAVEAT: in the combined SystemWideRule run 4 tests (another Team/Portfolio person refused rules, latest and v1) failed once; rerun of those 4 alone passed 4/4. Order-dependent flake, not reproduced alone.
+```
+
+```text
+Probe backend-tests SystemWide: 157/157 passed; named scenarios show Viewer-on-all rule listed once, member of group reads existing and later Team/Portfolio, outsider gains nothing, removing rule ends reach next request, rule validity matrix (Viewer/UnitAdmin AllUnits accepted; SystemAdmin/TeamAdmin/PortfolioAdmin AllUnits refused).
+```
+
+### E5
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests SystemWideRule: unit rules endpoint allowed for System Admin and Admin of that unit, refused for member who only reads through rule, Team Admin of another Team, no-role person; System Admin group left out; unknown unit not found. Frontend names SystemWideRulesNotice tests: spinner and checking message while loading, warning on failure, Viewer rule with group listed, nothing once answer arrives with no rule, late answer for other unit never lands; RbacSettingsNoDirectRole test: No direct role in column, chip and filter, never Unassigned. CAVEAT: in the combined SystemWideRule run 4 tests (another Team/Portfolio person refused rules, latest and v1) failed once; rerun of those 4 alone passed 4/4. Order-dependent flake, not reproduced alone.
+```
+
+### E6
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests Everyone (32/32) and Switch (46/46; matches unrelated tests too): switch off by default after install and seeders; person with profile and no group reads every Team/Portfolio incl. later one when on, writes none; key reads as owner; no-profile person reads nothing; off ends reach and leaves real roles; stale token 409, missing token 400, only System Admin may save; Team Admin keeps own admin only. Frontend probe (628 files, 9566 tests passed) names RbacSettingsEveryoneSignedIn tests: asks first naming the reach and Cancel changes nothing, turns on after Turn on, switch off by default.
+```
+
+### E7
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests Everyone (32/32) and Switch (46/46; matches unrelated tests too): switch off by default after install and seeders; person with profile and no group reads every Team/Portfolio incl. later one when on, writes none; key reads as owner; no-profile person reads nothing; off ends reach and leaves real roles; stale token 409, missing token 400, only System Admin may save; Team Admin keeps own admin only. Frontend probe (628 files, 9566 tests passed) names RbacSettingsEveryoneSignedIn tests: asks first naming the reach and Cancel changes nothing, turns on after Turn on, switch off by default.
+```
+
+### E8
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests AdminOnAll (49/49): member with Admin on all changes every Team and Portfolio incl. Team created later; refused create/clone Team or Portfolio, delete unit, edit connections/system settings/terminology/update/update all Teams, import or clear licence, turn everyone-signed-in on, administer access; summary lists every unit as administered. Rule validity: Admin on all only valid as AllUnits.
+```
+
+### E9
+
+met
+
+#### Observations
+
+```text
+Probe backend-tests AdminOnAll (49/49): member with Admin on all changes every Team and Portfolio incl. Team created later; refused create/clone Team or Portfolio, delete unit, edit connections/system settings/terminology/update/update all Teams, import or clear licence, turn everyone-signed-in on, administer access; summary lists every unit as administered. Rule validity: Admin on all only valid as AllUnits.
+```
