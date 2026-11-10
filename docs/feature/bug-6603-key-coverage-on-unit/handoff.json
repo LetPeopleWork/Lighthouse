@@ -1,0 +1,70 @@
+{
+"counters": {
+"F": 7,
+"P": 1,
+"S": 1
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Models/Authorization/EffectiveAccessTest.cs",
+"public_oracle": {
+"expected": "F6",
+"falsifier": "F7",
+"promises": [
+"P1"
+],
+"stimulus": "F5"
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/Authorization/EffectiveAccess.cs"
+}
+],
+"verification": [
+"dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~EffectiveAccessTest"
+]
+}
+}
+},
+"facts": {
+"F1": "Bug 6603: A limited API key can pass for an owner whose role on that unit does not apply to it. EffectiveAccess.Covers compares the owner's and the key's roles by general rank (Priority), while the owner's role on a unit only counts if it belongs to that kind of unit (PriorityOn). An owner whose only row on Team 5 is Portfolio Admin cannot read Team 5, yet a key limited to Viewer on Team 5 reads it, and a key limited to Team Admin on Team 5 administers it. Only reachable through a row written outside Lighthouse; every write path refuses it.",
+"F2": "A limited API key reaches a unit only at a role its owner's role on that unit actually gives, judged the same way as the owner's own reads.",
+"F3": "A limited API key reaches a unit only at a role its owner's role on that unit gives there",
+"F4": "A key limited to a Team or Portfolio reads or administers it only when its owner's role on that unit gives at least that role there",
+"F5": "An owner whose only row on a Team is Portfolio Admin (a role that gives nothing on a Team) limits a key to Viewer, and another key to Team Admin, on that Team; both keys ask to read and to write the Team. Control: an owner who is Team Admin on the Team does the same.",
+"F6": "Both keys of the Portfolio-Admin-only owner are refused read and write on the Team; the Team Admin owner's Viewer key reads and its Team Admin key writes.",
+"F7": "Either key of the Portfolio-Admin-only owner reads or writes the Team, or the Team Admin owner's keys lose access."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F4",
+"promises": [
+"P1"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "bug-6603-key-coverage-on-unit",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "S",
+"value": "F2"
+}
+}
