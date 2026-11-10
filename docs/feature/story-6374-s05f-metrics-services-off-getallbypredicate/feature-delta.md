@@ -441,3 +441,9 @@ no platform-architect dispatch or operational review ran, because nothing below 
 | Verification commands | `Lighthouse.Backend/Test-Fast.ps1` (fast loop); the slice's parity test class; `dotnet build` (zero warnings); the filtered `dotnet test` from CLAUDE.md (gate); `dotnet test -c Release --filter FullyQualifiedName~Architecture`. No frontend command: no frontend file changes. |
 
 DEVOPS hands DELIVER no new constraint beyond Docker for the parity tests and their 34 s per-class budget.
+
+## Wave: DELIVER / [REF] Maintainer decisions at DELIVER start (2026-11-10)
+
+- **Rigor profile: `thorough` for all four slices** (A-P, A-S1, B-P, B-S1). Acceptance designer and crafter on `opus`; reviewers and EXAMINE on `sonnet`. `model` is passed on every dispatch.
+- **UI sketch review: N/A**, because no slice changes anything a user sees (answers byte-identical by design).
+- **Route:** two nwdes features on `main`, no lane: `story-6374-s05f-a-team-reads`, then `story-6374-s05f-b-portfolio-reads`.
