@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
@@ -257,9 +256,9 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         private PortfolioMetricsService BuildPortfolioMetricsService()
         {
             var featureRepository = new Mock<IFeatureRepository>();
-            featureRepository
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => features);
+            var featureTransitionRepository = new Mock<IFeatureStateTransitionRepository>();
+            featureTransitionRepository.AnswersTransitionReadsFrom([]);
 
             var appSettingService = new Mock<IAppSettingService>();
             appSettingService.Setup(x => x.GetFeatureRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
@@ -269,7 +268,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 featureRepository.Object,
                 appSettingService.Object,
                 BuildServiceProvider(),
-                Mock.Of<IFeatureStateTransitionRepository>(),
+                featureTransitionRepository.Object,
                 clock);
         }
 

@@ -10,7 +10,6 @@ using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
-using System.Linq.Expressions;
 
 namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 {
@@ -18,7 +17,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
     public class PortfolioMetricsServiceTests
     {
         private Mock<ILogger<PortfolioMetricsService>> logger;
-        private Mock<IRepository<Feature>> featureRepository;
+        private Mock<IFeatureRepository> featureRepository;
         private Mock<IAppSettingService> appSettingService;
         private Mock<IForecastService> forecastServiceMock;
         private Mock<IFeatureStateTransitionRepository> featureStateTransitionRepository;
@@ -36,7 +35,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         public void Setup()
         {
             logger = new Mock<ILogger<PortfolioMetricsService>>();
-            featureRepository = new Mock<IRepository<Feature>>();
+            featureRepository = new Mock<IFeatureRepository>();
             appSettingService = new Mock<IAppSettingService>();
 
             appSettingService.Setup(m => m.GetFeatureRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
@@ -49,12 +48,11 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 .Returns(forecastServiceMock.Object);
 
             featureStateTransitionRepository = new Mock<IFeatureStateTransitionRepository>();
+            featureStateTransitionRepository.AnswersTransitionReadsFrom([]);
 
             subject = new PortfolioMetricsService(logger.Object, featureRepository.Object, appSettingService.Object, serviceProvider.Object, featureStateTransitionRepository.Object, TestToday.Clock);
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                    It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => features);
 
             SetupTestData();
         }        
@@ -72,9 +70,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => features);
 
             // Act
             var result = subject.GetThroughputForPortfolio(portfolio, startDate, endDate);
@@ -95,9 +91,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 5, 0, 0, 0, DateTimeKind.Utc);
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => features);
 
             // Act
             var result = subject.GetFeaturesInProgressOverTimeForPortfolio(portfolio, startDate, endDate);
@@ -115,9 +109,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 3, 0, 0, 0, DateTimeKind.Utc);
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => features);
 
             var throughput = subject.GetStartedItemsForPortfolio(portfolio, startDate, endDate);
 
@@ -393,9 +385,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var startDate = new DateTime(2023, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             var endDate = new DateTime(2023, 1, 10, 0, 0, 0, DateTimeKind.Utc);
 
-            featureRepository.Setup(x => x.GetAllByPredicate(
-                It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => features.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => features);
 
             var howManyForecast = new HowManyForecast();
             var expectedResult = new ForecastPredictabilityScore(howManyForecast);
@@ -1461,10 +1451,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 InFlightFeature(cumulativePortfolio, id: 104, referenceId: "EPIC-WIP", state: building, currentStateEnteredAt: windowEnd.AddDays(-40)),
             };
 
-            featureRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => cumulativeFeatures.Where(predicate.Compile()).AsQueryable());
-            featureStateTransitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
-                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => cumulativeFeatures);
+            featureStateTransitionRepository.AnswersTransitionReadsFrom(transitions);
 
             var result = subject.GetCumulativeStateTimeForPortfolio(cumulativePortfolio, windowStart, windowEnd, null);
 
@@ -1563,10 +1551,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 SingleDoingVisitFeature(flowPortfolio, transitions, id: 203, referenceId: "EPIC-C", doingState: waiting, startedDate: inWindow, days: 100),
             };
 
-            featureRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => flowFeatures.Where(predicate.Compile()).AsQueryable());
-            featureStateTransitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
-                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => flowFeatures);
+            featureStateTransitionRepository.AnswersTransitionReadsFrom(transitions);
 
             var result = subject.GetFlowEfficiencyInfoForPortfolio(flowPortfolio, windowStart, windowEnd);
 
@@ -1660,10 +1646,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
                 new() { FeatureId = feature.Id, FromState = "Review", ToState = "Done", TransitionedAt = started.AddDays(30) },
             ];
 
-            featureRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> predicate) => mappedFeatures.Where(predicate.Compile()).AsQueryable());
-            featureStateTransitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
-                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => mappedFeatures);
+            featureStateTransitionRepository.AnswersTransitionReadsFrom(transitions);
 
             return mappedPortfolio;
         }
@@ -1769,11 +1753,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
 
         private void SetupFeatureTransitions(params FeatureStateTransition[] transitions)
         {
-            var stored = transitions.ToList();
-            featureStateTransitionRepository
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
-                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) =>
-                    stored.Where(predicate.Compile()).AsQueryable());
+            featureStateTransitionRepository.AnswersTransitionReadsFrom(transitions.ToList());
         }
 
         [Test]

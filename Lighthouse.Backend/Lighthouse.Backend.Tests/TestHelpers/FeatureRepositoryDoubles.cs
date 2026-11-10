@@ -41,5 +41,43 @@ namespace Lighthouse.Backend.Tests.TestHelpers
                     !feature.IsUsingDefaultFeatureSize &&
                     feature.FeatureWork.Any(work => work.TeamId == teamId && work.TotalWorkItems > 0)).ToList());
         }
+
+        /// <summary>
+        /// Answers every read of a Portfolio's Features the way the database would, from the Features the
+        /// test holds at the moment of the read. The list is asked for on each call, so a test may assign or
+        /// add to it after the set-up and the next read still sees it.
+        /// </summary>
+        public static void AnswersPortfolioReadsFrom(this Mock<IFeatureRepository> repository, Func<IEnumerable<Feature>> features)
+        {
+            repository
+                .Setup(r => r.DoneFeaturesOfPortfolio(It.IsAny<int>()))
+                .Returns((int portfolioId) => OfPortfolio(features(), portfolioId)
+                    .Where(f => f.StateCategory == StateCategories.Done).ToList());
+            repository
+                .Setup(r => r.DoingOrDoneFeaturesOfPortfolio(It.IsAny<int>()))
+                .Returns((int portfolioId) => OfPortfolio(features(), portfolioId)
+                    .Where(f => f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done).ToList());
+            repository
+                .Setup(r => r.ToDoOrDoingFeaturesOfPortfolio(It.IsAny<int>()))
+                .Returns((int portfolioId) => OfPortfolio(features(), portfolioId)
+                    .Where(f => f.StateCategory == StateCategories.ToDo || f.StateCategory == StateCategories.Doing).ToList());
+            repository
+                .Setup(r => r.ToDoDoingOrDoneFeaturesOfPortfolio(It.IsAny<int>()))
+                .Returns((int portfolioId) => OfPortfolio(features(), portfolioId)
+                    .Where(f => f.StateCategory == StateCategories.Done || f.StateCategory == StateCategories.ToDo || f.StateCategory == StateCategories.Doing).ToList());
+            repository
+                .Setup(r => r.EveryFeatureOfPortfolio(It.IsAny<int>()))
+                .Returns((int portfolioId) => OfPortfolio(features(), portfolioId).ToList());
+        }
+
+        public static void AnswersTransitionReadsFrom(this Mock<IFeatureStateTransitionRepository> repository, IEnumerable<FeatureStateTransition> transitions)
+        {
+            repository
+                .Setup(r => r.TransitionsOfFeatures(It.IsAny<IReadOnlyCollection<int>>()))
+                .Returns((IReadOnlyCollection<int> featureIds) => transitions.Where(t => featureIds.Contains(t.FeatureId)).ToList());
+        }
+
+        private static IEnumerable<Feature> OfPortfolio(IEnumerable<Feature> features, int portfolioId)
+            => features.Where(f => f.Portfolios.Any(p => p.Id == portfolioId));
     }
 }

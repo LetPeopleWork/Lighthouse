@@ -9,7 +9,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 {
     public class PortfolioMetricsService(
         ILogger<PortfolioMetricsService> logger,
-        IRepository<Feature> featureRepository,
+        IFeatureRepository featureRepository,
         IAppSettingService appSettingService,
         IServiceProvider serviceProvider,
         IFeatureStateTransitionRepository featureStateTransitionRepository,
@@ -25,9 +25,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(portfolio, $"Throughput_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                var portfolioFeatures = featureRepository.GetAllByPredicate(f =>
-                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    f.StateCategory == StateCategories.Done);
+                var portfolioFeatures = featureRepository.DoneFeaturesOfPortfolio(portfolio.Id);
 
                 return new RunChartData(GenerateThroughputRunChart(startDate, endDate, portfolioFeatures));
             }, logger);
@@ -140,10 +138,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(portfolio, $"FeaturesInProgressOverTime_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                var features = featureRepository.GetAllByPredicate(f =>
-                        f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                        (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
-                    .ToList();
+                var features = featureRepository.DoingOrDoneFeaturesOfPortfolio(portfolio.Id);
 
                 return new RunChartData(GenerateWorkInProgressByDay(startDate, endDate, features));
             }, logger);
@@ -158,10 +153,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             logger.LogDebug("Getting Total Work Item Age Over Time for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var features = featureRepository.GetAllByPredicate(f =>
-                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
-                .ToList();
+            var features = featureRepository.DoingOrDoneFeaturesOfPortfolio(portfolio.Id);
 
             var wiaOverTime = GenerateTotalWorkItemAgeByDay(
                 startDate,
@@ -179,9 +171,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(portfolio, $"StartedItems_{startDate:yyyy-MM-dd}_{endDate:yyyy-MM-dd}", () =>
             {
-                var startedItems = featureRepository.GetAllByPredicate(f =>
-                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    (f.StateCategory == StateCategories.Done || f.StateCategory == StateCategories.Doing));
+                var startedItems = featureRepository.DoingOrDoneFeaturesOfPortfolio(portfolio.Id);
 
                 return new RunChartData(GenerateStartedRunChart(startDate, endDate, startedItems));
             }, logger);
@@ -213,10 +203,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             return GetFromCacheIfExists(portfolio, $"WipSnapshot_{asOfDate:yyyy-MM-dd}", () =>
             {
-                var features = featureRepository.GetAllByPredicate(f =>
-                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done))
-                    .ToList();
+                var features = featureRepository.DoingOrDoneFeaturesOfPortfolio(portfolio.Id);
 
                 return GenerateWorkInProgressByDay(asOfDate, asOfDate, features)[0].OfType<Feature>();
             }
@@ -238,8 +225,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             var featureIds = features.Select(feature => feature.Id).ToHashSet();
             var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
-                .GetAllByPredicate(transition => featureIds.Contains(transition.FeatureId))
-                .AsEnumerable()
+                .TransitionsOfFeatures(featureIds)
                 .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
 
             return transitionsByFeature
@@ -261,10 +247,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
             // Features in an open state category (To Do OR Doing) are eligible to read as blocked — a
             // feature can sit in To Do because it is blocked. Done/Unknown are excluded. The blocked-rule
             // match is applied by the caller via IBlockedItemService.
-            return featureRepository.GetAllByPredicate(f =>
-                f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                (f.StateCategory == StateCategories.ToDo || f.StateCategory == StateCategories.Doing))
-                .ToList();
+            return featureRepository.ToDoOrDoingFeaturesOfPortfolio(portfolio.Id);
         }
 
         public IEnumerable<PercentileValue> GetCycleTimePercentilesForPortfolio(Portfolio portfolio, DateTime startDate, DateTime endDate)
@@ -431,7 +414,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         private List<WorkItem> ResolveCumulativeStateTimeCandidates(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
-            var portfolioFeatures = featureRepository.GetAllByPredicate(f => f.Portfolios.Any(p => p.Id == portfolio.Id)).ToList();
+            var portfolioFeatures = featureRepository.EveryFeatureOfPortfolio(portfolio.Id);
             var itemsWithTransitions = AssociateSyncedTransitionsPreservingCurrentState(portfolioFeatures);
 
             return itemsWithTransitions
@@ -444,8 +427,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             var featureIds = features.Select(feature => feature.Id).ToHashSet();
             var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
-                .GetAllByPredicate(transition => featureIds.Contains(transition.FeatureId))
-                .AsEnumerable()
+                .TransitionsOfFeatures(featureIds)
                 .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
 
             return features
@@ -501,8 +483,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             var completedFeatureIds = completedFeatures.Select(feature => feature.Id).ToHashSet();
             var transitionsByFeature = GroupTransitionsByItem(featureStateTransitionRepository
-                .GetAllByPredicate(transition => completedFeatureIds.Contains(transition.FeatureId))
-                .AsEnumerable()
+                .TransitionsOfFeatures(completedFeatureIds)
                 .Select(transition => (transition.FeatureId, ToWorkItemStateTransition(transition))));
 
             return completedFeatures
@@ -561,12 +542,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
         {
             logger.LogDebug("Getting All Features For Size Chart for Portfolio {PortfolioName} between {StartDate} and {EndDate}", portfolio.Name, startDate.Date, endDate.Date);
 
-            var allFeatures = featureRepository.GetAllByPredicate(f =>
-                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    (f.StateCategory == StateCategories.Done ||
-                     f.StateCategory == StateCategories.ToDo ||
-                     f.StateCategory == StateCategories.Doing))
-                .ToList();
+            var allFeatures = featureRepository.ToDoDoingOrDoneFeaturesOfPortfolio(portfolio.Id);
 
             return InSizeChartWindow(allFeatures, startDate, endDate).ToList();
         }
@@ -596,9 +572,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
             var totalWorkItemAge = GetFromCacheIfExists(portfolio, $"TotalWorkItemAge_{endDate:yyyy-MM-dd}", () =>
              {
-                 var features = featureRepository.GetAllByPredicate(f =>
-                     f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                     (f.StateCategory == StateCategories.Doing || f.StateCategory == StateCategories.Done));
+                 var features = featureRepository.DoingOrDoneFeaturesOfPortfolio(portfolio.Id);
 
                  var (values, _) = GenerateTotalWorkItemAgeByDay(endDate, endDate, features);
                  return new InfoMetric(values[0]);
@@ -752,10 +726,7 @@ namespace Lighthouse.Backend.Modules.FlowMetrics.Application
 
         private IEnumerable<Feature> GetFeaturesClosedInDateRange(Portfolio portfolio, DateTime startDate, DateTime endDate)
         {
-            var closedFeaturesOfPortfolio = featureRepository.GetAllByPredicate(f =>
-                    f.Portfolios.Any(p => p.Id == portfolio.Id) &&
-                    f.StateCategory == StateCategories.Done)
-                .ToList();
+            var closedFeaturesOfPortfolio = featureRepository.DoneFeaturesOfPortfolio(portfolio.Id);
 
             return ClosedInDateRange(closedFeaturesOfPortfolio, startDate, endDate);
         }

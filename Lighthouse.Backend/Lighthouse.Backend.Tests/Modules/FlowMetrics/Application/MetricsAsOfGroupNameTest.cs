@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
@@ -88,14 +87,13 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             var transitions = new List<FeatureStateTransition> { new() { Id = 1, FeatureId = 7, ToState = "Review", TransitionedAt = Day5 } };
 
             var transitionRepository = new Mock<IFeatureStateTransitionRepository>();
-            transitionRepository.Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<FeatureStateTransition, bool>>>()))
-                .Returns((Expression<Func<FeatureStateTransition, bool>> predicate) => transitions.Where(predicate.Compile()).AsQueryable());
+            transitionRepository.AnswersTransitionReadsFrom(transitions);
             var appSettings = new Mock<IAppSettingService>();
             appSettings.Setup(m => m.GetFeatureRefreshSettings()).Returns(new RefreshSettings { Interval = 30 });
 
             var subject = new PortfolioMetricsService(
                 Mock.Of<ILogger<PortfolioMetricsService>>(),
-                Mock.Of<IRepository<Feature>>(),
+                Mock.Of<IFeatureRepository>(),
                 appSettings.Object,
                 ACacheOnly(Mock.Of<IForecastService>()),
                 transitionRepository.Object,

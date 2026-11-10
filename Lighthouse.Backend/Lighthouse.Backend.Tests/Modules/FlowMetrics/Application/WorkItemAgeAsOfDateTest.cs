@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
@@ -251,19 +250,20 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             serviceProvider.Setup(sp => sp.GetService(typeof(IForecastService)))
                 .Returns(Mock.Of<IForecastService>());
 
+            var featureTransitionRepository = new Mock<IFeatureStateTransitionRepository>();
+            featureTransitionRepository.AnswersTransitionReadsFrom([]);
+
             portfolio = new Portfolio { Id = 1, Name = "Test Portfolio" };
             subject = new PortfolioMetricsService(
                 Mock.Of<ILogger<PortfolioMetricsService>>(),
                 featureRepository.Object,
                 appSettingService.Object,
                 serviceProvider.Object,
-                Mock.Of<IFeatureStateTransitionRepository>(),
+                featureTransitionRepository.Object,
                 TestToday.Clock);
 
             features = new List<Feature>();
-            featureRepository
-                .Setup(x => x.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
-                .Returns((Expression<Func<Feature, bool>> pred) => features.Where(pred.Compile()).AsQueryable());
+            featureRepository.AnswersPortfolioReadsFrom(() => features);
         }
 
         [TearDown]
