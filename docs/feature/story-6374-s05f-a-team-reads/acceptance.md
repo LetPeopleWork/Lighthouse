@@ -256,4 +256,32 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+architecture-rules probe: 642/642 passed, incl. GetAllByPredicate allow-list guard; backend-tests RepositoryLeakRatchet: 25/25 passed. Allow-list no longer flags TeamMetricsService.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+backend-tests Parity: 22/22 passed (named-read parity support, SQLite and Postgres via Docker); ef-model-unchanged: no model changes on Sqlite and Postgres.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+backend-tests RealityCheckQueryCount: 2/2 passed; backend-tests TeamMetrics: 277/277 passed (existing metrics asserts). metrics-answers-compare not runnable here (needs prod-like backup DB and jq); full suite not run.
+```

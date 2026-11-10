@@ -123,7 +123,7 @@
 "counters": {
 "C": 1,
 "E": 3,
-"F": 195,
+"F": 198,
 "L": 4,
 "P": 3,
 "S": 1,
@@ -851,6 +851,26 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F196"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F197"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F198"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -983,6 +1003,9 @@
 "F192": "Identical answers, exit 0",
 "F193": "Every Team metrics answer a real instance shows is unchanged",
 "F195": "A changed answer on a data shape absent from the backup; the comparison stays INDETERMINATE when the backup is absent in the examiner environment",
+"F196": "architecture-rules probe: 642/642 passed, incl. GetAllByPredicate allow-list guard; backend-tests RepositoryLeakRatchet: 25/25 passed. Allow-list no longer flags TeamMetricsService.",
+"F197": "backend-tests Parity: 22/22 passed (named-read parity support, SQLite and Postgres via Docker); ef-model-unchanged: no model changes on Sqlite and Postgres.",
+"F198": "backend-tests RealityCheckQueryCount: 2/2 passed; backend-tests TeamMetrics: 277/277 passed (existing metrics asserts). metrics-answers-compare not runnable here (needs prod-like backup DB and jq); full suite not run.",
 "F2": "The Team metrics read work items, transitions and features through named, provider-translatable reads, with every metrics answer unchanged",
 "F20": "Arrange stubs retarget only.",
 "F21": "Arrange stubs retarget, keeping today's per-read filtering of the in-memory list; Asserts unchanged.",

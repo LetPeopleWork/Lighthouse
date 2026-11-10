@@ -374,6 +374,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>architecture-rules probe: 642/642 passed, incl. GetAllByPredicate allow-list guard; backend-tests RepositoryLeakRatchet: 25/25 passed. Allow-list no longer flags TeamMetricsService.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>backend-tests Parity: 22/22 passed (named-read parity support, SQLite and Postgres via Docker); ef-model-unchanged: no model changes on Sqlite and Postgres.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>backend-tests RealityCheckQueryCount: 2/2 passed; backend-tests TeamMetrics: 277/277 passed (existing metrics asserts). metrics-answers-compare not runnable here (needs prod-like backup DB and jq); full suite not run.
+</code></pre>
 
 </body></html>
