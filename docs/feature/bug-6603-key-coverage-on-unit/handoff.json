@@ -44,7 +44,7 @@
 },
 "counters": {
 "E": 3,
-"F": 22,
+"F": 24,
 "P": 1,
 "S": 1
 },
@@ -71,6 +71,28 @@
 "dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests --filter FullyQualifiedName~EffectiveAccessTest"
 ]
 }
+}
+},
+"examination": {
+"E1": {
+"observations": [
+"F23",
+"F24"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F23",
+"F24"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F24"
+],
+"verdict": "met"
 }
 },
 "expectations": {
@@ -114,6 +136,8 @@
 "F20": "The key never reads a unit its owner cannot read, and never writes a unit its owner cannot write.",
 "F21": "No limited key ever reaches beyond its owner on a unit.",
 "F22": "A fix that refuses every key row, so keys of admin owners lose access; the table test pins that the control keys keep their access.",
+"F23": "Probe backend-tests _key_ : all green; named parameterised matrix A_key_never_reads_or_writes_a_unit_its_owner_cannot(unitKind in Team/Portfolio, ownerRole in SystemAdmin/TeamAdmin/PortfolioAdmin/Viewer/UnitAdmin/null, keyRole in same set) incl. (Team,PortfolioAdmin,TeamAdmin) and (Team,PortfolioAdmin,Viewer); plus A_key_whose_owner_reaches_nothing_reads_nothing, L10_on_a_key_whose_owner_has_no_profile_reads_nothing, A_Team_Admin_key_writes_the_Team_its_owner_administers_while_a_Viewer_key_there_only_reads, A_Team_Admin_key_of_an_owner_who_only_reads_through_the_rule_writes_nothing. Names and totals only; responses not shown.",
+"F24": "Full unfiltered _key_ probe output (128 passed, 0 failed) names: The_same_key_follows_its_owners_role_on_the_Team_as_it_changes (passed), Removing_the_rule_stops_the_limited_key_on_its_next_request (passed), and a matrix A_key_reaches_a_unit_only_as_far_as_its_owners_role_there_gives(unit,ownerRole,keyRole,reads,writes) e.g. (Team,PortfolioAdmin,Viewer,False,False), (Team,PortfolioAdmin,TeamAdmin,False,False), (Team,TeamAdmin,Viewer,True,False), (Team,TeamAdmin,TeamAdmin,True,True). Names and arguments only; role-change sequence itself not shown.",
 "F3": "A limited API key reaches a unit only at a role its owner's role on that unit gives there",
 "F4": "A key limited to a Team or Portfolio reads or administers it only when its owner's role on that unit gives at least that role there",
 "F5": "An owner whose only row on a Team is Portfolio Admin (a role that gives nothing on a Team) limits a key to Viewer, and another key to Team Admin, on that Team; both keys ask to read and to write the Team. Control: an owner who is Team Admin on the Team does the same.",

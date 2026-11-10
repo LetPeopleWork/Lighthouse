@@ -268,6 +268,37 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Examination</h2>
 
-<p>None.</p>
+<h3>E1</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests _key_ : all green; named parameterised matrix A_key_never_reads_or_writes_a_unit_its_owner_cannot(unitKind in Team/Portfolio, ownerRole in SystemAdmin/TeamAdmin/PortfolioAdmin/Viewer/UnitAdmin/null, keyRole in same set) incl. (Team,PortfolioAdmin,TeamAdmin) and (Team,PortfolioAdmin,Viewer); plus A_key_whose_owner_reaches_nothing_reads_nothing, L10_on_a_key_whose_owner_has_no_profile_reads_nothing, A_Team_Admin_key_writes_the_Team_its_owner_administers_while_a_Viewer_key_there_only_reads, A_Team_Admin_key_of_an_owner_who_only_reads_through_the_rule_writes_nothing. Names and totals only; responses not shown.
+</code></pre>
+
+<pre><code>Full unfiltered _key_ probe output (128 passed, 0 failed) names: The_same_key_follows_its_owners_role_on_the_Team_as_it_changes (passed), Removing_the_rule_stops_the_limited_key_on_its_next_request (passed), and a matrix A_key_reaches_a_unit_only_as_far_as_its_owners_role_there_gives(unit,ownerRole,keyRole,reads,writes) e.g. (Team,PortfolioAdmin,Viewer,False,False), (Team,PortfolioAdmin,TeamAdmin,False,False), (Team,TeamAdmin,Viewer,True,False), (Team,TeamAdmin,TeamAdmin,True,True). Names and arguments only; role-change sequence itself not shown.
+</code></pre>
+
+<h3>E2</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Probe backend-tests _key_ : all green; named parameterised matrix A_key_never_reads_or_writes_a_unit_its_owner_cannot(unitKind in Team/Portfolio, ownerRole in SystemAdmin/TeamAdmin/PortfolioAdmin/Viewer/UnitAdmin/null, keyRole in same set) incl. (Team,PortfolioAdmin,TeamAdmin) and (Team,PortfolioAdmin,Viewer); plus A_key_whose_owner_reaches_nothing_reads_nothing, L10_on_a_key_whose_owner_has_no_profile_reads_nothing, A_Team_Admin_key_writes_the_Team_its_owner_administers_while_a_Viewer_key_there_only_reads, A_Team_Admin_key_of_an_owner_who_only_reads_through_the_rule_writes_nothing. Names and totals only; responses not shown.
+</code></pre>
+
+<pre><code>Full unfiltered _key_ probe output (128 passed, 0 failed) names: The_same_key_follows_its_owners_role_on_the_Team_as_it_changes (passed), Removing_the_rule_stops_the_limited_key_on_its_next_request (passed), and a matrix A_key_reaches_a_unit_only_as_far_as_its_owners_role_there_gives(unit,ownerRole,keyRole,reads,writes) e.g. (Team,PortfolioAdmin,Viewer,False,False), (Team,PortfolioAdmin,TeamAdmin,False,False), (Team,TeamAdmin,Viewer,True,False), (Team,TeamAdmin,TeamAdmin,True,True). Names and arguments only; role-change sequence itself not shown.
+</code></pre>
+
+<h3>E3</h3>
+
+<p>met</p>
+
+<h4>Observations</h4>
+
+<pre><code>Full unfiltered _key_ probe output (128 passed, 0 failed) names: The_same_key_follows_its_owners_role_on_the_Team_as_it_changes (passed), Removing_the_rule_stops_the_limited_key_on_its_next_request (passed), and a matrix A_key_reaches_a_unit_only_as_far_as_its_owners_role_there_gives(unit,ownerRole,keyRole,reads,writes) e.g. (Team,PortfolioAdmin,Viewer,False,False), (Team,PortfolioAdmin,TeamAdmin,False,False), (Team,TeamAdmin,Viewer,True,False), (Team,TeamAdmin,TeamAdmin,True,True). Names and arguments only; role-change sequence itself not shown.
+</code></pre>
 
 </body></html>
