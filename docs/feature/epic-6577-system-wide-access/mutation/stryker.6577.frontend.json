@@ -1,0 +1,54 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6577.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incrementalFile": "reports/mutation/stryker-incremental-6577.json",
+  "concurrency": 2,
+  "timeoutMS": 120000,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports"
+  ],
+  "mutate": [
+    "src/components/Common/Authorization/ScopedGroupMappingManager.tsx:17-31",
+    "src/components/Common/Authorization/ScopedGroupMappingManager.tsx:51-51",
+    "src/components/Common/Authorization/ScopedGroupMappingManager.tsx:121-154",
+    "src/components/Common/Authorization/ScopedGroupMappingManager.tsx:185-207",
+    "src/components/Common/Authorization/SystemWideRulesNotice.tsx",
+    "src/models/Authorization/RbacModels.ts:55-93",
+    "src/pages/Portfolios/Detail/PortfolioDetail.tsx:595-609",
+    "src/pages/Settings/Rbac/EveryoneSignedInSection.tsx",
+    "src/pages/Settings/Rbac/RbacSettings.tsx:28-136",
+    "src/pages/Settings/Rbac/RbacSettings.tsx:196-246",
+    "src/pages/Settings/Rbac/RbacSettings.tsx:293-293",
+    "src/pages/Settings/Rbac/RbacSettings.tsx:341-358",
+    "src/pages/Settings/Rbac/RbacSettings.tsx:418-501",
+    "src/pages/Teams/Detail/TeamDetail.tsx:662-673",
+    "src/services/Api/RbacService.ts:42-45",
+    "src/services/Api/RbacService.ts:190-222"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6577-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6577"
+}

@@ -1,0 +1,35 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Services/Implementation/Authorization/RbacAdministrationService.cs",
+      "**/API/AuthorizationController.cs",
+      "**/Models/Authorization/AppliesTo.cs",
+      "**/Models/Authorization/EffectiveAccess.cs",
+      "**/Models/Authorization/EveryoneSignedInSetting.cs",
+      "**/Models/Authorization/SystemWideRule.cs",
+      "**/Models/Authorization/PermissionRule.cs",
+      "**/Models/Authorization/RbacOperationResult.cs",
+      "**/Services/Implementation/Seeding/EveryoneSignedInSeeder.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTestInIsolation",
+    "test-case-filter": "(FullyQualifiedName~Acceptance.SystemWideAccess|FullyQualifiedName~EffectiveAccessTest|FullyQualifiedName~RbacAdministrationServiceTest|FullyQualifiedName~AuthorizationControllerTest)&FullyQualifiedName!~Skeleton&FullyQualifiedName!~WireContract&FullyQualifiedName!~API.Integration&FullyQualifiedName!~Dogfood",
+    "reporters": [
+      "progress",
+      "json",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
