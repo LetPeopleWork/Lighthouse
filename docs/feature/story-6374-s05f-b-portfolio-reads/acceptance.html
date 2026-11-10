@@ -151,7 +151,188 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Scan every production source file for calls of the general predicate read and compare the callers with the allow-list of 13 files, which no longer names the Portfolio metrics service
+</code></pre>
+
+<pre><code>Fails while the Portfolio metrics service still calls the general predicate read, naming that file as a caller not on the list; passes once it reads only through the named reads and the scanned callers equal the 13 listed files
+</code></pre>
+
+<pre><code>The Portfolio metrics cannot go back to the general predicate read without a test naming the file
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs::GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList</p>
+
+<pre><code>A named read that internally builds a different predicate, or a call made through reflection or a delegate; the provider parity rows catch the first
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On Sqlite, seed two Portfolios with Features in every state category including Unknown, one Feature in both Portfolios, one in none, and transitions for several Features and for one not asked about; read each Portfolio through every named read and through the predicate it replaces, each in a fresh context, and read the transitions of the chosen Features both ways
+</code></pre>
+
+<pre><code>Each named read gives the same Features or transitions in the same sequence, with the same Portfolios, Feature work with Team, forecasts and start forecasts with simulation results and dependency references loaded, all tracked, as its predicate; the doing-or-done read matches both spellings of its predicate; no predicate comes back empty
+</code></pre>
+
+<pre><code>The Portfolio metrics read the same data from the same database once they switch to the named reads
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/PortfolioMetricsReadsParityOnBothProvidersTests.cs::Every_named_Portfolio_read_gives_what_its_predicate_gives_on_Sqlite</p>
+
+<pre><code>A named read that differs only on a data shape the fixture does not hold, such as ordering ties or transition row order on much larger data
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On Postgres, seed two Portfolios with Features in every state category including Unknown, one Feature in both Portfolios, one in none, and transitions for several Features and for one not asked about; read each Portfolio through every named read and through the predicate it replaces, each in a fresh context, and read the transitions of the chosen Features both ways
+</code></pre>
+
+<pre><code>Each named read gives the same Features or transitions in the same sequence, with the same Portfolios, Feature work with Team, forecasts and start forecasts with simulation results and dependency references loaded, all tracked, as its predicate; the doing-or-done read matches both spellings of its predicate; no predicate comes back empty
+</code></pre>
+
+<pre><code>The Portfolio metrics read the same data from the same database once they switch to the named reads
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/PortfolioMetricsReadsParityOnBothProvidersTests.cs::Every_named_Portfolio_read_gives_what_its_predicate_gives_on_Postgres</p>
+
+<pre><code>A named read that differs only on a data shape the fixture does not hold, such as ordering ties or transition row order on much larger data
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the existing Portfolio metrics tests with only their read stubs retargeted to the named reads and an explicit empty answer for the transition read
+</code></pre>
+
+<pre><code>Every existing Assert, Is and Verify line passes unchanged; a read nobody set up answers null and makes the test fail rather than pass
+</code></pre>
+
+<pre><code>Every Portfolio metrics answer the existing tests pin stays the same
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PortfolioMetricsServiceTests.cs</p>
+
+<pre><code>A named read that the double answers regardless of its own predicate or includes; the provider parity rows catch that
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Serialize every Portfolio metrics answer from the instance backup on the base revision and on the candidate, and compare
+</code></pre>
+
+<pre><code>Identical answers, exit 0
+</code></pre>
+
+<pre><code>Every Portfolio metrics answer a real instance shows is unchanged
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Scripts/examine/bin/metrics-answers-compare</p>
+
+<pre><code>A changed answer on a data shape absent from the backup; the comparison stays INDETERMINATE when the backup is absent in the examiner environment
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Count the database statements per Portfolio metrics answer before and after the switch to the named reads
+</code></pre>
+
+<pre><code>The same number of statements per answer
+</code></pre>
+
+<pre><code>The Portfolio metrics do not get slower through extra database round trips
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>No Portfolio statement-count test exists and the design declares none: today&#x27;s Feature read already runs at once and every transition query is enumerated once by its caller, so reading inside the repository adds no statement; the reviewer checks the call sites and the answer comparison shows no changed answer
+</code></pre>
+
+<p>reviewer</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the Flow metrics module architecture rules in the Release configuration
+</code></pre>
+
+<pre><code>The module&#x27;s application layer still has no edge to EF Core or the data layer and no newcomer on the inbound lists, with unchanged baselines
+</code></pre>
+
+<pre><code>Reading through the owner repositories adds no new dependency to the Flow metrics module
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs</p>
+
+<pre><code>A dependency added through a type the rules do not scan
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

@@ -1,8 +1,126 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F89",
+"L1/F90",
+"T1"
+],
+"still_passes_if": "F160",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/RepositoryLeakRatchetArchUnitTest.cs::GetAllByPredicate_IsCalledOnlyFromTheFilesOnTheList"
+},
+"expected": "F158",
+"stimulus": "F157",
+"user_result": "F159"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F93",
+"L2/F94",
+"L2/F95",
+"L2/F96"
+],
+"still_passes_if": "F164",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/PortfolioMetricsReadsParityOnBothProvidersTests.cs::Every_named_Portfolio_read_gives_what_its_predicate_gives_on_Sqlite"
+},
+"expected": "F162",
+"stimulus": "F161",
+"user_result": "F163"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F93",
+"L2/F94",
+"L2/F95",
+"L2/F96"
+],
+"still_passes_if": "F164",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Integration/Containers/PortfolioMetricsReadsParityOnBothProvidersTests.cs::Every_named_Portfolio_read_gives_what_its_predicate_gives_on_Postgres"
+},
+"expected": "F162",
+"stimulus": "F165",
+"user_result": "F163"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F169",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Modules/FlowMetrics/Application/PortfolioMetricsServiceTests.cs"
+},
+"expected": "F167",
+"stimulus": "F166",
+"user_result": "F168"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F101"
+],
+"still_passes_if": "F173",
+"test": "Scripts/examine/bin/metrics-answers-compare"
+},
+"expected": "F171",
+"stimulus": "F170",
+"user_result": "F172"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "reviewer",
+"reason": "F177"
+},
+"expected": "F175",
+"stimulus": "F174",
+"user_result": "F176"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F181",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/FlowMetricsApplicationOutboundArchUnitTest.cs"
+},
+"expected": "F179",
+"stimulus": "F178",
+"user_result": "F180"
+}
+]
+},
 "counters": {
 "C": 1,
 "E": 3,
-"F": 156,
+"F": 181,
 "L": 4,
 "P": 3,
 "S": 1,
@@ -714,9 +832,34 @@
 "F154": "A maintainer reading the Portfolio metrics code and the GetAllByPredicate allow-list finds no remaining use of GetAllByPredicate by the Portfolio metrics service, and no allow-list entry naming it.",
 "F155": "For each named Portfolio read, a user comparing it with the predicate it replaced sees the same features or transitions, in the same order, with the same related data loaded and tracked, on both SQLite and Postgres.",
 "F156": "A user viewing Portfolio metrics sees exactly the same answers as before, and each answer costs the same number of database queries.",
+"F157": "Scan every production source file for calls of the general predicate read and compare the callers with the allow-list of 13 files, which no longer names the Portfolio metrics service",
+"F158": "Fails while the Portfolio metrics service still calls the general predicate read, naming that file as a caller not on the list; passes once it reads only through the named reads and the scanned callers equal the 13 listed files",
+"F159": "The Portfolio metrics cannot go back to the general predicate read without a test naming the file",
 "F16": "Portfolio read answers with each read's own predicate over a list read at each call; a T2 answer for the transition mock.",
+"F160": "A named read that internally builds a different predicate, or a call made through reflection or a delegate; the provider parity rows catch the first",
+"F161": "On Sqlite, seed two Portfolios with Features in every state category including Unknown, one Feature in both Portfolios, one in none, and transitions for several Features and for one not asked about; read each Portfolio through every named read and through the predicate it replaces, each in a fresh context, and read the transitions of the chosen Features both ways",
+"F162": "Each named read gives the same Features or transitions in the same sequence, with the same Portfolios, Feature work with Team, forecasts and start forecasts with simulation results and dependency references loaded, all tracked, as its predicate; the doing-or-done read matches both spellings of its predicate; no predicate comes back empty",
+"F163": "The Portfolio metrics read the same data from the same database once they switch to the named reads",
+"F164": "A named read that differs only on a data shape the fixture does not hold, such as ordering ties or transition row order on much larger data",
+"F165": "On Postgres, seed two Portfolios with Features in every state category including Unknown, one Feature in both Portfolios, one in none, and transitions for several Features and for one not asked about; read each Portfolio through every named read and through the predicate it replaces, each in a fresh context, and read the transitions of the chosen Features both ways",
+"F166": "Run the existing Portfolio metrics tests with only their read stubs retargeted to the named reads and an explicit empty answer for the transition read",
+"F167": "Every existing Assert, Is and Verify line passes unchanged; a read nobody set up answers null and makes the test fail rather than pass",
+"F168": "Every Portfolio metrics answer the existing tests pin stays the same",
+"F169": "A named read that the double answers regardless of its own predicate or includes; the provider parity rows catch that",
 "F17": "Mock type and Arrange stubs retarget; transition mock answers empty by default; Asserts byte-identical.",
+"F170": "Serialize every Portfolio metrics answer from the instance backup on the base revision and on the candidate, and compare",
+"F171": "Identical answers, exit 0",
+"F172": "Every Portfolio metrics answer a real instance shows is unchanged",
+"F173": "A changed answer on a data shape absent from the backup; the comparison stays INDETERMINATE when the backup is absent in the examiner environment",
+"F174": "Count the database statements per Portfolio metrics answer before and after the switch to the named reads",
+"F175": "The same number of statements per answer",
+"F176": "The Portfolio metrics do not get slower through extra database round trips",
+"F177": "No Portfolio statement-count test exists and the design declares none: today's Feature read already runs at once and every transition query is enumerated once by its caller, so reading inside the repository adds no statement; the reviewer checks the call sites and the answer comparison shows no changed answer",
+"F178": "Run the Flow metrics module architecture rules in the Release configuration",
+"F179": "The module's application layer still has no edge to EF Core or the data layer and no newcomer on the inbound lists, with unchanged baselines",
 "F18": "Portfolio class: Arrange stubs retarget, explicit empty T2 answer.",
+"F180": "Reading through the owner repositories adds no new dependency to the Flow metrics module",
+"F181": "A dependency added through a type the rules do not scan",
 "F19": "Transition stub retargets to T2; Mock.Of<IRepository<Feature>> becomes Mock.Of<IFeatureRepository>.",
 "F2": "The Portfolio metrics read features and their transitions through named, provider-translatable reads, with every metrics answer unchanged",
 "F20": "Portfolio builder: Arrange stubs retarget, explicit empty T2 answer.",
