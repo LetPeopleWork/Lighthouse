@@ -7,5 +7,9 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
     public class WorkItemStateTransitionRepository(LighthouseAppContext context, ILogger<WorkItemStateTransitionRepository> logger)
         : RepositoryBase<WorkItemStateTransition>(context, (lighthouseAppContext) => lighthouseAppContext.WorkItemStateTransitions, logger), IWorkItemStateTransitionRepository
     {
+        public IReadOnlyList<WorkItemStateTransition> TransitionsOfWorkItems(IReadOnlyCollection<int> workItemIds)
+            => Context.WorkItemStateTransitions
+                .Where(transition => workItemIds.Contains(transition.WorkItemId))
+                .ToList();
     }
 }

@@ -24,6 +24,26 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return features.AsQueryable();
         }
 
+        public IReadOnlyList<WorkItem> DoneItemsOfTeam(int teamId)
+            => ItemsWithTeam(i => i.TeamId == teamId && i.StateCategory == StateCategories.Done).ToList();
+
+        public IReadOnlyList<WorkItem> DoingOrDoneItemsOfTeam(int teamId)
+            => ItemsWithTeam(i => i.TeamId == teamId && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.Done)).ToList();
+
+        public IReadOnlyList<WorkItem> ToDoOrDoingItemsOfTeam(int teamId)
+            => ItemsWithTeam(i => i.TeamId == teamId && (i.StateCategory == StateCategories.ToDo || i.StateCategory == StateCategories.Doing)).ToList();
+
+        public int CountToDoOrDoingItemsOfTeam(int teamId)
+            => ItemsWithTeam(i => i.TeamId == teamId && (i.StateCategory == StateCategories.Doing || i.StateCategory == StateCategories.ToDo)).Count();
+
+        public IReadOnlyList<WorkItem> ItemsOfTeam(int teamId)
+            => ItemsWithTeam(item => item.TeamId == teamId).ToList();
+
+        private IQueryable<WorkItem> ItemsWithTeam(Expression<Func<WorkItem, bool>> predicate)
+            => Context.WorkItems
+                .Include(wi => wi.Team)
+                .Where(predicate);
+
         public void RemoveWorkItemsForTeam(int teamId)
         {
             var workItems = Context.WorkItems

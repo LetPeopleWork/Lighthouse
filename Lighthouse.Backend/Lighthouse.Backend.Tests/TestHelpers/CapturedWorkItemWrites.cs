@@ -93,6 +93,16 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         public void RemoveWorkItemsForTeam(int teamId) => inner.RemoveWorkItemsForTeam(teamId);
 
+        public IReadOnlyList<WorkItem> DoneItemsOfTeam(int teamId) => inner.DoneItemsOfTeam(teamId);
+
+        public IReadOnlyList<WorkItem> DoingOrDoneItemsOfTeam(int teamId) => inner.DoingOrDoneItemsOfTeam(teamId);
+
+        public IReadOnlyList<WorkItem> ToDoOrDoingItemsOfTeam(int teamId) => inner.ToDoOrDoingItemsOfTeam(teamId);
+
+        public int CountToDoOrDoingItemsOfTeam(int teamId) => inner.CountToDoOrDoingItemsOfTeam(teamId);
+
+        public IReadOnlyList<WorkItem> ItemsOfTeam(int teamId) => inner.ItemsOfTeam(teamId);
+
         public bool Exists(int id) => inner.Exists(id);
 
         public bool Exists(Func<WorkItem, bool> predicate) => inner.Exists(predicate);

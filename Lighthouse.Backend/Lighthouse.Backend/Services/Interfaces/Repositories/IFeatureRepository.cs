@@ -36,6 +36,13 @@ namespace Lighthouse.Backend.Services.Interfaces.Repositories
         IReadOnlyList<Feature> FeaturesWorkedOnBy(IReadOnlyCollection<int> teamIds);
 
         /// <summary>
+        /// The Features in which this Team has at least one work item, leaving out those still on the
+        /// default size, in forecast order, each read whole as <see cref="IRepository{T}.GetAll"/> reads it
+        /// and tracked. With <paramref name="onlyIn"/> set, only the Features in that state category.
+        /// </summary>
+        IReadOnlyList<Feature> FeaturesWithRealWorkForTeam(int teamId, StateCategories? onlyIn);
+
+        /// <summary>
         /// Marks the forecasts of these Features as confirmed current at the given moment, leaving every
         /// forecast value as it is. One statement, because a large Portfolio holds thousands of forecasts.
         /// A forecast that already reads a later time keeps it, so an overlapping round that stamps last

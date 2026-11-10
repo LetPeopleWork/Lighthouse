@@ -100,6 +100,13 @@ namespace Lighthouse.Backend.Services.Implementation.Repositories
             return featureOrdering.Order(features).ToList();
         }
 
+        public IReadOnlyList<Feature> FeaturesWithRealWorkForTeam(int teamId, StateCategories? onlyIn)
+            => featureOrdering.Order(GetFeatures().Where(f =>
+                    (onlyIn == null || f.StateCategory == onlyIn) &&
+                    !f.IsUsingDefaultFeatureSize &&
+                    f.FeatureWork.Any(fw => fw.TeamId == teamId && fw.TotalWorkItems > 0))
+                .AsEnumerable()).ToList();
+
         public IReadOnlyList<Feature> FeaturesOfPortfolio(int portfolioId)
             => ListRead(Context.Features.Where(feature => feature.Portfolios.Any(portfolio => portfolio.Id == portfolioId)));
 
