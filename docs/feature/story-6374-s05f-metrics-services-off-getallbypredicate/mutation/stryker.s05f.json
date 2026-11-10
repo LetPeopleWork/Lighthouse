@@ -1,0 +1,33 @@
+{
+  "stryker-config": {
+    "project": "Lighthouse.Backend.csproj",
+    "solution": "../Lighthouse.sln",
+    "test-projects": [
+      "../Lighthouse.Backend.Tests/Lighthouse.Backend.Tests.csproj"
+    ],
+    "mutate": [
+      "**/Modules/FlowMetrics/Application/TeamMetricsService.cs",
+      "**/Modules/FlowMetrics/Application/PortfolioMetricsService.cs",
+      "**/Services/Implementation/Repositories/WorkItemRepository.cs",
+      "**/Services/Implementation/Repositories/FeatureRepository.cs",
+      "**/Services/Implementation/Repositories/WorkItemStateTransitionRepository.cs",
+      "**/Services/Implementation/Repositories/FeatureStateTransitionRepository.cs"
+    ],
+    "thresholds": {
+      "high": 80,
+      "low": 70,
+      "break": 0
+    },
+    "coverage-analysis": "perTest",
+    "test-case-filter": "(FullyQualifiedName~BaseMetricsServiceTests|FullyQualifiedName~BaseMetricsServiceNamedCycleTimeTest|FullyQualifiedName~TeamMetricsServiceTests|FullyQualifiedName~TeamMetricsServiceSnapshotTests|FullyQualifiedName~PortfolioMetricsServiceTests|FullyQualifiedName~ClosedInRangeCharacterisationTest|FullyQualifiedName~InstanceDayItemBucketingTest|FullyQualifiedName~MetricsAsOfGroupNameTest|FullyQualifiedName~WorkItemAgeAsOfDateTest|FullyQualifiedName~WorkItemBaseAgeOnDayTest|FullyQualifiedName~ForecastRealityCheckServiceTest|FullyQualifiedName~ForecastFilterFeatureForecastIntegrationTest|FullyQualifiedName~Tests.API.TeamMetricsControllerTest|FullyQualifiedName~Tests.API.PortfolioMetricsControllerTests|FullyQualifiedName~WorkItemRepositoryTest|FullyQualifiedName~FeatureRepositoryTest|FullyQualifiedName~WorkItemStateTransitionRepositoryTest|FullyQualifiedName~FeatureStateTransitionRepository|FullyQualifiedName~ReadsParityOnBothProviders|FullyQualifiedName~RealityCheckQueryCountTest)&FullyQualifiedName!~API.Integration",
+    "reporters": [
+      "progress",
+      "json",
+      "html",
+      "cleartext"
+    ],
+    "concurrency": 4,
+    "additional-timeout": 30000,
+    "verbosity": "info"
+  }
+}
