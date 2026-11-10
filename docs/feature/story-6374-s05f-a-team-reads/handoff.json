@@ -1,7 +1,8 @@
 {
 "counters": {
 "C": 1,
-"F": 163,
+"E": 3,
+"F": 166,
 "L": 4,
 "P": 3,
 "S": 1,
@@ -729,6 +730,31 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F164"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F165"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F166"
+}
+]
+},
 "facts": {
 "F1": "S05f #6374, part A: TeamMetricsService stops calling GetAllByPredicate and reads through named reads on the owner repositories, behaviour-free, and leaves the GetAllByPredicate allow-list (15 -> 14). Design: docs/feature/story-6374-s05f-metrics-services-off-getallbypredicate/feature-delta.md",
 "F10": "TeamMetricsService reads only through named reads on the owner repositories, and the allow-list drops it",
@@ -802,6 +828,9 @@
 "F161": "A missed set-up turns the test red, not falsely green; review checks the diff shows no changed Assert, Is. or Verify line",
 "F162": "Only the files on the inline list call GetAllByPredicate; TeamMetricsService is no longer on it (15 to 14), scanned over every production source file, including later ones.",
 "F163": "Flow metrics module rules R2-R6 hold with unchanged baselines: no edge from the module's Application to EF Core or Data, no newcomer on the inbound lists, in CI's Release configuration.",
+"F164": "A user reading Team metrics gets the same behavior as before, while the Team reads no longer go through the generic predicate lookup; the generic predicate allow-list no longer lists the Team metrics service.",
+"F165": "Each Team read returns the same items, in the same order, with the same related data and the same change-tracking behavior as the predicate read it replaces, on both SQLite and Postgres.",
+"F166": "Every Team metrics answer a user sees is identical to before, and each answer costs the same number of database queries.",
 "F17": "Compile-forced: WriteRecordingWorkItemRepository implements IWorkItemRepository, so W1-W5 are added as plain delegations to inner; no recording or assertion change.",
 "F18": "Value slice: the 14 GetAllByPredicate calls switch to the seven named reads; constructor unchanged; the size chart's in-memory filter stays in the service.",
 "F19": "Arrange stubs retarget through one helper; Asserts byte-identical; the Times.Never Verify on Features retargets to F1.",
