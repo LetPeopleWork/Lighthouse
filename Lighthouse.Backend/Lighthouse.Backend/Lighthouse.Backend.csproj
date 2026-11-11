@@ -40,7 +40,7 @@
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.14" />
 		<PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.14" />
 		<PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="10.0.14" />
-		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.14" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.StackExchangeRedis" Version="10.0.15" />
 		<PackageReference Include="Microsoft.AspNetCore.SpaServices.Extensions" Version="10.0.14" />
 		<!-- Microsoft.TeamFoundationServer.Client floors this at 6.0.1 while Microsoft.Data.SqlClient needs 8.0.0 or later; a direct reference settles the conflict. -->
 		<PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.14" />
