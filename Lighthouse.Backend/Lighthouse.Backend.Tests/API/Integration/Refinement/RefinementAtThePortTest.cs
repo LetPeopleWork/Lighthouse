@@ -36,29 +36,15 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         protected const string Backlog = RefinementPortGivens.Backlog;
 
-        protected const string Next = RefinementPortGivens.Next;
-
-        protected const string Analysing = RefinementPortGivens.Analysing;
-
         protected const string Implementation = RefinementPortGivens.Implementation;
 
         protected const string Done = RefinementPortGivens.Done;
 
         protected const int ThroughputHistoryDays = RefinementPortGivens.ThroughputHistoryDays;
 
-        protected const string BillingExport = RefinementPortGivens.BillingExport;
-
-        protected const string AdvancedReporting = RefinementPortGivens.AdvancedReporting;
-
-        protected const string ApiVersioning = RefinementPortGivens.ApiVersioning;
-
         protected const string UserActivityTracking = RefinementPortGivens.UserActivityTracking;
 
         protected const string AdvancedSearch = RefinementPortGivens.AdvancedSearch;
-
-        protected const string ConfigurationManagement = RefinementPortGivens.ConfigurationManagement;
-
-        protected const string LoadTesting = RefinementPortGivens.LoadTesting;
 
         private ServicePortHarness harness = null!;
 
