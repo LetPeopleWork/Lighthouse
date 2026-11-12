@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 5,
-"F": 179,
+"E": 4,
+"F": 183,
 "K": 5,
 "P": 4,
 "S": 5,
@@ -1047,6 +1048,38 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F180"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F181"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F182"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F183"
+}
+]
+},
 "facts": {
 "F1": "Story #6393 FE5 Split wide units, part A (slices S1-S5 of docs/feature/story-6393-fe5-split-wide-units/feature-delta.md): split ModifyConnectionSettings.tsx, ragRules.ts and BaseMetricsView.tsx by responsibility so no production frontend file is over 1000 lines unless listed by name on a size rule that only shrinks; replace the duplicated Team and Portfolio member and group-mapping handlers with one shared hook guarded against new copies; the six member failure texts use the configured Team and Portfolio term. Behaviour-free otherwise.",
 "F10": "The RAG rules are split into three rule-family files plus a types file with no change in any rule's answer, and their entry leaves the size rule's list",
@@ -1138,6 +1171,10 @@
 "F178": "Through TeamMetricsView and PortfolioMetricsView, unchanged.",
 "F179": "BaseMetricsView.tsx leaves the offender list in the commit that brings it under 1000 lines; the list ends empty and the rule stays",
 "F18": "Failure carriers: the size rule and the access guard report offending file paths in the failing assertion; the hook reports member failures as an error string state (one owner, useScopedAccess) read by the Access tab; no new error type.",
+"F180": "A maintainer opening any production frontend file finds it at 1000 lines or fewer, unless the file is on the size-rule list, and that list does not grow.",
+"F181": "After the split, every Team and Portfolio unit that was split shows the same screens, controls and behaviour as before, and the existing tests pass without edits, except tests that moved with their code.",
+"F182": "Team and Portfolio member and group-mapping actions behave the same from the user's side, and the pages no longer call those access methods directly; the behaviour is reached through one shared hook.",
+"F183": "With default terms, the Team and Portfolio Access tab member failure messages read as they do today; with custom terms, they show the user's configured Team or Portfolio word in lower case.",
 "F19": "Input bound: the line limit is 1000, a file of more than 1000 lines offends; the offender list is not extended, only shortened.",
 "F2": "The widest frontend files are split by responsibility and kept small by a named size rule, and Team and Portfolio access handling lives in one place",
 "F20": "Behaviour-free: existing tests stay green unmodified apart from tests that move with their code; effect dependency arrays, hook call order and useCallback dependencies are copied as they are. Default Team and Portfolio terms give today's texts word for word.",
