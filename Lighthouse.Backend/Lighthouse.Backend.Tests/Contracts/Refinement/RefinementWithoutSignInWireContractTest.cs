@@ -27,11 +27,6 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
         [SetUp]
         public void StartFromTheSeededDatabase()
         {
-            // The host starts at half past eleven at night UTC, which is already the next day on an instance in a
-            // zone ahead of UTC. A timestamp on the wire is UTC text and the instance's day is a zone day, so the
-            // rows that compare them agree only once both are on the same date: one hour on does that everywhere.
-            Clock.Advance(TimeSpan.FromHours(1));
-
             using var scope = NewScope();
             foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
             {
