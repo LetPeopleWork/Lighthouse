@@ -364,3 +364,15 @@ Patterns: same as before, plus: **extract pure rules to a function module** (cho
   slice's commits. No release notes (behaviour-free; the copy change matches today's text under default terms).
 - **Mutation:** StrykerJS once at the end of each nwdes feature, on frozen code, ≥ 80 % on touched files, baseline
   the old files (see DESIGN, Stryker notes).
+
+### Part A EXAMINE outcome (2026-11-12) — gap accepted by the maintainer
+
+Four source-blind EXAMINE runs (haiku) closed unmet, every verdict `observation_gap`; none found a product fault.
+Causes: the examiner's own name filter hid rows (run 1); a host `nwdes examine abort` deleted the workspace
+(run 2; never abort before an examination — prompt generation creates the workspace); probes spent on `--help`
+(run 3); a truncated capture (run 4). Run 4 still observed 892 passing tests, all six default failure texts and
+the renamed "Failed to load squad/program members." texts. Not observed: the size-rule scan, the access guard,
+the renamed update and remove texts. `frontend-tests` was improved on the way (comma-separated path fragments,
+`--help`, message rows quote their text). Maintainer's choice: one more haiku run, then accept the gap; taken.
+Other evidence for the four promises: each slice's observed RED, the accepted whole-candidate review, the full
+suite (9736 pass), mutation 97.06 %.
