@@ -777,3 +777,238 @@ describe("computeWorkItemAgePercentilesRag — count-based SLE bands over in-pro
 	 * absolute counts against the day value. There is no longer a shared band to assert or extract.
 	 */
 });
+
+describe("what the time and age rules say, and where they change", () => {
+	const sle85 = { percentile: 85, value: 10 };
+	const noTarget =
+		"Define a SLE in settings based on historical Cycle Time data.";
+
+	describe("computeCycleTimePercentilesRag", () => {
+		it("asks for a target when there is none, whatever the cycle times", () => {
+			const result = computeCycleTimePercentilesRag(null, [5], terms);
+
+			expect(result).toEqual({ ragStatus: "red", tipText: noTarget });
+		});
+
+		it("asks for a target when there is nothing to judge it against", () => {
+			const result = computeCycleTimePercentilesRag(sle85, [], terms);
+
+			expect(result).toEqual({ ragStatus: "red", tipText: noTarget });
+		});
+
+		it("counts an item exactly on the target days as within it", () => {
+			const result = computeCycleTimePercentilesRag(
+				{ percentile: 50, value: 10 },
+				[10, 20],
+				terms,
+			);
+
+			expect(result).toEqual({
+				ragStatus: "green",
+				tipText:
+					"50.0% of Work Items are within the SLE target of 50% @ 10 days. Consider tightening the target.",
+			});
+		});
+
+		it("is red, and says how far below, when more than 20 points short", () => {
+			const cycleTimes = [1, 2, 3, 4, 11, 12, 13, 14, 15, 16];
+
+			const result = computeCycleTimePercentilesRag(sle85, cycleTimes, terms);
+
+			expect(result).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Only 40.0% within the SLE target (85% @ 10 days) — 45.0pp below. Focus on the oldest items.",
+			});
+		});
+
+		it("is amber, and says how far below, when exactly 20 points short", () => {
+			const cycleTimes = [...new Array(13).fill(5), ...new Array(7).fill(15)];
+
+			const result = computeCycleTimePercentilesRag(sle85, cycleTimes, terms);
+
+			expect(result).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"65.0% within the SLE target (85% @ 10 days) — 20.0pp below. Focus on items approaching the limit.",
+			});
+		});
+	});
+
+	describe("computeTotalWorkItemAgeRag", () => {
+		const defineBoth =
+			"Define System WIP Limit and SLE to enable Work Item Age analysis.";
+
+		it("asks for both settings when either is zero or negative", () => {
+			for (const [limit, days] of [
+				[-5, 10],
+				[5, -10],
+				[0, 10],
+				[5, 0],
+			]) {
+				expect(computeTotalWorkItemAgeRag(10, 2, limit, days, terms)).toEqual({
+					ragStatus: "red",
+					tipText: defineBoth,
+				});
+			}
+		});
+
+		it("says what the total is against the reference value in each band", () => {
+			expect(computeTotalWorkItemAgeRag(60, 5, 5, 10, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Total Work Item Age is 60 days, exceeding the reference value of 50 (WIP limit 5 × SLE 10 days).",
+			});
+			expect(computeTotalWorkItemAgeRag(46, 5, 5, 10, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Total Work Item Age is 46. Tomorrow's projection (51) would exceed the reference value of 50.",
+			});
+			expect(computeTotalWorkItemAgeRag(45, 5, 5, 10, terms)).toEqual({
+				ragStatus: "green",
+				tipText:
+					"Total Work Item Age is 45, within the reference value of 50 (WIP limit 5 × SLE 10 days).",
+			});
+		});
+	});
+
+	describe("computeCycleTimeScatterplotRag", () => {
+		const exceeding = (above: number, total: number) => [
+			...new Array(total - above).fill(5),
+			...new Array(above).fill(15),
+		];
+
+		it("calls an empty board healthy", () => {
+			expect(computeCycleTimeScatterplotRag(sle85, [], terms)).toEqual({
+				ragStatus: "green",
+				tipText:
+					"No completed Work Items to analyze. Cycle Time behavior looks healthy.",
+			});
+		});
+
+		it("does not count an item exactly on the target days as exceeding it", () => {
+			expect(computeCycleTimeScatterplotRag(sle85, [10, 10], terms)).toEqual({
+				ragStatus: "green",
+				tipText:
+					"0.0% of Work Items exceed the SLE of 10 days, within the expected 15%.",
+			});
+		});
+
+		it("is green exactly at the allowance, amber just past it and red exactly at the threshold", () => {
+			expect(
+				computeCycleTimeScatterplotRag(sle85, exceeding(3, 20), terms),
+			).toEqual({
+				ragStatus: "green",
+				tipText:
+					"15.0% of Work Items exceed the SLE of 10 days, within the expected 15%.",
+			});
+			expect(
+				computeCycleTimeScatterplotRag(sle85, exceeding(18, 100), terms),
+			).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"18.0% of Work Items exceed the SLE of 10 days (expected: 15%). Focus on the oldest items first.",
+			});
+			expect(
+				computeCycleTimeScatterplotRag(sle85, exceeding(1, 4), terms),
+			).toEqual({
+				ragStatus: "red",
+				tipText:
+					"25.0% of Work Items exceed the SLE of 10 days (expected: 15%, threshold: 25%). Analyze the oldest items.",
+			});
+		});
+	});
+
+	describe("computeWorkItemAgeChartRag", () => {
+		const sle14 = { percentile: 85, value: 14 };
+		const anItem = (workItemAge: number) => ({
+			workItemAge,
+			isBlocked: false,
+			isStale: false,
+		});
+
+		it("calls an empty board healthy", () => {
+			expect(computeWorkItemAgeChartRag(sle14, true, [], terms)).toEqual({
+				ragStatus: "green",
+				tipText:
+					"No Work Items in progress. All Work Item Ages are within healthy ranges.",
+			});
+		});
+
+		it("does not count an item exactly as old as the target as exceeding it", () => {
+			expect(
+				computeWorkItemAgeChartRag(sle14, true, [anItem(14)], terms),
+			).toEqual({
+				ragStatus: "green",
+				tipText: "All Work Items are within the SLE of 14 days.",
+			});
+		});
+	});
+
+	describe("computeTotalWorkItemAgeOverTimeRag", () => {
+		it("says a total of nothing stays nothing", () => {
+			expect(computeTotalWorkItemAgeOverTimeRag(0, 0, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "Total Work Item Age is 0 throughout the period.",
+			});
+		});
+
+		it("is red when the total grows from nothing", () => {
+			expect(computeTotalWorkItemAgeOverTimeRag(0, 5, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Total Work Item Age grew from 0 to 5. Investigate root causes.",
+			});
+		});
+
+		it("is red when the total grew by more than 10%, and says by how much", () => {
+			expect(computeTotalWorkItemAgeOverTimeRag(100, 120, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Total Work Item Age grew by 20.0% (100 → 120). Investigate root causes.",
+			});
+		});
+
+		it("is amber when the total dropped by more than 10%, down to nothing too", () => {
+			expect(computeTotalWorkItemAgeOverTimeRag(100, 50, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Total Work Item Age dropped by 50% (100 → 50). Verify items are still in progress.",
+			});
+			expect(computeTotalWorkItemAgeOverTimeRag(10, 0, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Total Work Item Age dropped by 100% (10 → 0). Verify items are still in progress.",
+			});
+		});
+
+		it("is stable at exactly 10% either way", () => {
+			expect(computeTotalWorkItemAgeOverTimeRag(100, 110, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "Total Work Item Age is stable at 110 days (10.0% change).",
+			});
+			expect(computeTotalWorkItemAgeOverTimeRag(100, 90, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "Total Work Item Age is stable at 90 days (-10.0% change).",
+			});
+		});
+	});
+
+	describe("computeCumulativeStateTimeRag", () => {
+		const nothingToShow =
+			"No Work Items contribute time across states. Adjust the date range or filter to bring data into scope.";
+
+		it("is red with no states, and with states that hold no time", () => {
+			expect(computeCumulativeStateTimeRag([], terms)).toEqual({
+				ragStatus: "red",
+				tipText: nothingToShow,
+			});
+			expect(
+				computeCumulativeStateTimeRag(
+					[{ state: "Doing", totalDays: 0 }],
+					terms,
+				),
+			).toEqual({ ragStatus: "red", tipText: nothingToShow });
+		});
+	});
+});

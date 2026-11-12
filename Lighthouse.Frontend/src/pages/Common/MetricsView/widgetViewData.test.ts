@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WorkItemsDialogContextId } from "../../../components/Common/WorkItemsDialog/workItemsDialogContexts";
+import type { IFeature } from "../../../models/Feature";
+import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
 import { buildViewData } from "./widgetViewData";
 
@@ -276,5 +278,296 @@ describe("which lists carry the risk column", () => {
 		for (const key of Object.keys(built)) {
 			expect(built[key]?.sleRiskColumn).toBeUndefined();
 		}
+	});
+
+	const aWorkItem = (id: number, overrides: Partial<IWorkItem> = {}) => ({
+		...inFlightItem(id, `ZEN-${id}`),
+		...overrides,
+	});
+
+	const idsOfEvery = (built: ReturnType<typeof viewDataWith>) =>
+		Object.fromEntries(
+			Object.entries(built).map(([key, payload]) => [
+				key,
+				payload?.items.map((item) => item.id),
+			]),
+		);
+
+	const aFeature = (
+		id: number,
+		stateCategory: StateCategory,
+		size: number,
+	): IFeature => ({ id, stateCategory, size }) as unknown as IFeature;
+
+	it("each list is titled with the team's own words", () => {
+		const built = viewDataWith([], "team", {
+			title: "Zen Items",
+			featuresInProgress: [aWorkItem(3)],
+			terms: {
+				workItem: "Task",
+				workItems: "Tasks",
+				features: "Goals",
+				cycleTime: "Lead Time",
+				workItemAge: "Task Age",
+				blocked: "Halted",
+				sle: "Promise",
+			},
+		});
+
+		const titles = Object.fromEntries(
+			Object.entries(built).map(([key, payload]) => [key, payload?.title]),
+		);
+
+		expect(titles).toEqual({
+			wipOverview: "Zen Items in Progress",
+			blockedOverview: "Halted Tasks",
+			staleOverview: "Stale Tasks",
+			featuresWorkedOnOverview: "Goals being Worked On",
+			percentiles: "Closed Tasks",
+			totalWorkItemAge: "Zen Items in Progress",
+			workItemAgePercentiles: "Zen Items in Progress",
+			sleRisk: "Zen Items in Progress",
+			throughput: "Zen Items Completed",
+			cycleScatter: "Closed Tasks",
+			workDistribution: "Tasks Distribution",
+			aging: "Tasks in Progress",
+			wipOverTime: "Zen Items In Progress",
+			totalWorkItemAgeOverTime: "Zen Items Contributing to Total Age",
+			stacked: "Started and Closed Tasks",
+			estimationVsCycleTime: "Tasks with Estimates",
+			featureSize: "Goals",
+			featureSizePercentiles: "Closed Goals",
+			throughputPbc: "Zen Items Completed",
+			wipPbc: "Zen Items In Progress",
+			totalWorkItemAgePbc: "Zen Items Contributing to Total Age",
+			cycleTimePbc: "Closed Tasks",
+			featureSizePbc: "Goals",
+			arrivals: "Zen Items Started",
+			arrivalsPbc: "Zen Items Started",
+			totalThroughput: "Zen Items Completed",
+			totalArrivals: "Zen Items Started",
+		});
+	});
+
+	it("each list is fed from its own source", () => {
+		const openArrival = aWorkItem(30, {
+			closedDate: null as unknown as Date,
+		});
+		const closedArrival = aWorkItem(31);
+
+		const built = viewDataWith([], "team", {
+			inProgressItems: [aWorkItem(1), aWorkItem(2)],
+			blockedItems: [aWorkItem(4)],
+			staleItems: [aWorkItem(5)],
+			featuresInProgress: [aWorkItem(6)],
+			cycleTimeData: [aWorkItem(7)],
+			throughputData: new RunChartData(
+				{ 0: [aWorkItem(10)], 1: [aWorkItem(11)] },
+				2,
+				2,
+			),
+			wipOverTimeData: new RunChartData({ 0: [aWorkItem(20)] }, 1, 1),
+			arrivalsData: new RunChartData(
+				{ 0: [openArrival], 1: [closedArrival] },
+				2,
+				2,
+			),
+		});
+
+		expect(idsOfEvery(built)).toEqual({
+			wipOverview: [1, 2],
+			blockedOverview: [4],
+			staleOverview: [5],
+			featuresWorkedOnOverview: [6],
+			percentiles: [7],
+			totalWorkItemAge: [1, 2],
+			workItemAgePercentiles: [1, 2],
+			sleRisk: [1, 2],
+			throughput: [10, 11],
+			cycleScatter: [7],
+			workDistribution: [7, 1, 2],
+			aging: [1, 2],
+			wipOverTime: [20],
+			totalWorkItemAgeOverTime: [20],
+			stacked: [30, 10, 11],
+			estimationVsCycleTime: [],
+			featureSize: [],
+			featureSizePercentiles: [],
+			throughputPbc: [10, 11],
+			wipPbc: [20],
+			totalWorkItemAgePbc: [20],
+			cycleTimePbc: [7],
+			featureSizePbc: [],
+			arrivals: [30, 31],
+			arrivalsPbc: [30, 31],
+			totalThroughput: [10, 11],
+			totalArrivals: [30, 31],
+		});
+	});
+
+	it("Started and Closed Work Items counts only what was started and is still open, and what finished", () => {
+		const arrivalsOnly = viewDataWith([], "team", {
+			arrivalsData: new RunChartData(
+				{
+					0: [
+						aWorkItem(30, { closedDate: null as unknown as Date }),
+						aWorkItem(31),
+					],
+				},
+				1,
+				2,
+			),
+		});
+		const throughputOnly = viewDataWith([], "team", {
+			throughputData: new RunChartData({ 0: [aWorkItem(10)] }, 1, 1),
+		});
+
+		expect(arrivalsOnly.stacked?.items.map((item) => item.id)).toEqual([30]);
+		expect(throughputOnly.stacked?.items.map((item) => item.id)).toEqual([10]);
+	});
+
+	it("the Estimation list holds each Work Item an estimate point names, and skips ones the lookup does not know", () => {
+		const known = aWorkItem(1);
+		const alsoKnown = aWorkItem(2);
+
+		const withData = viewDataWith([], "team", {
+			workItemLookup: new Map([
+				[1, known],
+				[2, alsoKnown],
+			]),
+			estimationVsCycleTimeData: {
+				status: "Ready",
+				diagnostics: {
+					totalCount: 3,
+					mappedCount: 3,
+					unmappedCount: 0,
+					invalidCount: 0,
+				},
+				estimationUnit: "Points",
+				useNonNumericEstimation: false,
+				categoryValues: [],
+				dataPoints: [
+					{
+						workItemIds: [1, 99],
+						estimationNumericValue: 3,
+						estimationDisplayValue: "3",
+						cycleTime: 4,
+					},
+					{
+						workItemIds: [2],
+						estimationNumericValue: 5,
+						estimationDisplayValue: "5",
+						cycleTime: 8,
+					},
+				],
+			},
+		});
+		const withoutData = viewDataWith([]);
+
+		expect(withData.estimationVsCycleTime?.items).toEqual([known, alsoKnown]);
+		expect(withoutData.estimationVsCycleTime?.items).toEqual([]);
+	});
+
+	it("the Features lists hold the size chart's Features, and the percentiles only its sized, finished ones", () => {
+		const finished = aFeature(1, "Done", 5);
+		const finishedWithDefaultSize = aFeature(2, "Done", 0);
+		const stillOpen = aFeature(3, "Doing", 8);
+
+		const built = viewDataWith([], "team", {
+			allFeaturesForSizeChart: [finished, finishedWithDefaultSize, stillOpen],
+		});
+
+		const featureIds = (key: string) =>
+			built[key]?.items.map((item) => item.id);
+
+		expect(featureIds("featureSize")).toEqual([1, 2, 3]);
+		expect(featureIds("featureSizePbc")).toEqual([1, 2, 3]);
+		expect(featureIds("featureSizePercentiles")).toEqual([1]);
+	});
+
+	it("only a Feature list that was asked for is built", () => {
+		expect(viewDataWith([]).featuresWorkedOnOverview).toBeUndefined();
+	});
+
+	it("the closed lists carry the published target, and none when there is no target", () => {
+		const withTarget = viewDataWith([]);
+		const withoutTarget = viewDataWith([], "team", {
+			serviceLevelExpectation: null,
+		});
+
+		for (const key of ["percentiles", "cycleScatter", "cycleTimePbc"]) {
+			expect(withTarget[key]?.sle, key).toBe(10);
+			expect(withoutTarget[key]?.sle, key).toBeUndefined();
+		}
+	});
+
+	describe("closed Work Items scoped to a named cycle time", () => {
+		const closedIn = (
+			id: number,
+			namedCycleTimes?: IWorkItem["namedCycleTimes"],
+		) => aWorkItem(id, { namedCycleTimes });
+
+		const closed = [
+			closedIn(1, [{ definitionId: 5, days: 3 }]),
+			closedIn(2),
+			closedIn(3, [{ definitionId: 6, days: 4 }]),
+			closedIn(4, [
+				{ definitionId: 6, days: 4 },
+				{ definitionId: 5, days: 0 },
+			]),
+		];
+		const definitions = [
+			{ id: 5, name: "Development" },
+			{ id: 7, name: "Review" },
+		];
+
+		it("lists only the items that have a value for it, and names the scope", () => {
+			const percentiles = viewDataWith([], "team", {
+				cycleTimeData: closed,
+				percentilesScopeDefinitionId: 5,
+				namedCycleTimeDefinitions: definitions,
+			}).percentiles;
+
+			expect(percentiles?.items.map((item) => item.id)).toEqual([1, 4]);
+			expect(percentiles?.cycleTimeScope).toBe(5);
+			expect(percentiles?.namedCycleTimeDefinitions).toEqual(definitions);
+			expect(percentiles?.sle).toBeUndefined();
+			expect(percentiles?.context).toBe("closedItems");
+		});
+
+		it("finds the scope among several definitions", () => {
+			const percentiles = viewDataWith([], "team", {
+				cycleTimeData: [closedIn(8, [{ definitionId: 7, days: 2 }])],
+				percentilesScopeDefinitionId: 7,
+				namedCycleTimeDefinitions: definitions,
+			}).percentiles;
+
+			expect(percentiles?.cycleTimeScope).toBe(7);
+			expect(percentiles?.items.map((item) => item.id)).toEqual([8]);
+		});
+
+		it("falls back to every closed item and the target when the scope names no known definition", () => {
+			const percentiles = viewDataWith([], "team", {
+				cycleTimeData: closed,
+				percentilesScopeDefinitionId: 9,
+				namedCycleTimeDefinitions: definitions,
+			}).percentiles;
+
+			expect(percentiles?.items.map((item) => item.id)).toEqual([1, 2, 3, 4]);
+			expect(percentiles?.cycleTimeScope).toBeUndefined();
+			expect(percentiles?.sle).toBe(10);
+		});
+
+		it("is not scoped when no scope is chosen", () => {
+			const percentiles = viewDataWith([], "team", {
+				cycleTimeData: closed,
+				percentilesScopeDefinitionId: null,
+				namedCycleTimeDefinitions: definitions,
+			}).percentiles;
+
+			expect(percentiles?.items).toHaveLength(4);
+			expect(percentiles?.cycleTimeScope).toBeUndefined();
+			expect(percentiles?.sle).toBe(10);
+		});
 	});
 });

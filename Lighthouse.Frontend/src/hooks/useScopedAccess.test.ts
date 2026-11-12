@@ -174,6 +174,14 @@ const renderScopedAccess = async (
 	};
 };
 
+const deferred = <T>() => {
+	let resolve!: (value: T) => void;
+	const promise = new Promise<T>((done) => {
+		resolve = done;
+	});
+	return { promise, resolve };
+};
+
 const settle = async (action: () => Promise<unknown>) => {
 	await act(async () => {
 		await action();
@@ -402,6 +410,130 @@ describe("The members and group mappings of a Team or a Portfolio", () => {
 			await settle(() => access().loadMembers());
 			expect(access().membersError).toBeUndefined();
 			expect(access().members).toEqual([aMember(1)]);
+		});
+
+		it("starts with no members, not loading and no error", async () => {
+			const { access } = await renderScopedAccess(scope);
+
+			expect(access().members).toEqual([]);
+			expect(access().membersLoading).toBe(false);
+			expect(access().membersError).toBeUndefined();
+		});
+
+		it("shows that the members are loading until the answer arrives", async () => {
+			const rbacService = createMockRbacService();
+			const answer = deferred<RbacScopedMemberSummary[]>();
+			serviceCall(rbacService, scope.getMembers).mockReturnValue(
+				answer.promise,
+			);
+			const { access } = await renderScopedAccess(scope, { rbacService });
+
+			let loading!: Promise<void>;
+			act(() => {
+				loading = access().loadMembers();
+			});
+			expect(access().membersLoading).toBe(true);
+
+			answer.resolve([aMember(1)]);
+			await settle(() => loading);
+			expect(access().membersLoading).toBe(false);
+			expect(access().members).toEqual([aMember(1)]);
+		});
+
+		it.each([
+			{
+				name: "assigning a role",
+				fails: scope.upsert,
+				run: (a: ScopedAccess) => a.assignRole(42, scope.adminRole),
+			},
+			{
+				name: "removing a member",
+				fails: scope.remove,
+				run: (a: ScopedAccess) => a.removeMember(42),
+			},
+		])(
+			"drops an earlier failure message as soon as $name starts",
+			async ({ fails, run }) => {
+				const rbacService = createMockRbacService();
+				serviceCall(rbacService, scope.getMembers)
+					.mockRejectedValueOnce(new Error("down"))
+					.mockResolvedValue([]);
+				const write = deferred<undefined>();
+				serviceCall(rbacService, fails).mockReturnValue(write.promise);
+				const { access } = await renderScopedAccess(scope, { rbacService });
+				await settle(() => access().loadMembers());
+				expect(access().membersError).toBeDefined();
+
+				let writing!: Promise<void>;
+				act(() => {
+					writing = run(access());
+				});
+				expect(
+					access().membersError,
+					"The old message must not stay on screen while the new action is under way.",
+				).toBeUndefined();
+
+				write.resolve(undefined);
+				await settle(() => writing);
+			},
+		);
+
+		it("does not load anything while there is no scope yet", async () => {
+			const rbacService = createMockRbacService();
+			const { access } = await renderScopedAccess(scope, {
+				rbacService,
+				beforeTheScopeIsKnown: true,
+			});
+
+			await settle(() => access().loadMembers());
+			const mappings = await access().loadGroupMappings();
+
+			expect(serviceCall(rbacService, scope.getMembers)).not.toHaveBeenCalled();
+			expect(access().membersLoading).toBe(false);
+			expect(access().members).toEqual([]);
+			expect(mappings).toEqual([]);
+			expect(
+				serviceCall(rbacService, scope.getMappings),
+			).not.toHaveBeenCalled();
+		});
+
+		it("acts on the scope once it is known, with handlers it already handed out", async () => {
+			const rbacService = createMockRbacService();
+			serviceCall(rbacService, scope.getMembers).mockResolvedValue([]);
+			serviceCall(rbacService, scope.getMappings).mockResolvedValue([]);
+			const { access, rerenderForScopeId } = await renderScopedAccess(scope, {
+				rbacService,
+				beforeTheScopeIsKnown: true,
+			});
+
+			rerenderForScopeId(scope.id);
+			await settle(async () => {
+				await access().assignRole(42, scope.adminRole);
+				await access().removeMember(42);
+				await access().createGroupMapping("leads", scope.adminRole);
+				await access().removeGroupMapping(5);
+			});
+			await access().loadGroupMappings();
+
+			expect(serviceCall(rbacService, scope.upsert)).toHaveBeenCalledWith(
+				scope.id,
+				42,
+				scope.adminRole,
+			);
+			expect(serviceCall(rbacService, scope.remove)).toHaveBeenCalledWith(
+				scope.id,
+				42,
+			);
+			expect(serviceCall(rbacService, scope.getMappings)).toHaveBeenCalledWith(
+				scope.id,
+			);
+			expect(rbacService.createGroupMapping).toHaveBeenCalledWith({
+				groupValue: "leads",
+				role: scope.adminRole,
+				scopeType: scope.kind,
+				scopeId: scope.id,
+			});
+			expect(rbacService.removeGroupMapping).toHaveBeenCalledWith(5);
 		});
 
 		describe.each(termSets)("with $name", (termSet) => {

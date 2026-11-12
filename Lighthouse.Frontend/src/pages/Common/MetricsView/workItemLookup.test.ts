@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import type { IFeature } from "../../../models/Feature";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
-import { buildWorkItemLookup } from "./workItemLookup";
+import { buildWorkItemLookup, extractWorkItems } from "./workItemLookup";
+
+describe("extractWorkItems", () => {
+	it("holds no Work Items when there is nothing to extract from", () => {
+		expect(extractWorkItems(undefined)).toEqual([]);
+	});
+});
 
 describe("buildWorkItemLookup", () => {
 	const aWorkItem = (overrides: Partial<IWorkItem>): IWorkItem => ({

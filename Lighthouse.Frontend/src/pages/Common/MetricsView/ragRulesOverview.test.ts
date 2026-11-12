@@ -338,3 +338,39 @@ describe("the status rules are split into three rule families", () => {
 		).toBe(false);
 	});
 });
+
+describe("what the overview rules say about a limit that is not a positive number", () => {
+	it("asks for the System WIP Limit, and for the Feature WIP, when it is negative", () => {
+		expect(overview.computeWipOverviewRag(2, -3, terms)).toEqual({
+			ragStatus: "red",
+			tipText: "Define System WIP Limit in settings.",
+		});
+		expect(overview.computeFeaturesWorkedOnRag(1, -2, terms)).toEqual({
+			ragStatus: "red",
+			tipText: "Define Feature WIP in settings.",
+		});
+	});
+
+	it("says the predictability score as a percentage in each band, and keeps 40% and 60% in the middle one", () => {
+		expect(overview.computePredictabilityScoreRag(0.3, terms)).toEqual({
+			ragStatus: "red",
+			tipText:
+				"Predictability score is 30.0% (below 40%). Throughput is highly variable; forecasts will be unreliable.",
+		});
+		for (const [score, shown] of [
+			[0.4, "40.0"],
+			[0.5, "50.0"],
+			[0.6, "60.0"],
+		] as const) {
+			expect(overview.computePredictabilityScoreRag(score, terms)).toEqual({
+				ragStatus: "amber",
+				tipText: `Predictability score is ${shown}% (between 40–60%). Analyze bulk closings to improve stability.`,
+			});
+		}
+		expect(overview.computePredictabilityScoreRag(0.75, terms)).toEqual({
+			ragStatus: "green",
+			tipText:
+				"Predictability score is 75.0% (above 60%). Forecasts are trustworthy.",
+		});
+	});
+});

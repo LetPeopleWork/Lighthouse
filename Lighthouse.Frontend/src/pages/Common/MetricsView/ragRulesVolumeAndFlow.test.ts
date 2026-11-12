@@ -559,3 +559,400 @@ describe("ragRules", () => {
 		});
 	});
 });
+
+describe("what the volume and flow rules say, and where they change", () => {
+	const defineWipLimit = "Define System WIP Limit in settings.";
+
+	describe("a system WIP limit that is not a positive number", () => {
+		it("is asked for again, whatever the work looks like", () => {
+			const red = { ragStatus: "red", tipText: defineWipLimit };
+
+			expect(computeStartedVsClosedRag(10, 8, -2, terms)).toEqual(red);
+			expect(computeWipOverTimeRag([1, 2], -2, terms)).toEqual(red);
+			expect(computeArrivalsRunChartRag([1, 2], [], 10, 10, -2, terms)).toEqual(
+				red,
+			);
+		});
+	});
+
+	describe("computeStartedVsClosedRag", () => {
+		it("is green and says so when both are zero", () => {
+			expect(computeStartedVsClosedRag(0, 0, 5, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "Started and closed are both 0. Flow is balanced.",
+			});
+		});
+
+		it("does not call it balanced when only one of them is zero", () => {
+			expect(computeStartedVsClosedRag(5, 0, 5, terms).ragStatus).toBe("red");
+			expect(computeStartedVsClosedRag(0, 5, 5, terms).ragStatus).toBe("amber");
+		});
+
+		it("is balanced within one item", () => {
+			expect(computeStartedVsClosedRag(10, 11, 5, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "Started (10) and closed (11) are balanced.",
+			});
+		});
+
+		it("is green at exactly 5% apart", () => {
+			expect(computeStartedVsClosedRag(38, 40, 5, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "Started (38) and closed (40) are within 5% of each other.",
+			});
+		});
+
+		it("is red when started is well ahead, and says by how much of the larger", () => {
+			expect(computeStartedVsClosedRag(20, 10, 5, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Started (20) exceeds closed (10) by 50.0%. Focus on finishing in-progress Work Items.",
+			});
+		});
+
+		it("is amber when closed is well ahead", () => {
+			expect(computeStartedVsClosedRag(10, 20, 5, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Closed (20) significantly exceeds started (10). The process may be starving.",
+			});
+		});
+	});
+
+	describe("computeThroughputRag", () => {
+		it("is stable with nothing to look at", () => {
+			expect(computeThroughputRag([], [], terms)).toEqual({
+				ragStatus: "green",
+				tipText: "Stable, predictable Throughput.",
+			});
+		});
+
+		it("counts every run of three zero days, the last one included", () => {
+			expect(computeThroughputRag([0, 0, 0, 0], [], terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"2 runs of 3+ consecutive zero-Throughput days detected. Check for blockers or excessive WIP.",
+			});
+			expect(computeThroughputRag([0, 0, 0], [], terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"1 run of 3 consecutive zero-Throughput days detected. Inspect the PBC to understand what happened.",
+			});
+		});
+
+		it("is stable when no three days in a row are all zero", () => {
+			expect(computeThroughputRag([0, 1, 0, 1, 0, 1], [], terms)).toEqual({
+				ragStatus: "green",
+				tipText:
+					"No extended zero-Throughput runs detected. Throughput is stable.",
+			});
+		});
+	});
+
+	describe("computeWipOverTimeRag", () => {
+		it("says there is no data to judge", () => {
+			expect(computeWipOverTimeRag([], 5, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "No WIP data available. Operating within boundaries.",
+			});
+		});
+
+		it("is green when more than half of the days sit at the limit", () => {
+			expect(computeWipOverTimeRag([5, 5, 5, 6], 5, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "75.0% of days at the WIP limit of 5. Flow is consistent.",
+			});
+		});
+
+		it("is not green at exactly half of the days", () => {
+			expect(computeWipOverTimeRag([5, 6], 5, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"WIP distribution is uneven across the limit of 5. Aim for consistency.",
+			});
+		});
+
+		it("is red when most days are above the limit", () => {
+			expect(computeWipOverTimeRag([6, 6, 6, 5], 5, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"WIP exceeded the limit of 5 on 3 of 4 days. Reduce work in progress.",
+			});
+		});
+
+		it("is amber when most days are below the limit", () => {
+			expect(computeWipOverTimeRag([1, 1, 1, 5], 5, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"WIP was below the limit of 5 on 3 of 4 days. Consider starting more work.",
+			});
+		});
+
+		it("is uneven when the days below only match the days above and at the limit", () => {
+			expect(computeWipOverTimeRag([1, 1, 6, 5], 5, terms).tipText).toBe(
+				"WIP distribution is uneven across the limit of 5. Aim for consistency.",
+			);
+		});
+	});
+
+	describe("computeWorkDistributionRag", () => {
+		it("says there is nothing to evaluate", () => {
+			expect(computeWorkDistributionRag(0, 0, 5, 3, terms)).toEqual({
+				ragStatus: "green",
+				tipText: "No Work Items to evaluate. Distribution is healthy.",
+			});
+		});
+
+		it("is red at exactly a fifth of the items not linked to a Feature", () => {
+			expect(computeWorkDistributionRag(2, 10, 5, 3, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"20.0% of Work Items (2 of 10) are not linked to a Feature. Link them to improve visibility.",
+			});
+		});
+
+		it("asks for the Feature WIP unless it is a positive number", () => {
+			for (const featureWip of [undefined, 0, -2]) {
+				expect(computeWorkDistributionRag(1, 10, featureWip, 3, terms)).toEqual(
+					{
+						ragStatus: "red",
+						tipText: "Define Feature WIP in settings.",
+					},
+				);
+			}
+		});
+
+		it("says how far the work is spread against the Feature WIP in each band", () => {
+			expect(computeWorkDistributionRag(0, 10, 5, 7, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Work is spread across 7.0 Features, exceeding the Feature WIP of 5 by more than 20%. Focus on fewer initiatives.",
+			});
+			expect(computeWorkDistributionRag(0, 10, 5, 5.5, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Work is spread across 5.5 Features, slightly above the Feature WIP of 5. Consider reducing scope.",
+			});
+			expect(computeWorkDistributionRag(0, 10, 5, 5, terms)).toEqual({
+				ragStatus: "green",
+				tipText:
+					"Work is spread across 5.0 Features, within the Feature WIP of 5.",
+			});
+		});
+	});
+
+	describe("computeFeatureSizeRag", () => {
+		const percentiles = [
+			{ percentile: 70, value: 6 },
+			{ percentile: 85, value: 10 },
+		];
+
+		it("says there are no active Features", () => {
+			expect(computeFeatureSizeRag(percentiles, [], terms)).toEqual({
+				ragStatus: "green",
+				tipText: "No active Features to evaluate.",
+			});
+		});
+
+		it("is red for each Feature past the 85th percentile size, and counts them", () => {
+			expect(computeFeatureSizeRag(percentiles, [11, 12, 3], terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"2 Feature(s) exceed the 85th percentile size of 10 items. These are bigger than most other Features and still in progress — look to split or close as soon as possible.",
+			});
+		});
+
+		it("is amber for each Feature past the 70th percentile size but not the 85th, and counts them", () => {
+			expect(computeFeatureSizeRag(percentiles, [7, 8, 3], terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"2 Feature(s) exceed the 70th percentile size of 6 items. They are approaching the upper limit — if they grow further, try to split and deliver in smaller slices.",
+			});
+			expect(computeFeatureSizeRag(percentiles, [10, 6], terms).ragStatus).toBe(
+				"amber",
+			);
+		});
+
+		it("is green when no Feature is bigger than the 70th percentile size", () => {
+			expect(computeFeatureSizeRag(percentiles, [6, 3], terms)).toEqual({
+				ragStatus: "green",
+				tipText: "All active Features are within the expected size range.",
+			});
+		});
+	});
+
+	describe("computeEstimationVsCycleTimeRag", () => {
+		const points = (cycleTimes: number[]) =>
+			cycleTimes.map((cycleTime, index) => ({
+				estimate: index + 1,
+				cycleTime,
+			}));
+
+		it("has too little to judge below two data points, and judges two", () => {
+			expect(
+				computeEstimationVsCycleTimeRag("Ready", points([5]), terms),
+			).toEqual({
+				ragStatus: "green",
+				tipText: "Not enough data points to compute correlation yet.",
+			});
+			expect(
+				computeEstimationVsCycleTimeRag("Ready", points([5, 9]), terms),
+			).toEqual({
+				ragStatus: "green",
+				tipText:
+					"Spearman correlation is 1.00 (≥ 0.6). Estimates correlate well with actual Cycle Time.",
+			});
+		});
+
+		it("is green at a correlation of exactly 0.6", () => {
+			expect(
+				computeEstimationVsCycleTimeRag(
+					"Ready",
+					points([30, 20, 10, 40, 50]),
+					terms,
+				),
+			).toEqual({
+				ragStatus: "green",
+				tipText:
+					"Spearman correlation is 0.60 (≥ 0.6). Estimates correlate well with actual Cycle Time.",
+			});
+		});
+
+		it("is amber for a weak correlation", () => {
+			expect(
+				computeEstimationVsCycleTimeRag(
+					"Ready",
+					points([20, 40, 10, 30, 50]),
+					terms,
+				),
+			).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Spearman correlation is 0.50 (0.3–0.6). Weak correlation between estimates and Cycle Time. Review your estimation approach.",
+			});
+		});
+
+		it("is red for no correlation, and reads a reversed order as negative", () => {
+			expect(
+				computeEstimationVsCycleTimeRag("Ready", points([30, 20, 10]), terms),
+			).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Spearman correlation is -1.00 (< 0.3). No meaningful correlation between estimates and Cycle Time.",
+			});
+		});
+	});
+
+	describe("computeLoadBalanceMatrixRag", () => {
+		const noBaseline =
+			"Configure a baseline period to enable load balance analysis.";
+
+		it("asks for a baseline when any part of it is missing", () => {
+			for (const [available, wip, age] of [
+				[false, 5, 10],
+				[true, null, 10],
+				[true, 5, null],
+			] as const) {
+				expect(
+					computeLoadBalanceMatrixRag(available, 5, 10, wip, age, terms),
+				).toEqual({ ragStatus: "red", tipText: noBaseline });
+			}
+		});
+
+		it("says which side of the baseline the age and the WIP are on", () => {
+			expect(computeLoadBalanceMatrixRag(true, 5, 12, 5, 10, terms)).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Work Item Age is above baseline (12 > 10). Close ongoing work before starting new items.",
+			});
+			expect(computeLoadBalanceMatrixRag(true, 6, 10, 5, 10, terms)).toEqual({
+				ragStatus: "green",
+				tipText:
+					"WIP is above baseline (6 > 5) while Work Item Age is at or below baseline (10 <= 10).",
+			});
+			expect(computeLoadBalanceMatrixRag(true, 5, 10, 5, 10, terms)).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"WIP is at or below baseline (5 <= 5) while Work Item Age is at or below baseline. Consider starting more work.",
+			});
+		});
+	});
+
+	describe("computeArrivalsRunChartRag", () => {
+		it("is amber and says why when arrivals are balanced but come in batches, the last run included", () => {
+			expect(
+				computeArrivalsRunChartRag([0, 0, 0, 0], [], 5, 5, 5, terms),
+			).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Arrivals are balanced overall, but 2 runs of 3+ consecutive zero-arrival days suggest work is starting in batches rather than continuously.",
+			});
+		});
+
+		it("does not count days that only touch zeros, or a run that blackout days break", () => {
+			expect(
+				computeArrivalsRunChartRag([0, 5, 0, 5, 0, 5], [], 5, 5, 5, terms),
+			).toEqual({
+				ragStatus: "green",
+				tipText: "Started (5) and closed (5) are balanced.",
+			});
+			expect(
+				computeArrivalsRunChartRag([0, 0, 0, 0], [1], 5, 5, 5, terms).ragStatus,
+			).toBe("green");
+		});
+
+		it("keeps the starving message when the balance is already amber", () => {
+			expect(
+				computeArrivalsRunChartRag([0, 0, 0, 0], [], 10, 20, 5, terms),
+			).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Closed (20) significantly exceeds started (10). The process may be starving.",
+			});
+		});
+	});
+
+	describe("computePbcRag", () => {
+		const noBaseline = "Configure a baseline period to enable PBC analysis.";
+
+		it("asks for a baseline when it is not configured, or its status says it cannot be used", () => {
+			const unusable = [
+				{ baselineConfigured: false, status: "Ready" },
+				{ baselineConfigured: true, status: "BaselineMissing" },
+				{ baselineConfigured: true, status: "BaselineInvalid" },
+				{ baselineConfigured: true, status: "InsufficientData" },
+			];
+
+			for (const { baselineConfigured, status } of unusable) {
+				expect(
+					computePbcRag({ baselineConfigured, status, dataPoints: [] }),
+				).toEqual({ ragStatus: "red", tipText: noBaseline });
+			}
+		});
+
+		it("says which kind of signal it found, or that there is none", () => {
+			const run = (specialCauses: string[]) =>
+				computePbcRag({
+					baselineConfigured: true,
+					status: "Ready",
+					dataPoints: [{ specialCauses }],
+				});
+
+			expect(run(["LargeChange"])).toEqual({
+				ragStatus: "red",
+				tipText:
+					"Signal detected: Large-magnitude change in process behaviour. Investigate recent changes.",
+			});
+			expect(run(["ModerateChange"])).toEqual({
+				ragStatus: "amber",
+				tipText:
+					"Signal detected: Moderate change in process behaviour. Investigate before it escalates.",
+			});
+			expect(run([])).toEqual({
+				ragStatus: "green",
+				tipText:
+					"Process behaviour is within expected limits. No signals detected.",
+			});
+		});
+	});
+});
