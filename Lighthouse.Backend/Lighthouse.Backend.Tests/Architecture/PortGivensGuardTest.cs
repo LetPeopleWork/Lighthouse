@@ -98,6 +98,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase(typeof(PlantedPortClasses.TakesTheTeamsTableFromTheContext), "Set<Team>")]
         [TestCase(typeof(PlantedPortClasses.AddsATeamThroughTheContext), "Add<Team>")]
         [TestCase(typeof(PlantedPortClasses.UpdatesATeamThroughTheRepository), "Update")]
+        [TestCase(typeof(PlantedPortClasses.AddsATeamAsAnObjectThroughTheContext), "calls DbContext.Add")]
         [TestCase(typeof(PlantedPortClasses.HandsATeamsToDoStatesToAHelperThatAddsOne), "get_ToDoStates")]
         [TestCase(typeof(PlantedPortClasses.AddsADoingStateInALambdaLater), "get_DoingStates")]
         public void The_guard_sees_a_port_class_that_sets_up_a_Team_itself(Type planted, string whatItCalls)
@@ -151,10 +152,11 @@ namespace Lighthouse.Backend.Tests.Architecture
 
             if (TheContextTypes.Contains(declaringType.FullName))
             {
+                // A write that takes an object names no entity type, so it could be a Team and is refused outright.
                 return TheContextsTablesOfThose.Contains(called.Name)
                     || (ContextWrites.Contains(called.Name)
-                        && called is GenericInstanceMethod generic
-                        && generic.GenericArguments.Any(argument => TablesWrittenOnlyThroughTheirDoors.Contains(argument.FullName)));
+                        && (called is not GenericInstanceMethod generic
+                            || generic.GenericArguments.Any(argument => TablesWrittenOnlyThroughTheirDoors.Contains(argument.FullName))));
             }
 
             return RepositoryWrites.Contains(called.Name)
@@ -279,6 +281,11 @@ namespace Lighthouse.Backend.Tests.Architecture
         public sealed class AddsATeamThroughTheContext : RefinementAtThePortTest
         {
             public void Plant(Team team) => NewScope().ServiceProvider.GetRequiredService<LighthouseAppContext>().Add(team);
+        }
+
+        public sealed class AddsATeamAsAnObjectThroughTheContext : RefinementAtThePortTest
+        {
+            public void Plant(Team team) => NewScope().ServiceProvider.GetRequiredService<LighthouseAppContext>().Add((object)team);
         }
 
         public sealed class UpdatesATeamThroughTheRepository : RefinementAtThePortTest
