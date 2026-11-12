@@ -248,10 +248,10 @@
 "obligations": [
 "L1/F71"
 ],
-"still_passes_if": "F223",
+"still_passes_if": "F253",
 "test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs"
 },
-"expected": "F221",
+"expected": "F252",
 "stimulus": "F220",
 "user_result": "F222"
 },
@@ -361,6 +361,22 @@
 "expected": "F249",
 "stimulus": "F248",
 "user_result": "F250"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F76"
+],
+"still_passes_if": "F257",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs"
+},
+"expected": "F255",
+"stimulus": "F254",
+"user_result": "F256"
 }
 ]
 },
@@ -368,7 +384,7 @@
 "B": 1,
 "D": 15,
 "E": 4,
-"F": 251,
+"F": 257,
 "K": 10,
 "L": 3,
 "P": 4,
@@ -1303,9 +1319,7 @@
 "F219": "A comment limit of 1999 or 2001 characters, a question left open after its asker voted, or a log listing the newest entry first; held off by the 2000-character keep-whole rows, the asker-closes row and the oldest-first rows",
 "F22": "A moved class keeps its data: Slice10 and Slice12 use a new port Given for the 5-Work-Item Gravity of the vote host (GR-040, GR-058, GR-051, GR-054, GR-073, GR-074), not the 7-item base Given, which adds GR-059.",
 "F220": "On the wire, open the log of a Work Item that is not in refinement, the logs of Work Items whose references are REQ/12 and REQ/12#3 after a question was asked on each, and send a question without a name",
-"F221": "The 4 rows keep their names in the wire class: the log of an unlisted Work Item is 404 while a listed one opens; a slash reference opens and holds the one question asked; a nameless question is 400 with the code voter-name-required and the row stays untouched",
 "F222": "A browser keeps reaching the log of every Work Item, also those whose tracker reference holds a slash or a hash",
-"F223": "A log that answers 200 for a Work Item the tab does not list, or a slash reference sent unescaped so the route misses it; held off by asserting 404 after proving a listed log opens, and by reading the entry back for both slash references",
 "F224": "On the wire, read the log of a Work Item with two votes and a question and read when an entry was recorded",
 "F225": "Each entry carries exactly kind, answer, comment, voterName, channel, recordedAt, isMine and isOpenQuestion, never a voter key; the log carries only entries and voters; voters has yes, yesBut and no holding names; only the question is flagged open; recordedAt is a UTC time with milliseconds",
 "F226": "A browser keeps drawing the log, the open question and the time of each entry as it does today",
@@ -1337,6 +1351,12 @@
 "F25": "Guard gaps close in the slice whose class needs them: S1 tightens PortGivensGuardTest and the Team-fields parity rows; S2 makes the settings stand-in strict and compares SignInOff; S3 adds the all-inputs parity case. Every tightened guard ships a planted case that turns it red.",
 "F250": "A maintainer trusts that a moved scenario starts from a Team a user can really have",
 "F251": "A Team set up by a setter or collection change outside the builder; held off by the planted cases of the guard",
+"F252": "The 4 rows keep their names in the wire class: the log of an unlisted Work Item is 404 while a listed one opens; a slash reference opens, holds the one question asked and dates every entry on the instance's day; a nameless question is 400 with the code voter-name-required and the row stays untouched",
+"F253": "A log that answers 200 for a Work Item the tab does not list, a slash reference sent unescaped so the route misses it, or an entry without its time; held off by asserting 404 after proving a listed log opens, by reading the entry back for both slash references and by checking each entry's day against the wire host's clock",
+"F254": "On the wire, ask a question of exactly 2000 characters and read the log of its Work Item",
+"F255": "The question is accepted with 200 and the log holds it whole, so the limit sits at 2000: one more character is refused by the neighbouring rows",
+"F256": "A person can send a comment of the full length the browser promises",
+"F257": "A limit of 1999, which would refuse the 2000-character question; held off by asserting 200 and the whole text read back",
 "F26": "No dedup of rows that overlap NeedOverOneCycleTest in this feature: ids must survive a behaviour-free move. Dropping them is a separate later slice in feature story-6602-b.",
 "F27": "Today is explicit in every moved Given: TodayIs(2026, 10, 7) unless the row sets another day, because the host clock starts on 7 October 2026 09:00 UTC while the port base starts on TestToday.FrozenNow.",
 "F28": "ServicePortHarness.NewScope() stays public (maintainer, DELIVER start). PortGivensGuardTest, not visibility inside one test assembly, stops a port class from writing a Team itself.",

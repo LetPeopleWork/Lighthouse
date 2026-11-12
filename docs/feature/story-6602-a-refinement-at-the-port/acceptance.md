@@ -500,7 +500,7 @@ On the wire, open the log of a Work Item that is not in refinement, the logs of 
 ```
 
 ```text
-The 4 rows keep their names in the wire class: the log of an unlisted Work Item is 404 while a listed one opens; a slash reference opens and holds the one question asked; a nameless question is 400 with the code voter-name-required and the row stays untouched
+The 4 rows keep their names in the wire class: the log of an unlisted Work Item is 404 while a listed one opens; a slash reference opens, holds the one question asked and dates every entry on the instance's day; a nameless question is 400 with the code voter-name-required and the row stays untouched
 ```
 
 ```text
@@ -514,7 +514,7 @@ Tested
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Refinement\/RefinementWithoutSignInWireContractTest\.Log\.cs
 
 ```text
-A log that answers 200 for a Work Item the tab does not list, or a slash reference sent unescaped so the route misses it; held off by asserting 404 after proving a listed log opens, and by reading the entry back for both slash references
+A log that answers 200 for a Work Item the tab does not list, a slash reference sent unescaped so the route misses it, or an entry without its time; held off by asserting 404 after proving a listed log opens, by reading the entry back for both slash references and by checking each entry's day against the wire host's clock
 ```
 
 ###### Obligations
@@ -724,6 +724,35 @@ A Team set up by a setter or collection change outside the builder; held off by 
 ###### Obligations
 
 
+
+
+##### Covers
+
+P2
+
+```text
+On the wire, ask a question of exactly 2000 characters and read the log of its Work Item
+```
+
+```text
+The question is accepted with 200 and the log holds it whole, so the limit sits at 2000: one more character is refused by the neighbouring rows
+```
+
+```text
+A person can send a comment of the full length the browser promises
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Refinement\/RefinementWithoutSignInWireContractTest\.Log\.cs
+
+```text
+A limit of 1999, which would refuse the 2000-character question; held off by asserting 200 and the whole text read back
+```
+
+###### Obligations
 
 
 ## Expectations

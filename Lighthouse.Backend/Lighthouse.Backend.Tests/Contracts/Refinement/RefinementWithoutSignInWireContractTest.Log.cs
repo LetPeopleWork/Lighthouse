@@ -65,7 +65,11 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
 
             using var opened = await WhenTheLogIsOpened(AVoterNamed(AnaLimaTheVoter), gravity, reference);
 
-            await ThenTheLogReadsOnlyTheQuestion(opened, TheQuestionAsked, JonasWeberTheAsker);
+            Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.OK), "the log of a Work Item whose reference holds a slash must open");
+            var log = await BodyOf(opened);
+            ThenTheLogReadsOnlyTheQuestion(log, TheQuestionAsked, JonasWeberTheAsker);
+            Assert.That(log.GetProperty("entries").EnumerateArray().Select(entry => TextIn(entry, "recordedAt")),
+                Has.All.StartsWith(DayText(TheInstancesToday())), "every entry says when it was recorded");
         }
 
         [Test]
@@ -140,6 +144,22 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             using var refused = await WhenTheVoterAsks(AVoterNamed(JonasWeberTheAsker), gravity, AnotherWorkItemInRefinement, string.Empty);
 
             await ThenTheQuestionIsRefusedWith(refused, HttpStatusCode.BadRequest, "comment-required");
+        }
+
+        // The limit is exactly two thousand: that many is accepted and kept whole, one more is refused below.
+        [Test]
+        public async Task A_question_of_two_thousand_characters_is_accepted_and_kept_whole()
+        {
+            var gravity = GivenGravityRefinesFiveWorkItems();
+            var twoThousand = new string('x', 2000);
+            var jonas = AVoterNamed(JonasWeberTheAsker);
+
+            using var accepted = await WhenTheVoterAsks(jonas, gravity, AnotherWorkItemInRefinement, twoThousand);
+
+            Assert.That(accepted.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"a question of exactly the limit must be accepted: {await accepted.Content.ReadAsStringAsync()}");
+            var log = await WhenTheLogIsRead(jonas, gravity, AnotherWorkItemInRefinement);
+            Assert.That(log.GetProperty("entries").EnumerateArray().Select(entry => TextIn(entry, "comment")), Is.EqualTo(new[] { twoThousand }),
+                "the question must be kept whole");
         }
 
         [Test]
@@ -217,11 +237,8 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
 
         // --- Then ---
 
-        private static async Task ThenTheLogReadsOnlyTheQuestion(HttpResponseMessage opened, string question, string askedBy)
+        private static void ThenTheLogReadsOnlyTheQuestion(JsonElement log, string question, string askedBy)
         {
-            Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"the log did not open: {await opened.Content.ReadAsStringAsync()}");
-
-            var log = await BodyOf(opened);
             var entries = log.GetProperty("entries").EnumerateArray()
                 .Select(entry => (TextIn(entry, "kind"), TextIn(entry, "answer"), TextIn(entry, "comment"), TextIn(entry, "voterName"), TextIn(entry, "channel"), FlagIn(entry, "isMine")));
 
