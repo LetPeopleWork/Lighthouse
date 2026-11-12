@@ -276,15 +276,15 @@ None.
 P2
 
 ```text
-Ask the frame helpers for the columns status, the frame state and the body of a chart in each loading, failed and ready combination
+Ask the frame helpers for the columns status, the frame state and the body of a chart in each loading, failed and ready combination, including a failure next to a load
 ```
 
 ```text
-Only the aging chart waits on the Doing states; the worst status wins; a commit pending reads loading; only a ready chart with an older picture is dimmed; the chart body shows only once data and columns arrived
+Only the aging chart waits on the Doing states; error wins over loading in either order; a commit pending reads loading; only a ready chart with an older picture is dimmed; the chart body shows only once data and columns arrived
 ```
 
 ```text
-A chart under way shows a spinner, never an empty chart that reads as no data
+A chart under way shows a spinner, and a failed one says so, never an empty chart that reads as no data
 ```
 
 ##### Disposition
@@ -294,7 +294,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/dashboardFrame\.test\.ts
 
 ```text
-the columns status is ignored for aging, or the body shows a chart drawn from empty defaults
+loading outranks error, or the columns status is ignored for aging
 ```
 
 ###### Obligations

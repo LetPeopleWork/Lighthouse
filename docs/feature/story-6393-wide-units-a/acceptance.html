@@ -388,13 +388,13 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>Ask the frame helpers for the columns status, the frame state and the body of a chart in each loading, failed and ready combination
+<pre><code>Ask the frame helpers for the columns status, the frame state and the body of a chart in each loading, failed and ready combination, including a failure next to a load
 </code></pre>
 
-<pre><code>Only the aging chart waits on the Doing states; the worst status wins; a commit pending reads loading; only a ready chart with an older picture is dimmed; the chart body shows only once data and columns arrived
+<pre><code>Only the aging chart waits on the Doing states; error wins over loading in either order; a commit pending reads loading; only a ready chart with an older picture is dimmed; the chart body shows only once data and columns arrived
 </code></pre>
 
-<pre><code>A chart under way shows a spinner, never an empty chart that reads as no data
+<pre><code>A chart under way shows a spinner, and a failed one says so, never an empty chart that reads as no data
 </code></pre>
 
 <h5>Disposition</h5>
@@ -403,7 +403,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts</p>
 
-<pre><code>the columns status is ignored for aging, or the body shows a chart drawn from empty defaults
+<pre><code>loading outranks error, or the columns status is ignored for aging
 </code></pre>
 
 <h6>Obligations</h6>
