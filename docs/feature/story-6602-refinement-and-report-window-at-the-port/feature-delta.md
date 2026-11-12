@@ -327,3 +327,8 @@ The slices are approved as designed.
 | 5 drop the rows that repeat `NeedOverOneCycleTest` | `thorough` | `opus` | `sonnet` |
 
 - **nwdes features:** two, split at the checkpoint, because slices 4 and 5 depend on its answer. **Feature A** `story-6602-a-refinement-at-the-port`: slices 1 to 3, then its whole-candidate review and EXAMINE, then the checkpoint measurement and the question. **Feature B** `story-6602-b-report-window-and-overlap`: slices 4 and 5, opened only after the checkpoint answer. The whole-candidate review of A runs at `sonnet` (the strictest profile in A).
+
+## Wave: DELIVER / [REF] Findings carried to feature B (2026-11-12)
+
+- **From the S2 slice review (medium, duplication):** `Slice05NeedAndVerdictSpecifications` and `NeedOverOneCycleSpecifications` both derive from `RefinementAtThePortTest` and carry the same Gravity ready-rule builder, the tab reader, three constants and the five-to-eight script; `NeedOverOneCycleSpecifications` keeps its own `NeedIn` / `NeedReading` beside the base's `TheNeedOn` / `NeedFacts`. Fixing it in feature A edits the approved S2 oracle and a class outside feature A. It goes to **slice 5** (feature B), which already reworks `Slice05` against `NeedOverOneCycleTest`: hoist the shared members into the port base or the builder, and make `NeedOverOneCycleSpecifications` use `NeedFacts` and `TheNeedOn`.
+- **From the S1 slice review (low, stale comment):** `Slice10SleYardstickSpecifications.cs` line 84 narrates the old host design. It is in the approved S1 oracle; reword it in feature B's first slice that touches the file, or at the finalize step.
