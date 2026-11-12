@@ -374,15 +374,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Compares registrations of port fixtures with the host; the ISizingLogCommands lifetime is compared for Refinement from S2.
 </code></pre>
 
-<p>ScriptedForecasts</p>
-
-<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs:303</p>
-
-<p>Extend</p>
-
-<pre><code>Port forecast script; stamps from the port clock (S2). The host NeedForecastScript is kept for classes that stay hosted.
-</code></pre>
-
 <p>SizingVotesAcceptanceTest</p>
 
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/SizingVotesAcceptanceTest.cs:35</p>
@@ -399,6 +390,15 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Extend</p>
 
 <pre><code>The ratchet list of host users; each slice removes its moved class line, never adds one
+</code></pre>
+
+<p>ScriptedForecasts</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs:196</p>
+
+<p>Extend</p>
+
+<pre><code>F49
 </code></pre>
 
 <h3>Impact</h3>
@@ -1029,6 +1029,13 @@ env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTes
 <pre><code>Remove the Slice05NeedAndVerdictTest line in the move commit
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Adds the Tuesday cadence and the Backlog-only refinement input (both in EveryInput) and a Team whose Backlog holds many Work Items, which the need-and-verdict class sets up; the builder is the only writer of Team set-up
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs</p>
 
 <h4>Verification</h4>
@@ -1128,6 +1135,15 @@ env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTes
 <pre><code>Loses the moved class line in the move commit; never gains one
 </code></pre>
 
+<p>TestSupport</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>Gains RefinesOnTuesdays and RefinesInBacklog (both added to EveryInput) and ATeamWhoseBacklogHolds; existing members unchanged, so S1 port classes and the wire class compile and behave as before; the settings-save parity row now also covers the two new inputs
+</code></pre>
+
 <h5>Agreement</h5>
 
 <p>None.</p>
@@ -1224,6 +1240,13 @@ env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTes
 <pre><code>Remove the Slice12CommentsTest line in the move commit
 </code></pre>
 
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Adds a Gravity Given with one more Backlog Work Item whose reference holds a slash (REQ/12, REQ/12#3), which the two slash-reference log rows moved to the wire class set up; the wire class has no SeedWorkItem and the builder is the only writer of Team set-up
+</code></pre>
+
 <p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice12CommentsScenarios.cs</p>
 
 <h4>Verification</h4>
@@ -1303,6 +1326,15 @@ env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTes
 <p>Changed</p>
 
 <pre><code>Loses the moved class line in the move commit; never gains one
+</code></pre>
+
+<p>TestSupport</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs:23</p>
+
+<p>Changed</p>
+
+<pre><code>Gains a Gravity Given with one extra Backlog Work Item whose reference holds a slash, for the two slash-reference log rows in RefinementWithoutSignInWireContractTest.Log.cs; existing members unchanged
 </code></pre>
 
 <h5>Agreement</h5>

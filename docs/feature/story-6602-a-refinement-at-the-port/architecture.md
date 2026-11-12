@@ -257,16 +257,6 @@ Extend
 Compares registrations of port fixtures with the host; the ISizingLogCommands lifetime is compared for Refinement from S2.
 ```
 
-ScriptedForecasts
-
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementAtThePortTest\.cs\:303
-
-Extend
-
-```text
-Port forecast script; stamps from the port clock (S2). The host NeedForecastScript is kept for classes that stay hosted.
-```
-
 SizingVotesAcceptanceTest
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/SizingVotesAcceptanceTest\.cs\:35
@@ -285,6 +275,16 @@ Extend
 
 ```text
 The ratchet list of host users; each slice removes its moved class line, never adds one
+```
+
+ScriptedForecasts
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementAtThePortTest\.cs\:196
+
+Extend
+
+```text
+F49
 ```
 
 ### Impact
@@ -999,6 +999,14 @@ Extend
 Remove the Slice05NeedAndVerdictTest line in the move commit
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementPortGivens\.cs
+
+Extend
+
+```text
+Adds the Tuesday cadence and the Backlog-only refinement input (both in EveryInput) and a Team whose Backlog holds many Work Items, which the need-and-verdict class sets up; the builder is the only writer of Team set-up
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice05NeedAndVerdictScenarios\.cs
 
 #### Verification
@@ -1107,6 +1115,16 @@ Changed
 Loses the moved class line in the move commit; never gains one
 ```
 
+TestSupport
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementPortGivens\.cs\:23
+
+Changed
+
+```text
+Gains RefinesOnTuesdays and RefinesInBacklog (both added to EveryInput) and ATeamWhoseBacklogHolds; existing members unchanged, so S1 port classes and the wire class compile and behave as before; the settings-save parity row now also covers the two new inputs
+```
+
 ##### Agreement
 
 None.
@@ -1209,6 +1227,14 @@ Extend
 Remove the Slice12CommentsTest line in the move commit
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementPortGivens\.cs
+
+Extend
+
+```text
+Adds a Gravity Given with one more Backlog Work Item whose reference holds a slash (REQ/12, REQ/12#3), which the two slash-reference log rows moved to the wire class set up; the wire class has no SeedWorkItem and the builder is the only writer of Team set-up
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice12CommentsScenarios\.cs
 
 #### Verification
@@ -1295,6 +1321,16 @@ Changed
 
 ```text
 Loses the moved class line in the move commit; never gains one
+```
+
+TestSupport
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementPortGivens\.cs\:23
+
+Changed
+
+```text
+Gains a Gravity Given with one extra Backlog Work Item whose reference holds a slash, for the two slash-reference log rows in RefinementWithoutSignInWireContractTest.Log.cs; existing members unchanged
 ```
 
 ##### Agreement

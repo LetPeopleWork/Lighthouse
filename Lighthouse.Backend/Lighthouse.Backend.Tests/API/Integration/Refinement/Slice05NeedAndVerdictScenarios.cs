@@ -15,27 +15,30 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// to the Work Items listed: the browser numbers that many rows in whatever order it shows them and draws
     /// the "enough for" line after them, or after the last row when fewer are listed.
     ///
-    /// Driving ports: the Team settings write, the vote write, the Refinement tab's read and the manual
-    /// forecast. Step definitions live in Slice05NeedAndVerdictSpecifications.cs.
+    /// Driven at the application-service port: a vote is cast through the sizing log's commands for a voter
+    /// established as the votes route establishes one, and the tab is read through its query as the browser
+    /// receives it. That the tab's range is what the manual forecast route answers, and the texts of the
+    /// reasons for no number, are pinned on the wire contract of the Refinement tab. Step definitions live in
+    /// Slice05NeedAndVerdictSpecifications.cs.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5510-5881-refinement")]
     [Category("slice-05")]
-    public partial class Slice05NeedAndVerdictTest : RefinementNeedAcceptanceTest
+    public partial class Slice05NeedAndVerdictTest : RefinementAtThePortTest
     {
         // --- The verdict ---
 
         // The forecast differs at every likelihood, so only the median and the 85% reading give 5 and 8.
         [Test]
-        public async Task Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull()
+        public void Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull()
         {
-            var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
-            ThenTheNeedIs(tab, new NeedReading(Below, null, 5, 8, 50, 85, GravitysCycleWorkingDays));
+            ThenTheNeedIs(tab, new NeedFacts(Below, null, 5, 8, 50, 85, GravitysCycleWorkingDays));
             ThenTheNextRefinementIsThursdayTheEighthWithTwoReady(tab);
         }
 
@@ -44,81 +47,66 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(2, 8, InRange)]
         [TestCase(1, 2, InRange)]
         [TestCase(0, 1, Above)]
-        public async Task The_verdict_compares_the_ready_count_with_both_ends_of_the_range(int low, int high, string verdict)
+        public void The_verdict_compares_the_ready_count_with_both_ends_of_the_range(int low, int high, string verdict)
         {
-            var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, low), (85, high));
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
+            GivenTheTeamIsLikelyToPullOverItsCycle(low, high);
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
             ThenTheVerdictIs(tab, verdict);
         }
 
         // Without stage rules the votes make Work Items Ready, and so they move the verdict.
         [Test]
-        public async Task On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict()
+        public void On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict()
         {
-            var gravity = await GivenGravityWithoutStagesRefinesOnThursdayTheEighthAndIsLikelyToPullOneToThree();
-            ThenTheVerdictIs(await WhenTheCoachOpensTheRefinementTab(gravity), Below);
+            var gravity = GivenGravityWithoutStagesRefinesOnThursdayTheEighthAndIsLikelyToPullOneToThree();
+            ThenTheVerdictIs(WhenTheCoachOpensTheRefinementTab(gravity), Below);
 
-            await WhenThreeVotersSayYesOn(gravity, ConfigurationManagement);
+            WhenThreeVotersSayYesOn(gravity, RefinementPortGivens.ConfigurationManagement);
 
-            ThenTheVerdictIs(await WhenTheCoachOpensTheRefinementTab(gravity), InRange);
+            ThenTheVerdictIs(WhenTheCoachOpensTheRefinementTab(gravity), InRange);
         }
 
         // With stage rules the tracker decides what is ready; votes are shown, not counted. Were they counted,
         // the three Yes votes would make a third Work Item ready and lift the count above the range of 1-2.
         [Test]
-        public async Task On_a_Team_with_stages_votes_do_not_move_the_verdict()
+        public void On_a_Team_with_stages_votes_do_not_move_the_verdict()
         {
-            var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, 1), (85, 2));
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
+            GivenTheTeamIsLikelyToPullOverItsCycle(1, 2);
 
-            await WhenThreeVotersSayYesOn(gravity, ConfigurationManagement);
+            WhenThreeVotersSayYesOn(gravity, RefinementPortGivens.ConfigurationManagement);
 
-            ThenTheVerdictIs(await WhenTheCoachOpensTheRefinementTab(gravity), InRange);
+            ThenTheVerdictIs(WhenTheCoachOpensTheRefinementTab(gravity), InRange);
         }
 
         // --- The number behind it ---
 
-        // A Team that finishes two Work Items every day is forecast fourteen over the seven working days of its
-        // cycle, whatever the engine draws, so both reads of the shipped engine must agree exactly. The manual
-        // forecast is asked for the day as many working days ahead as the cycle has. With so even a history
-        // every likelihood reads fourteen: this proves the horizon, and the band's own tests prove which
-        // likelihood each end is read at.
-        [Test]
-        public async Task The_range_uses_the_same_horizon_as_the_manual_forecast()
-        {
-            var gravity = await GivenGravityFinishesTwoADayAndRefinesOnTuesdays();
-
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
-
-            await ThenTheRangeIsTheManualForecastForTheSevenWorkingDaysOfTheCycleAfterTuesdayTheThirteenth(tab, gravity);
-        }
-
         // Tuesday 13 and Wednesday 14 October are blackout days, so only five of the seven days after
         // Thursday the 8th up to Thursday the 15th are working days.
         [Test]
-        public async Task Blackout_days_inside_the_cycle_are_not_counted()
+        public void Blackout_days_inside_the_cycle_are_not_counted()
         {
-            var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            await BlackoutDaysFrom(new DateOnly(2026, 10, 13), new DateOnly(2026, 10, 14));
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
+            BlackoutDaysFrom(new DateOnly(2026, 10, 13), new DateOnly(2026, 10, 14));
             TheTeamIsLikelyToPull(5, (50, 4), (85, 7));
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
             ThenTheRangeIs(tab, low: 4, high: 7, horizonWorkingDays: 5);
         }
 
         // On a Refinement day today's session is the moment to top up, so the count looks a week ahead.
         [Test]
-        public async Task On_a_Refinement_day_the_number_is_for_the_following_Refinement()
+        public void On_a_Refinement_day_the_number_is_for_the_following_Refinement()
         {
-            var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             TodayIs(2026, 10, 8);
             TheTeamIsLikelyToPull(7, (50, 6), (85, 9));
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
             ThenTheRangeIs(tab, low: 6, high: 9, horizonWorkingDays: 7);
         }
@@ -127,32 +115,32 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // The guard forecasts use: at least five days with finished Work Items.
         [Test]
-        public async Task Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number()
+        public void Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number()
         {
-            var gravity = await GivenGravityFinishedWorkOnOnlyFourDaysAndRefinesOnThursdays();
+            var gravity = GivenGravityFinishedWorkOnOnlyFourDaysAndRefinesOnThursdays();
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
             ThenThereIsNoNumberBecause(tab, InsufficientData);
         }
 
         [Test]
-        public async Task Without_a_cadence_there_is_no_number_and_the_list_stays()
+        public void Without_a_cadence_there_is_no_number_and_the_list_stays()
         {
-            var gravity = await GivenGravityHasTwoReadyWithoutACadence();
+            var gravity = GivenGravityHasTwoReadyWithoutACadence();
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
             ThenThereIsNoNumberBecause(tab, NoCadence);
             ThenAllSixAreStillListed(tab);
         }
 
         [Test]
-        public async Task A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states()
+        public void A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states()
         {
             var zenith = GivenATeamWithoutRefinementStates();
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(zenith);
+            var tab = WhenTheCoachOpensTheRefinementTab(zenith);
 
             ThenThereIsNoNumberBecause(tab, NoRefinementStates);
         }
@@ -164,37 +152,37 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(3)]
         [TestCase(6)]
         [TestCase(11)]
-        public async Task The_high_end_is_stated_as_forecast_whatever_number_of_Work_Items_is_listed(int high)
+        public void The_high_end_is_stated_as_forecast_whatever_number_of_Work_Items_is_listed(int high)
         {
-            var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, 1), (85, high));
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
+            GivenTheTeamIsLikelyToPullOverItsCycle(1, high);
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
             ThenTheHighEndIsAndSixAreListed(tab, high);
         }
 
         // A Team likely to pull nothing at all over the cycle needs nothing refined.
         [Test]
-        public async Task A_range_of_nothing_says_stop_with_two_ready()
+        public void A_range_of_nothing_says_stop_with_two_ready()
         {
-            var gravity = await GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (50, 0), (85, 0));
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
+            GivenTheTeamIsLikelyToPullOverItsCycle(0, 0);
 
-            var tab = await WhenTheCoachOpensTheRefinementTab(gravity);
+            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
 
-            ThenTheNeedIs(tab, new NeedReading(Above, null, 0, 0, 50, 85, GravitysCycleWorkingDays));
+            ThenTheNeedIs(tab, new NeedFacts(Above, null, 0, 0, 50, 85, GravitysCycleWorkingDays));
         }
 
         // --- Guardrail ---
 
         // Second, warm read; the shipped forecast engine runs.
         [Test]
-        public async Task Three_hundred_Work_Items_in_refinement_still_answer_with_a_verdict_within_two_seconds()
+        public void Three_hundred_Work_Items_in_refinement_still_answer_with_a_verdict_within_two_seconds()
         {
-            var team = await GivenATeamWithThreeHundredWorkItemsInRefinementRefiningOnTuesdays();
+            var team = GivenATeamWithThreeHundredWorkItemsInRefinementRefiningOnTuesdays();
 
-            var (tab, elapsed) = await WhenTheTabIsReadASecondTime(team);
+            var (tab, elapsed) = WhenTheTabIsReadASecondTime(team);
 
             ThenTheVerdictCameBackInTime(tab, elapsed);
         }

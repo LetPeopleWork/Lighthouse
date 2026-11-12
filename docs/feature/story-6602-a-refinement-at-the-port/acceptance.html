@@ -305,6 +305,195 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>crafter and reviewer</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On an instance without sign-in, Gravity finishes two Work Items a day and refines on Tuesdays; the Refinement tab is read over HTTP and the manual forecast route is asked for the day seven working days ahead
+</code></pre>
+
+<pre><code>The tab&#x27;s low end equals the manual forecast&#x27;s median, the range is 14 to 14 over 7 working days, and the cycle runs from the next Tuesday to the Tuesday after it
+</code></pre>
+
+<pre><code>The number on the Refinement tab is the same forecast the Team sees on its Forecasts tab for the same working days
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.The_range_uses_the_same_horizon_as_the_manual_forecast</p>
+
+<pre><code>both routes used the same wrong horizon of seven calendar days on a Team with no blackout days, where calendar and working days agree
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On an instance without sign-in, one Team has finished work on only four days and one Team has chosen no state to refine in; both Refinement tabs are read over HTTP
+</code></pre>
+
+<pre><code>The need&#x27;s reason is sent as the strings InsufficientData and NoRefinementStates
+</code></pre>
+
+<pre><code>The browser and the clients can say why there is no number
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_need_without_a_number_names_its_reason_as_text</p>
+
+<pre><code>a third reason the browser reads were renamed on the wire; NoCadence is held by the existing wire row
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The host-use guard reads the test assembly after the need-and-verdict class moved to the service port
+</code></pre>
+
+<pre><code>The class starts no web host and its line is gone from the list of host users still to move; the list gains no line
+</code></pre>
+
+<pre><code>The suite runs this class without paying for a web host
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest</p>
+
+<pre><code>another hosted class kept its line, which later slices take off
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>The settings stand-in of the port fixture is compared with a newly seeded database, and the port fixture&#x27;s registrations are compared with the host&#x27;s
+</code></pre>
+
+<pre><code>Every answered setting equals the seeded one, a read the stand-in does not answer throws instead of returning a default, sign-in off agrees with the host&#x27;s answer on an instance without sign-in, and the sizing log commands are registered with the host&#x27;s lifetime
+</code></pre>
+
+<pre><code>A port scenario cannot pass on a setting, sign-in mode or lifetime no real instance has
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.Every_setting_a_port_scenario_is_given_is_what_a_seeded_database_holds</p>
+
+<pre><code>the stand-in answered a setting the seeded database also leaves at its default, so a strict throw is the only signal
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>Gravity has two ready Work Items and refines on Thursdays; the Team is likely to pull a scripted low and high over its cycle; the coach opens the Refinement tab at the service port
+</code></pre>
+
+<pre><code>Low 3 high 8 gives Below, 2-8 and 1-2 give In, 0-1 gives Above: both ends of the range count as in range
+</code></pre>
+
+<pre><code>The coach is told to refine more, to stop, or that the backlog is right, with the ends of the range counting as enough
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest.The_verdict_compares_the_ready_count_with_both_ends_of_the_range</p>
+
+<pre><code>the verdict were right only at these four scripted pairs while reading the range at a likelihood other than the median and 85 percent that happens to give the same counts
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>On a Team without stage rules three voters say Yes on one Work Item through the sizing log commands, each voter established as the votes route establishes one
+</code></pre>
+
+<pre><code>The verdict moves from Below to In; on a Team with stage rules the same votes leave it In
+</code></pre>
+
+<pre><code>Votes make a Work Item ready and move the verdict only where no stage rule decides readiness
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest.On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict</p>
+
+<pre><code>the port vote step stored the raw browser key instead of the established voter key, which changes whose own vote a reader sees but not readiness
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>The other fourteen rows of the need-and-verdict class run at the service port with today set explicitly in each Given: the range and its percentiles, blackout days, a Refinement day, the three reasons for no number, the uncut high end, a range of nothing, and a warm read of three hundred Work Items
+</code></pre>
+
+<pre><code>Each row keeps its id and asserts the same facts as on the web host; 17 rows in all pass at the port
+</code></pre>
+
+<pre><code>The Refinement tab gives the same need, verdict and reasons as before, now proven without a web host
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest</p>
+
+<pre><code>a fact pinned only by the moved manual-forecast row drifted, which the wire row covers instead
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

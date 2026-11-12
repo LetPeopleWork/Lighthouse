@@ -94,13 +94,112 @@
 "stimulus": "F171",
 "user_result": "F173"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F178",
+"test": "Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.The_range_uses_the_same_horizon_as_the_manual_forecast"
+},
+"expected": "F176",
+"stimulus": "F175",
+"user_result": "F177"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_need_without_a_number_names_its_reason_as_text"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend.Tests.Architecture.TestHostUseGuardTest"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F190",
+"test": "Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.Every_setting_a_port_scenario_is_given_is_what_a_seeded_database_holds"
+},
+"expected": "F188",
+"stimulus": "F187",
+"user_result": "F189"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F194",
+"test": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest.The_verdict_compares_the_ready_count_with_both_ends_of_the_range"
+},
+"expected": "F192",
+"stimulus": "F191",
+"user_result": "F193"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F198",
+"test": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest.On_a_Team_without_stages_a_vote_that_makes_a_Work_Item_Ready_moves_the_verdict"
+},
+"expected": "F196",
+"stimulus": "F195",
+"user_result": "F197"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F202",
+"test": "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest"
+},
+"expected": "F200",
+"stimulus": "F199",
+"user_result": "F201"
+}
 ]
 },
 "counters": {
 "B": 1,
 "D": 15,
 "E": 4,
-"F": 174,
+"F": 207,
 "K": 10,
 "L": 3,
 "P": 4,
@@ -496,12 +595,6 @@
 "symbol": "PortFixtures"
 },
 {
-"decision": "Extend",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs:303",
-"reason": "F49",
-"symbol": "ScriptedForecasts"
-},
-{
 "decision": "Reuse",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/SizingVotesAcceptanceTest.cs:35",
 "reason": "F50",
@@ -512,6 +605,12 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:10",
 "reason": "F51",
 "symbol": "HostUsersStillToMove"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs:196",
+"reason": "F203",
+"symbol": "ScriptedForecasts"
 }
 ],
 "risks": [
@@ -726,6 +825,12 @@
 "kind": "test-ratchet-list",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:1",
 "reason": "F122"
+},
+{
+"decision": "Changed",
+"kind": "TestSupport",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs:23",
+"reason": "F205"
 }
 ],
 "not_applicable": [
@@ -759,6 +864,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
 "reason": "F128"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs",
+"reason": "F204"
 }
 ],
 "verification": [
@@ -806,6 +916,12 @@
 "kind": "test-ratchet-list",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:1",
 "reason": "F122"
+},
+{
+"decision": "Changed",
+"kind": "TestSupport",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs:23",
+"reason": "F207"
 }
 ],
 "not_applicable": [
@@ -834,6 +950,11 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
 "reason": "F139"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs",
+"reason": "F206"
 }
 ],
 "verification": [
@@ -961,10 +1082,43 @@
 "F172": "The only differences are the 2 rows that moved to the wire class and the 1 new wire row",
 "F173": "A maintainer sees no test lost or renamed by the move",
 "F174": "Checked by comparing the run's id list with the recorded before list (design verification step 2), not by a test",
+"F175": "On an instance without sign-in, Gravity finishes two Work Items a day and refines on Tuesdays; the Refinement tab is read over HTTP and the manual forecast route is asked for the day seven working days ahead",
+"F176": "The tab's low end equals the manual forecast's median, the range is 14 to 14 over 7 working days, and the cycle runs from the next Tuesday to the Tuesday after it",
+"F177": "The number on the Refinement tab is the same forecast the Team sees on its Forecasts tab for the same working days",
+"F178": "both routes used the same wrong horizon of seven calendar days on a Team with no blackout days, where calendar and working days agree",
+"F179": "On an instance without sign-in, one Team has finished work on only four days and one Team has chosen no state to refine in; both Refinement tabs are read over HTTP",
 "F18": "Each moved class derives from RefinementAtThePortTest over ServicePortHarness and drives the application-service driving ports IRefinementViewQuery and ISizingLogCommands over the real repositories and a database per scenario; no web host. A moved class keeps its namespace, class name and method names, so test ids stay.",
+"F180": "The need's reason is sent as the strings InsufficientData and NoRefinementStates",
+"F181": "The browser and the clients can say why there is no number",
+"F182": "a third reason the browser reads were renamed on the wire; NoCadence is held by the existing wire row",
+"F183": "The host-use guard reads the test assembly after the need-and-verdict class moved to the service port",
+"F184": "The class starts no web host and its line is gone from the list of host users still to move; the list gains no line",
+"F185": "The suite runs this class without paying for a web host",
+"F186": "another hosted class kept its line, which later slices take off",
+"F187": "The settings stand-in of the port fixture is compared with a newly seeded database, and the port fixture's registrations are compared with the host's",
+"F188": "Every answered setting equals the seeded one, a read the stand-in does not answer throws instead of returning a default, sign-in off agrees with the host's answer on an instance without sign-in, and the sizing log commands are registered with the host's lifetime",
+"F189": "A port scenario cannot pass on a setting, sign-in mode or lifetime no real instance has",
 "F19": "The 7 rows that are about a route stay behind HTTP as wire-contract rows in the existing RefinementWithoutSignInWireContractTest, one partial file per slice (Yardstick, NeedParity, Log). No new host class and no new host build.",
+"F190": "the stand-in answered a setting the seeded database also leaves at its default, so a strict throw is the only signal",
+"F191": "Gravity has two ready Work Items and refines on Thursdays; the Team is likely to pull a scripted low and high over its cycle; the coach opens the Refinement tab at the service port",
+"F192": "Low 3 high 8 gives Below, 2-8 and 1-2 give In, 0-1 gives Above: both ends of the range count as in range",
+"F193": "The coach is told to refine more, to stop, or that the backlog is right, with the ends of the range counting as enough",
+"F194": "the verdict were right only at these four scripted pairs while reading the range at a likelihood other than the median and 85 percent that happens to give the same counts",
+"F195": "On a Team without stage rules three voters say Yes on one Work Item through the sizing log commands, each voter established as the votes route establishes one",
+"F196": "The verdict moves from Below to In; on a Team with stage rules the same votes leave it In",
+"F197": "Votes make a Work Item ready and move the verdict only where no stage rule decides readiness",
+"F198": "the port vote step stored the raw browser key instead of the established voter key, which changes whose own vote a reader sees but not readiness",
+"F199": "The other fourteen rows of the need-and-verdict class run at the service port with today set explicitly in each Given: the range and its percentiles, blackout days, a Refinement day, the three reasons for no number, the uncut high end, a range of nothing, and a warm read of three hundred Work Items",
 "F2": "The three Refinement acceptance classes prove the same rules without starting a web host, so the backend Integration tier is faster and no assertion is lost",
 "F20": "Seeders: keep the IAppSettingService stand-in at the port, no real seeders (maintainer decision 2026-11-08, not reopened). The wire test that compares port fixtures with a seeded database holds the stand-in to it.",
+"F200": "Each row keeps its id and asserts the same facts as on the web host; 17 rows in all pass at the port",
+"F201": "The Refinement tab gives the same need, verdict and reasons as before, now proven without a web host",
+"F202": "a fact pinned only by the moved manual-forecast row drifted, which the wire row covers instead",
+"F203": "F49",
+"F204": "Adds the Tuesday cadence and the Backlog-only refinement input (both in EveryInput) and a Team whose Backlog holds many Work Items, which the need-and-verdict class sets up; the builder is the only writer of Team set-up",
+"F205": "Gains RefinesOnTuesdays and RefinesInBacklog (both added to EveryInput) and ATeamWhoseBacklogHolds; existing members unchanged, so S1 port classes and the wire class compile and behave as before; the settings-save parity row now also covers the two new inputs",
+"F206": "Adds a Gravity Given with one more Backlog Work Item whose reference holds a slash (REQ/12, REQ/12#3), which the two slash-reference log rows moved to the wire class set up; the wire class has no SeedWorkItem and the builder is the only writer of Team set-up",
+"F207": "Gains a Gravity Given with one extra Backlog Work Item whose reference holds a slash, for the two slash-reference log rows in RefinementWithoutSignInWireContractTest.Log.cs; existing members unchanged",
 "F21": "RefinementPortGivens is the only writer of Team set-up: Work Item and finished-work Givens (TheTrackerHolds, TheTeamFinishedWorkEveryDay), the 5-Work-Item Gravity Given and GravitysStates move into it from RefinementAtThePortTest and the wire class. The port base gets ISizingLogCommands (scoped, as on the host) and voter, tab and log readers.",
 "F22": "A moved class keeps its data: Slice10 and Slice12 use a new port Given for the 5-Work-Item Gravity of the vote host (GR-040, GR-058, GR-051, GR-054, GR-073, GR-074), not the 7-item base Given, which adds GR-059.",
 "F23": "Port steps obtain a voter by VoterIdentityResolver.ForWriteAsync(name, key, none) and then call ISizingLogCommands, as RefinementVotesController does; writing the raw key would let ForTeam miss the voter own vote.",
@@ -995,7 +1149,6 @@
 "F46": "Already has one host and per-scenario seeders and the parity rows; extended by partial files per slice for the moved and new wire rows.",
 "F47": "Shared by the Reality Check, Refinement and System-wide-access ports; unchanged.",
 "F48": "Compares registrations of port fixtures with the host; the ISizingLogCommands lifetime is compared for Refinement from S2.",
-"F49": "Port forecast script; stamps from the port clock (S2). The host NeedForecastScript is kept for classes that stay hosted.",
 "F5": "The guard gaps named at T5's slice E review are closed: PortGivensGuardTest, E10 and E13 each fail on a planted case",
 "F50": "Host base; unchanged, other classes still derive from it, as do RefinementAcceptanceTest and RefinementNeedAcceptanceTest.",
 "F51": "The ratchet list of host users; each slice removes its moved class line, never adds one",
