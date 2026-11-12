@@ -77,7 +77,8 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
         // The inputs above each set one field, and several set the same one. This case sends one per field the form
         // holds together, so a tidy in the save that depends on two fields at once is seen: the states "Backlog,
         // Analysing, Next", the cadence "Monday and Thursday", the stage rule "ready when tagged ready", an SLE of
-        // 85 percent in 7 days and a Throughput history of 45 days.
+        // 85 percent in 7 days and a Throughput history of 45 days. The Team being saved starts with no SLE and a
+        // history of 30 days, so the form alone must bring it to the 85, 7 and 45 the port Team holds.
         [Test]
         public async Task A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up_when_every_field_is_given_together()
         {
@@ -90,9 +91,14 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             var givens = new RefinementPortGivens(Services);
             var setUpAtThePort = givens.ATeam("Team set up at the port", RefinementPortGivens.GravitysStates, throughputHistoryDays: 45, sleProbability: 85, sleRange: 7);
             givens.TheTeamRefines(setUpAtThePort, oneInputPerField);
-            var savedThroughItsSettings = givens.ATeam("Team saved through its settings", RefinementPortGivens.GravitysStates, throughputHistoryDays: 45, sleProbability: 85, sleRange: 7);
+            var savedThroughItsSettings = givens.ATeam("Team saved through its settings", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30, sleProbability: 0, sleRange: 0);
 
-            await TheAdminSavesTheSettingsFormWith(savedThroughItsSettings, oneInputPerField);
+            await TheAdminSavesTheSettingsFormWith(savedThroughItsSettings, form =>
+            {
+                form.ServiceLevelExpectationProbability = 85;
+                form.ServiceLevelExpectationRange = 7;
+                form.ThroughputHistory = 45;
+            }, oneInputPerField);
 
             Assert.That(WhatTheTeamStores(savedThroughItsSettings), Is.EqualTo(WhatTheTeamStores(setUpAtThePort)),
                 "the settings save stores every field given together otherwise than a port scenario writes them");
@@ -129,7 +135,10 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             }
         }
 
-        private async Task TheAdminSavesTheSettingsFormWith(int teamId, params RefinementInput[] inputs)
+        private Task TheAdminSavesTheSettingsFormWith(int teamId, params RefinementInput[] inputs)
+            => TheAdminSavesTheSettingsFormWith(teamId, _ => { }, inputs);
+
+        private async Task TheAdminSavesTheSettingsFormWith(int teamId, Action<TeamSettingDto> alsoFilledIn, params RefinementInput[] inputs)
         {
             var howItRefines = new RefinementSettings();
             foreach (var input in inputs)
@@ -144,6 +153,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
                     ?? throw new InvalidOperationException($"no Team {teamId} is stored to save settings for");
                 var today = scope.ServiceProvider.GetRequiredService<ILighthouseClock>().Today;
                 form = new TeamSettingDto(team, today) { Refinement = new RefinementSettingsDto(howItRefines) };
+                alsoFilledIn(form);
             }
 
             using var save = await Client.PutAsJsonAsync($"/api/latest/teams/{teamId}", form);
