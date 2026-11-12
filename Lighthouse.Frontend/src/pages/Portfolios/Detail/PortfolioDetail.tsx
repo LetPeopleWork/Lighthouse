@@ -20,10 +20,7 @@ import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandle
 import { useRefreshFeatureList } from "../../../hooks/useFeatureList";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
-import type {
-	RbacScopedMemberSummary,
-	ScopedRbacRole,
-} from "../../../models/Authorization/RbacModels";
+import { useScopedAccess } from "../../../hooks/useScopedAccess";
 import type {
 	IPortfolio,
 	Portfolio,
@@ -84,11 +81,8 @@ const PortfolioDetail: React.FC = () => {
 		initialViewFor(tab),
 	);
 	const [pendingPortfolioRefresh, setPendingPortfolioRefresh] = useState(false);
-	const [portfolioMembers, setPortfolioMembers] = useState<
-		RbacScopedMemberSummary[]
-	>([]);
-	const [portfolioMembersLoading, setPortfolioMembersLoading] = useState(false);
-	const [portfolioMembersError, setPortfolioMembersError] = useState<string>();
+	const access = useScopedAccess("Portfolio", portfolio?.id);
+	const { loadMembers, createGroupMapping, removeGroupMapping } = access;
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
@@ -101,7 +95,6 @@ const PortfolioDetail: React.FC = () => {
 		teamService,
 		updateSubscriptionService,
 		workTrackingSystemService,
-		rbacService,
 	} = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
 	useFeaturesHeldForUsageData(
@@ -121,88 +114,6 @@ const PortfolioDetail: React.FC = () => {
 		!!portfolio && rbac.isRbacEnabled && rbac.isPortfolioAdmin(portfolio.id);
 	const showWriteControls = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
 	const canEditDeliveries = !portfolio || rbac.isPortfolioAdmin(portfolio.id);
-
-	const loadPortfolioMembers = useCallback(
-		async (targetPortfolioId: number) => {
-			setPortfolioMembersError(undefined);
-			setPortfolioMembersLoading(true);
-			try {
-				const members =
-					await rbacService.getPortfolioMembers(targetPortfolioId);
-				setPortfolioMembers(members);
-			} catch {
-				setPortfolioMembersError("Failed to load portfolio members.");
-			} finally {
-				setPortfolioMembersLoading(false);
-			}
-		},
-		[rbacService],
-	);
-
-	const handleAssignPortfolioRole = useCallback(
-		async (userProfileId: number, role: ScopedRbacRole) => {
-			if (!portfolio) {
-				return;
-			}
-
-			setPortfolioMembersError(undefined);
-			try {
-				await rbacService.upsertPortfolioMember(
-					portfolio.id,
-					userProfileId,
-					role,
-				);
-				await loadPortfolioMembers(portfolio.id);
-			} catch {
-				setPortfolioMembersError("Failed to update portfolio member role.");
-			}
-		},
-		[rbacService, portfolio, loadPortfolioMembers],
-	);
-
-	const handleRemovePortfolioMember = useCallback(
-		async (userProfileId: number) => {
-			if (!portfolio) {
-				return;
-			}
-
-			setPortfolioMembersError(undefined);
-			try {
-				await rbacService.removePortfolioMember(portfolio.id, userProfileId);
-				await loadPortfolioMembers(portfolio.id);
-			} catch {
-				setPortfolioMembersError("Failed to remove portfolio member.");
-			}
-		},
-		[rbacService, portfolio, loadPortfolioMembers],
-	);
-
-	const handleCreatePortfolioGroupMapping = useCallback(
-		async (groupValue: string, role: ScopedRbacRole) => {
-			if (!portfolio) {
-				return;
-			}
-
-			await rbacService.createGroupMapping({
-				groupValue,
-				role,
-				scopeType: "Portfolio",
-				scopeId: portfolio.id,
-			});
-		},
-		[rbacService, portfolio],
-	);
-
-	const handleRemovePortfolioGroupMapping = useCallback(
-		async (mappingId: number) => {
-			if (!portfolio) {
-				return;
-			}
-
-			await rbacService.removeGroupMapping(mappingId);
-		},
-		[rbacService, portfolio],
-	);
 
 	const { getTerm } = useTerminology();
 	const featuresTerm = getTerm(TERMINOLOGY_KEYS.FEATURES);
@@ -419,9 +330,9 @@ const PortfolioDetail: React.FC = () => {
 
 	useEffect(() => {
 		if (activeView === "access" && portfolio) {
-			fireAndForget(loadPortfolioMembers(portfolio.id));
+			fireAndForget(loadMembers());
 		}
-	}, [activeView, portfolio, loadPortfolioMembers]);
+	}, [activeView, portfolio, loadMembers]);
 
 	return (
 		<SnackbarErrorHandler>
@@ -585,12 +496,12 @@ const PortfolioDetail: React.FC = () => {
 									<Stack spacing={2}>
 										<ScopedMembershipManager
 											title="Portfolio Access"
-											members={portfolioMembers}
+											members={access.members}
 											allowedRoles={["PortfolioAdmin", "Viewer"]}
-											loading={portfolioMembersLoading}
-											error={portfolioMembersError}
-											onAssignRole={handleAssignPortfolioRole}
-											onRemoveRole={handleRemovePortfolioMember}
+											loading={access.membersLoading}
+											error={access.membersError}
+											onAssignRole={access.assignRole}
+											onRemoveRole={access.removeMember}
 										/>
 										<SystemWideRulesNotice
 											unitKind="Portfolio"
@@ -599,11 +510,9 @@ const PortfolioDetail: React.FC = () => {
 										<ScopedGroupMappingManager
 											title="Portfolio Group Access"
 											allowedRoles={["PortfolioAdmin", "Viewer"]}
-											groupMappingsFetcher={() =>
-												rbacService.getPortfolioGroupMappings(portfolio.id)
-											}
-											onCreateMapping={handleCreatePortfolioGroupMapping}
-											onRemoveMapping={handleRemovePortfolioGroupMapping}
+											groupMappingsFetcher={access.loadGroupMappings}
+											onCreateMapping={createGroupMapping}
+											onRemoveMapping={removeGroupMapping}
 											readOnly={
 												!rbac.isSystemAdmin || rbac.isLoading || rbac.loadFailed
 											}

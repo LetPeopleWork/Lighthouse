@@ -30,10 +30,7 @@ import { useRefreshFeatureList } from "../../../hooks/useFeatureList";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../../hooks/useRbac";
 import { useRefinementSetUpReporter } from "../../../hooks/useRefinementSetUpReporter";
-import type {
-	RbacScopedMemberSummary,
-	ScopedRbacRole,
-} from "../../../models/Authorization/RbacModels";
+import { useScopedAccess } from "../../../hooks/useScopedAccess";
 import type { Team } from "../../../models/Team/Team";
 import type { ITeamSettings } from "../../../models/Team/TeamSettings";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -120,20 +117,15 @@ const TeamDetail: React.FC = () => {
 		initialViewFor(tab),
 	);
 	const [pendingTeamRefresh, setPendingTeamRefresh] = useState(false);
-	const [teamMembers, setTeamMembers] = useState<RbacScopedMemberSummary[]>([]);
-	const [teamMembersLoading, setTeamMembersLoading] = useState(false);
-	const [teamMembersError, setTeamMembersError] = useState<string>();
+	const access = useScopedAccess("Team", team?.id);
+	const { loadMembers, createGroupMapping, removeGroupMapping } = access;
 
 	// Always reflect the latest activeView inside async subscription callbacks
 	const activeViewRef = useRef(activeView);
 	activeViewRef.current = activeView;
 
-	const {
-		teamService,
-		updateSubscriptionService,
-		workTrackingSystemService,
-		rbacService,
-	} = useContext(ApiServiceContext);
+	const { teamService, updateSubscriptionService, workTrackingSystemService } =
+		useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
 	useFeaturesHeldForUsageData(
 		"Team",
@@ -149,83 +141,6 @@ const TeamDetail: React.FC = () => {
 	const showAccessTab =
 		!!team && rbac.isRbacEnabled && rbac.isTeamAdmin(team.id);
 	const showWriteControls = !team || rbac.isTeamAdmin(team.id);
-
-	const loadTeamMembers = useCallback(
-		async (targetTeamId: number) => {
-			setTeamMembersError(undefined);
-			setTeamMembersLoading(true);
-			try {
-				const members = await rbacService.getTeamMembers(targetTeamId);
-				setTeamMembers(members);
-			} catch {
-				setTeamMembersError("Failed to load team members.");
-			} finally {
-				setTeamMembersLoading(false);
-			}
-		},
-		[rbacService],
-	);
-
-	const handleAssignTeamRole = useCallback(
-		async (userProfileId: number, role: ScopedRbacRole) => {
-			if (!team) {
-				return;
-			}
-
-			setTeamMembersError(undefined);
-			try {
-				await rbacService.upsertTeamMember(team.id, userProfileId, role);
-				await loadTeamMembers(team.id);
-			} catch {
-				setTeamMembersError("Failed to update team member role.");
-			}
-		},
-		[rbacService, team, loadTeamMembers],
-	);
-
-	const handleRemoveTeamMember = useCallback(
-		async (userProfileId: number) => {
-			if (!team) {
-				return;
-			}
-
-			setTeamMembersError(undefined);
-			try {
-				await rbacService.removeTeamMember(team.id, userProfileId);
-				await loadTeamMembers(team.id);
-			} catch {
-				setTeamMembersError("Failed to remove team member.");
-			}
-		},
-		[rbacService, team, loadTeamMembers],
-	);
-
-	const handleCreateTeamGroupMapping = useCallback(
-		async (groupValue: string, role: ScopedRbacRole) => {
-			if (!team) {
-				return;
-			}
-
-			await rbacService.createGroupMapping({
-				groupValue,
-				role,
-				scopeType: "Team",
-				scopeId: team.id,
-			});
-		},
-		[rbacService, team],
-	);
-
-	const handleRemoveTeamGroupMapping = useCallback(
-		async (mappingId: number) => {
-			if (!team) {
-				return;
-			}
-
-			await rbacService.removeGroupMapping(mappingId);
-		},
-		[rbacService, team],
-	);
 
 	const fetchTeam = useCallback(async () => {
 		setHasNoAccess(false);
@@ -423,9 +338,9 @@ const TeamDetail: React.FC = () => {
 
 	useEffect(() => {
 		if (activeView === "access" && team) {
-			fireAndForget(loadTeamMembers(team.id));
+			fireAndForget(loadMembers());
 		}
-	}, [activeView, team, loadTeamMembers]);
+	}, [activeView, team, loadMembers]);
 
 	const handleViewChange = (
 		_event: React.SyntheticEvent,
@@ -652,22 +567,20 @@ const TeamDetail: React.FC = () => {
 									<Stack spacing={2}>
 										<ScopedMembershipManager
 											title="Team Access"
-											members={teamMembers}
+											members={access.members}
 											allowedRoles={["TeamAdmin", "Viewer"]}
-											loading={teamMembersLoading}
-											error={teamMembersError}
-											onAssignRole={handleAssignTeamRole}
-											onRemoveRole={handleRemoveTeamMember}
+											loading={access.membersLoading}
+											error={access.membersError}
+											onAssignRole={access.assignRole}
+											onRemoveRole={access.removeMember}
 										/>
 										<SystemWideRulesNotice unitKind="Team" unitId={team.id} />
 										<ScopedGroupMappingManager
 											title="Team Group Access"
 											allowedRoles={["TeamAdmin", "Viewer"]}
-											groupMappingsFetcher={() =>
-												rbacService.getTeamGroupMappings(team.id)
-											}
-											onCreateMapping={handleCreateTeamGroupMapping}
-											onRemoveMapping={handleRemoveTeamGroupMapping}
+											groupMappingsFetcher={access.loadGroupMappings}
+											onCreateMapping={createGroupMapping}
+											onRemoveMapping={removeGroupMapping}
 											readOnly={
 												!rbac.isSystemAdmin || rbac.isLoading || rbac.loadFailed
 											}
