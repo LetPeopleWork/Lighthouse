@@ -338,32 +338,27 @@ export function computeCumulativeStateTimeRag(
 }
 
 /**
- * Age of the IN-PROGRESS population against the SLE, as of the last day of the selected range (D3).
+ * Age of the in-progress population against the SLE, as of the last day of the selected range.
  *
- * D6-REVISED (product-owner decision, 2026-07-19) — bands on ABSOLUTE COUNTS against the SLE's day
- * value, evaluated in this order:
+ * Bands count items against the SLE's day value, evaluated in this order:
  *
  *   no SLE configured                               → red (define-an-SLE tip)
  *   count(age > value) > 1                          → red   (Act)
  *   count(age > value) === 1 || count(age === value) → amber (Observe)
  *   otherwise — all ages below, or nothing in progress → green (Sustain)
  *
- * The original share-based design (band on the PERCENTAGE within the SLE, reusing
- * `computeCycleTimePercentilesRag`'s 20pp bands) was withdrawn when its human validation gate fired:
- * it read green on a period the coach had nominated as deteriorated, because a percentage over a
- * population of 1-4 items is noise. See `docs/feature/widget-loose-ends/feature-delta.md` →
- * "D6 gate RESULT and D6-REVISED".
+ * Banding on the percentage within the SLE was dropped: over a population of 1-4 items a
+ * percentage is noise, and it read green on a period a coach judged deteriorated.
  *
- * Three deliberate properties, confirmed by the product owner — do not "fix" them:
+ * Three deliberate properties, do not "fix" them:
  *  1. The SLE percentile is discarded; only the day value is used. A probability is meaningless at
  *     the WIP sizes this widget sees.
  *  2. The counts do not scale with WIP. Two breaching items read red whether WIP is 3 or 40.
  *  3. An empty population is green, not a neutral state. Nothing in progress is not a bad state, and
- *     the WIP RAG already signals an empty board — this widget must not say it twice.
+ *     the WIP RAG already signals an empty board; this widget must not say it twice.
  *
- * DESIGN D19 (extract a band helper shared with `computeCycleTimePercentilesRag`) is WITHDRAWN with
- * the old design: that rule bands on a share against the percentile, this one on counts against the
- * day value. There is no longer one piece of knowledge to place in one location.
+ * No band helper is shared with `computeCycleTimePercentilesRag`: that rule bands a share against
+ * the percentile, this one counts items against the day value, so there is no common knowledge.
  */
 export function computeWorkItemAgePercentilesRag(
 	sle: { percentile: number; value: number } | null,
