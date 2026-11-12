@@ -1,0 +1,15 @@
+A_window_at_an_edge_is_answered_as_the_table_says(a Now of 13 days)	0.130	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Now of 14 days)	0.151	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Now reaching back two years, when every finished item is kept)	0.156	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Now starting before the first day the calendar can name, when every finished item is kept)	0.147	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Now starting on the earliest day)	0.154	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Now starting the day before the earliest day)	0.130	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then ending today)	0.143	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then ending tomorrow)	0.120	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days ending tomorrow)	0.157	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days)	1.091	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days)	0.249	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then starting before the first day the calendar can name, when every finished item is kept)	0.125	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then starting long before any kept day, when every finished item is kept)	0.153	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then starting on the earliest day)	0.181	Passed
+A_window_at_an_edge_is_answered_as_the_table_says(a Then starting the day before the earliest day)	0.160	Passed

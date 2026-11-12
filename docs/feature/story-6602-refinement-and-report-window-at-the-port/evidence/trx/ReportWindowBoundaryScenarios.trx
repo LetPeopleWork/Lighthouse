@@ -1,0 +1,491 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="a36f6f97-ff38-4892-b3c0-84b6bdd93a30" name="@cachy-desktop 2026-11-12 16:31:32" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-12T16:31:32.2730465+01:00" queuing="2026-11-12T16:31:32.2730466+01:00" start="2026-11-12T16:31:27.6316019+01:00" finish="2026-11-12T16:31:34.0923298+01:00" />
+  <TestSettings name="default" id="ff4c1f37-3365-4228-a71d-9ea8f896e9d9">
+    <Deployment runDeploymentRoot="_cachy-desktop_2026-11-12_16_31_32" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="96232f5f-2e2a-4f2a-aedb-4b0cf3499074" testId="a0632d4f-9645-68a3-999b-97093ff38d05" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting the day before the earliest day)" computerName="cachy-desktop" duration="00:00:00.1304730" startTime="2026-11-12T16:31:33.5475514+01:00" endTime="2026-11-12T16:31:33.6780243+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="96232f5f-2e2a-4f2a-aedb-4b0cf3499074">
+      <Output>
+        <StdOut>16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="33a7f041-8298-4ed5-ae62-ac79296927ba" testId="2154ab71-a94e-b3d5-be3f-62d52e450701" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting before the first day the calendar can name, when every finished item is kept)" computerName="cachy-desktop" duration="00:00:00.1249960" startTime="2026-11-12T16:31:32.9881227+01:00" endTime="2026-11-12T16:31:33.1131187+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="33a7f041-8298-4ed5-ae62-ac79296927ba">
+      <Output>
+        <StdOut>16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="060aa1c8-55f9-40fc-b4fb-703b785499af" testId="78d6da86-571c-0582-bb7c-03e016688175" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting before the first day the calendar can name, when every finished item is kept)" computerName="cachy-desktop" duration="00:00:00.1473210" startTime="2026-11-12T16:31:33.8337432+01:00" endTime="2026-11-12T16:31:33.9810642+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="060aa1c8-55f9-40fc-b4fb-703b785499af">
+      <Output>
+        <StdOut>16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="0c69e92f-1385-4f3a-b860-67d65fd4a11a" testId="18c40098-2638-9270-a218-a94775430d76" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting on the earliest day)" computerName="cachy-desktop" duration="00:00:00.1536720" startTime="2026-11-12T16:31:33.3938433+01:00" endTime="2026-11-12T16:31:33.5475150+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="0c69e92f-1385-4f3a-b860-67d65fd4a11a">
+      <Output>
+        <StdOut>16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="8cb938d3-5acb-4fd6-a117-40dfee423460" testId="6b89e093-9570-5b86-91d5-e2bbe0393097" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Now of 13 days)" computerName="cachy-desktop" duration="00:00:00.1300000" startTime="2026-11-12T16:31:33.1131500+01:00" endTime="2026-11-12T16:31:33.2431496+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8cb938d3-5acb-4fd6-a117-40dfee423460">
+      <Output>
+        <StdOut>16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d2004efa-308c-4b31-9abe-8a5db37ccc6b" testId="85fbbefa-c0a7-4827-b47e-61a8b5fa7f3f" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Now reaching back two years, when every finished item is kept)" computerName="cachy-desktop" duration="00:00:00.1556470" startTime="2026-11-12T16:31:33.6780590+01:00" endTime="2026-11-12T16:31:33.8337058+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d2004efa-308c-4b31-9abe-8a5db37ccc6b">
+      <Output>
+        <StdOut>16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4a5abd00-f86c-4c16-bbf4-0614c36a6992" testId="df1d3a18-0e2a-ba90-c95c-1370e247d533" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days)" computerName="cachy-desktop" duration="00:00:00.2490120" startTime="2026-11-12T16:31:31.9825264+01:00" endTime="2026-11-12T16:31:32.2315383+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4a5abd00-f86c-4c16-bbf4-0614c36a6992">
+      <Output>
+        <StdOut>16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4dda878a-69ee-4577-9a22-c492eac3e2ab" testId="87255e79-d7e5-92ac-196b-e4965f683dbc" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting the day before the earliest day)" computerName="cachy-desktop" duration="00:00:00.1599210" startTime="2026-11-12T16:31:32.6756116+01:00" endTime="2026-11-12T16:31:32.8355325+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4dda878a-69ee-4577-9a22-c492eac3e2ab">
+      <Output>
+        <StdOut>16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="75ca4ca2-c8df-4222-8d47-fcb206f2ecef" testId="b80f09e0-1d66-579b-1205-353907d0c2cf" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days)" computerName="cachy-desktop" duration="00:00:01.0914170" startTime="2026-11-12T16:31:30.7328465+01:00" endTime="2026-11-12T16:31:31.8242088+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="75ca4ca2-c8df-4222-8d47-fcb206f2ecef">
+      <Output>
+        <StdOut>16:31:30 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:31 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:31 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:31 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:31 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:31 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:31 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:31 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:31 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:31 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="288fef7f-213f-4139-9bc6-cca74312aebf" testId="0d52f718-8a89-c7ac-1007-f79976f73f12" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Now of 14 days)" computerName="cachy-desktop" duration="00:00:00.1506130" startTime="2026-11-12T16:31:33.2431813+01:00" endTime="2026-11-12T16:31:33.3937942+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="288fef7f-213f-4139-9bc6-cca74312aebf">
+      <Output>
+        <StdOut>16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e394703f-50cb-4037-895b-0b9d6797f76e" testId="90709109-177c-9677-f842-93a43f949072" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting long before any kept day, when every finished item is kept)" computerName="cachy-desktop" duration="00:00:00.1525240" startTime="2026-11-12T16:31:32.8355654+01:00" endTime="2026-11-12T16:31:32.9880891+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e394703f-50cb-4037-895b-0b9d6797f76e">
+      <Output>
+        <StdOut>16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="49e92bb5-6b66-4406-8128-3669ecb450f1" testId="1ce4dc4c-1a7c-2a4d-93a5-d943627bb6c8" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then ending today)" computerName="cachy-desktop" duration="00:00:00.1432130" startTime="2026-11-12T16:31:32.2315640+01:00" endTime="2026-11-12T16:31:32.3747768+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="49e92bb5-6b66-4406-8128-3669ecb450f1">
+      <Output>
+        <StdOut>16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e4fff245-22fc-4e23-b7a9-f50fff9487e4" testId="7908467d-ad5f-7de4-81f6-b65fb1b37867" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting on the earliest day)" computerName="cachy-desktop" duration="00:00:00.1808870" startTime="2026-11-12T16:31:32.4946146+01:00" endTime="2026-11-12T16:31:32.6755015+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e4fff245-22fc-4e23-b7a9-f50fff9487e4">
+      <Output>
+        <StdOut>16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="6215188e-34ba-482c-8404-62d9390303a9" testId="2518a068-3668-1cb8-03ce-0486f359960d" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days ending tomorrow)" computerName="cachy-desktop" duration="00:00:00.1570850" startTime="2026-11-12T16:31:31.8254051+01:00" endTime="2026-11-12T16:31:31.9824897+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6215188e-34ba-482c-8404-62d9390303a9">
+      <Output>
+        <StdOut>16:31:31 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:31 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:31 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:31 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:31 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:31 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:31 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:31 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:31 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:31 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="69176cb3-5d58-4dd3-b988-e58873891003" testId="98bf0320-1366-326f-21a8-6de154b95142" testName="A_window_at_an_edge_is_answered_as_the_table_says(a Then ending tomorrow)" computerName="cachy-desktop" duration="00:00:00.1197870" startTime="2026-11-12T16:31:32.3748019+01:00" endTime="2026-11-12T16:31:32.4945891+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="69176cb3-5d58-4dd3-b988-e58873891003">
+      <Output>
+        <StdOut>16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting the day before the earliest day)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="a0632d4f-9645-68a3-999b-97093ff38d05">
+      <Execution id="96232f5f-2e2a-4f2a-aedb-4b0cf3499074" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting the day before the earliest day)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting on the earliest day)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="18c40098-2638-9270-a218-a94775430d76">
+      <Execution id="0c69e92f-1385-4f3a-b860-67d65fd4a11a" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting on the earliest day)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting before the first day the calendar can name, when every finished item is kept)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="78d6da86-571c-0582-bb7c-03e016688175">
+      <Execution id="060aa1c8-55f9-40fc-b4fb-703b785499af" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Now starting before the first day the calendar can name, when every finished item is kept)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="df1d3a18-0e2a-ba90-c95c-1370e247d533">
+      <Execution id="4a5abd00-f86c-4c16-bbf4-0614c36a6992" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting before the first day the calendar can name, when every finished item is kept)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="2154ab71-a94e-b3d5-be3f-62d52e450701">
+      <Execution id="33a7f041-8298-4ed5-ae62-ac79296927ba" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting before the first day the calendar can name, when every finished item is kept)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Now of 13 days)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="6b89e093-9570-5b86-91d5-e2bbe0393097">
+      <Execution id="8cb938d3-5acb-4fd6-a117-40dfee423460" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Now of 13 days)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="b80f09e0-1d66-579b-1205-353907d0c2cf">
+      <Execution id="75ca4ca2-c8df-4222-8d47-fcb206f2ecef" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days ending tomorrow)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="2518a068-3668-1cb8-03ce-0486f359960d">
+      <Execution id="6215188e-34ba-482c-8404-62d9390303a9" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then of 13 days ending tomorrow)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting on the earliest day)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="7908467d-ad5f-7de4-81f6-b65fb1b37867">
+      <Execution id="e4fff245-22fc-4e23-b7a9-f50fff9487e4" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting on the earliest day)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Now of 14 days)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="0d52f718-8a89-c7ac-1007-f79976f73f12">
+      <Execution id="288fef7f-213f-4139-9bc6-cca74312aebf" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Now of 14 days)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then ending tomorrow)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="98bf0320-1366-326f-21a8-6de154b95142">
+      <Execution id="69176cb3-5d58-4dd3-b988-e58873891003" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then ending tomorrow)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then ending today)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="1ce4dc4c-1a7c-2a4d-93a5-d943627bb6c8">
+      <Execution id="49e92bb5-6b66-4406-8128-3669ecb450f1" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then ending today)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting long before any kept day, when every finished item is kept)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="90709109-177c-9677-f842-93a43f949072">
+      <Execution id="e394703f-50cb-4037-895b-0b9d6797f76e" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting long before any kept day, when every finished item is kept)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Now reaching back two years, when every finished item is kept)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="85fbbefa-c0a7-4827-b47e-61a8b5fa7f3f">
+      <Execution id="d2004efa-308c-4b31-9abe-8a5db37ccc6b" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Now reaching back two years, when every finished item is kept)" />
+    </UnitTest>
+    <UnitTest name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting the day before the earliest day)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="87255e79-d7e5-92ac-196b-e4965f683dbc">
+      <Execution id="4dda878a-69ee-4577-9a22-c492eac3e2ab" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios" name="A_window_at_an_edge_is_answered_as_the_table_says(a Then starting the day before the earliest day)" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="a0632d4f-9645-68a3-999b-97093ff38d05" executionId="96232f5f-2e2a-4f2a-aedb-4b0cf3499074" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2154ab71-a94e-b3d5-be3f-62d52e450701" executionId="33a7f041-8298-4ed5-ae62-ac79296927ba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="78d6da86-571c-0582-bb7c-03e016688175" executionId="060aa1c8-55f9-40fc-b4fb-703b785499af" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="18c40098-2638-9270-a218-a94775430d76" executionId="0c69e92f-1385-4f3a-b860-67d65fd4a11a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6b89e093-9570-5b86-91d5-e2bbe0393097" executionId="8cb938d3-5acb-4fd6-a117-40dfee423460" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="85fbbefa-c0a7-4827-b47e-61a8b5fa7f3f" executionId="d2004efa-308c-4b31-9abe-8a5db37ccc6b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="df1d3a18-0e2a-ba90-c95c-1370e247d533" executionId="4a5abd00-f86c-4c16-bbf4-0614c36a6992" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="87255e79-d7e5-92ac-196b-e4965f683dbc" executionId="4dda878a-69ee-4577-9a22-c492eac3e2ab" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b80f09e0-1d66-579b-1205-353907d0c2cf" executionId="75ca4ca2-c8df-4222-8d47-fcb206f2ecef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0d52f718-8a89-c7ac-1007-f79976f73f12" executionId="288fef7f-213f-4139-9bc6-cca74312aebf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="90709109-177c-9677-f842-93a43f949072" executionId="e394703f-50cb-4037-895b-0b9d6797f76e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1ce4dc4c-1a7c-2a4d-93a5-d943627bb6c8" executionId="49e92bb5-6b66-4406-8128-3669ecb450f1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7908467d-ad5f-7de4-81f6-b65fb1b37867" executionId="e4fff245-22fc-4e23-b7a9-f50fff9487e4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2518a068-3668-1cb8-03ce-0486f359960d" executionId="6215188e-34ba-482c-8404-62d9390303a9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="98bf0320-1366-326f-21a8-6de154b95142" executionId="69176cb3-5d58-4dd3-b988-e58873891003" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="15" executed="15" passed="15" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>NUnit Adapter 6.3.1.0: Test execution started
+Running selected tests in /storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll
+   NUnit3TestExecutor discovered 15 of 15 NUnit test cases using Current Discovery mode, Non-Explicit run
+16:31:31 - INFORMATION - ReportCommands: Report creation refused with then-too-short for Team 1 with template then-and-now
+16:31:30 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:31 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:31 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:31 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:31 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:31 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:31 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:31 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:31 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:31 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:31 - INFORMATION - ReportCommands: Report creation refused with then-too-short for Team 1 with template then-and-now
+16:31:31 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:31 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:31 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:31 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:31 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:31 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:31 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:31 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:31 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:31 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:32 - INFORMATION - ReportCommands: Report 1 of Team 1 with template then-and-now, Then 14 days and Now 90 days, was created in 0 ms
+16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:32 - INFORMATION - ReportCommands: Report 1 of Team 1 with template then-and-now, Then 90 days and Now 90 days, was created in 0 ms
+16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:32 - INFORMATION - ReportCommands: Report creation refused with then-ends-in-the-future for Team 1 with template then-and-now
+16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:32 - INFORMATION - ReportCommands: Report 1 of Team 1 with template then-and-now, Then 90 days and Now 90 days, was created in 0 ms
+16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:32 - INFORMATION - ReportCommands: Report creation refused with then-before-cutoff for Team 1 with template then-and-now
+16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:32 - INFORMATION - ReportCommands: Report 1 of Team 1 with template then-and-now, Then 90 days and Now 90 days, was created in 0 ms
+16:31:32 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:32 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:32 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:32 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:32 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:32 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:32 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:32 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:32 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:32 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:33 - INFORMATION - ReportCommands: Report creation refused with then-too-long for Team 1 with template then-and-now
+16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:33 - INFORMATION - ReportCommands: Report creation refused with now-too-short for Team 1 with template then-and-now
+16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:33 - INFORMATION - ReportCommands: Report 1 of Team 1 with template then-and-now, Then 90 days and Now 14 days, was created in 0 ms
+16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:33 - INFORMATION - ReportCommands: Report 1 of Team 1 with template then-and-now, Then 90 days and Now 366 days, was created in 0 ms
+16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:33 - INFORMATION - ReportCommands: Report creation refused with now-before-cutoff for Team 1 with template then-and-now
+16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:33 - INFORMATION - ReportCommands: Report 1 of Team 1 with template then-and-now, Then 90 days and Now 730 days, was created in 0 ms
+16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+16:31:33 - INFORMATION - ReportCommands: Report creation refused with now-too-long for Team 1 with template then-and-now
+16:31:33 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+16:31:33 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+16:31:33 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+16:31:33 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+16:31:33 - INFORMATION - TerminologySeeder: Seeding Terminology
+16:31:33 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+16:31:33 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+16:31:33 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+16:31:33 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+16:31:33 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>
