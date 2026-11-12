@@ -1,9 +1,106 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1",
+"L2"
+],
+"still_passes_if": "F154",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickScenarios.cs"
+},
+"expected": "F152",
+"stimulus": "F151",
+"user_result": "F153"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F158",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Yardstick.cs"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F162",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+},
+"expected": "F160",
+"stimulus": "F159",
+"user_result": "F161"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"T1"
+],
+"still_passes_if": "F166",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs"
+},
+"expected": "F164",
+"stimulus": "F163",
+"user_result": "F165"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F170",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.cs"
+},
+"expected": "F168",
+"stimulus": "F167",
+"user_result": "F169"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter and reviewer",
+"reason": "F174"
+},
+"expected": "F172",
+"stimulus": "F171",
+"user_result": "F173"
+}
+]
+},
 "counters": {
 "B": 1,
 "D": 15,
 "E": 4,
-"F": 150,
+"F": 174,
 "K": 10,
 "L": 3,
 "P": 4,
@@ -838,8 +935,32 @@
 "F149": "The guard checks named at the earlier slice review (PortGivensGuardTest, E10, E13) each fail when a deliberately planted violating case is introduced, and pass again when it is removed.",
 "F15": "The comments class runs at the service port, with the sizing log and its errors pinned by wire rows",
 "F150": "Measured the same way as before, the combined run time of the three classes after the move is lower than the time measured before the move.",
+"F151": "Run the yardstick class at the service port: a Team with a whole SLE, without one, with half of one, with no finished work, with slow work finished outside, on the first day of and the day before the Throughput window, and two voters reading the same Team, today 7 October 2026",
+"F152": "Its 10 rows pass under their unchanged names without a web host: the SLE of 7 days at 85%, the fallback of 12 days at 85% (60 days when slow work finished on the window's first day), and no number when nothing finished inside the window; both voters see the same fallback",
+"F153": "A maintainer sees the yardstick rules proven at the port, faster, with no test lost",
+"F154": "The finished-work Given counted days back from a fixed 7 October while the clock read another day, so the window edges shift together and the edge rows still agree; held off by setting today explicitly in every Given and by the deliberate break of a one-day-wider window turning the day-before row red",
+"F155": "On the wire, save a Team's SLE through the Team settings (set 75% within 10 days, then clear it) and read the Refinement tab before and after; also read the tab of a Team with no SLE and nothing finished",
+"F156": "The 2 rows Setting_an_SLE_replaces_the_fallback_on_the_next_read and Clearing_the_SLE_brings_the_fallback_back_on_the_next_read pass under their names in the wire class: the next read answers the saved SLE or the 12-day fallback, and the same Work Items stay listed; the new row shows the source as the text Unavailable with days and probability sent as null",
+"F157": "A browser keeps reading the yardstick names and texts it reads today, and an SLE an admin saves is what voters answer against next",
+"F158": "The yardstick days or probability left out of the answer when there is no number instead of sent as null; held off by asserting the JSON kind Null, not a null read of a missing member",
+"F159": "Run the host-use guard after the yardstick class moves",
 "F16": "Slice12CommentsTest proves its 22 rules at the port and its 4 route rows on the wire; the three classes together cost less time than before",
+"F160": "The guard passes and its list of host users still to move no longer names the yardstick class; the list gains no line",
+"F161": "A maintainer sees one class fewer starting a web host",
+"F162": "The class line stays on the list while the class no longer starts a host; the guard asks for the line to go in the same commit",
+"F163": "Run the port-Givens guard over the port classes and its planted classes, including a planted port class that adds to a Team's To Do states, sets a nested setting reachable from a Team, or writes a guarded table through the database context",
+"F164": "No real port class writes Team set-up outside the port builder, and each planted case, the To Do states addition among them, is reported by the guard",
+"F165": "A maintainer knows a port scenario cannot pass on a Team no settings save would produce",
+"F166": "The guard reads only direct setters on Team and misses collection mutators and nested setters; held off by one planted case per gap",
+"F167": "Run the settings-parity rows of the Refinement wire contract: a Team set up by the port builder against one saved through the settings form, compared on SLE probability and range, states and Throughput history as well as how it refines",
+"F168": "The parity rows pass and compare every public property of those Team fields, so a field the builder sets otherwise than the save turns them red",
+"F169": "A maintainer knows the port builder stores what the settings save stores",
 "F17": "Order: Slice10SleYardstickTest (S1), then Slice05NeedAndVerdictTest (S2), then Slice12CommentsTest (S3), then a stop-and-ask checkpoint before any report-window work. Smallest harness change first (Slice10 casts no vote); Slice12 needs the most new wire rows, so it comes last and the checkpoint reads all three classes.",
+"F170": "Comparison through a JSON serialisation that skips ignored members; held off by a public-property dump",
+"F171": "Compare the sorted test ids of the yardstick class and the wire class after the move with the ids recorded before it",
+"F172": "The only differences are the 2 rows that moved to the wire class and the 1 new wire row",
+"F173": "A maintainer sees no test lost or renamed by the move",
+"F174": "Checked by comparing the run's id list with the recorded before list (design verification step 2), not by a test",
 "F18": "Each moved class derives from RefinementAtThePortTest over ServicePortHarness and drives the application-service driving ports IRefinementViewQuery and ISizingLogCommands over the real repositories and a database per scenario; no web host. A moved class keeps its namespace, class name and method names, so test ids stay.",
 "F19": "The 7 rows that are about a route stay behind HTTP as wire-contract rows in the existing RefinementWithoutSignInWireContractTest, one partial file per slice (Yardstick, NeedParity, Log). No new host class and no new host build.",
 "F2": "The three Refinement acceptance classes prove the same rules without starting a web host, so the backend Integration tier is faster and no assertion is lost",

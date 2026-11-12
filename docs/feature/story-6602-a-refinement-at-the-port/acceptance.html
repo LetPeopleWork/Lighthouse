@@ -151,7 +151,159 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>Run the yardstick class at the service port: a Team with a whole SLE, without one, with half of one, with no finished work, with slow work finished outside, on the first day of and the day before the Throughput window, and two voters reading the same Team, today 7 October 2026
+</code></pre>
+
+<pre><code>Its 10 rows pass under their unchanged names without a web host: the SLE of 7 days at 85%, the fallback of 12 days at 85% (60 days when slow work finished on the window&#x27;s first day), and no number when nothing finished inside the window; both voters see the same fallback
+</code></pre>
+
+<pre><code>A maintainer sees the yardstick rules proven at the port, faster, with no test lost
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickScenarios.cs</p>
+
+<pre><code>The finished-work Given counted days back from a fixed 7 October while the clock read another day, so the window edges shift together and the edge rows still agree; held off by setting today explicitly in every Given and by the deliberate break of a one-day-wider window turning the day-before row red
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On the wire, save a Team&#x27;s SLE through the Team settings (set 75% within 10 days, then clear it) and read the Refinement tab before and after; also read the tab of a Team with no SLE and nothing finished
+</code></pre>
+
+<pre><code>The 2 rows Setting_an_SLE_replaces_the_fallback_on_the_next_read and Clearing_the_SLE_brings_the_fallback_back_on_the_next_read pass under their names in the wire class: the next read answers the saved SLE or the 12-day fallback, and the same Work Items stay listed; the new row shows the source as the text Unavailable with days and probability sent as null
+</code></pre>
+
+<pre><code>A browser keeps reading the yardstick names and texts it reads today, and an SLE an admin saves is what voters answer against next
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Yardstick.cs</p>
+
+<pre><code>The yardstick days or probability left out of the answer when there is no number instead of sent as null; held off by asserting the JSON kind Null, not a null read of a missing member
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the host-use guard after the yardstick class moves
+</code></pre>
+
+<pre><code>The guard passes and its list of host users still to move no longer names the yardstick class; the list gains no line
+</code></pre>
+
+<pre><code>A maintainer sees one class fewer starting a web host
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs</p>
+
+<pre><code>The class line stays on the list while the class no longer starts a host; the guard asks for the line to go in the same commit
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the port-Givens guard over the port classes and its planted classes, including a planted port class that adds to a Team&#x27;s To Do states, sets a nested setting reachable from a Team, or writes a guarded table through the database context
+</code></pre>
+
+<pre><code>No real port class writes Team set-up outside the port builder, and each planted case, the To Do states addition among them, is reported by the guard
+</code></pre>
+
+<pre><code>A maintainer knows a port scenario cannot pass on a Team no settings save would produce
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs</p>
+
+<pre><code>The guard reads only direct setters on Team and misses collection mutators and nested setters; held off by one planted case per gap
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the settings-parity rows of the Refinement wire contract: a Team set up by the port builder against one saved through the settings form, compared on SLE probability and range, states and Throughput history as well as how it refines
+</code></pre>
+
+<pre><code>The parity rows pass and compare every public property of those Team fields, so a field the builder sets otherwise than the save turns them red
+</code></pre>
+
+<pre><code>A maintainer knows the port builder stores what the settings save stores
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.cs</p>
+
+<pre><code>Comparison through a JSON serialisation that skips ignored members; held off by a public-property dump
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Compare the sorted test ids of the yardstick class and the wire class after the move with the ids recorded before it
+</code></pre>
+
+<pre><code>The only differences are the 2 rows that moved to the wire class and the 1 new wire row
+</code></pre>
+
+<pre><code>A maintainer sees no test lost or renamed by the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Checked by comparing the run&#x27;s id list with the recorded before list (design verification step 2), not by a test
+</code></pre>
+
+<p>crafter and reviewer</p>
 
 <h2>Expectations</h2>
 

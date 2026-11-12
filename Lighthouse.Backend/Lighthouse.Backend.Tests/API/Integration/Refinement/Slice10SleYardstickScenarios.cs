@@ -9,30 +9,33 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// that it is a fallback. When the Team has no SLE and nothing finished in that window, the tab says
     /// there is no number. The server answers facts; the browser writes the sentence.
     ///
-    /// Driving port: the Refinement tab's read. Step definitions live in Slice10SleYardstickSpecifications.cs.
+    /// Driven at the application-service port: the Refinement tab's query, read as the browser receives it,
+    /// with the Team set up through the port's one builder. That an SLE saved through the Team settings
+    /// changes the next read is a matter of the settings route, so it is pinned on the wire contract of the
+    /// Refinement tab. Step definitions live in Slice10SleYardstickSpecifications.cs.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5510-5881-refinement")]
     [Category("slice-10")]
-    public partial class Slice10SleYardstickTest : SizingVotesAcceptanceTest
+    public partial class Slice10SleYardstickTest : RefinementAtThePortTest
     {
         [Test]
-        public async Task The_Teams_SLE_is_the_yardstick_every_voter_answers_against()
+        public void The_Teams_SLE_is_the_yardstick_every_voter_answers_against()
         {
-            var gravity = await GivenGravityExpects85PercentWithinSevenDays();
+            var gravity = GivenGravityExpects85PercentWithinSevenDays();
 
-            var tab = await WhenJonasOpensTheRefinementTab(gravity);
+            var tab = WhenJonasOpensTheRefinementTab(gravity);
 
             ThenTheYardstickIs(tab, TheSle, days: 7, probability: 85);
         }
 
         [Test]
-        public async Task Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time()
+        public void Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time()
         {
-            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            var meridian = GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
 
-            var tab = await WhenJonasOpensTheRefinementTab(meridian);
+            var tab = WhenJonasOpensTheRefinementTab(meridian);
 
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
@@ -40,56 +43,56 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // The fallback samples the same window the Team's Throughput does, so old slow work does not
         // inflate the question.
         [Test]
-        public async Task Work_Items_finished_before_the_Throughput_window_do_not_move_the_fallback()
+        public void Work_Items_finished_before_the_Throughput_window_do_not_move_the_fallback()
         {
-            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            var meridian = GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
             AndFiveVerySlowWorkItemsFinishedFortyDaysAgo(meridian);
 
-            var tab = await WhenJonasOpensTheRefinementTab(meridian);
+            var tab = WhenJonasOpensTheRefinementTab(meridian);
 
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
         // The window counts today, so its first day is one day short of the Throughput history ago.
         [Test]
-        public async Task Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback()
+        public void Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback()
         {
-            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            var meridian = GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
             AndFiveVerySlowWorkItemsFinishedOnTheFirstDayOfTheThroughputWindow(meridian);
 
-            var tab = await WhenJonasOpensTheRefinementTab(meridian);
+            var tab = WhenJonasOpensTheRefinementTab(meridian);
 
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 60, probability: 85);
         }
 
         [Test]
-        public async Task Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback()
+        public void Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback()
         {
-            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            var meridian = GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
             AndFiveVerySlowWorkItemsFinishedTheDayBeforeTheThroughputWindowOpens(meridian);
 
-            var tab = await WhenJonasOpensTheRefinementTab(meridian);
+            var tab = WhenJonasOpensTheRefinementTab(meridian);
 
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
         [Test]
-        public async Task No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number()
+        public void No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number()
         {
-            var equinox = await GivenEquinoxHasNoSleAndHasFinishedNothing();
+            var equinox = GivenEquinoxHasNoSleAndHasFinishedNothing();
 
-            var tab = await WhenJonasOpensTheRefinementTab(equinox);
+            var tab = WhenJonasOpensTheRefinementTab(equinox);
 
             ThenTheYardstickIs(tab, Unavailable, days: null, probability: null);
         }
 
         [Test]
-        public async Task Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished()
+        public void Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished()
         {
-            var equinox = await GivenEquinoxHasNoSleAndHasFinishedNothing();
+            var equinox = GivenEquinoxHasNoSleAndHasFinishedNothing();
             AndFiveVerySlowWorkItemsFinishedFortyDaysAgo(equinox);
 
-            var tab = await WhenJonasOpensTheRefinementTab(equinox);
+            var tab = WhenJonasOpensTheRefinementTab(equinox);
 
             ThenTheYardstickIs(tab, Unavailable, days: null, probability: null);
         }
@@ -97,51 +100,23 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         // An SLE needs both a probability and a number of days; either one alone is not a promise.
         [TestCase(85, 0)]
         [TestCase(0, 7)]
-        public async Task Half_an_SLE_is_no_SLE_and_the_fallback_is_used(int probability, int days)
+        public void Half_an_SLE_is_no_SLE_and_the_fallback_is_used(int probability, int days)
         {
-            var meridian = await GivenMeridianWithAHalfSetSleAndCycleTimes85thPercentileOfTwelveDays(probability, days);
+            var meridian = GivenMeridianWithAHalfSetSleAndCycleTimes85thPercentileOfTwelveDays(probability, days);
 
-            var tab = await WhenJonasOpensTheRefinementTab(meridian);
+            var tab = WhenJonasOpensTheRefinementTab(meridian);
 
             ThenTheYardstickIs(tab, TheCycleTimeFallback, days: 12, probability: 85);
         }
 
-        [Test]
-        public async Task Setting_an_SLE_replaces_the_fallback_on_the_next_read()
-        {
-            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
-            var before = await WhenJonasOpensTheRefinementTab(meridian);
-            ThenTheYardstickIs(before, TheCycleTimeFallback, days: 12, probability: 85);
-
-            var withSle = await WhenTheAdminSetsTheSleTo75PercentWithinTenDays(meridian);
-            var after = await WhenJonasOpensTheRefinementTab(withSle);
-
-            ThenTheYardstickIs(after, TheSle, days: 10, probability: 75);
-            ThenTheSameWorkItemsAreListed(before, after);
-        }
-
-        [Test]
-        public async Task Clearing_the_SLE_brings_the_fallback_back_on_the_next_read()
-        {
-            var meridian = await GivenMeridianExpects75PercentWithinTenDaysAndItsCycleTimes85thPercentileIsTwelveDays();
-            var before = await WhenJonasOpensTheRefinementTab(meridian);
-            ThenTheYardstickIs(before, TheSle, days: 10, probability: 75);
-
-            var withoutSle = await WhenTheAdminClearsTheSle(meridian);
-            var after = await WhenJonasOpensTheRefinementTab(withoutSle);
-
-            ThenTheYardstickIs(after, TheCycleTimeFallback, days: 12, probability: 85);
-            ThenTheSameWorkItemsAreListed(before, after);
-        }
-
         // The question is the same whoever asks: the yardstick is the Team's, not the reader's.
         [Test]
-        public async Task Every_voter_is_shown_the_same_yardstick()
+        public void Every_voter_is_shown_the_same_yardstick()
         {
-            var meridian = await GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
+            var meridian = GivenMeridianHasNoSleAndItsCycleTimes85thPercentileIsTwelveDays();
 
-            var jonasSees = await WhenJonasOpensTheRefinementTab(meridian);
-            var anaSees = await WhenAnaOpensTheRefinementTab(meridian);
+            var jonasSees = WhenJonasOpensTheRefinementTab(meridian);
+            var anaSees = WhenAnaOpensTheRefinementTab(meridian);
 
             ThenBothAreShownTheSameYardstick(jonasSees, anaSees);
         }
