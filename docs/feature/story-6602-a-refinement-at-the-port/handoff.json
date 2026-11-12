@@ -192,6 +192,32 @@
 "expected": "F200",
 "stimulus": "F199",
 "user_result": "F201"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F211",
+"test": "Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_setting_no_port_scenario_was_given_fails_loud_naming_the_setting"
+},
+"expected": "F209",
+"stimulus": "F208",
+"user_result": "F210"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F215",
+"test": "Lighthouse.Backend.Tests.Contracts.Refinement.RefinementWithoutSignInWireContractTest.A_port_scenario_runs_with_sign_in_as_an_instance_without_sign_in_has_it"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
 }
 ]
 },
@@ -199,7 +225,7 @@
 "B": 1,
 "D": 15,
 "E": 4,
-"F": 207,
+"F": 215,
 "K": 10,
 "L": 3,
 "P": 4,
@@ -1119,7 +1145,15 @@
 "F205": "Gains RefinesOnTuesdays and RefinesInBacklog (both added to EveryInput) and ATeamWhoseBacklogHolds; existing members unchanged, so S1 port classes and the wire class compile and behave as before; the settings-save parity row now also covers the two new inputs",
 "F206": "Adds a Gravity Given with one more Backlog Work Item whose reference holds a slash (REQ/12, REQ/12#3), which the two slash-reference log rows moved to the wire class set up; the wire class has no SeedWorkItem and the builder is the only writer of Team set-up",
 "F207": "Gains a Gravity Given with one extra Backlog Work Item whose reference holds a slash, for the two slash-reference log rows in RefinementWithoutSignInWireContractTest.Log.cs; existing members unchanged",
+"F208": "The settings stand-in a port scenario is given, exactly as the port fixture registers it, is asked for a setting no scenario stubbed",
+"F209": "The read throws, and the failure names the setting read; it never hands back an empty default",
 "F21": "RefinementPortGivens is the only writer of Team set-up: Work Item and finished-work Givens (TheTrackerHolds, TheTeamFinishedWorkEveryDay), the 5-Work-Item Gravity Given and GravitysStates move into it from RefinementAtThePortTest and the wire class. The port base gets ISizingLogCommands (scoped, as on the host) and voter, tab and log readers.",
+"F210": "A port scenario that reads an instance setting nobody gave it fails loud instead of passing on a value no seeded database holds",
+"F211": "the stand-in were strict for this one setting only and lenient for another unstubbed setting a scenario reads",
+"F212": "The port fixture's sign-in answer is compared with what this instance without sign-in answers, and a planted fixture answer saying sign-in is on is put through the same comparison",
+"F213": "The port answer equals the instance's answer in mode and misconfiguration message; the planted answer is found to differ",
+"F214": "A port scenario cannot pass on a sign-in mode an instance without sign-in does not have, and the check that says so can fail",
+"F215": "the comparison only looked at a property both answers share by chance; the planted row A_port_fixture_that_says_sign_in_is_on_is_caught_by_the_sign_in_comparison shows it sees the mode",
 "F22": "A moved class keeps its data: Slice10 and Slice12 use a new port Given for the 5-Work-Item Gravity of the vote host (GR-040, GR-058, GR-051, GR-054, GR-073, GR-074), not the 7-item base Given, which adds GR-059.",
 "F23": "Port steps obtain a voter by VoterIdentityResolver.ForWriteAsync(name, key, none) and then call ISizingLogCommands, as RefinementVotesController does; writing the raw key would let ForTeam miss the voter own vote.",
 "F24": "Port rows read RefinementViewDto and the sizing log built as the controller builds them, as NeedOverOneCycleTest does, so the wire text of enums and dates is the DTO text and string assertions stay. New DTO readers go on the port base as protected members; NeedOverOneCycleSpecifications keeps its private readers.",

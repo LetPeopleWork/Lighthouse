@@ -397,6 +397,66 @@ a fact pinned only by the moved manual-forecast row drifted, which the wire row 
 
 None.
 
+##### Covers
+
+P3
+
+```text
+The settings stand-in a port scenario is given, exactly as the port fixture registers it, is asked for a setting no scenario stubbed
+```
+
+```text
+The read throws, and the failure names the setting read; it never hands back an empty default
+```
+
+```text
+A port scenario that reads an instance setting nobody gave it fails loud instead of passing on a value no seeded database holds
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Contracts\.Refinement\.RefinementWithoutSignInWireContractTest\.A\_setting\_no\_port\_scenario\_was\_given\_fails\_loud\_naming\_the\_setting
+
+```text
+the stand-in were strict for this one setting only and lenient for another unstubbed setting a scenario reads
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+The port fixture's sign-in answer is compared with what this instance without sign-in answers, and a planted fixture answer saying sign-in is on is put through the same comparison
+```
+
+```text
+The port answer equals the instance's answer in mode and misconfiguration message; the planted answer is found to differ
+```
+
+```text
+A port scenario cannot pass on a sign-in mode an instance without sign-in does not have, and the check that says so can fail
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\.Tests\.Contracts\.Refinement\.RefinementWithoutSignInWireContractTest\.A\_port\_scenario\_runs\_with\_sign\_in\_as\_an\_instance\_without\_sign\_in\_has\_it
+
+```text
+the comparison only looked at a property both answers share by chance; the planted row A_port_fixture_that_says_sign_in_is_on_is_caught_by_the_sign_in_comparison shows it sees the mode
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

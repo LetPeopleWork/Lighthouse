@@ -3,9 +3,12 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Tests.API.Integration.Refinement;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.Contracts.Refinement
@@ -13,7 +16,8 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
     /// <summary>
     /// The need on the wire: that the range the Refinement tab sends is what the manual forecast route answers
     /// for the same working days, and the texts the browser reads when there is no number. How the need is
-    /// worked out is asserted at the port.
+    /// worked out is asserted at the port. Also held here: the port fixture's stand-ins for the instance
+    /// settings and for sign-in must not let a scenario pass on something no instance without sign-in has.
     /// </summary>
     public partial class RefinementWithoutSignInWireContractTest
     {
@@ -46,6 +50,44 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             ThenEachNeedNamesItsReasonAsText(littleHistorysNeed, noRefinementStatesNeed);
         }
 
+        // --- What the port fixture stands in for ---
+
+        // A port scenario answers the instance settings from a stand-in. A setting no scenario was given must
+        // fail the scenario that reads it, naming the setting, instead of handing back an empty default that no
+        // seeded database holds.
+        [Test]
+        public void A_setting_no_port_scenario_was_given_fails_loud_naming_the_setting()
+        {
+            using var settings = GivenThePortFixturesSettingsStandIn();
+
+            var failure = WhenASettingNoScenarioWasGivenIsRead(settings.StandIn);
+
+            ThenTheReadFailsNaming(failure, nameof(IAppSettingService.GetSurveyNudgeNextEligibleAt));
+        }
+
+        // A port scenario runs with sign-in as its fixture says. That must be what an instance without sign-in
+        // answers, or a scenario could pass on a sign-in mode no such instance has.
+        [Test]
+        public void A_port_scenario_runs_with_sign_in_as_an_instance_without_sign_in_has_it()
+        {
+            var portAnswer = GivenWhatThePortFixtureAnswersForSignIn();
+
+            var hostAnswer = WhenThisInstanceWithoutSignInIsAskedWhetherSignInIsOn();
+
+            ThenTheSignInAnswersAgree(portAnswer, hostAnswer);
+        }
+
+        // The comparison above must be able to fail: a fixture that said sign-in is on is caught by it.
+        [Test]
+        public void A_port_fixture_that_says_sign_in_is_on_is_caught_by_the_sign_in_comparison()
+        {
+            var plantedAnswer = GivenAPortFixtureThatSaysSignInIsOn();
+
+            var hostAnswer = WhenThisInstanceWithoutSignInIsAskedWhetherSignInIsOn();
+
+            ThenTheSignInComparisonFindsTheyDiffer(plantedAnswer, hostAnswer);
+        }
+
         // --- Given ---
 
         /// <summary>Gravity finished two Work Items on each day of its Throughput window, today included, and refines on Tuesdays.</summary>
@@ -74,6 +116,23 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             return (gravity, zenith);
         }
 
+        /// <summary>The settings stand-in a port scenario is given, exactly as the port fixture registers it.</summary>
+        private static PortSettings GivenThePortFixturesSettingsStandIn()
+        {
+            var services = RefinementAtThePortTest.WhatItRegisters.BuildServiceProvider();
+            var scope = services.CreateScope();
+            return new PortSettings(services, scope, scope.ServiceProvider.GetRequiredService<IAppSettingService>());
+        }
+
+        private static RuntimeAuthStatus GivenWhatThePortFixtureAnswersForSignIn()
+        {
+            using var services = RefinementAtThePortTest.WhatItRegisters.BuildServiceProvider();
+            using var scope = services.CreateScope();
+            return scope.ServiceProvider.GetRequiredService<IAuthModeResolver>().Resolve();
+        }
+
+        private static RuntimeAuthStatus GivenAPortFixtureThatSaysSignInIsOn() => new() { Mode = AuthMode.Enabled };
+
         private static FinishedWorkItem[] FinishedEveryDay(int perDay, int days)
             => [.. Enumerable.Range(0, days).SelectMany(daysAgo => Enumerable.Range(0, perDay)
                 .Select(index => new FinishedWorkItem($"DONE-{daysAgo}-{index}", CycleTimeDays: 1, FinishedDaysAgo: daysAgo)))];
@@ -82,6 +141,25 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
 
         private async Task<(JsonElement First, JsonElement Second)> WhenTheNeedOfBothIsRead(int first, int second)
             => (await TheNeedOnTheRefinementTabOf(first), await TheNeedOnTheRefinementTabOf(second));
+
+        private static MockException? WhenASettingNoScenarioWasGivenIsRead(IAppSettingService standIn)
+        {
+            try
+            {
+                standIn.GetSurveyNudgeNextEligibleAt();
+                return null;
+            }
+            catch (MockException failure)
+            {
+                return failure;
+            }
+        }
+
+        private RuntimeAuthStatus WhenThisInstanceWithoutSignInIsAskedWhetherSignInIsOn()
+        {
+            using var scope = NewScope();
+            return scope.ServiceProvider.GetRequiredService<IAuthModeResolver>().Resolve();
+        }
 
         // --- Then ---
 
@@ -119,6 +197,23 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             }
         }
 
+        private static void ThenTheReadFailsNaming(MockException? failure, string setting)
+            => Assert.That(failure?.Message ?? "no failure: the stand-in answered with a default", Does.Contain(setting),
+                $"the port fixture's settings stand-in answered {setting}, which no scenario gave it, with a default instead of failing; "
+                + "make the stand-in strict, so that a setting a scenario reads but nobody stubbed fails loud and names the setting");
+
+        private static void ThenTheSignInAnswersAgree(RuntimeAuthStatus portAnswer, RuntimeAuthStatus hostAnswer)
+            => Assert.That(SignInAnswersAgree(portAnswer, hostAnswer), Is.True,
+                $"the port fixture answers sign-in as {portAnswer}, but an instance without sign-in answers {hostAnswer}; "
+                + "the port fixture's sign-in stand-in must answer what such an instance answers");
+
+        private static void ThenTheSignInComparisonFindsTheyDiffer(RuntimeAuthStatus plantedAnswer, RuntimeAuthStatus hostAnswer)
+            => Assert.That(SignInAnswersAgree(plantedAnswer, hostAnswer), Is.False,
+                $"a port fixture answering {plantedAnswer} passed the comparison with an instance answering {hostAnswer}, so the comparison cannot fail");
+
+        /// <summary>Both the mode and any misconfiguration message must be the same.</summary>
+        private static bool SignInAnswersAgree(RuntimeAuthStatus portAnswer, RuntimeAuthStatus hostAnswer) => portAnswer == hostAnswer;
+
         private DateOnly TheInstancesToday()
         {
             using var scope = NewScope();
@@ -145,5 +240,17 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
                 : null;
 
         private static string DayText(DateOnly day) => day.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        /// <summary>The port fixture's own services, kept alive while its settings stand-in is read.</summary>
+        private sealed class PortSettings(ServiceProvider services, IServiceScope scope, IAppSettingService standIn) : IDisposable
+        {
+            public IAppSettingService StandIn { get; } = standIn;
+
+            public void Dispose()
+            {
+                scope.Dispose();
+                services.Dispose();
+            }
+        }
     }
 }
