@@ -1,0 +1,2085 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: story-6393-wide-units-a</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Paradigm object_oriented as the project rule; the code is React function components and hooks, so no class is added: the cohesive owner of each decision is a module or a hook, never the page. Behaviour-free split by responsibility; the only behaviour change is the six member failure texts in S5.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Formal verification: no Quint, TLA+ or Agda model is written and none is claimed. A file split and one hook extraction change no state, transition, ordering or concurrency; the guarantees are checked by running code: test ids and outcomes equal before and after, rendered output equal, effect dependency arrays and hook call order equal in the diff, and two source-scan enforcement tests that refuse a planted case. Types are checked by tsc in pnpm build.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Size rule carrier: src/fileSize.enforcement.test.ts scans production .ts/.tsx under src (not *.test.ts(x), not src/tests, no TestKit or Fixture in the name, not *.d.ts), counting line terminators like wc -l; a file over 1000 lines offends. The offender list lives in src/fileSize.offenders.ts (name plus plain-words reason), owned by the crafter, so removing an entry in S2 and S4 never edits S1&#x27;s oracle. It fails both ways: a new offender not listed, and a listed file at or under the line. The list starts with BaseMetricsView.tsx and ragRules.ts and only shrinks.
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>No barrel and no re-export from any old file for moved symbols; importers change their import. Moved tests travel with the code they cover and keep their rows unmodified.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Failure carriers: the size rule and the access guard report offending file paths in the failing assertion; the hook reports member failures as an error string state (one owner, useScopedAccess) read by the Access tab; no new error type.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Input bound: the line limit is 1000, a file of more than 1000 lines offends; the offender list is not extended, only shortened.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>Behaviour-free: existing tests stay green unmodified apart from tests that move with their code; effect dependency arrays, hook call order and useCallback dependencies are copied as they are. Default Team and Portfolio terms give today&#x27;s texts word for word.
+</code></pre>
+
+<h4>K3</h4>
+
+<pre><code>S5 copy is approved text: Failed to load {team} members. / Failed to update {team} member role. / Failed to remove {team} member., same for {portfolio}; the term is getTerm(TERMINOLOGY_KEYS.TEAM or PORTFOLIO) lower-cased and read when the failure happens, not at mount.
+</code></pre>
+
+<h4>K4</h4>
+
+<pre><code>Test rules: the test-writing skill and its frontend half win over nWave&#x27;s timing and PBT density; no nWave scenario tags in code; no broad property tests (finite example rows only); the new enforcement tests walk about 700 files, well inside the default per-test budget, no derogation.
+</code></pre>
+
+<h4>K5</h4>
+
+<pre><code>One oracle file per slice; an earlier slice&#x27;s oracle and support files are never edited by a later slice.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Every caller and callee is inside the one frontend deployable and changes in the same commit; the primary oracles cover them.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>React Testing Library render of the component, renderHook of the hook with its providers, pure modules called as functions, and source-scan enforcement tests over src
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<p>None.</p>
+
+<pre><code>Pages and views depend on extracted hooks and pure modules; extracted modules never import their former parent; useScopedAccess depends on rbacService from ApiServiceContext and useTerminology only; no barrel.
+</code></pre>
+
+<h4>Failures</h4>
+
+<p>None.</p>
+
+<h3>Observations</h3>
+
+<p>None.</p>
+
+<h3>Equality</h3>
+
+<p>None.</p>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<p>None.</p>
+
+<h3>Claims</h3>
+
+<p>None.</p>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>A production file of at most 1000 lines, or a file over 1000 lines named on the offender list
+</code></pre>
+
+<p>src/fileSize.offenders.ts</p>
+
+<p>Excluded</p>
+
+<pre><code>A new production file over 1000 lines that is not listed; a listed file at or under 1000 lines that is still listed
+</code></pre>
+
+<p>src/fileSize.enforcement.test.ts</p>
+
+<p>Excluded</p>
+
+<pre><code>A page calling rbacService member or group-mapping methods directly; my-summary fetched outside RbacService.ts
+</code></pre>
+
+<p>src/rbacAccess.enforcement.test.ts</p>
+
+<p>Unknown</p>
+
+<pre><code>Cohesion of a file under the line is not judged; the check sees length only
+</code></pre>
+
+<p>reviewer</p>
+
+<h3>Models</h3>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>size rule and access guard
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Exclusion is a source scan executed by the host; no formal model is claimed; planted-project scenarios are the falsifiers.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>useScopedAccess and moved modules
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>input scope kind and id -&gt; useScopedAccess -&gt; TeamDetail or PortfolioDetail Access tab -&gt; ScopedMembershipManager is acyclic; moved modules are called by their former parent.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>useScopedAccess and moved modules
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Reached through the rendered Access tab and the page components; the pure modules through their function exports.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>all slices
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: no scheduler, fairness or progress claim; the sets of states and effects are the same before and after.
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>A moved effect loses an item in its dependency array or two effects swap order
+</code></pre>
+
+<pre><code>No refetch loop and no stale scope
+</code></pre>
+
+<pre><code>Nothing
+</code></pre>
+
+<pre><code>Changed effect dependencies or hook call order
+</code></pre>
+
+<pre><code>Read line by line in review; S1-S4 move only pure code and the form; effects stay in their components
+</code></pre>
+
+<p>crafter</p>
+
+<h4>Y2</h4>
+
+<p>Bypass</p>
+
+<pre><code>ctx_patch writes REDACTED into moved type= lines
+</code></pre>
+
+<pre><code>Password fields stay password
+</code></pre>
+
+<pre><code>Nothing
+</code></pre>
+
+<pre><code>REDACTED text in source
+</code></pre>
+
+<pre><code>git grep REDACTED gate after each edit; ConnectionDefaults Playwright spec
+</code></pre>
+
+<p>crafter</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>The renamed term is read before terminology loads
+</code></pre>
+
+<pre><code>Failure text uses the configured word at failure time
+</code></pre>
+
+<pre><code>Default word before terminology is ready
+</code></pre>
+
+<pre><code>Term read once at mount
+</code></pre>
+
+<pre><code>Hook reads getTerm when the failure happens; one row where the term arrives after mount
+</code></pre>
+
+<p>crafter</p>
+
+<h4>Y4</h4>
+
+<p>Stressor</p>
+
+<pre><code>A fourth file crosses 1000 lines during the work, or the scan misses a folder
+</code></pre>
+
+<pre><code>The rule names every offender
+</code></pre>
+
+<pre><code>Nothing
+</code></pre>
+
+<pre><code>Silent none from an unreadable folder
+</code></pre>
+
+<pre><code>Scenario with a deep planted file and a loud failure on an unreadable folder; the fix is a split, not a list entry
+</code></pre>
+
+<p>acceptance-designer</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Parent keeps the component and the two layer-leak imports; sections move out.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ConnectionDefaultsSection.tsx</p>
+
+<p>Create</p>
+
+<pre><code>Defaults section moved out of the parent.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts</p>
+
+<p>Create</p>
+
+<pre><code>Copy and pure form helpers moved out.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/OAuthPremiumNotice.tsx</p>
+
+<p>Create</p>
+
+<pre><code>OAuth upgrade notice with the settings/license link.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx</p>
+
+<p>Create</p>
+
+<pre><code>Authentication section of the form.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/useConnectionSave.ts</p>
+
+<p>Create</p>
+
+<pre><code>Validate, 409 handling and update question of the save flow.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts</p>
+
+<p>Create</p>
+
+<pre><code>Offender list by name with reasons; read by the size rule.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test src/components/Common/Connection src/pages/Connections src/layerBoundaries.enforcement.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run the size rule over the source tree and over planted temp projects (1001 lines, 1000 lines, a 1500-line .test.tsx, src/tests/Kit.tsx, a listed file that is now short, an unreadable folder); run the existing ModifyConnectionSettings, whatASaveAsks, EditConnection and CreateConnectionWizard tests against the split form.
+</code></pre>
+
+<pre><code>The scan reports 1001 lines and no more, does not report 1000, a test file or src/tests, reports a stale list entry, fails loudly on an unreadable folder, and lists exactly BaseMetricsView.tsx and ragRules.ts for the real tree; the existing connection form tests pass unmodified.
+</code></pre>
+
+<pre><code>Limit 1000 changed to 1100 turns the 1001-line scenario red; removing the link text in OAuthPremiumNotice.tsx, returning the 409 copy for every save error in useConnectionSave.ts, or dropping readOnly on the OAuth locked fields in ConnectionAuthSection.tsx turns the named existing rows red.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>ModifyConnectionSettings</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:302</p>
+
+<p>Extend</p>
+
+<pre><code>Component stays the owner of the form; only responsibilities with their own reason to change leave.
+</code></pre>
+
+<p>compareWithAllowList</p>
+
+<p>Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts:1</p>
+
+<p>Reuse</p>
+
+<pre><code>The size rule reuses the list-by-name enforcement shape; no shared import, the small helpers are copied.
+</code></pre>
+
+<p>fileSizeOffenders</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Nothing owns file size; Fallow has no size rule and a baseline count would hide which file was fixed.
+</code></pre>
+
+<p>fieldsChangedSince</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/whatASaveAsks.ts:30</p>
+
+<p>Reuse</p>
+
+<pre><code>Already owns the update-question decision rules; useConnectionSave calls it unchanged.
+</code></pre>
+
+<p>ConnectionDefaultsSection</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ConnectionDefaultsSection.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file holds the section moved unchanged from the parent; no other file owns it.
+</code></pre>
+
+<p>CONNECTION_COPY</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file holds the copy and pure helpers moved unchanged from the parent.
+</code></pre>
+
+<p>OAuthPremiumNotice</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/OAuthPremiumNotice.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file holds the upgrade notice moved unchanged, with the one settings/license link.
+</code></pre>
+
+<p>ConnectionAuthSection</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file holds the authentication section moved unchanged.
+</code></pre>
+
+<p>useConnectionSave</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/useConnectionSave.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New hook holds the save flow moved unchanged; no existing hook owns it.
+</code></pre>
+
+<p>TOO_WIDE_TODAY</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No candidate owns file size; see the size rule decision.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:302</p>
+
+<p>Changed</p>
+
+<pre><code>Sections and the save flow move to new files; props and export unchanged.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Connections/EditConnection.tsx:137</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Imports the unchanged export; return path stays here.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Renders the parent component; unmodified.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Both leak imports stay in the parent file, so the allow-list does not change.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ConnectionDefaultsSection.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Declaration moves here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Declarations move here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/OAuthPremiumNotice.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Declaration moves here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Declaration moves here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/useConnectionSave.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Save flow moves here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New list read by the size rule.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>ModifyConnectionSettings props and default export</p>
+
+<p>Lighthouse.Frontend/src/pages/Connections/EditConnection.tsx:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Props and export unchanged.
+</code></pre>
+
+<p>ModifyConnectionSettings props and default export</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:302</p>
+
+<p>Producer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Props and export unchanged.
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is the behaviour-free move itself; no behaviour change follows in S1 that a separate preserving move would ease.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T2</h6>
+
+<pre><code>No production frontend file is over 1000 lines unless named on the offender list; the list only shrinks; a stale entry fails
+</code></pre>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts</p>
+
+<p>Create</p>
+
+<pre><code>WIP, Blocked, Stale, FeaturesWorkedOn, Predictability, FlowEfficiency rules.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts</p>
+
+<p>Create</p>
+
+<pre><code>SleRisk, CycleTimePercentiles, TotalWorkItemAge, scatterplot, age chart, age over time, age percentiles, cumulative state time rules.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts</p>
+
+<p>Create</p>
+
+<pre><code>StartedVsClosed, Throughput, WipOverTime, SimplifiedCfd, WorkDistribution, FeatureSize, EstimationVsCycleTime, LoadBalance, Arrivals, Pbc rules.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts</p>
+
+<p>Create</p>
+
+<pre><code>RagResult and RagTerms shared by the three families.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Emptied and deleted once its functions have moved; no barrel is left.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Import of RagTerms points at ragTypes.ts; only edit it needs.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Imports point at the family modules.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Delete the ragRules.ts entry.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts
+pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Call each rag rule function from its family module with the existing rows (the describe blocks of ragRules.test.ts, moved by family), and run blockedMaxAgeRag and BaseMetricsView tests.
+</code></pre>
+
+<pre><code>Every rule gives the same answer as before; the moved rows pass unmodified; ragRules.ts is gone, no file of the three families exceeds 1000 lines, and the offender list no longer names ragRules.ts.
+</code></pre>
+
+<pre><code>Swapping two bands in computeCycleTimePercentilesRag after the move turns its row in ragRulesTimeAndAge.test.ts red; making RagTerms miss blocked in ragTypes.ts fails tsc in pnpm build; leaving ragRules.ts listed fails the size rule as stale.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>RagTerms</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:6</p>
+
+<p>Extend</p>
+
+<pre><code>Type moves unchanged to ragTypes.ts so the three family files share it without importing each other.
+</code></pre>
+
+<p>computeWipOverviewRag</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New family file holds the overview rules moved unchanged.
+</code></pre>
+
+<p>BlockedRagResult</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts:11</p>
+
+<p>Extend</p>
+
+<pre><code>Only its RagTerms type import changes.
+</code></pre>
+
+<p>computeWipOverviewRag</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:19</p>
+
+<p>Replace</p>
+
+<pre><code>31 independent pure functions with no shared table; split by metric family, no barrel.
+</code></pre>
+
+<p>computeBlockedOverviewRag</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:2</p>
+
+<p>CreateNew</p>
+
+<pre><code>Same family file, second rule moved unchanged.
+</code></pre>
+
+<p>computeCycleTimePercentilesRag</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New family file holds the time and age rules moved unchanged.
+</code></pre>
+
+<p>computeThroughputRag</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New family file holds the volume and flow rules moved unchanged.
+</code></pre>
+
+<p>RagTerms</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New types file; the type moves unchanged so the families share it.
+</code></pre>
+
+<p>BaseMetricsView</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+
+<p>Extend</p>
+
+<pre><code>Only its imports change.
+</code></pre>
+
+<p>TOO_WIDE_TODAY</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>List created in the first slice; its entry is deleted here.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Functions move to three family files; behaviour identical.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Import lines point at the family modules.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>RagTerms import path.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.test.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Describe blocks move to the matching family test files, rows unmodified.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Type import of RagTerms points at ragTypes.ts.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Functions move here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Functions move here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Functions move here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Types move here; shape identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>ragRules.ts entry deleted.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>RagResult and RagTerms types</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:1</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Declared once in ragTypes.ts.
+</code></pre>
+
+<p>RagResult and RagTerms types</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Imports from the family modules and ragTypes.ts.
+</code></pre>
+
+<p>RagResult and RagTerms types</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Imports RagTerms from ragTypes.ts.
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is the behaviour-free move itself; no behaviour change follows.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T3</h6>
+
+<pre><code>ragRules.ts leaves the offender list in the commit that brings it under 1000 lines; the list does not grow
+</code></pre>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.ts</p>
+
+<p>Create</p>
+
+<pre><code>buildWorkItemLookup moved out.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetFooters.ts</p>
+
+<p>Create</p>
+
+<pre><code>buildWidgetFooters moved out.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts</p>
+
+<p>Create</p>
+
+<pre><code>buildViewData moved out.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Imports the three modules; no re-export for tests.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts
+pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Call buildViewData, buildWorkItemLookup and the footer builders as functions with the existing DOM-free rows (the 390 lines of BaseMetricsView.test.tsx moved with their code), and render the metrics view through its existing test files.
+</code></pre>
+
+<pre><code>Every builder returns what it returned before; the moved rows pass unmodified; the metrics view tests pass with no change.
+</code></pre>
+
+<pre><code>Dropping sleRiskColumn from inFlight in widgetViewData.ts turns the which-lists-carry-the-risk-column row red; letting a Feature overwrite a Team Work Item in workItemLookup.ts turns the ownerKind team row red; swapping amber and red thresholds in widgetFooters.ts turns the widget-rag-aging amber row in BaseMetricsView.test.tsx red.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>buildViewData</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:593</p>
+
+<p>Extend</p>
+
+<pre><code>Existing pure builder gains its own module; same function, same export name.
+</code></pre>
+
+<p>buildWorkItemLookup</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:210</p>
+
+<p>Extend</p>
+
+<pre><code>Existing pure builder gains its own module.
+</code></pre>
+
+<p>buildWidgetFooters</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing pure builder gains its own module.
+</code></pre>
+
+<p>buildWorkItemLookup</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New module holds the builder moved unchanged.
+</code></pre>
+
+<p>buildWidgetFooters</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetFooters.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New module holds the builder moved unchanged.
+</code></pre>
+
+<p>buildViewData</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New module holds the builder moved unchanged.
+</code></pre>
+
+<p>BaseMetricsView</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+
+<p>Extend</p>
+
+<pre><code>Only its imports change; no re-export.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:210</p>
+
+<p>Migrated</p>
+
+<pre><code>Builders move to three modules; behaviour identical.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx:6970</p>
+
+<p>Migrated</p>
+
+<pre><code>The two DOM-free describes move to workItemLookup.test.ts and widgetViewData.test.ts.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+
+<p>Changed</p>
+
+<pre><code>The component imports the builders instead of declaring them.
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Imports BaseMetricsView component through TeamMetricsView; export unchanged.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Builder moves here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetFooters.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Builder moves here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Builder moves here; behaviour identical.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>buildViewData and buildWorkItemLookup exports</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts:1</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Same signature, new module.
+</code></pre>
+
+<p>buildViewData and buildWorkItemLookup exports</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx:6970</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Rows move to the new test files with the code.
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>The size rule of S1 already covers the length law for every file, including the new modules; this slice adds no dependency or owner law of its own.
+</code></pre>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is the behaviour-free move itself; no behaviour change follows.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx</p>
+
+<p>Create</p>
+
+<pre><code>buildPbcNodes and buildWidgetNodes moved out.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.ts</p>
+
+<p>Create</p>
+
+<pre><code>The four frame helpers moved out.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Imports the two modules; component stays; under 1000 lines.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Delete the BaseMetricsView.tsx entry; the list ends empty.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Call the frame helpers (isPlaced and its siblings) as functions with rows taken from the existing loading test for estimation vs cycle time, render the metrics view through the existing test files, and run the size rule over the tree.
+</code></pre>
+
+<pre><code>The helpers answer as before; the metrics view tests pass unmodified; BaseMetricsView.tsx is at most 1000 lines and is no longer on the offender list; the offender list is empty.
+</code></pre>
+
+<pre><code>Making isPlaced always true in dashboardFrame.ts turns the dashboardFrame row and the loading-test row for estimation vs cycle time red; re-adding a 1001-line file or keeping a stale BaseMetricsView entry fails the size rule naming it.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>buildWidgetNodes</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing pure node builders gain their own module.
+</code></pre>
+
+<p>BaseMetricsView</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+
+<p>Extend</p>
+
+<pre><code>The component keeps state and effects; only pure code leaves.
+</code></pre>
+
+<p>buildWidgetNodes</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New module holds the node builders moved unchanged.
+</code></pre>
+
+<p>isPlaced</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New module holds the frame helpers moved unchanged.
+</code></pre>
+
+<p>TOO_WIDE_TODAY</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>List created in the first slice; its entry is deleted here.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Node builders and frame helpers move; behaviour identical.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Render tests keep their vi.mock module ids; unmodified.
+</code></pre>
+
+<p>config</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Offender list becomes empty.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Node builders move here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.ts:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Frame helpers move here; behaviour identical.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/fileSize.offenders.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>BaseMetricsView.tsx entry deleted; list empty.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Pure code leaves; component under 1000 lines.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>BaseMetricsView component export</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+
+<p>Producer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Props and export unchanged.
+</code></pre>
+
+<p>BaseMetricsView component export</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Through TeamMetricsView and PortfolioMetricsView, unchanged.
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The slice is the behaviour-free move itself; no behaviour change follows.
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T4</h6>
+
+<pre><code>BaseMetricsView.tsx leaves the offender list in the commit that brings it under 1000 lines; the list ends empty and the rule stays
+</code></pre>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S5</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.ts</p>
+
+<p>Create</p>
+
+<pre><code>One owner of members and group mappings for a Team or Portfolio scope, taking the scope kind and id.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Duplicated handlers replaced by the hook.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Duplicated handlers replaced by the hook.
+</code></pre>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail Lighthouse.Frontend/src/pages/Portfolios/Detail Lighthouse.Frontend/src/hooks/useRbac.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>renderHook useScopedAccess for scope Team and for scope Portfolio inside a ready terminology provider and an ApiServiceContext with a fake rbacService: load members, assign, remove, create and remove a group mapping, with each call failing; with default terms and with Team renamed to Squad and Portfolio to Program. Render the Team and Portfolio Access tabs once each with a renamed term and a failing load. Run the access guard over the source tree and a planted temp project.
+</code></pre>
+
+<pre><code>With default terms the six texts equal today&#x27;s (Failed to load team members., Failed to update team member role., Failed to remove team member., and the portfolio ones); with the renamed terms they read Failed to load squad members., Failed to update squad member role., Failed to remove squad member. and the program ones; assign and remove reload the members; the Access tabs show one renamed text on screen; the member and group-mapping methods of rbacService are called only from hooks/useScopedAccess.ts and my-summary appears only in RbacService.ts.
+</code></pre>
+
+<pre><code>Dropping toLowerCase of the term gives Failed to load Squad members.; hard-coding team in the portfolio text fails the Portfolio renamed row; calling upsert without reloading the members fails the assign row; calling rbacService.removeGroupMapping from a page again fails the access guard naming that file; reverting only the text change keeps the default-text rows green and turns the six renamed rows red.
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>Extract useScopedAccess from TeamDetail, then use it in PortfolioDetail, before the failure texts change; makes the copy change one edit in one place.
+</code></pre>
+
+<pre><code>Handlers, reload after assign and remove, and today&#x27;s default failure texts
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>useRbac</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Gating stays there; useScopedAccess does not decide permission.
+</code></pre>
+
+<p>RbacService</p>
+
+<p>Lighthouse.Frontend/src/services/Api/RbacService.ts:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Only owner of my-summary and of the member and group-mapping calls; unchanged.
+</code></pre>
+
+<p>useScopedAccess</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:158</p>
+
+<p>CreateNew</p>
+
+<pre><code>Two pages hold an 86-line copy of the same handlers; no hook owns them. One hook with the scope kind as an argument, no mode flag, since behaviour does not diverge.
+</code></pre>
+
+<p>useScopedAccess</p>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>One owner of the members and group-mapping handlers; see the earlier reuse record.
+</code></pre>
+
+<p>PortfolioDetail</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:122</p>
+
+<p>Extend</p>
+
+<pre><code>Handlers replaced by the hook; page keeps its layout.
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:158</p>
+
+<p>Migrated</p>
+
+<pre><code>Handlers and member state move to the hook.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:122</p>
+
+<p>Migrated</p>
+
+<pre><code>Handlers and member state move to the hook.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Characterization rows added first with default texts; page rows shrink to one wiring row after the hook has its own rows.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Same as the Team Access tab test.
+</code></pre>
+
+<p>test</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx:917</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>createGroupMapping row keeps passing through the page.
+</code></pre>
+
+<p>source</p>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New hook holds the handlers and the six failure texts with the configured terms.
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>useScopedAccess members and group-mapping handlers</p>
+
+<p>Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Single producer of the handlers and the failure texts.
+</code></pre>
+
+<p>useScopedAccess members and group-mapping handlers</p>
+
+<p>Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:158</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads state and handlers from the hook.
+</code></pre>
+
+<p>useScopedAccess members and group-mapping handlers</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:122</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Reads state and handlers from the hook.
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>None.</p>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<h6>T1</h6>
+
+<pre><code>The member and group-mapping methods of rbacService are called only from hooks/useScopedAccess.ts and my-summary appears only in RbacService.ts; empty allow-lists
+</code></pre>
+
+<p>Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend test src/rbacAccess.enforcement.test.ts
+</code></pre>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>

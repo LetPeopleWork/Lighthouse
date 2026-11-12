@@ -1,0 +1,1321 @@
+{
+"counters": {
+"D": 5,
+"F": 179,
+"K": 5,
+"P": 4,
+"S": 5,
+"T": 4,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F26",
+"driving_port": "F25"
+},
+"closure": [
+{
+"axis": "Safety",
+"basis": "F32",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F31"
+},
+{
+"axis": "Inhabitation",
+"basis": "F34",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F33"
+},
+{
+"axis": "PublicReachability",
+"basis": "F35",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F33"
+},
+{
+"axis": "Liveness",
+"basis": "F37",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F36"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F19"
+},
+{
+"id": "K2",
+"text": "F20"
+},
+{
+"id": "K3",
+"text": "F21"
+},
+{
+"id": "K4",
+"text": "F22"
+},
+{
+"id": "K5",
+"text": "F23"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F14"
+},
+{
+"id": "D2",
+"text": "F15"
+},
+{
+"id": "D3",
+"text": "F16"
+},
+{
+"id": "D4",
+"text": "F17"
+},
+{
+"id": "D5",
+"text": "F18"
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F24"
+}
+],
+"risks": [
+{
+"allowed": "F40",
+"forbidden": "F41",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F39",
+"residue": "F42",
+"source": "F38"
+},
+{
+"allowed": "F40",
+"forbidden": "F45",
+"id": "Y2",
+"kind": "Bypass",
+"owner": "crafter",
+"preserved": "F44",
+"residue": "F46",
+"source": "F43"
+},
+{
+"allowed": "F49",
+"forbidden": "F50",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F48",
+"residue": "F51",
+"source": "F47"
+},
+{
+"allowed": "F40",
+"forbidden": "F54",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "acceptance-designer",
+"preserved": "F53",
+"residue": "F55",
+"source": "F52"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "src/fileSize.offenders.ts",
+"state": "F27"
+},
+{
+"kind": "Excluded",
+"owner": "src/fileSize.enforcement.test.ts",
+"state": "F28"
+},
+{
+"kind": "Excluded",
+"owner": "src/rbacAccess.enforcement.test.ts",
+"state": "F29"
+},
+{
+"kind": "Unknown",
+"owner": "reviewer",
+"state": "F30"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts",
+"public_oracle": {
+"expected": "F84",
+"falsifier": "F85",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F83"
+},
+"records": {
+"agreement": [
+{
+"contract": "ModifyConnectionSettings props and default export",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/pages/Connections/EditConnection.tsx:1",
+"party": "Consumer",
+"reason": "F104"
+},
+{
+"contract": "ModifyConnectionSettings props and default export",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:302",
+"party": "Producer",
+"reason": "F104"
+}
+],
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts",
+"id": "T2",
+"obligation": "F106",
+"oracle": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:302",
+"reason": "F96"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Connections/EditConnection.tsx:137",
+"reason": "F97"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.test.tsx:1",
+"reason": "F98"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts:1",
+"reason": "F99"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionDefaultsSection.tsx:1",
+"reason": "F100"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts:1",
+"reason": "F101"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/OAuthPremiumNotice.tsx:1",
+"reason": "F100"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx:1",
+"reason": "F100"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/useConnectionSave.ts:1",
+"reason": "F102"
+},
+{
+"decision": "Changed",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F103"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F105"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:302",
+"reason": "F86",
+"symbol": "ModifyConnectionSettings"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts:1",
+"reason": "F87",
+"symbol": "compareWithAllowList"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F88",
+"symbol": "fileSizeOffenders"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/whatASaveAsks.ts:30",
+"reason": "F89",
+"symbol": "fieldsChangedSince"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionDefaultsSection.tsx:1",
+"reason": "F90",
+"symbol": "ConnectionDefaultsSection"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts:1",
+"reason": "F91",
+"symbol": "CONNECTION_COPY"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/OAuthPremiumNotice.tsx:1",
+"reason": "F92",
+"symbol": "OAuthPremiumNotice"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx:1",
+"reason": "F93",
+"symbol": "ConnectionAuthSection"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/useConnectionSave.ts:1",
+"reason": "F94",
+"symbol": "useConnectionSave"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F95",
+"symbol": "TOO_WIDE_TODAY"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+"reason": "F76"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionDefaultsSection.tsx",
+"reason": "F77"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/connectionFormRules.ts",
+"reason": "F78"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/OAuthPremiumNotice.tsx",
+"reason": "F79"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/ConnectionAuthSection.tsx",
+"reason": "F80"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/useConnectionSave.ts",
+"reason": "F81"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/fileSize.offenders.ts",
+"reason": "F82"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts",
+"pnpm --dir Lighthouse.Frontend test src/components/Common/Connection src/pages/Connections src/layerBoundaries.enforcement.test.ts"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts",
+"public_oracle": {
+"expected": "F116",
+"falsifier": "F117",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F115"
+},
+"records": {
+"agreement": [
+{
+"contract": "RagResult and RagTerms types",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:1",
+"party": "Producer",
+"reason": "F136"
+},
+{
+"contract": "RagResult and RagTerms types",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"party": "Consumer",
+"reason": "F137"
+},
+{
+"contract": "RagResult and RagTerms types",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts:1",
+"party": "Consumer",
+"reason": "F138"
+}
+],
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts",
+"id": "T3",
+"obligation": "F140",
+"oracle": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:1",
+"reason": "F128"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"reason": "F129"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts:1",
+"reason": "F130"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.test.ts:1",
+"reason": "F131"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts:1",
+"reason": "F132"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:1",
+"reason": "F133"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:1",
+"reason": "F133"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:1",
+"reason": "F133"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:1",
+"reason": "F134"
+},
+{
+"decision": "Changed",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F135"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F139"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:6",
+"reason": "F118",
+"symbol": "RagTerms"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:1",
+"reason": "F119",
+"symbol": "computeWipOverviewRag"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts:11",
+"reason": "F120",
+"symbol": "BlockedRagResult"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:19",
+"reason": "F121",
+"symbol": "computeWipOverviewRag"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:2",
+"reason": "F122",
+"symbol": "computeBlockedOverviewRag"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:1",
+"reason": "F123",
+"symbol": "computeCycleTimePercentilesRag"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:1",
+"reason": "F124",
+"symbol": "computeThroughputRag"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:1",
+"reason": "F125",
+"symbol": "RagTerms"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"reason": "F126",
+"symbol": "BaseMetricsView"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F127",
+"symbol": "TOO_WIDE_TODAY"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts",
+"Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts",
+"reason": "F107"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.ts",
+"reason": "F108"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts",
+"reason": "F109"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts",
+"reason": "F110"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts",
+"reason": "F111"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts",
+"reason": "F112"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F113"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/fileSize.offenders.ts",
+"reason": "F114"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts",
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts",
+"public_oracle": {
+"expected": "F146",
+"falsifier": "F147",
+"promises": [
+"P2"
+],
+"stimulus": "F145"
+},
+"records": {
+"agreement": [
+{
+"contract": "buildViewData and buildWorkItemLookup exports",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts:1",
+"party": "Producer",
+"reason": "F157"
+},
+{
+"contract": "buildViewData and buildWorkItemLookup exports",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx:6970",
+"party": "Consumer",
+"reason": "F158"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:210",
+"reason": "F152"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx:6970",
+"reason": "F153"
+},
+{
+"decision": "Changed",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"reason": "F154"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:1",
+"reason": "F155"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.ts:1",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetFooters.ts:1",
+"reason": "F156"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts:1",
+"reason": "F156"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F159"
+},
+{
+"analysis": "prefactoring",
+"reason": "F139"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:593",
+"reason": "F148",
+"symbol": "buildViewData"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:210",
+"reason": "F149",
+"symbol": "buildWorkItemLookup"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"reason": "F149",
+"symbol": "buildWidgetFooters"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.ts:1",
+"reason": "F150",
+"symbol": "buildWorkItemLookup"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetFooters.ts:1",
+"reason": "F150",
+"symbol": "buildWidgetFooters"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts:1",
+"reason": "F150",
+"symbol": "buildViewData"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"reason": "F151",
+"symbol": "BaseMetricsView"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.ts",
+"reason": "F141"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetFooters.ts",
+"reason": "F142"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.ts",
+"reason": "F143"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F144"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts",
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts",
+"public_oracle": {
+"expected": "F165",
+"falsifier": "F166",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F164"
+},
+"records": {
+"agreement": [
+{
+"contract": "BaseMetricsView component export",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"party": "Producer",
+"reason": "F104"
+},
+{
+"contract": "BaseMetricsView component export",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:1",
+"party": "Consumer",
+"reason": "F178"
+}
+],
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts",
+"id": "T4",
+"obligation": "F179",
+"oracle": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"reason": "F171"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx:1",
+"reason": "F172"
+},
+{
+"decision": "Changed",
+"kind": "config",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F173"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:1",
+"reason": "F174"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.ts:1",
+"reason": "F175"
+},
+{
+"decision": "Changed",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F176"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"reason": "F177"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F139"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"reason": "F167",
+"symbol": "buildWidgetNodes"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"reason": "F168",
+"symbol": "BaseMetricsView"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:1",
+"reason": "F169",
+"symbol": "buildWidgetNodes"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.ts:1",
+"reason": "F170",
+"symbol": "isPlaced"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/fileSize.offenders.ts:1",
+"reason": "F127",
+"symbol": "TOO_WIDE_TODAY"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx",
+"reason": "F160"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.ts",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/fileSize.offenders.ts",
+"reason": "F163"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts",
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx"
+]
+},
+"S5": {
+"oracle": "Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx",
+"move": "F61",
+"preserved": "F62",
+"verification": [
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F59",
+"falsifier": "F60",
+"promises": [
+"P2",
+"P3",
+"P4"
+],
+"stimulus": "F58"
+},
+"records": {
+"agreement": [
+{
+"contract": "useScopedAccess members and group-mapping handlers",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1",
+"party": "Producer",
+"reason": "F73"
+},
+{
+"contract": "useScopedAccess members and group-mapping handlers",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:158",
+"party": "Consumer",
+"reason": "F74"
+},
+{
+"contract": "useScopedAccess members and group-mapping handlers",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:122",
+"party": "Consumer",
+"reason": "F74"
+}
+],
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/rbacAccess.enforcement.test.ts",
+"id": "T1",
+"obligation": "F75",
+"oracle": "Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts"
+}
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:158",
+"reason": "F68"
+},
+{
+"decision": "Migrated",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:122",
+"reason": "F68"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx:1",
+"reason": "F69"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx:1",
+"reason": "F70"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx:917",
+"reason": "F71"
+},
+{
+"decision": "Changed",
+"kind": "source",
+"locator": "Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1",
+"reason": "F72"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.ts:1",
+"reason": "F63",
+"symbol": "useRbac"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/services/Api/RbacService.ts:1",
+"reason": "F64",
+"symbol": "RbacService"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx:158",
+"reason": "F65",
+"symbol": "useScopedAccess"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useScopedAccess.ts:1",
+"reason": "F66",
+"symbol": "useScopedAccess"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx:122",
+"reason": "F67",
+"symbol": "PortfolioDetail"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/useScopedAccess.ts",
+"reason": "F56"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.tsx",
+"reason": "F57"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.tsx",
+"reason": "F57"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts",
+"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail Lighthouse.Frontend/src/pages/Portfolios/Detail Lighthouse.Frontend/src/hooks/useRbac.test.ts"
+]
+}
+}
+},
+"facts": {
+"F1": "Story #6393 FE5 Split wide units, part A (slices S1-S5 of docs/feature/story-6393-fe5-split-wide-units/feature-delta.md): split ModifyConnectionSettings.tsx, ragRules.ts and BaseMetricsView.tsx by responsibility so no production frontend file is over 1000 lines unless listed by name on a size rule that only shrinks; replace the duplicated Team and Portfolio member and group-mapping handlers with one shared hook guarded against new copies; the six member failure texts use the configured Team and Portfolio term. Behaviour-free otherwise.",
+"F10": "The RAG rules are split into three rule-family files plus a types file with no change in any rule's answer, and their entry leaves the size rule's list",
+"F100": "Declaration moves here; behaviour identical.",
+"F101": "Declarations move here; behaviour identical.",
+"F102": "Save flow moves here; behaviour identical.",
+"F103": "New list read by the size rule.",
+"F104": "Props and export unchanged.",
+"F105": "The slice is the behaviour-free move itself; no behaviour change follows in S1 that a separate preserving move would ease.",
+"F106": "No production frontend file is over 1000 lines unless named on the offender list; the list only shrinks; a stale entry fails",
+"F107": "WIP, Blocked, Stale, FeaturesWorkedOn, Predictability, FlowEfficiency rules.",
+"F108": "SleRisk, CycleTimePercentiles, TotalWorkItemAge, scatterplot, age chart, age over time, age percentiles, cumulative state time rules.",
+"F109": "StartedVsClosed, Throughput, WipOverTime, SimplifiedCfd, WorkDistribution, FeatureSize, EstimationVsCycleTime, LoadBalance, Arrivals, Pbc rules.",
+"F11": "The pure builders of the metrics view live in their own modules with no visible or behavioural change in any metrics widget",
+"F110": "RagResult and RagTerms shared by the three families.",
+"F111": "Emptied and deleted once its functions have moved; no barrel is left.",
+"F112": "Import of RagTerms points at ragTypes.ts; only edit it needs.",
+"F113": "Imports point at the family modules.",
+"F114": "Delete the ragRules.ts entry.",
+"F115": "Call each rag rule function from its family module with the existing rows (the describe blocks of ragRules.test.ts, moved by family), and run blockedMaxAgeRag and BaseMetricsView tests.",
+"F116": "Every rule gives the same answer as before; the moved rows pass unmodified; ragRules.ts is gone, no file of the three families exceeds 1000 lines, and the offender list no longer names ragRules.ts.",
+"F117": "Swapping two bands in computeCycleTimePercentilesRag after the move turns its row in ragRulesTimeAndAge.test.ts red; making RagTerms miss blocked in ragTypes.ts fails tsc in pnpm build; leaving ragRules.ts listed fails the size rule as stale.",
+"F118": "Type moves unchanged to ragTypes.ts so the three family files share it without importing each other.",
+"F119": "New family file holds the overview rules moved unchanged.",
+"F12": "The metrics view's widget nodes and frame helpers live in their own modules, the view is under 1000 lines and its entry leaves the size rule's list",
+"F120": "Only its RagTerms type import changes.",
+"F121": "31 independent pure functions with no shared table; split by metric family, no barrel.",
+"F122": "Same family file, second rule moved unchanged.",
+"F123": "New family file holds the time and age rules moved unchanged.",
+"F124": "New family file holds the volume and flow rules moved unchanged.",
+"F125": "New types file; the type moves unchanged so the families share it.",
+"F126": "Only its imports change.",
+"F127": "List created in the first slice; its entry is deleted here.",
+"F128": "Functions move to three family files; behaviour identical.",
+"F129": "Import lines point at the family modules.",
+"F13": "Team and Portfolio Access tabs handle members and group mappings through one shared hook, a guard names any page that calls those access methods again, and the member failure messages use the configured Team and Portfolio words",
+"F130": "RagTerms import path.",
+"F131": "Describe blocks move to the matching family test files, rows unmodified.",
+"F132": "Type import of RagTerms points at ragTypes.ts.",
+"F133": "Functions move here; behaviour identical.",
+"F134": "Types move here; shape identical.",
+"F135": "ragRules.ts entry deleted.",
+"F136": "Declared once in ragTypes.ts.",
+"F137": "Imports from the family modules and ragTypes.ts.",
+"F138": "Imports RagTerms from ragTypes.ts.",
+"F139": "The slice is the behaviour-free move itself; no behaviour change follows.",
+"F14": "Paradigm object_oriented as the project rule; the code is React function components and hooks, so no class is added: the cohesive owner of each decision is a module or a hook, never the page. Behaviour-free split by responsibility; the only behaviour change is the six member failure texts in S5.",
+"F140": "ragRules.ts leaves the offender list in the commit that brings it under 1000 lines; the list does not grow",
+"F141": "buildWorkItemLookup moved out.",
+"F142": "buildWidgetFooters moved out.",
+"F143": "buildViewData moved out.",
+"F144": "Imports the three modules; no re-export for tests.",
+"F145": "Call buildViewData, buildWorkItemLookup and the footer builders as functions with the existing DOM-free rows (the 390 lines of BaseMetricsView.test.tsx moved with their code), and render the metrics view through its existing test files.",
+"F146": "Every builder returns what it returned before; the moved rows pass unmodified; the metrics view tests pass with no change.",
+"F147": "Dropping sleRiskColumn from inFlight in widgetViewData.ts turns the which-lists-carry-the-risk-column row red; letting a Feature overwrite a Team Work Item in workItemLookup.ts turns the ownerKind team row red; swapping amber and red thresholds in widgetFooters.ts turns the widget-rag-aging amber row in BaseMetricsView.test.tsx red.",
+"F148": "Existing pure builder gains its own module; same function, same export name.",
+"F149": "Existing pure builder gains its own module.",
+"F15": "Formal verification: no Quint, TLA+ or Agda model is written and none is claimed. A file split and one hook extraction change no state, transition, ordering or concurrency; the guarantees are checked by running code: test ids and outcomes equal before and after, rendered output equal, effect dependency arrays and hook call order equal in the diff, and two source-scan enforcement tests that refuse a planted case. Types are checked by tsc in pnpm build.",
+"F150": "New module holds the builder moved unchanged.",
+"F151": "Only its imports change; no re-export.",
+"F152": "Builders move to three modules; behaviour identical.",
+"F153": "The two DOM-free describes move to workItemLookup.test.ts and widgetViewData.test.ts.",
+"F154": "The component imports the builders instead of declaring them.",
+"F155": "Imports BaseMetricsView component through TeamMetricsView; export unchanged.",
+"F156": "Builder moves here; behaviour identical.",
+"F157": "Same signature, new module.",
+"F158": "Rows move to the new test files with the code.",
+"F159": "The size rule of S1 already covers the length law for every file, including the new modules; this slice adds no dependency or owner law of its own.",
+"F16": "Size rule carrier: src/fileSize.enforcement.test.ts scans production .ts/.tsx under src (not *.test.ts(x), not src/tests, no TestKit or Fixture in the name, not *.d.ts), counting line terminators like wc -l; a file over 1000 lines offends. The offender list lives in src/fileSize.offenders.ts (name plus plain-words reason), owned by the crafter, so removing an entry in S2 and S4 never edits S1's oracle. It fails both ways: a new offender not listed, and a listed file at or under the line. The list starts with BaseMetricsView.tsx and ragRules.ts and only shrinks.",
+"F160": "buildPbcNodes and buildWidgetNodes moved out.",
+"F161": "The four frame helpers moved out.",
+"F162": "Imports the two modules; component stays; under 1000 lines.",
+"F163": "Delete the BaseMetricsView.tsx entry; the list ends empty.",
+"F164": "Call the frame helpers (isPlaced and its siblings) as functions with rows taken from the existing loading test for estimation vs cycle time, render the metrics view through the existing test files, and run the size rule over the tree.",
+"F165": "The helpers answer as before; the metrics view tests pass unmodified; BaseMetricsView.tsx is at most 1000 lines and is no longer on the offender list; the offender list is empty.",
+"F166": "Making isPlaced always true in dashboardFrame.ts turns the dashboardFrame row and the loading-test row for estimation vs cycle time red; re-adding a 1001-line file or keeping a stale BaseMetricsView entry fails the size rule naming it.",
+"F167": "Existing pure node builders gain their own module.",
+"F168": "The component keeps state and effects; only pure code leaves.",
+"F169": "New module holds the node builders moved unchanged.",
+"F17": "No barrel and no re-export from any old file for moved symbols; importers change their import. Moved tests travel with the code they cover and keep their rows unmodified.",
+"F170": "New module holds the frame helpers moved unchanged.",
+"F171": "Node builders and frame helpers move; behaviour identical.",
+"F172": "Render tests keep their vi.mock module ids; unmodified.",
+"F173": "Offender list becomes empty.",
+"F174": "Node builders move here; behaviour identical.",
+"F175": "Frame helpers move here; behaviour identical.",
+"F176": "BaseMetricsView.tsx entry deleted; list empty.",
+"F177": "Pure code leaves; component under 1000 lines.",
+"F178": "Through TeamMetricsView and PortfolioMetricsView, unchanged.",
+"F179": "BaseMetricsView.tsx leaves the offender list in the commit that brings it under 1000 lines; the list ends empty and the rule stays",
+"F18": "Failure carriers: the size rule and the access guard report offending file paths in the failing assertion; the hook reports member failures as an error string state (one owner, useScopedAccess) read by the Access tab; no new error type.",
+"F19": "Input bound: the line limit is 1000, a file of more than 1000 lines offends; the offender list is not extended, only shortened.",
+"F2": "The widest frontend files are split by responsibility and kept small by a named size rule, and Team and Portfolio access handling lives in one place",
+"F20": "Behaviour-free: existing tests stay green unmodified apart from tests that move with their code; effect dependency arrays, hook call order and useCallback dependencies are copied as they are. Default Team and Portfolio terms give today's texts word for word.",
+"F21": "S5 copy is approved text: Failed to load {team} members. / Failed to update {team} member role. / Failed to remove {team} member., same for {portfolio}; the term is getTerm(TERMINOLOGY_KEYS.TEAM or PORTFOLIO) lower-cased and read when the failure happens, not at mount.",
+"F22": "Test rules: the test-writing skill and its frontend half win over nWave's timing and PBT density; no nWave scenario tags in code; no broad property tests (finite example rows only); the new enforcement tests walk about 700 files, well inside the default per-test budget, no derogation.",
+"F23": "One oracle file per slice; an earlier slice's oracle and support files are never edited by a later slice.",
+"F24": "Every caller and callee is inside the one frontend deployable and changes in the same commit; the primary oracles cover them.",
+"F25": "React Testing Library render of the component, renderHook of the hook with its providers, pure modules called as functions, and source-scan enforcement tests over src",
+"F26": "Pages and views depend on extracted hooks and pure modules; extracted modules never import their former parent; useScopedAccess depends on rbacService from ApiServiceContext and useTerminology only; no barrel.",
+"F27": "A production file of at most 1000 lines, or a file over 1000 lines named on the offender list",
+"F28": "A new production file over 1000 lines that is not listed; a listed file at or under 1000 lines that is still listed",
+"F29": "A page calling rbacService member or group-mapping methods directly; my-summary fetched outside RbacService.ts",
+"F3": "No production frontend file is over 1000 lines unless it is named on the size rule's list, and the list only shrinks",
+"F30": "Cohesion of a file under the line is not judged; the check sees length only",
+"F31": "size rule and access guard",
+"F32": "Exclusion is a source scan executed by the host; no formal model is claimed; planted-project scenarios are the falsifiers.",
+"F33": "useScopedAccess and moved modules",
+"F34": "input scope kind and id -> useScopedAccess -> TeamDetail or PortfolioDetail Access tab -> ScopedMembershipManager is acyclic; moved modules are called by their former parent.",
+"F35": "Reached through the rendered Access tab and the page components; the pure modules through their function exports.",
+"F36": "all slices",
+"F37": "Not applicable: no scheduler, fairness or progress claim; the sets of states and effects are the same before and after.",
+"F38": "A moved effect loses an item in its dependency array or two effects swap order",
+"F39": "No refetch loop and no stale scope",
+"F4": "Each split unit behaves and renders exactly as before: its existing tests stay green unmodified, apart from tests that move with the code they cover",
+"F40": "Nothing",
+"F41": "Changed effect dependencies or hook call order",
+"F42": "Read line by line in review; S1-S4 move only pure code and the form; effects stay in their components",
+"F43": "ctx_patch writes REDACTED into moved type= lines",
+"F44": "Password fields stay password",
+"F45": "REDACTED text in source",
+"F46": "git grep REDACTED gate after each edit; ConnectionDefaults Playwright spec",
+"F47": "The renamed term is read before terminology loads",
+"F48": "Failure text uses the configured word at failure time",
+"F49": "Default word before terminology is ready",
+"F5": "Team and Portfolio member and group-mapping handling lives in one shared hook, and no page calls those access methods directly",
+"F50": "Term read once at mount",
+"F51": "Hook reads getTerm when the failure happens; one row where the term arrives after mount",
+"F52": "A fourth file crosses 1000 lines during the work, or the scan misses a folder",
+"F53": "The rule names every offender",
+"F54": "Silent none from an unreadable folder",
+"F55": "Scenario with a deep planted file and a loud failure on an unreadable folder; the fix is a split, not a list entry",
+"F56": "One owner of members and group mappings for a Team or Portfolio scope, taking the scope kind and id.",
+"F57": "Duplicated handlers replaced by the hook.",
+"F58": "renderHook useScopedAccess for scope Team and for scope Portfolio inside a ready terminology provider and an ApiServiceContext with a fake rbacService: load members, assign, remove, create and remove a group mapping, with each call failing; with default terms and with Team renamed to Squad and Portfolio to Program. Render the Team and Portfolio Access tabs once each with a renamed term and a failing load. Run the access guard over the source tree and a planted temp project.",
+"F59": "With default terms the six texts equal today's (Failed to load team members., Failed to update team member role., Failed to remove team member., and the portfolio ones); with the renamed terms they read Failed to load squad members., Failed to update squad member role., Failed to remove squad member. and the program ones; assign and remove reload the members; the Access tabs show one renamed text on screen; the member and group-mapping methods of rbacService are called only from hooks/useScopedAccess.ts and my-summary appears only in RbacService.ts.",
+"F6": "The member failure messages on the Team and Portfolio Access tabs use the configured Team and Portfolio words, lower-cased; with default terms they read as today",
+"F60": "Dropping toLowerCase of the term gives Failed to load Squad members.; hard-coding team in the portfolio text fails the Portfolio renamed row; calling upsert without reloading the members fails the assign row; calling rbacService.removeGroupMapping from a page again fails the access guard naming that file; reverting only the text change keeps the default-text rows green and turns the six renamed rows red.",
+"F61": "Extract useScopedAccess from TeamDetail, then use it in PortfolioDetail, before the failure texts change; makes the copy change one edit in one place.",
+"F62": "Handlers, reload after assign and remove, and today's default failure texts",
+"F63": "Gating stays there; useScopedAccess does not decide permission.",
+"F64": "Only owner of my-summary and of the member and group-mapping calls; unchanged.",
+"F65": "Two pages hold an 86-line copy of the same handlers; no hook owns them. One hook with the scope kind as an argument, no mode flag, since behaviour does not diverge.",
+"F66": "One owner of the members and group-mapping handlers; see the earlier reuse record.",
+"F67": "Handlers replaced by the hook; page keeps its layout.",
+"F68": "Handlers and member state move to the hook.",
+"F69": "Characterization rows added first with default texts; page rows shrink to one wiring row after the hook has its own rows.",
+"F7": "ModifyConnectionSettings.tsx, ragRules.ts and BaseMetricsView.tsx split by responsibility; a size rule listing files over 1000 lines by name; one shared Team/Portfolio access hook with a guard; the six member failure texts use the configured terms",
+"F70": "Same as the Team Access tab test.",
+"F71": "createGroupMapping row keeps passing through the page.",
+"F72": "New hook holds the handlers and the six failure texts with the configured terms.",
+"F73": "Single producer of the handlers and the failure texts.",
+"F74": "Reads state and handlers from the hook.",
+"F75": "The member and group-mapping methods of rbacService are called only from hooks/useScopedAccess.ts and my-summary appears only in RbacService.ts; empty allow-lists",
+"F76": "Parent keeps the component and the two layer-leak imports; sections move out.",
+"F77": "Defaults section moved out of the parent.",
+"F78": "Copy and pure form helpers moved out.",
+"F79": "OAuth upgrade notice with the settings/license link.",
+"F8": "Splitting DeliverySection, DeliveryCreateModal, useMetricsData and the metrics view's effectful hooks (feature B); packaging into modules (FE2); per-module API ports (FE4); any other visible change",
+"F80": "Authentication section of the form.",
+"F81": "Validate, 409 handling and update question of the save flow.",
+"F82": "Offender list by name with reasons; read by the size rule.",
+"F83": "Run the size rule over the source tree and over planted temp projects (1001 lines, 1000 lines, a 1500-line .test.tsx, src/tests/Kit.tsx, a listed file that is now short, an unreadable folder); run the existing ModifyConnectionSettings, whatASaveAsks, EditConnection and CreateConnectionWizard tests against the split form.",
+"F84": "The scan reports 1001 lines and no more, does not report 1000, a test file or src/tests, reports a stale list entry, fails loudly on an unreadable folder, and lists exactly BaseMetricsView.tsx and ragRules.ts for the real tree; the existing connection form tests pass unmodified.",
+"F85": "Limit 1000 changed to 1100 turns the 1001-line scenario red; removing the link text in OAuthPremiumNotice.tsx, returning the 409 copy for every save error in useConnectionSave.ts, or dropping readOnly on the OAuth locked fields in ConnectionAuthSection.tsx turns the named existing rows red.",
+"F86": "Component stays the owner of the form; only responsibilities with their own reason to change leave.",
+"F87": "The size rule reuses the list-by-name enforcement shape; no shared import, the small helpers are copied.",
+"F88": "Nothing owns file size; Fallow has no size rule and a baseline count would hide which file was fixed.",
+"F89": "Already owns the update-question decision rules; useConnectionSave calls it unchanged.",
+"F9": "The connection settings form is split into five smaller files with no visible or behavioural change, and the size rule exists, naming the two files still over 1000 lines",
+"F90": "New file holds the section moved unchanged from the parent; no other file owns it.",
+"F91": "New file holds the copy and pure helpers moved unchanged from the parent.",
+"F92": "New file holds the upgrade notice moved unchanged, with the one settings/license link.",
+"F93": "New file holds the authentication section moved unchanged.",
+"F94": "New hook holds the save flow moved unchanged; no existing hook owns it.",
+"F95": "No candidate owns file size; see the size rule decision.",
+"F96": "Sections and the save flow move to new files; props and export unchanged.",
+"F97": "Imports the unchanged export; return path stays here.",
+"F98": "Renders the parent component; unmodified.",
+"F99": "Both leak imports stay in the parent file, so the allow-list does not change."
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_in": [
+"F7"
+],
+"scope_out": [
+"F8"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F9",
+"promises": [
+"P1",
+"P2"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F10",
+"promises": [
+"P1",
+"P2"
+]
+},
+{
+"id": "S3",
+"observation": "F11",
+"promises": [
+"P2"
+]
+},
+{
+"depends_on": [
+"S3",
+"S1"
+],
+"id": "S4",
+"observation": "F12",
+"promises": [
+"P1",
+"P2"
+]
+},
+{
+"id": "S5",
+"observation": "F13",
+"promises": [
+"P2",
+"P3",
+"P4"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6393-wide-units-a",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}
