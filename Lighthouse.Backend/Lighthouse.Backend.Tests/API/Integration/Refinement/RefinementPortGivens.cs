@@ -1,6 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
+using Lighthouse.Backend.Services.Interfaces;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -174,6 +175,64 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         /// <summary>
+        /// A Team with Gravity's states and Throughput history and this SLE refines in Backlog, Analysing and Next,
+        /// and its tracker holds, in backlog order: GR-040 being implemented (not in refinement), GR-058 in Next,
+        /// GR-051 and GR-054 in Analysing, GR-073 and GR-074 in Backlog - five Work Items in refinement.
+        /// </summary>
+        public int GravityRefinesFiveWorkItems(string name = "Team Gravity", int sleProbability = 85, int sleRange = 7)
+        {
+            var gravity = ATeam(name, GravitysStates, ThroughputHistoryDays, sleProbability, sleRange);
+
+            TheTrackerHolds(gravity, [],
+            [
+                new TrackerWorkItem(BillingExport, "Billing export", Implementation, StateCategories.Doing, "1", StartedDaysAgo: 9),
+                new TrackerWorkItem(UserActivityTracking, "User activity tracking", Next, StateCategories.Doing, "2", StartedDaysAgo: 1),
+                new TrackerWorkItem(AdvancedReporting, "Advanced reporting module", Analysing, StateCategories.Doing, "3", StartedDaysAgo: 3),
+                new TrackerWorkItem(ApiVersioning, "Public API versioning", Analysing, StateCategories.Doing, "4", StartedDaysAgo: 2),
+                new TrackerWorkItem(ConfigurationManagement, "Configuration management", Backlog, StateCategories.ToDo, "5"),
+                new TrackerWorkItem(LoadTesting, "Load testing framework", Backlog, StateCategories.ToDo, "6"),
+            ]);
+
+            TheTeamRefines(gravity, RefinesInBacklogAnalysingAndNext);
+            return gravity;
+        }
+
+        /// <summary>
+        /// The Team finished these Work Items, each at noon the given number of days before the instance's today,
+        /// having taken its cycle time: a cycle time of N days started N - 1 days before the day it finished.
+        /// </summary>
+        public void TheTeamFinished(int teamId, params FinishedWorkItem[] finished)
+        {
+            using var scope = services.CreateScope();
+            var owner = TheStoredTeam(scope, teamId);
+            var today = scope.ServiceProvider.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight;
+            var workItemRepository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+
+            foreach (var item in finished)
+            {
+                var closed = today.AddDays(-item.FinishedDaysAgo).AddHours(12);
+
+                workItemRepository.Add(new WorkItem
+                {
+                    Team = owner,
+                    TeamId = owner.Id,
+                    ReferenceId = item.ReferenceId,
+                    Name = $"Finished {item.ReferenceId}",
+                    Type = "User Story",
+                    State = Done,
+                    StateCategory = StateCategories.Done,
+                    CreatedDate = closed.AddDays(-item.CycleTimeDays - 10),
+                    StartedDate = closed.AddDays(-(item.CycleTimeDays - 1)),
+                    ClosedDate = closed,
+                    Order = "99",
+                    Url = TrackerAddressOf(item.ReferenceId),
+                });
+            }
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
         /// The Team finished this many Work Items on each of the last <paramref name="days"/> days before the tracker
         /// was read, that day included, each taking one day. A Team that finishes the same number every day makes the
         /// shipped forecast engine answer one number, whatever it draws.
@@ -249,6 +308,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private sealed record TrackerWorkItem(string ReferenceId, string Name, string State, StateCategories Category, string Rank, int StartedDaysAgo = 0);
     }
+
+    /// <summary>A Work Item the Team finished: its cycle time in days, and how many days before today it finished.</summary>
+    public sealed record FinishedWorkItem(string ReferenceId, int CycleTimeDays, int FinishedDaysAgo);
 
     /// <summary>A Team's states by category, in the tracker's order.</summary>
     public sealed record TeamStates(IReadOnlyList<string> ToDo, IReadOnlyList<string> Doing, IReadOnlyList<string> Done);

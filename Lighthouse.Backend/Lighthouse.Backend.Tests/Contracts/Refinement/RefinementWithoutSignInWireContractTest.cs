@@ -1,5 +1,8 @@
+using System.Collections;
+using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
+using System.Reflection;
 using System.Text.Json;
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
@@ -53,20 +56,21 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
         private static IEnumerable<TestCaseData> EveryInputOfThePortBuilder()
             => RefinementPortGivens.EveryInput.Select(input => new TestCaseData(input).SetArgDisplayNames(input.ToString()));
 
-        // A port scenario writes how a Team refines straight onto the Team, past the save that tidies what the
-        // settings form sends. Each input the port may write is sent through that save here, as the form sends it
-        // for a Team that has not yet said how it refines, and both Teams must end up storing the same thing.
+        // A port scenario writes a Team's set-up straight onto the Team, past the save that tidies what the settings
+        // form sends. Each input the port may write is sent through that save here, as the form sends it for a Team
+        // that has not yet said how it refines, and both Teams must end up storing the same SLE, states, Throughput
+        // history and way of refining.
         [TestCaseSource(nameof(EveryInputOfThePortBuilder))]
         public async Task A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(RefinementInput input)
         {
             var givens = new RefinementPortGivens(Services);
-            var setUpAtThePort = givens.ATeam("Team set up at the port", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30);
+            var setUpAtThePort = givens.ATeam("Team set up at the port", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30, sleProbability: 85, sleRange: 7);
             givens.TheTeamRefines(setUpAtThePort, input);
-            var savedThroughItsSettings = givens.ATeam("Team saved through its settings", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30);
+            var savedThroughItsSettings = givens.ATeam("Team saved through its settings", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30, sleProbability: 85, sleRange: 7);
 
             await TheAdminSavesTheSettingsFormWith(savedThroughItsSettings, input);
 
-            Assert.That(HowItRefinesAsStored(savedThroughItsSettings), Is.EqualTo(HowItRefinesAsStored(setUpAtThePort)),
+            Assert.That(WhatTheTeamStores(savedThroughItsSettings), Is.EqualTo(WhatTheTeamStores(setUpAtThePort)),
                 $"the settings save stores \"{input}\" otherwise than a port scenario writes it");
         }
 
@@ -119,13 +123,39 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             Assert.That(save.StatusCode, Is.EqualTo(HttpStatusCode.OK), $"the settings save was refused: {await save.Content.ReadAsStringAsync()}");
         }
 
-        private string HowItRefinesAsStored(int teamId)
+        /// <summary>What the Team stores of the set-up a port scenario gives it: its SLE, its states, its Throughput history and how it refines.</summary>
+        private string WhatTheTeamStores(int teamId)
         {
             using var scope = NewScope();
             var team = scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)
                 ?? throw new InvalidOperationException($"no Team {teamId} is stored");
-            return JsonSerializer.Serialize(team.RefinementSettings);
+
+            return PublicPropertiesOf(new
+            {
+                team.ServiceLevelExpectationProbability,
+                team.ServiceLevelExpectationRange,
+                team.ToDoStates,
+                team.DoingStates,
+                team.DoneStates,
+                team.ThroughputHistory,
+                team.RefinementSettings,
+            });
         }
+
+        // Every public property is listed, also those the JSON writer is told to skip, so a member it would leave out
+        // still has to agree.
+        private static string PublicPropertiesOf(object? value, string path = "")
+            => value switch
+            {
+                null => $"{path} = null\n",
+                string or ValueType => $"{path} = {Convert.ToString(value, CultureInfo.InvariantCulture)}\n",
+                IEnumerable items => string.Concat(items.Cast<object?>().Select((item, index) => PublicPropertiesOf(item, $"{path}[{index}]"))),
+                _ => string.Concat(value.GetType()
+                    .GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                    .Where(property => property.GetIndexParameters().Length == 0)
+                    .OrderBy(property => property.Name, StringComparer.Ordinal)
+                    .Select(property => PublicPropertiesOf(property.GetValue(value), $"{path}.{property.Name}"))),
+            };
 
         private async Task<JsonElement> TheNeedOnTheRefinementTabOf(int teamId)
         {

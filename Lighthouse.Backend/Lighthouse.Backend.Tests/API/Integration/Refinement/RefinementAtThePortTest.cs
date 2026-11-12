@@ -1,3 +1,4 @@
+using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
@@ -103,6 +104,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             using var scope = harness.NewScope();
             return scope.ServiceProvider.GetRequiredService<IRefinementViewQuery>().ForTeam(teamId, null);
         }
+
+        /// <summary>What the votes on this tab are cast against: the source as the browser reads its text, and both numbers.</summary>
+        protected static YardstickReading YardstickIn(RefinementViewDto tab)
+            => new(tab.Yardstick.Source.ToString(), tab.Yardstick.Days, tab.Yardstick.Probability);
+
+        protected sealed record YardstickReading(string? Source, int? Days, int? Probability);
 
         /// <summary>One step of a scenario, for a Given that goes through a real service.</summary>
         protected IServiceScope NewScope() => harness.NewScope();
