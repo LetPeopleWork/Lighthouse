@@ -90,8 +90,15 @@ Then collect three sources and reconcile them:
 
 1. **ADO** — the tagged Epics (query above), then one WIQL over their children (`/ado-sync` has the
    `az boards` cookbook): `SELECT [System.Id], [System.Title], [System.State], [System.Parent] FROM
-   WorkItems WHERE [System.TeamProject] = 'Lighthouse' AND [System.Parent] IN (<epic-ids>)`. If `az` fails, say so and continue on local evidence
-   alone, marking the board "ADO not checked".
+   WorkItems WHERE [System.TeamProject] = 'Lighthouse' AND [System.Parent] IN (<epic-ids>)`. WIQL cannot
+   sort by `[System.Parent]`; order by `[System.Id]`. Then a second WIQL for **orphans**: Stories and Bugs
+   tagged `Continuous Improvement`, not Closed or Removed, with no parent (`... AND [System.WorkItemType]
+   IN ('User Story', 'Bug') AND [System.Tags] CONTAINS 'Continuous Improvement' AND [System.State] NOT IN
+   ('Closed', 'Removed') AND [System.Parent] = ''`). These are usually follow-ups of an item whose Epic has
+   since closed (T10 #6537 and #6602 after #6506). Show them in their own **Unparented** group at the top
+   of the board, find their plan in the workspace of the item they follow up on, and never re-parent
+   them yourself. If `az` fails, say so and continue on local evidence alone, marking the board "ADO not
+   checked".
 2. **Workspaces** — item workspaces `docs/feature/story-<ado-id>-*/` and
    `docs/feature/stories-*<ado-id>*/`, plus archives in `docs/evolution/` naming the id. For an open
    workspace, detect its wave from its artifacts (`feature-delta.md` sections, `handoff.json` for DELIVER).
