@@ -22,7 +22,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
     /// sign-in. What the tab works out is asserted at the port; this class holds only the names and shapes the
     /// callers read.
     /// </summary>
-    public class RefinementWithoutSignInWireContractTest : WireContractTest
+    public partial class RefinementWithoutSignInWireContractTest : WireContractTest
     {
         [SetUp]
         public void StartFromTheSeededDatabase()
