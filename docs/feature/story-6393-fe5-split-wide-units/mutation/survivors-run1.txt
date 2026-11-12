@@ -1,0 +1,255 @@
+src/hooks/useScopedAccess.ts:46 Survived StringLiteral → "Stryker was here!"
+src/hooks/useScopedAccess.ts:53 Survived ArrayDeclaration → ["Stryker was here"]
+src/hooks/useScopedAccess.ts:54 Survived BooleanLiteral → true
+src/hooks/useScopedAccess.ts:58 NoCoverage BlockStatement → {}
+src/hooks/useScopedAccess.ts:58 Survived ConditionalExpression → false
+src/hooks/useScopedAccess.ts:63 Survived BooleanLiteral → false
+src/hooks/useScopedAccess.ts:83 Survived CallExpression → ;
+src/hooks/useScopedAccess.ts:95 Survived ArrayDeclaration → []
+src/hooks/useScopedAccess.ts:104 Survived CallExpression → ;
+src/hooks/useScopedAccess.ts:114 Survived ArrayDeclaration → []
+src/hooks/useScopedAccess.ts:118 NoCoverage BlockStatement → {}
+src/hooks/useScopedAccess.ts:118 Survived ConditionalExpression → false
+src/hooks/useScopedAccess.ts:119 NoCoverage ArrayDeclaration → ["Stryker was here"]
+src/hooks/useScopedAccess.ts:140 Survived ArrayDeclaration → []
+src/hooks/useScopedAccess.ts:151 Survived ArrayDeclaration → []
+src/pages/Common/MetricsView/ragRulesOverview.ts:8 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesOverview.ts:8 Survived EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesOverview.ts:95 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesOverview.ts:95 Survived EqualityOperator → featureWip < 0
+src/pages/Common/MetricsView/ragRulesOverview.ts:126 Survived ArithmeticOperator → score / 100
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:8 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:8 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:11 Survived EqualityOperator → v < sle.value
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:76 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:76 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:88 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:88 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:91 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:98 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:104 Survived EqualityOperator → difference >= 20
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:107 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:113 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:124 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:124 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:124 Survived EqualityOperator → sleDays < 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:124 Survived EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:136 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:141 Survived EqualityOperator → tomorrowProjection >= referenceValue
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:144 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:150 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:166 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:166 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:169 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:173 Survived EqualityOperator → ct >= sle.value
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:178 Survived EqualityOperator → abovePercent > redThreshold
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:181 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:184 Survived EqualityOperator → abovePercent >= allowedAbove
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:187 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:192 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:219 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:219 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:222 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:226 Survived EqualityOperator → i.workItemAge >= sle.value
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:252 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:261 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:261 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:261 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:261 Survived EqualityOperator → startValue !== 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:264 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:268 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:268 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:268 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:268 Survived EqualityOperator → endValue <= 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:268 Survived EqualityOperator → endValue >= 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:271 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:276 Survived ArithmeticOperator → change / 100
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:278 Survived EqualityOperator → change >= 0.1
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:281 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:285 Survived EqualityOperator → change <= -0.1
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:288 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:294 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:307 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:9 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:9 Survived EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:16 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:16 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:16 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:16 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:16 Survived EqualityOperator → closedTotal !== 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:16 Survived EqualityOperator → startedTotal !== 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:16 Survived LogicalOperator → startedTotal === 0 || closedTotal === 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:19 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:27 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:31 Survived MethodExpression → Math.min(startedTotal, closedTotal)
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:32 Survived ArithmeticOperator → absDiff * larger
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:34 NoCoverage BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:34 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:34 Survived EqualityOperator → difference < 5
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:35 NoCoverage ObjectLiteral → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:36 NoCoverage StringLiteral → ""
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:37 NoCoverage StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:41 Survived EqualityOperator → startedTotal >= closedTotal
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:59 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:59 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:62 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:69 Survived ArithmeticOperator → periodValues.length + 3
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:82 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:88 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:102 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:102 Survived EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:112 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:129 Survived EqualityOperator → atPercent >= 50
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:132 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:139 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:143 Survived ArithmeticOperator → above - at
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:143 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:143 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:143 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:143 Survived EqualityOperator → below <= above + at
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:143 Survived EqualityOperator → below >= above + at
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:146 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:152 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:177 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:177 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:180 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:192 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:192 Survived EqualityOperator → featureWip < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:211 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:217 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:226 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:226 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:229 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:236 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:236 Survived EqualityOperator → s >= p85
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:237 Survived ArrowFunction → () => undefined
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:237 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:237 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:237 Survived EqualityOperator → s <= p85
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:237 Survived EqualityOperator → s >= p85
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:237 Survived MethodExpression → activeItemSizes
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:244 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:245 Survived ArrowFunction → () => undefined
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:245 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:245 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:245 Survived EqualityOperator → s <= p70
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:245 Survived EqualityOperator → s >= p70
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:245 Survived MethodExpression → activeItemSizes
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:254 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:270 Survived EqualityOperator → dataPoints.length <= 2
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:273 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:279 Survived ArrayDeclaration → new Array()
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:281 Survived ArithmeticOperator → i - 1
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:298 Survived ArithmeticOperator → n * n + 1
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:300 Survived EqualityOperator → rho > 0.6
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:303 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:306 Survived EqualityOperator → rho > 0.3
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:309 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:314 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:327 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:327 Survived LogicalOperator → !baselineAvailable && averageWip === null
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:327 Survived LogicalOperator → (!baselineAvailable || averageWip === null) && averageTotalWorkItemAge === null
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:328 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:329 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:344 Survived EqualityOperator → currentWip >= averageWip
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:347 Survived StringLiteral → ``
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 Survived EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 Survived LogicalOperator → !systemWipLimit && systemWipLimit <= 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:380 Survived BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:380 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:380 Survived StringLiteral → ""
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:385 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:385 Survived EqualityOperator → arrivalsValues.length >= 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:389 Survived ArithmeticOperator → arrivalsValues.length + 3
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:389 Survived EqualityOperator → i < arrivalsValues.length - 3
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:391 Survived MethodExpression → window.some(idx => !blackoutSet.has(idx) && arrivalsValues[idx] === 0)
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:399 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:418 Survived LogicalOperator → !data.baselineConfigured && data.status === "BaselineMissing"
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:419 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:419 Survived StringLiteral → ""
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:443 Survived StringLiteral → ""
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:450 Survived StringLiteral → ""
+src/pages/Common/MetricsView/widgetViewData.ts:96 Survived BlockStatement → {}
+src/pages/Common/MetricsView/widgetViewData.ts:97 Survived ArrayDeclaration → ["Stryker was here"]
+src/pages/Common/MetricsView/widgetViewData.ts:98 NoCoverage BlockStatement → {}
+src/pages/Common/MetricsView/widgetViewData.ts:98 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:102 NoCoverage MethodExpression → startedWorkItems
+src/pages/Common/MetricsView/widgetViewData.ts:103 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:103 NoCoverage ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:103 NoCoverage ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:103 NoCoverage EqualityOperator → item.closedDate !== null
+src/pages/Common/MetricsView/widgetViewData.ts:105 NoCoverage CallExpression → ;
+src/pages/Common/MetricsView/widgetViewData.ts:107 NoCoverage BlockStatement → {}
+src/pages/Common/MetricsView/widgetViewData.ts:107 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:107 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:108 NoCoverage CallExpression → ;
+src/pages/Common/MetricsView/widgetViewData.ts:113 Survived ArrayDeclaration → []
+src/pages/Common/MetricsView/widgetViewData.ts:119 Survived LogicalOperator → inputs.estimationVsCycleTimeData?.dataPoints?.flatMap(dp => dp.workItemIds.map(i
+src/pages/Common/MetricsView/widgetViewData.ts:119 Survived MethodExpression → inputs.estimationVsCycleTimeData?.dataPoints?.flatMap(dp => dp.workItemIds.map(i
+src/pages/Common/MetricsView/widgetViewData.ts:119 Survived OptionalChaining → inputs.estimationVsCycleTimeData?.dataPoints.flatMap
+src/pages/Common/MetricsView/widgetViewData.ts:120 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:121 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:123 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:123 NoCoverage ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:123 NoCoverage ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:123 NoCoverage EqualityOperator → item === undefined
+src/pages/Common/MetricsView/widgetViewData.ts:123 Survived ArrayDeclaration → ["Stryker was here"]
+src/pages/Common/MetricsView/widgetViewData.ts:125 Survived BlockStatement → {}
+src/pages/Common/MetricsView/widgetViewData.ts:127 Survived BlockStatement → {}
+src/pages/Common/MetricsView/widgetViewData.ts:127 Survived ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:127 Survived ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:127 Survived EqualityOperator → id !== null
+src/pages/Common/MetricsView/widgetViewData.ts:131 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:131 NoCoverage ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:131 NoCoverage ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:131 NoCoverage EqualityOperator → candidate.id !== id
+src/pages/Common/MetricsView/widgetViewData.ts:133 NoCoverage BlockStatement → {}
+src/pages/Common/MetricsView/widgetViewData.ts:133 NoCoverage ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:133 NoCoverage ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:133 NoCoverage EqualityOperator → definition !== undefined
+src/pages/Common/MetricsView/widgetViewData.ts:136 NoCoverage ObjectLiteral → {}
+src/pages/Common/MetricsView/widgetViewData.ts:138 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:139 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:139 NoCoverage ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:139 NoCoverage ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:139 NoCoverage EqualityOperator → value.definitionId !== id
+src/pages/Common/MetricsView/widgetViewData.ts:139 NoCoverage OptionalChaining → item.namedCycleTimes.find
+src/pages/Common/MetricsView/widgetViewData.ts:139 NoCoverage OptionalChaining → item.namedCycleTimes?.find(value => value.definitionId === id).days
+src/pages/Common/MetricsView/widgetViewData.ts:159 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:173 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:178 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:185 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:191 NoCoverage ObjectLiteral → {}
+src/pages/Common/MetricsView/widgetViewData.ts:192 NoCoverage StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:193 NoCoverage MethodExpression → inputs.cycleTimeData
+src/pages/Common/MetricsView/widgetViewData.ts:194 NoCoverage ArrowFunction → () => undefined
+src/pages/Common/MetricsView/widgetViewData.ts:194 NoCoverage ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:194 NoCoverage ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:194 NoCoverage EqualityOperator → namedPercentilesScope.valueFor(item) === undefined
+src/pages/Common/MetricsView/widgetViewData.ts:201 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:204 Survived OptionalChaining → inputs.serviceLevelExpectation.value
+src/pages/Common/MetricsView/widgetViewData.ts:213 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:218 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:221 Survived OptionalChaining → inputs.serviceLevelExpectation.value
+src/pages/Common/MetricsView/widgetViewData.ts:224 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:231 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:235 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:240 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:245 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:250 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:255 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:260 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:268 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:273 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:278 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:283 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:286 Survived OptionalChaining → inputs.serviceLevelExpectation.value
+src/pages/Common/MetricsView/widgetViewData.ts:289 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:294 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:299 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:304 Survived StringLiteral → ``
+src/pages/Common/MetricsView/widgetViewData.ts:309 Survived StringLiteral → ``
+src/pages/Common/MetricsView/workItemLookup.ts:9 Survived ArrayDeclaration → ["Stryker was here"]

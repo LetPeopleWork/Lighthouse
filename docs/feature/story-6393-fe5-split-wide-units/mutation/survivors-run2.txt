@@ -1,0 +1,38 @@
+src/hooks/useScopedAccess.ts:46 StringLiteral → "Stryker was here!"
+src/pages/Common/MetricsView/ragRulesOverview.ts:8 EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesOverview.ts:95 EqualityOperator → featureWip < 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:8 BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:8 ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:124 EqualityOperator → sleDays < 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:124 EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:268 ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:268 EqualityOperator → endValue >= 0
+src/pages/Common/MetricsView/ragRulesTimeAndAge.ts:307 ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:9 EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:41 EqualityOperator → startedTotal >= closedTotal
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:69 ArithmeticOperator → periodValues.length + 3
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:102 EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:192 EqualityOperator → featureWip < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:236 ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:237 EqualityOperator → s >= p85
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:244 ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:245 EqualityOperator → s >= p70
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:279 ArrayDeclaration → new Array()
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:281 ArithmeticOperator → i - 1
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:306 EqualityOperator → rho > 0.3
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 EqualityOperator → systemWipLimit < 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:365 LogicalOperator → !systemWipLimit && systemWipLimit <= 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:380 BlockStatement → {}
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:380 ConditionalExpression → false
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:380 StringLiteral → ""
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:385 ConditionalExpression → true
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:385 EqualityOperator → arrivalsValues.length >= 0
+src/pages/Common/MetricsView/ragRulesVolumeAndFlow.ts:389 ArithmeticOperator → arrivalsValues.length + 3
+src/pages/Common/MetricsView/widgetViewData.ts:107 ConditionalExpression → true
+src/pages/Common/MetricsView/widgetViewData.ts:119 OptionalChaining → inputs.estimationVsCycleTimeData?.dataPoints.flatMap
+src/pages/Common/MetricsView/widgetViewData.ts:127 BlockStatement → {}
+src/pages/Common/MetricsView/widgetViewData.ts:127 ConditionalExpression → false
+src/pages/Common/MetricsView/widgetViewData.ts:192 StringLiteral → ``
