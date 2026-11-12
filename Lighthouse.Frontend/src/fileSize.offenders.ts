@@ -9,9 +9,4 @@ export interface TooWideEntry {
 	reason: string;
 }
 
-export const TOO_WIDE_TODAY: TooWideEntry[] = [
-	{
-		path: "pages/Common/MetricsView/BaseMetricsView.tsx",
-		reason: "One view holds the chart, the drill-down and the table together.",
-	},
-];
+export const TOO_WIDE_TODAY: TooWideEntry[] = [];
