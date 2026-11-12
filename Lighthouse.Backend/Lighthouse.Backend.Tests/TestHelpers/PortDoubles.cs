@@ -24,11 +24,12 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         /// <summary>
         /// The settings a newly seeded database holds. The port seeds nothing, so this answers what the seeded
-        /// rows say rather than reading them.
+        /// rows say rather than reading them. A setting nobody gave it fails the read, naming the setting, rather
+        /// than answering a default no seeded database holds.
         /// </summary>
         public static IAppSettingService SettingsAsSeeded()
         {
-            var settings = new Mock<IAppSettingService>();
+            var settings = new Mock<IAppSettingService>(MockBehavior.Strict);
             settings
                 .Setup(service => service.GetTeamDataRefreshSettings())
                 .Returns(new RefreshSettings { Interval = 60, RefreshAfter = 180, StartDelay = 10 });

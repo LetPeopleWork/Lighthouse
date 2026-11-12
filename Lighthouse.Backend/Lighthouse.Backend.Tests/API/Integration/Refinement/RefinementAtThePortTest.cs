@@ -1,6 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
+using Lighthouse.Backend.Models.Auth;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Models.OptionalFeatures;
@@ -23,6 +24,7 @@ using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;
+using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
@@ -60,7 +62,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             using var _ = FixtureSetupTimer.Measure(GetType().Name, FixtureSetupTimer.MeasurementKind.SetUp);
 
             clock = new FakeLighthouseClock(TestToday.FrozenNow);
-            forecasts = new ScriptedForecasts();
+            forecasts = new ScriptedForecasts(clock);
             harness = new ServicePortHarness(services => Register(services, clock, forecasts));
             Givens = new RefinementPortGivens(harness.NewScope().ServiceProvider);
         }
@@ -97,6 +99,52 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected sealed record YardstickReading(string? Source, int? Days, int? Probability);
 
+        /// <summary>The need on this tab as the browser reads its text: the verdict or why there is none, the range, its likelihoods and its working days.</summary>
+        protected static NeedFacts TheNeedOn(RefinementViewDto tab)
+            => new(
+                tab.Need.Verdict?.ToString(),
+                tab.Need.UnavailableReason?.ToString(),
+                tab.Need.Low,
+                tab.Need.High,
+                tab.Need.LowPercentile,
+                tab.Need.HighPercentile,
+                tab.Need.HorizonWorkingDays);
+
+        protected sealed record NeedFacts(
+            string? Verdict,
+            string? UnavailableReason,
+            int? Low,
+            int? High,
+            int? LowPercentile,
+            int? HighPercentile,
+            int? HorizonWorkingDays);
+
+        /// <summary>A reader on an instance without sign-in: the name they typed, and the key their browser made up and sends with every vote.</summary>
+        protected sealed record PortVoter(string Name, string BrowserKey);
+
+        /// <summary>A browser that has not voted before, so it has a key no other browser has.</summary>
+        protected static PortVoter ABrowserOf(string name) => new(name, Guid.NewGuid().ToString("N"));
+
+        /// <summary>
+        /// The reader has cast this vote from their browser. The voter is established as the votes route establishes
+        /// one, so the tab later recognises the vote as theirs.
+        /// </summary>
+        protected void HasVoted(PortVoter voter, int teamId, string workItem, SizingAnswer answer)
+        {
+            using var scope = harness.NewScope();
+            var resolution = scope.ServiceProvider.GetRequiredService<VoterIdentityResolver>()
+                .ForWriteAsync(voter.Name, voter.BrowserKey, () => Task.FromResult<UserProfile?>(null))
+                .GetAwaiter().GetResult();
+            var established = resolution.Voter
+                ?? throw new InvalidOperationException($"{voter.Name} could not vote: {resolution.Refusal}");
+
+            var outcome = scope.ServiceProvider.GetRequiredService<ISizingLogCommands>()
+                .Vote(teamId, workItem, new SizingVote(answer, SizingChannel.Web, null), established);
+
+            Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded).Or.EqualTo(SizingOutcome.RecordedAndMadeReady),
+                $"{voter.Name}'s {answer} on {workItem} was not recorded");
+        }
+
         /// <summary>One step of a scenario, for a Given that goes through a real service.</summary>
         protected IServiceScope NewScope() => harness.NewScope();
 
@@ -131,7 +179,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             get
             {
                 var services = new ServiceCollection();
-                Register(services, new FakeLighthouseClock(TestToday.FrozenNow), new ScriptedForecasts());
+                var clock = new FakeLighthouseClock(TestToday.FrozenNow);
+                Register(services, clock, new ScriptedForecasts(clock));
                 return services;
             }
         }
@@ -170,6 +219,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             services.AddScoped<IRefinementCalendar, RefinementCalendar>();
             services.AddScoped<RefinementNeedCalculator>();
             services.AddScoped<IRefinementViewQuery, RefinementViewQuery>();
+            services.AddScoped<ISizingLogCommands, SizingLogCommands>();
 
             RegisterTheShippedEngine(services);
             services.AddScoped<IForecastService>(provider => new ForecastWithScriptedHorizons(ActivatorUtilities.CreateInstance<ForecastService>(provider), forecasts));
@@ -193,7 +243,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// The forecasts a scenario chose, by the number of working days they cover. A simulation of one hundred runs
         /// is built so that reading it at (100 - p) gives exactly the count chosen for likelihood p.
         /// </summary>
-        private sealed class ScriptedForecasts
+        private sealed class ScriptedForecasts(ILighthouseClock clock)
         {
             private const int Runs = 100;
 
@@ -216,7 +266,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     runs[count] = runs.GetValueOrDefault(count) + 1;
                 }
 
-                return new HowManyForecast(runs, days, DateTime.UtcNow);
+                return new HowManyForecast(runs, days, clock.Now.UtcDateTime);
             }
 
             private static int CountAt(List<(int Percentile, int Count)> likelihoods, int percentile)

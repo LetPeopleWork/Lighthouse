@@ -75,6 +75,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             "States chosen: Backlog, Analysing, Next",
             settings => settings.States = [.. new[] { "Backlog", "Analysing", "Next" }.Select(state => new RefinementStateSetting { State = state })]);
 
+        /// <summary>The Team refines in Backlog.</summary>
+        public static RefinementInput RefinesInBacklog { get; } = new(
+            "States chosen: Backlog",
+            settings => settings.States = [new RefinementStateSetting { State = Backlog }]);
+
         /// <summary>A Team that has chosen no state to refine in.</summary>
         public static RefinementInput RefinesInNoState { get; } = new(
             "No states chosen",
@@ -98,6 +103,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             "Cadence: Thursday, every week, no starting week",
             settings => settings.Cadence = RefinementCadence.Of([DayOfWeek.Thursday], 1, null));
 
+        /// <summary>The Team refines every Tuesday.</summary>
+        public static RefinementInput RefinesOnTuesdays { get; } = new(
+            "Cadence: Tuesday, every week, no starting week",
+            settings => settings.Cadence = RefinementCadence.Of([DayOfWeek.Tuesday], 1, null));
+
         /// <summary>The Team refines every Monday and every Thursday.</summary>
         public static RefinementInput RefinesOnMondaysAndThursdays { get; } = new(
             "Cadence: Monday and Thursday, every week, no starting week",
@@ -107,9 +117,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         public static IReadOnlyList<RefinementInput> EveryInput { get; } =
         [
             RefinesInBacklogAnalysingAndNext,
+            RefinesInBacklog,
             RefinesInNoState,
             ReadyWhenTaggedReady,
             RefinesOnThursdays,
+            RefinesOnTuesdays,
             RefinesOnMondaysAndThursdays,
         ];
 
@@ -200,6 +212,19 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             TheTrackerReportsFinished(scope, teamId, TrackerReadOn.Date,
                 Enumerable.Range(0, days).SelectMany(daysAgo => Enumerable.Range(0, perDay)
                     .Select(index => new FinishedWorkItem($"DONE-{daysAgo}-{index}", CycleTimeDays: 1, FinishedDaysAgo: daysAgo))));
+        }
+
+        /// <summary>
+        /// A Team with the states Backlog, Implementation and Done and a Throughput history of thirty days, whose
+        /// tracker holds this many Work Items in Backlog: NB-001 "Nebula Work Item 1" ranked first, and so on. It
+        /// has not yet said how it refines.
+        /// </summary>
+        public int ATeamWhoseBacklogHolds(string name, int workItems)
+        {
+            var team = ATeam(name, new TeamStates([Backlog], [Implementation], [Done]), ThroughputHistoryDays);
+            TheTrackerHolds(team, [], Enumerable.Range(1, workItems).Select(number => new TrackerWorkItem(
+                $"NB-{number:D3}", $"Nebula Work Item {number}", Backlog, StateCategories.ToDo, $"{number}")));
+            return team;
         }
 
         private int GravityRefines(string name, int sleProbability, int sleRange, (string WorkItem, string Tag)[] tags, IEnumerable<TrackerWorkItem> workItems)
