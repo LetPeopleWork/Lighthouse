@@ -17,8 +17,8 @@ const frontendRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 /** A production file of more than this many lines is too wide: it is split by responsibility. */
 const LINE_LIMIT = 1000;
 
-/** The two files that are still over the limit, and only they, while the split is under way. */
-const EXPECTED_LISTED_TODAY = [
+/** The only files the list may ever name: the two that were too wide when the rule landed. */
+const BASELINE_OFFENDERS = [
 	"src/pages/Common/MetricsView/BaseMetricsView.tsx",
 	"src/pages/Common/MetricsView/ragRules.ts",
 ];
@@ -33,6 +33,12 @@ interface Offender {
 interface SizeDrift {
 	newcomers: string[];
 	stale: string[];
+}
+
+/** One entry of the offender list: path relative to src, and why the file still waits. */
+interface ListedEntry {
+	path: string;
+	reason: string;
 }
 
 const slashed = (path: string): string => path.replaceAll("\\", "/");
@@ -106,19 +112,25 @@ const describeDrift = (drift: SizeDrift): string =>
 		`Listed but no longer over ${LINE_LIMIT} lines (delete these entries): ${drift.stale.join("; ") || "none"}`,
 	].join("\n");
 
-/** The paths named on the offender list, or null when the list does not exist yet. */
-const listedOffenders = async (): Promise<string[] | null> => {
+/** The offender list entries, or null when the list does not exist yet. */
+const loadOffenderEntries = async (): Promise<ListedEntry[] | null> => {
 	try {
 		const loaded = await import(/* @vite-ignore */ offendersModule);
-		const entries = loaded.TOO_WIDE_TODAY as { path?: string; name?: string }[];
 
-		return entries
-			.map((entry) => slashed(entry.path ?? entry.name ?? ""))
-			.map((path) => (path.startsWith("src/") ? path : `src/${path}`))
-			.sort(bySortOrder);
+		return loaded.TOO_WIDE_TODAY as ListedEntry[];
 	} catch {
 		return null;
 	}
+};
+
+/** The paths named on the offender list, as paths from the frontend root. */
+const listedOffenders = async (): Promise<string[] | null> => {
+	const entries = await loadOffenderEntries();
+
+	return (
+		entries?.map((entry) => `src/${slashed(entry.path)}`).sort(bySortOrder) ??
+		null
+	);
 };
 
 const trees: string[] = [];
@@ -160,13 +172,38 @@ describe("the frontend file size rule", () => {
 	});
 
 	describe("the real source tree", () => {
-		it("lists exactly the two files that are still too wide", async () => {
+		it("names only files from the starting list, so it can only shrink", async () => {
 			const listed = await listedOffenders();
 
 			expect(
 				listed,
-				"The offender list src/fileSize.offenders.ts is missing or unreadable. The size rule needs it to name the files still over the limit; create it with the entries BaseMetricsView.tsx and ragRules.ts, each with a reason.",
-			).toEqual(EXPECTED_LISTED_TODAY);
+				"The offender list src/fileSize.offenders.ts is missing or unreadable. The size rule needs it to name the files still over the limit; create it as TOO_WIDE_TODAY with { path, reason } entries for BaseMetricsView.tsx and ragRules.ts.",
+			).not.toBeNull();
+			const gained = (listed ?? []).filter(
+				(path) => !BASELINE_OFFENDERS.includes(path),
+			);
+			expect(
+				gained,
+				`The list gained names that were not on it at the start: ${gained.join("; ")}. A list that grows hides a file that should be split; split the file instead of listing it.`,
+			).toEqual([]);
+		});
+
+		it("gives every listed file a reason in plain words", async () => {
+			const loaded = await loadOffenderEntries();
+			const entries = loaded ?? [];
+
+			const withoutReason = entries
+				.filter((entry) => !entry.reason?.trim())
+				.map((entry) => entry.path);
+
+			expect(
+				loaded,
+				"The offender list is missing, so no reason can be checked; create TOO_WIDE_TODAY with { path, reason } entries.",
+			).not.toBeNull();
+			expect(
+				withoutReason,
+				"Entries without a reason cannot tell a maintainer why the file waits; give each one a reason in plain words.",
+			).toEqual([]);
 		});
 
 		it("has no production file over the limit that is not listed, and no listed file under it", async () => {
@@ -189,7 +226,10 @@ describe("the frontend file size rule", () => {
 
 			const drift = sizeDrift(root, []);
 
-			expect(drift).toEqual({
+			expect(
+				drift,
+				"A file of one line over the limit must be reported with its path and length, or the limit is set too high.",
+			).toEqual({
 				newcomers: [`src/pages/Wide.tsx (${LINE_LIMIT + 1} lines)`],
 				stale: [],
 			});
@@ -203,7 +243,10 @@ describe("the frontend file size rule", () => {
 
 			const drift = sizeDrift(root, []);
 
-			expect(drift).toEqual({ newcomers: [control.entry], stale: [] });
+			expect(
+				drift,
+				"A file of exactly the limit is allowed; only the control file may be reported.",
+			).toEqual({ newcomers: [control.entry], stale: [] });
 		});
 
 		it("does not report test files, test kits, fixtures, declarations or anything under src/tests", () => {
@@ -220,7 +263,10 @@ describe("the frontend file size rule", () => {
 
 			const drift = sizeDrift(root, []);
 
-			expect(drift).toEqual({ newcomers: [control.entry], stale: [] });
+			expect(
+				drift,
+				"Test code, test kits, fixtures, declarations and src/tests are not production files; only the control file may be reported.",
+			).toEqual({ newcomers: [control.entry], stale: [] });
 		});
 
 		it("accepts a listed file that is still over the limit", () => {
@@ -228,7 +274,10 @@ describe("the frontend file size rule", () => {
 
 			const drift = sizeDrift(root, [control.path]);
 
-			expect(drift).toEqual({ newcomers: [], stale: [] });
+			expect(
+				drift,
+				"A listed file that is still over the limit is allowed to wait; nothing is new and nothing is stale.",
+			).toEqual({ newcomers: [], stale: [] });
 		});
 
 		it("reports a listed file that is now short as a stale entry", () => {
@@ -239,7 +288,10 @@ describe("the frontend file size rule", () => {
 
 			const drift = sizeDrift(root, [control.path, "src/Short.ts"]);
 
-			expect(drift).toEqual({ newcomers: [], stale: ["src/Short.ts"] });
+			expect(
+				drift,
+				"A listed file now at or under the limit must be reported stale so its entry is deleted.",
+			).toEqual({ newcomers: [], stale: ["src/Short.ts"] });
 		});
 
 		it("reports a listed file that no longer exists as a stale entry", () => {
@@ -247,7 +299,10 @@ describe("the frontend file size rule", () => {
 
 			const drift = sizeDrift(root, [control.path, "src/Gone.ts"]);
 
-			expect(drift).toEqual({ newcomers: [], stale: ["src/Gone.ts"] });
+			expect(
+				drift,
+				"A listed file that no longer exists must be reported stale so its entry is deleted.",
+			).toEqual({ newcomers: [], stale: ["src/Gone.ts"] });
 		});
 
 		it("fails loudly when a folder cannot be read, instead of reporting nothing", () => {
