@@ -1,10 +1,8 @@
 import {
 	Alert,
-	Box,
 	Container,
 	FormControl,
 	InputLabel,
-	Link,
 	MenuItem,
 	Select,
 	type SelectChangeEvent,
@@ -14,7 +12,6 @@ import {
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { ParentSourceEntry } from "../../../models/Common/ParentSourceEntry";
@@ -23,266 +20,37 @@ import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/Ad
 import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
 import {
 	type ConnectionDefaultName,
-	type EstimationDefaultName,
-	type FieldDefaultName,
 	type IAuthenticationMethod,
 	type IConnectionDefaults,
 	type IConnectionUsage,
 	type IEstimationDefault,
 	type IWorkTrackingSystemConnection,
-	isEstimationDefaultName,
-	isParentSourcesDefaultName,
 	type ParentSourcesDefaultName,
 	ParentSourcesListOfDefault,
-	type WorkTrackingSystemType,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import {
-	type IWorkTrackingSystemOption,
-	SecretStates,
-} from "../../../models/WorkTracking/WorkTrackingSystemOption";
+import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import type { IWriteBackMappingDefinition } from "../../../models/WorkTracking/WriteBackMappingDefinition";
 import AdditionalFieldsEditor from "../../../pages/Settings/Connections/AdditionalFieldsEditor";
 import WriteBackMappingsEditor from "../../../pages/Settings/Connections/WriteBackMappingsEditor";
-import { ApiError } from "../../../services/Api/ApiError";
 import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
-import {
-	directionTip,
-	directionTipTermsFrom,
-	parentSourcesTip,
-} from "../ConnectionDefault/fieldDirectionTips";
-import ParentSourcesList from "../ConnectionDefault/ParentSourcesList";
-import { ownerOfParentSourcesDefault } from "../ConnectionDefault/parentSources";
 import AuthMethodDropdown from "../Connections/AuthMethodDropdown";
 import OAuthAuthForm from "../Connections/OAuthAuthForm";
 import ReconnectBanner from "../Connections/ReconnectBanner";
-import FormSelectField from "../FormSelectField";
-import InputGroup from "../InputGroup/InputGroup";
 import LoadingAnimation from "../LoadingAnimation/LoadingAnimation";
 import ValidationActions from "../ValidationActions/ValidationActions";
+import ConnectionAuthSection from "./ConnectionAuthSection";
+import ConnectionDefaultsSection from "./ConnectionDefaultsSection";
+import { isOAuthMethod } from "./connectionFormRules";
 import { defaultsKeepingOnlyFields } from "./defaultsKeepingOnlyFields";
-import EstimationDefaultEditor from "./EstimationDefaultEditor";
+import OAuthPremiumNotice from "./OAuthPremiumNotice";
 import SecretHandlingNotice, {
 	containsSecretField,
 } from "./SecretHandlingNotice";
-import UpdateQuestion, { type WhyUpdate } from "./UpdateQuestion";
-import {
-	changedDefaultsToUpdateFollowersOf,
-	changedEstimationDefaultsWithFollowers,
-	type DefaultsGroup,
-	fieldOfDefault,
-	fieldsChangedSince,
-	parentSourcesOfDefault,
-	WhereEachDefaultSits,
-	whyUpdate,
-} from "./whatASaveAsks";
-
-const OAUTH_KEY_SUFFIX = ".oauth";
-
-const CONFLICT_STATUS = 409;
-// The server's own sentence names the field and who still uses it, so it is shown as it stands.
-const FIELD_STILL_IN_USE_CODE = "additional-field-in-use";
-const CONCURRENCY_CONFLICT_COPY =
-	"This connection was changed by someone else since you opened it. Reload to get the latest values, then re-apply your change.";
-
-const OAUTH_LOCKED_COPY =
-	"Locked after the OAuth connect handshake. Reconnect to rotate.";
-
-const UNREADABLE_SECRET_COPY =
-	"This secret cannot be read with the current encryption key. Enter it again to store it under the key this instance uses now.";
-
-/** Said only when the refusal arrived without a word of its own to say. */
-const unexplainedRefusalCopy = (workTrackingSystemTerm: string): string =>
-	`Could not connect to the ${workTrackingSystemTerm} with the provided settings. Please review and try again.`;
-
-const isOAuthMethod = (method: IAuthenticationMethod | null): boolean =>
-	Boolean(method?.key.endsWith(OAUTH_KEY_SUFFIX));
-
-const secretCannotBeRead = (option: IWorkTrackingSystemOption): boolean =>
-	option.secretState === SecretStates.Unreadable;
-
-const resolveAuthOptionHelperText = (
-	option: IWorkTrackingSystemOption,
-	lockOAuthField: boolean,
-): string | undefined => {
-	if (secretCannotBeRead(option)) {
-		return UNREADABLE_SECRET_COPY;
-	}
-
-	if (lockOAuthField) {
-		return OAUTH_LOCKED_COPY;
-	}
-
-	return undefined;
-};
-
-function resolveValidationErrorMessage(
-	error: unknown,
-	workTrackingSystemTerm: string,
-): { message: string; details: string | null } {
-	if (error instanceof ApiError && error.code === 403) {
-		return {
-			message:
-				error.message ||
-				"You've exceeded the number of additional fields allowed on your plan.",
-			details: error.technicalDetails ?? null,
-		};
-	}
-
-	if (error instanceof ApiError) {
-		return { message: error.message, details: error.technicalDetails ?? null };
-	}
-
-	return {
-		message: unexplainedRefusalCopy(workTrackingSystemTerm),
-		details: null,
-	};
-}
-
-// The parent defaults travel as lists. The old number a read carries would be read as an edit of the
-// default if it were sent back beside a list that has changed.
-const defaultsWithoutTheOldParentNumbers = (
-	defaults: IConnectionDefaults,
-): IConnectionDefaults =>
-	Object.fromEntries(
-		Object.entries(defaults).filter(
-			([name]) => !isParentSourcesDefaultName(name),
-		),
-	);
+import UpdateQuestion from "./UpdateQuestion";
+import { useConnectionSave } from "./useConnectionSave";
 
 const NOBODY: IConnectionUsage = { teams: 0, portfolios: 0 };
-
-interface ConnectionDefaultsSectionProps {
-	supportedDefaults: ConnectionDefaultName[];
-	defaults: IConnectionDefaults;
-	additionalFields: IAdditionalFieldDefinition[];
-	onChange: (name: FieldDefaultName, fieldId: number | null) => void;
-	onEstimationChange: (
-		name: EstimationDefaultName,
-		bundle: IEstimationDefault | null,
-	) => void;
-	onParentSourcesChange: (
-		name: ParentSourcesDefaultName,
-		list: readonly ParentSourceEntry[],
-	) => void;
-	/** Only a saved field can be named by a default, so a field added in this edit is not offered yet. */
-	savedFieldIds: ReadonlySet<number>;
-	tracker: WorkTrackingSystemType | undefined;
-}
-
-const ConnectionDefaultsSection: React.FC<ConnectionDefaultsSectionProps> = ({
-	supportedDefaults,
-	defaults,
-	additionalFields,
-	onChange,
-	onEstimationChange,
-	onParentSourcesChange,
-	savedFieldIds,
-	tracker,
-}) => {
-	const { getTerm } = useTerminology();
-	const teamsTerm = getTerm(TERMINOLOGY_KEYS.TEAMS);
-	const portfoliosTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIOS);
-	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
-	const tipTerms = directionTipTermsFrom(getTerm);
-	const title = `Defaults for ${teamsTerm} and ${portfoliosTerm}`;
-
-	const fieldOptions = additionalFields.map((field) => ({
-		id: field.id,
-		label: field.displayName,
-	}));
-	const fieldIds = new Set(additionalFields.map((field) => field.id));
-	// A field removed from the list above has no entry to show, so its default reads as None.
-	const chosenFieldOf = (name: ConnectionDefaultName): number | "" => {
-		const fieldId = fieldOfDefault(name, defaults);
-		return fieldId != null && fieldIds.has(fieldId) ? fieldId : "";
-	};
-
-	const chosenFieldIdOf = (name: ConnectionDefaultName): number | null => {
-		const chosen = chosenFieldOf(name);
-		return chosen === "" ? null : chosen;
-	};
-
-	const savedFields = additionalFields.filter((field) =>
-		savedFieldIds.has(field.id),
-	);
-
-	const groups: { group: DefaultsGroup; heading: string }[] = [
-		{ group: "teams", heading: teamsTerm },
-		{ group: "portfolios", heading: portfoliosTerm },
-	];
-	const sections = groups
-		.map(({ group, heading }) => ({
-			heading,
-			rows: supportedDefaults.filter(
-				(name) => WhereEachDefaultSits[name].group === group,
-			),
-		}))
-		.filter(({ rows }) => rows.length > 0);
-
-	const rowOf = (name: ConnectionDefaultName) => {
-		if (isEstimationDefaultName(name)) {
-			return (
-				<EstimationDefaultEditor
-					key={name}
-					bundle={defaults[name]}
-					chosenField={chosenFieldIdOf(name)}
-					additionalFields={additionalFields}
-					onChange={(bundle) => onEstimationChange(name, bundle)}
-				/>
-			);
-		}
-		if (isParentSourcesDefaultName(name) && tracker) {
-			return (
-				<ParentSourcesList
-					key={name}
-					owner={ownerOfParentSourcesDefault(name)}
-					value={parentSourcesOfDefault(name, defaults)}
-					tracker={tracker}
-					additionalFieldDefinitions={savedFields}
-					onChange={(list) => onParentSourcesChange(name, list)}
-					info={parentSourcesTip(name, tracker, tipTerms)}
-				/>
-			);
-		}
-		return (
-			<FormSelectField<number>
-				key={name}
-				label={WhereEachDefaultSits[name].label(featureTerm)}
-				value={chosenFieldOf(name)}
-				options={fieldOptions}
-				onChange={(fieldId) => onChange(name, fieldId)}
-				info={directionTip(name, tracker, tipTerms)}
-			/>
-		);
-	};
-
-	return (
-		<Box component="section" aria-label={title}>
-			<InputGroup title={title}>
-				<Typography variant="body2" color="text.secondary">
-					{`${teamsTerm} and ${portfoliosTerm} on this connection use these unless they set their own.`}
-				</Typography>
-				{sections.map(({ heading, rows }) => (
-					<Box
-						key={heading}
-						component="fieldset"
-						sx={{ border: 0, m: 0, p: 0, minWidth: 0 }}
-					>
-						<Typography
-							component="legend"
-							variant="subtitle2"
-							color="text.secondary"
-						>
-							{heading}
-						</Typography>
-						{rows.map(rowOf)}
-					</Box>
-				))}
-			</InputGroup>
-		</Box>
-	);
-};
 
 interface ModifyConnectionSettingsProps {
 	title: string;
@@ -342,22 +110,8 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		undefined,
 	);
 	const [loadedDefaults, setLoadedDefaults] = useState<IConnectionDefaults>({});
-	const [whyAsked, setWhyAsked] = useState<WhyUpdate>({
-		because: "fields",
-		teams: 0,
-		portfolios: 0,
-	});
-	const [connectionAwaitingAnswer, setConnectionAwaitingAnswer] =
-		useState<IWorkTrackingSystemConnection | null>(null);
-	const [validationErrorMessage, setValidationErrorMessage] = useState<
-		string | null
-	>(null);
-	const [validationTechnicalDetails, setValidationTechnicalDetails] = useState<
-		string | null
-	>(null);
 	const { getTerm } = useTerminology();
 	const workTrackingSystemTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
-	const featureTerm = getTerm(TERMINOLOGY_KEYS.FEATURE);
 	const { licenseStatus } = useLicenseRestrictions();
 	const canUsePremiumFeatures = licenseStatus?.canUsePremiumFeatures ?? true;
 	const baseUrl = useBaseUrl();
@@ -547,10 +301,30 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 		setInputsValid(optionsValid && nameValid);
 	}, [name, allOptions, isEditMode, originalAuthMethodKey, selectedAuthMethod]);
 
-	const clearValidationFeedback = () => {
-		setValidationErrorMessage(null);
-		setValidationTechnicalDetails(null);
-	};
+	const {
+		validationErrorMessage,
+		validationTechnicalDetails,
+		clearValidationFeedback,
+		handleSave,
+		whyAsked,
+		isAskingWhetherToUpdate,
+		saveAnswering,
+		cancelAnswer,
+	} = useConnectionSave({
+		name,
+		selectedWorkTrackingSystem,
+		selectedAuthMethod,
+		allOptions,
+		additionalFields,
+		writeBackMappings,
+		defaults,
+		loadedFields,
+		loadedDefaults,
+		usage,
+		isEditMode,
+		validateConnectionSettings,
+		saveConnectionSettings,
+	});
 
 	const handleSystemChange = (event: SelectChangeEvent<string>) => {
 		clearValidationFeedback();
@@ -624,109 +398,6 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 	const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		clearValidationFeedback();
 		setName(event.target.value);
-	};
-
-	const handleSave = async () => {
-		if (selectedWorkTrackingSystem && selectedAuthMethod) {
-			clearValidationFeedback();
-
-			const connection: IWorkTrackingSystemConnection = {
-				id: selectedWorkTrackingSystem.id,
-				name,
-				workTrackingSystem: selectedWorkTrackingSystem.workTrackingSystem,
-				options: allOptions,
-				authenticationMethodKey: selectedAuthMethod.key,
-				workTrackingSystemGetDataRetrievalDisplayName:
-					selectedWorkTrackingSystem.workTrackingSystemGetDataRetrievalDisplayName,
-				additionalFieldDefinitions: additionalFields,
-				writeBackMappingDefinitions: writeBackMappings,
-				defaults: defaults && defaultsWithoutTheOldParentNumbers(defaults),
-			};
-
-			try {
-				const verdict = await validateConnectionSettings(connection);
-				if (!verdict.isValid) {
-					// The connector knows which field it could not find, which credential was refused,
-					// what the work tracking system answered. Saying our own sentence over the top of
-					// that leaves the person with nothing to act on.
-					setValidationErrorMessage(
-						verdict.message ?? unexplainedRefusalCopy(workTrackingSystemTerm),
-					);
-					setValidationTechnicalDetails(verdict.technicalDetails ?? null);
-					return;
-				}
-			} catch (error) {
-				const { message, details } = resolveValidationErrorMessage(
-					error,
-					workTrackingSystemTerm,
-				);
-				setValidationErrorMessage(message);
-				setValidationTechnicalDetails(details);
-				return;
-			}
-
-			const why = isEditMode
-				? whyUpdate(
-						fieldsChangedSince(loadedFields, additionalFields),
-						changedDefaultsToUpdateFollowersOf(
-							loadedDefaults,
-							defaults ?? {},
-							usage,
-						),
-						changedEstimationDefaultsWithFollowers(
-							loadedDefaults,
-							defaults ?? {},
-							usage,
-						),
-						usage,
-						featureTerm,
-					)
-				: null;
-			if (why) {
-				setWhyAsked(why);
-				setConnectionAwaitingAnswer(connection);
-				return;
-			}
-
-			await save(connection);
-		}
-	};
-
-	const save = async (
-		connection: IWorkTrackingSystemConnection,
-		choice?: ISaveConnectionChoice,
-	) => {
-		try {
-			await saveConnectionSettings(connection, choice);
-		} catch (error_) {
-			if (error_ instanceof ApiError && error_.code === CONFLICT_STATUS) {
-				setValidationErrorMessage(
-					error_.problemCode === FIELD_STILL_IN_USE_CODE
-						? error_.message
-						: CONCURRENCY_CONFLICT_COPY,
-				);
-				setValidationTechnicalDetails(null);
-				return;
-			}
-			throw error_;
-		}
-	};
-
-	const saveAnswering = async (startUpdates: boolean) => {
-		if (!connectionAwaitingAnswer) {
-			return;
-		}
-		try {
-			await save(connectionAwaitingAnswer, {
-				startUpdates,
-				additionalFieldsChanged: fieldsChangedSince(
-					loadedFields,
-					additionalFields,
-				),
-			});
-		} finally {
-			setConnectionAwaitingAnswer(null);
-		}
 	};
 
 	const usesOAuth = isOAuthMethod(selectedAuthMethod);
@@ -859,76 +530,16 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 						</Grid>
 					)}
 
-					{showOAuthUpgradeNotice && (
-						<Grid size={{ xs: 12 }}>
-							<Typography
-								variant="subtitle2"
-								color="text.secondary"
-								sx={{ mb: 1 }}
-							>
-								Authentication
-							</Typography>
-							<Alert
-								severity="info"
-								data-testid="oauth-premium-upgrade-affordance"
-							>
-								<Typography variant="body2">
-									OAuth 2.0 authentication is a Premium feature. Upgrade to
-									Premium to connect via OAuth.{" "}
-									<Link component={RouterLink} to="/settings/license">
-										View license options
-									</Link>
-								</Typography>
-							</Alert>
-						</Grid>
-					)}
+					{showOAuthUpgradeNotice && <OAuthPremiumNotice />}
 
 					{showAuthFields && (
-						<Grid size={{ xs: 12 }}>
-							<Typography
-								variant="subtitle2"
-								color="text.secondary"
-								sx={{ mb: 1 }}
-							>
-								Authentication
-							</Typography>
-							<Grid container spacing={2}>
-								{authOptions.map((option) => {
-									const displayName =
-										selectedAuthMethod?.options.find(
-											(o) => o.key === option.key,
-										)?.displayName ?? option.key;
-									return (
-										<Grid size={{ xs: 12, md: 6 }} key={option.key}>
-											<TextField
-												label={displayName}
-												type={option.isSecret ? "password" : "text"}
-												fullWidth
-												value={option.value}
-												placeholder={
-													isEditMode && option.isSecret && option.value === ""
-														? "Leave empty to keep existing value"
-														: ""
-												}
-												slotProps={
-													lockOAuthField
-														? { input: { readOnly: true } }
-														: undefined
-												}
-												error={secretCannotBeRead(option)}
-												helperText={resolveAuthOptionHelperText(
-													option,
-													lockOAuthField,
-												)}
-												onChange={(e) =>
-													handleAuthOptionChange(option, e.target.value)
-												}
-											/>
-										</Grid>
-									);
-								})}
-							</Grid>
-						</Grid>
+						<ConnectionAuthSection
+							authOptions={authOptions}
+							selectedAuthMethod={selectedAuthMethod}
+							isEditMode={isEditMode}
+							lockOAuthField={lockOAuthField}
+							onOptionChange={handleAuthOptionChange}
+						/>
 					)}
 
 					{showOAuthConnectForm && (
@@ -1048,11 +659,11 @@ const ModifyConnectionSettings: React.FC<ModifyConnectionSettingsProps> = ({
 					</Grid>
 				</Grid>
 				<UpdateQuestion
-					open={connectionAwaitingAnswer !== null}
+					open={isAskingWhetherToUpdate}
 					why={whyAsked}
 					onUpdate={() => saveAnswering(true)}
 					onSaveOnly={() => saveAnswering(false)}
-					onCancel={() => setConnectionAwaitingAnswer(null)}
+					onCancel={cancelAnswer}
 				/>
 			</Container>
 		</LoadingAnimation>
