@@ -1,4 +1,5 @@
 using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.API.Helpers;
 using Lighthouse.Backend.Cache;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Auth;
@@ -139,7 +140,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 ?? throw new InvalidOperationException($"{voter.Name} could not vote: {resolution.Refusal}");
 
             var outcome = scope.ServiceProvider.GetRequiredService<ISizingLogCommands>()
-                .Vote(teamId, workItem, new SizingVote(answer, SizingChannel.Web, null), established);
+                .Vote(teamId, WorkItemRouteReference.From(workItem), new SizingVote(answer, SizingChannel.Web, null), established);
 
             Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded).Or.EqualTo(SizingOutcome.RecordedAndMadeReady),
                 $"{voter.Name}'s {answer} on {workItem} was not recorded");

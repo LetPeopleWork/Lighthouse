@@ -48,6 +48,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         public const string LoadTesting = "GR-074";
 
+        private const string TeamNamePrefix = "Team ";
+
         private const string TagsField = "workitem.tags";
 
         private const string ContainsOperator = "contains";
@@ -216,16 +218,22 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         /// <summary>
         /// A Team with the states Backlog, Implementation and Done and a Throughput history of thirty days, whose
-        /// tracker holds this many Work Items in Backlog: NB-001 "Nebula Work Item 1" ranked first, and so on. It
-        /// has not yet said how it refines.
+        /// tracker holds this many Work Items in Backlog, named after the Team: for "Team Nebula", NB-001
+        /// "Nebula Work Item 1" ranked first, and so on. It has not yet said how it refines.
         /// </summary>
         public int ATeamWhoseBacklogHolds(string name, int workItems)
         {
             var team = ATeam(name, new TeamStates([Backlog], [Implementation], [Done]), ThroughputHistoryDays);
+            var shortName = name.StartsWith(TeamNamePrefix, StringComparison.Ordinal) ? name[TeamNamePrefix.Length..] : name;
+            var keyPrefix = TrackerKeyPrefixOf(shortName);
             TheTrackerHolds(team, [], Enumerable.Range(1, workItems).Select(number => new TrackerWorkItem(
-                $"NB-{number:D3}", $"Nebula Work Item {number}", Backlog, StateCategories.ToDo, $"{number}")));
+                $"{keyPrefix}-{number:D3}", $"{shortName} Work Item {number}", Backlog, StateCategories.ToDo, $"{number}")));
             return team;
         }
+
+        /// <summary>The tracker's key for a project is the first two consonants of its name, as GR is for Gravity and NB for Nebula.</summary>
+        private static string TrackerKeyPrefixOf(string shortName)
+            => string.Concat(shortName.Where(letter => char.IsLetter(letter) && !"aeiouAEIOU".Contains(letter)).Take(2)).ToUpperInvariant();
 
         private int GravityRefines(string name, int sleProbability, int sleRange, (string WorkItem, string Tag)[] tags, IEnumerable<TrackerWorkItem> workItems)
         {
