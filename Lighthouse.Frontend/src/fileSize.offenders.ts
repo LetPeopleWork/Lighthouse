@@ -1,0 +1,23 @@
+/**
+ * Production files that are still over the size limit, listed by name. The list only shrinks:
+ * an entry is deleted in the same change that brings its file under the limit.
+ */
+export interface TooWideEntry {
+	/** Path relative to src. */
+	path: string;
+	/** Why the file still waits, in plain words. */
+	reason: string;
+}
+
+export const TOO_WIDE_TODAY: TooWideEntry[] = [
+	{
+		path: "pages/Common/MetricsView/BaseMetricsView.tsx",
+		reason:
+			"One view holds the chart, the drill-down and the table together; it is split by responsibility in a later slice of the same story.",
+	},
+	{
+		path: "pages/Common/MetricsView/ragRules.ts",
+		reason:
+			"One file holds the status rules of every metric; it is split by metric in a later slice of the same story.",
+	},
+];
