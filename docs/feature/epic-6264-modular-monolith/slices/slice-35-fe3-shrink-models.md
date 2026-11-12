@@ -37,6 +37,15 @@ Most of `models` is owned by one module. **Disproved if** many types are shared 
 - Hard: FE1.
 - Soft: FE2 per module, S01.
 
+## Notes for DESIGN
+
+- **Known case, added 2026-11-12: `src/models/Settings/`.** Epic #6473 (settings split) adds two files there: the
+  settings definition `settingsAreas.ts` (areas, tabs, old `?tab=` keys, connection paths; data only) and the pure
+  resolver `resolveSettingsLocation.ts`. They sit in `models` on purpose: the Header and `OnboardingStepper` (zone
+  `components`) must read the definition, and the import rules let `components` import `models` but not `pages`. FE3
+  decides whether they join the shared core or move to a settings module that `components` may import, and counts
+  them in its re-count.
+
 ## Slicing
 
 Carpaccio slicing into ≤ 1-day slices happens at this Story's DESIGN (one model folder per slice).
