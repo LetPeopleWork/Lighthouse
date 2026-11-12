@@ -1,4 +1,4 @@
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useRef, useState } from "react";
 import type {
 	RbacGroupMapping,
 	RbacScopedMemberSummary,
@@ -35,7 +35,10 @@ export const useScopedAccess = (
 ): ScopedAccess => {
 	const { rbacService } = useContext(ApiServiceContext);
 	const { getTerm } = useTerminology();
-	const scopeWord = getTerm(
+	// Read through a ref so a late terminology answer changes the next message,
+	// not the identity of the handlers a page effect depends on.
+	const scopeWordRef = useRef("");
+	scopeWordRef.current = getTerm(
 		scope === "Team" ? TERMINOLOGY_KEYS.TEAM : TERMINOLOGY_KEYS.PORTFOLIO,
 	).toLowerCase();
 	const [members, setMembers] = useState<RbacScopedMemberSummary[]>([]);
@@ -56,11 +59,11 @@ export const useScopedAccess = (
 					: await rbacService.getPortfolioMembers(scopeId),
 			);
 		} catch {
-			setMembersError(`Failed to load ${scopeWord} members.`);
+			setMembersError(`Failed to load ${scopeWordRef.current} members.`);
 		} finally {
 			setMembersLoading(false);
 		}
-	}, [rbacService, scope, scopeId, scopeWord]);
+	}, [rbacService, scope, scopeId]);
 
 	const assignRole = useCallback(
 		async (userProfileId: number, role: ScopedRbacRole) => {
@@ -75,10 +78,12 @@ export const useScopedAccess = (
 					: rbacService.upsertPortfolioMember(scopeId, userProfileId, role));
 				await loadMembers();
 			} catch {
-				setMembersError(`Failed to update ${scopeWord} member role.`);
+				setMembersError(
+					`Failed to update ${scopeWordRef.current} member role.`,
+				);
 			}
 		},
-		[rbacService, scope, scopeId, scopeWord, loadMembers],
+		[rbacService, scope, scopeId, loadMembers],
 	);
 
 	const removeMember = useCallback(
@@ -94,10 +99,10 @@ export const useScopedAccess = (
 					: rbacService.removePortfolioMember(scopeId, userProfileId));
 				await loadMembers();
 			} catch {
-				setMembersError(`Failed to remove ${scopeWord} member.`);
+				setMembersError(`Failed to remove ${scopeWordRef.current} member.`);
 			}
 		},
-		[rbacService, scope, scopeId, scopeWord, loadMembers],
+		[rbacService, scope, scopeId, loadMembers],
 	);
 
 	const loadGroupMappings = useCallback(() => {
