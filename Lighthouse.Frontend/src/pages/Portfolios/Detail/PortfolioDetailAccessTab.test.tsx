@@ -27,13 +27,15 @@ vi.mock("../../../components/Common/LoadingAnimation/LoadingAnimation", () => ({
 vi.mock("./PortfolioFeatureList", () => ({ default: () => <div /> }));
 vi.mock("./InvolvedTeamsList", () => ({ default: () => <div /> }));
 
+const terms = vi.hoisted(() => ({ portfolio: "Portfolio" }));
+
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
 		getTerm: (key: string) =>
 			({
 				[TERMINOLOGY_KEYS.TEAM]: "Team",
 				[TERMINOLOGY_KEYS.TEAMS]: "Teams",
-				[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
+				[TERMINOLOGY_KEYS.PORTFOLIO]: terms.portfolio,
 				[TERMINOLOGY_KEYS.PORTFOLIOS]: "Portfolios",
 				[TERMINOLOGY_KEYS.FEATURES]: "Features",
 			})[key] ?? key,
@@ -106,6 +108,7 @@ const openTheAccessTabAs = (
 describe("The Access tab of a Portfolio", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		terms.portfolio = "Portfolio";
 	});
 
 	it("shows a Portfolio Admin which rules for all Teams and Portfolios reach the Portfolio, and offers no form to add a group", async () => {
@@ -227,6 +230,19 @@ describe("The Access tab of a Portfolio", () => {
 
 			expect(
 				await screen.findByText("Failed to load portfolio members."),
+			).toBeInTheDocument();
+		});
+
+		it("names the Portfolio with the instance's own word when the members could not be loaded", async () => {
+			terms.portfolio = "Program";
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbacService.getPortfolioMembers = vi
+					.fn()
+					.mockRejectedValue(new Error("down"));
+			});
+
+			expect(
+				await screen.findByText("Failed to load program members."),
 			).toBeInTheDocument();
 		});
 

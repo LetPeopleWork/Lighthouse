@@ -4,7 +4,9 @@ import type {
 	RbacScopedMemberSummary,
 	ScopedRbacRole,
 } from "../models/Authorization/RbacModels";
+import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
+import { useTerminology } from "../services/TerminologyContext";
 
 export type ScopedAccessKind = "Team" | "Portfolio";
 
@@ -23,8 +25,6 @@ export interface ScopedAccess {
 	removeGroupMapping: (mappingId: number) => Promise<void>;
 }
 
-const scopeWord = (scope: ScopedAccessKind): string => scope.toLowerCase();
-
 /**
  * The members and group mappings of one Team or Portfolio. Who may see or change them stays
  * with the page, through `useRbac`; this hook only talks to the service for that scope.
@@ -34,6 +34,10 @@ export const useScopedAccess = (
 	scopeId: number | undefined,
 ): ScopedAccess => {
 	const { rbacService } = useContext(ApiServiceContext);
+	const { getTerm } = useTerminology();
+	const scopeWord = getTerm(
+		scope === "Team" ? TERMINOLOGY_KEYS.TEAM : TERMINOLOGY_KEYS.PORTFOLIO,
+	).toLowerCase();
 	const [members, setMembers] = useState<RbacScopedMemberSummary[]>([]);
 	const [membersLoading, setMembersLoading] = useState(false);
 	const [membersError, setMembersError] = useState<string>();
@@ -52,11 +56,11 @@ export const useScopedAccess = (
 					: await rbacService.getPortfolioMembers(scopeId),
 			);
 		} catch {
-			setMembersError(`Failed to load ${scopeWord(scope)} members.`);
+			setMembersError(`Failed to load ${scopeWord} members.`);
 		} finally {
 			setMembersLoading(false);
 		}
-	}, [rbacService, scope, scopeId]);
+	}, [rbacService, scope, scopeId, scopeWord]);
 
 	const assignRole = useCallback(
 		async (userProfileId: number, role: ScopedRbacRole) => {
@@ -71,10 +75,10 @@ export const useScopedAccess = (
 					: rbacService.upsertPortfolioMember(scopeId, userProfileId, role));
 				await loadMembers();
 			} catch {
-				setMembersError(`Failed to update ${scopeWord(scope)} member role.`);
+				setMembersError(`Failed to update ${scopeWord} member role.`);
 			}
 		},
-		[rbacService, scope, scopeId, loadMembers],
+		[rbacService, scope, scopeId, scopeWord, loadMembers],
 	);
 
 	const removeMember = useCallback(
@@ -90,10 +94,10 @@ export const useScopedAccess = (
 					: rbacService.removePortfolioMember(scopeId, userProfileId));
 				await loadMembers();
 			} catch {
-				setMembersError(`Failed to remove ${scopeWord(scope)} member.`);
+				setMembersError(`Failed to remove ${scopeWord} member.`);
 			}
 		},
-		[rbacService, scope, scopeId, loadMembers],
+		[rbacService, scope, scopeId, scopeWord, loadMembers],
 	);
 
 	const loadGroupMappings = useCallback(() => {

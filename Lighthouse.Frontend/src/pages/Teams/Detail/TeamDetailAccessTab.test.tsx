@@ -16,11 +16,13 @@ vi.mock("./TeamFeaturesView", () => ({ default: () => <div /> }));
 vi.mock("./TeamForecastView", () => ({ default: () => <div /> }));
 vi.mock("./TeamMetricsView", () => ({ default: () => <div /> }));
 
+const terms = vi.hoisted(() => ({ team: "Team" }));
+
 vi.mock("../../../services/TerminologyContext", () => ({
 	useTerminology: () => ({
 		getTerm: (key: string) =>
 			({
-				[TERMINOLOGY_KEYS.TEAM]: "Team",
+				[TERMINOLOGY_KEYS.TEAM]: terms.team,
 				[TERMINOLOGY_KEYS.TEAMS]: "Teams",
 				[TERMINOLOGY_KEYS.PORTFOLIO]: "Portfolio",
 				[TERMINOLOGY_KEYS.PORTFOLIOS]: "Portfolios",
@@ -116,6 +118,7 @@ const openTheAccessTabAs = (
 describe("The Access tab of a Team", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
+		terms.team = "Team";
 	});
 
 	it("shows a Team Admin which rules for all Teams and Portfolios reach the Team, and offers no form to add a group", async () => {
@@ -229,6 +232,19 @@ describe("The Access tab of a Team", () => {
 
 			expect(
 				await screen.findByText("Failed to load team members."),
+			).toBeInTheDocument();
+		});
+
+		it("names the Team with the instance's own word when the members could not be loaded", async () => {
+			terms.team = "Squad";
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbacService.getTeamMembers = vi
+					.fn()
+					.mockRejectedValue(new Error("down"));
+			});
+
+			expect(
+				await screen.findByText("Failed to load squad members."),
 			).toBeInTheDocument();
 		});
 
