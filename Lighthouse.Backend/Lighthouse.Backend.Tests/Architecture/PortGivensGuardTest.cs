@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     /// and nothing else. A port class that wrote a Team itself would step around them, and could pass on a Team no
     /// save produces. Blackout days and rules, which a port class may add, go through their own services, which
     /// check them as the routes do. This reads the compiled port classes, with the compiler-made types nested in
-    /// them, for any call that writes a Team or anything a Team holds: a setter on it, a change to one of its lists,
+    /// them, for any call that writes a Team or anything a Team holds: a setter on it, a read of one of its lists,
     /// or a write of a Team or a blackout table through a repository or the database context.
     /// </summary>
     [TestFixture]
@@ -60,11 +60,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             nameof(DbContext.Attach), nameof(DbContext.AttachRange),
         };
 
-        private static readonly HashSet<string> CollectionChanges = new(StringComparer.Ordinal)
-        {
-            "Add", "AddRange", "Insert", "InsertRange", "Remove", "RemoveAt", "RemoveAll", "RemoveRange", "Clear",
-        };
-
         private ModuleDefinition module = null!;
 
         private List<TypeDefinition> everyNamedType = [];
@@ -103,6 +98,8 @@ namespace Lighthouse.Backend.Tests.Architecture
         [TestCase(typeof(PlantedPortClasses.TakesTheTeamsTableFromTheContext), "Set<Team>")]
         [TestCase(typeof(PlantedPortClasses.AddsATeamThroughTheContext), "Add<Team>")]
         [TestCase(typeof(PlantedPortClasses.UpdatesATeamThroughTheRepository), "Update")]
+        [TestCase(typeof(PlantedPortClasses.HandsATeamsToDoStatesToAHelperThatAddsOne), "get_ToDoStates")]
+        [TestCase(typeof(PlantedPortClasses.AddsADoingStateInALambdaLater), "get_DoingStates")]
         public void The_guard_sees_a_port_class_that_sets_up_a_Team_itself(Type planted, string whatItCalls)
         {
             var plantedClass = everyNamedType.Single(type => type.FullName == KeyOf(planted));
@@ -133,28 +130,16 @@ namespace Lighthouse.Backend.Tests.Architecture
                 .Where(method => method.HasBody)
                 .SelectMany(method => WritesInTheBodyOf(method).Select(write => $"{portClass.Name}.{method.Name} {write}"));
 
-        // A list a Team holds is changed by a call on what its getter returned, so a getter of such a list is
-        // remembered until a change to a list of the same type follows it in the same method.
+        // A list a Team holds can be changed wherever it is handed on to: a helper, a lambda, a field. Following it
+        // there is not possible from the calls alone, so a port class may not take such a list off a Team at all.
         private static IEnumerable<string> WritesInTheBodyOf(MethodDefinition method)
-        {
-            var listsReadOffATeam = new Dictionary<string, MethodReference>(StringComparer.Ordinal);
-
-            foreach (var called in method.Body.Instructions.Select(instruction => instruction.Operand).OfType<MethodReference>())
-            {
-                if (IsAWriteOfASetUpTable(called))
-                {
-                    yield return $"calls {NameOf(called)}";
-                }
-                else if (IsAListATeamHolds(called))
-                {
-                    listsReadOffATeam[called.ReturnType.FullName] = called;
-                }
-                else if (CollectionChanges.Contains(called.Name) && listsReadOffATeam.TryGetValue(called.DeclaringType.FullName, out var getter))
-                {
-                    yield return $"calls {NameOf(getter)} and then {NameOf(called)} on what it returned";
-                }
-            }
-        }
+            => method.Body.Instructions
+                .Select(instruction => instruction.Operand)
+                .OfType<MethodReference>()
+                .Select(called => IsAWriteOfASetUpTable(called) ? $"calls {NameOf(called)}"
+                    : IsAListATeamHolds(called) ? $"calls {NameOf(called)}, a list a Team holds, which it could change"
+                    : null)
+                .OfType<string>();
 
         private static bool IsAWriteOfASetUpTable(MethodReference called)
         {
@@ -268,6 +253,22 @@ namespace Lighthouse.Backend.Tests.Architecture
         public sealed class AddsAToDoStateToATeam : RefinementAtThePortTest
         {
             public static void Plant(Team team) => team.ToDoStates.Add("Ready for refinement");
+        }
+
+        public sealed class HandsATeamsToDoStatesToAHelperThatAddsOne : RefinementAtThePortTest
+        {
+            public static void Plant(Team team) => AddReady(team.ToDoStates);
+
+            private static void AddReady(List<string> states) => states.Add("Ready for refinement");
+        }
+
+        public sealed class AddsADoingStateInALambdaLater : RefinementAtThePortTest
+        {
+            public static Action Plant(Team team)
+            {
+                var states = team.DoingStates;
+                return () => states.Add("Ready for refinement");
+            }
         }
 
         public sealed class TakesTheTeamsTableFromTheContext : RefinementAtThePortTest
