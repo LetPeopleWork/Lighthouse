@@ -95,15 +95,19 @@ node_bin="$(dirname "$(command -v node)")"
 cat > "$out/frontend-tests" <<EOF
 #!/usr/bin/env bash
 # Runs the frontend tests and prints every test by name with its result, plus the totals.
-# Usage: frontend-tests [path-fragment [name-fragment]]
-#   path-fragment  runs only the spec files whose path contains it, for example Settings/Rbac
-#   name-fragment  runs only the tests whose name contains it, for example "No direct role"
+# Usage: frontend-tests [path-fragments [name-fragment]]
+#   path-fragments  runs only the spec files whose path contains one of them; separate several with commas,
+#                   for example Settings/Rbac or MetricsView/ragRules,Connection/,useScopedAccess
+#   name-fragment   runs only the tests whose name contains it, for example "No direct role"
+# Result marks: ✓ passed, × failed, ↓ skipped. With a name fragment, every test whose name lacks it is
+# reported as skipped: it did not run, and it did not fail. Run without a name fragment to see a whole file.
+# Rows that check a message a user reads name that exact text in quotes, so a passing row shows the text.
 set -euo pipefail
 # The examiner runs commands in a bare environment; Node and pnpm live under the user's home.
 export HOME="$home" PATH="$node_bin:/usr/bin:/bin" CI=true NO_COLOR=1 FORCE_COLOR=0
 cd "$repo/Lighthouse.Frontend"
 args=(run --reporter=verbose)
-if [ \$# -gt 0 ] && [ -n "\$1" ]; then args+=("\$1"); fi
+if [ \$# -gt 0 ] && [ -n "\$1" ]; then IFS=, read -r -a paths <<< "\$1"; args+=("\${paths[@]}"); fi
 if [ \$# -gt 1 ] && [ -n "\$2" ]; then args+=(-t "\$2"); fi
 pnpm exec vitest "\${args[@]}" 2>&1 | grep -E "^ +(✓|×|↓) |^ +(Test Files|Tests) |FAIL " || true
 EOF
