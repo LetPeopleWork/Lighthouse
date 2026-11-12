@@ -239,6 +239,97 @@ A builder that drops the risk column from one in-flight list fails its each-row;
 
 None.
 
+### S4
+
+##### Covers
+
+P2
+
+```text
+Ask whether Estimation vs Cycle Time and every other chart get a frame, with and without a chart, loading and failed
+```
+
+```text
+Estimation vs Cycle Time is held back until it has a chart or its data failed to load; every other chart is placed from the first render
+```
+
+```text
+The dashboard layout does not reshuffle and no empty frame appears for an estimation chart that may never exist
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/dashboardFrame\.test\.ts
+
+```text
+isPlaced always returns true, or holds back every chart
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Ask the frame helpers for the columns status, the frame state and the body of a chart in each loading, failed and ready combination
+```
+
+```text
+Only the aging chart waits on the Doing states; the worst status wins; a commit pending reads loading; only a ready chart with an older picture is dimmed; the chart body shows only once data and columns arrived
+```
+
+```text
+A chart under way shows a spinner, never an empty chart that reads as no data
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/dashboardFrame\.test\.ts
+
+```text
+the columns status is ignored for aging, or the body shows a chart drawn from empty defaults
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Run the size rule over the source tree after the metrics view lost its widget nodes and frame helpers
+```
+
+```text
+BaseMetricsView.tsx is at most 1000 lines, its entry is off the offender list and the list is empty; a stale entry or a 1001-line file is named
+```
+
+```text
+No production frontend file is over the limit unless listed, and the list only shrinks
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/fileSize\.enforcement\.test\.ts
+
+```text
+the entry is kept after the file is under 1000 lines
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

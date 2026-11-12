@@ -124,12 +124,56 @@
 "stimulus": "F212",
 "user_result": "F214"
 }
+],
+"S4": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F219",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts"
+},
+"expected": "F217",
+"stimulus": "F216",
+"user_result": "F218"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F223",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F227",
+"test": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F226"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 4,
-"F": 215,
+"F": 227,
 "K": 5,
 "P": 4,
 "S": 5,
@@ -1338,7 +1382,19 @@
 "F213": "Each payload carries or omits the risk column as before, names its dialog context and owner kind, counts Time in State to the range's last day, measures age on the last day for the four over-the-range lists, and a team with no target gets no column",
 "F214": "Every metrics widget list shows the same columns, context and ages as before the split",
 "F215": "A builder that drops the risk column from one in-flight list fails its each-row; one that adds a new unclassified payload fails the every-list-classified row",
+"F216": "Ask whether Estimation vs Cycle Time and every other chart get a frame, with and without a chart, loading and failed",
+"F217": "Estimation vs Cycle Time is held back until it has a chart or its data failed to load; every other chart is placed from the first render",
+"F218": "The dashboard layout does not reshuffle and no empty frame appears for an estimation chart that may never exist",
+"F219": "isPlaced always returns true, or holds back every chart",
 "F22": "Test rules: the test-writing skill and its frontend half win over nWave's timing and PBT density; no nWave scenario tags in code; no broad property tests (finite example rows only); the new enforcement tests walk about 700 files, well inside the default per-test budget, no derogation.",
+"F220": "Ask the frame helpers for the columns status, the frame state and the body of a chart in each loading, failed and ready combination",
+"F221": "Only the aging chart waits on the Doing states; the worst status wins; a commit pending reads loading; only a ready chart with an older picture is dimmed; the chart body shows only once data and columns arrived",
+"F222": "A chart under way shows a spinner, never an empty chart that reads as no data",
+"F223": "the columns status is ignored for aging, or the body shows a chart drawn from empty defaults",
+"F224": "Run the size rule over the source tree after the metrics view lost its widget nodes and frame helpers",
+"F225": "BaseMetricsView.tsx is at most 1000 lines, its entry is off the offender list and the list is empty; a stale entry or a 1001-line file is named",
+"F226": "No production frontend file is over the limit unless listed, and the list only shrinks",
+"F227": "the entry is kept after the file is under 1000 lines",
 "F23": "One oracle file per slice; an earlier slice's oracle and support files are never edited by a later slice.",
 "F24": "Every caller and callee is inside the one frontend deployable and changes in the same commit; the primary oracles cover them.",
 "F25": "React Testing Library render of the component, renderHook of the hook with its providers, pure modules called as functions, and source-scan enforcement tests over src",
