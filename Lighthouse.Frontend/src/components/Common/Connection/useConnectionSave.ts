@@ -2,25 +2,19 @@ import { useState } from "react";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IAdditionalFieldDefinition } from "../../../models/WorkTracking/AdditionalFieldDefinition";
 import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
-import type {
-	IAuthenticationMethod,
-	IConnectionDefaults,
-	IConnectionUsage,
-	IWorkTrackingSystemConnection,
+import {
+	type IAuthenticationMethod,
+	type IConnectionDefaults,
+	type IConnectionUsage,
+	type IWorkTrackingSystemConnection,
+	isParentSourcesDefaultName,
 } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import type { IWorkTrackingSystemOption } from "../../../models/WorkTracking/WorkTrackingSystemOption";
 import type { IWriteBackMappingDefinition } from "../../../models/WorkTracking/WriteBackMappingDefinition";
 import { ApiError } from "../../../services/Api/ApiError";
 import type { ISaveConnectionChoice } from "../../../services/Api/WorkTrackingSystemService";
 import { useTerminology } from "../../../services/TerminologyContext";
-import {
-	CONFLICT_STATUS,
-	CONNECTION_COPY,
-	defaultsWithoutTheOldParentNumbers,
-	FIELD_STILL_IN_USE_CODE,
-	resolveValidationErrorMessage,
-	unexplainedRefusalCopy,
-} from "./connectionFormRules";
+import { CONNECTION_COPY, unexplainedRefusalCopy } from "./connectionFormRules";
 import type { WhyUpdate } from "./UpdateQuestion";
 import {
 	changedDefaultsToUpdateFollowersOf,
@@ -28,6 +22,44 @@ import {
 	fieldsChangedSince,
 	whyUpdate,
 } from "./whatASaveAsks";
+
+const CONFLICT_STATUS = 409;
+// The server's own sentence names the field and who still uses it, so it is shown as it stands.
+const FIELD_STILL_IN_USE_CODE = "additional-field-in-use";
+
+function resolveValidationErrorMessage(
+	error: unknown,
+	workTrackingSystemTerm: string,
+): { message: string; details: string | null } {
+	if (error instanceof ApiError && error.code === 403) {
+		return {
+			message:
+				error.message ||
+				"You've exceeded the number of additional fields allowed on your plan.",
+			details: error.technicalDetails ?? null,
+		};
+	}
+
+	if (error instanceof ApiError) {
+		return { message: error.message, details: error.technicalDetails ?? null };
+	}
+
+	return {
+		message: unexplainedRefusalCopy(workTrackingSystemTerm),
+		details: null,
+	};
+}
+
+// The parent defaults travel as lists. The old number a read carries would be read as an edit of the
+// default if it were sent back beside a list that has changed.
+const defaultsWithoutTheOldParentNumbers = (
+	defaults: IConnectionDefaults,
+): IConnectionDefaults =>
+	Object.fromEntries(
+		Object.entries(defaults).filter(
+			([name]) => !isParentSourcesDefaultName(name),
+		),
+	);
 
 interface ConnectionSaveInputs {
 	name: string;

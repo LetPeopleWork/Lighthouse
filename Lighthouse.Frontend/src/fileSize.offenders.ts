@@ -12,12 +12,10 @@ export interface TooWideEntry {
 export const TOO_WIDE_TODAY: TooWideEntry[] = [
 	{
 		path: "pages/Common/MetricsView/BaseMetricsView.tsx",
-		reason:
-			"One view holds the chart, the drill-down and the table together; it is split by responsibility in a later slice of the same story.",
+		reason: "One view holds the chart, the drill-down and the table together.",
 	},
 	{
 		path: "pages/Common/MetricsView/ragRules.ts",
-		reason:
-			"One file holds the status rules of every metric; it is split by metric in a later slice of the same story.",
+		reason: "One file holds the status rules of every metric.",
 	},
 ];

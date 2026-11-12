@@ -1,19 +1,10 @@
-import type {
-	IAuthenticationMethod,
-	IConnectionDefaults,
-} from "../../../models/WorkTracking/WorkTrackingSystemConnection";
-import { isParentSourcesDefaultName } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
+import type { IAuthenticationMethod } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import {
 	type IWorkTrackingSystemOption,
 	SecretStates,
 } from "../../../models/WorkTracking/WorkTrackingSystemOption";
-import { ApiError } from "../../../services/Api/ApiError";
 
 const OAUTH_KEY_SUFFIX = ".oauth";
-
-export const CONFLICT_STATUS = 409;
-// The server's own sentence names the field and who still uses it, so it is shown as it stands.
-export const FIELD_STILL_IN_USE_CODE = "additional-field-in-use";
 
 export const CONNECTION_COPY = {
 	concurrencyConflict:
@@ -50,37 +41,3 @@ export const resolveAuthOptionHelperText = (
 
 	return undefined;
 };
-
-export function resolveValidationErrorMessage(
-	error: unknown,
-	workTrackingSystemTerm: string,
-): { message: string; details: string | null } {
-	if (error instanceof ApiError && error.code === 403) {
-		return {
-			message:
-				error.message ||
-				"You've exceeded the number of additional fields allowed on your plan.",
-			details: error.technicalDetails ?? null,
-		};
-	}
-
-	if (error instanceof ApiError) {
-		return { message: error.message, details: error.technicalDetails ?? null };
-	}
-
-	return {
-		message: unexplainedRefusalCopy(workTrackingSystemTerm),
-		details: null,
-	};
-}
-
-// The parent defaults travel as lists. The old number a read carries would be read as an edit of the
-// default if it were sent back beside a list that has changed.
-export const defaultsWithoutTheOldParentNumbers = (
-	defaults: IConnectionDefaults,
-): IConnectionDefaults =>
-	Object.fromEntries(
-		Object.entries(defaults).filter(
-			([name]) => !isParentSourcesDefaultName(name),
-		),
-	);
