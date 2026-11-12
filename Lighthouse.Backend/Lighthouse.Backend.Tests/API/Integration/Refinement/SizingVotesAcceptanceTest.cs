@@ -416,14 +416,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 && rows.ValueKind == JsonValueKind.Array
                 && rows.EnumerateArray().Any(candidate => TextOf(candidate, "referenceId") == referenceId);
 
-        protected static YardstickReading YardstickIn(JsonElement tab)
-        {
-            Assert.That(tab.TryGetProperty("yardstick", out var yardstick) && yardstick.ValueKind == JsonValueKind.Object, Is.True,
-                $"The Refinement tab's answer does not say what the votes are cast against. Body: {tab}");
-
-            return new YardstickReading(TextOf(yardstick, "source"), NumberOf(yardstick, "days"), NumberOf(yardstick, "probability"));
-        }
-
         protected static int? ReadyByVotesIn(JsonElement tab) => NumberOf(tab, "readyByVotesCount");
 
         protected static string? VoterIdentityIn(JsonElement tab) => TextOf(tab, "voterIdentity");
@@ -659,8 +651,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         protected sealed record FinishedWorkItem(string ReferenceId, int CycleTimeDays, int FinishedDaysAgo);
-
-        protected sealed record YardstickReading(string? Source, int? Days, int? Probability);
 
         protected sealed record ReadinessReading(int? MinYes, int? MinVoters, DiscussWhen? Discussion);
 
