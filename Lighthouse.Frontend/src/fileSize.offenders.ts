@@ -14,8 +14,4 @@ export const TOO_WIDE_TODAY: TooWideEntry[] = [
 		path: "pages/Common/MetricsView/BaseMetricsView.tsx",
 		reason: "One view holds the chart, the drill-down and the table together.",
 	},
-	{
-		path: "pages/Common/MetricsView/ragRules.ts",
-		reason: "One file holds the status rules of every metric.",
-	},
 ];
