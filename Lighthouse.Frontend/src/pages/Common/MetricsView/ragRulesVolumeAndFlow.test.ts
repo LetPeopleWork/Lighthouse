@@ -1,14 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RagTerms } from "./ragTypes";
-
-type Family = typeof import("./ragRulesVolumeAndFlow");
-
-// Loaded without a static import so a missing family module fails the rows below, not the collection.
-const familyPath = "./ragRulesVolumeAndFlow";
-const family = (await import(/* @vite-ignore */ familyPath).catch(
-	() => ({}),
-)) as Family;
-const {
+import {
 	computeArrivalsRunChartRag,
 	computeEstimationVsCycleTimeRag,
 	computeFeatureSizeRag,
@@ -19,7 +10,8 @@ const {
 	computeThroughputRag,
 	computeWipOverTimeRag,
 	computeWorkDistributionRag,
-} = family;
+} from "./ragRulesVolumeAndFlow";
+import type { RagTerms } from "./ragTypes";
 
 const terms: RagTerms = {
 	workItem: "Work Item",

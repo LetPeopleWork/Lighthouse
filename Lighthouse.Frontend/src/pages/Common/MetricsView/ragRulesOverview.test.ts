@@ -2,15 +2,11 @@ import { existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import * as overview from "./ragRulesOverview";
+import * as timeAndAge from "./ragRulesTimeAndAge";
+import * as volumeAndFlow from "./ragRulesVolumeAndFlow";
 import type { RagTerms } from "./ragTypes";
 
-type Family = typeof import("./ragRulesOverview");
-
-// Loaded without a static import so a missing family module fails the rows below, not the collection.
-const familyPath = "./ragRulesOverview";
-const family = (await import(/* @vite-ignore */ familyPath).catch(
-	() => ({}),
-)) as Family;
 const {
 	computeBlockedOverviewRag,
 	computeFeaturesWorkedOnRag,
@@ -18,7 +14,7 @@ const {
 	computePredictabilityScoreRag,
 	computeStaleOverviewRag,
 	computeWipOverviewRag,
-} = family;
+} = overview;
 
 const terms: RagTerms = {
 	workItem: "Work Item",
@@ -288,25 +284,16 @@ describe("ragRules", () => {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-/** The rule functions a family module exports, or null when the module does not exist. */
-const exportedRules = async (module: string): Promise<string[] | null> => {
-	try {
-		const loaded = await import(/* @vite-ignore */ `./${module}`);
-
-		return Object.keys(loaded)
-			.filter((name) => typeof loaded[name] === "function")
-			.sort();
-	} catch {
-		return null;
-	}
-};
-
-const MISSING =
-	"The family module does not exist yet; create it and move its rules there unchanged, so the metric status rules are split by family.";
+/** The rule functions a family module exports. */
+const exportedRules = (family: object): string[] =>
+	Object.entries(family)
+		.filter(([, value]) => typeof value === "function")
+		.map(([name]) => name)
+		.sort((a, b) => a.localeCompare(b));
 
 describe("the status rules are split into three rule families", () => {
-	it("keeps the overview rules in the overview family", async () => {
-		expect(await exportedRules("ragRulesOverview"), MISSING).toEqual([
+	it("keeps the overview rules in the overview family", () => {
+		expect(exportedRules(overview)).toEqual([
 			"computeBlockedOverviewRag",
 			"computeFeaturesWorkedOnRag",
 			"computeFlowEfficiencyRag",
@@ -316,8 +303,8 @@ describe("the status rules are split into three rule families", () => {
 		]);
 	});
 
-	it("keeps the time and age rules in the time-and-age family", async () => {
-		expect(await exportedRules("ragRulesTimeAndAge"), MISSING).toEqual([
+	it("keeps the time and age rules in the time-and-age family", () => {
+		expect(exportedRules(timeAndAge)).toEqual([
 			"computeCumulativeStateTimeRag",
 			"computeCycleTimePercentilesRag",
 			"computeCycleTimeScatterplotRag",
@@ -329,8 +316,8 @@ describe("the status rules are split into three rule families", () => {
 		]);
 	});
 
-	it("keeps the volume and flow rules in the volume-and-flow family", async () => {
-		expect(await exportedRules("ragRulesVolumeAndFlow"), MISSING).toEqual([
+	it("keeps the volume and flow rules in the volume-and-flow family", () => {
+		expect(exportedRules(volumeAndFlow)).toEqual([
 			"computeArrivalsRunChartRag",
 			"computeEstimationVsCycleTimeRag",
 			"computeFeatureSizeRag",
