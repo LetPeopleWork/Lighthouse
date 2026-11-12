@@ -3,6 +3,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Lighthouse.Backend.API;
+using Lighthouse.Backend.Services.Interfaces;
+using Microsoft.Extensions.DependencyInjection;
 using Lighthouse.Backend.Tests.API.Integration.Refinement;
 using NUnit.Framework;
 
@@ -61,15 +63,17 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
         {
             var gravity = new RefinementPortGivens(Services).GravityRefinesFiveWorkItemsAndOneReferencedAs(reference);
             var jonas = AVoterNamed(JonasWeberTheAsker);
+            var beforeTheQuestion = TheInstancesInstantInUtc();
             await GivenTheVoterHasAsked(jonas, gravity, reference, TheQuestionAsked);
 
             using var opened = await WhenTheLogIsOpened(AVoterNamed(AnaLimaTheVoter), gravity, reference);
+            var afterTheRead = TheInstancesInstantInUtc();
 
             Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.OK), "the log of a Work Item whose reference holds a slash must open");
             var log = await BodyOf(opened);
             ThenTheLogReadsOnlyTheQuestion(log, TheQuestionAsked, JonasWeberTheAsker);
-            Assert.That(log.GetProperty("entries").EnumerateArray().Select(entry => TextIn(entry, "recordedAt")),
-                Has.All.StartsWith(DayText(TheInstancesToday())), "every entry says when it was recorded");
+            Assert.That(log.GetProperty("entries").EnumerateArray().Select(entry => InstantInUtc(TextIn(entry, "recordedAt"))),
+                Has.All.InRange(beforeTheQuestion, afterTheRead), "every entry says when it was recorded");
         }
 
         [Test]
@@ -323,6 +327,18 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
 
             return await Client.SendAsync(request);
         }
+
+        /// <summary>The instance's clock now, in UTC and cut to the millisecond a log entry is written with.</summary>
+        private DateTime TheInstancesInstantInUtc()
+        {
+            using var scope = NewScope();
+            var now = scope.ServiceProvider.GetRequiredService<ILighthouseClock>().Now.UtcDateTime;
+            return new DateTime(now.Ticks - now.Ticks % TimeSpan.TicksPerMillisecond, DateTimeKind.Utc);
+        }
+
+        private static DateTime InstantInUtc(string? text)
+            => DateTime.Parse(text ?? throw new InvalidOperationException("an entry carries no time"), System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.AdjustToUniversal | System.Globalization.DateTimeStyles.AssumeUniversal);
 
         private static async Task<JsonElement> BodyOf(HttpResponseMessage response)
         {
