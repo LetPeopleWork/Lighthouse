@@ -15,46 +15,11 @@ import {
 	createMockRbacService,
 	createMockTerminologyService,
 } from "../tests/MockApiServiceProvider";
-
-/** What a page reads from the hook: the members and group mappings of one Team or Portfolio. */
-interface ScopedAccess {
-	members: RbacScopedMemberSummary[];
-	membersLoading: boolean;
-	membersError: string | undefined;
-	loadMembers: () => Promise<void>;
-	assignRole: (userProfileId: number, role: ScopedRbacRole) => Promise<void>;
-	removeMember: (userProfileId: number) => Promise<void>;
-	loadGroupMappings: () => Promise<RbacGroupMapping[]>;
-	createGroupMapping: (
-		groupValue: string,
-		role: ScopedRbacRole,
-	) => Promise<void>;
-	removeGroupMapping: (mappingId: number) => Promise<void>;
-}
-
-type ScopeKind = "Team" | "Portfolio";
-type UseScopedAccess = (
-	scope: ScopeKind,
-	scopeId: number | undefined,
-) => ScopedAccess;
-
-const hookModule = "./useScopedAccess";
-
-const loadTheHook = async (): Promise<UseScopedAccess> => {
-	let loaded: { useScopedAccess?: UseScopedAccess } | null = null;
-	try {
-		loaded = await import(/* @vite-ignore */ hookModule);
-	} catch {
-		loaded = null;
-	}
-
-	expect(
-		loaded?.useScopedAccess,
-		"hooks/useScopedAccess.ts must export useScopedAccess(scope, scopeId) so the Team and Portfolio Access tabs share one owner of members and group mappings; create it with the members, the loading and error state, and the handlers named in this file.",
-	).toBeTypeOf("function");
-
-	return loaded?.useScopedAccess as UseScopedAccess;
-};
+import {
+	type ScopedAccess,
+	type ScopedAccessKind,
+	useScopedAccess,
+} from "./useScopedAccess";
 
 const SQUAD_AND_PROGRAM: Record<string, string> = {
 	team: "Squad",
@@ -108,7 +73,7 @@ const scopes = [
 		],
 	},
 ] as const satisfies readonly {
-	kind: ScopeKind;
+	kind: ScopedAccessKind;
 	id: number;
 	defaultWord: string;
 	renamedWord: string;
@@ -158,7 +123,6 @@ const renderScopedAccess = async (
 		beforeTheScopeIsKnown?: boolean;
 	} = {},
 ) => {
-	const useScopedAccess = await loadTheHook();
 	const terminologyService = {
 		...createMockTerminologyService(),
 		getAllTerminology: vi.fn().mockResolvedValue(termsAnswer(terms)),
@@ -345,6 +309,32 @@ describe("The members and group mappings of a Team or a Portfolio", () => {
 				).not.toHaveBeenCalled();
 			}
 		});
+
+		it.each([
+			{
+				name: "an assignment",
+				run: (a: ScopedAccess) => a.assignRole(42, scope.adminRole),
+			},
+			{ name: "a removal", run: (a: ScopedAccess) => a.removeMember(42) },
+		])(
+			"says the members could not be loaded when $name worked but the reload failed",
+			async ({ run }) => {
+				const rbacService = createMockRbacService();
+				serviceCall(rbacService, scope.getMembers).mockRejectedValue(
+					new Error("down"),
+				);
+				serviceCall(rbacService, scope.upsert).mockResolvedValue(undefined);
+				serviceCall(rbacService, scope.remove).mockResolvedValue(undefined);
+				const { access } = await renderScopedAccess(scope, { rbacService });
+
+				await settle(() => run(access()));
+
+				expect(
+					access().membersError,
+					"The write went through, so the only failure left to report is the reload of the members.",
+				).toBe(`Failed to load ${scope.defaultWord} members.`);
+			},
+		);
 
 		it("drops the failure message once the members load again", async () => {
 			const rbacService = createMockRbacService();

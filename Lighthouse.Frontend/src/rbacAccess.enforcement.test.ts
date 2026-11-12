@@ -40,7 +40,7 @@ const SCOPED_ACCESS_METHODS = [
  * Creating and removing a group mapping is also what the system-wide administration page does,
  * for rules that belong to no single Team or Portfolio. That page is the only other owner of them.
  */
-const SYSTEM_WIDE_ADMINISTRATION = "src/pages/Settings/Rbac/";
+const SYSTEM_WIDE_ADMINISTRATION = "src/pages/Settings/Rbac/RbacSettings.tsx";
 const SYSTEM_WIDE_METHODS = ["createGroupMapping", "removeGroupMapping"];
 
 const slashed = (path: string): string => path.replaceAll("\\", "/");
@@ -92,8 +92,7 @@ const callsMethod = (text: string, method: string): boolean =>
 
 const mayCall = (path: string, method: string): boolean =>
 	path === ACCESS_HOOK ||
-	(path.startsWith(SYSTEM_WIDE_ADMINISTRATION) &&
-		SYSTEM_WIDE_METHODS.includes(method));
+	(path === SYSTEM_WIDE_ADMINISTRATION && SYSTEM_WIDE_METHODS.includes(method));
 
 /** One entry per file and what it reaches for that it does not own, sorted. */
 const accessViolations = (root: string): string[] =>
@@ -185,7 +184,7 @@ describe("the Team and Portfolio access rule", () => {
 		it("lets the system-wide administration page create and remove group mappings, and nothing more", () => {
 			const root = projectWith({
 				...control.files,
-				[`${SYSTEM_WIDE_ADMINISTRATION}Settings.tsx`]: [
+				[SYSTEM_WIDE_ADMINISTRATION]: [
 					"rbacService.createGroupMapping(request);",
 					"rbacService.removeGroupMapping(1);",
 					"rbacService.getTeamMembers(1);",
@@ -197,7 +196,7 @@ describe("the Team and Portfolio access rule", () => {
 				"The system-wide page owns system-wide group mappings, but not the members of a Team.",
 			).toEqual([
 				control.entry,
-				`${SYSTEM_WIDE_ADMINISTRATION}Settings.tsx calls rbacService.getTeamMembers`,
+				`${SYSTEM_WIDE_ADMINISTRATION} calls rbacService.getTeamMembers`,
 			]);
 		});
 
