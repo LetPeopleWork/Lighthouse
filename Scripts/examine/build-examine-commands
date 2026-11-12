@@ -103,6 +103,10 @@ cat > "$out/frontend-tests" <<EOF
 # reported as skipped: it did not run, and it did not fail. Run without a name fragment to see a whole file.
 # Rows that check a message a user reads name that exact text in quotes, so a passing row shows the text.
 set -euo pipefail
+if [ "\${1:-}" = "--help" ] || [ "\${1:-}" = "-h" ]; then
+  sed -n '2,/^set -euo/p' "\$0" | grep '^#' | sed 's/^# \{0,1\}//'
+  exit 0
+fi
 # The examiner runs commands in a bare environment; Node and pnpm live under the user's home.
 export HOME="$home" PATH="$node_bin:/usr/bin:/bin" CI=true NO_COLOR=1 FORCE_COLOR=0
 cd "$repo/Lighthouse.Frontend"
