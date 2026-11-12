@@ -1,42 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { WorkItemsDialogContextId } from "../../../components/Common/WorkItemsDialog/workItemsDialogContexts";
 import type { IWorkItem, StateCategory } from "../../../models/WorkItem";
-
-// The builder is loaded at run time so a missing module fails the rows below with a message,
-// instead of stopping the whole file before any row runs. The local types state the builder's
-// contract, so the rows stay typed whether or not the module exists yet.
-type ViewDataInputs = Record<string, unknown>;
-
-type ViewDataPayload = {
-	sleRiskColumn?: unknown;
-	timeInStateColumn?: { now?: Date };
-	context?: string;
-	ownerKind?: string;
-	ageOn?: Date;
-};
-
-type ViewDataBuilders = {
-	buildViewData(
-		inputs: ViewDataInputs,
-	): Record<string, ViewDataPayload | undefined>;
-};
-
-const MODULE_PATH = "./widgetViewData";
-
-async function loadBuilders(): Promise<ViewDataBuilders> {
-	const loaded = await import(/* @vite-ignore */ MODULE_PATH).catch(
-		() => undefined,
-	);
-	expect(
-		loaded,
-		"widgetViewData.ts does not exist or cannot be loaded. The View Data builder must live in its own module, because the metrics view only imports it. Create widgetViewData.ts exporting buildViewData, moved unchanged.",
-	).toBeDefined();
-	expect(
-		typeof loaded?.buildViewData,
-		"widgetViewData.ts must export buildViewData, the function that builds every widget's list payload. Export it under that name.",
-	).toBe("function");
-	return loaded as ViewDataBuilders;
-}
+import { buildViewData } from "./widgetViewData";
 
 // The risk column is attached per payload, and a payload added without one is invisible: nothing
 // fails, the list simply renders without the column. Two of the four lists of in-flight work went
@@ -92,7 +57,7 @@ describe("which lists carry the risk column", () => {
 		isBlocked: false,
 	});
 
-	const viewDataWith = async (
+	const viewDataWith = (
 		sleRiskValues: {
 			referenceId: string;
 			risk: number;
@@ -100,10 +65,9 @@ describe("which lists carry the risk column", () => {
 			finishedItemsThatWentOnToMiss: number | null;
 		}[],
 		ownerKind: "team" | "portfolio" = "team",
-		overrides: Partial<ViewDataInputs> = {},
-	) => {
-		const { buildViewData } = await loadBuilders();
-		return buildViewData({
+		overrides: Partial<Parameters<typeof buildViewData>[0]> = {},
+	) =>
+		buildViewData({
 			title: "Work Items",
 			endDate: new Date("2026-10-01T12:00:00"),
 			ownerKind,
@@ -141,7 +105,6 @@ describe("which lists carry the risk column", () => {
 			},
 			...overrides,
 		});
-	};
 
 	const builtWithRisk = () =>
 		viewDataWith([
@@ -161,20 +124,20 @@ describe("which lists carry the risk column", () => {
 
 	it.each(LISTS_WHAT_IS_IN_FLIGHT_TODAY)(
 		"every list of what is in flight today carries the risk: %s",
-		async (key) => {
-			expect((await builtWithRisk())[key]?.sleRiskColumn).toBeDefined();
+		(key) => {
+			expect(builtWithRisk()[key]?.sleRiskColumn).toBeDefined();
 		},
 	);
 
 	it.each(DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY)(
 		"no other list carries it: %s",
-		async (key) => {
-			expect((await builtWithRisk())[key]?.sleRiskColumn).toBeUndefined();
+		(key) => {
+			expect(builtWithRisk()[key]?.sleRiskColumn).toBeUndefined();
 		},
 	);
 
-	it("every list is in one of the two lists above", async () => {
-		const unaccountedFor = Object.keys(await builtWithRisk()).filter(
+	it("every list is in one of the two lists above", () => {
+		const unaccountedFor = Object.keys(builtWithRisk()).filter(
 			(key) =>
 				!LISTS_WHAT_IS_IN_FLIGHT_TODAY.includes(key) &&
 				!DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY.includes(key),
@@ -188,9 +151,8 @@ describe("which lists carry the risk column", () => {
 
 	it.each(["team", "portfolio"] as const)(
 		"the Estimation list opens the estimation context for a %s",
-		async (ownerKind) => {
-			const estimation = (await viewDataWith([], ownerKind))
-				.estimationVsCycleTime;
+		(ownerKind) => {
+			const estimation = viewDataWith([], ownerKind).estimationVsCycleTime;
 
 			expect(estimation?.context).toBe("estimation");
 			expect(estimation?.ownerKind).toBe(ownerKind);
@@ -201,10 +163,10 @@ describe("which lists carry the risk column", () => {
 	// reason must count to that same day, not to today.
 	it.each(["wipOverview", "staleOverview"])(
 		"the %s list counts Time in State to the range's last day",
-		async (key) => {
+		(key) => {
 			const rangeEnd = new Date(2026, 4, 25);
 
-			const list = (await viewDataWith([], "team", { endDate: rangeEnd }))[key];
+			const list = viewDataWith([], "team", { endDate: rangeEnd })[key];
 
 			expect(list?.timeInStateColumn?.now).toBe(rangeEnd);
 		},
@@ -242,8 +204,8 @@ describe("which lists carry the risk column", () => {
 
 	it.each(["team", "portfolio"] as const)(
 		"every View Data payload names a context for a %s",
-		async (ownerKind) => {
-			const built = await viewDataWith([], ownerKind, {
+		(ownerKind) => {
+			const built = viewDataWith([], ownerKind, {
 				featuresInProgress: [inFlightItem(3, "ZEN-3")],
 			});
 
@@ -275,9 +237,9 @@ describe("which lists carry the risk column", () => {
 		"totalWorkItemAgePbc",
 	];
 
-	it("the lists of what was in progress over the range measure age on the range's last day, and no other list does", async () => {
+	it("the lists of what was in progress over the range measure age on the range's last day, and no other list does", () => {
 		const lastDay = new Date("2026-09-30T12:00:00");
-		const built = await viewDataWith([], "team", { endDate: lastDay });
+		const built = viewDataWith([], "team", { endDate: lastDay });
 
 		const ageOnOfEvery = Object.fromEntries(
 			Object.entries(built).map(([key, payload]) => [key, payload?.ageOn]),
@@ -293,8 +255,8 @@ describe("which lists carry the risk column", () => {
 		);
 	});
 
-	it("no list is claimed that no longer exists", async () => {
-		const built = await builtWithRisk();
+	it("no list is claimed that no longer exists", () => {
+		const built = builtWithRisk();
 		const named = [
 			...LISTS_WHAT_IS_IN_FLIGHT_TODAY,
 			...DOES_NOT_LIST_WHAT_IS_IN_FLIGHT_TODAY,
@@ -308,8 +270,8 @@ describe("which lists carry the risk column", () => {
 
 	// Without this, the first assertion would be satisfied by a descriptor that is always built,
 	// and a team that has published no target would get a column of blanks on four lists.
-	it("a team with no published target gets the column nowhere", async () => {
-		const built = await viewDataWith([]);
+	it("a team with no published target gets the column nowhere", () => {
+		const built = viewDataWith([]);
 
 		for (const key of Object.keys(built)) {
 			expect(built[key]?.sleRiskColumn).toBeUndefined();
