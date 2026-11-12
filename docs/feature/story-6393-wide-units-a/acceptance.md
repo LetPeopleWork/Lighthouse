@@ -330,6 +330,97 @@ the entry is kept after the file is under 1000 lines
 ###### Obligations
 
 
+### S5
+
+##### Covers
+
+P3
+
+```text
+Scan the production source tree and a planted project for files other than the access hook calling the member and scoped group-mapping methods, and other than the service naming the authorization summary endpoint
+```
+
+```text
+Today TeamDetail.tsx and PortfolioDetail.tsx are named; a planted page calling any of the ten methods is named, the hook and the system-wide administration page's own mapping calls are not, test code is ignored, an unreadable folder fails loudly
+```
+
+```text
+A copy of the access handlers cannot return to a page unnoticed, and the summary stays fetched in one place
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/rbacAccess\.enforcement\.test\.ts
+
+```text
+A scan that applied no rule passes an empty tree: every planted row carries a control page that must be named
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+The Team or Portfolio Access tab's hook fails to load members, to assign a role or to remove a member, with default terms and with Team renamed Squad and Portfolio renamed Program
+```
+
+```text
+Default terms: Failed to load team members., Failed to update team member role., Failed to remove team member. and the portfolio ones; renamed terms: the same with squad and program, lower-cased
+```
+
+```text
+An administrator of a renamed Team or Portfolio reads the failure in their own word; with default terms nothing changes
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useScopedAccess\.test\.ts
+
+```text
+A hard-coded team in the Portfolio text, or a Terminology word that is not lower-cased, passes only the default-term rows: the renamed rows and the Portfolio renamed rows catch both
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Load members, assign a role, remove a member, list, create and remove a group mapping, and act before a scope exists, through the one hook for a Team and for a Portfolio
+```
+
+```text
+The call goes to that scope's service method with the scope id; assign and remove reload the members; a created mapping carries the scope kind and id; failed mapping calls reach the caller; nothing is called without a scope; a later success clears the message
+```
+
+```text
+Team and Portfolio Access tabs manage members and group mappings the same way, through one owner
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/useScopedAccess\.test\.ts
+
+```text
+A hook that skips the reload after assign or remove, or calls the other scope's method, would pass a render-only page row: the reload rows and the other-scope-not-called check fail it
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

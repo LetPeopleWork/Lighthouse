@@ -168,12 +168,56 @@
 "stimulus": "F224",
 "user_result": "F226"
 }
+],
+"S5": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F235",
+"test": "Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F239",
+"test": "Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts"
+},
+"expected": "F237",
+"stimulus": "F236",
+"user_result": "F238"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F243",
+"test": "Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts"
+},
+"expected": "F241",
+"stimulus": "F240",
+"user_result": "F242"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 4,
-"F": 231,
+"F": 243,
 "K": 5,
 "P": 4,
 "S": 5,
@@ -1390,7 +1434,19 @@
 "F23": "One oracle file per slice; an earlier slice's oracle and support files are never edited by a later slice.",
 "F230": "A chart under way shows a spinner, and a failed one says so, never an empty chart that reads as no data",
 "F231": "loading outranks error, or the columns status is ignored for aging",
+"F232": "Scan the production source tree and a planted project for files other than the access hook calling the member and scoped group-mapping methods, and other than the service naming the authorization summary endpoint",
+"F233": "Today TeamDetail.tsx and PortfolioDetail.tsx are named; a planted page calling any of the ten methods is named, the hook and the system-wide administration page's own mapping calls are not, test code is ignored, an unreadable folder fails loudly",
+"F234": "A copy of the access handlers cannot return to a page unnoticed, and the summary stays fetched in one place",
+"F235": "A scan that applied no rule passes an empty tree: every planted row carries a control page that must be named",
+"F236": "The Team or Portfolio Access tab's hook fails to load members, to assign a role or to remove a member, with default terms and with Team renamed Squad and Portfolio renamed Program",
+"F237": "Default terms: Failed to load team members., Failed to update team member role., Failed to remove team member. and the portfolio ones; renamed terms: the same with squad and program, lower-cased",
+"F238": "An administrator of a renamed Team or Portfolio reads the failure in their own word; with default terms nothing changes",
+"F239": "A hard-coded team in the Portfolio text, or a Terminology word that is not lower-cased, passes only the default-term rows: the renamed rows and the Portfolio renamed rows catch both",
 "F24": "Every caller and callee is inside the one frontend deployable and changes in the same commit; the primary oracles cover them.",
+"F240": "Load members, assign a role, remove a member, list, create and remove a group mapping, and act before a scope exists, through the one hook for a Team and for a Portfolio",
+"F241": "The call goes to that scope's service method with the scope id; assign and remove reload the members; a created mapping carries the scope kind and id; failed mapping calls reach the caller; nothing is called without a scope; a later success clears the message",
+"F242": "Team and Portfolio Access tabs manage members and group mappings the same way, through one owner",
+"F243": "A hook that skips the reload after assign or remove, or calls the other scope's method, would pass a render-only page row: the reload rows and the other-scope-not-called check fail it",
 "F25": "React Testing Library render of the component, renderHook of the hook with its providers, pure modules called as functions, and source-scan enforcement tests over src",
 "F26": "Pages and views depend on extracted hooks and pure modules; extracted modules never import their former parent; useScopedAccess depends on rbacService from ApiServiceContext and useTerminology only; no barrel.",
 "F27": "A production file of at most 1000 lines, or a file over 1000 lines named on the offender list",
