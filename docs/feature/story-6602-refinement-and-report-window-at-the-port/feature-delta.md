@@ -111,12 +111,12 @@ Checked against the code that stays on the host (reads of each member in `Slice0
 | E3 (narrowed) | `Slice12` | `recordedAt` as `yyyy-MM-ddTHH:mm:ss.fffZ` | Only `Slice12` compares it (`Slice17` nulls it) |
 | E5 (narrowed) | `Slice12` | `isOpenQuestion`, and the log's two members `entries`, `voters`, the three answer keys | `isOpenQuestion` is read only in `Slice12`; `Slice17` keeps the rest of the entry names |
 | E6 | `Slice12` | 409 and `work-item-not-in-refinement` for a question | The vote's 409 stays pinned by `Slice11` |
-| E7 | `Slice12` | 400 and `comment-required` (empty), 400 and `comment-too-long` (2 cases) | Only `Slice12` pins them |
+| E7 | `Slice12` | 400 and `comment-required` (empty), 400 and `comment-too-long` (a question and a vote comment, at 2001 characters), and 2000 characters accepted at the limit | Only `Slice12` pins them |
 | E11 | `Slice12` | the row an answer to a question or comment carries, including its open-question flag | `Slice17` keeps status and row; flag read: re-check |
 | E2, E8, E9, E12 | | already landed or not needed | |
 | E10, E13 | each slice | tightened, see below | |
 
-New wire rows: **up to 9** (E1 1, E4 1 or 2, E3 1, E5 1, E6 1, E7 2, E11 1). Moved host rows: 7. The wire class goes from 7 rows to at most 23. Window class (F): no new wire row. `today`, `earliestStart`, `minimumLengthDays` are pinned by `Slice01TeamReportScenarios` and `CreateForSeveralTeamsScenarios`; the 400 and the refusal code of each window refusal by `ThenItIsRefusedFor` in `Slice01`, `Slice02`, `Slice07` and `Slice10`, all of which stay. Re-verify at the F slice.
+New wire rows: **up to 9** (E1 1, E4 1 or 2, E3 1, E5 1, E6 1, E7 3 or 4, E11 1; the feature-A total stays within 9 plus the boundary row). Moved host rows: 7. The wire class goes from 7 rows to at most 23. Window class (F): no new wire row. `today`, `earliestStart`, `minimumLengthDays` are pinned by `Slice01TeamReportScenarios` and `CreateForSeveralTeamsScenarios`; the 400 and the refusal code of each window refusal by `ThenItIsRefusedFor` in `Slice01`, `Slice02`, `Slice07` and `Slice10`, all of which stay. Re-verify at the F slice.
 
 ## Wave: DESIGN / [REF] Reuse Analysis
 
@@ -184,7 +184,7 @@ At most 5; each is one nwdes slice with its own oracle file. Oracle = the moved 
 | 1 | `PortGivensGuardTest` plant: a port class calls `team.ToDoStates.Add` | the guard's planted row |
 | 2 | `RefinementNeedCalculator` verdict: compare `>` for `>=` at the range's ends | `The_verdict_compares_the_ready_count_with_both_ends_of_the_range` |
 | 2 | stand-in `GetTeamDataRefreshSettings` stubbed to 61 | E13 (existing) and a strict stand-in throws on an unstubbed read |
-| 3 | `SizingLogEntry.LongestComment` 2000 to 1999 | `A_comment_of_two_thousand_characters_is_kept_whole` at the port, and E7 on the wire |
+| 3 | `SizingLogEntry.LongestComment` 2000 to 1999 | `A_comment_of_two_thousand_characters_is_kept_whole` at the port, and the E7 wire row that sends exactly 2000 characters and expects them kept |
 | 3 | `[JsonIgnore]` on `SizingLogLine.IsOpenQuestion` DTO member | E5 |
 | 4 | `ReportWindowPolicy.MinimumLengthDays` 14 to 15 | `A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days)` |
 
@@ -332,3 +332,4 @@ The slices are approved as designed.
 
 - **From the S2 slice review (medium, duplication):** `Slice05NeedAndVerdictSpecifications` and `NeedOverOneCycleSpecifications` both derive from `RefinementAtThePortTest` and carry the same Gravity ready-rule builder, the tab reader, three constants and the five-to-eight script; `NeedOverOneCycleSpecifications` keeps its own `NeedIn` / `NeedReading` beside the base's `TheNeedOn` / `NeedFacts`. Fixing it in feature A edits the approved S2 oracle and a class outside feature A. It goes to **slice 5** (feature B), which already reworks `Slice05` against `NeedOverOneCycleTest`: hoist the shared members into the port base or the builder, and make `NeedOverOneCycleSpecifications` use `NeedFacts` and `TheNeedOn`.
 - **From the S1 slice review (low, stale comment):** `Slice10SleYardstickSpecifications.cs` line 84 narrates the old host design. It is in the approved S1 oracle; reword it in feature B's first slice that touches the file, or at the finalize step.
+- **The settings-save case with every input together (slice 3), root decision in AFK mode, 2026-11-12:** `EveryInput` holds inputs that set the same field (`RefinesInBacklog` and `RefinesInNoState` both set the states), so "every input together" cannot be built as written. The case combines one input per field it changes: the states, the cadence, the stage rules, the SLE and the Throughput history each taken once, so a save-side tidy that depends on a combination of fields is seen. Which input stands for a field is the crafter's choice and is named in the test. Revisit if the maintainer wants every pair instead.
