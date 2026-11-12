@@ -291,3 +291,39 @@ After (E): they call the driving ports directly, `IRefinementViewQuery` and `ISi
 | A new host class for the stay rows | Rejected | One more host build for 7 rows |
 | One shared Reports builder now | Rejected | One class uses it; build it when a second does |
 | Deleting overlapping rows | Rejected | Ids must survive a move |
+
+## Wave: DESIGN / [REF] Maintainer review (2026-11-12)
+
+The slices are approved as designed.
+
+| Open question | Answer |
+|---|---|
+| 1 Reports port base for slice 4 | Decided at the checkpoint after slice 3, on the measured saving (unchanged) |
+| 2 The 7 stay-rows go into `RefinementWithoutSignInWireContractTest` | **Yes** |
+| 3 `NewScope()` stays public | Explained, answer pending. Correction to the design's reason: `ServicePortHarness` and the planted classes are in the same test assembly, so `internal` would need no `InternalsVisibleTo` and would protect nothing. What stops a port class from writing a Team itself is `PortGivensGuardTest`, not the method's visibility |
+| 4 Drop the `Slice05` rows that repeat `NeedOverOneCycleTest` | **Yes, after the move**, as its own edit: a fifth slice after slice 4 (or after the checkpoint, if slice 4 is not approved). Each dropped row is mapped to the `NeedOverOneCycleTest` row that proves the same rule with the same inputs, and the id comparison shows exactly the dropped ids. It is never folded into a move commit |
+| 5 The 14.1 s line is a stop heuristic; continue to slice 3, then ask | **Yes** |
+
+## Wave: DEVOPS / [REF] Platform lens and usage data (2026-11-12)
+
+- **Platform risk:** none. Test code only; no build, CI workflow, deployment or configuration change. The moved classes run in the same `dotnet test` step under the same filter, and lose their web host.
+- **CI time:** the backend Integration tier should fall by about 10.6 s summed for slices 1 to 3 (projected). ADR-237's per-class budget is read for the grown `RefinementWithoutSignInWireContractTest` at the checkpoint.
+- **Usage-data event:** N/A, because the Story is behaviour-free: no user sees or does anything new.
+- **Rollback:** revert the slice's commits; each class still has its host version in history, and `HostUsersStillToMove` gets its line back only through that revert.
+- **T10 #6537:** its before set starts after this Story's last move push. Tell T10 when that push lands.
+
+## Wave: DELIVER / [REF] Maintainer decisions at DELIVER start (2026-11-12)
+
+- **Open question 3:** `NewScope()` stays public. `PortGivensGuardTest` is what stops a port class from writing a Team itself; visibility inside one test assembly protects nothing.
+- **UI sketches:** N/A, because nothing a user sees changes.
+- **Rigor profile per slice** (model passed on every dispatch; EXAMINE uses the reviewer model):
+
+| Slice | Profile | Crafter, acceptance designer | Reviewers |
+|---|---|---|---|
+| 1 yardstick, builder, guards | `thorough` | `opus` | `sonnet` |
+| 2 need-and-verdict, strict stand-in | `thorough` | `opus` | `sonnet` |
+| 3 comments, wire rows | `standard` | `sonnet` | `haiku` |
+| 4 report window (if approved at the checkpoint) | `standard` | `sonnet` | `haiku` |
+| 5 drop the rows that repeat `NeedOverOneCycleTest` | `thorough` | `opus` | `sonnet` |
+
+- **nwdes features:** two, split at the checkpoint, because slices 4 and 5 depend on its answer. **Feature A** `story-6602-a-refinement-at-the-port`: slices 1 to 3, then its whole-candidate review and EXAMINE, then the checkpoint measurement and the question. **Feature B** `story-6602-b-report-window-and-overlap`: slices 4 and 5, opened only after the checkpoint answer. The whole-candidate review of A runs at `sonnet` (the strictest profile in A).
