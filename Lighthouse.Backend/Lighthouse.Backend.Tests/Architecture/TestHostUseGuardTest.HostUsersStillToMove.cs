@@ -162,7 +162,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice02RefinementListTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice03StageRulesTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice04RefinementCadenceTest",
-            "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice05NeedAndVerdictTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice07BandPercentilesTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice09ClientNeedTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice09ClientNeedWithAnApiKeyTest",
