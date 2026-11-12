@@ -46,7 +46,8 @@ const slashed = (path: string): string => path.replaceAll("\\", "/");
 const bySortOrder = (a: string, b: string): number => a.localeCompare(b);
 
 const isProductionSource = (path: string): boolean => {
-	const name = path.split("/").at(-1) ?? "";
+	const parts = path.split("/");
+	const name = parts[parts.length - 1];
 
 	return (
 		/\.tsx?$/.test(name) &&
