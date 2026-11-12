@@ -944,8 +944,8 @@ All four DESIGN questions are answered; none is left for the DISTILL walk-throug
 
 - None. Q-D1, Q7, Q8 and Q-D2 are answered (Maintainer decisions MD1–MD4).
 - JTBD precondition: the reviewer found `job-config-admin-find-how-we-work-in-one-place` in `jobs.yaml` and both
-  persona files referencing the new ids; `job-operator-run-the-instance-apart-from-how-we-work` is still to be
-  confirmed in `jobs.yaml` (file too large for search) before DISTILL starts.
+  persona files referencing the new ids; `job-operator-run-the-instance-apart-from-how-we-work` was confirmed in
+  `docs/product/jobs.yaml` on 2026-11-12 (OI-1 closed).
 - DEVOPS: the usage-data event question (DESIGN adds none; DD14 keeps settings paths event-free until DEVOPS says
   otherwise).
 
@@ -1244,7 +1244,7 @@ Pre-requisites for DELIVER:
 5. Throttled-browser check of the Wait spinner and Connections loading look (manual, at DELIVER review).
 
 Open items (uncertain, decided by default):
-- OI-1 `job-operator-run-the-instance-apart-from-how-we-work` in `jobs.yaml` still to be confirmed before DISTILL (DESIGN carry-over).
+- OI-1 CLOSED 2026-11-12: `job-operator-run-the-instance-apart-from-how-we-work` is in `docs/product/jobs.yaml`.
 - OI-2 The `kpi-contracts.yaml` block above is proposed, not applied; apply at finalize if the maintainer wants K1-K4 tracked there.
 - OI-3 K4 has no baseline; "no rise" is judged by the maintainer's memory of the inbox. Accepted.
 - OI-4 Mobile viewport has no E2E coverage (E2E is a thin sanity check); covered by Vitest only.
