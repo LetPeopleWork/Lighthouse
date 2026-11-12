@@ -177,6 +177,68 @@ A family that also exports another family's rule, or a barrel that re-exports, w
 ###### Obligations
 
 
+### S3
+
+##### Covers
+
+P2
+
+```text
+Call the Work Item lookup builder as a function with a run chart record, a cycle time record, an in-progress record, a size chart Feature and a Team Work Item sharing an id, for the five moved lookup rows
+```
+
+```text
+Each row returns the record it returned before: cycle time and age from the richest source, size chart Features winning, a Team's own Work Item kept over a Feature with the same id, run-chart-only items still present
+```
+
+```text
+Every metrics list opens the same Work Items with the same fields as before the split
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/workItemLookup\.test\.ts
+
+```text
+A lookup that lets a Feature overwrite a Team Work Item would still pass the size-chart-wins row only; the Team row fails it
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+Call the View Data builder as a function with in-flight items, a published target and each owner kind, for the 37 moved payload rows
+```
+
+```text
+Each payload carries or omits the risk column as before, names its dialog context and owner kind, counts Time in State to the range's last day, measures age on the last day for the four over-the-range lists, and a team with no target gets no column
+```
+
+```text
+Every metrics widget list shows the same columns, context and ages as before the split
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/widgetViewData\.test\.ts
+
+```text
+A builder that drops the risk column from one in-flight list fails its each-row; one that adds a new unclassified payload fails the every-list-classified row
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

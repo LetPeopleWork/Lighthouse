@@ -96,12 +96,40 @@
 "stimulus": "F204",
 "user_result": "F206"
 }
+],
+"S3": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F211",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts"
+},
+"expected": "F209",
+"stimulus": "F208",
+"user_result": "F210"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F215",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 4,
-"F": 207,
+"F": 215,
 "K": 5,
 "P": 4,
 "S": 5,
@@ -1301,7 +1329,15 @@
 "F205": "Overview, time-and-age and volume-and-flow modules export exactly their own rules and the old rules file is gone",
 "F206": "The status rules are split into three files with no catch-all left, and the size rule no longer lists it",
 "F207": "A family that also exports another family's rule, or a barrel that re-exports, would pass the exact-export list only if names match; the missing old file check rejects a leftover barrel",
+"F208": "Call the Work Item lookup builder as a function with a run chart record, a cycle time record, an in-progress record, a size chart Feature and a Team Work Item sharing an id, for the five moved lookup rows",
+"F209": "Each row returns the record it returned before: cycle time and age from the richest source, size chart Features winning, a Team's own Work Item kept over a Feature with the same id, run-chart-only items still present",
 "F21": "S5 copy is approved text: Failed to load {team} members. / Failed to update {team} member role. / Failed to remove {team} member., same for {portfolio}; the term is getTerm(TERMINOLOGY_KEYS.TEAM or PORTFOLIO) lower-cased and read when the failure happens, not at mount.",
+"F210": "Every metrics list opens the same Work Items with the same fields as before the split",
+"F211": "A lookup that lets a Feature overwrite a Team Work Item would still pass the size-chart-wins row only; the Team row fails it",
+"F212": "Call the View Data builder as a function with in-flight items, a published target and each owner kind, for the 37 moved payload rows",
+"F213": "Each payload carries or omits the risk column as before, names its dialog context and owner kind, counts Time in State to the range's last day, measures age on the last day for the four over-the-range lists, and a team with no target gets no column",
+"F214": "Every metrics widget list shows the same columns, context and ages as before the split",
+"F215": "A builder that drops the risk column from one in-flight list fails its each-row; one that adds a new unclassified payload fails the every-list-classified row",
 "F22": "Test rules: the test-writing skill and its frontend half win over nWave's timing and PBT density; no nWave scenario tags in code; no broad property tests (finite example rows only); the new enforcement tests walk about 700 files, well inside the default per-test budget, no derogation.",
 "F23": "One oracle file per slice; an earlier slice's oracle and support files are never edited by a later slice.",
 "F24": "Every caller and callee is inside the one frontend deployable and changes in the same commit; the primary oracles cover them.",
