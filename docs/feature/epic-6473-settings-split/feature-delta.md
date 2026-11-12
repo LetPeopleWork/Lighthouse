@@ -1250,3 +1250,387 @@ Open items (uncertain, decided by default):
 - OI-4 Mobile viewport has no E2E coverage (E2E is a thin sanity check); covered by Vitest only.
 - OI-5 No E2E for the RBAC-on non-admin path of the new Connections hidden tab beyond `RoleBasedAccessControl.spec.ts`; DISTILL decides if one assertion is added there.
 - OI-6 `/release` guard: do not cut a release with only slice 01 on `main` (behaviour-row gap).
+
+---
+
+## Wave: DELIVER / [REF] Inventory refresh (2026-11-12)
+
+Read against `main` at `f32a7dab5`. Scope: what changed in the code since DISCUSS and DESIGN (2026-11-02), with
+file:line. Facts only; the decisions are in the sketch section below. Spelling follows MD1 (Organization, License).
+Seeded default terms are used (Work Tracking System for a connection, Team, Portfolio, Feature).
+
+### 1. The settings page today (all rows of the DISCUSS inventory)
+
+`Settings.tsx` is unchanged in shape: one `Container`, h1 "System Settings" (l.210), `TabContext`/`TabList` with
+icon tabs, `?tab=` read in an effect (l.57-85) and written back with `history.replaceState` (l.87-106).
+Visibility rule is still l.167-175: tab 50 needs `isRbacEnabled && isSystemAdmin`, tabs 20/25/30/45/50 need
+`isSystemAdmin` (`systemAdminTabValues`, l.31-37), 40 and 99 are for everyone.
+
+| Row (DISCUSS) | Old | Now | Who sees it now | Change since 2026-11-02 |
+|---|---|---|---|---|
+| Configuration (20): Blackout Periods & Recurring Rules | `System/BlackoutSettings` | same, `SystemSettingsTab.tsx` | System Admin | none |
+| Configuration: Behaviour Settings (Feature ordering, Never send usage data) | `BehaviourSettingsTable` | same, section hidden until `optionalFeatures.length > 0` (`SystemSettingsTab.tsx` ~l.115); licence read by `licensingService.getLicenseStatus` directly, failure sets `null` (= "no Premium") | System Admin | none; the gap DESIGN named (hidden section, unreadable licence reads as no Premium) is still there |
+| Configuration: Terminology Configuration | `TerminologyConfiguration` | same | System Admin | none |
+| Configuration: {Team} Refresh, {Feature} Refresh | `RefreshSettingUpdater` | same | System Admin | none |
+| Demo Data (25) | `DemoDataSettings` | same | System Admin | none |
+| Database (30) | `DatabaseManagementSettings` | same | System Admin | none |
+| API Keys (40) | `ApiKeysSettings` | same | everyone | none |
+| Encryption (45) | `EncryptionPanel` ("Secret Encryption Key") | same | System Admin | none |
+| System Admins (50, `rbac-tab`) | users table, SSO group mappings, RBAC status | **grown by Epic 6577** (see 2) | RBAC on + System Admin | **yes: SSO Groups now carry three roles and a new "Everyone signed in" switch; the user table says "No direct role" instead of "Unassigned"** |
+| System Info (99) | System Info, Refresh History, Logs (`LogSettings`), Third Party Packages | same four `InputGroup`s (`SystemInfoSettings.tsx` l.11-18) | everyone; Log Level System Admin only | none structural; Refresh History sentences now name "Parent sources" (Story 6501, `refreshFindingSentences.ts`) |
+| (not on page) Connections | Overview section, `OverviewDashboard.tsx` | same, inline JSX l.586-709; Add button in the page header row l.497-503; refused alert l.453-461; stepper l.463-478 | System Admin | none |
+| (not on page) License | header `LicenseStatusIcon` popover | same; `useLicenseStatusQuery` in `hooks/useLicenseRestrictions.ts:35`; popover is `LicenseStatusPopover.tsx` (props `error`, loading text l.328) | everyone read, System Admin import/clear | none |
+| (not on page) Usage data per person | footer `UsageDataDialog` | same | everyone | none |
+| (not on page) Task Manager | header | same; `ConnectionsSection.tsx` has per-row "Test connection" and "Edit" buttons | everyone | none |
+
+### 2. What is new since DESIGN
+
+- **Epic 6577 (system-wide access), on the System Admins tab** (`pages/Settings/Rbac/RbacSettings.tsx`):
+  `ssoGroupRoles = ["SystemAdmin", "ViewerOnAll", "AdminOnAll"]` (l.45), labels "System Admin", "Viewer on all",
+  "Admin on all" (l.55-71); h6 "SSO Groups" (l.419) with the mapping form shown only `status?.hasSystemAdmin`
+  (l.415); `EveryoneSignedInSection` mounted at l.500 under the same condition, h6 "Everyone signed in"
+  (`EveryoneSignedInSection.tsx` ~l.150), a switch with a confirm dialog, its own pending, failed and save-problem
+  looks. Tab label, slug, gating and test id `rbac-tab` are unchanged. Consequence: the tab is named "System
+  Admins" but now holds the system-wide rules for everyone, not only admins (decision D5).
+- **Same word, second place.** Commit `d5bcc1530` adds an "Access" tab on a Team or Portfolio page (read-only list
+  of the system-wide rules that reach the unit). The Settings area called "Access" and a unit's "Access" tab are two
+  different things; no code conflict (different routes), but docs and the walk-through must keep them apart.
+- **Story 6501 (parent sources), on the connection page.** `ParentSourcesList` is rendered inside
+  `ModifyConnectionSettings.tsx` (l.237, import l.54); `EditConnection.tsx` l.17-34 and the save path report a usage
+  event after saving a default with several sources, then `navigate("/")` (l.137). Effect on this Epic: none on
+  scope; the save still ends in one `navigate`. It does make "mapping stays on the connection page" truer than at
+  DESIGN, which #6474 slice 08 later moves.
+- **`pages/Settings/Connections/` already exists** and holds `WriteBackMappingsEditor.tsx` and
+  `AdditionalFieldsEditor.tsx` (imported by `ModifyConnectionSettings.tsx` l.45). DD9 puts `ConnectionsSettings.tsx`
+  in the same folder: same folder, different job (editors of the connection page vs the list). FE5 may move those
+  editors; the crafter must not assume the folder is empty.
+- **FE5 (Story 6393)** has not landed: no `OAuthPremiumNotice.tsx` exists yet. The `/settings/license` link in
+  `ModifyConnectionSettings.tsx` is still at l.878 (notice at l.867-880, test id `oauth-premium-upgrade-affordance`).
+
+### 3. Every entry point into settings or connections today
+
+| # | File:line | Target today | Moves in |
+|---|---|---|---|
+| 1 | `components/App/Header/Header.tsx:66` (nav array; desktop l.~154, drawer l.71-76) | `/settings`, text "System Settings", a plain `NavigationItem` | slice 01 |
+| 2 | `components/App/Header/TaskManager/RecentProblemsSection.tsx:14` | `/settings?tab=system-info` | slice 01 |
+| 3 | `components/Common/DataOverviewTable/DataOverviewTable.tsx:354` | `/settings?tab=demodata` (empty Teams or Portfolios list) | slice 01 |
+| 4 | `pages/Overview/OverviewDashboard.tsx:626` | `/settings?tab=demodata` (inside the connections empty state; moves with the extraction) | slice 01, then 04 |
+| 5 | `components/Common/Connection/CreateConnectionWizard.tsx:499` | `/settings/license` (dead) | slice 01 (lands on System), 03 (License) |
+| 6 | `components/Common/Connection/ModifyConnectionSettings.tsx:878` | `/settings/license` (dead); FE5 moves it to `OAuthPremiumNotice.tsx` | same as 5 |
+| 7 | `components/Common/OnboardingStepper/OnboardingStepper.tsx:90` | `navigate("/connections/new")`, step "Connect", label "Add {Work Tracking System}" | slice 05 |
+| 8 | `pages/Overview/OverviewDashboard.tsx:265` (`handleAddConnection`, button l.497-503) | `navigate("/connections/new")` | slice 04 removes button, 05 |
+| 9 | `pages/Overview/OverviewDashboard.tsx:350` and `:385` | `/connections/${row.id}/edit` (name link and Edit button) | slice 04 (moves with the list), 05 |
+| 10 | `pages/Overview/OverviewDashboard.tsx:509` | tooltip text "Create a {Work Tracking System} before adding a {Team}" on the disabled Add {Team}; **no link** | slice 05 |
+| 11 | `components/App/Header/TaskManager/ConnectionsSection.tsx:98` | `navigate("/connections/${id}/edit")` from the per-row Edit button; the empty text "No connections are configured." (l.~64) has no link | slice 05 |
+| 12 | `pages/Connections/Edit/EditConnection.tsx:137` | after Save of an existing connection: `navigate("/")` | slice 05 |
+| 13 | `pages/Connections/Edit/EditConnection.tsx:180`, `:181` | wizard `onCancel` and `onComplete`: `navigate("/")` | slice 05 |
+| 14 | `pages/Connections/Edit/EditConnection.tsx:161` | no-access alert "Back to Overview" (`to="/"`); stays (A8) | none |
+| 15 | `App.tsx:259-262` | routes `/connections/new`, `/connections/:id/edit` (inside `AppShell`) | slice 05 (A13) |
+| 16 | `App.tsx:283` | route `/settings` (exact) | slice 01 (A13) |
+| 17 | `Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:866` | `goto("/connections/new")` (DESIGN said l.855) | slice 05 |
+| 18 | `Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts:93` | `goToSettings` clicks the link named "Settings" | slice 01 |
+| 19 | `.../models/auth/rbac/RbacSettingsPage.ts:29` | same-pathname `/settings` workaround | slice 01 |
+| 20 | `.../models/overview/OverviewPage.ts` (3 calls) and 8 specs (ado, csv, jira, linear, OAuthConnection, servicenow 1 each, ConnectionDefaults 2, Screenshots 3 = 11 calls) | `addConnection`, `editConnection`, `deleteConnection` | slice 04 (count matches DESIGN) |
+
+No backend code, e-mail or redirect names `/settings?tab=...`, `/settings/license` or `/connections/...`
+(grep over `*.cs`), and the OAuth popup returns to `/oauth/popup-complete` (App.tsx:255), not to a connection URL.
+The only other holders are docs and screenshots (finalize).
+
+### 4. Confirmations
+
+- **Bug #6498 is still real, in two places:** `CreateConnectionWizard.tsx:499` and `ModifyConnectionSettings.tsx:878`
+  both link "View license options" to `/settings/license`. `App.tsx` has no such route and no catch-all, so the shell
+  renders empty.
+  I did not look at ADO.
+- **The deep-link bounce is still real.** `useRbac()` starts with `PERMISSIVE_SUMMARY` (`isRbacEnabled: false`) and
+  `isLoading: true` (`hooks/useRbac.ts:5-35`); `Settings.tsx` filters tab 50 out on first render and the effect at
+  l.177-188 sets the first visible tab. A deep link to the System Admins tab is therefore bounced to the first tab.
+- **FE5 correction for slice 05.** The connection page's return path is `EditConnection.tsx` l.137 (save of an
+  existing connection), l.180 (wizard cancel) and l.181 (wizard complete); `ModifyConnectionSettings.tsx` holds **no**
+  `navigate` and no Cancel button (grep for `navigate`, `Cancel`, `useNavigate` is empty). Its only settings link is
+  the license link (l.878). Slice 05's own text says "Connection add and edit pages return to System → Connections"
+  and does not name the file; the DESIGN component table (feature-delta, "Entry points") lists
+  `ModifyConnectionSettings` as a changed entry point, which is right only for the license link. So for slice 05:
+  return paths = `EditConnection.tsx`; the license link belongs to slice 01/03 and will have moved to
+  `OAuthPremiumNotice.tsx` if FE5 lands first. **There is no Cancel on the edit page of an existing connection**; the
+  slice 05 scenario "Cancelling returns to the connections" applies to the wizard only.
+
+### 5. Where DESIGN no longer matches the code, and what each slice must change
+
+| # | DESIGN said | Code now | Slice effect |
+|---|---|---|---|
+| M1 | The Access tab's "System Admins" holds admins, group mappings, RBAC status | Also Viewer on all, Admin on all, "Everyone signed in" switch (Epic 6577) | Slice 01 moves it unchanged; the label is a decision (D5); slice 01 scenario "Access holds System Admins and API Keys" needs the wider sentence |
+| M2 | "Task Manager connections section links there" (slice 05) | It has a per-row Edit button (l.98) and an unlinked empty text; no section-level link | Slice 05 decides what to add (D13); the Edit path moves, nothing else changes |
+| M3 | Connection page "Save, Cancel and wizard completion" | Edit page has Save only (l.137); Cancel and complete are the wizard (l.180-181) | Slice 05 AC is satisfied by 3 call sites, not 4; wording only |
+| M4 | Overview connections section "lines ~586-698" | l.586-709 incl. delete dialog; the Add button is in the page header row (l.497) beside Add {Team} and Add {Portfolio}, not in the section | Slice 04 removes the button from the header row; the row keeps two buttons |
+| M5 | Connection page license link in `ModifyConnectionSettings` | FE5 will move it to `OAuthPremiumNotice.tsx` | Slice 01 (path string) and slice 03 touch whichever file holds it when they run; the wizard link (l.499) stays in the wizard |
+| M6 | E2E RBAC spec l.855 | l.866 | cosmetic |
+| M7 | Terminology rule in copy | `ConnectionsSection.tsx` has literal "No connections are configured.", "Test connection", "Edit connection" | Not a slice item by itself; slice 05 touches the file, so it should say {Work Tracking Systems} there (D13) |
+| M8 | Header has a nav array with plain links | Same; the "Update all" button and Task Manager icon sit right of the nav (Header.tsx l.~166-169) | no change; the menu replaces one link |
+| M9 | Overview stepper can be dismissed for good | Still (`rememberDismissed`, OnboardingStepper l.~80) | After slice 04 a dismissed stepper leaves no Overview route to Connections except the disabled-Add-{Team} hint (D12) |
+
+Unchanged and still true: DD1-DD16 and A1-A16, the 14 legacy keys, `useRbac()` per-instance reads (A6), the
+Overview needing the list for stepper and disabled Add {Team}, `licenseStatusOneAsker` allow-list naming
+`SystemSettingsTab.tsx` (4 test files `SystemSettingsTab*.test.tsx` and `Settings.test.tsx`, which mocks
+`./System/SystemSettingsTab` and asserts the h1 "System Settings", move with slices 01 and 02).
+
+---
+
+## Wave: DELIVER / [REF] Sketches for the walk-through (PROPOSED, not approved)
+
+Nothing here is decided. Each sketch names the control it reuses and lists the decisions the maintainer has to
+make, one per line with options and my recommendation. Terms in braces are the configurable seeded defaults
+(Team, Portfolio, Feature, Work Item, Work Tracking System). All panels keep their content unchanged unless a
+sketch says otherwise. Visualization skill: N/A, no chart or metric is added.
+
+### Sketch S1 (slice 01): the header "Settings" menu, desktop and mobile
+
+Reuses: `Header.tsx` nav row and `NavigationItem` look; MUI `Menu`/`MenuItem` (DD6); mobile drawer `List`.
+
+```text
+ DESKTOP  (nav row today: Overview  Features  Reports  System Settings)
+ +--------------------------------------------------------------------------------------+
+ | [logo]  Overview  {Features}  Reports  [Settings v]        (update all) (tasks) (licence)... |
+ |                                        +----------------------------------+          |
+ |                                        | Organization  how we work         |          |
+ |                                        | Access        who may do what     |          |
+ |                                        | System        running this server |          |
+ |                                        +----------------------------------+          |
+ +--------------------------------------------------------------------------------------+
+  "Settings" is bold/underlined while the path starts with /settings (as NavigationItem is today).
+  A person who may see only System and Access (RBAC on, no System Admin) sees those two entries.
+  Gated entries are absent until access has loaded (A6); no spinner in a menu.
+
+ MOBILE DRAWER (today: four NavigationItems, then theme, license, update-all)
+ +----------------------------+
+ |  Overview                  |
+ |  {Features}                |
+ |  Reports                   |
+ |  Settings                  |   <- a non-link caption
+ |    Organization            |
+ |    Access                  |
+ |    System                  |
+ |  [theme] [licence icon] ...|
+ +----------------------------+
+```
+
+Open decisions:
+
+- **D1 Menu entries show a one-line description** (a) yes, as drawn; (b) names only. Recommend (a): the point of the Epic is that the name says whose it is.
+- **D2 Trigger look:** (a) text "Settings" with a down arrow, same weight as the other nav items; (b) gear icon only. Recommend (a): the E2E link-by-name and screen readers stay simple.
+- **D3 Mobile drawer:** (a) caption "Settings" with three indented entries, as drawn; (b) one "Settings" item that expands; (c) three flat items without a caption. Recommend (a).
+
+### Sketch S2 (slice 01, walking skeleton): an area page, with today's tabs whole
+
+Reuses: today's `Settings.tsx` shell as is (`Container`, h1, `Paper`, `TabContext`/`TabList`, `TabPanel`, icons, scrollable tabs on mobile, `LoadingAnimation` for the wait).
+
+```text
+ Settings > Organization                                   /settings/organization/configuration
+ +-------------------------------------------------------------------------------------------+
+ | Settings › Organization                                                         (h1)      |
+ | +---------------------------------------------------------------------------------------+ |
+ | |   [ Configuration ]                                                                   | |
+ | +---------------------------------------------------------------------------------------+ |
+ | |  (today's Configuration panel, unchanged: Blackout, Behaviour, Terminology, Refresh)  | |
+ | +---------------------------------------------------------------------------------------+ |
+
+ Settings > Access        /settings/access/system-admins
+ |  [ System Admins ]*   [ API Keys ]                       * RBAC on and System Admin
+ |  (System Admins panel unchanged: users, SSO Groups with three roles, Everyone signed in)
+
+ Settings > System        /settings/system/demo-data   (first visible tab in slice 01)
+ |  [ Demo Data ] [ Database ] [ Encryption ] [ System Info ]
+
+ WAIT (deep link, access still loading)            NOT ALLOWED (reader opens /settings/system/database)
+ Settings › System                                 lands on /settings/system/system-info (first tab he may see)
+ +---------------------------+
+ |        ( spinner )        |  no tab row until access is known
+ +---------------------------+
+```
+
+Failure look: none new. If the access call fails the permissive fallback applies (A7): everyone sees all
+three areas and every tab, as the old page did, and the backend refuses what they may not do.
+Bare `/settings` lands on the first area the person may see. `/settings/license` lands on `/settings/system`.
+
+Open decisions:
+
+- **D4 Heading text:** (a) "Settings › Organization" (DESIGN, M2); (b) just "Organization". Recommend (a).
+- **D5 Label of the Access tab now that it holds more than admins (Epic 6577):** (a) keep "System Admins" and rename in a later improvement; (b) rename to "System-wide access", slug `system-wide`, `system-admins` kept as an earlier slug, test id `rbac-tab` kept; (c) rename to "People and groups". Recommend (b) because the tab now also holds who may view or administer everything, and the rename costs one definition row; accept (a) if you want slice 01 to stay a pure move.
+- **D6 System tab order after all slices:** (a) Connections, Database, Encryption, Demo Data, Usage Data, System Info, License (DISCUSS order); (b) Connections, License, Database, Encryption, Usage Data, Demo Data, System Info (the two things first-time admins need first); (c) today's order with new tabs appended. Recommend (a). In slice 01 alone the first tab is Demo Data, as today.
+- **D7 Where bare `/settings` lands for a System Admin:** (a) Organization (first area); (b) the area last used (needs storage). Recommend (a).
+
+### Sketch S3 (slice 02): Organization with three tabs, and the behaviour rows' looks
+
+Reuses: `InputGroup` sections of `SystemSettingsTab` unchanged; `BehaviourSettingsTable`; `LoadingAnimation`; the inline alert style of `ApiKeysSettings`.
+
+```text
+ Settings > Organization                         /settings/organization/terminology
+ | [ Terminology ]   [ Calendar ]   [ Refresh & ordering ]                                  |
+ +------------------------------------------------------------------------------------------+
+ | v Terminology Configuration                (unchanged)                                   |
+ |   ...                                                                                     |
+ |   (room below for the levels section of the next Epic; nothing built here)               |
+
+ Calendar tab:       v Blackout Periods & Recurring Rules  (unchanged)
+                     Premium-gated controls: spinner while the licence loads;
+                     "Could not load the license." in place of "Premium required" if it fails (A2)
+
+ Refresh & ordering tab:
+   > {Team} Refresh        (unchanged)
+   > {Feature} Refresh     (unchanged)
+   v Behaviour Settings
+       Let Lighthouse own the order of your {Features}      [ switch ]   (Premium)
+
+ Behaviour row LOADING                   Behaviour row FAILED
+   v Behaviour Settings                    v Behaviour Settings
+       ( spinner )                           (!) Could not load the behaviour settings.
+```
+
+Open decisions:
+
+- **D8 Tab icons for the new tabs** (today every tab has an MUI icon, `iconPosition` top): Terminology `Translate`, Calendar `EventBusy`, Refresh & ordering `Sync`. Options: (a) these; (b) other. Recommend (a), maintainer may swap.
+- **D9 Failure copy for the licence on the Calendar tab:** (a) "Could not load the license." as A2; (b) reuse the behaviour sentence. Recommend (a): one sentence per cause.
+
+### Sketch S4 (slice 02): System → Usage Data
+
+Reuses: `BehaviourSettingsTable` filtered to the one row; `InputGroup`; the S3 looks.
+
+```text
+ Settings > System > Usage Data                       /settings/system/usage-data
+ | v Usage Data                                                                              |
+ |   Never send usage data                                        [ switch ]                 |
+ |   Learn what Lighthouse sends: <link to the usage-data docs page>                         |
+ |   (optional line) Each person can still choose for themselves in the footer.             |
+ |   loading: ( spinner )     failed: (!) Could not load the behaviour settings.             |
+```
+
+Open decisions:
+
+- **D10 Extra line about the personal footer choice:** (a) none, row and docs link only (DISCUSS); (b) one sentence as drawn. Recommend (b): the tab is otherwise a lone switch, and the footer choice is the likely next question. Docs link target needs the exact page name, to confirm at finalize.
+
+### Sketch S5 (slice 03): System → License
+
+Reuses: the popover's content extracted as `LicenseStatusContent` (DD8), `useLicenseStatusQuery`, its own loading and failure looks.
+
+```text
+ Settings > System > License                          /settings/system/license
+ | v License                                                                                 |
+ |   Premium                                              (status icon + text as the popover)|
+ |   Licensed to: Northwind Logistics    Valid until: 31 March 2027                          |
+ |   [ Clear license ]  [ Import license ]        <- System Admin only; readers see none     |
+ |   loading: "Loading..."    failed: the popover's own could-not-load message               |
+ Header icon stays; import here updates it (same query key).
+```
+
+Open decisions:
+
+- **D11 Layout of the tab:** (a) the content at its natural width inside one `InputGroup` "License"; (b) full-width card. Recommend (a).
+- **D12 Link text in the connection forms:** (a) keep "View license options", only the target changes; (b) "Open License in System". Recommend (a): the target fixes Bug #6498 with no copy change.
+
+### Sketch S6 (slice 04): System → Connections, and the Overview without them
+
+Reuses: the Overview's own section, extracted unchanged (`DataGridBase`, `storageKey="overview-connection-table"`, `ReconnectBanner`, `DeleteConfirmationDialog`, the empty-state `Alert` with Load Demo Data and docs links, the refused `Alert`), `LoadingAnimation`.
+
+```text
+ Settings > System > Connections                      /settings/system/connections
+ | [ Connections ] [ Database ] [ Encryption ] [ Demo Data ] [ Usage Data ] [ System Info ] [ License ] |
+ +-------------------------------------------------------------------------------------------------+
+ |  {Work Tracking Systems}                                          [ + Add {Work Tracking System} ] |
+ |  (!) Northwind Jira needs to be reconnected                         [ Reconnect ]  (ReconnectBanner)|
+ |  Name             | Type        | ...today's columns...                       | [Edit] [Delete]  |
+ |  Northwind Jira   | Jira Cloud  |                                             |                  |
+ |  Northwind ADO    | Azure DevOps|                                             |                  |
+ |  no text filter (MD4)                                                                            |
+ |  EMPTY:   No {Work Tracking System} found. Load Demo Data or Check the documentation ...        |
+ |  LOADING: ( spinner ), no empty state, no Add button yet                                         |
+ |  FAILED:  (!) Could not load the {Work Tracking Systems}.        403: refused alert (today's text)|
+
+ OVERVIEW after slice 04
+ |  [stepper: Connect > Add {Team} > Add {Portfolio}]   (still System Admin only)                    |
+ |  (!) Northwind Jira needs to be reconnected [Reconnect]    <- stays here too (MD2)                |
+ |                                      [ Add {Team} ] [ Add {Portfolio} ]   (no Add {WTS} button) |
+ |  Portfolios ...   Teams ...         (no connections section; filter box filters these only)      |
+```
+
+Open decisions:
+
+- **D13a Place of "Add {Work Tracking System}":** (a) right of the section title, in the existing flex row of the extracted section (drawn); (b) in a toolbar above the tabs. Recommend (a).
+- **D13b Section title inside the tab:** (a) keep the capitalised "{Work Tracking Systems}" h5 (the extraction is unchanged); (b) drop it because the tab already says it. Recommend (a): zero behaviour change in the refactor commit.
+- **D12 A dismissed stepper leaves the Overview with no route to Connections** (M9): (a) none, M4 stands and the disabled Add {Team} hint links there (slice 05); (b) also show a small "Set up a {Work Tracking System}" text link on the Overview while none exists; (c) the stepper cannot be dismissed while there is no connection. Recommend (a). This one may be a product call, see the report.
+
+### Sketch S7 (slice 05): every way in, and the way back
+
+Reuses: `OnboardingStepper` action, the Add {Team} `Tooltip`, `TaskManager/ConnectionsSection`, `EditConnection` pages unchanged.
+
+```text
+ STEPPER (Overview)                    Step 1  Connect: "Set up a {Work Tracking System} ..." [ Add {Work Tracking System} ]
+                                       -> /settings/system/connections/new (wizard), stays on the Overview otherwise
+
+ DISABLED Add {Team} (Overview)        tooltip: Create a {Work Tracking System} before adding a {Team}.
+                                                 <Go to Settings › System › Connections>   (new link inside the tooltip)
+                                       (a tooltip that holds a link must stay open while the pointer is on it)
+
+ TASK MANAGER (header popover)
+   Connections                                     [ Manage {Work Tracking Systems} ]   <- new, one link to the tab
+   (ok)  Northwind ADO            [Test connection] [Edit]
+   (x)   Northwind Jira  ...why...[Test connection] [Edit]   Edit -> /settings/system/connections/:id/edit
+   empty: "No {Work Tracking Systems} are configured."  + link to the tab (today: plain text, no link)
+
+ CONNECTION PAGE  /settings/system/connections/:id/edit  and  .../new   (unchanged content)
+   Save (edit page)  -> System > Connections      Wizard Cancel / Complete -> System > Connections
+   no-access alert keeps "Back to Overview" (A8)
+   old /connections/new and /connections/:id/edit redirect here (replace)
+   header "Settings" is shown as active while on these pages (path starts with /settings)
+
+ CONNECTION PAGE, ability to go back by hand (not drawn today; the edit page has no Cancel)
+   <  Back to {Work Tracking Systems}                  <- proposed text link above the page title
+   Edit {Work Tracking System}: Northwind Jira
+```
+
+Open decisions:
+
+- **D13 Task Manager connections section:** (a) only retarget the Edit path and leave the rest; (b) add one "Manage {Work Tracking Systems}" link and a link in the empty text, and use the configurable term in its literals (M7); (c) as (b) without fixing the literals. Recommend (b).
+- **D14 Back link on the connection pages:** (a) none (OUT: "any change to the connection pages"); (b) a small "Back to {Work Tracking Systems}" link above the title, on both pages; (c) a breadcrumb "Settings › System › Connections › {name}". Recommend (b): the pages now sit under Settings but show no sign of it, and the edit page has no Cancel. It is a UI addition on the connection page, so it needs a yes.
+- **D15 Disabled Add {Team} hint:** (a) link inside the tooltip as drawn; (b) a text line under the buttons when no connection exists. Recommend (b): a link inside a hover tooltip is hard to use on touch and with a keyboard, and it needs a sketch of its own if (a).
+
+### Sketch S8 (slice 01): the Access area after Epic 6577 (for the label decision D5)
+
+Reuses: `RbacSettings.tsx` unchanged; only the tab label may change.
+
+```text
+ Settings > Access > [ System Admins ]* [ API Keys ]                    (* RBAC on and System Admin)
+ | RBAC Status  [enabled] [premium gate] [emergency admin] [ready] ...                       |
+ | Users  [search]   name | System Admin / No direct role | [Grant|Revoke] [Remove]          |
+ | SSO Groups   Group value [____]  Role [System Admin | Viewer on all | Admin on all]  [Add Mapping]
+ |              mapping table (System Admin and all-units rules)                              |
+ | Everyone signed in   [ switch ]  Off: people see only what they are given.                |
+ |   (section shown only once a System Admin exists)                                          |
+```
+
+Open decisions: D5 only (above).
+
+### Loading and failure looks, as the DESIGN chose them (nothing new)
+
+| View | Loading | Failure | Reused look |
+|---|---|---|---|
+| Shell, any area | lone spinner, no tab row, until `isLoading` is false | permissive fallback (A7) | `LoadingAnimation` |
+| Header menu | gated entries absent until loaded | permissive | none |
+| Behaviour rows (Refresh & ordering, Usage Data) | spinner in the section | "Could not load the behaviour settings." | `LoadingAnimation`, `ApiKeysSettings` alert |
+| Calendar Premium controls | spinner | "Could not load the license." | same |
+| License tab | the popover's own | the popover's own | `LicenseStatusContent` |
+| Connections tab | lone spinner, never the empty state | 403 refused alert; otherwise "Could not load the {Work Tracking Systems}." | `LoadingAnimation`, today's alerts |
+| Connection pages | unchanged | unchanged | none |
+
+Manual check for each: browser throttled to a slow connection (CLAUDE.md "Design for a slow connection").
+
+---
+
+## Wave: DELIVER / [REF] Slice impact of the refresh
+
+| Slice | Scope change? | Note |
+|---|---|---|
+| 01 Three areas | **No change in size; one new decision (D5) and one wider sentence** | The System Admins panel moves as is but now carries Epic 6577's roles and switch; its scenario text should say so. In-app link list gains exact lines (section 3). The h1 test and the `Settings.test.tsx` mock of `SystemSettingsTab` move with it. Decide D1-D7 before the first oracle |
+| 02 Organization tabs | No | Four `SystemSettingsTab*.test.tsx` files and the licence-asker allow-list entry move; AC unchanged. D8-D10 |
+| 03 License in System | No | **Bug #6498 fits slice 03** (its AC already says the connection forms' link opens System → License). Slice 01 already stops the blank page by landing on System; slice 03 makes it land on License. Do not start a separate fix. If FE5 lands first the link is in `OAuthPremiumNotice.tsx`, and the wizard still has its own (l.499): the crafter edits both holders |
+| 04 Connections in System | No | Anchors updated (section l.586-709, Add button l.497, refused alert l.453); the page header row keeps two Add buttons; the Overview keeps the stepper, refused alert and reconnect banners. Extraction commit first, as DD9 |
+| 05 Connection entry points | **Wording and two additions pending a yes** | Correct the file: return paths are in `EditConnection.tsx` (l.137, 180, 181); `ModifyConnectionSettings.tsx` has none. No Cancel on the edit page. Task Manager has an Edit button, not a section link (D13). Hint has no link yet (D15). A back link on the connection pages (D14) would be new scope unless the maintainer says yes. Bug #6498 does **not** belong here: its fix is the license target, owned by slices 01 and 03 |
