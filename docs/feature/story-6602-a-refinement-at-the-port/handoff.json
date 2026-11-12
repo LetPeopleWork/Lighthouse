@@ -2,7 +2,8 @@
 "counters": {
 "B": 1,
 "D": 15,
-"F": 146,
+"E": 4,
+"F": 150,
 "K": 10,
 "L": 3,
 "P": 4,
@@ -746,6 +747,38 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F147"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F148"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F149"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F150"
+}
+]
+},
 "facts": {
 "F1": "Story #6602, feature A: move Slice10SleYardstickTest, Slice05NeedAndVerdictTest and Slice12CommentsTest from the web host to the application-service port, behaviour-free, each leaving HostUsersStillToMove in the commit that moves it; the 7 rows that test a route join RefinementWithoutSignInWireContractTest. Design: docs/feature/story-6602-refinement-and-report-window-at-the-port/feature-delta.md",
 "F10": "Any production code change",
@@ -800,7 +833,11 @@
 "F144": "All-inputs case",
 "F145": "S3 first step is an edit (readers and new wire rows), not a behaviour-preserving move",
 "F146": "No class outside HostUsersStillToMove or a named wire-contract reason starts a web host; Slice12CommentsTest leaves the list",
+"F147": "A maintainer running the three test classes (SLE yardstick, need and verdict, comments) sees them execute without starting a web host, and the list of tests still waiting to move off a web host no longer names any of them.",
+"F148": "After the move, every test id the three classes had before still exists: 49 rows run at the application-service port and 7 route rows remain in RefinementWithoutSignInWireContractTest, and each earlier assertion is still made somewhere.",
+"F149": "The guard checks named at the earlier slice review (PortGivensGuardTest, E10, E13) each fail when a deliberately planted violating case is introduced, and pass again when it is removed.",
 "F15": "The comments class runs at the service port, with the sizing log and its errors pinned by wire rows",
+"F150": "Measured the same way as before, the combined run time of the three classes after the move is lower than the time measured before the move.",
 "F16": "Slice12CommentsTest proves its 22 rules at the port and its 4 route rows on the wire; the three classes together cost less time than before",
 "F17": "Order: Slice10SleYardstickTest (S1), then Slice05NeedAndVerdictTest (S2), then Slice12CommentsTest (S3), then a stop-and-ask checkpoint before any report-window work. Smallest harness change first (Slice10 casts no vote); Slice12 needs the most new wire rows, so it comes last and the checkpoint reads all three classes.",
 "F18": "Each moved class derives from RefinementAtThePortTest over ServicePortHarness and drives the application-service driving ports IRefinementViewQuery and ISizingLogCommands over the real repositories and a database per scenario; no web host. A moved class keeps its namespace, class name and method names, so test ids stay.",
