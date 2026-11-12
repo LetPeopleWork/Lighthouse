@@ -123,7 +123,7 @@ namespace Lighthouse.Backend.Tests.TestHelpers
 
         private string databaseFileName = NewDatabaseFileName();
 
-        private readonly object templateCopyLock = new();
+        private readonly Lock templateCopyLock = new();
 
         // When on, the first scope to see a new database path starts from a copy of the prebuilt schema
         // instead of an empty file. Off by default.

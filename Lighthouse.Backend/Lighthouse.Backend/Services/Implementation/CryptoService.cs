@@ -76,7 +76,7 @@ namespace Lighthouse.Backend.Services.Implementation
 
             private readonly Queue<string> reportedOldestFirst = new();
 
-            private readonly object gate = new();
+            private readonly Lock gate = new();
 
             public bool NotReportedYet(string storedValue)
             {

@@ -7,7 +7,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
     {
         private readonly ConcurrentDictionary<string, DatabaseOperationStatus> operations = new();
         private string? latestOperationId;
-        private readonly object latestLock = new();
+        private readonly Lock latestLock = new();
 
         public DatabaseOperationStatus StartOperation(string operationId, DatabaseOperationType operationType)
         {

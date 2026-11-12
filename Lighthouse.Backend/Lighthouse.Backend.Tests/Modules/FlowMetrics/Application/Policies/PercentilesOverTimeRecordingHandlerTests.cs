@@ -463,7 +463,7 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application.Policies
             teamRepositoryMock.Setup(x => x.GetById(team.Id)).Returns(team);
 
             // The reader returns only P50/P70/P85 for every horizon — P95 is absent.
-            List<PercentileValue> PartialReading() =>
+            static List<PercentileValue> PartialReading() =>
             [
                 new PercentileValue(50, 8),
                 new PercentileValue(70, 9),

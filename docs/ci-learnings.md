@@ -221,8 +221,10 @@ carries a `// biome-ignore lint/plugin: <reason>`.
   new-code period. They redden the gate on files nobody touched, and S9129 and S8733 do not fire in a
   local build even when raised to `warning` (probed against SonarAnalyzer 10.35). Fix: check the rule's
   `createdAt` (`curl` the public `/api/rules/show` API, because the `sonar` CLI is not installed), fix
-  the hits anyway, and for S8733 use a narrow pragma (`.AsSplitQuery()` is a banned symbol). Not automated because:
-  the rule only exists on the server.
+  the hits anyway, and for S8733 use a narrow pragma (`.AsSplitQuery()` is a banned symbol). First check
+  whether the newest `SonarAnalyzer.CSharp` on NuGet already carries the rule (S9422 did, in 10.36): if it
+  does, take that bump, and the build enforces the rule from then on. Not automated because: until such a
+  release exists, the rule only exists on the server.
 - **Adopting a Sonar or analyzer version bump**: a Dependabot `SonarAnalyzer.CSharp` bump can add
   error-severity rules (S8969/S8970) that redden `Package App` but not `Verify Backend`. Fix: apply the
   bump locally, run `dotnet build`, fix or promote what it surfaces, then let the bump through. Not

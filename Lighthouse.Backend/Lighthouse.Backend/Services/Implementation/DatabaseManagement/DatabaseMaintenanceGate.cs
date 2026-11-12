@@ -26,7 +26,7 @@ namespace Lighthouse.Backend.Services.Implementation.DatabaseManagement
         private readonly IUpdateStatusStore statusStore;
         private readonly IOverTimeHistoryFillActivity? historyFill;
         private readonly TimeProvider time;
-        private readonly object gateLock = new();
+        private readonly Lock gateLock = new();
 
         private string? activeOperationId;
         private DatabaseOperationType? activeOperationType;

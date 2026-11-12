@@ -610,7 +610,7 @@ namespace Lighthouse.Backend.Tests.API
         private static IEnumerable<TestCaseData> ParentSourcesDefaultsThatCannotBeKept()
         {
             var ownParent = new ParentSourceEntryDto { Kind = ParentSourceKind.TrackerParent };
-            ParentSourceEntryDto Field(int id) => new() { Kind = ParentSourceKind.AdditionalField, AdditionalFieldDefinitionId = id };
+            static ParentSourceEntryDto Field(int id) => new() { Kind = ParentSourceKind.AdditionalField, AdditionalFieldDefinitionId = id };
 
             yield return new TestCaseData(new List<ParentSourceEntryDto?>(), "A list needs at least one source.").SetName("A Parent sources default with no entries");
             yield return new TestCaseData(new List<ParentSourceEntryDto?> { new() { Kind = ParentSourceKind.AdditionalField } }, "A source is the own Parent or one Additional Field.").SetName("A Parent sources default naming no field");

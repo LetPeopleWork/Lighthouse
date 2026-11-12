@@ -51,7 +51,7 @@ namespace Lighthouse.Backend.Services.Implementation.Logging
 
         private readonly Queue<RecentProblem> retained = new();
 
-        private readonly object gate = new();
+        private readonly Lock gate = new();
 
         private readonly int capacity;
 

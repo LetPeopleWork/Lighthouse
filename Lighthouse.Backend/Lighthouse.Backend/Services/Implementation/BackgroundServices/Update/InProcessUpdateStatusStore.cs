@@ -18,7 +18,7 @@ namespace Lighthouse.Backend.Services.Implementation.BackgroundServices.Update
         /// starts it in the middle of the decision. The dictionary is concurrent, but the status it hands back
         /// is one object shared by every caller, so nothing about it is atomic on its own.
         /// </summary>
-        private readonly object progressGate = new();
+        private readonly Lock progressGate = new();
 
         public InProcessUpdateStatusStore(ConcurrentDictionary<UpdateKey, UpdateStatus> updateStatuses, ILighthouseClock clock)
         {
