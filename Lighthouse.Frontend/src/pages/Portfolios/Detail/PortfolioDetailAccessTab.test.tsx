@@ -46,6 +46,7 @@ vi.mock("../../../services/TerminologyContext", () => ({
 const openTheAccessTabAs = (
 	isSystemAdmin: boolean,
 	summaryAnswer?: Promise<unknown>,
+	tune?: (rbacService: ReturnType<typeof createMockRbacService>) => void,
 ) => {
 	const portfolio = new Portfolio();
 	portfolio.id = 1;
@@ -82,6 +83,7 @@ const openTheAccessTabAs = (
 			.fn()
 			.mockResolvedValue([{ role: "Viewer", holder: "team-readers" }]),
 	});
+	tune?.(rbacService);
 	render(
 		<ApiServiceContext.Provider
 			value={createMockApiServiceContext({
@@ -166,4 +168,131 @@ describe("The Access tab of a Portfolio", () => {
 			).not.toBeInTheDocument();
 		},
 	);
+
+	describe("members and group mappings as they behave today", () => {
+		const viewer = {
+			userProfileId: 4,
+			subject: "auth0|viewer",
+			displayName: "Viewer User",
+			email: "viewer@example.com",
+			role: "Viewer" as const,
+		};
+
+		it("assigns a role to a member and reads the members again", async () => {
+			let rbac: ReturnType<typeof createMockRbacService> | undefined;
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbac = rbacService;
+				rbacService.getPortfolioMembers = vi.fn().mockResolvedValue([viewer]);
+				rbacService.upsertPortfolioMember = vi
+					.fn()
+					.mockResolvedValue(undefined);
+			});
+
+			fireEvent.click(await screen.findByTestId("assign-PortfolioAdmin-4"));
+
+			await waitFor(() =>
+				expect(rbac?.getPortfolioMembers).toHaveBeenCalledTimes(2),
+			);
+			expect(rbac?.upsertPortfolioMember).toHaveBeenCalledWith(
+				1,
+				4,
+				"PortfolioAdmin",
+			);
+		});
+
+		it("removes a member and reads the members again", async () => {
+			let rbac: ReturnType<typeof createMockRbacService> | undefined;
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbac = rbacService;
+				rbacService.getPortfolioMembers = vi.fn().mockResolvedValue([viewer]);
+				rbacService.removePortfolioMember = vi
+					.fn()
+					.mockResolvedValue(undefined);
+			});
+
+			fireEvent.click(await screen.findByTestId("remove-member-4"));
+
+			await waitFor(() =>
+				expect(rbac?.getPortfolioMembers).toHaveBeenCalledTimes(2),
+			);
+			expect(rbac?.removePortfolioMember).toHaveBeenCalledWith(1, 4);
+		});
+
+		it("says the members could not be loaded", async () => {
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbacService.getPortfolioMembers = vi
+					.fn()
+					.mockRejectedValue(new Error("down"));
+			});
+
+			expect(
+				await screen.findByText("Failed to load portfolio members."),
+			).toBeInTheDocument();
+		});
+
+		it("says assigning a role failed, and leaves the members as they were", async () => {
+			let rbac: ReturnType<typeof createMockRbacService> | undefined;
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbac = rbacService;
+				rbacService.getPortfolioMembers = vi.fn().mockResolvedValue([viewer]);
+				rbacService.upsertPortfolioMember = vi
+					.fn()
+					.mockRejectedValue(new Error("down"));
+			});
+
+			fireEvent.click(await screen.findByTestId("assign-PortfolioAdmin-4"));
+
+			expect(
+				await screen.findByText("Failed to update portfolio member role."),
+			).toBeInTheDocument();
+			expect(rbac?.getPortfolioMembers).toHaveBeenCalledTimes(1);
+		});
+
+		it("says removing a member failed, and leaves the members as they were", async () => {
+			let rbac: ReturnType<typeof createMockRbacService> | undefined;
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbac = rbacService;
+				rbacService.getPortfolioMembers = vi.fn().mockResolvedValue([viewer]);
+				rbacService.removePortfolioMember = vi
+					.fn()
+					.mockRejectedValue(new Error("down"));
+			});
+
+			fireEvent.click(await screen.findByTestId("remove-member-4"));
+
+			expect(
+				await screen.findByText("Failed to remove portfolio member."),
+			).toBeInTheDocument();
+			expect(rbac?.getPortfolioMembers).toHaveBeenCalledTimes(1);
+		});
+
+		it("adds and removes a group mapping for this Portfolio", async () => {
+			let rbac: ReturnType<typeof createMockRbacService> | undefined;
+			openTheAccessTabAs(true, undefined, (rbacService) => {
+				rbac = rbacService;
+				rbacService.createGroupMapping = vi.fn().mockResolvedValue(undefined);
+				rbacService.removeGroupMapping = vi.fn().mockResolvedValue(undefined);
+			});
+
+			fireEvent.change(await screen.findByLabelText(/^Group value$/), {
+				target: { value: " new-group " },
+			});
+			fireEvent.click(
+				screen.getByRole("button", { name: /^Add Group Mapping$/ }),
+			);
+			await waitFor(() =>
+				expect(rbac?.createGroupMapping).toHaveBeenCalledWith({
+					groupValue: "new-group",
+					role: "PortfolioAdmin",
+					scopeType: "Portfolio",
+					scopeId: 1,
+				}),
+			);
+
+			fireEvent.click(await screen.findByTestId("scoped-group-remove-5"));
+			await waitFor(() =>
+				expect(rbac?.removeGroupMapping).toHaveBeenCalledWith(5),
+			);
+		});
+	});
 });
