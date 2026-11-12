@@ -21,8 +21,6 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
     /// </summary>
     public class RefinementWithoutSignInWireContractTest : WireContractTest
     {
-        private static readonly TeamStates GravitysStates = new(["Backlog"], ["Next", "Analysing", "Implementation"], ["Done"]);
-
         [SetUp]
         public void StartFromTheSeededDatabase()
         {
@@ -39,7 +37,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
         public async Task A_Team_with_no_number_states_its_need_as_nulls_and_names_no_date()
         {
             var givens = new RefinementPortGivens(Services);
-            var teamId = givens.ATeam("Team Gravity", GravitysStates, throughputHistoryDays: 30);
+            var teamId = givens.ATeam("Team Gravity", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30);
             givens.TheTeamRefines(teamId, RefinementPortGivens.RefinesInBacklogAnalysingAndNext, RefinementPortGivens.ReadyWhenTaggedReady);
 
             var need = await TheNeedOnTheRefinementTabOf(teamId);
@@ -62,9 +60,9 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
         public async Task A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up(RefinementInput input)
         {
             var givens = new RefinementPortGivens(Services);
-            var setUpAtThePort = givens.ATeam("Team set up at the port", GravitysStates, throughputHistoryDays: 30);
+            var setUpAtThePort = givens.ATeam("Team set up at the port", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30);
             givens.TheTeamRefines(setUpAtThePort, input);
-            var savedThroughItsSettings = givens.ATeam("Team saved through its settings", GravitysStates, throughputHistoryDays: 30);
+            var savedThroughItsSettings = givens.ATeam("Team saved through its settings", RefinementPortGivens.GravitysStates, throughputHistoryDays: 30);
 
             await TheAdminSavesTheSettingsFormWith(savedThroughItsSettings, input);
 

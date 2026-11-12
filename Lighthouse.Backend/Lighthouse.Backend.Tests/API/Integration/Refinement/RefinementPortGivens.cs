@@ -21,9 +21,41 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// </summary>
     public sealed class RefinementPortGivens(IServiceProvider services)
     {
+        public const string Backlog = "Backlog";
+
+        public const string Next = "Next";
+
+        public const string Analysing = "Analysing";
+
+        public const string Implementation = "Implementation";
+
+        public const string Done = "Done";
+
+        public const int ThroughputHistoryDays = 30;
+
+        public const string BillingExport = "GR-040";
+
+        public const string AdvancedReporting = "GR-051";
+
+        public const string ApiVersioning = "GR-054";
+
+        public const string UserActivityTracking = "GR-058";
+
+        public const string AdvancedSearch = "GR-059";
+
+        public const string ConfigurationManagement = "GR-073";
+
+        public const string LoadTesting = "GR-074";
+
         private const string TagsField = "workitem.tags";
 
         private const string ContainsOperator = "contains";
+
+        /// <summary>Wednesday 7 October 2026, nine in the morning: the moment the tracker's dates are counted back from.</summary>
+        private static readonly DateTime TrackerReadOn = new(2026, 10, 7, 9, 0, 0, DateTimeKind.Utc);
+
+        /// <summary>The Gravity demo Team's tracker states: To Do "Backlog"; Doing "Next", "Analysing" and "Implementation"; Done "Done".</summary>
+        public static TeamStates GravitysStates { get; } = new([Backlog], [Next, Analysing, Implementation], [Done]);
 
         /// <summary>The Team refines in Backlog, Analysing and Next.</summary>
         public static RefinementInput RefinesInBacklogAnalysingAndNext { get; } = new(
@@ -115,6 +147,107 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             teamRepository.Update(team);
             teamRepository.Save().GetAwaiter().GetResult();
         }
+
+        /// <summary>
+        /// Team Gravity refines in Backlog, Analysing and Next, and its tracker holds, in backlog order: GR-040
+        /// being implemented (not in refinement), GR-058 and GR-059 in Next, GR-051 and GR-054 in Analysing,
+        /// GR-073 and GR-074 in Backlog - six Work Items in refinement. The given Work Items carry the given
+        /// tags. No stage, cadence or band has been chosen.
+        /// </summary>
+        public int GravityRefinesSixWorkItems(params (string WorkItem, string Tag)[] tags)
+        {
+            var gravity = ATeam("Team Gravity", GravitysStates, ThroughputHistoryDays, sleProbability: 85, sleRange: 7);
+
+            TheTrackerHolds(gravity, tags,
+            [
+                new TrackerWorkItem(BillingExport, "Billing export", Implementation, StateCategories.Doing, "1", StartedDaysAgo: 9),
+                new TrackerWorkItem(UserActivityTracking, "User activity tracking", Next, StateCategories.Doing, "2", StartedDaysAgo: 1),
+                new TrackerWorkItem(AdvancedSearch, "Advanced search filters", Next, StateCategories.Doing, "3", StartedDaysAgo: 1),
+                new TrackerWorkItem(AdvancedReporting, "Advanced reporting module", Analysing, StateCategories.Doing, "4", StartedDaysAgo: 3),
+                new TrackerWorkItem(ApiVersioning, "Public API versioning", Analysing, StateCategories.Doing, "5", StartedDaysAgo: 2),
+                new TrackerWorkItem(ConfigurationManagement, "Configuration management", Backlog, StateCategories.ToDo, "6"),
+                new TrackerWorkItem(LoadTesting, "Load testing framework", Backlog, StateCategories.ToDo, "7"),
+            ]);
+
+            TheTeamRefines(gravity, RefinesInBacklogAnalysingAndNext);
+            return gravity;
+        }
+
+        /// <summary>
+        /// The Team finished this many Work Items on each of the last <paramref name="days"/> days before the tracker
+        /// was read, that day included, each taking one day. A Team that finishes the same number every day makes the
+        /// shipped forecast engine answer one number, whatever it draws.
+        /// </summary>
+        public void TheTeamFinishedWorkEveryDay(int teamId, int perDay, int days = ThroughputHistoryDays)
+        {
+            using var scope = services.CreateScope();
+            var owner = TheStoredTeam(scope, teamId);
+            var workItemRepository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+
+            foreach (var daysAgo in Enumerable.Range(0, days))
+            {
+                foreach (var index in Enumerable.Range(0, perDay))
+                {
+                    var referenceId = $"DONE-{daysAgo}-{index}";
+                    var closed = TrackerReadOn.Date.AddDays(-daysAgo).AddHours(12);
+
+                    workItemRepository.Add(new WorkItem
+                    {
+                        Team = owner,
+                        TeamId = owner.Id,
+                        ReferenceId = referenceId,
+                        Name = $"Finished {referenceId}",
+                        Type = "User Story",
+                        State = Done,
+                        StateCategory = StateCategories.Done,
+                        CreatedDate = closed.AddDays(-11),
+                        StartedDate = closed,
+                        ClosedDate = closed,
+                        Order = "99",
+                        Url = TrackerAddressOf(referenceId),
+                    });
+                }
+            }
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+        }
+
+        private void TheTrackerHolds(int teamId, (string WorkItem, string Tag)[] tags, List<TrackerWorkItem> workItems)
+        {
+            using var scope = services.CreateScope();
+            var owner = TheStoredTeam(scope, teamId);
+            var workItemRepository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
+
+            foreach (var tracked in workItems)
+            {
+                workItemRepository.Add(new WorkItem
+                {
+                    Team = owner,
+                    TeamId = owner.Id,
+                    ReferenceId = tracked.ReferenceId,
+                    Name = tracked.Name,
+                    Type = "User Story",
+                    State = tracked.State,
+                    StateCategory = tracked.Category,
+                    CreatedDate = TrackerReadOn.AddDays(-60),
+                    StartedDate = tracked.Category == StateCategories.Doing ? TrackerReadOn.Date.AddDays(-tracked.StartedDaysAgo).AddHours(12) : null,
+                    Order = tracked.Rank,
+                    Url = TrackerAddressOf(tracked.ReferenceId),
+                    ParentReferenceId = string.Empty,
+                    Tags = [.. tags.Where(tag => tag.WorkItem == tracked.ReferenceId).Select(tag => tag.Tag)],
+                });
+            }
+
+            workItemRepository.Save().GetAwaiter().GetResult();
+        }
+
+        private static Team TheStoredTeam(IServiceScope scope, int teamId)
+            => scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)
+                ?? throw new InvalidOperationException($"no Team {teamId} is stored to give Work Items");
+
+        private static string TrackerAddressOf(string referenceId) => $"https://tracker.example/browse/{referenceId}";
+
+        private sealed record TrackerWorkItem(string ReferenceId, string Name, string State, StateCategories Category, string Rank, int StartedDaysAgo = 0);
     }
 
     /// <summary>A Team's states by category, in the tracker's order.</summary>

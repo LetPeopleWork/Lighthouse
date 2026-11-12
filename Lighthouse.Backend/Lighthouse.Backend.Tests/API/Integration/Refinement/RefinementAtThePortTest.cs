@@ -33,37 +33,31 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// </summary>
     public abstract class RefinementAtThePortTest
     {
-        protected const string Backlog = "Backlog";
+        protected const string Backlog = RefinementPortGivens.Backlog;
 
-        protected const string Next = "Next";
+        protected const string Next = RefinementPortGivens.Next;
 
-        protected const string Analysing = "Analysing";
+        protected const string Analysing = RefinementPortGivens.Analysing;
 
-        protected const string Implementation = "Implementation";
+        protected const string Implementation = RefinementPortGivens.Implementation;
 
-        protected const string Done = "Done";
+        protected const string Done = RefinementPortGivens.Done;
 
-        protected const int ThroughputHistoryDays = 30;
+        protected const int ThroughputHistoryDays = RefinementPortGivens.ThroughputHistoryDays;
 
-        protected const string BillingExport = "GR-040";
+        protected const string BillingExport = RefinementPortGivens.BillingExport;
 
-        protected const string AdvancedReporting = "GR-051";
+        protected const string AdvancedReporting = RefinementPortGivens.AdvancedReporting;
 
-        protected const string ApiVersioning = "GR-054";
+        protected const string ApiVersioning = RefinementPortGivens.ApiVersioning;
 
-        protected const string UserActivityTracking = "GR-058";
+        protected const string UserActivityTracking = RefinementPortGivens.UserActivityTracking;
 
-        protected const string AdvancedSearch = "GR-059";
+        protected const string AdvancedSearch = RefinementPortGivens.AdvancedSearch;
 
-        protected const string ConfigurationManagement = "GR-073";
+        protected const string ConfigurationManagement = RefinementPortGivens.ConfigurationManagement;
 
-        protected const string LoadTesting = "GR-074";
-
-        /// <summary>The Gravity demo Team's tracker states: To Do "Backlog"; Doing "Next", "Analysing" and "Implementation"; Done "Done".</summary>
-        protected static readonly TeamStates GravitysStates = new([Backlog], [Next, Analysing, Implementation], [Done]);
-
-        /// <summary>Wednesday 7 October 2026, nine in the morning: the moment the tracker's dates are counted back from.</summary>
-        private static readonly DateTime TrackerReadOn = new(2026, 10, 7, 9, 0, 0, DateTimeKind.Utc);
+        protected const string LoadTesting = RefinementPortGivens.LoadTesting;
 
         private ServicePortHarness harness = null!;
 
@@ -113,69 +107,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// <summary>One step of a scenario, for a Given that goes through a real service.</summary>
         protected IServiceScope NewScope() => harness.NewScope();
 
-        /// <summary>
-        /// Team Gravity refines in Backlog, Analysing and Next, and its tracker holds, in backlog order: GR-040
-        /// being implemented (not in refinement), GR-058 and GR-059 in Next, GR-051 and GR-054 in Analysing,
-        /// GR-073 and GR-074 in Backlog - six Work Items in refinement. The given Work Items carry the given
-        /// tags. No stage, cadence or band has been chosen.
-        /// </summary>
-        protected int GravityRefinesSixWorkItems(params (string WorkItem, string Tag)[] tags)
-        {
-            var gravity = Givens.ATeam("Team Gravity", GravitysStates, ThroughputHistoryDays, sleProbability: 85, sleRange: 7);
+        /// <inheritdoc cref="RefinementPortGivens.GravityRefinesSixWorkItems"/>
+        protected int GravityRefinesSixWorkItems(params (string WorkItem, string Tag)[] tags) => Givens.GravityRefinesSixWorkItems(tags);
 
-            TheTrackerHolds(gravity, tags,
-            [
-                new TrackerWorkItem(BillingExport, "Billing export", Implementation, StateCategories.Doing, "1", StartedDaysAgo: 9),
-                new TrackerWorkItem(UserActivityTracking, "User activity tracking", Next, StateCategories.Doing, "2", StartedDaysAgo: 1),
-                new TrackerWorkItem(AdvancedSearch, "Advanced search filters", Next, StateCategories.Doing, "3", StartedDaysAgo: 1),
-                new TrackerWorkItem(AdvancedReporting, "Advanced reporting module", Analysing, StateCategories.Doing, "4", StartedDaysAgo: 3),
-                new TrackerWorkItem(ApiVersioning, "Public API versioning", Analysing, StateCategories.Doing, "5", StartedDaysAgo: 2),
-                new TrackerWorkItem(ConfigurationManagement, "Configuration management", Backlog, StateCategories.ToDo, "6"),
-                new TrackerWorkItem(LoadTesting, "Load testing framework", Backlog, StateCategories.ToDo, "7"),
-            ]);
-
-            Givens.TheTeamRefines(gravity, RefinementPortGivens.RefinesInBacklogAnalysingAndNext);
-            return gravity;
-        }
-
-        /// <summary>
-        /// The Team finished this many Work Items on each of the last <paramref name="days"/> days before the tracker
-        /// was read, that day included, each taking one day. A Team that finishes the same number every day makes the
-        /// shipped forecast engine answer one number, whatever it draws.
-        /// </summary>
+        /// <inheritdoc cref="RefinementPortGivens.TheTeamFinishedWorkEveryDay"/>
         protected void TheTeamFinishedWorkEveryDay(int teamId, int perDay, int days = ThroughputHistoryDays)
-        {
-            using var scope = harness.NewScope();
-            var owner = TheStoredTeam(scope, teamId);
-            var workItemRepository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
-
-            foreach (var daysAgo in Enumerable.Range(0, days))
-            {
-                foreach (var index in Enumerable.Range(0, perDay))
-                {
-                    var referenceId = $"DONE-{daysAgo}-{index}";
-                    var closed = TrackerReadOn.Date.AddDays(-daysAgo).AddHours(12);
-
-                    workItemRepository.Add(new WorkItem
-                    {
-                        Team = owner,
-                        TeamId = owner.Id,
-                        ReferenceId = referenceId,
-                        Name = $"Finished {referenceId}",
-                        Type = "User Story",
-                        State = Done,
-                        StateCategory = StateCategories.Done,
-                        CreatedDate = closed.AddDays(-11),
-                        StartedDate = closed,
-                        ClosedDate = closed,
-                        Order = "99",
-                        Url = TrackerAddressOf(referenceId),
-                    });
-                }
-            }
-
-            workItemRepository.Save().GetAwaiter().GetResult();
-        }
+            => Givens.TheTeamFinishedWorkEveryDay(teamId, perDay, days);
 
         /// <summary>A system admin has declared every day from the first to the last a blackout day for the whole instance.</summary>
         protected void BlackoutDaysFrom(DateOnly first, DateOnly last)
@@ -194,43 +131,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 .Create(new RecurringBlackoutRuleDto { Weekdays = [.. weekdays], IntervalWeeks = 1, Start = first, End = last, Description = description })
                 .GetAwaiter().GetResult();
         }
-
-        private void TheTrackerHolds(int teamId, (string WorkItem, string Tag)[] tags, List<TrackerWorkItem> workItems)
-        {
-            using var scope = harness.NewScope();
-            var owner = TheStoredTeam(scope, teamId);
-            var workItemRepository = scope.ServiceProvider.GetRequiredService<IWorkItemRepository>();
-
-            foreach (var tracked in workItems)
-            {
-                workItemRepository.Add(new WorkItem
-                {
-                    Team = owner,
-                    TeamId = owner.Id,
-                    ReferenceId = tracked.ReferenceId,
-                    Name = tracked.Name,
-                    Type = "User Story",
-                    State = tracked.State,
-                    StateCategory = tracked.Category,
-                    CreatedDate = TrackerReadOn.AddDays(-60),
-                    StartedDate = tracked.Category == StateCategories.Doing ? TrackerReadOn.Date.AddDays(-tracked.StartedDaysAgo).AddHours(12) : null,
-                    Order = tracked.Rank,
-                    Url = TrackerAddressOf(tracked.ReferenceId),
-                    ParentReferenceId = string.Empty,
-                    Tags = [.. tags.Where(tag => tag.WorkItem == tracked.ReferenceId).Select(tag => tag.Tag)],
-                });
-            }
-
-            workItemRepository.Save().GetAwaiter().GetResult();
-        }
-
-        private static Team TheStoredTeam(IServiceScope scope, int teamId)
-            => scope.ServiceProvider.GetRequiredService<IRepository<Team>>().GetById(teamId)
-                ?? throw new InvalidOperationException($"no Team {teamId} is stored to give Work Items");
-
-        private static string TrackerAddressOf(string referenceId) => $"https://tracker.example/browse/{referenceId}";
-
-        private sealed record TrackerWorkItem(string ReferenceId, string Name, string State, StateCategories Category, string Rank, int StartedDaysAgo = 0);
 
         /// <summary>What every scenario of this base adds to the harness, read without building or resolving any of it.</summary>
         internal static IServiceCollection WhatItRegisters
