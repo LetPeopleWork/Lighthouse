@@ -384,7 +384,7 @@
 "B": 1,
 "D": 15,
 "E": 4,
-"F": 257,
+"F": 260,
 "K": 10,
 "L": 3,
 "P": 4,
@@ -1150,6 +1150,33 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F258"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F258"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F259",
+"F260"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F258"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1357,7 +1384,10 @@
 "F255": "The question is accepted with 200 and the log holds it whole, so the limit sits at 2000: one more character is refused by the neighbouring rows",
 "F256": "A person can send a comment of the full length the browser promises",
 "F257": "A limit of 1999, which would refuse the 2000-character question; held off by asserting 200 and the whole text read back",
+"F258": "dotnet test of the 3 classes + wire class + PortGivensGuardTest: 93 passed, 0 failed, total 5 s wall. Listed rows: Slice10 10, Slice05 17, Slice12 22 (=49 at port), wire class 30, PortGivensGuardTest 14. Not probed: HostUsersStillToMove content (private source), original id list comparison, planted-violation guard runs, before/after T5 measurement method.",
+"F259": "architecture-rules PortGivens Debug: 14/14 pass incl. 13 planted-class rows (e.g. AddsAToDoStateToATeam get_ToDoStates, AddsADoingStateInALambdaLater) showing PortGivensGuardTest flags planted violations, and the real-scan row passes. Fragments HostUsers and E1 matched no tests; E10/E13 not reachable by this probe, so their planted-fail behaviour is unobserved.",
 "F26": "No dedup of rows that overlap NeedOverOneCycleTest in this feature: ids must survive a behaviour-free move. Dropping them is a separate later slice in feature story-6602-b.",
+"F260": "backend-tests RefinementWithoutSignInWireContractTest: 30/30 pass. E10 rows: 7 per-input cases plus every-field-together pass. E13 rows: Every_setting..._seeded_database_holds, plus planted-case rows A_setting_no_port_scenario_was_given_fails_loud_naming_the_setting and A_port_fixture_that_says_sign_in_is_on_is_caught_by_the_sign_in_comparison pass, i.e. the guard detects those planted cases. With O2 (13 planted PortGivens rows pass) each of the three guards shows a planted failing case caught. Removal-then-pass is shown by the real-scan rows passing.",
 "F27": "Today is explicit in every moved Given: TodayIs(2026, 10, 7) unless the row sets another day, because the host clock starts on 7 October 2026 09:00 UTC while the port base starts on TestToday.FrozenNow.",
 "F28": "ServicePortHarness.NewScope() stays public (maintainer, DELIVER start). PortGivensGuardTest, not visibility inside one test assembly, stops a port class from writing a Team itself.",
 "F29": "ScriptedForecasts (port) stamps forecasts from the port clock instead of DateTime.UtcNow. ScriptedForecasts and the host NeedForecastScript are both kept; the host script still serves classes that stay hosted.",

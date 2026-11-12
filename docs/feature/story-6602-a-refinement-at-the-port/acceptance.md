@@ -805,4 +805,46 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+dotnet test of the 3 classes + wire class + PortGivensGuardTest: 93 passed, 0 failed, total 5 s wall. Listed rows: Slice10 10, Slice05 17, Slice12 22 (=49 at port), wire class 30, PortGivensGuardTest 14. Not probed: HostUsersStillToMove content (private source), original id list comparison, planted-violation guard runs, before/after T5 measurement method.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+dotnet test of the 3 classes + wire class + PortGivensGuardTest: 93 passed, 0 failed, total 5 s wall. Listed rows: Slice10 10, Slice05 17, Slice12 22 (=49 at port), wire class 30, PortGivensGuardTest 14. Not probed: HostUsersStillToMove content (private source), original id list comparison, planted-violation guard runs, before/after T5 measurement method.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+architecture-rules PortGivens Debug: 14/14 pass incl. 13 planted-class rows (e.g. AddsAToDoStateToATeam get_ToDoStates, AddsADoingStateInALambdaLater) showing PortGivensGuardTest flags planted violations, and the real-scan row passes. Fragments HostUsers and E1 matched no tests; E10/E13 not reachable by this probe, so their planted-fail behaviour is unobserved.
+```
+
+```text
+backend-tests RefinementWithoutSignInWireContractTest: 30/30 pass. E10 rows: 7 per-input cases plus every-field-together pass. E13 rows: Every_setting..._seeded_database_holds, plus planted-case rows A_setting_no_port_scenario_was_given_fails_loud_naming_the_setting and A_port_fixture_that_says_sign_in_is_on_is_caught_by_the_sign_in_comparison pass, i.e. the guard detects those planted cases. With O2 (13 planted PortGivens rows pass) each of the three guards shows a planted failing case caught. Removal-then-pass is shown by the real-scan rows passing.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+dotnet test of the 3 classes + wire class + PortGivensGuardTest: 93 passed, 0 failed, total 5 s wall. Listed rows: Slice10 10, Slice05 17, Slice12 22 (=49 at port), wire class 30, PortGivensGuardTest 14. Not probed: HostUsersStillToMove content (private source), original id list comparison, planted-violation guard runs, before/after T5 measurement method.
+```

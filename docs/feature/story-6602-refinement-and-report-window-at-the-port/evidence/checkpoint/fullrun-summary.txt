@@ -1,0 +1,9 @@
+Full filtered backend run, Release, fixture timer on, tracker variables removed, 2026-11-12.
+One run after the move; no full-run "before" was measured, so the full-run saving is not claimed.
+
+Passed!  - Failed:     0, Passed: 13444, Skipped:     2, Total: 13446, Duration: 6 m 55 s - Lighthouse.Backend.Tests.dll (net10.0)
+host builds: 631
+Slice10SleYardstickTest (full run): rows=10 trx=0.520s one_time=0.000s builds=0 total=0.520s
+Slice05NeedAndVerdictTest (full run): rows=17 trx=1.553s one_time=0.000s builds=0 total=1.553s
+Slice12CommentsTest (full run): rows=22 trx=1.087s one_time=0.000s builds=0 total=1.087s
+RefinementWithoutSignInWireContractTest (full run): rows=30 trx=5.205s one_time=0.148s builds=1 total=5.353s
