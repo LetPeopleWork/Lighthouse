@@ -1,0 +1,14 @@
+load before: 11.13 7.00 5.14
+Slice10SleYardstickTest: rows=10 {'Passed': 10} trx=2.723s one_time=0.000s builds=0 total=2.723s
+Slice10SleYardstickTest: rows=10 {'Passed': 10} trx=2.733s one_time=0.000s builds=0 total=2.733s
+Slice10SleYardstickTest: rows=10 {'Passed': 10} trx=2.796s one_time=0.000s builds=0 total=2.796s
+Slice05NeedAndVerdictTest: rows=17 {'Passed': 17} trx=3.738s one_time=0.000s builds=0 total=3.738s
+Slice05NeedAndVerdictTest: rows=17 {'Passed': 17} trx=3.623s one_time=0.000s builds=0 total=3.623s
+Slice05NeedAndVerdictTest: rows=17 {'Passed': 17} trx=3.400s one_time=0.000s builds=0 total=3.400s
+Slice12CommentsTest: rows=22 {'Passed': 22} trx=3.213s one_time=0.000s builds=0 total=3.213s
+Slice12CommentsTest: rows=22 {'Passed': 22} trx=2.982s one_time=0.000s builds=0 total=2.982s
+Slice12CommentsTest: rows=22 {'Passed': 22} trx=3.037s one_time=0.000s builds=0 total=3.037s
+RefinementWithoutSignInWireContractTest: rows=30 {'Passed': 30} trx=4.424s one_time=2.288s builds=1 total=6.712s
+RefinementWithoutSignInWireContractTest: rows=30 {'Passed': 30} trx=4.544s one_time=2.191s builds=1 total=6.735s
+RefinementWithoutSignInWireContractTest: rows=30 {'Passed': 30} trx=4.423s one_time=2.214s builds=1 total=6.638s
+load after: 4.67 5.87 4.88

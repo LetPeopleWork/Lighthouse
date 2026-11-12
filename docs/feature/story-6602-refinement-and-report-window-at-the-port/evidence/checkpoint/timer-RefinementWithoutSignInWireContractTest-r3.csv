@@ -1,0 +1,2 @@
+fixture,setup_count,setup_total_ms,setup_mean_ms,teardown_total_ms,one_time_setup_ms,one_time_teardown_ms,host_build_count,host_build_total_ms
+RefinementWithoutSignInWireContractTest,30,4.5,0.15,89.8,2214.2,5.0,1,2203.6

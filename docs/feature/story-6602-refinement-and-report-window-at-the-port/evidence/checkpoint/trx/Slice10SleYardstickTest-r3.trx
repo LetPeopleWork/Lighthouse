@@ -1,0 +1,86 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="ea907d49-c5a9-4433-b681-d8561088bf97" name="@cachy-desktop 2026-11-12 22:14:35" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-12T22:14:35.2431938+01:00" queuing="2026-11-12T22:14:35.2431938+01:00" start="2026-11-12T22:14:31.3720622+01:00" finish="2026-11-12T22:14:35.5724604+01:00" />
+  <TestSettings name="default" id="d1a73f20-0d35-4bec-8506-00f46d59ff6e">
+    <Deployment runDeploymentRoot="_cachy-desktop_2026-11-12_22_14_35" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="cb00f7b0-aafd-4c5d-b174-b643b6c5262a" testId="42b0f05b-50a4-fd1c-7b98-fec84a858307" testName="Every_voter_is_shown_the_same_yardstick" computerName="cachy-desktop" duration="00:00:02.5262910" startTime="2026-11-12T22:14:32.6867126+01:00" endTime="2026-11-12T22:14:35.2129219+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cb00f7b0-aafd-4c5d-b174-b643b6c5262a" />
+    <UnitTestResult executionId="baa3badf-87a9-41ac-b829-247de93452c1" testId="3da29155-c777-9f68-2b8d-175d807f7d7e" testName="Half_an_SLE_is_no_SLE_and_the_fallback_is_used(85,0)" computerName="cachy-desktop" duration="00:00:00.0372170" startTime="2026-11-12T22:14:35.2143477+01:00" endTime="2026-11-12T22:14:35.2515644+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="baa3badf-87a9-41ac-b829-247de93452c1" />
+    <UnitTestResult executionId="e6ba5773-969d-49ed-9543-36e9b90a9873" testId="2a7a05f4-d8b2-fc4e-ab8d-28a2d87d6b85" testName="No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number" computerName="cachy-desktop" duration="00:00:00.0195100" startTime="2026-11-12T22:14:35.2826206+01:00" endTime="2026-11-12T22:14:35.3021311+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e6ba5773-969d-49ed-9543-36e9b90a9873" />
+    <UnitTestResult executionId="87311a33-9b40-43fd-8d35-3356565fb9ef" testId="ee9378ee-20f3-81dc-4aac-50f0b13f57ef" testName="Work_Items_finished_before_the_Throughput_window_do_not_move_the_fallback" computerName="cachy-desktop" duration="00:00:00.0360840" startTime="2026-11-12T22:14:35.3811856+01:00" endTime="2026-11-12T22:14:35.4172693+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="87311a33-9b40-43fd-8d35-3356565fb9ef" />
+    <UnitTestResult executionId="14286d46-8f92-4a64-a7f6-c972ebe0f40b" testId="5c0f62eb-cad9-524b-6ddd-0078772ebe02" testName="Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished" computerName="cachy-desktop" duration="00:00:00.0250810" startTime="2026-11-12T22:14:35.3560762+01:00" endTime="2026-11-12T22:14:35.3811572+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="14286d46-8f92-4a64-a7f6-c972ebe0f40b" />
+    <UnitTestResult executionId="2d81c339-9abf-460d-85fd-9c80c5bac9b4" testId="6832f6f6-260d-5622-3e9a-054fb92c49f1" testName="Half_an_SLE_is_no_SLE_and_the_fallback_is_used(0,7)" computerName="cachy-desktop" duration="00:00:00.0294730" startTime="2026-11-12T22:14:35.2516120+01:00" endTime="2026-11-12T22:14:35.2810847+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2d81c339-9abf-460d-85fd-9c80c5bac9b4" />
+    <UnitTestResult executionId="7c2d7c0f-5ecf-4f6c-a996-3bca3a58bf4a" testId="8b585b9c-10a0-7ca3-ff64-2631010b9afa" testName="Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback" computerName="cachy-desktop" duration="00:00:00.0350020" startTime="2026-11-12T22:14:35.4173014+01:00" endTime="2026-11-12T22:14:35.4523036+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7c2d7c0f-5ecf-4f6c-a996-3bca3a58bf4a" />
+    <UnitTestResult executionId="66755a54-0dad-4190-92a3-67afe39bcc95" testId="9d746bec-c185-0927-4706-dfa88e93f87e" testName="The_Teams_SLE_is_the_yardstick_every_voter_answers_against" computerName="cachy-desktop" duration="00:00:00.0253130" startTime="2026-11-12T22:14:35.3021541+01:00" endTime="2026-11-12T22:14:35.3274675+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="66755a54-0dad-4190-92a3-67afe39bcc95" />
+    <UnitTestResult executionId="f352c5d1-4e5c-4ece-8b6b-29e47bb81ac7" testId="5495fee3-53dd-e588-9915-9b46b076acc0" testName="Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time" computerName="cachy-desktop" duration="00:00:00.0285560" startTime="2026-11-12T22:14:35.3274939+01:00" endTime="2026-11-12T22:14:35.3560508+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f352c5d1-4e5c-4ece-8b6b-29e47bb81ac7" />
+    <UnitTestResult executionId="ab22de17-c2dc-421a-8289-f6fba75beef4" testId="2aeedc21-7b7d-0ad3-866a-f1e371dcc77a" testName="Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback" computerName="cachy-desktop" duration="00:00:00.0337340" startTime="2026-11-12T22:14:35.4523388+01:00" endTime="2026-11-12T22:14:35.4860728+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ab22de17-c2dc-421a-8289-f6fba75beef4" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="5495fee3-53dd-e588-9915-9b46b076acc0">
+      <Execution id="f352c5d1-4e5c-4ece-8b6b-29e47bb81ac7" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Without_an_SLE_the_yardstick_is_the_85th_percentile_of_the_Teams_cycle_time" />
+    </UnitTest>
+    <UnitTest name="Half_an_SLE_is_no_SLE_and_the_fallback_is_used(0,7)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="6832f6f6-260d-5622-3e9a-054fb92c49f1">
+      <Execution id="2d81c339-9abf-460d-85fd-9c80c5bac9b4" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Half_an_SLE_is_no_SLE_and_the_fallback_is_used(0,7)" />
+    </UnitTest>
+    <UnitTest name="Half_an_SLE_is_no_SLE_and_the_fallback_is_used(85,0)" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="3da29155-c777-9f68-2b8d-175d807f7d7e">
+      <Execution id="baa3badf-87a9-41ac-b829-247de93452c1" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Half_an_SLE_is_no_SLE_and_the_fallback_is_used(85,0)" />
+    </UnitTest>
+    <UnitTest name="The_Teams_SLE_is_the_yardstick_every_voter_answers_against" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="9d746bec-c185-0927-4706-dfa88e93f87e">
+      <Execution id="66755a54-0dad-4190-92a3-67afe39bcc95" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="The_Teams_SLE_is_the_yardstick_every_voter_answers_against" />
+    </UnitTest>
+    <UnitTest name="Every_voter_is_shown_the_same_yardstick" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="42b0f05b-50a4-fd1c-7b98-fec84a858307">
+      <Execution id="cb00f7b0-aafd-4c5d-b174-b643b6c5262a" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Every_voter_is_shown_the_same_yardstick" />
+    </UnitTest>
+    <UnitTest name="Work_Items_finished_before_the_Throughput_window_do_not_move_the_fallback" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="ee9378ee-20f3-81dc-4aac-50f0b13f57ef">
+      <Execution id="87311a33-9b40-43fd-8d35-3356565fb9ef" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Work_Items_finished_before_the_Throughput_window_do_not_move_the_fallback" />
+    </UnitTest>
+    <UnitTest name="Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="8b585b9c-10a0-7ca3-ff64-2631010b9afa">
+      <Execution id="7c2d7c0f-5ecf-4f6c-a996-3bca3a58bf4a" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Work_Items_finished_on_the_first_day_of_the_Throughput_window_move_the_fallback" />
+    </UnitTest>
+    <UnitTest name="Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="5c0f62eb-cad9-524b-6ddd-0078772ebe02">
+      <Execution id="14286d46-8f92-4a64-a7f6-c972ebe0f40b" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Work_finished_only_before_the_Throughput_window_counts_as_nothing_finished" />
+    </UnitTest>
+    <UnitTest name="No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="2a7a05f4-d8b2-fc4e-ab8d-28a2d87d6b85">
+      <Execution id="e6ba5773-969d-49ed-9543-36e9b90a9873" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="No_SLE_and_no_finished_Work_Items_leaves_the_question_without_a_number" />
+    </UnitTest>
+    <UnitTest name="Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback" storage="/storage/repos/lighthouse/.claude/worktrees/hazy-wiggling-flurry/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="2aeedc21-7b7d-0ad3-866a-f1e371dcc77a">
+      <Execution id="ab22de17-c2dc-421a-8289-f6fba75beef4" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.Refinement.Slice10SleYardstickTest" name="Work_Items_finished_the_day_before_the_Throughput_window_opens_do_not_move_the_fallback" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="42b0f05b-50a4-fd1c-7b98-fec84a858307" executionId="cb00f7b0-aafd-4c5d-b174-b643b6c5262a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3da29155-c777-9f68-2b8d-175d807f7d7e" executionId="baa3badf-87a9-41ac-b829-247de93452c1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2a7a05f4-d8b2-fc4e-ab8d-28a2d87d6b85" executionId="e6ba5773-969d-49ed-9543-36e9b90a9873" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ee9378ee-20f3-81dc-4aac-50f0b13f57ef" executionId="87311a33-9b40-43fd-8d35-3356565fb9ef" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5c0f62eb-cad9-524b-6ddd-0078772ebe02" executionId="14286d46-8f92-4a64-a7f6-c972ebe0f40b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6832f6f6-260d-5622-3e9a-054fb92c49f1" executionId="2d81c339-9abf-460d-85fd-9c80c5bac9b4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8b585b9c-10a0-7ca3-ff64-2631010b9afa" executionId="7c2d7c0f-5ecf-4f6c-a996-3bca3a58bf4a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9d746bec-c185-0927-4706-dfa88e93f87e" executionId="66755a54-0dad-4190-92a3-67afe39bcc95" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5495fee3-53dd-e588-9915-9b46b076acc0" executionId="f352c5d1-4e5c-4ece-8b6b-29e47bb81ac7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2aeedc21-7b7d-0ad3-866a-f1e371dcc77a" executionId="ab22de17-c2dc-421a-8289-f6fba75beef4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="10" executed="10" passed="10" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>NUnit Adapter 6.3.1.0: Test execution started
+Running selected tests in /storage/repos/Lighthouse/.claude/worktrees/hazy-wiggling-flurry/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll
+   NUnit3TestExecutor discovered 10 of 10 NUnit test cases using Current Discovery mode, Non-Explicit run
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>
