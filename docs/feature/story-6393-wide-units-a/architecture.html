@@ -867,13 +867,6 @@ pnpm --dir Lighthouse.Frontend test src/components/Common/Connection src/pages/C
 <pre><code>RagResult and RagTerms shared by the three families.
 </code></pre>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts</p>
-
-<p>Extend</p>
-
-<pre><code>Emptied and deleted once its functions have moved; no barrel is left.
-</code></pre>
-
 <p>Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts</p>
 
 <p>Extend</p>
@@ -899,8 +892,8 @@ pnpm --dir Lighthouse.Frontend test src/components/Common/Connection src/pages/C
 
 <h4>Verification</h4>
 
-<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts
+<pre><code>pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/ragRulesOverview.test.ts src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts
 </code></pre>
 
 <h4>Supports</h4>
@@ -944,7 +937,7 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <p>RagTerms</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:6</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:6</p>
 
 <p>Extend</p>
 
@@ -971,7 +964,7 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <p>computeWipOverviewRag</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:19</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:3</p>
 
 <p>Replace</p>
 
@@ -1016,7 +1009,7 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <p>BaseMetricsView</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:92</p>
 
 <p>Extend</p>
 
@@ -1262,8 +1255,8 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <h4>Verification</h4>
 
-<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
+<pre><code>pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/widgetViewData.test.ts src/pages/Common/MetricsView/workItemLookup.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
 </code></pre>
 
 <h4>Supports</h4>
@@ -1357,7 +1350,7 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <p>BaseMetricsView</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:92</p>
 
 <p>Extend</p>
 
@@ -1553,8 +1546,8 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <h4>Verification</h4>
 
-<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
+<pre><code>pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
 </code></pre>
 
 <h4>Supports</h4>
@@ -1605,7 +1598,7 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <p>BaseMetricsView</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:92</p>
 
 <p>Extend</p>
 
@@ -1824,8 +1817,8 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/Metrics
 
 <h4>Verification</h4>
 
-<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail Lighthouse.Frontend/src/pages/Portfolios/Detail Lighthouse.Frontend/src/hooks/useRbac.test.ts
+<pre><code>pnpm --dir Lighthouse.Frontend test src/hooks/useScopedAccess.test.ts src/rbacAccess.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Teams/Detail src/pages/Portfolios/Detail src/hooks/useRbac.test.ts
 </code></pre>
 
 <h4>Supports</h4>
@@ -1863,7 +1856,7 @@ pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail L
 
 <h5>Verification</h5>
 
-<pre><code>pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx
+<pre><code>pnpm --dir Lighthouse.Frontend test src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx src/pages/Teams/Detail/TeamDetail.test.tsx src/pages/Portfolios/Detail/PortfolioDetail.test.tsx
 </code></pre>
 
 <h4>Records</h4>

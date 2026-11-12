@@ -803,14 +803,6 @@ Create
 RagResult and RagTerms shared by the three families.
 ```
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRules\.ts
-
-Extend
-
-```text
-Emptied and deleted once its functions have moved; no barrel is left.
-```
-
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/blockedMaxAgeRag\.ts
 
 Extend
@@ -840,8 +832,8 @@ Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesOverview\.test\.t
 #### Verification
 
 ```text
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/ragRulesOverview.test.ts src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts
 ```
 
 #### Supports
@@ -888,7 +880,7 @@ None.
 
 RagTerms
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRules\.ts\:6
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragTypes\.ts\:6
 
 Extend
 
@@ -918,7 +910,7 @@ Only its RagTerms type import changes.
 
 computeWipOverviewRag
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRules\.ts\:19
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesOverview\.ts\:3
 
 Replace
 
@@ -968,7 +960,7 @@ New types file; the type moves unchanged so the families share it.
 
 BaseMetricsView
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:1347
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:92
 
 Extend
 
@@ -1237,8 +1229,8 @@ Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/widgetViewData\.test\.ts
 #### Verification
 
 ```text
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/widgetViewData.test.ts src/pages/Common/MetricsView/workItemLookup.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
 ```
 
 #### Supports
@@ -1341,7 +1333,7 @@ New module holds the builder moved unchanged.
 
 BaseMetricsView
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:1347
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:92
 
 Extend
 
@@ -1554,8 +1546,8 @@ Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/dashboardFrame\.test\.ts
 #### Verification
 
 ```text
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx
 ```
 
 #### Supports
@@ -1610,7 +1602,7 @@ Existing pure node builders gain their own module.
 
 BaseMetricsView
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:1347
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:92
 
 Extend
 
@@ -1849,8 +1841,8 @@ Lighthouse\.Frontend\/src\/hooks\/useScopedAccess\.test\.ts
 #### Verification
 
 ```text
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail Lighthouse.Frontend/src/pages/Portfolios/Detail Lighthouse.Frontend/src/hooks/useRbac.test.ts
+pnpm --dir Lighthouse.Frontend test src/hooks/useScopedAccess.test.ts src/rbacAccess.enforcement.test.ts
+pnpm --dir Lighthouse.Frontend test src/pages/Teams/Detail src/pages/Portfolios/Detail src/hooks/useRbac.test.ts
 ```
 
 #### Supports
@@ -1894,7 +1886,7 @@ Lighthouse\.Frontend\/src\/pages\/Teams\/Detail\/TeamDetailAccessTab\.test\.tsx
 ##### Verification
 
 ```text
-pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx
+pnpm --dir Lighthouse.Frontend test src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx src/pages/Teams/Detail/TeamDetail.test.tsx src/pages/Portfolios/Detail/PortfolioDetail.test.tsx
 ```
 
 #### Records

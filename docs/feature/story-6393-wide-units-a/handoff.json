@@ -656,7 +656,7 @@
 "reuse": [
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:6",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragTypes.ts:6",
 "reason": "F118",
 "symbol": "RagTerms"
 },
@@ -674,7 +674,7 @@
 },
 {
 "decision": "Replace",
-"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts:19",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.ts:3",
 "reason": "F121",
 "symbol": "computeWipOverviewRag"
 },
@@ -704,7 +704,7 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:92",
 "reason": "F126",
 "symbol": "BaseMetricsView"
 },
@@ -743,11 +743,6 @@
 },
 {
 "change": "Extend",
-"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRules.ts",
-"reason": "F111"
-},
-{
-"change": "Extend",
 "path": "Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.ts",
 "reason": "F112"
 },
@@ -763,8 +758,8 @@
 }
 ],
 "verification": [
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts",
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts"
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/ragRulesOverview.test.ts src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts",
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/blockedMaxAgeRag.test.ts src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/fileSize.enforcement.test.ts"
 ]
 },
 "S3": {
@@ -887,7 +882,7 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:92",
 "reason": "F151",
 "symbol": "BaseMetricsView"
 }
@@ -919,8 +914,8 @@
 }
 ],
 "verification": [
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/widgetViewData.test.ts Lighthouse.Frontend/src/pages/Common/MetricsView/workItemLookup.test.ts",
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx"
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/widgetViewData.test.ts src/pages/Common/MetricsView/workItemLookup.test.ts",
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx"
 ]
 },
 "S4": {
@@ -1018,7 +1013,7 @@
 },
 {
 "decision": "Extend",
-"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1347",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:92",
 "reason": "F168",
 "symbol": "BaseMetricsView"
 },
@@ -1065,8 +1060,8 @@
 }
 ],
 "verification": [
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts",
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx"
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/dashboardFrame.test.ts src/fileSize.enforcement.test.ts",
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx"
 ]
 },
 "S5": {
@@ -1076,7 +1071,7 @@
 "move": "F61",
 "preserved": "F62",
 "verification": [
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx Lighthouse.Frontend/src/pages/Teams/Detail/TeamDetail.test.tsx Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDetail.test.tsx"
+"pnpm --dir Lighthouse.Frontend test src/pages/Teams/Detail/TeamDetailAccessTab.test.tsx src/pages/Portfolios/Detail/PortfolioDetailAccessTab.test.tsx src/pages/Teams/Detail/TeamDetail.test.tsx src/pages/Portfolios/Detail/PortfolioDetail.test.tsx"
 ]
 },
 "public_oracle": {
@@ -1213,8 +1208,8 @@
 }
 ],
 "verification": [
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/hooks/useScopedAccess.test.ts Lighthouse.Frontend/src/rbacAccess.enforcement.test.ts",
-"pnpm --dir Lighthouse.Frontend test Lighthouse.Frontend/src/pages/Teams/Detail Lighthouse.Frontend/src/pages/Portfolios/Detail Lighthouse.Frontend/src/hooks/useRbac.test.ts"
+"pnpm --dir Lighthouse.Frontend test src/hooks/useScopedAccess.test.ts src/rbacAccess.enforcement.test.ts",
+"pnpm --dir Lighthouse.Frontend test src/pages/Teams/Detail src/pages/Portfolios/Detail src/hooks/useRbac.test.ts"
 ]
 }
 }
@@ -1266,7 +1261,6 @@
 "F109": "StartedVsClosed, Throughput, WipOverTime, SimplifiedCfd, WorkDistribution, FeatureSize, EstimationVsCycleTime, LoadBalance, Arrivals, Pbc rules.",
 "F11": "The pure builders of the metrics view live in their own modules with no visible or behavioural change in any metrics widget",
 "F110": "RagResult and RagTerms shared by the three families.",
-"F111": "Emptied and deleted once its functions have moved; no barrel is left.",
 "F112": "Import of RagTerms points at ragTypes.ts; only edit it needs.",
 "F113": "Imports point at the family modules.",
 "F114": "Delete the ragRules.ts entry.",
