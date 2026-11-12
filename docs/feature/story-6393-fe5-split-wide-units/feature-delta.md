@@ -138,7 +138,7 @@ Facts read from the code (not inferred):
 - The 3 near files (992, 989, 970) are not listed; crossing the line makes the next change fail and split in its own change. Limit: the check sees length only, not cohesion.
 - Time: one directory walk of about 700 files, expected well under 1 s; per-test budget from `vitest.config.ts` applies; no derogation needed.
 
-## Wave: DESIGN / [REF] Slices
+## Wave: DESIGN / [REF] Slices (superseded by "Slices (current)" below)
 
 Two nwdes features. **Feature A `story-6393-wide-units-a`** (S1-S5), **Feature B `story-6393-wide-units-b`** (S6, optional, see Q1). One oracle file per slice (lesson from #6602).
 
@@ -213,7 +213,7 @@ Second stressor set (walked against the finished design, not executed): a fourth
 | Release notes | None |
 | Mutation | Last, on frozen code, per D-6393-13 |
 
-## Wave: DESIGN / [REF] Open questions for the maintainer
+## Wave: DESIGN / [REF] Open questions for the maintainer (answered, see Maintainer decisions)
 
 1. **Do the 3 near files and S6 get done?** Recommendation: S6 yes (the component stays a 730-line function after S4, where "split by responsibility" bites); the 3 near files no, guarded only, because they sit under the line and are already partly decomposed. Option B: split them as a third feature (about 2 days, not designed). Changes: slice count and Feature B.
 2. **S1 first, in its own push, before #6473 slice 05?** Recommendation: yes, push S1 alone and tell #6473. Cost: the Story stays open while S2-S5 follow.
@@ -257,3 +257,110 @@ New: the files above, the hook, two enforcement tests. Modified: the three wide 
 | Strategy per tracker for the connection form | Rejected | No behaviour differs; it would be a new abstraction |
 | Count as a baseline | Rejected | Hides which file was fixed (ADR-268) |
 | Composition over inheritance | Chosen | Hooks and components compose; no base class |
+
+## Wave: DESIGN / [REF] Maintainer decisions (2026-11-12)
+
+These answer the four open questions above and **supersede** the slice table, the deliberate-break table, the self-falsification table, the open questions and the architecture summary above where they differ; the sections below are the current ones.
+
+| Id | Decision |
+|---|---|
+| M-6393-1 | S6 (BaseMetricsView hooks) is in. |
+| M-6393-2 | The three near-line files are **split** in FE5, not guarded only: `DeliverySection.tsx` (992), `DeliveryCreateModal.tsx` (989), `hooks/useMetricsData.ts` (970). D-6393-8 is replaced by this. |
+| M-6393-3 | S1 is pushed on its own, before #6473 slice 05 starts. |
+| M-6393-4 | The six "Failed to ... team/portfolio member(s)..." texts change in S5, in their own `fix(access): ...` commit apart from the moves, pinned by tests. Approved copy: `Failed to load {team} members.`, `Failed to update {team} member role.`, `Failed to remove {team} member.` and the same with {portfolio}; `{team}` and `{portfolio}` are `getTerm(TERMINOLOGY_KEYS.TEAM)` and `getTerm(TERMINOLOGY_KEYS.PORTFOLIO)` lower-cased. With the default terms the text is unchanged. D-6393-14 is replaced by this. |
+| M-6393-5 | Rigor profile `standard` for every slice (sonnet crafter and acceptance designer, haiku reviewers). Per slice: refactor and review; push per slice; mutation once at the end. |
+| M-6393-6 | FE2 will later move the Delivery pair into a Delivery module: the new Delivery files stay in the one folder `pages/Portfolios/Detail/Components/DeliveryGrid/`, no barrel (the existing `index.ts` is not touched). |
+
+## Wave: DESIGN / [REF] The three near-line splits (read from the code, 2026-11-12)
+
+**Ratchet: nothing more is needed.** Each file is under the 1000 line threshold, so none is ever listed; the threshold stays 1000. The slices still lower their line counts so a later change does not cross the line.
+
+**`useMetricsData.ts` (970), S7.** l.49-341 are types, the owner key and a query helper; l.342-970 are the hook, a flat list of about 40 `useMetricsQuery` calls plus one effect. Moves: `metricsApplicability.ts` (the `is...MetricsService` guards, `applicabilityFor`, `narrowsAChartAlreadyDrawn`, l.132-225, pure), `metricsOwnerKey.ts` (`OwnerType`, `MetricsOwnerKey`, `metricsOwnerKeyOf`, the request types, l.241-277), `useMetricsQuery.ts` (`useMetricsQuery`, `LastDrawn`, `ownerOf`, `listOf`, `dayOf`, l.270-341). Result about 750 lines. The hook's query calls are **not** split into sub-hooks: React runs hooks in call order and the order the queries start is observable (requests, tests), so a family split is a behaviour risk this Story does not take. Eight files import `MetricsOwnerKey` / `MetricsOwnerRequest` from `hooks/useMetricsData`: their import lines change (edit commit, not part of a move). **`layerBoundaries.enforcement.test.ts` lists `useMetricsData.ts -> pages/Common/MetricsView/categoryMetadata.ts` and `-> widgetStatus.ts`**: the file that holds those imports after the move gives the pair a new importing name, so the list entries are renamed in the same commit (ADR-268: the list is part of the test; the number of leaks does not grow). Oracle: `useMetricsData.test.ts`, `usePbcOverTime`, `useFilteredView` and `useCumulativeStateTimeChoices` tests, `BaseMetricsView*.test.tsx`, `layerBoundaries.enforcement.test.ts`, `@screenshot` team metrics (Screenshots.spec.ts l.516).
+
+**`DeliverySection.tsx` (992), S8.** The component is l.450-868 (JSX l.613-868); before it sit helper components and copy (l.80-449), after it two components (l.869-992). Moves: `UnbindConfirmationDialog.tsx` (l.869-937), `WorkItemsTab.tsx` (l.938-992), `deliveryFeatureRow.tsx` (`DeliveryRowActions`, `SelectionModeMarker`, `OwningTeams`, `featureColumns`, l.164-403, about 240 lines), `deliveryHeaderCopy.tsx` (`howTheFeaturesWereChosen`, `WhatIsWrongWithTheSource`, `whatTheHeaderChipSays`, l.94-163 and 404-432, about 100 lines). Result about 480 lines. Oracle: the ten `DeliverySection.*.test.tsx` files (archive, beyondTheHorizon, likelihoodCopy, metrics, notes, overdue, provenance, publishRefused, sourceUnavailable, plain), `DeliveryDialogTestKit.tsx` as support, Playwright `DeliveryMetrics.spec.ts` and the `@screenshot` of retiring a Delivery (Screenshots.spec.ts l.449).
+
+**`DeliveryCreateModal.tsx` (989), S9.** l.114-470 are presentational pieces and the selection tab content, l.472-580 are pure form rules, l.582-989 is the dialog (state, handlers, two effects, JSX). Moves: `DeliverySelectionContent.tsx` (`ManualSelectionContent`, `RuleBasedContent`, `SelectionModeContent`, their prop types, `selectionTabContent`, l.173-374), `DeliverySelectionTabRow.tsx` (`SelectionTabButton`, `BusySelectionTab`, `SelectionTabRow`, l.375-470), `deliveryFormRules.ts` (`dateInputValue`, `offeredTabs`, `boundSourceSelection`, `isValidFutureDate`, `nameErrorOf`, `dateErrorOf`, `getFirstBlockingError`, l.472-580, pure, new `.test.ts` rows move down from the render tests where a row only proves one of these rules), `DeliveryDialogParts.tsx` (`LoadingSpinner`, `SchemaLoadError`, `PremiumFeatureNotice`, `ValidationButton`, `MatchedFeaturesAlert`, `MatchedFeaturesGrid`, l.114-171). Result about 470 lines. **Semantic-duplicate check before CREATE_NEW:** `deliverySelectionTabs.ts` already owns the tab types and keys, and `deliverySelectionBody.ts` the body; the crafter reads both first and puts `offeredTabs` there if it is the same knowledge (EXTEND), else `deliveryFormRules.ts`. Oracle: the nine `DeliveryCreateModal.*.test.tsx` files (edit, featureListAndRuleFields, licenceNeverKnown, loadsOnce, neverAGuess, rulebased, sourceBinding, sourceValidation, plain), `deliverySelectionTabs.test.ts`, Playwright `DeliverySourcePicker.spec.ts`.
+
+## Wave: DESIGN / [REF] Slices (current; replaces the earlier table)
+
+Two nwdes features, at most 5 slices each. **Feature A `story-6393-wide-units-a`**: S1-S5. **Feature B `story-6393-wide-units-b`**: S6-S9. Profile `standard` throughout. One oracle file per slice. Push per slice; S1 first and on its own.
+
+| Slice | Delivers, in plain words | Commits (move, then edit) | Oracle | Size |
+|---|---|---|---|---|
+| S1 | The connection form lives in five small files; the size rule exists and names the two files still too wide | as in the earlier table | as in the earlier table | 1 day |
+| S2 | `ragRules.ts` becomes three family files plus a types file | as before | as before | 0.5 day |
+| S3 | The pure builders of the metrics view leave `BaseMetricsView.tsx` | as before | as before | 1 day |
+| S4 | Widget nodes and frame helpers leave it; under 1000; list entry deleted | as before | as before | 0.75 day |
+| S5 | Team and Portfolio share one hook for members and group mappings; a test keeps the copies from coming back; the six failure texts follow the renamed Team/Portfolio term | (1) `test: characterize assign, remove, failed load, failed assign on both Access tabs` with the **default** texts, GREEN on the old code; (2) `refactor: extract useScopedAccess from TeamDetail`; (3) `refactor: use it in PortfolioDetail`; (4) `test: hook rows at the function layer; page rows shrink to one wiring row each`; (5) `test: rbacAccess enforcement`; (6) `fix(access): failure texts use the configured Team and Portfolio term` (the only commit that changes behaviour; its renamed-term rows are RED before it, GREEN after) | Characterization rows (1) stay GREEN through (2)-(5) unmodified. Fix oracle in `useScopedAccess.test.ts` (hook, provider wrapper): for each of the three actions (load fails, assign fails, remove fails) and each scope, **with Team renamed to "Squad" and Portfolio to "Program"** the message is `Failed to load squad members.`, `Failed to update squad member role.`, `Failed to remove squad member.` and `... program ...`; **with the default terms** the six texts equal today's (`team`, `portfolio`). One wiring row per page (`TeamDetailAccessTab.test.tsx`, `PortfolioDetailAccessTab.test.tsx`) shows one renamed text on screen. Playwright `RoleBasedAccessControl.spec.ts` Access tab cases (`--grep` one). Sketch: none needed, the copy is approved text | 0.75 day |
+| S6 | The metrics view's two effectful parts become hooks | `move useNamedPercentilesScope`; `move useStateDrillDown` | `BaseMetricsView.loading.test.tsx`, `.cumulativeStateTimeDialog.test.tsx`, `BaseMetricsView.test.tsx` | 0.5 day |
+| S7 | `useMetricsData.ts` gives away its owner key, applicability rules and query helper | `move metricsApplicability`; `move metricsOwnerKey`; `move useMetricsQuery`; `edit: eight importers and two layer-list entries` | as in the `useMetricsData` paragraph above | 0.5 day |
+| S8 | `DeliverySection.tsx` gives away its dialogs, row parts and header copy | `move UnbindConfirmationDialog`; `move WorkItemsTab`; `move deliveryFeatureRow`; `move deliveryHeaderCopy` | as in its paragraph | 0.75 day |
+| S9 | `DeliveryCreateModal.tsx` gives away its selection content, tab row, form rules and small parts | `move deliveryFormRules (+ tests down)`; `move DeliverySelectionContent`; `move DeliverySelectionTabRow`; `move DeliveryDialogParts` | as in its paragraph | 0.75 day |
+
+Fast loop and full gates as in the earlier Slices section. Mutation: once, at the end, on frozen code, config by file (D-6393-13), covering the files of all slices.
+
+## Wave: DESIGN / [REF] Deliberate-break rows added (S5 to S9)
+
+| Slice | Planted change | Must fail |
+|---|---|---|
+| S5 | In the hook, drop `.toLowerCase()` of the term | the renamed-term row ("Squad" gives `Failed to load Squad members.`) |
+| S5 | Hard-code "team" in the portfolio scope text | the Portfolio renamed-term row |
+| S5 | Revert only the `fix(access)` commit | the six renamed-term rows RED, the characterization rows with default texts stay GREEN |
+| S7 | In `metricsApplicability.ts` make `providesSleRisk` always true | `useMetricsData.test.ts` "asks for the team alone, with no window to disagree about" or the risk rows |
+| S7 | In `useMetricsQuery.ts` drop the `lastDrawn` update | the `.loading.test.tsx` row that keeps the previous answer dimmed |
+| S7 | Leave the two moved layer imports unrenamed in the list | `layerBoundaries.enforcement.test.ts` names stale and new pairs |
+| S8 | In `UnbindConfirmationDialog.tsx` make the confirm button always enabled | `DeliverySection.archive.test.tsx` or the unbind row in `DeliverySection.test.tsx` (the acceptance designer names the exact row before S8) |
+| S8 | In `deliveryHeaderCopy.tsx` change "Overdue" wording | `DeliverySection.overdue.test.tsx` |
+| S9 | In `deliveryFormRules.ts` make `isValidFutureDate` accept yesterday | the moved `deliveryFormRules.test.ts` row and the matching `DeliveryCreateModal.test.tsx` row |
+| S9 | In `DeliverySelectionContent.tsx` drop the premium notice | `DeliveryCreateModal.licenceNeverKnown.test.tsx` |
+
+## Wave: DESIGN / [REF] Self-falsification rows added
+
+| Counterexample | What it would show | Answer |
+|---|---|---|
+| `useMetricsData` is split into per-family sub-hooks and the queries start in another order | Request order changes, tests flake or a spinner shows later | Not split (above); only pure and helper code moves |
+| A moved layer import keeps its old name in `ALLOWED_LEAKS` | The ratchet reports a stale entry and a new leak | The rename is in the same commit as the move; the planted break above |
+| The renamed term is read before the terminology loads | The text shows a default word under a renamed instance | The hook reads `getTerm` at the time of the failure, not at mount; the renamed-term row uses a provider that is ready, plus one row where the term arrives after mount |
+| Lower-casing breaks a term that is an acronym or has an uppercase second word | "SLE team" becomes "sle team" | The approved copy says lower-cased; stays as approved, listed in the new open question below |
+| `DeliveryCreateModal` pieces move into a folder FE2 will also touch | Double move | Same folder, no barrel (M-6393-6); FE2 moves the whole folder |
+| A moved Delivery row test mocks a moved module by path and stays green | A check that cannot fail | `vi.mock` ids are module paths, kept; each slice has a plant |
+| `offeredTabs` is copied next to `deliverySelectionTabs.ts` | A semantic duplicate | Read both before CREATE_NEW; extend the existing owner |
+
+## Wave: DESIGN / [REF] Open questions (current)
+
+The four earlier questions are closed by the maintainer's answers above. One new question:
+1. **Lower-casing a renamed term.** The approved copy lower-cases the Terminology word. A term such as "SLE group" would read "sle group". Recommendation: keep the approved rule (it matches the default texts "team"/"portfolio"); change it only if a real instance shows a bad case. Changes: the S5 fix commit and its renamed-term rows.
+
+## Wave: DESIGN / [REF] Architecture summary (amendments)
+
+```
+hooks/useMetricsData.ts (970)        hooks/useMetricsData.ts (~750)
+                                       metricsApplicability.ts, metricsOwnerKey.ts, useMetricsQuery.ts
+DeliveryGrid/DeliverySection.tsx     DeliveryGrid/DeliverySection.tsx (~480)
+ (992)                                 UnbindConfirmationDialog, WorkItemsTab,
+                                       deliveryFeatureRow, deliveryHeaderCopy
+DeliveryGrid/DeliveryCreateModal.tsx DeliveryGrid/DeliveryCreateModal.tsx (~470)
+ (989)                                 DeliverySelectionContent, DeliverySelectionTabRow,
+                                       deliveryFormRules, DeliveryDialogParts
+useScopedAccess (S5)                 reads getTerm for the six failure texts
+```
+
+Patterns: same as before, plus: **extract pure rules to a function module** (chosen for `metricsApplicability`, `deliveryFormRules`: tested without a render); **keep hook call order** (chosen: no sub-hook split of `useMetricsData`); **one folder, no barrel for the Delivery pair** (chosen: FE2 moves a folder, not a facade); **a family split of the 40 queries** (rejected: observable order); **a new Delivery module now** (rejected: FE2's job).
+
+## Wave: DESIGN / [REF] Open question closed in AFK (2026-11-12)
+
+- Lower-casing a renamed term ("SLE group" reads "sle group"): kept the approved rule, as recommended. Revisit only if
+  a real instance shows a bad case. Taken in AFK mode; the maintainer may revisit.
+
+## Wave: DEVOPS / [REF] Platform and usage data (2026-11-12)
+
+- **Platform risk: none.** Frontend-only file splits plus one copy change; no route, data, migration, config,
+  workflow or deployment change. Existing CI (`ci.yml`, Vitest, Playwright via the verify workflows, Sonar) covers it
+  unchanged; the two new enforcement tests run inside `pnpm test`.
+- **Usage-data event: N/A.** The Story is behaviour-free apart from six failure texts that now use the configured
+  Team and Portfolio words; nothing new is there to be used, so no event would show adoption. `UsageDataEventName`
+  and `docs/settings/usagedata.md` are unchanged.
+- **Rollout and rollback:** per-slice push to `main` (S1 first, before #6473 slice 05); rollback is a revert of the
+  slice's commits. No release notes (behaviour-free; the copy change matches today's text under default terms).
+- **Mutation:** StrykerJS once at the end of each nwdes feature, on frozen code, ≥ 80 % on touched files, baseline
+  the old files (see DESIGN, Stryker notes).
