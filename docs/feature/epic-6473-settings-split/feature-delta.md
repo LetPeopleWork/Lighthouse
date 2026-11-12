@@ -1634,3 +1634,13 @@ Manual check for each: browser throttled to a slow connection (CLAUDE.md "Design
 | 03 License in System | No | **Bug #6498 fits slice 03** (its AC already says the connection forms' link opens System → License). Slice 01 already stops the blank page by landing on System; slice 03 makes it land on License. Do not start a separate fix. If FE5 lands first the link is in `OAuthPremiumNotice.tsx`, and the wizard still has its own (l.499): the crafter edits both holders |
 | 04 Connections in System | No | Anchors updated (section l.586-709, Add button l.497, refused alert l.453); the page header row keeps two Add buttons; the Overview keeps the stepper, refused alert and reconnect banners. Extraction commit first, as DD9 |
 | 05 Connection entry points | **Wording and two additions pending a yes** | Correct the file: return paths are in `EditConnection.tsx` (l.137, 180, 181); `ModifyConnectionSettings.tsx` has none. No Cancel on the edit page. Task Manager has an Edit button, not a section link (D13). Hint has no link yet (D15). A back link on the connection pages (D14) would be new scope unless the maintainer says yes. Bug #6498 does **not** belong here: its fix is the license target, owned by slices 01 and 03 |
+
+## Wave: DELIVER / [REF] Maintainer decisions before the walk-through (2026-11-12)
+
+- **D5**: the Access tab "System Admins" is renamed **"System-wide access"**; its old slug stays as an earlier slug, so
+  existing links keep working.
+- **D12b**: nothing extra for a dismissed onboarding stepper with no connection; the "Add {Team}" hint and the Settings
+  menu are the way to Connections.
+- **D14**: the connection pages get one back link at the top, **"Back to {Work Tracking Systems}"** (configured term),
+  to System → Connections.
+- Every other decision in "Sketches for the walk-through" stays open for the walk-through.
