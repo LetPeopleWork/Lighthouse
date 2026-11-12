@@ -1782,7 +1782,7 @@ describe("BaseMetricsView component", () => {
 
 		// A single blocked item — the max-blocked-age RAG on the over-time widget must be
 		// RED because it has been blocked 15 days, past the 10-day staleness threshold.
-		// The overview count tile keeps its own count-based RAG (covered in ragRules.test.ts).
+		// The overview count tile keeps its own count-based RAG (covered in the ragRules family test files).
 		const blockedScenarioItems: IWorkItem[] = [
 			{
 				...mockInProgressItems[0],
@@ -5716,7 +5716,7 @@ describe("BaseMetricsView component", () => {
 	});
 
 	/**
-	 * The widget-level half: the rule itself is pinned in ragRules.test.ts; here we pin
+	 * The widget-level half: the rule itself is pinned in the ragRules family test files; here we pin
 	 * that it is REGISTERED, that the trend policy flipped from "none" to "previous-period", and
 	 * that both render through the EXISTING WidgetShell chrome rather than a new component.
 	 */
@@ -5802,7 +5802,7 @@ describe("BaseMetricsView component", () => {
 		 *
 		 * What still needs pinning is why this test exists at all: the mapping from rule result to
 		 * chip lives in this view, not in the rule, so the false "define an SLE" instruction could
-		 * reappear at the only layer the user reads while ragRules.test.ts stayed green. Empty and
+		 * reappear at the only layer the user reads while the ragRules family tests stayed green. Empty and
 		 * unconfigured remain distinguishable — they are just distinguished by COLOUR now (green vs
 		 * red) rather than by presence, and the define-an-SLE tip stays exclusive to unconfigured.
 		 */

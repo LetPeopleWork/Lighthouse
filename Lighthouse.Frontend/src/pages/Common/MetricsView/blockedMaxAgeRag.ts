@@ -1,4 +1,4 @@
-import type { RagTerms } from "./ragRules";
+import type { RagTerms } from "./ragTypes";
 
 /**
  * Aging band as a fraction of the staleness threshold: at/above this fraction (but below the

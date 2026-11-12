@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computeBlockedMaxAgeRag } from "./blockedMaxAgeRag";
-import type { RagTerms } from "./ragRules";
+import type { RagTerms } from "./ragTypes";
 
 const terms: RagTerms = {
 	workItem: "Work Item",
