@@ -1,4 +1,10 @@
-import { useCallback, useContext, useRef, useState } from "react";
+import {
+	useCallback,
+	useContext,
+	useLayoutEffect,
+	useRef,
+	useState,
+} from "react";
 import type {
 	RbacGroupMapping,
 	RbacScopedMemberSummary,
@@ -38,9 +44,12 @@ export const useScopedAccess = (
 	// Read through a ref so a late terminology answer changes the next message,
 	// not the identity of the handlers a page effect depends on.
 	const scopeWordRef = useRef("");
-	scopeWordRef.current = getTerm(
+	const scopeWord = getTerm(
 		scope === "Team" ? TERMINOLOGY_KEYS.TEAM : TERMINOLOGY_KEYS.PORTFOLIO,
 	).toLowerCase();
+	useLayoutEffect(() => {
+		scopeWordRef.current = scopeWord;
+	}, [scopeWord]);
 	const [members, setMembers] = useState<RbacScopedMemberSummary[]>([]);
 	const [membersLoading, setMembersLoading] = useState(false);
 	const [membersError, setMembersError] = useState<string>();

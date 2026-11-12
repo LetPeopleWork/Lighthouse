@@ -2,19 +2,19 @@ import type { RagTerms } from "./ragTypes";
 
 /**
  * Aging band as a fraction of the staleness threshold: at/above this fraction (but below the
- * threshold) the oldest blocker is AMBER. Fixed default per OQ-EB-D1 — not a user setting.
+ * threshold) the oldest blocker is AMBER. A fixed default, not a user setting.
  */
 const AMBER_BAND_FRACTION = 0.75;
 
-export type BlockedRagStatus = "red" | "amber" | "green" | "none";
+type BlockedRagStatus = "red" | "amber" | "green" | "none";
 
-export type BlockedRagResult = {
+type BlockedRagResult = {
 	readonly ragStatus: BlockedRagStatus;
 	readonly tipText: string;
 };
 
 /**
- * B2 (slice-07): drive the Blocked overview widget RAG from the MAX blocked age across the
+ * Drive the Blocked overview widget RAG from the MAX blocked age across the
  * currently-blocked items, calibrated on the existing blockedStalenessThresholdDays:
  *   RED   = an item is blocked past the threshold,
  *   AMBER = an item is aging toward it (within the aging band, a default fraction of the threshold),
