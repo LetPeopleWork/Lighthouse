@@ -182,7 +182,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// tags. No stage, cadence or band has been chosen.
         /// </summary>
         public int GravityRefinesSixWorkItems(params (string WorkItem, string Tag)[] tags)
-            => GravityRefines("Team Gravity", sleProbability: 85, sleRange: 7, tags, GravitysTracker);
+            => GravityRefines("Team Gravity", sleProbability: 85, sleRange: 7, tags, GravitysTracker, TrackerReadOn);
 
         /// <summary>
         /// A Team with Gravity's states and Throughput history and this SLE refines in Backlog, Analysing and Next,
@@ -190,7 +190,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// GR-058 in Next, GR-051 and GR-054 in Analysing, GR-073 and GR-074 in Backlog - five Work Items in refinement.
         /// </summary>
         public int GravityRefinesFiveWorkItems(string name = "Team Gravity", int sleProbability = 85, int sleRange = 7)
-            => GravityRefines(name, sleProbability, sleRange, [], GravitysTracker.Where(tracked => tracked.ReferenceId != AdvancedSearch));
+            => GravityRefines(name, sleProbability, sleRange, [], GravitysTracker.Where(tracked => tracked.ReferenceId != AdvancedSearch), TrackerReadOn);
+
+        /// <summary>
+        /// Team Gravity as in <see cref="GravityRefinesFiveWorkItems"/>, and its tracker holds one more Work Item
+        /// in Backlog, ranked 7, under this reference, such as one that holds a slash. Days are counted back from
+        /// the instance's today, so the Given also serves a host whose clock is the instance's.
+        /// </summary>
+        public int GravityRefinesFiveWorkItemsAndOneReferencedAs(string reference)
+        {
+            using var scope = services.CreateScope();
+            var today = scope.ServiceProvider.GetRequiredService<ILighthouseClock>().TodayAsUtcMidnight.AddHours(9);
+            var referenced = new TrackerWorkItem(reference, "Work Item whose reference holds a slash", Backlog, StateCategories.ToDo, "7");
+            return GravityRefines("Team Gravity", sleProbability: 85, sleRange: 7, [], GravitysTracker.Where(tracked => tracked.ReferenceId != AdvancedSearch).Append(referenced), today);
+        }
 
         /// <summary>
         /// The Team finished these Work Items, each at noon the given number of days before the instance's today,
@@ -227,7 +240,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             var shortName = name.StartsWith(TeamNamePrefix, StringComparison.Ordinal) ? name[TeamNamePrefix.Length..] : name;
             var keyPrefix = TrackerKeyPrefixOf(shortName);
             TheTrackerHolds(team, [], Enumerable.Range(1, workItems).Select(number => new TrackerWorkItem(
-                $"{keyPrefix}-{number:D3}", $"{shortName} Work Item {number}", Backlog, StateCategories.ToDo, $"{number}")));
+                $"{keyPrefix}-{number:D3}", $"{shortName} Work Item {number}", Backlog, StateCategories.ToDo, $"{number}")), TrackerReadOn);
             return team;
         }
 
@@ -235,10 +248,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static string TrackerKeyPrefixOf(string shortName)
             => string.Concat(shortName.Where(letter => char.IsLetter(letter) && !"aeiouAEIOU".Contains(letter)).Take(2)).ToUpperInvariant();
 
-        private int GravityRefines(string name, int sleProbability, int sleRange, (string WorkItem, string Tag)[] tags, IEnumerable<TrackerWorkItem> workItems)
+        private int GravityRefines(string name, int sleProbability, int sleRange, (string WorkItem, string Tag)[] tags, IEnumerable<TrackerWorkItem> workItems, DateTime readOn)
         {
             var gravity = ATeam(name, GravitysStates, ThroughputHistoryDays, sleProbability, sleRange);
-            TheTrackerHolds(gravity, tags, workItems);
+            TheTrackerHolds(gravity, tags, workItems, readOn);
             TheTeamRefines(gravity, RefinesInBacklogAnalysingAndNext);
             return gravity;
         }
@@ -272,7 +285,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             workItemRepository.Save().GetAwaiter().GetResult();
         }
 
-        private void TheTrackerHolds(int teamId, (string WorkItem, string Tag)[] tags, IEnumerable<TrackerWorkItem> workItems)
+        private void TheTrackerHolds(int teamId, (string WorkItem, string Tag)[] tags, IEnumerable<TrackerWorkItem> workItems, DateTime readOn)
         {
             using var scope = services.CreateScope();
             var owner = TheStoredTeam(scope, teamId);
@@ -289,8 +302,8 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                     Type = "User Story",
                     State = tracked.State,
                     StateCategory = tracked.Category,
-                    CreatedDate = TrackerReadOn.AddDays(-60),
-                    StartedDate = tracked.Category == StateCategories.Doing ? TrackerReadOn.Date.AddDays(-tracked.StartedDaysAgo).AddHours(12) : null,
+                    CreatedDate = readOn.AddDays(-60),
+                    StartedDate = tracked.Category == StateCategories.Doing ? readOn.Date.AddDays(-tracked.StartedDaysAgo).AddHours(12) : null,
                     Order = tracked.Rank,
                     Url = TrackerAddressOf(tracked.ReferenceId),
                     ParentReferenceId = string.Empty,

@@ -27,6 +27,11 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
         [SetUp]
         public void StartFromTheSeededDatabase()
         {
+            // The host starts at half past eleven at night UTC, which is already the next day on an instance in a
+            // zone ahead of UTC. A timestamp on the wire is UTC text and the instance's day is a zone day, so the
+            // rows that compare them agree only once both are on the same date: one hour on does that everywhere.
+            Clock.Advance(TimeSpan.FromHours(1));
+
             using var scope = NewScope();
             foreach (var seeder in scope.ServiceProvider.GetServices<ISeeder>())
             {
@@ -74,6 +79,30 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
                 $"the settings save stores \"{input}\" otherwise than a port scenario writes it");
         }
 
+        // The inputs above each set one field, and several set the same one. This case sends one per field the form
+        // holds together, so a tidy in the save that depends on two fields at once is seen: the states "Backlog,
+        // Analysing, Next", the cadence "Monday and Thursday", the stage rule "ready when tagged ready", an SLE of
+        // 85 percent in 7 days and a Throughput history of 45 days.
+        [Test]
+        public async Task A_Team_set_up_through_its_settings_holds_what_a_port_scenario_sets_up_when_every_field_is_given_together()
+        {
+            RefinementInput[] oneInputPerField =
+            [
+                RefinementPortGivens.RefinesInBacklogAnalysingAndNext,
+                RefinementPortGivens.RefinesOnMondaysAndThursdays,
+                RefinementPortGivens.ReadyWhenTaggedReady,
+            ];
+            var givens = new RefinementPortGivens(Services);
+            var setUpAtThePort = givens.ATeam("Team set up at the port", RefinementPortGivens.GravitysStates, throughputHistoryDays: 45, sleProbability: 85, sleRange: 7);
+            givens.TheTeamRefines(setUpAtThePort, oneInputPerField);
+            var savedThroughItsSettings = givens.ATeam("Team saved through its settings", RefinementPortGivens.GravitysStates, throughputHistoryDays: 45, sleProbability: 85, sleRange: 7);
+
+            await TheAdminSavesTheSettingsFormWith(savedThroughItsSettings, oneInputPerField);
+
+            Assert.That(WhatTheTeamStores(savedThroughItsSettings), Is.EqualTo(WhatTheTeamStores(setUpAtThePort)),
+                "the settings save stores every field given together otherwise than a port scenario writes them");
+        }
+
         private static IEnumerable<TestCaseData> PortFixturesStandingInForTheSettings()
         {
             yield return new TestCaseData(nameof(RefinementAtThePortTest), (Func<IServiceCollection>)(() => RefinementAtThePortTest.WhatItRegisters))
@@ -105,10 +134,13 @@ namespace Lighthouse.Backend.Tests.Contracts.Refinement
             }
         }
 
-        private async Task TheAdminSavesTheSettingsFormWith(int teamId, RefinementInput input)
+        private async Task TheAdminSavesTheSettingsFormWith(int teamId, params RefinementInput[] inputs)
         {
             var howItRefines = new RefinementSettings();
-            input.ApplyTo(howItRefines);
+            foreach (var input in inputs)
+            {
+                input.ApplyTo(howItRefines);
+            }
 
             TeamSettingDto form;
             using (var scope = NewScope())

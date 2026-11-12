@@ -127,24 +127,61 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected static PortVoter ABrowserOf(string name) => new(name, Guid.NewGuid().ToString("N"));
 
         /// <summary>
-        /// The reader has cast this vote from their browser. The voter is established as the votes route establishes
-        /// one, so the tab later recognises the vote as theirs.
+        /// The reader has cast this vote from their browser, with the comment if one is given. The voter is
+        /// established as the votes route establishes one, so the tab later recognises the vote as theirs.
         /// </summary>
-        protected void HasVoted(PortVoter voter, int teamId, string workItem, SizingAnswer answer)
+        protected void HasVoted(PortVoter voter, int teamId, string workItem, SizingAnswer answer, string? comment = null)
+            => AssertRecorded(TriesToVote(voter, teamId, workItem, answer, comment), $"{voter.Name}'s {answer} on {workItem}");
+
+        /// <summary>The reader has asked or said this on the Work Item, from their browser, as the comments route records it.</summary>
+        protected void HasCommented(PortVoter voter, int teamId, string workItem, string comment)
+            => AssertRecorded(TriesToComment(voter, teamId, workItem, comment), $"{voter.Name}'s comment on {workItem}");
+
+        /// <summary>The reader casts this vote, and the outcome is returned as it is, recorded or refused.</summary>
+        protected SizingOutcome TriesToVote(PortVoter voter, int teamId, string workItem, SizingAnswer answer, string? comment = null)
         {
             using var scope = harness.NewScope();
+            return scope.ServiceProvider.GetRequiredService<ISizingLogCommands>()
+                .Vote(teamId, WorkItemRouteReference.From(workItem), new SizingVote(answer, SizingChannel.Web, comment), EstablishedVoter(scope, voter));
+        }
+
+        /// <summary>The reader sends this comment, and the outcome is returned as it is, recorded or refused.</summary>
+        protected SizingOutcome TriesToComment(PortVoter voter, int teamId, string workItem, string comment)
+        {
+            using var scope = harness.NewScope();
+            return scope.ServiceProvider.GetRequiredService<ISizingLogCommands>()
+                .Comment(teamId, WorkItemRouteReference.From(workItem), new SizingComment(comment, SizingChannel.Web), EstablishedVoter(scope, voter));
+        }
+
+        /// <summary>The tab as the reader's browser reads it: the view the controller wraps for the wire, with the reader's own votes marked.</summary>
+        protected RefinementViewDto TheTabAsSeenBy(PortVoter reader, int teamId)
+        {
+            using var scope = harness.NewScope();
+            var view = scope.ServiceProvider.GetRequiredService<IRefinementViewQuery>().ForTeam(teamId, reader.BrowserKey)
+                ?? throw new InvalidOperationException($"no Team {teamId} is stored to open the tab of");
+            return new RefinementViewDto(view);
+        }
+
+        /// <summary>The log of the Work Item as the reader's browser reads it, built as the log route builds it.</summary>
+        protected SizingLogDto TheLogAsSeenBy(PortVoter reader, int teamId, string workItem)
+        {
+            using var scope = harness.NewScope();
+            var log = scope.ServiceProvider.GetRequiredService<IRefinementViewQuery>().LogOf(teamId, WorkItemRouteReference.From(workItem), reader.BrowserKey)
+                ?? throw new InvalidOperationException($"{workItem} has no log on Team {teamId}: no such Team, or it is not in refinement");
+            return new SizingLogDto(log);
+        }
+
+        private static Voter EstablishedVoter(IServiceScope scope, PortVoter voter)
+        {
             var resolution = scope.ServiceProvider.GetRequiredService<VoterIdentityResolver>()
                 .ForWriteAsync(voter.Name, voter.BrowserKey, () => Task.FromResult<UserProfile?>(null))
                 .GetAwaiter().GetResult();
-            var established = resolution.Voter
+            return resolution.Voter
                 ?? throw new InvalidOperationException($"{voter.Name} could not vote: {resolution.Refusal}");
-
-            var outcome = scope.ServiceProvider.GetRequiredService<ISizingLogCommands>()
-                .Vote(teamId, WorkItemRouteReference.From(workItem), new SizingVote(answer, SizingChannel.Web, null), established);
-
-            Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded).Or.EqualTo(SizingOutcome.RecordedAndMadeReady),
-                $"{voter.Name}'s {answer} on {workItem} was not recorded");
         }
+
+        private static void AssertRecorded(SizingOutcome outcome, string what)
+            => Assert.That(outcome, Is.EqualTo(SizingOutcome.Recorded).Or.EqualTo(SizingOutcome.RecordedAndMadeReady), $"{what} was not recorded");
 
         /// <summary>One step of a scenario, for a Given that goes through a real service.</summary>
         protected IServiceScope NewScope() => harness.NewScope();
