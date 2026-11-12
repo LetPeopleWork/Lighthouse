@@ -221,7 +221,7 @@ describe("The Access tab of a Portfolio", () => {
 			expect(rbac?.removePortfolioMember).toHaveBeenCalledWith(1, 4);
 		});
 
-		it("says the members could not be loaded", async () => {
+		it('shows "Failed to load portfolio members." when the members could not be loaded', async () => {
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbacService.getPortfolioMembers = vi
 					.fn()
@@ -233,7 +233,7 @@ describe("The Access tab of a Portfolio", () => {
 			).toBeInTheDocument();
 		});
 
-		it("names the Portfolio with the instance's own word when the members could not be loaded", async () => {
+		it('shows "Failed to load program members." when the Portfolio is called Program and the members could not be loaded', async () => {
 			terms.portfolio = "Program";
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbacService.getPortfolioMembers = vi
@@ -246,7 +246,7 @@ describe("The Access tab of a Portfolio", () => {
 			).toBeInTheDocument();
 		});
 
-		it("says assigning a role failed, and leaves the members as they were", async () => {
+		it('shows "Failed to update portfolio member role." when assigning a role fails, and leaves the members as they were', async () => {
 			let rbac: ReturnType<typeof createMockRbacService> | undefined;
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbac = rbacService;
@@ -264,7 +264,7 @@ describe("The Access tab of a Portfolio", () => {
 			expect(rbac?.getPortfolioMembers).toHaveBeenCalledTimes(1);
 		});
 
-		it("says removing a member failed, and leaves the members as they were", async () => {
+		it('shows "Failed to remove portfolio member." when removing a member fails, and leaves the members as they were', async () => {
 			let rbac: ReturnType<typeof createMockRbacService> | undefined;
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbac = rbacService;

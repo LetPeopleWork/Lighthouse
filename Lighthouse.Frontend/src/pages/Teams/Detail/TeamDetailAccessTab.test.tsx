@@ -223,7 +223,7 @@ describe("The Access tab of a Team", () => {
 			expect(rbac?.removeTeamMember).toHaveBeenCalledWith(1, 4);
 		});
 
-		it("says the members could not be loaded", async () => {
+		it('shows "Failed to load team members." when the members could not be loaded', async () => {
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbacService.getTeamMembers = vi
 					.fn()
@@ -235,7 +235,7 @@ describe("The Access tab of a Team", () => {
 			).toBeInTheDocument();
 		});
 
-		it("names the Team with the instance's own word when the members could not be loaded", async () => {
+		it('shows "Failed to load squad members." when the Team is called Squad and the members could not be loaded', async () => {
 			terms.team = "Squad";
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbacService.getTeamMembers = vi
@@ -248,7 +248,7 @@ describe("The Access tab of a Team", () => {
 			).toBeInTheDocument();
 		});
 
-		it("says assigning a role failed, and leaves the members as they were", async () => {
+		it('shows "Failed to update team member role." when assigning a role fails, and leaves the members as they were', async () => {
 			let rbac: ReturnType<typeof createMockRbacService> | undefined;
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbac = rbacService;
@@ -266,7 +266,7 @@ describe("The Access tab of a Team", () => {
 			expect(rbac?.getTeamMembers).toHaveBeenCalledTimes(1);
 		});
 
-		it("says removing a member failed, and leaves the members as they were", async () => {
+		it('shows "Failed to remove team member." when removing a member fails, and leaves the members as they were', async () => {
 			let rbac: ReturnType<typeof createMockRbacService> | undefined;
 			openTheAccessTabAs(true, undefined, (rbacService) => {
 				rbac = rbacService;
