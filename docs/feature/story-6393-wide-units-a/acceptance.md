@@ -117,6 +117,66 @@ Existing unmodified tests cover it; no new oracle row is written for them, and t
 
 crafter
 
+### S2
+
+##### Covers
+
+P2
+
+```text
+Call each status rule from its family module with the existing rows, moved by family from the old rules test file
+```
+
+```text
+All 183 moved rows pass unmodified and every rule gives the same answer as before
+```
+
+```text
+Every metric widget shows the same status colour and tip as before the split
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesOverview\.test\.ts\, Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesTimeAndAge\.test\.ts\, Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesVolumeAndFlow\.test\.ts
+
+```text
+A rule changed while moving (two bands swapped) is still accepted if its moved row was loosened; rows keep exact names and assertions so this is caught on review of the 1:1 id mapping
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Ask each rule family module which rules it exports, and look for the old catch-all rules file
+```
+
+```text
+Overview, time-and-age and volume-and-flow modules export exactly their own rules and the old rules file is gone
+```
+
+```text
+The status rules are split into three files with no catch-all left, and the size rule no longer lists it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ragRulesOverview\.test\.ts
+
+```text
+A family that also exports another family's rule, or a barrel that re-exports, would pass the exact-export list only if names match; the missing old file check rejects a leftover barrel
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

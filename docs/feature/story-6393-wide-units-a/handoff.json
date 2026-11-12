@@ -62,12 +62,46 @@
 "stimulus": "F196",
 "user_result": "F198"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F203",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts, Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesTimeAndAge.test.ts, Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesVolumeAndFlow.test.ts"
+},
+"expected": "F201",
+"stimulus": "F200",
+"user_result": "F202"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F207",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/ragRulesOverview.test.ts"
+},
+"expected": "F205",
+"stimulus": "F204",
+"user_result": "F206"
+}
 ]
 },
 "counters": {
 "D": 5,
 "E": 4,
-"F": 199,
+"F": 207,
 "K": 5,
 "P": 4,
 "S": 5,
@@ -1259,6 +1293,14 @@
 "F199": "Existing unmodified tests cover it; no new oracle row is written for them, and they already pass on today's code so no RED applies",
 "F2": "The widest frontend files are split by responsibility and kept small by a named size rule, and Team and Portfolio access handling lives in one place",
 "F20": "Behaviour-free: existing tests stay green unmodified apart from tests that move with their code; effect dependency arrays, hook call order and useCallback dependencies are copied as they are. Default Team and Portfolio terms give today's texts word for word.",
+"F200": "Call each status rule from its family module with the existing rows, moved by family from the old rules test file",
+"F201": "All 183 moved rows pass unmodified and every rule gives the same answer as before",
+"F202": "Every metric widget shows the same status colour and tip as before the split",
+"F203": "A rule changed while moving (two bands swapped) is still accepted if its moved row was loosened; rows keep exact names and assertions so this is caught on review of the 1:1 id mapping",
+"F204": "Ask each rule family module which rules it exports, and look for the old catch-all rules file",
+"F205": "Overview, time-and-age and volume-and-flow modules export exactly their own rules and the old rules file is gone",
+"F206": "The status rules are split into three files with no catch-all left, and the size rule no longer lists it",
+"F207": "A family that also exports another family's rule, or a barrel that re-exports, would pass the exact-export list only if names match; the missing old file check rejects a leftover barrel",
 "F21": "S5 copy is approved text: Failed to load {team} members. / Failed to update {team} member role. / Failed to remove {team} member., same for {portfolio}; the term is getTerm(TERMINOLOGY_KEYS.TEAM or PORTFOLIO) lower-cased and read when the failure happens, not at mount.",
 "F22": "Test rules: the test-writing skill and its frontend half win over nWave's timing and PBT density; no nWave scenario tags in code; no broad property tests (finite example rows only); the new enforcement tests walk about 700 files, well inside the default per-test budget, no derogation.",
 "F23": "One oracle file per slice; an earlier slice's oracle and support files are never edited by a later slice.",
