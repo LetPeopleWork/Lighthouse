@@ -457,6 +457,275 @@ the comparison only looked at a property both answers share by chance; the plant
 
 None.
 
+### S3
+
+##### Covers
+
+P1
+
+P2
+
+```text
+Run the comments class at the service port: votes with and without a comment, Yes-but conditions, questions from people who did and did not vote, a changed mind, a reader who never voted, comments of 2000 and 2001 characters, empty questions, and a question on a Work Item that is not in refinement, today 7 October 2026
+```
+
+```text
+Its 22 rows pass under their unchanged names without a web host: the log says who said what, from where and when, oldest first; the open question is marked until its asker votes; each answer lists its current voters in vote order; a refused comment is refused for its reason and leaves the row untouched
+```
+
+```text
+A maintainer sees the comment and log rules proven at the port, faster, with no test lost
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice12CommentsScenarios\.cs
+
+```text
+A comment limit of 1999 or 2001 characters, a question left open after its asker voted, or a log listing the newest entry first; held off by the 2000-character keep-whole rows, the asker-closes row and the oldest-first rows
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+On the wire, open the log of a Work Item that is not in refinement, the logs of Work Items whose references are REQ/12 and REQ/12#3 after a question was asked on each, and send a question without a name
+```
+
+```text
+The 4 rows keep their names in the wire class: the log of an unlisted Work Item is 404 while a listed one opens; a slash reference opens and holds the one question asked; a nameless question is 400 with the code voter-name-required and the row stays untouched
+```
+
+```text
+A browser keeps reaching the log of every Work Item, also those whose tracker reference holds a slash or a hash
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Refinement\/RefinementWithoutSignInWireContractTest\.Log\.cs
+
+```text
+A log that answers 200 for a Work Item the tab does not list, or a slash reference sent unescaped so the route misses it; held off by asserting 404 after proving a listed log opens, and by reading the entry back for both slash references
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+On the wire, read the log of a Work Item with two votes and a question and read when an entry was recorded
+```
+
+```text
+Each entry carries exactly kind, answer, comment, voterName, channel, recordedAt, isMine and isOpenQuestion, never a voter key; the log carries only entries and voters; voters has yes, yesBut and no holding names; only the question is flagged open; recordedAt is a UTC time with milliseconds
+```
+
+```text
+A browser keeps drawing the log, the open question and the time of each entry as it does today
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Refinement\/RefinementWithoutSignInWireContractTest\.Log\.cs
+
+```text
+isOpenQuestion hidden from the JSON, a voter key sent with an entry, or a time without milliseconds; held off by asserting the member names of every entry and the log, the three answer keys holding strings, the flag sequence and the recordedAt text
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+On the wire, ask a question on a Work Item that is not in refinement, send an empty question, a question of 2001 characters and a vote with a comment of 2001 characters, and ask a valid question
+```
+
+```text
+The unlisted Work Item answers 409 work-item-not-in-refinement; the empty question 400 comment-required; both too-long comments 400 comment-too-long; a valid question answers 200 with the row of its Work Item flagged as having an open question
+```
+
+```text
+A browser tells a person why a comment was refused, and shows the question as open as soon as it is sent
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/Refinement\/RefinementWithoutSignInWireContractTest\.Log\.cs
+
+```text
+A refusal with the right status but a wrong or missing code, or an answer row that omits the open-question flag; held off by asserting status and code together on every refusal and the row members on the answer
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Run the guard that names every class starting a web host, with the comments class no longer listed as still to move
+```
+
+```text
+No class outside the still-to-move list or a named wire contract starts a web host, and the comments class is off the list
+```
+
+```text
+A maintainer is told if the comments class ever starts a web host again
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/TestHostUseGuardTest\.cs
+
+```text
+The comments class moved but its line left on the list, so a host could return unnoticed; held off by the guard failing on a listed class that no longer starts a host
+```
+
+###### Obligations
+
+
+##### Covers
+
+P4
+
+```text
+Measure the three moved classes and the wire class as the earlier timing run did
+```
+
+```text
+The summed time of the three classes after the move is lower than the 19.06 s before
+```
+
+```text
+A maintainer waits less for the same three classes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+A duration is measured by the host's timing run over the trx files, not asserted by a test
+```
+
+root\-host\-timing\-run
+
+##### Covers
+
+P2
+
+```text
+Run the yardstick class at the port and its wire rows
+```
+
+```text
+10 rows at the port and 2 in the wire class keep their ids; a fallback window one day wider turns a window-edge row red
+```
+
+```text
+A maintainer sees no yardstick test lost in the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice10SleYardstickScenarios\.cs
+
+```text
+A fallback window one day wider; held off by the first-day and day-before window-edge rows
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P2
+
+```text
+Run the need-and-verdict class at the port and its wire row
+```
+
+```text
+17 rows at the port and 1 in the wire class keep their ids; a verdict that uses greater-than where the range includes both ends turns a range-end row red
+```
+
+```text
+A maintainer sees no need or verdict test lost in the move
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice05NeedAndVerdictScenarios\.cs
+
+```text
+A verdict that treats the high end as outside the range; held off by the in-range rows that sit on both ends
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+```text
+Run the guards on the Team set-up the port writes: a set on a type reachable from a Team, a change to a Team collection, and a guarded table written outside the builder
+```
+
+```text
+Each planted case turns its guard red, so a moved scenario cannot store what no settings save produces
+```
+
+```text
+A maintainer trusts that a moved scenario starts from a Team a user can really have
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PortGivensGuardTest\.cs
+
+```text
+A Team set up by a setter or collection change outside the builder; held off by the planted cases of the guard
+```
+
+###### Obligations
+
+
+
+
 ## Expectations
 
 ### Rows

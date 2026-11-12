@@ -1,16 +1,33 @@
-using System.Net;
-using System.Text.Json;
-using Lighthouse.Backend.Models;
+using Lighthouse.Backend.API.DTO;
+using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Interfaces.Refinement;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 {
     /// <summary>
-    /// Step definitions for comments, questions and the log. When an entry was recorded is checked once,
-    /// against the instance's clock, and left out of the comparison of what each entry says.
+    /// Step definitions for comments, questions and the log. Every Given says which day it is: Wednesday
+    /// 7 October 2026, nine in the morning. When an entry was recorded is checked once, against that day, and
+    /// left out of the comparison of what each entry says.
     /// </summary>
     public partial class Slice12CommentsTest
     {
+        private const string BillingExport = RefinementPortGivens.BillingExport;
+
+        private const string AdvancedReporting = RefinementPortGivens.AdvancedReporting;
+
+        private const string ApiVersioning = RefinementPortGivens.ApiVersioning;
+
+        private const string ConfigurationManagement = RefinementPortGivens.ConfigurationManagement;
+
+        private const string JonasWeber = "Jonas Weber";
+
+        private const string AnaLima = "Ana Lima";
+
+        private const string MoOkafor = "Mo Okafor";
+
+        private const string PriyaSharma = "Priya Sharma";
+
         private const string OnlyIfThePdfExportMovesOut = "only if the PDF export moves to its own Work Item";
 
         private const string NeedsTheDesignFirst = "needs the design for the export first";
@@ -19,175 +36,129 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         private const string MarkupAndQuotes = "<b>bold</b> & \"quotes\" 'too'";
 
-        private const string CommentRequired = "comment-required";
-
-        private const string CommentTooLong = "comment-too-long";
-
-        private static readonly bool?[] OnlyTheThirdEntryIsOpen = [false, false, true];
-
-        private static readonly string[] EverythingALogEntryCarries =
-            ["kind", "answer", "comment", "voterName", "channel", "recordedAt", "isMine", "isOpenQuestion"];
-
-        private static readonly string[] EverythingALogCarries = ["entries", "voters"];
-
-        private static readonly string[] EveryAnswer = ["yes", "yesBut", "no"];
-
         /// <summary>Every entry in these scenarios is recorded on the instance's today.</summary>
-        private static readonly string RecordedToday = Today.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        private const string RecordedToday = "2026-10-07";
 
-        private static readonly Voter Jonas = ABrowserOf(JonasWeber);
+        private static readonly bool[] OnlyTheThirdEntryIsOpen = [false, false, true];
 
-        private static readonly Voter Ana = ABrowserOf(AnaLima);
+        private static readonly PortVoter Jonas = ABrowserOf(JonasWeber);
 
-        private static readonly Voter Mo = ABrowserOf(MoOkafor);
+        private static readonly PortVoter Ana = ABrowserOf(AnaLima);
+
+        private static readonly PortVoter Mo = ABrowserOf(MoOkafor);
 
         // --- Given ---
 
-        private async Task<TeamUnderTest> GivenGravityRefinesAndNobodyHasVoted()
-            => await GravityRefinesSixWorkItemsNobodyHasVotedOn();
-
-        private async Task<TeamUnderTest> GivenGravityAlsoRefinesAWorkItemReferencedAs(string reference)
+        private int GivenGravityRefinesAndNobodyHasVoted()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            SeedWorkItem(gravity, reference, "Imported requirement", Backlog, StateCategories.ToDo, "7");
+            TodayIs(2026, 10, 7);
+            return Givens.GravityRefinesFiveWorkItems();
+        }
+
+        private int GivenJonasVotedYesOnConfigurationManagement()
+        {
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
+            HasVoted(Jonas, gravity, ConfigurationManagement, SizingAnswer.Yes);
             return gravity;
         }
 
-        private async Task<TeamUnderTest> GivenJonasVotedYesOnConfigurationManagement()
+        private int GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await HasVoted(Jonas, gravity, ConfigurationManagement, Answer.Yes);
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
+            HasVoted(Jonas, gravity, AdvancedReporting, SizingAnswer.Yes);
+            HasVoted(Ana, gravity, AdvancedReporting, SizingAnswer.No);
+            HasCommented(Mo, gravity, AdvancedReporting, WhichApiVersion);
             return gravity;
         }
 
-        private async Task<TeamUnderTest> GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting()
+        private int GivenJonasAskedWhichApiVersionOnApiVersioning()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await HasVoted(Jonas, gravity, AdvancedReporting, Answer.Yes);
-            await HasVoted(Ana, gravity, AdvancedReporting, Answer.No);
-            await HasCommented(Mo, gravity, AdvancedReporting, WhichApiVersion);
-            return gravity;
-        }
-
-        private async Task<TeamUnderTest> GivenJonasAskedWhichApiVersionOnApiVersioning()
-        {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await HasCommented(Jonas, gravity, ApiVersioning, WhichApiVersion);
-            return gravity;
-        }
-
-        private async Task<TeamUnderTest> GivenAnaVotedAndCanOpenTheLogOfAdvancedReporting()
-        {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await HasVoted(Ana, gravity, AdvancedReporting, Answer.Yes);
-
-            using var opened = await OpensTheLog(Ana, gravity, AdvancedReporting);
-            Assert.That(opened.StatusCode, Is.EqualTo(HttpStatusCode.OK),
-                "the log of a listed Work Item does not open, so a refusal for another one proves nothing");
-
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
+            HasCommented(Jonas, gravity, ApiVersioning, WhichApiVersion);
             return gravity;
         }
 
         // --- When ---
 
-        private async Task WhenAnaSaysYesBut(TeamUnderTest team, string workItem, string condition)
-            => await HasVoted(Ana, team, workItem, Answer.YesBut, condition);
+        private void WhenAnaSaysYesBut(int team, string workItem, string condition)
+            => HasVoted(Ana, team, workItem, SizingAnswer.YesBut, condition);
 
-        private async Task WhenAnaVotesWithAComment(TeamUnderTest team, Answer answer, string comment)
-            => await HasVoted(Ana, team, AdvancedReporting, answer, comment);
+        private void WhenAnaVotesWithAComment(int team, SizingAnswer answer, string comment)
+            => HasVoted(Ana, team, AdvancedReporting, answer, comment);
 
-        private async Task WhenAnaVotesWithoutAComment(TeamUnderTest team)
-            => await HasVoted(Ana, team, AdvancedReporting, Answer.Yes);
+        private void WhenAnaVotesWithoutAComment(int team)
+            => HasVoted(Ana, team, AdvancedReporting, SizingAnswer.Yes);
 
-        private async Task WhenJonasChangesHisMindTo(TeamUnderTest team, Answer answer)
-            => await HasVoted(Jonas, team, ConfigurationManagement, answer);
+        private void WhenJonasChangesHisMindTo(int team, SizingAnswer answer)
+            => HasVoted(Jonas, team, ConfigurationManagement, answer);
 
-        private async Task<JsonElement> WhenAnaOpensTheLogOf(TeamUnderTest team, string workItem)
-            => await TheLogAsSeenBy(Ana, team, workItem);
+        private SizingLogDto WhenAnaOpensTheLogOf(int team, string workItem)
+            => TheLogAsSeenBy(Ana, team, workItem);
 
-        private async Task WhenAnaChangesHerMindTo(TeamUnderTest team, string workItem, Answer answer)
-            => await HasVoted(Ana, team, workItem, answer);
+        private void WhenAnaChangesHerMindTo(int team, string workItem, SizingAnswer answer)
+            => HasVoted(Ana, team, workItem, answer);
 
-        private async Task<(VotedRowReading Row, JsonElement Log)> WhenPriyaWhoNeverVotedLooksAt(TeamUnderTest team, string workItem)
+        private (VotedRowReading Row, SizingLogDto Log) WhenPriyaWhoNeverVotedLooksAt(int team, string workItem)
         {
             var priya = ABrowserOf(PriyaSharma);
-            var row = RowOf(await TheTabAsSeenBy(priya, team), workItem);
-            var log = await TheLogAsSeenBy(priya, team, workItem);
+            var row = RowOf(TheTabAsSeenBy(priya, team), workItem);
+            var log = TheLogAsSeenBy(priya, team, workItem);
             return (row, log);
         }
 
-        private async Task WhenJonasAsks(TeamUnderTest team, string workItem, string question)
-            => await HasCommented(Jonas, team, workItem, question);
+        private void WhenJonasAsks(int team, string workItem, string question)
+            => HasCommented(Jonas, team, workItem, question);
 
-        private async Task<HttpResponseMessage> WhenJonasTriesToAsk(TeamUnderTest team, string workItem, string question)
-            => await Comments(Jonas, team, workItem, question);
+        private SizingOutcome WhenJonasTriesToAsk(int team, string workItem, string question)
+            => TriesToComment(Jonas, team, workItem, question);
 
-        private async Task<HttpResponseMessage> WhenJonasTriesToVoteYesWithTheComment(TeamUnderTest team, string workItem, string comment)
-            => await Votes(Jonas, team, workItem, Answer.Yes, comment);
+        private SizingOutcome WhenJonasTriesToVoteYesWithTheComment(int team, string workItem, string comment)
+            => TriesToVote(Jonas, team, workItem, SizingAnswer.Yes, comment);
 
-        private async Task WhenTheyVote(Voter voter, TeamUnderTest team, string workItem, Answer answer)
-            => await HasVoted(voter, team, workItem, answer);
+        private void WhenTheyVote(PortVoter voter, int team, string workItem, SizingAnswer answer)
+            => HasVoted(voter, team, workItem, answer);
 
-        private async Task WhenAnaComments(TeamUnderTest team, string workItem, string comment)
-            => await HasCommented(Ana, team, workItem, comment);
+        private void WhenAnaComments(int team, string workItem, string comment)
+            => HasCommented(Ana, team, workItem, comment);
 
-        private async Task WhenJonasVotesYesWithTheComment(TeamUnderTest team, string comment)
-            => await HasVoted(Jonas, team, ConfigurationManagement, Answer.Yes, comment);
+        private void WhenJonasVotesYesWithTheComment(int team, string comment)
+            => HasVoted(Jonas, team, ConfigurationManagement, SizingAnswer.Yes, comment);
 
         // --- Then ---
 
-        private async Task ThenAnaReadsInTheLog(TeamUnderTest team, string workItem, LogEntryReading expected)
-            => ThenTheLogReads(await TheLogAsSeenBy(Ana, team, workItem), expected);
-
-        private static void ThenTheLogReads(JsonElement log, params LogEntryReading[] expected)
+        private static void ThenTheLogReads(SizingLogDto log, params LogEntryReading[] expected)
         {
             var entries = EntriesIn(log);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(entries.Select(entry => entry with { RecordedAt = null }), Is.EqualTo(expected), $"Log: {log}");
+                Assert.That(entries.Select(entry => entry with { RecordedAt = null }), Is.EqualTo(expected),
+                    "the log must say who said what, from where, and whose entry is the reader's own, oldest first");
                 Assert.That(entries.Select(entry => entry.RecordedAt), Has.All.StartsWith(RecordedToday), "every entry says when it was recorded");
             }
         }
 
-        private static void ThenOnlyMosQuestionIsMarkedOpenAndNoEntryCarriesAVoterKey(JsonElement log)
+        private static void ThenOnlyMosQuestionIsMarkedOpen(SizingLogDto log)
+            => Assert.That(log.Entries.Select(entry => entry.IsOpenQuestion), Is.EqualTo(OnlyTheThirdEntryIsOpen),
+                "the server must mark the one question whose asker has not voted, so every reader sees the same one");
+
+        private void ThenPriyaReadsTheVoters(int team, string workItem, VotersReading expected)
         {
-            var entries = log.GetProperty("entries").EnumerateArray().ToList();
+            var reader = ABrowserOf(PriyaSharma);
+            var log = TheLogAsSeenBy(reader, team, workItem);
+            var row = RowOf(TheTabAsSeenBy(reader, team), workItem);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(entries.Select(entry => FlagOf(entry, "isOpenQuestion")), Is.EqualTo(OnlyTheThirdEntryIsOpen), $"Log: {log}");
-                Assert.That(entries.Select(entry => entry.EnumerateObject().Select(property => property.Name)),
-                    Has.All.EquivalentTo(EverythingALogEntryCarries), "a log entry carries nothing else, and never the voter's key");
-                Assert.That(log.EnumerateObject().Select(property => property.Name), Is.EquivalentTo(EverythingALogCarries),
-                    "the log carries its entries and who votes what, nothing else");
-                Assert.That(log.GetProperty("voters").EnumerateObject().Select(property => property.Name), Is.EquivalentTo(EveryAnswer),
-                    "every answer is there, and nothing else is");
-                Assert.That(log.GetProperty("voters").EnumerateObject().SelectMany(answer => answer.Value.EnumerateArray()).Select(name => name.ValueKind),
-                    Has.All.EqualTo(JsonValueKind.String), "a voter is named, never handed out as a key or an object");
-            }
-        }
-
-        private async Task ThenPriyaReadsTheVoters(TeamUnderTest team, string workItem, VotersReading expected)
-        {
-            var log = await TheLogAsSeenBy(ABrowserOf(PriyaSharma), team, workItem);
-            var row = RowOf(await TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
-            var voters = log.GetProperty("voters");
-            string[] NamesUnder(string answer) => [.. voters.GetProperty(answer).EnumerateArray().Select(name => name.GetString()!)];
-
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That(NamesUnder("yes"), Is.EqualTo(expected.Yes), $"Log: {log}");
-                Assert.That(NamesUnder("yesBut"), Is.EqualTo(expected.YesBut), $"Log: {log}");
-                Assert.That(NamesUnder("no"), Is.EqualTo(expected.No), $"Log: {log}");
-                Assert.That(new SplitReading(NamesUnder("yes").Length, NamesUnder("yesBut").Length, NamesUnder("no").Length), Is.EqualTo(row.Split),
+                Assert.That(log.Voters.Yes, Is.EqualTo(expected.Yes), "the names under Yes, in the order the current votes were cast");
+                Assert.That(log.Voters.YesBut, Is.EqualTo(expected.YesBut));
+                Assert.That(log.Voters.No, Is.EqualTo(expected.No));
+                Assert.That(new SplitReading(log.Voters.Yes.Count, log.Voters.YesBut.Count, log.Voters.No.Count), Is.EqualTo(row.Split),
                     "the names under each answer and the row's split agree");
             }
         }
 
-        private sealed record VotersReading(string[] Yes, string[] YesBut, string[] No);
-
-        private static void ThenPriyaReadsTheSplitAndTheLog(VotedRowReading row, JsonElement log, SplitReading split, params LogEntryReading[] expected)
+        private static void ThenPriyaReadsTheSplitAndTheLog(VotedRowReading row, SizingLogDto log, SplitReading split, params LogEntryReading[] expected)
         {
             var entries = EntriesIn(log).Select(entry => entry with { RecordedAt = null });
 
@@ -195,20 +166,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             {
                 Assert.That(row.Split, Is.EqualTo(split), "the split is there for somebody who never voted");
                 Assert.That(row.MyVote, Is.Null);
-                Assert.That(entries, Is.EqualTo(expected), $"every comment is there for somebody who never voted. Log: {log}");
+                Assert.That(entries, Is.EqualTo(expected), "every comment is there for somebody who never voted");
             }
         }
 
-        private async Task ThenJonasReadsTheAnswersInOrder(TeamUnderTest team, string workItem, params string[] answers)
-        {
-            var entries = EntriesIn(await TheLogAsSeenBy(Jonas, team, workItem));
+        private void ThenJonasReadsTheAnswersInOrder(int team, string workItem, params string[] answers)
+            => Assert.That(EntriesIn(TheLogAsSeenBy(Jonas, team, workItem)).Select(entry => entry.Answer), Is.EqualTo(answers),
+                "a changed mind adds an entry and never overwrites the earlier one");
 
-            Assert.That(entries.Select(entry => entry.Answer), Is.EqualTo(answers));
-        }
-
-        private async Task ThenTheRowReads(TeamUnderTest team, string workItem, int voteCount, bool hasOpenQuestion, bool hasComments)
+        private void ThenTheRowReads(int team, string workItem, int voteCount, bool hasOpenQuestion, bool hasComments)
         {
-            var row = RowOf(await TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
+            var row = RowOf(TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
 
             using (Assert.EnterMultipleScope())
             {
@@ -218,9 +186,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        private async Task ThenAnaStillCountsWith(TeamUnderTest team, string workItem, Answer answer)
+        private void ThenAnaStillCountsWith(int team, string workItem, SizingAnswer answer)
         {
-            var row = RowOf(await TheTabAsSeenBy(Ana, team), workItem);
+            var row = RowOf(TheTabAsSeenBy(Ana, team), workItem);
 
             using (Assert.EnterMultipleScope())
             {
@@ -231,9 +199,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        private async Task ThenTheReadinessOfTheRowIs(TeamUnderTest team, string workItem, string readiness, int missingVotes)
+        private void ThenTheReadinessOfTheRowIs(int team, string workItem, string readiness, int missingVotes)
         {
-            var row = RowOf(await TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
+            var row = RowOf(TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
 
             using (Assert.EnterMultipleScope())
             {
@@ -242,32 +210,70 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             }
         }
 
-        private async Task ThenTheCommentIsRefusedAndTheRowIsUntouched(HttpResponseMessage refused, TeamUnderTest team, string workItem, HttpStatusCode status, string? expectedCode)
+        private void ThenTheCommentIsRefusedAndTheRowIsUntouched(SizingOutcome refused, int team, string workItem, SizingOutcome expectedOutcome)
         {
-            var code = await RefusalCodeOf(refused);
-            var row = RowOf(await TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
+            var row = RowOf(TheTabAsSeenBy(ABrowserOf(PriyaSharma), team), workItem);
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(refused.StatusCode, Is.EqualTo(status));
-                if (expectedCode is not null)
-                {
-                    Assert.That(code, Is.EqualTo(expectedCode));
-                }
-
+                Assert.That(refused, Is.EqualTo(expectedOutcome), "the sizing log must refuse for exactly this reason");
                 Assert.That(row.VoteCount, Is.Zero, "a refused vote must not be counted");
                 Assert.That(row.HasComments, Is.False, "a refused comment must leave no trace on the row");
                 Assert.That(row.HasOpenQuestion, Is.False);
             }
         }
 
-        private async Task ThenJonasReadsHisComment(TeamUnderTest team, string comment)
+        private void ThenJonasReadsHisComment(int team, string comment)
         {
-            var entries = EntriesIn(await TheLogAsSeenBy(Jonas, team, ConfigurationManagement));
+            var entries = EntriesIn(TheLogAsSeenBy(Jonas, team, ConfigurationManagement));
 
             List<string?> onlyHisComment = [comment];
 
-            Assert.That(entries.Select(entry => entry.Comment), Is.EqualTo(onlyHisComment));
+            Assert.That(entries.Select(entry => entry.Comment), Is.EqualTo(onlyHisComment), "a comment is kept whole and handed back exactly as written");
         }
+
+        // --- Reading what the browser reads ---
+
+        private static List<LogEntryReading> EntriesIn(SizingLogDto log)
+            => [.. log.Entries.Select(entry => new LogEntryReading(
+                entry.Kind.ToString(), entry.Answer?.ToString(), entry.Comment, entry.VoterName, entry.Channel.ToString(), entry.RecordedAt, entry.IsMine))];
+
+        private static VotedRowReading RowOf(RefinementViewDto tab, string referenceId)
+        {
+            var row = tab.WorkItems.SingleOrDefault(candidate => candidate.ReferenceId == referenceId);
+            Assert.That(row, Is.Not.Null, $"{referenceId} is not listed on the Refinement tab");
+
+            return new VotedRowReading(
+                row!.VoteCount,
+                row.MyVote?.ToString(),
+                new SplitReading(row.Split.Yes, row.Split.YesBut, row.Split.No),
+                row.Readiness.ToString(),
+                row.MissingVotes,
+                row.HasComments,
+                row.HasOpenQuestion);
+        }
+
+        private sealed record SplitReading(int Yes, int YesBut, int No);
+
+        private sealed record VotersReading(string[] Yes, string[] YesBut, string[] No);
+
+        private sealed record VotedRowReading(
+            int VoteCount,
+            string? MyVote,
+            SplitReading Split,
+            string Readiness,
+            int? MissingVotes,
+            bool HasComments,
+            bool HasOpenQuestion);
+
+        /// <summary>One entry of a Work Item's log, oldest first.</summary>
+        private sealed record LogEntryReading(
+            string Kind,
+            string? Answer,
+            string? Comment,
+            string VoterName,
+            string Channel,
+            string? RecordedAt,
+            bool IsMine);
     }
 }

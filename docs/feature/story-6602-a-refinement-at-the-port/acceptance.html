@@ -546,6 +546,239 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>Run the comments class at the service port: votes with and without a comment, Yes-but conditions, questions from people who did and did not vote, a changed mind, a reader who never voted, comments of 2000 and 2001 characters, empty questions, and a question on a Work Item that is not in refinement, today 7 October 2026
+</code></pre>
+
+<pre><code>Its 22 rows pass under their unchanged names without a web host: the log says who said what, from where and when, oldest first; the open question is marked until its asker votes; each answer lists its current voters in vote order; a refused comment is refused for its reason and leaves the row untouched
+</code></pre>
+
+<pre><code>A maintainer sees the comment and log rules proven at the port, faster, with no test lost
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice12CommentsScenarios.cs</p>
+
+<pre><code>A comment limit of 1999 or 2001 characters, a question left open after its asker voted, or a log listing the newest entry first; held off by the 2000-character keep-whole rows, the asker-closes row and the oldest-first rows
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On the wire, open the log of a Work Item that is not in refinement, the logs of Work Items whose references are REQ/12 and REQ/12#3 after a question was asked on each, and send a question without a name
+</code></pre>
+
+<pre><code>The 4 rows keep their names in the wire class: the log of an unlisted Work Item is 404 while a listed one opens; a slash reference opens and holds the one question asked; a nameless question is 400 with the code voter-name-required and the row stays untouched
+</code></pre>
+
+<pre><code>A browser keeps reaching the log of every Work Item, also those whose tracker reference holds a slash or a hash
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs</p>
+
+<pre><code>A log that answers 200 for a Work Item the tab does not list, or a slash reference sent unescaped so the route misses it; held off by asserting 404 after proving a listed log opens, and by reading the entry back for both slash references
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On the wire, read the log of a Work Item with two votes and a question and read when an entry was recorded
+</code></pre>
+
+<pre><code>Each entry carries exactly kind, answer, comment, voterName, channel, recordedAt, isMine and isOpenQuestion, never a voter key; the log carries only entries and voters; voters has yes, yesBut and no holding names; only the question is flagged open; recordedAt is a UTC time with milliseconds
+</code></pre>
+
+<pre><code>A browser keeps drawing the log, the open question and the time of each entry as it does today
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs</p>
+
+<pre><code>isOpenQuestion hidden from the JSON, a voter key sent with an entry, or a time without milliseconds; held off by asserting the member names of every entry and the log, the three answer keys holding strings, the flag sequence and the recordedAt text
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>On the wire, ask a question on a Work Item that is not in refinement, send an empty question, a question of 2001 characters and a vote with a comment of 2001 characters, and ask a valid question
+</code></pre>
+
+<pre><code>The unlisted Work Item answers 409 work-item-not-in-refinement; the empty question 400 comment-required; both too-long comments 400 comment-too-long; a valid question answers 200 with the row of its Work Item flagged as having an open question
+</code></pre>
+
+<pre><code>A browser tells a person why a comment was refused, and shows the question as open as soon as it is sent
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs</p>
+
+<pre><code>A refusal with the right status but a wrong or missing code, or an answer row that omits the open-question flag; held off by asserting status and code together on every refusal and the row members on the answer
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the guard that names every class starting a web host, with the comments class no longer listed as still to move
+</code></pre>
+
+<pre><code>No class outside the still-to-move list or a named wire contract starts a web host, and the comments class is off the list
+</code></pre>
+
+<pre><code>A maintainer is told if the comments class ever starts a web host again
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs</p>
+
+<pre><code>The comments class moved but its line left on the list, so a host could return unnoticed; held off by the guard failing on a listed class that no longer starts a host
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Measure the three moved classes and the wire class as the earlier timing run did
+</code></pre>
+
+<pre><code>The summed time of the three classes after the move is lower than the 19.06 s before
+</code></pre>
+
+<pre><code>A maintainer waits less for the same three classes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>A duration is measured by the host&#x27;s timing run over the trx files, not asserted by a test
+</code></pre>
+
+<p>root-host-timing-run</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the yardstick class at the port and its wire rows
+</code></pre>
+
+<pre><code>10 rows at the port and 2 in the wire class keep their ids; a fallback window one day wider turns a window-edge row red
+</code></pre>
+
+<pre><code>A maintainer sees no yardstick test lost in the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickScenarios.cs</p>
+
+<pre><code>A fallback window one day wider; held off by the first-day and day-before window-edge rows
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the need-and-verdict class at the port and its wire row
+</code></pre>
+
+<pre><code>17 rows at the port and 1 in the wire class keep their ids; a verdict that uses greater-than where the range includes both ends turns a range-end row red
+</code></pre>
+
+<pre><code>A maintainer sees no need or verdict test lost in the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs</p>
+
+<pre><code>A verdict that treats the high end as outside the range; held off by the in-range rows that sit on both ends
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the guards on the Team set-up the port writes: a set on a type reachable from a Team, a change to a Team collection, and a guarded table written outside the builder
+</code></pre>
+
+<pre><code>Each planted case turns its guard red, so a moved scenario cannot store what no settings save produces
+</code></pre>
+
+<pre><code>A maintainer trusts that a moved scenario starts from a Team a user can really have
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs</p>
+
+<pre><code>A Team set up by a setter or collection change outside the builder; held off by the planted cases of the guard
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

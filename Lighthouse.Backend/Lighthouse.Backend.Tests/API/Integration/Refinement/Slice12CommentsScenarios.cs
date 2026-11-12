@@ -1,4 +1,5 @@
-using System.Net;
+using Lighthouse.Backend.Models.Refinement;
+using Lighthouse.Backend.Services.Interfaces.Refinement;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
@@ -12,270 +13,245 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// The log is open to everybody who can open the tab, voted or not: a Product Owner who never votes
     /// still reads how the Team voted and why.
     ///
-    /// Driving ports: the vote and comment writes, the Work Item's log and the Refinement tab's read. Step
-    /// definitions live in Slice12CommentsSpecifications.cs.
+    /// Driven at the application-service port: votes and comments are written through the sizing log's
+    /// commands for a voter established as the votes route establishes one, and the tab and a Work Item's log
+    /// are read as the browser receives them, before they are written out as JSON. What a refused comment is
+    /// answered with on the wire, the shape of the log and the log of a Work Item the tab does not list are
+    /// pinned on the wire contract of the Refinement tab. Step definitions live in
+    /// Slice12CommentsSpecifications.cs.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5510-5881-refinement")]
     [Category("slice-12")]
-    public partial class Slice12CommentsTest : SizingVotesAcceptanceTest
+    public partial class Slice12CommentsTest : RefinementAtThePortTest
     {
         [Test]
-        public async Task A_Yes_but_carries_its_condition_into_the_Work_Items_log()
+        public void A_Yes_but_carries_its_condition_into_the_Work_Items_log()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            await WhenAnaSaysYesBut(gravity, AdvancedReporting, OnlyIfThePdfExportMovesOut);
+            WhenAnaSaysYesBut(gravity, AdvancedReporting, OnlyIfThePdfExportMovesOut);
 
-            await ThenAnaReadsInTheLog(gravity, AdvancedReporting,
-                new LogEntryReading("Vote", nameof(Answer.YesBut), OnlyIfThePdfExportMovesOut, AnaLima, nameof(Channel.Web), null, IsMine: true));
+            var log = WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
+
+            ThenTheLogReads(log,
+                new LogEntryReading("Vote", nameof(SizingAnswer.YesBut), OnlyIfThePdfExportMovesOut, AnaLima, nameof(SizingChannel.Web), null, IsMine: true));
         }
 
-        [TestCase(Answer.Yes)]
-        [TestCase(Answer.No)]
-        public async Task Any_answer_may_carry_a_comment(Answer answer)
+        [TestCase(SizingAnswer.Yes)]
+        [TestCase(SizingAnswer.No)]
+        public void Any_answer_may_carry_a_comment(SizingAnswer answer)
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            await WhenAnaVotesWithAComment(gravity, answer, NeedsTheDesignFirst);
+            WhenAnaVotesWithAComment(gravity, answer, NeedsTheDesignFirst);
 
-            await ThenAnaReadsInTheLog(gravity, AdvancedReporting,
-                new LogEntryReading("Vote", answer.ToString(), NeedsTheDesignFirst, AnaLima, nameof(Channel.Web), null, IsMine: true));
+            var log = WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
+
+            ThenTheLogReads(log,
+                new LogEntryReading("Vote", answer.ToString(), NeedsTheDesignFirst, AnaLima, nameof(SizingChannel.Web), null, IsMine: true));
         }
 
         [Test]
-        public async Task A_vote_without_a_comment_carries_none()
+        public void A_vote_without_a_comment_carries_none()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            await WhenAnaVotesWithoutAComment(gravity);
+            WhenAnaVotesWithoutAComment(gravity);
 
-            await ThenAnaReadsInTheLog(gravity, AdvancedReporting,
-                new LogEntryReading("Vote", nameof(Answer.Yes), null, AnaLima, nameof(Channel.Web), null, IsMine: true));
+            var log = WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
+
+            ThenTheLogReads(log,
+                new LogEntryReading("Vote", nameof(SizingAnswer.Yes), null, AnaLima, nameof(SizingChannel.Web), null, IsMine: true));
         }
 
         // Changing your mind adds to the log; nothing is ever overwritten.
         [Test]
-        public async Task A_changed_mind_keeps_both_votes_in_the_log_oldest_first()
+        public void A_changed_mind_keeps_both_votes_in_the_log_oldest_first()
         {
-            var gravity = await GivenJonasVotedYesOnConfigurationManagement();
+            var gravity = GivenJonasVotedYesOnConfigurationManagement();
 
-            await WhenJonasChangesHisMindTo(gravity, Answer.YesBut);
+            WhenJonasChangesHisMindTo(gravity, SizingAnswer.YesBut);
 
-            await ThenJonasReadsTheAnswersInOrder(gravity, ConfigurationManagement, nameof(Answer.Yes), nameof(Answer.YesBut));
+            ThenJonasReadsTheAnswersInOrder(gravity, ConfigurationManagement, nameof(SizingAnswer.Yes), nameof(SizingAnswer.YesBut));
         }
 
         [Test]
-        public async Task The_log_says_who_said_what_when_and_from_where_oldest_first()
+        public void The_log_says_who_said_what_when_and_from_where_oldest_first()
         {
-            var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
+            var gravity = GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
 
-            var log = await WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
+            var log = WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
 
             ThenTheLogReads(log,
-                new LogEntryReading("Vote", nameof(Answer.Yes), null, JonasWeber, nameof(Channel.Web), null, IsMine: false),
-                new LogEntryReading("Vote", nameof(Answer.No), null, AnaLima, nameof(Channel.Web), null, IsMine: true),
-                new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(Channel.Web), null, IsMine: false));
+                new LogEntryReading("Vote", nameof(SizingAnswer.Yes), null, JonasWeber, nameof(SizingChannel.Web), null, IsMine: false),
+                new LogEntryReading("Vote", nameof(SizingAnswer.No), null, AnaLima, nameof(SizingChannel.Web), null, IsMine: true),
+                new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(SizingChannel.Web), null, IsMine: false));
         }
 
         // The server decides which entry is the open question, so every reader marks the same one.
         [Test]
-        public async Task The_log_marks_the_question_still_waiting_for_its_askers_vote()
+        public void The_log_marks_the_question_still_waiting_for_its_askers_vote()
         {
-            var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
+            var gravity = GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
 
-            var log = await WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
+            var log = WhenAnaOpensTheLogOf(gravity, AdvancedReporting);
 
-            ThenOnlyMosQuestionIsMarkedOpenAndNoEntryCarriesAVoterKey(log);
+            ThenOnlyMosQuestionIsMarkedOpen(log);
         }
 
         // The names travel beside the split so a reader can see who stands behind each count; a changed mind moves
         // its voter, and each list keeps the order in which those current votes were cast.
         [Test]
-        public async Task The_log_names_who_currently_votes_each_answer_in_the_order_they_voted()
+        public void The_log_names_who_currently_votes_each_answer_in_the_order_they_voted()
         {
-            var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
-            await HasVoted(Mo, gravity, AdvancedReporting, Answer.Yes);
+            var gravity = GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
+            HasVoted(Mo, gravity, AdvancedReporting, SizingAnswer.Yes);
 
-            await WhenAnaChangesHerMindTo(gravity, AdvancedReporting, Answer.Yes);
+            WhenAnaChangesHerMindTo(gravity, AdvancedReporting, SizingAnswer.Yes);
 
-            await ThenPriyaReadsTheVoters(gravity, AdvancedReporting,
+            ThenPriyaReadsTheVoters(gravity, AdvancedReporting,
                 new VotersReading(Yes: [JonasWeber, MoOkafor, AnaLima], YesBut: [], No: []));
         }
 
         // Nobody has to vote to read the others: the split and every comment are there for anyone.
         [Test]
-        public async Task Somebody_who_never_voted_reads_how_the_votes_split_and_every_comment()
+        public void Somebody_who_never_voted_reads_how_the_votes_split_and_every_comment()
         {
-            var gravity = await GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
+            var gravity = GivenJonasVotedYesAnaVotedNoAndMoAskedAQuestionOnAdvancedReporting();
 
-            var (row, log) = await WhenPriyaWhoNeverVotedLooksAt(gravity, AdvancedReporting);
+            var (row, log) = WhenPriyaWhoNeverVotedLooksAt(gravity, AdvancedReporting);
 
             ThenPriyaReadsTheSplitAndTheLog(row, log, new SplitReading(Yes: 1, YesBut: 0, No: 1),
-                new LogEntryReading("Vote", nameof(Answer.Yes), null, JonasWeber, nameof(Channel.Web), null, IsMine: false),
-                new LogEntryReading("Vote", nameof(Answer.No), null, AnaLima, nameof(Channel.Web), null, IsMine: false),
-                new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(Channel.Web), null, IsMine: false));
+                new LogEntryReading("Vote", nameof(SizingAnswer.Yes), null, JonasWeber, nameof(SizingChannel.Web), null, IsMine: false),
+                new LogEntryReading("Vote", nameof(SizingAnswer.No), null, AnaLima, nameof(SizingChannel.Web), null, IsMine: false),
+                new LogEntryReading("Comment", null, WhichApiVersion, MoOkafor, nameof(SizingChannel.Web), null, IsMine: false));
         }
 
         [Test]
-        public async Task A_question_without_a_vote_flags_the_Work_Item_and_counts_as_no_vote()
+        public void A_question_without_a_vote_flags_the_Work_Item_and_counts_as_no_vote()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            await WhenJonasAsks(gravity, ApiVersioning, WhichApiVersion);
+            WhenJonasAsks(gravity, ApiVersioning, WhichApiVersion);
 
-            await ThenTheRowReads(gravity, ApiVersioning, voteCount: 0, hasOpenQuestion: true, hasComments: true);
+            ThenTheRowReads(gravity, ApiVersioning, voteCount: 0, hasOpenQuestion: true, hasComments: true);
         }
 
         [Test]
-        public async Task The_asker_voting_closes_their_own_question()
+        public void The_asker_voting_closes_their_own_question()
         {
-            var gravity = await GivenJonasAskedWhichApiVersionOnApiVersioning();
+            var gravity = GivenJonasAskedWhichApiVersionOnApiVersioning();
 
-            await WhenTheyVote(Jonas, gravity, ApiVersioning, Answer.Yes);
+            WhenTheyVote(Jonas, gravity, ApiVersioning, SizingAnswer.Yes);
 
-            await ThenTheRowReads(gravity, ApiVersioning, voteCount: 1, hasOpenQuestion: false, hasComments: true);
+            ThenTheRowReads(gravity, ApiVersioning, voteCount: 1, hasOpenQuestion: false, hasComments: true);
         }
 
         [Test]
-        public async Task Somebody_elses_vote_does_not_close_the_question()
+        public void Somebody_elses_vote_does_not_close_the_question()
         {
-            var gravity = await GivenJonasAskedWhichApiVersionOnApiVersioning();
+            var gravity = GivenJonasAskedWhichApiVersionOnApiVersioning();
 
-            await WhenTheyVote(Ana, gravity, ApiVersioning, Answer.Yes);
+            WhenTheyVote(Ana, gravity, ApiVersioning, SizingAnswer.Yes);
 
-            await ThenTheRowReads(gravity, ApiVersioning, voteCount: 1, hasOpenQuestion: true, hasComments: true);
+            ThenTheRowReads(gravity, ApiVersioning, voteCount: 1, hasOpenQuestion: true, hasComments: true);
         }
 
         [Test]
-        public async Task A_comment_from_somebody_who_has_voted_is_no_open_question_and_keeps_their_vote()
+        public void A_comment_from_somebody_who_has_voted_is_no_open_question_and_keeps_their_vote()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-            await HasVoted(Ana, gravity, ApiVersioning, Answer.No);
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
+            HasVoted(Ana, gravity, ApiVersioning, SizingAnswer.No);
 
-            await WhenAnaComments(gravity, ApiVersioning, NeedsTheDesignFirst);
+            WhenAnaComments(gravity, ApiVersioning, NeedsTheDesignFirst);
 
-            await ThenAnaStillCountsWith(gravity, ApiVersioning, Answer.No);
+            ThenAnaStillCountsWith(gravity, ApiVersioning, SizingAnswer.No);
         }
 
         [Test]
-        public async Task A_question_counts_for_nothing_towards_readiness()
+        public void A_question_counts_for_nothing_towards_readiness()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            await WhenJonasAsks(gravity, ApiVersioning, WhichApiVersion);
+            WhenJonasAsks(gravity, ApiVersioning, WhichApiVersion);
 
-            await ThenTheReadinessOfTheRowIs(gravity, ApiVersioning, "MoreYesNeeded", missingVotes: 3);
+            ThenTheReadinessOfTheRowIs(gravity, ApiVersioning, "MoreYesNeeded", missingVotes: 3);
         }
 
         [TestCase("")]
         [TestCase("   ")]
-        public async Task An_empty_question_is_refused_and_nothing_is_recorded(string comment)
+        public void An_empty_question_is_refused_and_nothing_is_recorded(string comment)
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            using var refused = await WhenJonasTriesToAsk(gravity, ApiVersioning, comment);
+            var refused = WhenJonasTriesToAsk(gravity, ApiVersioning, comment);
 
-            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentRequired);
+            ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, SizingOutcome.CommentMissing);
         }
 
         [Test]
-        public async Task A_comment_of_two_thousand_characters_is_kept_whole()
+        public void A_comment_of_two_thousand_characters_is_kept_whole()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
             var twoThousand = new string('x', 2000);
 
-            await WhenJonasVotesYesWithTheComment(gravity, twoThousand);
+            WhenJonasVotesYesWithTheComment(gravity, twoThousand);
 
-            await ThenJonasReadsHisComment(gravity, twoThousand);
+            ThenJonasReadsHisComment(gravity, twoThousand);
         }
 
         [Test]
-        public async Task A_comment_longer_than_two_thousand_characters_is_refused()
+        public void A_comment_longer_than_two_thousand_characters_is_refused()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            using var refused = await WhenJonasTriesToAsk(gravity, ApiVersioning, new string('x', 2001));
+            var refused = WhenJonasTriesToAsk(gravity, ApiVersioning, new string('x', 2001));
 
-            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentTooLong);
+            ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, SizingOutcome.CommentTooLong);
         }
 
         [Test]
-        public async Task A_question_of_two_thousand_characters_is_kept_whole()
+        public void A_question_of_two_thousand_characters_is_kept_whole()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
             var twoThousand = new string('x', 2000);
 
-            await WhenJonasAsks(gravity, ConfigurationManagement, twoThousand);
+            WhenJonasAsks(gravity, ConfigurationManagement, twoThousand);
 
-            await ThenJonasReadsHisComment(gravity, twoThousand);
+            ThenJonasReadsHisComment(gravity, twoThousand);
         }
 
         [Test]
-        public async Task A_vote_whose_comment_is_longer_than_two_thousand_characters_is_refused()
+        public void A_vote_whose_comment_is_longer_than_two_thousand_characters_is_refused()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            using var refused = await WhenJonasTriesToVoteYesWithTheComment(gravity, ApiVersioning, new string('x', 2001));
+            var refused = WhenJonasTriesToVoteYesWithTheComment(gravity, ApiVersioning, new string('x', 2001));
 
-            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, CommentTooLong);
+            ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, SizingOutcome.CommentTooLong);
         }
 
         [Test]
-        public async Task A_question_without_a_name_is_refused()
+        public void A_question_on_a_Work_Item_that_is_not_in_refinement_is_refused()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            using var refused = await Comments(ABrowserWithoutAName(), gravity, ApiVersioning, WhichApiVersion);
+            var refused = WhenJonasTriesToAsk(gravity, BillingExport, WhichApiVersion);
 
-            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.BadRequest, VoterNameRequired);
-        }
-
-        [Test]
-        public async Task A_question_on_a_Work_Item_that_is_not_in_refinement_is_refused()
-        {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
-
-            using var refused = await WhenJonasTriesToAsk(gravity, BillingExport, WhichApiVersion);
-
-            await ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, HttpStatusCode.Conflict, WorkItemNotInRefinement);
-        }
-
-        // The log opens for a listed Work Item first, so the refusal can only be about the Work Item.
-        [Test]
-        public async Task The_log_of_a_Work_Item_that_is_not_in_refinement_is_not_found()
-        {
-            var gravity = await GivenAnaVotedAndCanOpenTheLogOfAdvancedReporting();
-
-            using var refused = await OpensTheLog(Ana, gravity, BillingExport);
-
-            Assert.That(refused.StatusCode, Is.EqualTo(HttpStatusCode.NotFound));
-        }
-
-        // A reference is whatever text the tracker uses; a slash in it travels escaped, as a browser sends it.
-        [TestCase("REQ/12")]
-        [TestCase("REQ/12#3")]
-        public async Task The_log_of_a_Work_Item_whose_reference_holds_a_slash_opens(string reference)
-        {
-            var gravity = await GivenGravityAlsoRefinesAWorkItemReferencedAs(reference);
-            await HasCommented(Jonas, gravity, reference, WhichApiVersion);
-
-            var log = await WhenAnaOpensTheLogOf(gravity, reference);
-
-            ThenTheLogReads(log,
-                new LogEntryReading("Comment", null, WhichApiVersion, JonasWeber, nameof(Channel.Web), null, IsMine: false));
+            ThenTheCommentIsRefusedAndTheRowIsUntouched(refused, gravity, ApiVersioning, SizingOutcome.WorkItemNotInRefinement);
         }
 
         // Whatever somebody types is text: it is stored and handed back exactly, never interpreted.
         [Test]
-        public async Task A_comment_comes_back_exactly_as_it_was_written()
+        public void A_comment_comes_back_exactly_as_it_was_written()
         {
-            var gravity = await GivenGravityRefinesAndNobodyHasVoted();
+            var gravity = GivenGravityRefinesAndNobodyHasVoted();
 
-            await WhenJonasVotesYesWithTheComment(gravity, MarkupAndQuotes);
+            WhenJonasVotesYesWithTheComment(gravity, MarkupAndQuotes);
 
-            await ThenJonasReadsHisComment(gravity, MarkupAndQuotes);
+            ThenJonasReadsHisComment(gravity, MarkupAndQuotes);
         }
     }
 }

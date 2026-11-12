@@ -219,13 +219,156 @@
 "stimulus": "F212",
 "user_result": "F214"
 }
+],
+"S3": [
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F71",
+"L2/F76"
+],
+"still_passes_if": "F219",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice12CommentsScenarios.cs"
+},
+"expected": "F217",
+"stimulus": "F216",
+"user_result": "F218"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F71"
+],
+"still_passes_if": "F223",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs"
+},
+"expected": "F221",
+"stimulus": "F220",
+"user_result": "F222"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F227",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs"
+},
+"expected": "F225",
+"stimulus": "F224",
+"user_result": "F226"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F231",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Refinement/RefinementWithoutSignInWireContractTest.Log.cs"
+},
+"expected": "F229",
+"stimulus": "F228",
+"user_result": "F230"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F235",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+},
+"expected": "F233",
+"stimulus": "F232",
+"user_result": "F234"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "root-host-timing-run",
+"reason": "F239"
+},
+"expected": "F237",
+"stimulus": "F236",
+"user_result": "F238"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F69",
+"L2/F74"
+],
+"still_passes_if": "F243",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickScenarios.cs"
+},
+"expected": "F241",
+"stimulus": "F240",
+"user_result": "F242"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F70",
+"L2/F75"
+],
+"still_passes_if": "F247",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs"
+},
+"expected": "F245",
+"stimulus": "F244",
+"user_result": "F246"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F79",
+"L3/F80",
+"L3/F81"
+],
+"still_passes_if": "F251",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs"
+},
+"expected": "F249",
+"stimulus": "F248",
+"user_result": "F250"
+}
 ]
 },
 "counters": {
 "B": 1,
 "D": 15,
 "E": 4,
-"F": 215,
+"F": 251,
 "K": 10,
 "L": 3,
 "P": 4,
@@ -1154,10 +1297,46 @@
 "F213": "The port answer equals the instance's answer in mode and misconfiguration message; the planted answer is found to differ",
 "F214": "A port scenario cannot pass on a sign-in mode an instance without sign-in does not have, and the check that says so can fail",
 "F215": "the comparison only looked at a property both answers share by chance; the planted row A_port_fixture_that_says_sign_in_is_on_is_caught_by_the_sign_in_comparison shows it sees the mode",
+"F216": "Run the comments class at the service port: votes with and without a comment, Yes-but conditions, questions from people who did and did not vote, a changed mind, a reader who never voted, comments of 2000 and 2001 characters, empty questions, and a question on a Work Item that is not in refinement, today 7 October 2026",
+"F217": "Its 22 rows pass under their unchanged names without a web host: the log says who said what, from where and when, oldest first; the open question is marked until its asker votes; each answer lists its current voters in vote order; a refused comment is refused for its reason and leaves the row untouched",
+"F218": "A maintainer sees the comment and log rules proven at the port, faster, with no test lost",
+"F219": "A comment limit of 1999 or 2001 characters, a question left open after its asker voted, or a log listing the newest entry first; held off by the 2000-character keep-whole rows, the asker-closes row and the oldest-first rows",
 "F22": "A moved class keeps its data: Slice10 and Slice12 use a new port Given for the 5-Work-Item Gravity of the vote host (GR-040, GR-058, GR-051, GR-054, GR-073, GR-074), not the 7-item base Given, which adds GR-059.",
+"F220": "On the wire, open the log of a Work Item that is not in refinement, the logs of Work Items whose references are REQ/12 and REQ/12#3 after a question was asked on each, and send a question without a name",
+"F221": "The 4 rows keep their names in the wire class: the log of an unlisted Work Item is 404 while a listed one opens; a slash reference opens and holds the one question asked; a nameless question is 400 with the code voter-name-required and the row stays untouched",
+"F222": "A browser keeps reaching the log of every Work Item, also those whose tracker reference holds a slash or a hash",
+"F223": "A log that answers 200 for a Work Item the tab does not list, or a slash reference sent unescaped so the route misses it; held off by asserting 404 after proving a listed log opens, and by reading the entry back for both slash references",
+"F224": "On the wire, read the log of a Work Item with two votes and a question and read when an entry was recorded",
+"F225": "Each entry carries exactly kind, answer, comment, voterName, channel, recordedAt, isMine and isOpenQuestion, never a voter key; the log carries only entries and voters; voters has yes, yesBut and no holding names; only the question is flagged open; recordedAt is a UTC time with milliseconds",
+"F226": "A browser keeps drawing the log, the open question and the time of each entry as it does today",
+"F227": "isOpenQuestion hidden from the JSON, a voter key sent with an entry, or a time without milliseconds; held off by asserting the member names of every entry and the log, the three answer keys holding strings, the flag sequence and the recordedAt text",
+"F228": "On the wire, ask a question on a Work Item that is not in refinement, send an empty question, a question of 2001 characters and a vote with a comment of 2001 characters, and ask a valid question",
+"F229": "The unlisted Work Item answers 409 work-item-not-in-refinement; the empty question 400 comment-required; both too-long comments 400 comment-too-long; a valid question answers 200 with the row of its Work Item flagged as having an open question",
 "F23": "Port steps obtain a voter by VoterIdentityResolver.ForWriteAsync(name, key, none) and then call ISizingLogCommands, as RefinementVotesController does; writing the raw key would let ForTeam miss the voter own vote.",
+"F230": "A browser tells a person why a comment was refused, and shows the question as open as soon as it is sent",
+"F231": "A refusal with the right status but a wrong or missing code, or an answer row that omits the open-question flag; held off by asserting status and code together on every refusal and the row members on the answer",
+"F232": "Run the guard that names every class starting a web host, with the comments class no longer listed as still to move",
+"F233": "No class outside the still-to-move list or a named wire contract starts a web host, and the comments class is off the list",
+"F234": "A maintainer is told if the comments class ever starts a web host again",
+"F235": "The comments class moved but its line left on the list, so a host could return unnoticed; held off by the guard failing on a listed class that no longer starts a host",
+"F236": "Measure the three moved classes and the wire class as the earlier timing run did",
+"F237": "The summed time of the three classes after the move is lower than the 19.06 s before",
+"F238": "A maintainer waits less for the same three classes",
+"F239": "A duration is measured by the host's timing run over the trx files, not asserted by a test",
 "F24": "Port rows read RefinementViewDto and the sizing log built as the controller builds them, as NeedOverOneCycleTest does, so the wire text of enums and dates is the DTO text and string assertions stay. New DTO readers go on the port base as protected members; NeedOverOneCycleSpecifications keeps its private readers.",
+"F240": "Run the yardstick class at the port and its wire rows",
+"F241": "10 rows at the port and 2 in the wire class keep their ids; a fallback window one day wider turns a window-edge row red",
+"F242": "A maintainer sees no yardstick test lost in the move",
+"F243": "A fallback window one day wider; held off by the first-day and day-before window-edge rows",
+"F244": "Run the need-and-verdict class at the port and its wire row",
+"F245": "17 rows at the port and 1 in the wire class keep their ids; a verdict that uses greater-than where the range includes both ends turns a range-end row red",
+"F246": "A maintainer sees no need or verdict test lost in the move",
+"F247": "A verdict that treats the high end as outside the range; held off by the in-range rows that sit on both ends",
+"F248": "Run the guards on the Team set-up the port writes: a set on a type reachable from a Team, a change to a Team collection, and a guarded table written outside the builder",
+"F249": "Each planted case turns its guard red, so a moved scenario cannot store what no settings save produces",
 "F25": "Guard gaps close in the slice whose class needs them: S1 tightens PortGivensGuardTest and the Team-fields parity rows; S2 makes the settings stand-in strict and compares SignInOff; S3 adds the all-inputs parity case. Every tightened guard ships a planted case that turns it red.",
+"F250": "A maintainer trusts that a moved scenario starts from a Team a user can really have",
+"F251": "A Team set up by a setter or collection change outside the builder; held off by the planted cases of the guard",
 "F26": "No dedup of rows that overlap NeedOverOneCycleTest in this feature: ids must survive a behaviour-free move. Dropping them is a separate later slice in feature story-6602-b.",
 "F27": "Today is explicit in every moved Given: TodayIs(2026, 10, 7) unless the row sets another day, because the host clock starts on 7 October 2026 09:00 UTC while the port base starts on TestToday.FrozenNow.",
 "F28": "ServicePortHarness.NewScope() stays public (maintainer, DELIVER start). PortGivensGuardTest, not visibility inside one test assembly, stops a port class from writing a Team itself.",
