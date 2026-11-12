@@ -1,8 +1,73 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F187",
+"test": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+},
+"expected": "F185",
+"stimulus": "F184",
+"user_result": "F186"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F191",
+"test": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+},
+"expected": "F189",
+"stimulus": "F188",
+"user_result": "F190"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F195",
+"test": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+},
+"expected": "F193",
+"stimulus": "F192",
+"user_result": "F194"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "crafter",
+"reason": "F199"
+},
+"expected": "F197",
+"stimulus": "F196",
+"user_result": "F198"
+}
+]
+},
 "counters": {
 "D": 5,
 "E": 4,
-"F": 183,
+"F": 199,
 "K": 5,
 "P": 4,
 "S": 5,
@@ -1175,7 +1240,23 @@
 "F181": "After the split, every Team and Portfolio unit that was split shows the same screens, controls and behaviour as before, and the existing tests pass without edits, except tests that moved with their code.",
 "F182": "Team and Portfolio member and group-mapping actions behave the same from the user's side, and the pages no longer call those access methods directly; the behaviour is reached through one shared hook.",
 "F183": "With default terms, the Team and Portfolio Access tab member failure messages read as they do today; with custom terms, they show the user's configured Team or Portfolio word in lower case.",
+"F184": "Run the size rule over the real source tree",
+"F185": "The offender list exists and names exactly BaseMetricsView.tsx and ragRules.ts, and no other production file is over 1000 lines or listed while short",
+"F186": "A maintainer opening any production frontend file finds it at 1000 lines or fewer unless it is named on the list",
+"F187": "The list names the right files but a third wide file such as the connection form stays over the line unreported",
+"F188": "Run the size rule over planted projects: 1001 lines, 1000 lines, 1500-line test files, test kit, fixture, declaration and src/tests files",
+"F189": "Only the 1001-line file is reported with its length; 1000 lines and the excluded files are not",
 "F19": "Input bound: the line limit is 1000, a file of more than 1000 lines offends; the offender list is not extended, only shortened.",
+"F190": "A new over-wide file is refused by name and length; test code and exact-limit files are left alone",
+"F191": "The limit is 1100, or the scan counts test kits and src/tests files",
+"F192": "Run the size rule with a listed file that is now short or gone, a listed file still wide, and a folder that cannot be read",
+"F193": "The short or missing entry is reported stale, the still-wide one is accepted, and the unreadable folder fails loudly",
+"F194": "The list only shrinks and a broken scan never passes as clean",
+"F195": "A scan that skips unreadable folders and reports no files",
+"F196": "Run the existing connection form, save-question, edit-connection and wizard tests against the split form",
+"F197": "They pass unmodified; removing the upgrade link text, blaming a concurrent edit for every save error, or dropping read-only on OAuth locked fields turns them red",
+"F198": "The connection form looks and behaves exactly as before",
+"F199": "Existing unmodified tests cover it; no new oracle row is written for them, and they already pass on today's code so no RED applies",
 "F2": "The widest frontend files are split by responsibility and kept small by a named size rule, and Team and Portfolio access handling lives in one place",
 "F20": "Behaviour-free: existing tests stay green unmodified apart from tests that move with their code; effect dependency arrays, hook call order and useCallback dependencies are copied as they are. Default Team and Portfolio terms give today's texts word for word.",
 "F21": "S5 copy is approved text: Failed to load {team} members. / Failed to update {team} member role. / Failed to remove {team} member., same for {portfolio}; the term is getTerm(TERMINOLOGY_KEYS.TEAM or PORTFOLIO) lower-cased and read when the failure happens, not at mount.",

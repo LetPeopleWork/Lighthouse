@@ -151,7 +151,104 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the size rule over the real source tree
+</code></pre>
+
+<pre><code>The offender list exists and names exactly BaseMetricsView.tsx and ragRules.ts, and no other production file is over 1000 lines or listed while short
+</code></pre>
+
+<pre><code>A maintainer opening any production frontend file finds it at 1000 lines or fewer unless it is named on the list
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>The list names the right files but a third wide file such as the connection form stays over the line unreported
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the size rule over planted projects: 1001 lines, 1000 lines, 1500-line test files, test kit, fixture, declaration and src/tests files
+</code></pre>
+
+<pre><code>Only the 1001-line file is reported with its length; 1000 lines and the excluded files are not
+</code></pre>
+
+<pre><code>A new over-wide file is refused by name and length; test code and exact-limit files are left alone
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>The limit is 1100, or the scan counts test kits and src/tests files
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the size rule with a listed file that is now short or gone, a listed file still wide, and a folder that cannot be read
+</code></pre>
+
+<pre><code>The short or missing entry is reported stale, the still-wide one is accepted, and the unreadable folder fails loudly
+</code></pre>
+
+<pre><code>The list only shrinks and a broken scan never passes as clean
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>A scan that skips unreadable folders and reports no files
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Run the existing connection form, save-question, edit-connection and wizard tests against the split form
+</code></pre>
+
+<pre><code>They pass unmodified; removing the upgrade link text, blaming a concurrent edit for every save error, or dropping read-only on OAuth locked fields turns them red
+</code></pre>
+
+<pre><code>The connection form looks and behaves exactly as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>Existing unmodified tests cover it; no new oracle row is written for them, and they already pass on today&#x27;s code so no RED applies
+</code></pre>
+
+<p>crafter</p>
 
 <h2>Expectations</h2>
 
