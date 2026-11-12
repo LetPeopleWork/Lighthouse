@@ -10,7 +10,7 @@ overrides:
   immutable@>=5.0.0-beta.1 <5.1.8: ^5.1.9
   minimatch@>=7.0.0 <11.0.1: ^11.0.4
   postcss: ^8.5.32
-  qs@>=6.7.0 <6.16.1: ^6.16.1
+  qs@>=6.7.0 <6.16.1: ^6.17.1
   undici: ^8.12.4
   # Mutation testing's runner accepts any vitest from 2 upward, so the resolver was free to keep an
   # older copy for it while the suite moved on. It then drove one version of the test framework while
