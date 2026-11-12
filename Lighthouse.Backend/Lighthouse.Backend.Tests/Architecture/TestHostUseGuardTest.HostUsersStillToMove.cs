@@ -166,7 +166,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice09ClientNeedTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice09ClientNeedWithAnApiKeyTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice11CastAVoteTest",
-            "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice12CommentsTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice13ReadinessTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice15VotesWithAnAccountTest",
             "Lighthouse.Backend.Tests.API.Integration.Refinement.Slice15VotesWithoutRolesTest",
