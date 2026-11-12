@@ -147,17 +147,31 @@ const renderScopedAccess = async (
 		);
 
 	const rendered = renderHook(
-		() =>
-			useScopedAccess(scope.kind, beforeTheScopeIsKnown ? undefined : scope.id),
+		({ id }: { id: number | undefined }) => useScopedAccess(scope.kind, id),
 		{
 			wrapper,
+			initialProps: {
+				id: beforeTheScopeIsKnown
+					? undefined
+					: (scope.id as number | undefined),
+			},
 		},
 	);
 	await waitFor(() =>
 		expect(queryClient.getQueryData(["terminology-database"])).toBeDefined(),
 	);
 
-	return { access: () => rendered.result.current, rbacService };
+	return {
+		access: () => rendered.result.current,
+		rbacService,
+		rerenderForScopeId: (id: number) => rendered.rerender({ id }),
+		rerenderUnchanged: () => rendered.rerender({ id: scope.id }),
+		renameTerms: (terms: Record<string, string>) =>
+			act(async () => {
+				queryClient.setQueryData(["terminology-database"], termsAnswer(terms));
+				await new Promise((resolve) => setTimeout(resolve, 0));
+			}),
+	};
 };
 
 const settle = async (action: () => Promise<unknown>) => {
@@ -335,6 +349,42 @@ describe("The members and group mappings of a Team or a Portfolio", () => {
 				).toBe(`Failed to load ${scope.defaultWord} members.`);
 			},
 		);
+
+		it("keeps the same loaders across re-renders and a change of terminology, and gets new ones for another scope id", async () => {
+			const rbacService = createMockRbacService();
+			serviceCall(rbacService, scope.getMembers).mockRejectedValue(
+				new Error("down"),
+			);
+			const { access, rerenderUnchanged, rerenderForScopeId, renameTerms } =
+				await renderScopedAccess(scope, { rbacService });
+			const before = access();
+
+			rerenderUnchanged();
+			expect(
+				access().loadGroupMappings,
+				"A new loadGroupMappings on every render makes the group list refetch on every render of the page.",
+			).toBe(before.loadGroupMappings);
+			expect(access().loadMembers).toBe(before.loadMembers);
+
+			await renameTerms(SQUAD_AND_PROGRAM);
+			await settle(() => access().loadMembers());
+			expect(
+				access().membersError,
+				"The rename must have reached the hook, or this row proves nothing about renaming.",
+			).toBe(`Failed to load ${scope.renamedWord} members.`);
+			expect(
+				access().loadGroupMappings,
+				"Renaming a term must not make the group list refetch.",
+			).toBe(before.loadGroupMappings);
+			expect(
+				access().loadMembers,
+				"Renaming a term must not reload the members; the term is only read when a failure is reported.",
+			).toBe(before.loadMembers);
+
+			rerenderForScopeId(scope.id + 1);
+			expect(access().loadGroupMappings).not.toBe(before.loadGroupMappings);
+			expect(access().loadMembers).not.toBe(before.loadMembers);
+		});
 
 		it("drops the failure message once the members load again", async () => {
 			const rbacService = createMockRbacService();
