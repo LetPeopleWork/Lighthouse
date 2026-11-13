@@ -1,0 +1,89 @@
+useMetricsQuery.ts:32 NoCoverage BlockStatement {}
+useMetricsQuery.ts:33 NoCoverage StringLiteral ``
+useMetricsQuery.ts:32 Survived ConditionalExpression false
+useMetricsQuery.ts:61 Survived ConditionalExpression true
+useMetricsQuery.ts:99 Survived ArrayDeclaration ["Stryker was here"]
+useNamedPercentilesScope.ts:55 NoCoverage BlockStatement {}
+useNamedPercentilesScope.ts:39 Survived UpdateOperator --namedPercentilesFetchGeneration.current
+useNamedPercentilesScope.ts:55 Survived ConditionalExpression false
+useNamedPercentilesScope.ts:89 Survived ArrayDeclaration []
+useNamedPercentilesScope.ts:97 Survived AssignmentOperator namedPercentilesFetchGeneration.current -= 1
+useNamedPercentilesScope.ts:99 Survived CallExpression ;
+useNamedPercentilesScope.ts:100 Survived CallExpression ;
+useStateDrillDown.ts:61 NoCoverage StringLiteral "Stryker was here!"
+useStateDrillDown.ts:82 Survived LogicalOperator drillDownOpen || drillDownState !== null
+useStateDrillDown.ts:82 Survived ConditionalExpression true
+useStateDrillDown.ts:102 Survived StringLiteral "Stryker was here!"
+useStateDrillDown.ts:103 Survived BooleanLiteral true
+deliveryFeatureRow.tsx:138 NoCoverage BooleanLiteral false
+deliveryFeatureRow.tsx:139 NoCoverage BooleanLiteral true
+deliveryFeatureRow.tsx:140 NoCoverage BooleanLiteral false
+deliveryFeatureRow.tsx:141 NoCoverage BooleanLiteral true
+deliveryFeatureRow.tsx:208 NoCoverage StringLiteral "Stryker was here!"
+deliveryFeatureRow.tsx:229 NoCoverage ArrowFunction () => undefined
+deliveryFeatureRow.tsx:252 NoCoverage MethodExpression delivery.featureLikelihoods
+deliveryFeatureRow.tsx:253 NoCoverage ArrowFunction () => undefined
+deliveryFeatureRow.tsx:253 NoCoverage ConditionalExpression true
+deliveryFeatureRow.tsx:253 NoCoverage ConditionalExpression false
+deliveryFeatureRow.tsx:253 NoCoverage EqualityOperator fl.featureId !== row.id
+deliveryFeatureRow.tsx:254 NoCoverage ArrowFunction () => undefined
+deliveryFeatureRow.tsx:258 NoCoverage ConditionalExpression true
+deliveryFeatureRow.tsx:258 NoCoverage ConditionalExpression false
+deliveryFeatureRow.tsx:258 NoCoverage EqualityOperator row.getRemainingWorkForFeature() >= 0
+deliveryFeatureRow.tsx:258 NoCoverage EqualityOperator row.getRemainingWorkForFeature() <= 0
+deliveryFeatureRow.tsx:52 Survived StringLiteral ""
+deliveryFeatureRow.tsx:51 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:53 Survived StringLiteral ""
+deliveryFeatureRow.tsx:54 Survived StringLiteral ""
+deliveryFeatureRow.tsx:57 Survived StringLiteral ""
+deliveryFeatureRow.tsx:58 Survived StringLiteral ""
+deliveryFeatureRow.tsx:63 Survived StringLiteral ``
+deliveryFeatureRow.tsx:71 Survived OptionalChaining onArchive(delivery)
+deliveryFeatureRow.tsx:91 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:92 Survived StringLiteral ""
+deliveryFeatureRow.tsx:93 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:93 Survived StringLiteral ""
+deliveryFeatureRow.tsx:117 Survived BooleanLiteral true
+deliveryFeatureRow.tsx:122 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:122 Survived StringLiteral ""
+deliveryFeatureRow.tsx:122 Survived StringLiteral ""
+deliveryFeatureRow.tsx:123 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:123 Survived StringLiteral ""
+deliveryFeatureRow.tsx:138 Survived ArrowFunction () => undefined
+deliveryFeatureRow.tsx:139 Survived ArrowFunction () => undefined
+deliveryFeatureRow.tsx:140 Survived ArrowFunction () => undefined
+deliveryFeatureRow.tsx:141 Survived ArrowFunction () => undefined
+deliveryFeatureRow.tsx:142 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:142 Survived StringLiteral ""
+deliveryFeatureRow.tsx:172 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:172 Survived StringLiteral ""
+deliveryFeatureRow.tsx:172 Survived StringLiteral ""
+deliveryFeatureRow.tsx:201 Survived StringLiteral ``
+deliveryFeatureRow.tsx:202 Survived BooleanLiteral true
+deliveryFeatureRow.tsx:208 Survived LogicalOperator row.url && ""
+deliveryFeatureRow.tsx:214 Survived StringLiteral ""
+deliveryFeatureRow.tsx:219 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:220 Survived StringLiteral ""
+deliveryFeatureRow.tsx:221 Survived StringLiteral ""
+deliveryFeatureRow.tsx:224 Survived BooleanLiteral true
+deliveryFeatureRow.tsx:225 Survived ArrowFunction () => undefined
+deliveryFeatureRow.tsx:233 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:234 Survived StringLiteral ""
+deliveryFeatureRow.tsx:239 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:240 Survived StringLiteral ""
+deliveryFeatureRow.tsx:245 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:246 Survived StringLiteral ""
+deliveryFeatureRow.tsx:250 Survived BooleanLiteral true
+deliveryFeatureRow.tsx:251 Survived ArrowFunction () => undefined
+deliveryFeatureRow.tsx:28 Survived StringLiteral ""
+metricsApplicability.ts:101 Survived ArrayDeclaration []
+metricsApplicability.ts:102 Survived StringLiteral ""
+metricsApplicability.ts:103 Survived StringLiteral ""
+UnbindConfirmationDialog.tsx:39 Survived BooleanLiteral true
+UnbindConfirmationDialog.tsx:42 Survived ConditionalExpression true
+deliveryFormRules.ts:65 Survived ConditionalExpression false
+deliveryFormRules.ts:65 Survived BlockStatement {}
+deliveryFormRules.ts:71 Survived MethodExpression today.setMinutes(0, 0, 0, 0)
+deliveryHeaderCopy.tsx:70 Survived ConditionalExpression true
+deliveryHeaderCopy.tsx:116 Survived ConditionalExpression true
+deliveryHeaderCopy.tsx:116 Survived EqualityOperator delivery.remainingWork >= 0

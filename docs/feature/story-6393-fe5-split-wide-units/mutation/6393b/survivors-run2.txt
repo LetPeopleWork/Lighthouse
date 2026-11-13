@@ -1,0 +1,36 @@
+metricsApplicability.ts:101 Survived ArrayDeclaration []
+metricsApplicability.ts:102 Survived StringLiteral ""
+metricsApplicability.ts:103 Survived StringLiteral ""
+useNamedPercentilesScope.ts:39 Survived UpdateOperator --namedPercentilesFetchGeneration.current
+useNamedPercentilesScope.ts:97 Survived AssignmentOperator namedPercentilesFetchGeneration.current -= 1
+useStateDrillDown.ts:61 NoCoverage StringLiteral "Stryker was here!"
+useStateDrillDown.ts:82 Survived ConditionalExpression true
+UnbindConfirmationDialog.tsx:39 Survived BooleanLiteral true
+deliveryFeatureRow.tsx:28 Survived StringLiteral ""
+deliveryFeatureRow.tsx:52 Survived StringLiteral ""
+deliveryFeatureRow.tsx:51 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:54 Survived StringLiteral ""
+deliveryFeatureRow.tsx:53 Survived StringLiteral ""
+deliveryFeatureRow.tsx:57 Survived StringLiteral ""
+deliveryFeatureRow.tsx:58 Survived StringLiteral ""
+deliveryFeatureRow.tsx:91 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:92 Survived StringLiteral ""
+deliveryFeatureRow.tsx:93 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:93 Survived StringLiteral ""
+deliveryFeatureRow.tsx:122 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:122 Survived StringLiteral ""
+deliveryFeatureRow.tsx:71 RuntimeError OptionalChaining onArchive(delivery)
+deliveryFeatureRow.tsx:122 Survived StringLiteral ""
+deliveryFeatureRow.tsx:123 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:123 Survived StringLiteral ""
+deliveryFeatureRow.tsx:142 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:142 Survived StringLiteral ""
+deliveryFeatureRow.tsx:172 Survived ObjectLiteral {}
+deliveryFeatureRow.tsx:172 Survived StringLiteral ""
+deliveryFeatureRow.tsx:172 Survived StringLiteral ""
+deliveryFormRules.ts:65 Survived ConditionalExpression false
+deliveryFormRules.ts:65 Survived BlockStatement {}
+deliveryFormRules.ts:71 Survived MethodExpression today.setMinutes(0, 0, 0, 0)
+deliveryHeaderCopy.tsx:70 Survived ConditionalExpression true
+deliveryHeaderCopy.tsx:116 Survived ConditionalExpression true
+deliveryHeaderCopy.tsx:116 Survived EqualityOperator delivery.remainingWork >= 0

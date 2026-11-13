@@ -1,0 +1,50 @@
+{
+  "packageManager": "pnpm",
+  "testRunner": "vitest",
+  "plugins": [
+    "@stryker-mutator/vitest-runner"
+  ],
+  "vitest": {
+    "configFile": "vitest.stryker.6393b.mutation.ts"
+  },
+  "reporters": [
+    "clear-text",
+    "progress",
+    "json"
+  ],
+  "coverageAnalysis": "perTest",
+  "incremental": true,
+  "incrementalFile": "reports/mutation/stryker-incremental-6393b.json",
+  "concurrency": 4,
+  "timeoutMS": 120000,
+  "timeoutFactor": 3,
+  "dryRunTimeoutMinutes": 30,
+  "inPlace": true,
+  "disableTypeChecks": false,
+  "ignorePatterns": [
+    "/dist",
+    "/coverage",
+    "/playwright-report",
+    "/reports"
+  ],
+  "mutate": [
+    "src/pages/Common/MetricsView/useNamedPercentilesScope.ts",
+    "src/pages/Common/MetricsView/useStateDrillDown.ts",
+    "src/hooks/metricsApplicability.ts",
+    "src/hooks/metricsOwnerKey.ts",
+    "src/hooks/useMetricsQuery.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.ts",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryHeaderCopy.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx",
+    "src/pages/Portfolios/Detail/Components/DeliveryGrid/UnbindConfirmationDialog.tsx"
+  ],
+  "thresholds": {
+    "high": 90,
+    "low": 80,
+    "break": 0
+  },
+  "jsonReporter": {
+    "fileName": "reports/mutation/stryker-6393b-frontend.json"
+  },
+  "tempDirName": ".stryker-tmp-6393b"
+}
