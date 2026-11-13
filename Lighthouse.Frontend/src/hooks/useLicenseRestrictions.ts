@@ -1,5 +1,9 @@
-import { type UseQueryResult, useQuery } from "@tanstack/react-query";
-import { useContext } from "react";
+import {
+	type UseQueryResult,
+	useQuery,
+	useQueryClient,
+} from "@tanstack/react-query";
+import { useCallback, useContext } from "react";
 import type { ILicenseStatus } from "../models/ILicenseStatus";
 import { ApiError } from "../services/Api/ApiError";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
@@ -31,16 +35,50 @@ const listOf = <T>(query: UseQueryResult<T[]>): T[] | undefined =>
 		? []
 		: undefined);
 
+const LICENSE_STATUS_KEY = ["licenseStatus"] as const;
+
 /** The one place the license is read for gating: every gate and the header icon share this query. */
 export const useLicenseStatusQuery = () => {
 	const { licensingService } = useContext(ApiServiceContext);
 
 	return useQuery({
-		queryKey: ["licenseStatus"],
+		queryKey: LICENSE_STATUS_KEY,
 		queryFn: () => licensingService.getLicenseStatus(),
 		staleTime: 1000 * 60 * 5,
 		refetchInterval: 1000 * 60 * 60,
 	});
+};
+
+/** Why the license cannot be relied on yet: while it is unread, Premium is neither granted nor refused. */
+export type UnreadLicense = "loading" | "failed";
+
+/** Undefined once the license has been read. */
+export const unreadLicenseOf = (
+	license: ReturnType<typeof useLicenseStatusQuery>,
+): UnreadLicense | undefined => {
+	if (license.isError || license.data === null) return "failed";
+	if (license.data === undefined) return "loading";
+	return undefined;
+};
+
+export const LICENSE_UNREADABLE_MESSAGE = "Could not load the license.";
+
+/** Shows an imported license at once wherever the license is read, then asks the server for the status it keeps. */
+export const useStoreImportedLicense = (): ((
+	imported: ILicenseStatus,
+) => void) => {
+	const queryClient = useQueryClient();
+	return useCallback(
+		(imported: ILicenseStatus) => {
+			queryClient.setQueryData(LICENSE_STATUS_KEY, imported);
+			queryClient
+				.invalidateQueries({ queryKey: LICENSE_STATUS_KEY })
+				.catch((error) => {
+					console.error("Error refreshing the license status:", error);
+				});
+		},
+		[queryClient],
+	);
 };
 
 export const useLicenseRestrictions = (): LicenseRestrictions => {

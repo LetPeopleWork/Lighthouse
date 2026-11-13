@@ -19,7 +19,10 @@ import DeleteConfirmationDialog from "../../components/Common/DeleteConfirmation
 import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
 import OnboardingStepper from "../../components/Common/OnboardingStepper/OnboardingStepper";
-import { useForgetConfiguredConnections } from "../../hooks/useConfiguredConnections";
+import {
+	CONNECTIONS_REFUSED_MESSAGE,
+	useForgetConfiguredConnections,
+} from "../../hooks/useConfiguredConnections";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
@@ -39,7 +42,6 @@ import {
 	reportsQueryKeyOf,
 } from "../Common/Reports/reportOwner";
 import { useOwnerReports } from "../Common/Reports/useOwnerReports";
-import { CONNECTIONS_REFUSED_MESSAGE } from "../Settings/Connections/ConnectionsSettings";
 import ConnectFirstHint from "./ConnectFirstHint";
 
 /** What goes with a Team or Portfolio besides itself, said once its reports have been counted. */

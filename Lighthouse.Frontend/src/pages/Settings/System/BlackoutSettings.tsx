@@ -24,6 +24,10 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { LicenseTooltip } from "../../../components/App/License/LicenseToolTip";
 import WeeklyRecurrenceFields from "../../../components/Common/WeeklyRecurrence/WeeklyRecurrenceFields";
+import {
+	LICENSE_UNREADABLE_MESSAGE,
+	type UnreadLicense,
+} from "../../../hooks/useLicenseRestrictions";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type {
 	DayOfWeek,
@@ -65,7 +69,7 @@ const messageFromError = (error: unknown, fallback: string): string =>
 interface BlackoutSettingsProps {
 	isPremium: boolean;
 	/** Set while the license has not been read: Premium is then neither granted nor refused. */
-	licenseUnknown?: "loading" | "failed";
+	licenseUnknown?: UnreadLicense;
 }
 
 const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({
@@ -321,7 +325,7 @@ const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({
 
 			{licenseUnknown === "failed" && (
 				<Alert severity="error" sx={{ mb: 2 }}>
-					Could not load the license.
+					{LICENSE_UNREADABLE_MESSAGE}
 				</Alert>
 			)}
 

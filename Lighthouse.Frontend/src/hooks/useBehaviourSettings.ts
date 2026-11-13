@@ -5,7 +5,10 @@ import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import { UsageDataEventName } from "../services/Api/UsageDataService";
 import { usageDataOptionalFeatureFor } from "../services/UsageData/usageDataOptionalFeatures";
 import { useUsageDataReporter } from "../services/UsageData/usageDataReporter";
-import { useLicenseStatusQuery } from "./useLicenseRestrictions";
+import {
+	unreadLicenseOf,
+	useLicenseStatusQuery,
+} from "./useLicenseRestrictions";
 
 const OPTIONAL_FEATURES_KEY = ["optionalFeatures"] as const;
 
@@ -82,10 +85,8 @@ export const useBehaviourSettings = (
 		keys.includes(setting.key),
 	);
 	const needsLicense = settings.some((setting) => setting.isPremium);
-	if (needsLicense) {
-		if (license.isError || license.data === null) return { status: "failed" };
-		if (license.data === undefined) return { status: "loading" };
-	}
+	const unreadLicense = needsLicense ? unreadLicenseOf(license) : undefined;
+	if (unreadLicense) return { status: unreadLicense };
 
 	return {
 		status: "ready",

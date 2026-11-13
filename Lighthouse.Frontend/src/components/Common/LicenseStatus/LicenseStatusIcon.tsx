@@ -2,10 +2,12 @@ import SecurityIcon from "@mui/icons-material/Security";
 import IconButton from "@mui/material/IconButton";
 import { useTheme } from "@mui/material/styles";
 import Tooltip from "@mui/material/Tooltip";
-import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
-import { useLicenseStatusQuery } from "../../../hooks/useLicenseRestrictions";
+import {
+	useLicenseStatusQuery,
+	useStoreImportedLicense,
+} from "../../../hooks/useLicenseRestrictions";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import {
 	errorColor,
@@ -16,7 +18,7 @@ import LicenseStatusPopover from "./LicenseStatusPopover";
 
 const LicenseStatusIcon: React.FC = () => {
 	const theme = useTheme();
-	const queryClient = useQueryClient();
+	const storeImportedLicense = useStoreImportedLicense();
 	const [anchorEl, setAnchorEl] = useState<HTMLButtonElement | null>(null);
 
 	const { data: licenseStatus, isLoading, error } = useLicenseStatusQuery();
@@ -30,15 +32,7 @@ const LicenseStatusIcon: React.FC = () => {
 	};
 
 	const handleLicenseImported = (newLicenseStatus: ILicenseStatus) => {
-		// Invalidate the license status query to refetch
-		queryClient
-			.invalidateQueries({ queryKey: ["licenseStatus"] })
-			.catch((error_) => {
-				console.error("Error refreshing the license status:", error_);
-			});
-		// Update the cache immediately with the new data
-		queryClient.setQueryData(["licenseStatus"], newLicenseStatus);
-		// Close the popover
+		storeImportedLicense(newLicenseStatus);
 		handleClose();
 	};
 

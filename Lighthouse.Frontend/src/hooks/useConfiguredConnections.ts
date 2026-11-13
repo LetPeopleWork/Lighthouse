@@ -13,6 +13,9 @@ export type ConfiguredConnectionsState =
 	| { status: "failed" }
 	| { status: "ready"; connections: IWorkTrackingSystemConnection[] };
 
+export const CONNECTIONS_REFUSED_MESSAGE =
+	"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.";
+
 const isRefusal = (error: unknown): boolean =>
 	error instanceof ApiError && error.code === 403;
 

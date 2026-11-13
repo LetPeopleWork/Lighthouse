@@ -22,6 +22,7 @@ import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import {
+	CONNECTIONS_REFUSED_MESSAGE,
 	useConfiguredConnections,
 	useForgetConfiguredConnections,
 } from "../../../hooks/useConfiguredConnections";
@@ -46,9 +47,6 @@ const linkStyle = (color: string) => ({
 });
 
 const underlineOnHover = { "&:hover": { textDecoration: "underline" } };
-
-export const CONNECTIONS_REFUSED_MESSAGE =
-	"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.";
 
 /** The configured connections, once the list is known: their reconnect banners and the list with Edit and Delete. */
 const ConnectionsList: React.FC<{
