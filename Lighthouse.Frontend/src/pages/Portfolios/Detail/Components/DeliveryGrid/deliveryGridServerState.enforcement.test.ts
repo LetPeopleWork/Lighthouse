@@ -62,9 +62,15 @@ describe("the Deliveries folder's server state", () => {
 		expect(filesCalling("getFeaturesByIds")).toContain(
 			"useDeliveryFormQueries.ts",
 		);
-		expect(filesCalling("getFeaturesByIds")).not.toContain(
+		for (const dialogFile of [
 			"DeliveryCreateModal.tsx",
-		);
+			"deliveryFormRules.ts",
+			"DeliverySelectionContent.tsx",
+			"DeliverySelectionTabRow.tsx",
+			"DeliveryDialogParts.tsx",
+		]) {
+			expect(filesCalling("getFeaturesByIds")).not.toContain(dialogFile);
+		}
 	});
 
 	it("keeps no server answers in a store of its own that outlives a render", () => {

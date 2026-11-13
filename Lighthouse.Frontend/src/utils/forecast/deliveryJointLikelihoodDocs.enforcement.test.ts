@@ -35,10 +35,17 @@ const conceptPage = resolve(
 	"docs/concepts/howlighthouseforecasts.md",
 );
 const releaseNotes = resolve(repoRoot, "docs/releasenotes/releasenotes.md");
-const deliverySection = resolve(
+const deliveryGridFolder = resolve(
 	here,
-	"../../pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+	"../../pages/Portfolios/Detail/Components/DeliveryGrid",
 );
+const deliverySectionFiles = [
+	"DeliverySection.tsx",
+	"UnbindConfirmationDialog.tsx",
+	"WorkItemsTab.tsx",
+	"deliveryFeatureRow.tsx",
+	"deliveryHeaderCopy.tsx",
+].map((file) => resolve(deliveryGridFolder, file));
 
 function read(path: string): string {
 	return readFileSync(path, "utf8");
@@ -153,12 +160,15 @@ describe("delivery joint likelihood docs must not overclaim (Story #5587 slice-0
 		// D3 chose docs-only. The failure this catches is a well-meant "why did my number change?"
 		// banner appearing in DELIVER, which is the one thing the decision ruled out — no dismissible-
 		// notice mechanism exists and building one for a single-release message is disproportionate.
-		// Scoped to DeliverySection: the trend-annotation half of AC-04.7 lives in the chart components
-		// and is a diff-review item, not a greppable one.
-		const source = read(deliverySection);
+		// Scoped to the Delivery section, which is DeliverySection and the files split out of it: the
+		// trend-annotation half of AC-04.7 lives in the chart components and is a diff-review item,
+		// not a greppable one.
+		for (const file of deliverySectionFiles) {
+			const source = read(file);
 
-		expect(source).not.toMatch(/\bAlert\b/);
-		expect(source).not.toMatch(/\bSnackbar\b/);
-		expect(source).not.toMatch(/dismiss/i);
+			expect(source, file).not.toMatch(/\bAlert\b/);
+			expect(source, file).not.toMatch(/\bSnackbar\b/);
+			expect(source, file).not.toMatch(/dismiss/i);
+		}
 	});
 });
