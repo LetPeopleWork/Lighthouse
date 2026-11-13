@@ -260,3 +260,12 @@ export const visibleTabsOf = (
 
 export const visibleAreasOf = (access: SettingsAccess): SettingsArea[] =>
 	SETTINGS_AREAS.filter((area) => visibleTabsOf(area.slug, access).length > 0);
+
+const CONNECTIONS_ROOT = "/connections";
+
+/** Where a new connection is set up. */
+export const newConnectionPath = (): string => `${CONNECTIONS_ROOT}/new`;
+
+/** Where an existing connection is edited. */
+export const editConnectionPath = (connectionId: number | null): string =>
+	`${CONNECTIONS_ROOT}/${connectionId}/edit`;
