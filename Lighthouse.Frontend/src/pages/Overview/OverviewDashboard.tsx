@@ -240,7 +240,6 @@ const OverviewDashboard: React.FC = () => {
 		}
 	};
 
-	// Update URL when filter changes
 	const handleFilterChange = (newFilterText: string) => {
 		setFilterText(newFilterText);
 		const params = new URLSearchParams(location.search);
@@ -335,7 +334,6 @@ const OverviewDashboard: React.FC = () => {
 							</Box>
 						))}
 
-				{/* Header with Add buttons */}
 				<Box
 					sx={{
 						mt: 2,
@@ -405,7 +403,6 @@ const OverviewDashboard: React.FC = () => {
 					</Box>
 				</Box>
 
-				{/* Vertical layout: Portfolios → Teams → Connections (bottom) */}
 				<Box
 					sx={{
 						display: "flex",
