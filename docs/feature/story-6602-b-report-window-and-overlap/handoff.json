@@ -1,7 +1,8 @@
 {
 "counters": {
 "D": 12,
-"F": 142,
+"E": 4,
+"F": 146,
 "K": 9,
 "L": 4,
 "P": 4,
@@ -637,6 +638,38 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F143"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F144"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F145"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F146"
+}
+]
+},
 "facts": {
 "F1": "Story #6602, feature B: move ReportWindowBoundaryScenarios from the web host to the application-service port on a new Reports port base (ReportsAtThePortTest), behaviour-free, leaving HostUsersStillToMove in the commit that moves it; then drop the Slice05NeedAndVerdictTest rows that repeat NeedOverOneCycleTest, each mapped to its twin, and hoist the duplication the feature A reviews carried forward. Design: docs/feature/story-6602-refinement-and-report-window-at-the-port/feature-delta.md",
 "F10": "Folding the host NeedForecastScript into ScriptedForecasts",
@@ -687,6 +720,10 @@
 "F140": "Keeps guarding Refinement port classes; the hoisted builder lives in RefinementPortGivens, which it allows",
 "F141": "Copies of hoisted members removed; base readers used; ids and assertions unchanged",
 "F142": "Only RefinementPortGivens writes Team set-up in a Refinement port class, including the hoisted Gravity ready-rule builder",
+"F143": "A maintainer can run the report-window boundary scenarios as application-service-port tests on a new Reports port base (ReportsAtThePortTest) without starting a web host, and the host-user backlog list (HostUsersStillToMove) no longer names ReportWindowBoundaryScenarios.",
+"F144": "After the move, the same 15 report-window boundary test ids still run at the port, no new wire-level row appears, every earlier assertion is still made, and the port fixture check fails if the Reports port registrations differ from the host's.",
+"F145": "The id comparison for Slice05NeedAndVerdictTest lists exactly the rows dropped; each dropped row has a NeedOverOneCycleTest row proving the same rule with the same inputs, and every other id still exists.",
+"F146": "Each Refinement port test helper that feature A's reviews found duplicated (Gravity ready-rule builder, tab and need readers, shared constants and script, TheTabAsReadBy) is defined once, in the port base or port builder, and not repeated in other Refinement test classes.",
 "F15": "S1 creates a new Reports port base, ReportsAtThePortTest, under API/Integration/Reports, over ServicePortHarness: no candidate owns IReportQueries or IReportCommands at the port (ServicePortHarness users are the Reality Check, Refinement and System-wide-access bases only). It registers the Reports services as Program.RegisterReports does (the 17 registrations) plus what they read: the team and portfolio repositories, the team metrics service, a TimeProvider and an ILicenseService stand-in that answers no premium licence, as the host fixture does. The clock is a FakeLighthouseClock set to nine in the morning of Friday 2 Oct 2026 in Europe/Zurich, the host fixture instant, because the port harness starts on TestToday.FrozenNow. It exposes WhatItRegisters for the port-fixture lifetime check.",
 "F16": "ReportWindowBoundaryScenarios moves to ReportsAtThePortTest keeping its namespace (Lighthouse.Backend.Tests.API.Integration.Reports), class name, method name and TestCaseSource names, so its 15 test ids stay. It drives IReportQueries.Templates and IReportCommands.Create with ReportOwner.Team and a Models.Reports.NewReport. It keeps TheTable, BoundaryTableFile, BoundaryBounds and BoundaryRow internal or public as now, because ReportWindowPolicyTest reads them.",
 "F17": "Port observation of each window row: ReportTemplatesRead.Today and EarliestStart written as yyyy-MM-dd equal the table bounds (EarliestStart null for a Team keeping every finished Work Item), MinimumLengthDays equals 14; a row without a refusal answers ReportOutcomeStatus.Done with a report; a row with a refusal answers ReportOutcomeStatus.Refused with Code equal to the table refusal. HTTP 400 and the JSON text are not observable at the port and need no new wire row: today, earliestStart and minimumLengthDays on the wire are pinned by the hosted Slice01TeamReportScenarios and CreateForSeveralTeamsScenarios, a null earliestStart by Slice02ThenInThePastScenarios, and the 400 with each of the seven window refusal codes by ThenItIsRefusedFor in Slice01 (then-too-long, now-too-long), Slice02 (then-too-short, then-ends-in-the-future, then-before-cutoff) and Slice07NowLengthScenarios (now-too-short, now-before-cutoff), all of which stay on the host. The role check of the POST stays pinned by the hosted classes; the port has none.",
