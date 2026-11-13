@@ -10,6 +10,7 @@ import LoadingAnimation from "../../../components/Common/LoadingAnimation/Loadin
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
 import { useForgetConfiguredConnections } from "../../../hooks/useConfiguredConnections";
 import { useRbacGate } from "../../../hooks/useRbacGate";
+import { connectionsTabPath } from "../../../models/Settings/settingsAreas";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { UsageDataUpdates } from "../../../models/UsageData/UsageData";
 import {
@@ -36,6 +37,16 @@ const savedADefaultWithSeveralParentSources = (
 		nowListsSeveralSources(saved?.[name] ?? [], loaded?.[name] ?? []),
 	);
 
+const BackToConnections: React.FC<{ connectionsTerm: string }> = ({
+	connectionsTerm,
+}) => (
+	<Container maxWidth={false} sx={{ mb: 1 }}>
+		<Link component={RouterLink} to={connectionsTabPath()}>
+			{`Back to ${connectionsTerm}`}
+		</Link>
+	</Container>
+);
+
 const EditConnectionPage: React.FC = () => {
 	const { id } = useParams<{ id?: string }>();
 	const isNewConnection = id === undefined;
@@ -44,6 +55,7 @@ const EditConnectionPage: React.FC = () => {
 
 	const { getTerm } = useTerminology();
 	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const connectionsTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS);
 
 	const pageTitle = isNewConnection
 		? `Create ${connectionTerm} Connection`
@@ -137,7 +149,7 @@ const EditConnectionPage: React.FC = () => {
 				name: UsageDataEventName.ParentSourcesSavedWithSeveralEntries,
 			});
 		}
-		reportFailedNavigation(navigate("/"));
+		reportFailedNavigation(navigate(connectionsTabPath()));
 	};
 
 	const validateConnectionSettings = async (
@@ -172,6 +184,7 @@ const EditConnectionPage: React.FC = () => {
 	if (isNewConnection) {
 		return (
 			<SnackbarErrorHandler>
+				<BackToConnections connectionsTerm={connectionsTerm} />
 				<Container maxWidth={false}>
 					<Typography variant="h4" sx={{ mb: 2 }}>
 						{pageTitle}
@@ -180,10 +193,14 @@ const EditConnectionPage: React.FC = () => {
 						getSupportedSystems={getSupportedSystems}
 						validateConnection={validateConnectionSettings}
 						saveConnection={saveConnectionSettings}
-						onCancel={() => navigate("/")}
+						onCancel={() => {
+							// A draft the wizard saved is deleted on cancel, so the list must be read again.
+							forgetConfiguredConnections();
+							reportFailedNavigation(navigate(connectionsTabPath()));
+						}}
 						onComplete={() => {
 							forgetConfiguredConnections();
-							reportFailedNavigation(navigate("/"));
+							reportFailedNavigation(navigate(connectionsTabPath()));
 						}}
 					/>
 				</Container>
@@ -224,6 +241,7 @@ const EditConnectionPage: React.FC = () => {
 
 	return (
 		<SnackbarErrorHandler>
+			<BackToConnections connectionsTerm={connectionsTerm} />
 			<ModifyConnectionSettings
 				key={connectionId}
 				title={pageTitle}

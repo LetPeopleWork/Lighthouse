@@ -863,7 +863,7 @@ test.describe("@rbac E2E", () => {
 				overview.page.getByLabel("Name", { exact: true }),
 			).toHaveCount(0);
 
-			await overview.page.goto("/connections/new");
+			await overview.page.goto("/settings/system/connections/new");
 			await expect(
 				overview.page.getByTestId("connection-edit-no-access-alert"),
 			).toBeVisible();

@@ -271,11 +271,17 @@ export const visibleTabsOf = (
 export const visibleAreasOf = (access: SettingsAccess): SettingsArea[] =>
 	SETTINGS_AREAS.filter((area) => visibleTabsOf(area.slug, access).length > 0);
 
-const CONNECTIONS_ROOT = "/connections";
+/** The Connections tab, where every way to a connection ends and every connection page leads back. */
+export const connectionsTabPath = (): string =>
+	settingsTabPath("system", "connections");
+
+/** The route patterns of the connection pages, for the router. */
+export const NEW_CONNECTION_ROUTE = `${connectionsTabPath()}/new`;
+export const EDIT_CONNECTION_ROUTE = `${connectionsTabPath()}/:id/edit`;
 
 /** Where a new connection is set up. */
-export const newConnectionPath = (): string => `${CONNECTIONS_ROOT}/new`;
+export const newConnectionPath = (): string => NEW_CONNECTION_ROUTE;
 
 /** Where an existing connection is edited. */
 export const editConnectionPath = (connectionId: number | null): string =>
-	`${CONNECTIONS_ROOT}/${connectionId}/edit`;
+	`${connectionsTabPath()}/${connectionId}/edit`;

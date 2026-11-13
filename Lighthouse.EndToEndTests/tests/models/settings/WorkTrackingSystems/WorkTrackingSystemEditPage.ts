@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 import { LighthousePage } from "../../app/LighthousePage";
-import { OverviewPage } from "../../overview/OverviewPage";
+import type { OverviewPage } from "../../overview/OverviewPage";
 
 export class WorkTrackingSystemEditPage {
 	page: Page;
@@ -19,8 +19,11 @@ export class WorkTrackingSystemEditPage {
 
 	async create(): Promise<OverviewPage> {
 		await this.createButton.click();
+		await this.page.waitForURL(
+			(url) => url.pathname === "/settings/system/connections",
+		);
 
-		return new OverviewPage(this.page, new LighthousePage(this.page));
+		return new LighthousePage(this.page).goToOverview();
 	}
 
 	async scrollToTop(): Promise<void> {
@@ -70,8 +73,11 @@ export class WorkTrackingSystemEditPage {
 		const dialog = this.page.getByRole("dialog", { name: question });
 		await dialog.getByRole("button", { name: answer, exact: true }).click();
 		await dialog.waitFor({ state: "detached" });
+		await this.page.waitForURL(
+			(url) => url.pathname === "/settings/system/connections",
+		);
 
-		return new OverviewPage(this.page, new LighthousePage(this.page));
+		return new LighthousePage(this.page).goToOverview();
 	}
 
 	get reconnectBanner(): Locator {

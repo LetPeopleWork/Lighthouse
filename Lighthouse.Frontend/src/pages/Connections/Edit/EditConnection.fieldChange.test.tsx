@@ -351,7 +351,9 @@ const theChoiceTheSaveCarried = (
 ) => vi.mocked(server.updateWorkTrackingSystemConnection).mock.calls[0][1];
 
 const thenSheIsBackOnTheOverview = () =>
-	waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+	waitFor(() =>
+		expect(mockNavigate).toHaveBeenCalledWith("/settings/system/connections"),
+	);
 
 const thenNoQuestionIsAsked = () =>
 	expect(

@@ -3,13 +3,20 @@ import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
 import ErrorIcon from "@mui/icons-material/Error";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Link from "@mui/material/Link";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { useNavigate } from "react-router";
+import { Link as RouterLink, useNavigate } from "react-router";
+import {
+	connectionsTabPath,
+	editConnectionPath,
+} from "../../../../models/Settings/settingsAreas";
+import { TERMINOLOGY_KEYS } from "../../../../models/TerminologyKeys";
 import type {
 	ConnectionHealthState,
 	IConnectionHealth,
 } from "../../../../services/Api/ConnectionHealthService";
+import { useTerminology } from "../../../../services/TerminologyContext";
 import { CONNECTION_STATE_WORDING, isBroken } from "./connectionHealthWording";
 
 /**
@@ -58,66 +65,81 @@ const ConnectionsSection = ({
 	onTest,
 }: ConnectionsSectionProps) => {
 	const navigate = useNavigate();
+	const { getTerm } = useTerminology();
+	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const connectionsTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS);
+
+	const manageLink = (
+		<Link component={RouterLink} to={connectionsTabPath()} variant="body2">
+			{`Manage ${connectionsTerm}`}
+		</Link>
+	);
 
 	if (connections.length === 0) {
 		return (
 			<Typography variant="body2" color="text.secondary">
-				No connections are configured.
+				{`No ${connectionsTerm} are configured. `}
+				{manageLink}
 			</Typography>
 		);
 	}
 
-	return connections.map((connection) => (
-		<Box
-			key={connection.connectionId}
-			data-testid={`connection-health-${connection.connectionId}`}
-			sx={{ py: 0.5 }}
-		>
-			<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-				<ConnectionState connection={connection} />
-
-				<Typography
-					data-testid={`connection-health-row-${connection.connectionId}`}
-					variant="body2"
-					sx={{ flexGrow: 1 }}
+	return (
+		<>
+			{connections.map((connection) => (
+				<Box
+					key={connection.connectionId}
+					data-testid={`connection-health-${connection.connectionId}`}
+					sx={{ py: 0.5 }}
 				>
-					{connection.connectionName}
-				</Typography>
+					<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+						<ConnectionState connection={connection} />
 
-				<Button
-					size="small"
-					onClick={() => onTest(connection)}
-					aria-label={`Test connection ${connection.connectionName}`}
-				>
-					Test connection
-				</Button>
+						<Typography
+							data-testid={`connection-health-row-${connection.connectionId}`}
+							variant="body2"
+							sx={{ flexGrow: 1 }}
+						>
+							{connection.connectionName}
+						</Typography>
 
-				<Button
-					size="small"
-					onClick={() =>
-						navigate(`/connections/${connection.connectionId}/edit`)
-					}
-					aria-label={`Edit connection ${connection.connectionName}`}
-				>
-					Edit
-				</Button>
-			</Box>
+						<Button
+							size="small"
+							onClick={() => onTest(connection)}
+							aria-label={`Test ${connectionTerm} ${connection.connectionName}`}
+						>
+							{`Test ${connectionTerm}`}
+						</Button>
 
-			{/* The state says something is wrong; this is the half that says what to do about it, and it
+						<Button
+							size="small"
+							onClick={() =>
+								navigate(editConnectionPath(connection.connectionId))
+							}
+							aria-label={`Edit ${connectionTerm} ${connection.connectionName}`}
+						>
+							Edit
+						</Button>
+					</Box>
+
+					{/* The state says something is wrong; this is the half that says what to do about it, and it
 			    is the difference between reissuing the right credential and the wrong one. Shown rather
 			    than tucked into a tooltip: nobody hovers a row to find out whether they need to. */}
-			{isBroken(connection) && connection.message ? (
-				<Typography
-					data-testid={`connection-health-explanation-${connection.connectionId}`}
-					variant="caption"
-					color="text.secondary"
-					sx={{ display: "block" }}
-				>
-					{connection.message}
-				</Typography>
-			) : null}
-		</Box>
-	));
+					{isBroken(connection) && connection.message ? (
+						<Typography
+							data-testid={`connection-health-explanation-${connection.connectionId}`}
+							variant="caption"
+							color="text.secondary"
+							sx={{ display: "block" }}
+						>
+							{connection.message}
+						</Typography>
+					) : null}
+				</Box>
+			))}
+			<Box sx={{ pt: 0.5 }}>{manageLink}</Box>
+		</>
+	);
 };
 
 export default ConnectionsSection;

@@ -15,6 +15,7 @@ import type React from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import type { LicenseCheckStatus } from "../../../hooks/useLicenseRestrictions";
+import { newConnectionPath } from "../../../models/Settings/settingsAreas";
 import { LicenseTooltip } from "../../App/License/LicenseToolTip";
 
 const DISMISSED_KEY = "lighthouse-hide-onboarding-stepper";
@@ -87,8 +88,8 @@ const OnboardingStepper: React.FC<OnboardingStepperProps> = ({
 		{
 			label: "Connect",
 			description: `Set up a ${connectionTerm} to connect with your data.`,
-			action: () => navigate("/connections/new"),
-			actionLabel: `Add ${connectionTerm}`,
+			action: () => navigate(newConnectionPath()),
+			actionLabel: `Connect ${connectionTerm}`,
 			enabled: true,
 			licenseGated: false,
 		},

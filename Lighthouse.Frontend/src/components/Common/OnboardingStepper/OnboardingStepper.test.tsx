@@ -91,14 +91,14 @@ describe("OnboardingStepper", () => {
 	});
 
 	describe("CTA label", () => {
-		it("shows Add Connection when no connections exist", () => {
+		it("shows Connect Connection when no connections exist", () => {
 			render(
 				<MemoryRouter>
 					<OnboardingStepper {...defaultProps} />
 				</MemoryRouter>,
 			);
 			expect(screen.getByTestId("onboarding-cta")).toHaveTextContent(
-				"Add Connection",
+				"Connect Connection",
 			);
 		});
 
@@ -199,7 +199,7 @@ describe("OnboardingStepper", () => {
 	});
 
 	describe("Navigation", () => {
-		it("navigates to /connections/new when Add Connection CTA is clicked", async () => {
+		it("navigates to the new connection page under System when the Connect CTA is clicked", async () => {
 			const user = userEvent.setup();
 			render(
 				<MemoryRouter>
@@ -207,7 +207,9 @@ describe("OnboardingStepper", () => {
 				</MemoryRouter>,
 			);
 			await user.click(screen.getByTestId("onboarding-cta"));
-			expect(mockNavigate).toHaveBeenCalledWith("/connections/new");
+			expect(mockNavigate).toHaveBeenCalledWith(
+				"/settings/system/connections/new",
+			);
 		});
 
 		it("navigates to /teams/new when Add Team CTA is clicked", async () => {

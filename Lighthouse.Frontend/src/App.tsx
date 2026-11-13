@@ -43,9 +43,6 @@ const OverviewDashboard = lazy(
 const OAuthPopupComplete = lazy(
 	() => import("./components/Common/Connections/OAuthPopupComplete"),
 );
-const EditConnection = lazy(
-	() => import("./pages/Connections/Edit/EditConnection"),
-);
 const PortfolioDetail = lazy(
 	() => import("./pages/Portfolios/Detail/PortfolioDetail"),
 );
@@ -256,10 +253,6 @@ const App: React.FC = () => {
 										path="/oauth/popup-complete"
 										element={<OAuthPopupComplete />}
 									/>
-									<Route path="/connections">
-										<Route path="new" element={<EditConnection />} />
-										<Route path=":id/edit" element={<EditConnection />} />
-									</Route>
 									<Route path="/teams">
 										<Route path=":id/:tab?" element={<TeamDetail />} />
 										<Route path=":id/:tab/:reportId" element={<TeamDetail />} />

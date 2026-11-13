@@ -133,7 +133,7 @@ const renderIconWithConnections = (
 				    route goes to this connection" are different claims. */}
 				<Routes>
 					<Route
-						path="/connections/:connectionId/edit"
+						path="/settings/system/connections/:connectionId/edit"
 						element={<EditConnectionPage />}
 					/>
 				</Routes>
@@ -1105,7 +1105,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test connection Jira Cloud/i,
+					name: /test workTrackingSystem Jira Cloud/i,
 				}),
 			);
 
@@ -1127,7 +1127,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test connection Jira Cloud/i,
+					name: /test workTrackingSystem Jira Cloud/i,
 				}),
 			);
 
@@ -1148,7 +1148,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test connection Jira Cloud/i,
+					name: /test workTrackingSystem Jira Cloud/i,
 				}),
 			);
 
@@ -1168,7 +1168,7 @@ describe("TaskManagerIcon", () => {
 
 			expect(
 				await screen.findByRole("button", {
-					name: /edit connection Jira Cloud/i,
+					name: /edit workTrackingSystem Jira Cloud/i,
 				}),
 			).toBeInTheDocument();
 		});
@@ -1254,7 +1254,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /edit connection Jira Cloud/i,
+					name: /edit workTrackingSystem Jira Cloud/i,
 				}),
 			);
 
@@ -1270,7 +1270,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 
 			expect(
-				await screen.findByText(/no connections are configured/i),
+				await screen.findByText(/no workTrackingSystems are configured/i),
 			).toBeInTheDocument();
 		});
 
@@ -1398,7 +1398,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test connection Jira Cloud/i,
+					name: /test workTrackingSystem Jira Cloud/i,
 				}),
 			);
 

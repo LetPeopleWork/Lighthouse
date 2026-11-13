@@ -4,13 +4,14 @@ import {
 	Box,
 	CircularProgress,
 	Container,
+	Link,
 	Tooltip,
 	Typography,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import ActionButton from "../../components/Common/ActionButton/ActionButton";
 import ReconnectBanner from "../../components/Common/Connections/ReconnectBanner";
@@ -25,6 +26,7 @@ import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IReportOwner } from "../../models/Reports/Report";
+import { connectionsTabPath } from "../../models/Settings/settingsAreas";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -93,6 +95,25 @@ const OwnerDeleteDialog: React.FC<{
 			onConfirm={onConfirm}
 			onCancel={onCancel}
 		/>
+	);
+};
+
+/** Says where to connect the first connection, under the Add buttons it keeps disabled. */
+const ConnectFirstHint: React.FC<{
+	hasConnections: boolean;
+	connectionTerm: string;
+}> = ({ hasConnections, connectionTerm }) => {
+	const { isLoading, isSystemAdmin } = useRbac();
+	if (isLoading || !isSystemAdmin || hasConnections) {
+		return null;
+	}
+	return (
+		<Typography variant="body2" color="text.secondary">
+			{`Connect a ${connectionTerm} first: `}
+			<Link component={RouterLink} to={connectionsTabPath()}>
+				Settings › System › Connections
+			</Link>
+		</Typography>
 	);
 };
 
@@ -355,56 +376,69 @@ const OverviewDashboard: React.FC = () => {
 						component="h1"
 						sx={{ fontWeight: 600 }}
 					></Typography>
-					<Box sx={{ display: "flex", gap: 2 }}>
-						{rbac.canCreateTeam && (
-							<Tooltip
-								title={
-									rbac.isSystemAdmin && !hasConnections
-										? `Create a ${connectionTerm} before adding a ${teamTerm}`
-										: ""
-								}
-							>
-								<span>
-									<LicenseTooltip
-										canUseFeature={canCreateTeam}
-										checkStatus={licenseCheckStatus}
-										defaultTooltip=""
-										premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
-									>
-										<span>
-											<ActionButton
-												buttonText={`Add ${teamTerm}`}
-												startIcon={<AddIcon />}
-												onClickHandler={handleAddTeam}
-												buttonVariant="contained"
-												disabled={
-													!canCreateTeam ||
-													(rbac.isSystemAdmin && !hasConnections)
-												}
-											/>
-										</span>
-									</LicenseTooltip>
-								</span>
-							</Tooltip>
-						)}
-						{rbac.canCreatePortfolio && (
-							<LicenseTooltip
-								canUseFeature={canCreatePortfolio}
-								checkStatus={licenseCheckStatus}
-								defaultTooltip=""
-								premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
-							>
-								<span>
-									<ActionButton
-										buttonText={`Add ${portfolioTerm}`}
-										startIcon={<AddIcon />}
-										onClickHandler={handleAddPortfolio}
-										buttonVariant="contained"
-										disabled={!canCreatePortfolio}
-									/>
-								</span>
-							</LicenseTooltip>
-						)}
+					<Box
+						sx={{
+							display: "flex",
+							flexDirection: "column",
+							alignItems: "flex-end",
+							gap: 1,
+						}}
+					>
+						<Box sx={{ display: "flex", gap: 2 }}>
+							{rbac.canCreateTeam && (
+								<Tooltip
+									title={
+										rbac.isSystemAdmin && !hasConnections
+											? `Create a ${connectionTerm} before adding a ${teamTerm}`
+											: ""
+									}
+								>
+									<span>
+										<LicenseTooltip
+											canUseFeature={canCreateTeam}
+											checkStatus={licenseCheckStatus}
+											defaultTooltip=""
+											premiumExtraInfo={`Free users can only create up to ${maxTeamsWithoutPremium} teams`}
+										>
+											<span>
+												<ActionButton
+													buttonText={`Add ${teamTerm}`}
+													startIcon={<AddIcon />}
+													onClickHandler={handleAddTeam}
+													buttonVariant="contained"
+													disabled={
+														!canCreateTeam ||
+														(rbac.isSystemAdmin && !hasConnections)
+													}
+												/>
+											</span>
+										</LicenseTooltip>
+									</span>
+								</Tooltip>
+							)}
+							{rbac.canCreatePortfolio && (
+								<LicenseTooltip
+									canUseFeature={canCreatePortfolio}
+									checkStatus={licenseCheckStatus}
+									defaultTooltip=""
+									premiumExtraInfo={`Free users can only create up to ${maxPortfoliosWithoutPremium} portfolio`}
+								>
+									<span>
+										<ActionButton
+											buttonText={`Add ${portfolioTerm}`}
+											startIcon={<AddIcon />}
+											onClickHandler={handleAddPortfolio}
+											buttonVariant="contained"
+											disabled={!canCreatePortfolio}
+										/>
+									</span>
+								</LicenseTooltip>
+							)}
+						</Box>
+						<ConnectFirstHint
+							hasConnections={hasConnections}
+							connectionTerm={connectionTerm}
+						/>
 					</Box>
 				</Box>
 

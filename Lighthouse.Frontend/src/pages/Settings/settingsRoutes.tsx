@@ -4,9 +4,24 @@ import { lazy } from "react";
 import { Navigate, Route, useLocation, useParams } from "react-router";
 import { useRbac } from "../../hooks/useRbac";
 import { resolveSettingsLocation } from "../../models/Settings/resolveSettingsLocation";
-import { settingsTabPath } from "../../models/Settings/settingsAreas";
+import {
+	EDIT_CONNECTION_ROUTE,
+	editConnectionPath,
+	NEW_CONNECTION_ROUTE,
+	newConnectionPath,
+	settingsTabPath,
+} from "../../models/Settings/settingsAreas";
 
 const SettingsAreaPage = lazy(() => import("./SettingsAreaPage"));
+const EditConnection = lazy(() => import("../Connections/Edit/EditConnection"));
+
+/** An old bookmark to a connection's edit page keeps its connection. */
+const OldEditConnectionAddress: React.FC = () => {
+	const { id } = useParams();
+	return (
+		<Navigate to={editConnectionPath(Number.parseInt(id ?? "", 10))} replace />
+	);
+};
 
 /** Asks the resolver what the address opens, and acts on the answer: wait, move on, or show the area. */
 const SettingsAddress: React.FC = () => {
@@ -46,6 +61,16 @@ export const settingsRoutes = (): React.ReactElement => (
 		<Route
 			path="/settings/license"
 			element={<Navigate to={settingsTabPath("system", "license")} replace />}
+		/>
+		<Route path={NEW_CONNECTION_ROUTE} element={<EditConnection />} />
+		<Route path={EDIT_CONNECTION_ROUTE} element={<EditConnection />} />
+		<Route
+			path="/connections/new"
+			element={<Navigate to={newConnectionPath()} replace />}
+		/>
+		<Route
+			path="/connections/:id/edit"
+			element={<OldEditConnectionAddress />}
 		/>
 		<Route path="/settings/:area/:tab?" element={<SettingsAddress />} />
 	</>

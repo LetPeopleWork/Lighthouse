@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 import { LighthousePage } from "../../app/LighthousePage";
-import { OverviewPage } from "../../overview/OverviewPage";
+import type { OverviewPage } from "../../overview/OverviewPage";
 
 export class WorkTrackingSystemCreateWizard {
 	page: Page;
@@ -31,9 +31,11 @@ export class WorkTrackingSystemCreateWizard {
 		await this.page
 			.getByRole("button", { name: "Create", exact: true })
 			.click();
-		// The app leaves the wizard only once the connection is saved; moving on sooner cancels the save.
-		await this.page.waitForURL((url) => url.pathname === "/");
-		return new OverviewPage(this.page, new LighthousePage(this.page));
+		// The app leaves the wizard for System, Connections only once the connection is saved; moving on sooner cancels the save.
+		await this.page.waitForURL(
+			(url) => url.pathname === "/settings/system/connections",
+		);
+		return new LighthousePage(this.page).goToOverview();
 	}
 
 	async selectAuthenticationMethod(displayName: string): Promise<void> {

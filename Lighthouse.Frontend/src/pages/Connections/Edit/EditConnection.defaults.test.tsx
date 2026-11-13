@@ -892,7 +892,11 @@ describe("defaults set once on the connection", () => {
 				startUpdates: true,
 				additionalFieldsChanged: true,
 			});
-			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+			await waitFor(() =>
+				expect(mockNavigate).toHaveBeenCalledWith(
+					"/settings/system/connections",
+				),
+			);
 			expect(theFieldsChangedEventsSent()).toHaveLength(1);
 		});
 
@@ -906,7 +910,11 @@ describe("defaults set once on the connection", () => {
 			await whenSheAnswers(TheUpdateQuestion, "Save and update");
 
 			await theSaveIsSent(server);
-			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+			await waitFor(() =>
+				expect(mockNavigate).toHaveBeenCalledWith(
+					"/settings/system/connections",
+				),
+			);
 			expect(theFieldsChangedEventsSent()).toEqual([]);
 		});
 	});
@@ -929,7 +937,11 @@ describe("defaults set once on the connection", () => {
 			await whenSheAnswers(TheUpdateQuestion, "Save only");
 
 			await theSaveIsSent(server);
-			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+			await waitFor(() =>
+				expect(mockNavigate).toHaveBeenCalledWith(
+					"/settings/system/connections",
+				),
+			);
 			expect(theParentSourcesEventsSent()).toEqual([
 				{ name: "ParentSourcesSavedWithSeveralEntries" },
 			]);
@@ -945,7 +957,11 @@ describe("defaults set once on the connection", () => {
 			whenPriyaPressesSave();
 
 			await theSaveIsSent(server);
-			await waitFor(() => expect(mockNavigate).toHaveBeenCalledWith("/"));
+			await waitFor(() =>
+				expect(mockNavigate).toHaveBeenCalledWith(
+					"/settings/system/connections",
+				),
+			);
 			expect(theParentSourcesEventsSent()).toEqual([]);
 		});
 	});
