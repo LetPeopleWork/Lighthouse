@@ -84,6 +84,25 @@ const theFramesSheets = (answer: "load" | "error", held = false) => {
 	};
 };
 
+/**
+ * The frame the factory makes, as a browser that cannot load it answers: with an error, or with nothing at all. The
+ * frame's own load is caught on its way down from the document, so the answer holds whether the engine loads the frame
+ * while it is being put in the page or only later.
+ */
+const theFrameLoads = (answer: "error" | "never") => {
+	const instead = (event: Event) => {
+		const frame = event.target as Node;
+		if (frame.nodeName !== "IFRAME") return;
+		event.stopImmediatePropagation();
+		if (answer === "error") frame.dispatchEvent(new Event("error"));
+	};
+	document.addEventListener("load", instead, { capture: true });
+	return {
+		stop: () =>
+			document.removeEventListener("load", instead, { capture: true }),
+	};
+};
+
 /** The app's own head as the built app carries it: a style sheet, a rule of its own, and one Emotion wrote. */
 const theAppsHead = () => {
 	const sheet = document.createElement("link");
@@ -545,33 +564,29 @@ describe("the print frame an export draws the report into", () => {
 	});
 
 	it(`says the frame itself could not be loaded, and takes it away, when the browser cannot load it`, async () => {
-		const failing = new MutationObserver((changes) => {
-			for (const change of changes) {
-				for (const node of Array.from(change.addedNodes)) {
-					if (node.nodeName === "IFRAME")
-						node.dispatchEvent(new Event("error"));
-				}
-			}
-		});
-		failing.observe(document.body, { childList: true });
+		const failing = theFrameLoads("error");
 		try {
 			await expect(openPrintFrame()).rejects.toThrow(
 				/^The print frame could not be loaded$/,
 			);
 			expect(document.querySelectorAll("iframe")).toHaveLength(0);
 		} finally {
-			failing.disconnect();
+			failing.stop();
 		}
 	});
 
 	it(`stops waiting, and takes the frame away, once the caller gives up before it has loaded`, async () => {
 		const givingUp = new AbortController();
+		const stillLoading = theFrameLoads("never");
+		try {
+			const opening = openPrintFrame(givingUp.signal);
+			givingUp.abort();
 
-		const opening = openPrintFrame(givingUp.signal);
-		givingUp.abort();
-
-		await expect(opening).rejects.toThrow(/^The print frame was given up$/);
-		expect(document.querySelectorAll("iframe")).toHaveLength(0);
+			await expect(opening).rejects.toThrow(/^The print frame was given up$/);
+			expect(document.querySelectorAll("iframe")).toHaveLength(0);
+		} finally {
+			stillLoading.stop();
+		}
 	});
 
 	it(`takes away exactly the frame it made when closed, and leaves the rest of the page as it was`, async () => {
