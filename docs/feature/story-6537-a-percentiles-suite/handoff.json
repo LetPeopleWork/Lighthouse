@@ -1,0 +1,122 @@
+{
+"counters": {
+"E": 3,
+"F": 12,
+"P": 3,
+"S": 1
+},
+"design": {
+"paradigm": "object_oriented",
+"slices": {
+"S1": {
+"oracle": "docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py",
+"public_oracle": {
+"expected": "F8",
+"falsifier": "F9",
+"promises": [
+"P1",
+"P2",
+"P3"
+],
+"stimulus": "F7"
+},
+"supports": [
+"docs/feature/story-6537-a-percentiles-suite/evidence/s1-expected-ids.txt"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedScenarios.cs"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice07WhereTheLimitsActuallyMovedSpecifications.cs"
+}
+],
+"verification": [
+"python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F10"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F11"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F12"
+}
+]
+},
+"facts": {
+"F1": "Story 6537 (T10), suite 1: the PercentilesOverTime family. Move each rule its host tests prove to the lowest layer that can prove it (a unit test of the computing class, else the service port), or rewrite it there on a smaller input where the host row is slow in its history fill (the maintainer said yes to rewrites on 2026-11-13). Start with the pilot class Slice07WhereTheLimitsActuallyMovedTest. Behaviour-free: no production file changes.",
+"F10": "A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and the tier takes less time than before.",
+"F11": "Every removed PercentilesOverTime host test has a row in the id table naming the lower-layer test that now proves its rule, and breaking that rule's production line in a deliberate probe turns that lower-layer test red, so no rule loses its proof.",
+"F12": "Across the change, no production file differs, the test-host guard lists do not grow, and at least one host test per route remains to prove the wiring end to end.",
+"F2": "The backend Integration tier spends far less time re-proving percentile-history rules through a web host, and every rule still has a test that goes red when its production line breaks",
+"F3": "Each rule a PercentilesOverTime host test proves is proven by a test at the lowest layer that can prove it (a unit test of the computing class, else the service port), so the backend Integration tier takes less time",
+"F4": "No rule loses its test: every removed host row has an id-table row naming the test that now proves its rule, and one deliberate break of that rule's production line turns that test red",
+"F5": "No production file changes, the test-host guard lists do not grow, and at least one host row per route still proves the wiring",
+"F6": "Pilot: the rules of Slice07WhereTheLimitsActuallyMovedTest (which limit families a team and a portfolio fill, the not-ready and zero-band gates, the retention edge as of a day, a refilled day reading as the watched day) are proven by unit tests of ProcessBehaviorSnapshotWriter and RetentionEdge; one host row stays for the limits route",
+"F7": "Run Slice07WhereTheLimitsActuallyMovedTest, ProcessBehaviorSnapshotWriterTest and RetentionEdgeTest (Debug, tokens removed), compare their sorted test ids with the expected id list, then apply one deliberate break per moved or rewritten rule in the working tree and run the named unit row",
+"F8": "Slice07WhereTheLimitsActuallyMovedTest holds exactly one row, Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing, and it passes; every other id of the three classes equals the expected list and passes; each of the nine removed host rows maps in the id table to a named unit row; each deliberate break (a family line removed from FamiliesFor, the zero-band gate removed, the retention edge anchored on today instead of the last observed day, FillDayIfAbsent passing asOf null) turns its named unit row red",
+"F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+}
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F6",
+"promises": [
+"P1",
+"P2",
+"P3"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6537-a-percentiles-suite",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
