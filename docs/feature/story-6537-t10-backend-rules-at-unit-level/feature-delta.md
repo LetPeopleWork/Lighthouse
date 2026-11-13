@@ -719,3 +719,23 @@ The maintainer decided on 2026-11-08 to close T9 #6536 with its backend ledger e
 - **T9's criterion 7, the first eligible run with connector tests,** is read from those runs.
 
 T5 #6469 also closed, at its slice E checkpoint. The remaining host-to-port moves of the Refinement and report-window classes are in **Story 6602**. If T10's ranking puts a Refinement or report-window suite in its top two, settle with the maintainer which Story takes it before either starts, so the same class is not moved twice.
+
+## Wave: DELIVER / [REF] Maintainer decisions before DELIVER (2026-11-13)
+
+- **Question 0, the stop line: (a), the line applies to the pair.** T10 stops at step 2 only if the two chosen suites **together**
+  are predicted under the 1 % line. Each suite's own saving is still reported beside it, and a suite under the line alone is named
+  in the note, not stopped on. This settles scenarios 2.4 and 5.1 and the stop rule in D-6537-6 in the pair reading; scenario 5.3
+  (a stop at step 2) now applies only when the pair is under the line. The pilot still runs first, and the measured target `P` is
+  still ratified by the maintainer before suite 2 starts (scenario 2.3).
+- **Story 6602's last move push has landed:** `b8c425ce6` on `main`, 2026-11-13 08:55 +01:00. The before set counts eligible runs
+  whose head is after it. Story 6602 moved more Refinement and report-window classes, so the leftovers behind the 91 and 96 rows in
+  "The success number" are probably smaller now (not counted); the ranking in step 1 decides the suites, not those estimates.
+- **Open question 1, rewrite as well as move: YES** (maintainer, 2026-11-13, on entering AFK mode). Scenarios R1 and R2 are live. A rewrite is
+  its own commit, after the moves of its suite, with its own deliberate break and an id row per removed row; body-bound classes are now
+  candidates in stage 3 (their saving is the removed row's seconds less the new row's).
+- **Rigor profile: `standard` for every step** (crafter and acceptance designer `sonnet`, reviewers and EXAMINE `haiku`).
+- **AFK options:** slice wrap-up refactor + review (mutation once, at the end); nothing is pushed. So the run reaches at most the ranking,
+  the screen and the pilot class, then holds: the after set and the data commit need pushed runs, and the measured `P` needs the
+  maintainer's ratification before suite 2 (scenario 2.3).
+- Still open, not blocking step 1: questions 2 to 5 in DISTILL's "For the maintainer". Question 3 (top two by stage-3 saving) is taken as
+  DESIGN recommends, to be confirmed.
