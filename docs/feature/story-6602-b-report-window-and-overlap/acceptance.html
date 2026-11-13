@@ -151,7 +151,142 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>For each of the 15 rows of the shared window table, Team Lightspeed keeps finished Work Items for 365 days (or for ever), the types of report are read and a report is made with the row&#x27;s window, with no web host
+</code></pre>
+
+<pre><code>Today reads 2 Oct 2026, the earliest start reads 2 Oct 2025 (none for a Team keeping every finished Work Item) and the shortest window reads 14 days, on every row
+</code></pre>
+
+<pre><code>A Team owner sees the same window bounds the browser wizard shows, on every edge of the table
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says</p>
+
+<pre><code>a server that reports today one day off but the same refusals, or reads an earliest start of 365 days for the keep-everything Team: both are caught by the three bound assertions; still accepted is a window rule changed only in a row the table does not hold
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>A window one day short of the shortest, ending tomorrow, starting before the oldest kept day, or a Now shorter than 14 days is submitted as a new report
+</code></pre>
+
+<pre><code>The outcome is Refused with exactly the refusal code the table names for that row (for example then-too-short), and no report is handed back
+</code></pre>
+
+<pre><code>The owner is told the reason from the closed list instead of getting a report
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says</p>
+
+<pre><code>a refusal with the right status but a neighbouring code is caught by the code equality; still accepted is a refusal for a different, equally invalid window that the table does not list
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<pre><code>A window exactly on an accepted edge (14 days, ending today, starting on the oldest kept day, any start for a Team keeping everything) is submitted
+</code></pre>
+
+<pre><code>The outcome is Done and a report is handed back
+</code></pre>
+
+<pre><code>The owner gets the report for a window the wizard allows
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says</p>
+
+<pre><code>an accepted window whose report is empty of content: the port hands back a report, and what it shows is pinned by other Reports scenarios
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The port-fixture lifetime check compares the services the Reports port base registers with the host&#x27;s
+</code></pre>
+
+<pre><code>No Reports registration has another lifetime than on the host, so the Reports port case passes
+</code></pre>
+
+<pre><code>The port scenarios stand for the product&#x27;s own wiring, not a lookalike
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs::Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host</p>
+
+<pre><code>a Reports service missing from the port base: the check compares only what is registered, so an absent service shows as a failing scenario, not here
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The host-use guard runs after the class left the list of host users still to move
+</code></pre>
+
+<pre><code>The class is not named on that list and starts no web host, and the guard passes
+</code></pre>
+
+<pre><code>The suite no longer starts a host for the report window rows
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs</p>
+
+<pre><code>a class that drives the port but keeps a host fixture elsewhere in its hierarchy is caught by the guard; still accepted is a stale ratchet line for a class that no longer exists, which the guard already refuses
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

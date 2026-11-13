@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
+using Lighthouse.Backend.Models.Reports;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Reports
 {
@@ -12,39 +13,56 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
     /// Every row is set on 2 Oct 2026 for a Team keeping finished Work Items for 365 days, the bounds the table
     /// itself names - except the rows marked as keeping every finished Work Item, which have no oldest kept day.
     ///
-    /// Driving ports: GET /teams/{id}/reports/templates, POST /teams/{id}/reports.
+    /// Driving ports: the types of report a Team may make, and making one. The status and the JSON text of the
+    /// route are pinned by the hosted Reports scenarios.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
     [Category("epic-5878-baseline")]
-    public class ReportWindowBoundaryScenarios : ReportsAcceptanceTest
+    public class ReportWindowBoundaryScenarios : ReportsAtThePortTest
     {
         private const string BoundaryTable = "Lighthouse.Frontend/src/tests/reportWindowBoundaries.json";
+
+        private const string Lightspeed = "Team Lightspeed";
+
+        private const string ThenAndNowTemplate = "then-and-now";
+
+        private const string EngagementStart = "Then & Now - engagement start";
+
+        private const string CycleTime = "cycle-time";
 
         [TestCaseSource(nameof(TheRowsOfTheBoundaryTable))]
         public async Task A_window_at_an_edge_is_answered_as_the_table_says(BoundaryRow row)
         {
             var lightspeed = ATeam(Lightspeed, keepsFinishedItemsForDays: row.KeepsEveryFinishedItem ? 0 : 365);
 
-            TheCallerAdministers(lightspeed);
-            var templates = await TheTypesOfReportFor(lightspeed);
-            using var answer = await CreateAReport(lightspeed, AsNewReport(row));
+            var templates = TheTypesOfReportFor(lightspeed);
+            var answer = await CreateAReport(lightspeed, AsNewReport(row));
 
             using (Assert.EnterMultipleScope())
             {
-                Assert.That(TextOf(templates, "today"), Is.EqualTo(TheTable.Bounds.Today), "the table and the server agree on today");
-                Assert.That(TextOf(templates, "earliestStart"), Is.EqualTo(row.KeepsEveryFinishedItem ? null : TheTable.Bounds.EarliestStart),
+                Assert.That(templates.Status, Is.EqualTo(ReportOutcomeStatus.Done), "the Team's types of report are on offer");
+                Assert.That(Day(templates.Value?.Today), Is.EqualTo(TheTable.Bounds.Today), "the table and the server agree on today");
+                Assert.That(Day(templates.Value?.EarliestStart), Is.EqualTo(row.KeepsEveryFinishedItem ? null : TheTable.Bounds.EarliestStart),
                     "and on the oldest kept day, which a Team keeping every finished Work Item does not have");
-                Assert.That(templates.GetProperty("minimumLengthDays").GetInt32(), Is.EqualTo(TheTable.Bounds.MinimumLengthDays), "and on the shortest window");
+                Assert.That(templates.Value?.MinimumLengthDays, Is.EqualTo(TheTable.Bounds.MinimumLengthDays), "and on the shortest window");
             }
 
             if (row.Refusal is null)
             {
-                await ThenItWasCreated(answer);
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(answer.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {answer.Code}");
+                    Assert.That(answer.Value, Is.Not.Null, "a created report is handed back");
+                }
             }
             else
             {
-                await ThenItIsRefusedFor(answer, row.Refusal);
+                using (Assert.EnterMultipleScope())
+                {
+                    Assert.That(answer.Status, Is.EqualTo(ReportOutcomeStatus.Refused), "a window outside the table's bounds is refused");
+                    Assert.That(answer.Code, Is.EqualTo(row.Refusal), "the refusal must name its reason from the closed list");
+                }
             }
         }
 
@@ -65,6 +83,20 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 ?? throw new InvalidOperationException($"{BoundaryTable} holds no table");
         }
 
+        /// <summary>The checkout's root, where the tables shared with the browser's tests live.</summary>
+        private static string RepositoryRoot()
+        {
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "Lighthouse.sln")))
+            {
+                directory = directory.Parent;
+            }
+
+            return Directory.GetParent(directory?.FullName ?? throw new InvalidOperationException("Lighthouse.sln could not be found to anchor the tables shared with the browser."))!.FullName;
+        }
+
+        private static string? Day(DateOnly? day) => day?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
         public sealed record BoundaryTableFile(BoundaryBounds Bounds, IReadOnlyList<BoundaryRow> Rows);
 
         public sealed record BoundaryBounds(string Today, string? EarliestStart, int MinimumLengthDays);
@@ -78,12 +110,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         /// <summary>A Then row moves Then and leaves Now at 90 days; a Now row keeps Then at the 90 days to today.</summary>
         private static NewReport AsNewReport(BoundaryRow row) => row.IsThen
-            ? new NewReport
-            {
-                ThenEnd = DateOnly.ParseExact(row.End ?? string.Empty, "yyyy-MM-dd", CultureInfo.InvariantCulture),
-                ThenLengthDays = row.LengthDays,
-                NowLengthDays = 90,
-            }
-            : new NewReport { NowLengthDays = row.LengthDays };
+            ? new NewReport(ThenAndNowTemplate, EngagementStart, [CycleTime],
+                new NewThenAndNow(DateOnly.ParseExact(row.End ?? string.Empty, "yyyy-MM-dd", CultureInfo.InvariantCulture), row.LengthDays, 90))
+            : new NewReport(ThenAndNowTemplate, EngagementStart, [CycleTime],
+                new NewThenAndNow(new DateOnly(2026, 10, 2), 90, row.LengthDays));
     }
 }

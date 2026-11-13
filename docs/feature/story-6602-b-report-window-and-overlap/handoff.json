@@ -1,8 +1,83 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F150",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says"
+},
+"expected": "F148",
+"stimulus": "F147",
+"user_result": "F149"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F154",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says"
+},
+"expected": "F152",
+"stimulus": "F151",
+"user_result": "F153"
+},
+{
+"covers": [
+"P1",
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F158",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says"
+},
+"expected": "F156",
+"stimulus": "F155",
+"user_result": "F157"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F162",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs::Every_service_a_port_fixture_registers_lives_as_long_as_it_does_on_the_host"
+},
+"expected": "F160",
+"stimulus": "F159",
+"user_result": "F161"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F166",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+},
+"expected": "F164",
+"stimulus": "F163",
+"user_result": "F165"
+}
+]
+},
 "counters": {
 "D": 12,
 "E": 4,
-"F": 146,
+"F": 166,
 "K": 9,
 "L": 4,
 "P": 4,
@@ -724,8 +799,28 @@
 "F144": "After the move, the same 15 report-window boundary test ids still run at the port, no new wire-level row appears, every earlier assertion is still made, and the port fixture check fails if the Reports port registrations differ from the host's.",
 "F145": "The id comparison for Slice05NeedAndVerdictTest lists exactly the rows dropped; each dropped row has a NeedOverOneCycleTest row proving the same rule with the same inputs, and every other id still exists.",
 "F146": "Each Refinement port test helper that feature A's reviews found duplicated (Gravity ready-rule builder, tab and need readers, shared constants and script, TheTabAsReadBy) is defined once, in the port base or port builder, and not repeated in other Refinement test classes.",
+"F147": "For each of the 15 rows of the shared window table, Team Lightspeed keeps finished Work Items for 365 days (or for ever), the types of report are read and a report is made with the row's window, with no web host",
+"F148": "Today reads 2 Oct 2026, the earliest start reads 2 Oct 2025 (none for a Team keeping every finished Work Item) and the shortest window reads 14 days, on every row",
+"F149": "A Team owner sees the same window bounds the browser wizard shows, on every edge of the table",
 "F15": "S1 creates a new Reports port base, ReportsAtThePortTest, under API/Integration/Reports, over ServicePortHarness: no candidate owns IReportQueries or IReportCommands at the port (ServicePortHarness users are the Reality Check, Refinement and System-wide-access bases only). It registers the Reports services as Program.RegisterReports does (the 17 registrations) plus what they read: the team and portfolio repositories, the team metrics service, a TimeProvider and an ILicenseService stand-in that answers no premium licence, as the host fixture does. The clock is a FakeLighthouseClock set to nine in the morning of Friday 2 Oct 2026 in Europe/Zurich, the host fixture instant, because the port harness starts on TestToday.FrozenNow. It exposes WhatItRegisters for the port-fixture lifetime check.",
+"F150": "a server that reports today one day off but the same refusals, or reads an earliest start of 365 days for the keep-everything Team: both are caught by the three bound assertions; still accepted is a window rule changed only in a row the table does not hold",
+"F151": "A window one day short of the shortest, ending tomorrow, starting before the oldest kept day, or a Now shorter than 14 days is submitted as a new report",
+"F152": "The outcome is Refused with exactly the refusal code the table names for that row (for example then-too-short), and no report is handed back",
+"F153": "The owner is told the reason from the closed list instead of getting a report",
+"F154": "a refusal with the right status but a neighbouring code is caught by the code equality; still accepted is a refusal for a different, equally invalid window that the table does not list",
+"F155": "A window exactly on an accepted edge (14 days, ending today, starting on the oldest kept day, any start for a Team keeping everything) is submitted",
+"F156": "The outcome is Done and a report is handed back",
+"F157": "The owner gets the report for a window the wizard allows",
+"F158": "an accepted window whose report is empty of content: the port hands back a report, and what it shows is pinned by other Reports scenarios",
+"F159": "The port-fixture lifetime check compares the services the Reports port base registers with the host's",
 "F16": "ReportWindowBoundaryScenarios moves to ReportsAtThePortTest keeping its namespace (Lighthouse.Backend.Tests.API.Integration.Reports), class name, method name and TestCaseSource names, so its 15 test ids stay. It drives IReportQueries.Templates and IReportCommands.Create with ReportOwner.Team and a Models.Reports.NewReport. It keeps TheTable, BoundaryTableFile, BoundaryBounds and BoundaryRow internal or public as now, because ReportWindowPolicyTest reads them.",
+"F160": "No Reports registration has another lifetime than on the host, so the Reports port case passes",
+"F161": "The port scenarios stand for the product's own wiring, not a lookalike",
+"F162": "a Reports service missing from the port base: the check compares only what is registered, so an absent service shows as a failing scenario, not here",
+"F163": "The host-use guard runs after the class left the list of host users still to move",
+"F164": "The class is not named on that list and starts no web host, and the guard passes",
+"F165": "The suite no longer starts a host for the report window rows",
+"F166": "a class that drives the port but keeps a host fixture elsewhere in its hierarchy is caught by the guard; still accepted is a stale ratchet line for a class that no longer exists, which the guard already refuses",
 "F17": "Port observation of each window row: ReportTemplatesRead.Today and EarliestStart written as yyyy-MM-dd equal the table bounds (EarliestStart null for a Team keeping every finished Work Item), MinimumLengthDays equals 14; a row without a refusal answers ReportOutcomeStatus.Done with a report; a row with a refusal answers ReportOutcomeStatus.Refused with Code equal to the table refusal. HTTP 400 and the JSON text are not observable at the port and need no new wire row: today, earliestStart and minimumLengthDays on the wire are pinned by the hosted Slice01TeamReportScenarios and CreateForSeveralTeamsScenarios, a null earliestStart by Slice02ThenInThePastScenarios, and the 400 with each of the seven window refusal codes by ThenItIsRefusedFor in Slice01 (then-too-long, now-too-long), Slice02 (then-too-short, then-ends-in-the-future, then-before-cutoff) and Slice07NowLengthScenarios (now-too-short, now-before-cutoff), all of which stay on the host. The role check of the POST stays pinned by the hosted classes; the port has none.",
 "F18": "No builder and no PortGivensGuardTest-like guard for the Reports port base: its only Team set-up is one ATeam step in the base itself, used by one class, so no builder rule exists to guard. A shared Reports builder is built when a second Reports class moves to the port.",
 "F19": "The repository-root lookup that anchors the shared table (Lighthouse.sln, then its parent) is needed at the port. ReportsAcceptanceTest.RepositoryRoot stays unchanged and is not reachable from the port base, so ReportsAtThePortTest or the moved class owns its own lookup. This repeats a lookup that already exists in several test classes; folding them is outside this Story.",
