@@ -563,9 +563,8 @@ describe("the connections live in System, Connections", () => {
 		});
 		await user.click(screen.getByRole("button", { name: /Next/ }));
 		await user.click(await screen.findByRole("button", { name: /^Create$/ }));
-		await waitFor(() => expect(whereWeAre()).toBe("/"));
-		fireEvent.click(
-			screen.getByRole("button", { name: "go back to the connections" }),
+		await waitFor(() =>
+			expect(whereWeAre()).toBe("/settings/system/connections"),
 		);
 
 		const panel = await theConnectionsTab();
