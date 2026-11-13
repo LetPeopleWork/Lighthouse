@@ -143,6 +143,8 @@ const AZURE_DEVOPS_AS_OFFERED = new WorkTrackingSystemConnection({
 const REFUSED_MESSAGE =
 	"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.";
 const COULD_NOT_LOAD = `Could not load the ${THEIR_WORD_PLURAL}.`;
+const EMPTY_STATE_ID = "no-connections-alert";
+/** The alert's whole text, links included, read from its textContent. */
 const EMPTY_STATE = new RegExp(
 	`No ${THEIR_WORD} found\\.\\s*Load Demo Data\\s*or\\s*Check the documentation`,
 );
@@ -345,7 +347,7 @@ const expectTheListShows = async (
 
 const expectNoEmptyState = (panel: ReturnType<typeof within>, why: string) => {
 	expect(
-		panel.queryByText(EMPTY_STATE),
+		panel.queryByTestId(EMPTY_STATE_ID),
 		`The empty state says no connection exists, which is false ${why}. Show it only after the list has loaded empty.`,
 	).not.toBeInTheDocument();
 };
@@ -451,7 +453,12 @@ describe("the connections live in System, Connections", () => {
 		renderTheApp({ address: "/settings/system/connections", list: [] });
 
 		const panel = await theConnectionsTab();
-		expect(await panel.findByText(EMPTY_STATE)).toBeVisible();
+		const emptyState = await panel.findByTestId(EMPTY_STATE_ID);
+		expect(emptyState).toBeVisible();
+		expect(
+			emptyState.textContent,
+			"The empty state names the configured term and offers both ways to start",
+		).toMatch(EMPTY_STATE);
 		expect(
 			panel.getByRole("link", { name: "Check the documentation" }),
 		).toHaveAttribute("href", "https://docs.lighthouse.letpeople.work");
@@ -616,6 +623,9 @@ describe("the Overview without the connections section", () => {
 		await waitFor(() =>
 			expect(screen.getByRole("button", { name: "Add Team" })).toBeDisabled(),
 		);
-		expect(screen.queryByText(EMPTY_STATE)).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId(EMPTY_STATE_ID),
+			"The connections empty state moved to System, Connections with its section",
+		).not.toBeInTheDocument();
 	});
 });

@@ -1031,7 +1031,7 @@ A System Admin opens the tab on an instance with no connection and follows Load 
 ```
 
 ```text
-No Tracker found. Load Demo Data or Check the documentation shows with a Connect Tracker button and the documentation link; Load Demo Data opens System, Demo Data
+The empty-state alert reads No Tracker found. Load Demo Data or Check the documentation, with a Connect Tracker button and the documentation link; Load Demo Data opens System, Demo Data
 ```
 
 ```text
@@ -1239,11 +1239,11 @@ A System Admin opens the Overview on an instance with no connection
 ```
 
 ```text
-Add Team is disabled and no connections empty state shows
+Add Team is disabled and the Overview shows no connections empty-state alert
 ```
 
 ```text
-Onboarding still waits for a connection before Teams
+Onboarding still waits for a connection before Teams, and the empty state lives only on System, Connections
 ```
 
 ##### Disposition

@@ -564,7 +564,7 @@
 "still_passes_if": "F453",
 "test": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections > a fresh instance is told no connection exists, with a link to load demo data that opens System, Demo Data, and a link to the documentation"
 },
-"expected": "F451",
+"expected": "F489",
 "stimulus": "F450",
 "user_result": "F452"
 },
@@ -658,9 +658,9 @@
 "still_passes_if": "F481",
 "test": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the Overview without the connections section > still asks whether a connection exists: with none, Add Team stays disabled for a System Admin"
 },
-"expected": "F479",
+"expected": "F490",
 "stimulus": "F478",
-"user_result": "F480"
+"user_result": "F491"
 }
 ]
 },
@@ -669,7 +669,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 488,
+"F": 491,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -3118,7 +3118,6 @@
 "F449": "The deleted row is hidden locally while the remembered list keeps it for the next visit",
 "F45": "row edit links and demo-data link move with the extracted list (S4) and take definition paths (S5)",
 "F450": "A System Admin opens the tab on an instance with no connection and follows Load Demo Data",
-"F451": "No Tracker found. Load Demo Data or Check the documentation shows with a Connect Tracker button and the documentation link; Load Demo Data opens System, Demo Data",
 "F452": "A fresh instance says how to start",
 "F453": "The documentation link opens in the same window",
 "F454": "A System Admin opens the tab while the list is still on its way, then the list arrives",
@@ -3148,9 +3147,7 @@
 "F476": "The Overview is about Portfolios and Teams but still warns of a broken connection",
 "F477": "The banner shows only for connections whose name matches the filter while the filter is empty",
 "F478": "A System Admin opens the Overview on an instance with no connection",
-"F479": "Add Team is disabled and no connections empty state shows",
 "F48": "settings and connection routes come from settingsRoutes()",
-"F480": "Onboarding still waits for a connection before Teams",
 "F481": "Add Team is disabled while the existence check is still loading and stays disabled after it fails",
 "F482": "Admin lands on Organization, reader on Access API Keys, hidden or unknown tabs fall back to the first tab the person may open (Connections for an admin in System), the earlier System Admins address opens System-wide access",
 "F483": "500 generated addresses (visible, hidden, earlier, legacy, unknown, bare) over all 8 access combinations, with Connections among System's tabs",
@@ -3159,7 +3156,10 @@
 "F486": "The old h1 System Settings, or all tabs under every area, or Demo Data still first in System",
 "F487": "The full log link leaves the person on a tab other than Logs, or the demo data link keeps its old address; the license links and the wizard link are held by the source scan and the License oracle, the connections empty-state demo data link by the Connections oracle",
 "F488": "Every area and tab address is opened, including System Connections, Logs, Refresh History and License",
+"F489": "The empty-state alert reads No Tracker found. Load Demo Data or Check the documentation, with a Connect Tracker button and the documentation link; Load Demo Data opens System, Demo Data",
 "F49": "POM goToSettings and SettingsPage.goTo* open the header menu, then the tab by its unchanged test id; specs keep their calls",
+"F490": "Add Team is disabled and the Overview shows no connections empty-state alert",
+"F491": "Onboarding still waits for a connection before Teams, and the empty state lives only on System, Connections",
 "F5": "System shows a License tab with the license status, import and clear, and the license links in the connection forms open it",
 "F50": "Existing ids kept where a tab survives; new ids added to the app and the POMs together; configuration ids retire in S2",
 "F51": "POM reads the same ids; new ids for new tabs",
