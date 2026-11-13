@@ -823,3 +823,40 @@ Its guard line stays: the class still starts a host.
 
 - **Target `P` = 5.0 %, ratified** by the maintainer on 2026-11-13 (scenario 2.3). Baseline: the before set median once it has 5 runs; until then the 10 ranking runs (2,031.7 s).
 - **After suite 1, hold** (maintainer, 2026-11-13): AFK finishes suite 1 and its final gates, then holds. Suite 2 starts with the maintainer.
+
+## Wave: DELIVER / [REF] Resume here (written 2026-11-13 17:2x, end of the AFK session)
+
+**State.** Suite 1 (`PercentilesOverTime`) is nwdes feature `docs/feature/story-6537-a-percentiles-suite/` (handoff.json there).
+- **S1** `Slice07WhereTheLimitsActuallyMovedTest`: done, slice review accepted. 9 of 10 host rows moved to unit rows; 1 route row stays.
+- **S2** `Slice06EveryPercentileTabSpansTheSamePeriodTest`: done, slice review accepted. 10 of 11 moved; 1 tab-route row stays.
+- **S3** `Slice05ReconstructCycleTimeHistoryTest`: recorded in nwdes; its oracle was mid-way when the session ended. The
+  unfinished work (new unit rows, a service-port scenario `TwoCopiesFillingTheSameDayAtThePortTest`, the oracle script and the
+  break script with about 10 breaks still to run) is parked as `docs/feature/story-6537-a-percentiles-suite/wip/s3-oracle-wip.patch`.
+  Resume: `git apply` it, re-read `s3-break-evidence.txt`, finish the breaks, close the acceptance record (none recorded yet), then
+  oracle review → craft → slice review, as S1 and S2 did. Not reviewed by anyone yet.
+- **S4** (the other fill-base classes `Slice08`, `Slice09`, `Slice10`, `Story6084`): not started; screen them first.
+- Then the suite-1 final gates: whole-candidate review (`--subject candidate`), EXAMINE, and mutation is N/A (no production change).
+- After suite 1: **hold** (maintainer). Suite 2 (likely `ConfigureOncePerConnection`, not screened) starts with the maintainer.
+
+**Pushed on 2026-11-13** (maintainer's decision, so the next session can start from a fresh worktree): S1, S2 and all workspace
+records, rebased onto `main`. That push is T10's **first move push**, so it closes the before-set window with **2 of 5** runs.
+**Decision (maintainer, by choosing to push now): rebuild the before set** from the 2 clean runs (`b8c425ce6`, `61cda4e8e`) plus the
+latest older plain runs, with the classes Story 6602 moved removed from their sums by id (the id-table method). Record it in the
+step 1 table as a deviation. The by-class fall (the main proof) is unaffected.
+
+**Measured so far (local, Release, quiet machine):** pilot `Slice07` 33.2 s → about 5.4 s (−27.8 s, 84 %), about −74 s predicted on
+CI. S2 and S3 timing **not taken**: the machine was loaded by other sessions. Pre-craft Release builds were snapshotted in the old
+session's scratchpad and are gone with it, so for S2 and S3 take the "before" from a checkout of the commit before each slice's
+GREEN commit, or read the class seconds from CI CSVs (before: the ranking runs; after: runs after the push).
+
+**Decisions in force:** stop line on the pair (question 0); rewrites allowed; rigor `standard`; `P` = 5.0 % ratified; hold after
+suite 1. Still open for the maintainer: DESIGN questions 2, 4, 5 (ceiling the formula cannot lower; waits without a limit; a revert
+of the data commit).
+
+**Lessons for the next dispatches** (both caught by the adversarial reviews, each once per slice so far): a removed host row proves
+every loop and gate its path walks, not only what its title says, so each needs a red break; and subagents must use ABSOLUTE paths
+for every `ctx_patch`, because a relative one wrote into the main checkout once.
+
+**Follow-ups to draft at T10's close:** a backend Story for the next families by the ranking (`FasterUpdates`, `Refinement`,
+`Reports`, `FetchFingerprint`), and a frontend Story to move rule rows from `.test.tsx` down to `.test.ts` (maintainer:
+separate topic).
