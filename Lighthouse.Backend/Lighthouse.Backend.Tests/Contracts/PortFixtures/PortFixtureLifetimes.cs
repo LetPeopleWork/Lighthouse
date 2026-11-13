@@ -1,4 +1,7 @@
+using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Interfaces;
+using Lighthouse.Backend.Services.Interfaces.Reports;
+using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Auth;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
@@ -28,6 +31,18 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
             typeof(IAuthModeResolver),
         ];
 
+        // Registered on the host as a factory that hands back another registration of the host, one unit of work
+        // per request; the lifetime is what a port fixture must match, as what the factory returns is that registration.
+        private static readonly Type[] ForwardedToTheirConcreteService =
+        [
+            typeof(IRepository<Portfolio>),
+            typeof(IReportReader),
+            typeof(IReportWriter),
+        ];
+
+        private IEnumerable<Type?> BuiltOnTheHostForAnyRegistrationOf(Type serviceType)
+            => hostRegistrations.Where(host => !host.IsKeyedService && host.ServiceType == serviceType).Select(WhatIsBuilt);
+
         public ServiceDescriptor? OnTheHost(Type serviceType)
             => hostRegistrations.LastOrDefault(host => !host.IsKeyedService && host.ServiceType == serviceType);
 
@@ -50,7 +65,7 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
                 return $"{port.ServiceType.Name} lives as {port.Lifetime} at the port and as {onTheHost.Lifetime} on the host";
             }
 
-            if (StandInsBuiltOnPurpose.Contains(port.ServiceType))
+            if (StandInsBuiltOnPurpose.Contains(port.ServiceType) || ForwardedToTheirConcreteService.Contains(port.ServiceType))
             {
                 return null;
             }
@@ -60,6 +75,13 @@ namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
             if (builtAtThePort == null && builtOnTheHost == null)
             {
                 return $"{port.ServiceType.Name} cannot be compared: a factory builds it on both sides";
+            }
+
+            // A service several types are registered for (every report metric) is read as a list, so the port
+            // is right when the host registers the same type among them.
+            if (builtAtThePort != null && BuiltOnTheHostForAnyRegistrationOf(port.ServiceType).Contains(builtAtThePort))
+            {
+                return null;
             }
 
             return builtAtThePort == builtOnTheHost

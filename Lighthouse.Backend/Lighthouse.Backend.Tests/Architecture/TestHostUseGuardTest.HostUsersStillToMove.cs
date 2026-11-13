@@ -180,7 +180,6 @@ namespace Lighthouse.Backend.Tests.Architecture
             "Lighthouse.Backend.Tests.API.Integration.Reports.PortfoliosJoinTheSelectionScenarios",
             "Lighthouse.Backend.Tests.API.Integration.Reports.RemoveReportsInBulkScenarios",
             "Lighthouse.Backend.Tests.API.Integration.Reports.ReportCreationTimingProbe",
-            "Lighthouse.Backend.Tests.API.Integration.Reports.ReportWindowBoundaryScenarios",
             "Lighthouse.Backend.Tests.API.Integration.Reports.ReportsWithoutSignInScenarios",
             "Lighthouse.Backend.Tests.API.Integration.Reports.Slice01TeamReportScenarios",
             "Lighthouse.Backend.Tests.API.Integration.Reports.Slice02ThenInThePastScenarios",

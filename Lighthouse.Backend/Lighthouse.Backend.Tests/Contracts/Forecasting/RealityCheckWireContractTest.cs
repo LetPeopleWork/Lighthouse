@@ -9,6 +9,7 @@ using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
 using Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck;
 using Lighthouse.Backend.Tests.API.Integration.Refinement;
+using Lighthouse.Backend.Tests.API.Integration.Reports;
 using Lighthouse.Backend.Tests.Contracts.PortFixtures;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -343,6 +344,7 @@ namespace Lighthouse.Backend.Tests.Contracts.Forecasting
             yield return PortFixture<Slice01OneSentenceAboutYourSamplingWindowTest>();
             yield return PortFixture<Slice04TheAnswerOpensInADialogTest>();
             yield return PortFixture(nameof(RefinementAtThePortTest), () => RefinementAtThePortTest.WhatItRegisters);
+            yield return PortFixture(nameof(ReportsAtThePortTest), () => ReportsAtThePortTest.WhatItRegisters);
         }
 
         private static TestCaseData PortFixture<TFixture>() where TFixture : RealityCheckAtThePortTest, new()
