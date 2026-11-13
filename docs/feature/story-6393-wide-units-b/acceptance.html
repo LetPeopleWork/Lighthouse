@@ -207,7 +207,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>A scope is chosen, then the entity id or the window end changes while the answers are still on their way, then they arrive
+<pre><code>A scope is chosen, then the entity, the window start or the window end changes while the answers are still on their way, then they arrive
 </code></pre>
 
 <pre><code>The scope returns to Default at the change and the late answers do not bring it back
@@ -220,9 +220,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or window</p>
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or a window that starts earlier or ends later</p>
 
-<pre><code>The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores window changes
+<pre><code>The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores a change of the window start or end
 </code></pre>
 
 <h6>Obligations</h6>

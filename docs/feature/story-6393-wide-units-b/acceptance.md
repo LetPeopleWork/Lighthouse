@@ -67,7 +67,7 @@ Only the failing half is cleared, the scope id stays named, or the failure is sw
 P2
 
 ```text
-A scope is chosen, then the entity id or the window end changes while the answers are still on their way, then they arrive
+A scope is chosen, then the entity, the window start or the window end changes while the answers are still on their way, then they arrive
 ```
 
 ```text
@@ -82,10 +82,10 @@ A scope chosen for one team or window never leaks into the next
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or window
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or a window that starts earlier or ends later
 
 ```text
-The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores window changes
+The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores a change of the window start or end
 ```
 
 ###### Obligations

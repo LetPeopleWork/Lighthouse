@@ -32,6 +32,7 @@ function deferred<T>(): Deferred<T> {
 
 const START = new Date(2026, 6, 1);
 const END = new Date(2026, 6, 30);
+const EARLIER_START = new Date(2026, 5, 1);
 const LATER_END = new Date(2026, 7, 15);
 
 function ownerWithId(id: number): IFeatureOwner {
@@ -55,6 +56,7 @@ function infoWith(value: number): ICycleTimePercentilesInfo {
 describe("the percentiles the reader scopes to a named cycle time definition", () => {
 	interface ScopeProps {
 		entityId: number;
+		startDate: Date;
 		endDate: Date;
 	}
 
@@ -67,14 +69,14 @@ describe("the percentiles the reader scopes to a named cycle time definition", (
 			getCycleTimePercentilesInfo,
 		} as unknown as AnyMetricsService;
 		return renderHook(
-			({ entityId, endDate }: ScopeProps) =>
+			({ entityId, startDate, endDate }: ScopeProps) =>
 				useNamedPercentilesScope({
 					metricsService,
 					entityId,
-					startDate: START,
+					startDate,
 					endDate,
 				}),
-			{ initialProps: { entityId: 1, endDate: END } },
+			{ initialProps: { entityId: 1, startDate: START, endDate: END } },
 		);
 	}
 
@@ -160,8 +162,15 @@ describe("the percentiles the reader scopes to a named cycle time definition", (
 	});
 
 	it.each([
-		["another entity", { entityId: 2, endDate: END }],
-		["another window", { entityId: 1, endDate: LATER_END }],
+		["another entity", { entityId: 2, startDate: START, endDate: END }],
+		[
+			"a window that starts earlier",
+			{ entityId: 1, startDate: EARLIER_START, endDate: END },
+		],
+		[
+			"a window that ends later",
+			{ entityId: 1, startDate: START, endDate: LATER_END },
+		],
 	])(
 		"drops a chosen scope and ignores answers still on their way when the reader moves to %s",
 		async (_which, next) => {

@@ -42,11 +42,11 @@
 "obligations": [
 "L1/F74"
 ],
-"still_passes_if": "F272",
-"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or window"
+"still_passes_if": "F278",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or a window that starts earlier or ends later"
 },
 "expected": "F270",
-"stimulus": "F269",
+"stimulus": "F277",
 "user_result": "F271"
 },
 {
@@ -102,7 +102,7 @@
 "counters": {
 "D": 6,
 "E": 6,
-"F": 276,
+"F": 278,
 "K": 7,
 "L": 7,
 "P": 4,
@@ -1649,6 +1649,8 @@
 "F270": "The scope returns to Default at the change and the late answers do not bring it back",
 "F271": "A scope chosen for one team or window never leaks into the next",
 "F272": "The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores window changes",
+"F277": "A scope is chosen, then the entity, the window start or the window end changes while the answers are still on their way, then they arrive",
+"F278": "The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores a change of the window start or end",
 "F28": "Whether fallow counts type-only imports as layer leaks, which decides whether the S2 move adds new pairs to the layer list (see slice S2 risk).",
 "F29": "A moved effect loses a dependency or two effects swap order",
 "F3": "Each split unit behaves and renders exactly as before: its existing tests stay green unmodified, apart from tests that move with the code they cover, and the order in which the metrics queries start is unchanged",
