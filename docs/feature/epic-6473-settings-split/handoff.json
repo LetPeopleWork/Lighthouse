@@ -886,7 +886,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 570,
+"F": 574,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -2887,6 +2887,80 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F574"
+],
+"verdict": "met"
+},
+"E10": {
+"observations": [
+"F573"
+],
+"verdict": "met"
+},
+"E11": {
+"observations": [
+"F572"
+],
+"verdict": "met"
+},
+"E12": {
+"observations": [
+"F572"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F574"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F571"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F571"
+],
+"verdict": "met"
+},
+"E5": {
+"observations": [
+"F571"
+],
+"verdict": "met"
+},
+"E6": {
+"observations": [
+"F574"
+],
+"verdict": "met"
+},
+"E7": {
+"observations": [
+"F574"
+],
+"verdict": "met"
+},
+"E8": {
+"observations": [
+"F573"
+],
+"verdict": "met"
+},
+"E9": {
+"observations": [
+"F573"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -3446,6 +3520,10 @@
 "F569": "From the connections list itself, adding and fixing a connection stay under System",
 "F57": "IOptionalFeatureService via useBehaviourSettings",
 "F570": "The tab's Connect and Edit still point at the old connection addresses, which then land nowhere because the old routes are redirects only for bookmarks and the scan forbids the old literals in App",
+"F571": "Re-probe (quiet machine): organizationTabs 100% pass: Calendar and Refresh & ordering tabs, Usage Data tab with switch/docs link and no ordering row, spinner while loading, could-not-load text on behaviour-settings failure (never empty tab or locked switch), could-not-load instead of Premium required when licence fails, new value kept after leave and return. Combined run 74/74 pass incl connectionEntryPoints and OverviewDashboard.",
+"F572": "Re-probe: connectionEntryPoints passes: old edit and new links open under System with way back; wizard cancel/complete and save return to System, Connections; stepper, Overview connect-first line (links to tab, hidden for reader), Task Manager failing/empty sections in the instance's words; reader still told no permission.",
+"F573": "Re-probe: ConnectionsSettings tests pass: Connections is System's first tab listing connections with Edit, Delete and reconnect banner; fresh instance empty state with Demo Data link and docs link; lone spinner while loading, never empty state; failure and refusal show messages not empty state; reader sees no Connections tab; created connection listed on return; delete removes from list. Overview tests pass (Portfolios, Teams, reconnect banners, connect-first line) but no row literally asserts absence of a connections section (output was truncated); E10 rests on that partial evidence.",
+"F574": "Earlier probe run (prior workspace, still valid): settingsAreas and LicenseTab pass. Menu lists Organization/Access/System; reader sees Access+System not Organization; deep link spinner then System-wide access; legacy tab routes open their tab; License tab status/import/clear, reader neither, failure text, header icon after import, connection wizard and OAuth-notice links open System, License (LicenseTab 10/10, re-run green in the quiet re-probe listing).",
 "F58": "pages -> components/hooks/models/services; components may import models but not pages; the definition in models imports nothing from them; panels moved unchanged keep their own service ports",
 "F59": "Access read fails",
 "F6": "System shows a Connections tab, first, with the list, reconnect banners, empty state and a Connect button, and the Overview no longer holds the connections section",
