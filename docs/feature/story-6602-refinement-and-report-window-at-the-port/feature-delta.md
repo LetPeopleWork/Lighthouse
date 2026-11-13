@@ -342,3 +342,17 @@ The slices are approved as designed.
 - Timing, each class alone (Release, 3 rounds, medians): three classes 19.06 s → 9.39 s; wire class 3.87 s (7 rows) → 6.71 s (30 rows); net about −6.8 s. Load average at the start: 11. Raw data: `evidence/checkpoint/summary.txt`.
 - Full filtered run after the move: 13,444 passed, 631 host builds; the three classes take 3.16 s and the wire class 5.35 s (`evidence/checkpoint/fullrun-summary.txt`). No full run was measured before the move, so no full-run saving is claimed.
 - Next: feature B (slice 4, the report window at the port; slice 5, the Slice05 overlap drop and the duplication findings above). The maintainer approved it on 2026-11-12 for the next session.
+
+## Wave: DELIVER / [REF] Checkpoint — feature B done (2026-11-13, AFK)
+
+Workspace: `docs/feature/story-6602-b-report-window-and-overlap/`. Rigor as agreed: S1 `standard`, S2 `thorough`; the whole-candidate review and EXAMINE at `sonnet`.
+
+- **S1 (design slice 4):** `ReportWindowBoundaryScenarios` runs at the service port on a new `ReportsAtThePortTest` base, without a web host. Its 15 ids are unchanged; the shortest window set to 15 days turns all 15 red; the class left `HostUsersStillToMove`. Pushed `ecdb28783`.
+  - One rework round. The port fixture lifetime check first skipped the three services the host forwards from a factory (`IRepository<Portfolio>`, `IReportReader`, `IReportWriter`), so a lookalike passed for every fixture. It now declares each forwarder with its target. Four planted lookalikes in `Architecture/PortFixtureLifetimesTest.cs` must each be reported; that class sits under `Architecture` because the test-host guard allows only wire contracts under `Contracts`.
+  - The boundary class names the engagement-start report with the host's em dash and checks the created report has an id.
+- **S2 (design slice 5):** the hoist (`refactor`, 49 ids unchanged) and the drop (`test`) are separate commits. Three `Slice05NeedAndVerdictTest` rows went: each has a `NeedOverOneCycleTest` twin with the same Givens and more assertions, and a break of its rule turns the twin red. The three classes hold 46 rows, 14 in `Slice05`. The near-twin `On_a_Refinement_day_the_number_is_for_the_following_Refinement` stays (different forecast numbers). Pushed `b8c425ce6`.
+  - The design first named the Slice05 files as the frozen oracle although S2 had to edit them; the oracle became `evidence/compare-ids.py` of the B workspace and was re-approved.
+- **Gates:** `dotnet build` 0 warnings; filtered `dotnet test` 13,447 passed (13,450 after S1, three rows fewer after S2). Whole-candidate review accepted; EXAMINE accepted (E1–E4 met; the full-suite probe exceeds the examiner's budget, so it re-probed with class fragments).
+- **Mutation:** N/A, because no production file changed.
+- **Left for later (low):** `GivenTodayIsWednesdayTheSeventhOfOctober` is still declared in two specifications; the hosted need base keeps its own need texts and Gravity Given; the using order in the lifetime check and its planted test; the repository-root walk repeated in about ten test classes; the Reports base has no Team-writer guard until a Reports builder exists; a port factory that returns a lookalike would still pass the lifetime check.
+- **Owed:** tell T10 #6537 that this Story's last move has landed, so its before set starts now.

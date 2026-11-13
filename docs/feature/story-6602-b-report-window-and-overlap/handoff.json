@@ -242,7 +242,7 @@
 "counters": {
 "D": 12,
 "E": 4,
-"F": 225,
+"F": 229,
 "K": 9,
 "L": 4,
 "P": 4,
@@ -946,6 +946,32 @@
 }
 }
 },
+"examination": {
+"E1": {
+"observations": [
+"F226"
+],
+"verdict": "met"
+},
+"E2": {
+"observations": [
+"F228"
+],
+"verdict": "met"
+},
+"E3": {
+"observations": [
+"F229"
+],
+"verdict": "met"
+},
+"E4": {
+"observations": [
+"F227"
+],
+"verdict": "met"
+}
+},
 "expectations": {
 "rows": [
 {
@@ -1117,6 +1143,10 @@
 "F223": "The step half of the need-and-verdict class; its copies of the shared members give way to the port base and port builder, and the steps only the dropped rows used go with them",
 "F224": "Its step half reads the tab through the base browser-key TheTabAsSeenBy overload instead of its own copy; ids and assertions unchanged",
 "F225": "Copies of hoisted members removed and unused steps deleted; remaining ids and assertions unchanged",
+"F226": "Own grep of test tree: ReportWindowBoundaryScenarios declared as 'class ReportWindowBoundaryScenarios : ReportsAtThePortTest'; ReportsAtThePortTest.cs exists; the class name appears in neither TestHostUseGuardTest.HostUsersStillToMove.cs nor any other host list; one TestCaseSource over reportWindowBoundaries.json rows, names A_window_at_an_edge_is_answered_as_the_table_says(case). Row count 15, assertions kept and PortFixtureLifetimes check not observed.",
+"F227": "Refinement port side: constants (Backlog, Done, UserActivityTracking, AdvancedSearch, Below, InRange, Above, NoCadence, InsufficientData, NoRefinementStates) and GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle are in RefinementAtThePortTest; GravityWithItsReadyRule (port) only in RefinementPortGivens; no TheTabAsReadBy definition found by grep in port classes. Host-wire bases (RefinementNeedAcceptanceTest, Slice03/Slice09 specifications) keep own host-based variants; wire rows, outside port members. Reader helper names not exhaustively verified.",
+"F228": "Re-probed backend-tests with class-name fragments: ReportWindowBoundaryScenarios 15/15 passed, 15 ids A_window_at_an_edge_is_answered_as_the_table_says(case), no host row; ReportsAtThePortTest 1/1 (port-fixture case) passed; PortFixtureLifetimesTest 5/5 passed incl. lookalike rows 'IRepository<Portfolio> factory with IPortfolioRepository missing at the port' and 'a report metric type the host does not register'; TestHostUseGuardTest 34/34 passed; HostUsersStillToMove file no longer contains ReportWindowBoundary.",
+"F229": "Slice05NeedAndVerdictTest probe 14/14 passed; NeedOverOneCycleTest 22/22; Slice10SleYardstickTest 10/10. Git history (own read): Slice05 scenarios before the drop (commit 601d36a6c) had 12 methods incl. Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull, Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number, A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states (17 rows); after (848dcb166) 9 methods = 14 rows; the three names are the only ones gone from the method list. NeedOverOneCycleTest contains Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) and a ThroughputHistory/InsufficientData twin. Same-inputs equivalence of the Below twin not independently read.",
 "F23": "S2 commit order: first refactor(test-infra) hoisting the duplicated members, with every test id of Slice05NeedAndVerdictTest, NeedOverOneCycleTest and Slice10SleYardstickTest unchanged; then test(refinement) dropping the three mapped rows and the steps only they used. A scenario file may change only the names of the steps it calls, never a test name.",
 "F24": "Carriers, all test-side, no domain class added: per-scenario state lives in the fixture instance of the port base (ServicePortHarness, FakeLighthouseClock, the licence stand-in for Reports; the RefinementAtThePortTest members as in feature story-6602-a for Refinement); Team set-up decisions live in the base ATeam step for Reports and in RefinementPortGivens for Refinement; outcomes are ReportTemplatesRead and ReportOutcome<ReportRead> from the Reports ports and RefinementViewDto from IRefinementViewQuery. Layers: application/port rows observe those records; HTTP status and JSON text are observed only by the hosted Reports classes and RefinementWithoutSignInWireContractTest, which do not change; no infrastructure or recovery layer is touched.",
 "F25": "Formal verification not applicable: no production code, state, transition, protocol or concurrency changes; the change is test structure only. The laws are finite set equalities of test ids, finite twin mappings and finite deliberate breaks, checked by running code. Quint, TLA+/TLC and Agda would model nothing new, so no model is written and no checker run or claimed. Liveness not applicable: no progress or temporal property exists in a synchronous test move. Property-based testing not applicable: no broad input domain, every row is a named finite case read from a table or written out. Code facts: code-fact answered only through its textsearch provider (noisy) and missed TheTabAsReadBy, so every locator was confirmed by reading the file. Jev: unavailable (unauthorized in this project).",

@@ -513,4 +513,42 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Own grep of test tree: ReportWindowBoundaryScenarios declared as 'class ReportWindowBoundaryScenarios : ReportsAtThePortTest'; ReportsAtThePortTest.cs exists; the class name appears in neither TestHostUseGuardTest.HostUsersStillToMove.cs nor any other host list; one TestCaseSource over reportWindowBoundaries.json rows, names A_window_at_an_edge_is_answered_as_the_table_says(case). Row count 15, assertions kept and PortFixtureLifetimes check not observed.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Re-probed backend-tests with class-name fragments: ReportWindowBoundaryScenarios 15/15 passed, 15 ids A_window_at_an_edge_is_answered_as_the_table_says(case), no host row; ReportsAtThePortTest 1/1 (port-fixture case) passed; PortFixtureLifetimesTest 5/5 passed incl. lookalike rows 'IRepository<Portfolio> factory with IPortfolioRepository missing at the port' and 'a report metric type the host does not register'; TestHostUseGuardTest 34/34 passed; HostUsersStillToMove file no longer contains ReportWindowBoundary.
+```
+
+### E3
+
+met
+
+#### Observations
+
+```text
+Slice05NeedAndVerdictTest probe 14/14 passed; NeedOverOneCycleTest 22/22; Slice10SleYardstickTest 10/10. Git history (own read): Slice05 scenarios before the drop (commit 601d36a6c) had 12 methods incl. Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull, Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number, A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states (17 rows); after (848dcb166) 9 methods = 14 rows; the three names are the only ones gone from the method list. NeedOverOneCycleTest contains Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) and a ThroughputHistory/InsufficientData twin. Same-inputs equivalence of the Below twin not independently read.
+```
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Refinement port side: constants (Backlog, Done, UserActivityTracking, AdvancedSearch, Below, InRange, Above, NoCadence, InsufficientData, NoRefinementStates) and GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle are in RefinementAtThePortTest; GravityWithItsReadyRule (port) only in RefinementPortGivens; no TheTabAsReadBy definition found by grep in port classes. Host-wire bases (RefinementNeedAcceptanceTest, Slice03/Slice09 specifications) keep own host-based variants; wire rows, outside port members. Reader helper names not exhaustively verified.
+```
