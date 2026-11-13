@@ -1,24 +1,10 @@
-import ArchiveIcon from "@mui/icons-material/Archive";
-import AutoModeIcon from "@mui/icons-material/AutoMode";
-import DeleteIcon from "@mui/icons-material/Delete";
-import EditIcon from "@mui/icons-material/Edit";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import LinkIcon from "@mui/icons-material/Link";
-import LinkOffIcon from "@mui/icons-material/LinkOff";
-import TouchAppIcon from "@mui/icons-material/TouchApp";
 import {
 	Accordion,
 	AccordionDetails,
 	AccordionSummary,
 	Box,
-	Button,
 	Chip,
-	Dialog,
-	DialogActions,
-	DialogContent,
-	DialogContentText,
-	DialogTitle,
-	IconButton,
 	Paper,
 	Tab,
 	Tabs,
@@ -27,25 +13,15 @@ import {
 } from "@mui/material";
 import type { GridRowId, GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type {
 	DataGridColumn,
 	DataGridExportTable,
 } from "../../../../../components/Common/DataGrid/types";
-import {
-	createForecastedStartColumn,
-	createForecastsColumn,
-	createStateColumn,
-} from "../../../../../components/Common/FeatureListDataGrid/columns";
-import FeatureListDataGrid from "../../../../../components/Common/FeatureListDataGrid/FeatureListDataGrid";
-import FeatureProgressIndicator from "../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator";
 import { useFeatureChildItems } from "../../../../../components/Common/FeatureListDataGrid/useFeatureChildItems";
-import FeatureName from "../../../../../components/Common/FeatureName/FeatureName";
-import { FeatureLikelihoodChip } from "../../../../../components/Common/Forecasts/FeatureLikelihoodChip";
 import { ForecastLevel } from "../../../../../components/Common/Forecasts/ForecastLevel";
 import { percentileDateText } from "../../../../../components/Common/Forecasts/forecastPercentileText";
 import ProgressIndicator from "../../../../../components/Common/ProgressIndicator/ProgressIndicator";
-import StyledLink from "../../../../../components/Common/StyledLink/StyledLink";
 import WorkItemsDialog from "../../../../../components/Common/WorkItemsDialog/WorkItemsDialog";
 import type { Delivery } from "../../../../../models/Delivery";
 import type { IDeliverySource } from "../../../../../models/Delivery/DeliverySource";
@@ -56,379 +32,35 @@ import { DeliverySelectionMode } from "../../../../../models/WorkItemRules";
 import { useTerminology } from "../../../../../services/TerminologyContext";
 import { getWorkItemName } from "../../../../../utils/featureName";
 import {
-	CANNOT_FORECAST_SHORT,
 	cannotBeForecast,
 	cannotForecastReason,
 } from "../../../../../utils/forecast/cannotForecast";
-import { formatLikelihood } from "../../../../../utils/forecast/formatLikelihood";
-import { INSUFFICIENT_FORECAST_DATA_SHORT } from "../../../../../utils/forecast/insufficientForecastData";
 import { isForecastDataInsufficient } from "../../../../../utils/forecast/isForecastDataInsufficient";
-import { jointLikelihoodLabel } from "../../../../../utils/forecast/jointLikelihoodLabel";
-import { PREMIUM_UPGRADE_TOOLTIP } from "../../../../../utils/premiumUpgradeTooltip";
 import DeliveryMetricsTab, {
 	MINIMUM_METRIC_SNAPSHOTS,
 	metricsUnavailableReason,
 	useLazyMetricsHistory,
 } from "./DeliveryMetricsTab";
 import DeliveryNotesPanel from "./DeliveryNotesPanel";
-import DeliveryPublishRefusedNotice from "./DeliveryPublishRefusedNotice";
-import DeliverySourceUnavailableNotice from "./DeliverySourceUnavailableNotice";
 import { buildDeliveryExportTable } from "./deliveryExportTable";
+import {
+	DeliveryRowActions,
+	featureColumns,
+	SelectionModeMarker,
+} from "./deliveryFeatureRow";
+import {
+	howTheFeaturesWereChosen,
+	WhatIsWrongWithTheSource,
+	whatTheHeaderChipSays,
+} from "./deliveryHeaderCopy";
 import { isStoredAs } from "./deliverySelectionTabs";
 import DeliveryTimelineTab from "./timeline/DeliveryTimelineTab";
+import UnbindConfirmationDialog from "./UnbindConfirmationDialog";
+import WorkItemsTab from "./WorkItemsTab";
 
 type DeliveryDetailTab = "workItems" | "metrics" | "timeline" | "notes";
 
-// A Feature's own chance of landing, not the Delivery's — the Delivery's asks whether they ALL land,
-// so it sits below any single row's, and the heading must not invite the two to be read as one number.
-const MARGINAL_LIKELIHOOD_HEADER = "Likelihood";
-
 const OVERDUE_LABEL = "Overdue";
-
-/**
- * The marker beside a Delivery's name, and the sentence a pointer gets for it. Out here rather than
- * inline because the component is at Sonar's cognitive-complexity limit and every branch left in it
- * costs one — but also because this is a lookup, not part of rendering: three ways a Delivery's
- * Features can have been chosen, and one suffix for the reader who is allowed to undo the third.
- */
-function howTheFeaturesWereChosen({
-	isSourceBound,
-	isRuleBased,
-	canUnbind,
-	sourceLabel,
-	featuresTerm,
-}: {
-	isSourceBound: boolean;
-	isRuleBased: boolean;
-	canUnbind: boolean;
-	sourceLabel: string;
-	featuresTerm: string;
-}): { Icon: typeof TouchAppIcon; hint: string } {
-	const chosen = (() => {
-		if (isSourceBound) {
-			return { Icon: LinkIcon, hint: `Bound to ${sourceLabel}` };
-		}
-
-		if (isRuleBased) {
-			return {
-				Icon: AutoModeIcon,
-				hint: `Rule-Based: ${featuresTerm} automatically update based on rules`,
-			};
-		}
-
-		return { Icon: TouchAppIcon, hint: `Manual: ${featuresTerm} are fixed` };
-	})();
-
-	return canUnbind
-		? { ...chosen, hint: `${chosen.hint} — click to stop following` }
-		: chosen;
-}
-
-/**
- * Everything a Delivery has to say about the source it follows before the row itself is read. Both
- * notices can stand at once and each sends the reader somewhere different: one says the values below
- * are frozen because nothing is maintaining them, the other says the Delivery is perfectly healthy and
- * one optional thing it does elsewhere did not happen.
- *
- * Out here rather than inline because the component below is at Sonar's cognitive-complexity limit and
- * every branch left in it costs one - but also because this is a statement about the binding, not part
- * of rendering the Delivery.
- */
-const WhatIsWrongWithTheSource: React.FC<{
-	delivery: Delivery;
-	isSourceBound: boolean;
-	sourceLabel: string;
-	deliveryTerm: string;
-	onUnbind?: () => void;
-}> = ({ delivery, isSourceBound, sourceLabel, deliveryTerm, onUnbind }) => (
-	<>
-		{isSourceBound && delivery.sourceUnavailableReason !== null && (
-			<DeliverySourceUnavailableNotice
-				reason={delivery.sourceUnavailableReason}
-				sourceLabel={sourceLabel}
-				lastSyncedOn={delivery.sourceLastSyncedOn}
-				onUnbind={onUnbind}
-			/>
-		)}
-		{isSourceBound && delivery.lastPublishRefusalReason !== null && (
-			<DeliveryPublishRefusedNotice
-				reason={delivery.lastPublishRefusalReason}
-				sourceLabel={sourceLabel}
-				refusedOn={delivery.lastPublishRefusedOn}
-				deliveryTerm={deliveryTerm}
-			/>
-		)}
-	</>
-);
-
-const ACTION_BUTTON_SX = {
-	bgcolor: "background.paper",
-	"&:hover": { bgcolor: "primary.light" },
-} as const;
-
-/** Archive, edit and delete, for a reader who may do them. */
-const DeliveryRowActions: React.FC<{
-	delivery: Delivery;
-	deliveryTerm: string;
-	canArchive: boolean;
-	onArchive?: (delivery: Delivery) => void;
-	onEdit: (delivery: Delivery) => void;
-	onDelete: (delivery: Delivery) => void;
-}> = ({ delivery, deliveryTerm, canArchive, onArchive, onEdit, onDelete }) => {
-	const stopAnd = (act: () => void) => (event: React.MouseEvent) => {
-		event.stopPropagation();
-		act();
-	};
-
-	return (
-		<Box
-			sx={{
-				position: "absolute",
-				top: "50%",
-				transform: "translateY(-50%)",
-				right: 8,
-				zIndex: 1,
-				display: "flex",
-				alignItems: "center",
-				gap: 0.5,
-			}}
-		>
-			<Tooltip
-				title={canArchive ? `Archive ${deliveryTerm}` : PREMIUM_UPGRADE_TOOLTIP}
-			>
-				{/* The button is disabled without a licence, and a disabled button fires no events, so
-				    the tooltip needs an enabled element of its own to sit on. */}
-				<span>
-					<IconButton
-						size="small"
-						disabled={!canArchive}
-						onClick={stopAnd(() => onArchive?.(delivery))}
-						aria-label="archive"
-						sx={ACTION_BUTTON_SX}
-					>
-						<ArchiveIcon />
-					</IconButton>
-				</span>
-			</Tooltip>
-			<IconButton
-				size="small"
-				onClick={stopAnd(() => onEdit(delivery))}
-				aria-label="edit"
-				sx={ACTION_BUTTON_SX}
-			>
-				<EditIcon />
-			</IconButton>
-			<IconButton
-				size="small"
-				onClick={stopAnd(() => onDelete(delivery))}
-				aria-label="delete"
-				sx={{
-					bgcolor: "background.paper",
-					"&:hover": { bgcolor: "error.light" },
-				}}
-			>
-				<DeleteIcon />
-			</IconButton>
-		</Box>
-	);
-};
-
-/**
- * The badge beside a Delivery's name saying how its Features were chosen — and, for a reader who may
- * let go of the source, the button that starts doing so.
- *
- * A whole link reads as a badge rather than as something to press, so the marker only breaks the
- * moment the pointer or the keyboard arrives: that shows what pressing will do without a second glyph
- * sitting beside every name for the rest of the time. The hover state lives here because nothing
- * outside this badge has any use for it.
- */
-const SelectionModeMarker: React.FC<{
-	hint: string;
-	Icon: typeof TouchAppIcon;
-	canUnbind: boolean;
-	onAskToUnbind: () => void;
-}> = ({ hint, Icon, canUnbind, onAskToUnbind }) => {
-	const [isAboutToUnbind, setIsAboutToUnbind] = useState(false);
-
-	if (!canUnbind) {
-		return (
-			<Tooltip title={hint}>
-				<Box sx={{ display: "flex", alignItems: "center" }}>
-					<Icon fontSize="small" sx={{ color: "text.secondary" }} />
-				</Box>
-			</Tooltip>
-		);
-	}
-
-	return (
-		<Tooltip title={hint}>
-			<IconButton
-				size="small"
-				aria-label={hint}
-				onClick={(e) => {
-					e.stopPropagation();
-					onAskToUnbind();
-				}}
-				onMouseEnter={() => setIsAboutToUnbind(true)}
-				onMouseLeave={() => setIsAboutToUnbind(false)}
-				onFocus={() => setIsAboutToUnbind(true)}
-				onBlur={() => setIsAboutToUnbind(false)}
-				sx={{ color: "text.secondary", p: 0 }}
-			>
-				{isAboutToUnbind ? (
-					<LinkOffIcon fontSize="small" />
-				) : (
-					<Icon fontSize="small" />
-				)}
-			</IconButton>
-		</Tooltip>
-	);
-};
-
-/** The teams carrying work on one row, or a word saying nobody is. */
-const OwningTeams: React.FC<{ row: IFeature; teams: IEntityReference[] }> = ({
-	row,
-	teams,
-}) => {
-	const teamsWithWork = teams.filter(
-		(team) => row.getTotalWorkForTeam(team.id) > 0,
-	);
-
-	if (teamsWithWork.length === 0) {
-		return (
-			<Typography variant="body2" color="text.secondary">
-				Unassigned
-			</Typography>
-		);
-	}
-
-	return (
-		<Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-			{teamsWithWork.map((team) => (
-				<StyledLink key={team.id} to={`/teams/${team.id}`}>
-					<Typography variant="body2">{team.name}</Typography>
-				</StyledLink>
-			))}
-		</Box>
-	);
-};
-
-/**
- * The grid's column definitions. They are a description of the table rather than part of this
- * component's own logic, and each cell renderer is a small function of its own — so they live out
- * here, where they do not count against the component that happens to mount the grid.
- */
-function featureColumns({
-	featureTerm,
-	delivery,
-	teams,
-	onShowDetails,
-}: {
-	featureTerm: string;
-	delivery: Delivery;
-	teams: IEntityReference[];
-	onShowDetails: (feature: IFeature) => void;
-}): DataGridColumn<IFeature & GridValidRowModel>[] {
-	return [
-		{
-			field: "name",
-			headerName: `${featureTerm} Name`,
-			hideable: false,
-			minWidth: 120,
-			flex: 1,
-			renderCell: ({ row }) => (
-				<FeatureName
-					name={getWorkItemName(row.name, row.referenceId)}
-					url={row.url ?? ""}
-				/>
-			),
-		},
-		{
-			field: "owningTeam",
-			headerName: "Team",
-			minWidth: 100,
-			flex: 0.5,
-			renderCell: ({ row }) => <OwningTeams row={row} teams={teams} />,
-		},
-		{
-			field: "progress",
-			headerName: "Progress",
-			minWidth: 200,
-			flex: 1,
-			sortable: false,
-			renderCell: ({ row }) => (
-				<FeatureProgressIndicator
-					feature={row}
-					teams={teams}
-					onShowDetails={() => Promise.resolve(onShowDetails(row))}
-				/>
-			),
-		},
-		{
-			...createForecastedStartColumn("Forecasted Start"),
-			minWidth: 100,
-			flex: 0.5,
-			width: undefined,
-		},
-		{
-			...createForecastsColumn("Forecasted Completion"),
-			minWidth: 100,
-			flex: 0.5,
-			width: undefined,
-		},
-		{
-			field: "likelihood",
-			headerName: MARGINAL_LIKELIHOOD_HEADER,
-			minWidth: 110,
-			flex: 0.3,
-			sortable: false,
-			renderCell: ({ row }) =>
-				delivery.featureLikelihoods
-					.filter((fl) => fl.featureId === row.id)
-					.map((fl) => (
-						<FeatureLikelihoodChip
-							key={fl.featureId}
-							featureLikelihood={fl}
-							hasRemainingWork={row.getRemainingWorkForFeature() > 0}
-						/>
-					)),
-		},
-		createStateColumn(),
-	];
-}
-
-/**
- * What the header chip says about the Delivery as a whole. The three answers are mutually exclusive
- * and ordered: no forecast at all beats not enough history, which beats the number itself.
- */
-function whatTheHeaderChipSays({
-	delivery,
-	featuresTerm,
-	cannotBeForecast: deliveryCannotBeForecast,
-	hasInsufficientData,
-}: {
-	delivery: Delivery;
-	featuresTerm: string;
-	cannotBeForecast: boolean;
-	hasInsufficientData: boolean;
-}): string {
-	if (deliveryCannotBeForecast || delivery.likelihoodPercentage === null) {
-		return CANNOT_FORECAST_SHORT;
-	}
-
-	if (hasInsufficientData) {
-		return INSUFFICIENT_FORECAST_DATA_SHORT;
-	}
-
-	return jointLikelihoodLabel({
-		term: featuresTerm,
-		date: delivery.getFormattedDate(),
-		value: formatLikelihood(delivery.likelihoodPercentage, {
-			hasRemainingWork: delivery.remainingWork > 0,
-			precision: "round",
-		}),
-	});
-}
 
 interface DeliverySectionProps {
 	delivery: Delivery;
@@ -863,129 +495,6 @@ const DeliverySection: React.FC<DeliverySectionProps> = ({
 				/>
 			)}
 		</Paper>
-	);
-};
-
-interface UnbindConfirmationDialogProps {
-	open: boolean;
-	sourceLabel: string;
-	deliveryName: string;
-	featuresTerm: string;
-	onConfirm: () => void;
-	onCancel: () => void;
-}
-
-/**
- * Asked because the way back is not symmetrical: binding again means finding the same entry in the
- * work tracking system and picking it a second time, which nothing on this page will do for you.
- */
-const UnbindConfirmationDialog: React.FC<UnbindConfirmationDialogProps> = ({
-	open,
-	sourceLabel,
-	deliveryName,
-	featuresTerm,
-	onConfirm,
-	onCancel,
-}) => {
-	const titleId = useId();
-	const descriptionId = useId();
-	// The dialog is still on screen while it fades out, so the button that started the unbind can be
-	// pressed a second time. That second press sends the same version number the first one has just
-	// spent, and the reader is told someone else changed the delivery moments after their own change
-	// went through.
-	const [asked, setAsked] = useState(false);
-
-	useEffect(() => {
-		if (open) {
-			setAsked(false);
-		}
-	}, [open]);
-
-	return (
-		<Dialog
-			open={open}
-			onClose={onCancel}
-			aria-labelledby={titleId}
-			aria-describedby={descriptionId}
-		>
-			<DialogTitle id={titleId}>Stop following the {sourceLabel}?</DialogTitle>
-			<DialogContent>
-				<DialogContentText id={descriptionId}>
-					{`"${deliveryName}" keeps the name, the date and the ${featuresTerm} it has right now, and from then on they are yours to edit. It stops taking them from the ${sourceLabel}.`}
-				</DialogContentText>
-			</DialogContent>
-			<DialogActions>
-				<Button onClick={onCancel} color="primary">
-					Cancel
-				</Button>
-				<Button
-					onClick={() => {
-						setAsked(true);
-						onConfirm();
-					}}
-					disabled={asked}
-					color="primary"
-					variant="contained"
-					autoFocus
-				>
-					Stop following
-				</Button>
-			</DialogActions>
-		</Dialog>
-	);
-};
-
-interface WorkItemsTabProps {
-	isLoadingFeatures: boolean;
-	features: IFeature[];
-	columns: DataGridColumn<IFeature & GridValidRowModel>[];
-	deliveryId: number;
-	featuresTerm: string;
-	deliveryTerm: string;
-	exportFileName: string;
-	exportTable: (orderedRowIds: GridRowId[]) => DataGridExportTable;
-}
-
-const WorkItemsTab: React.FC<WorkItemsTabProps> = ({
-	isLoadingFeatures,
-	features,
-	columns,
-	deliveryId,
-	featuresTerm,
-	deliveryTerm,
-	exportFileName,
-	exportTable,
-}) => {
-	if (isLoadingFeatures) {
-		return (
-			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-				{`Loading ${featuresTerm}...`}
-			</Typography>
-		);
-	}
-
-	if (features.length === 0) {
-		return (
-			<Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
-				No {featuresTerm} in this {deliveryTerm}.
-			</Typography>
-		);
-	}
-
-	return (
-		<Box sx={{ mx: 2, mb: 2, mt: 2 }}>
-			<FeatureListDataGrid
-				features={features}
-				columns={columns}
-				storageKey={`delivery-features-${deliveryId}`}
-				hideCompletedStorageKey={`lighthouse_hide_completed_features_delivery_${deliveryId}`}
-				loading={false}
-				emptyStateMessage={`No ${featuresTerm} found`}
-				enableExport={true}
-				exportFileName={exportFileName}
-				exportTable={exportTable}
-			/>
-		</Box>
 	);
 };
 
