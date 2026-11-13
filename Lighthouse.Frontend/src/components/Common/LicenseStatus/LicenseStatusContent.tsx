@@ -60,7 +60,6 @@ const LicenseStatusContent: React.FC<LicenseStatusContentProps> = ({
 	const dialogTitleId = useId();
 	const dialogDescriptionId = useId();
 
-	// Fetch Lighthouse version
 	useEffect(() => {
 		const fetchVersion = async () => {
 			try {
@@ -93,7 +92,6 @@ const LicenseStatusContent: React.FC<LicenseStatusContentProps> = ({
 		const file = event.target.files?.[0];
 		if (!file) return;
 
-		// Validate file type
 		if (!file.name.toLowerCase().endsWith(".json")) {
 			setUploadError("Please select a JSON file");
 			return;
@@ -105,12 +103,10 @@ const LicenseStatusContent: React.FC<LicenseStatusContentProps> = ({
 		try {
 			const newLicenseStatus = await licensingService.importLicense(file);
 			onLicenseImported?.(newLicenseStatus);
-			// Clear the file input
 			if (fileInputRef.current) {
 				fileInputRef.current.value = "";
 			}
 		} catch (error) {
-			// Check if this is a 400 error or license validation error
 			const isLicenseValidationError =
 				(error instanceof Error && error.message.includes("400")) ||
 				(error instanceof Error &&
@@ -161,7 +157,6 @@ const LicenseStatusContent: React.FC<LicenseStatusContentProps> = ({
 
 		try {
 			await licensingService.clearLicense();
-			// Refresh the license status after clearing
 			const newLicenseStatus: ILicenseStatus = {
 				hasLicense: false,
 				isValid: false,
@@ -192,12 +187,10 @@ const LicenseStatusContent: React.FC<LicenseStatusContentProps> = ({
 		const now = new Date();
 		const expiryDate = new Date(licenseStatus.expiryDate);
 
-		// Show renewal for expired licenses
 		if (expiryDate <= now) {
 			return true;
 		}
 
-		// Show renewal if license expires within 30 days
 		const thirtyDaysFromNow = new Date(
 			now.getTime() + 30 * 24 * 60 * 60 * 1000,
 		);
@@ -216,16 +209,13 @@ const LicenseStatusContent: React.FC<LicenseStatusContentProps> = ({
 		// For licenses expiring soon, use the day after expiry
 		let validFrom: string;
 		if (expiryDate <= now) {
-			// License is expired - use today
 			validFrom = formatLocalDate(now);
 		} else {
-			// License is expiring soon - use day after expiry
 			const nextDay = new Date(expiryDate);
 			nextDay.setDate(nextDay.getDate() + 1);
 			validFrom = formatLocalDate(nextDay);
 		}
 
-		// Build URL with query parameters
 		const params = new URLSearchParams();
 		if (licenseStatus.name) {
 			params.append("name", licenseStatus.name);
@@ -271,7 +261,6 @@ Hosting Method: [Please fill in - e.g., Docker, Windows Service, Direct Installa
 Thank you for your support!
 		`.trim();
 
-		// Encode the mailto link
 		const mailtoLink = `mailto:lighthouse@letpeople.work?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 		globalThis.location.href = mailtoLink;
 	};
@@ -280,14 +269,13 @@ Thank you for your support!
 		if (!licenseStatus) return null;
 
 		if (!licenseStatus.hasLicense) {
-			return null; // No icon for no license state
+			return null;
 		}
 
 		if (!licenseStatus.isValid) {
 			return <ErrorIcon style={{ color: errorColor, fontSize: 20 }} />;
 		}
 
-		// Check if license is not yet valid (validFrom in future)
 		if (licenseStatus.validFrom) {
 			const now = new Date();
 			const validFromDate = new Date(licenseStatus.validFrom);
@@ -296,17 +284,14 @@ Thank you for your support!
 			}
 		}
 
-		// Check license expiry status
 		if (licenseStatus.expiryDate) {
 			const now = new Date();
 			const expiryDate = new Date(licenseStatus.expiryDate);
 
-			// Check if license has already expired
 			if (expiryDate <= now) {
 				return <ErrorIcon style={{ color: errorColor, fontSize: 20 }} />;
 			}
 
-			// Check if license expires within 30 days
 			const thirtyDaysFromNow = new Date(
 				now.getTime() + 30 * 24 * 60 * 60 * 1000,
 			);
@@ -370,7 +355,6 @@ Thank you for your support!
 			);
 		}
 
-		// Has license - show details
 		return (
 			<Box sx={{ p: 2, minWidth: 280 }}>
 				<Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
@@ -382,7 +366,6 @@ Thank you for your support!
 						{(() => {
 							if (!licenseStatus.isValid) return "Invalid License";
 
-							// Check if license is not yet valid
 							if (licenseStatus.validFrom) {
 								const now = new Date();
 								const validFromDate = new Date(licenseStatus.validFrom);
@@ -432,7 +415,6 @@ Thank you for your support!
 					</Typography>
 				)}
 
-				{/* Status messages */}
 				{!licenseStatus.isValid && (
 					<Typography
 						variant="body2"
@@ -449,7 +431,6 @@ Thank you for your support!
 						const now = new Date();
 						const validFromDate = new Date(licenseStatus.validFrom);
 
-						// Check if license is not yet valid
 						if (validFromDate > now) {
 							return (
 								<Typography
@@ -471,7 +452,6 @@ Thank you for your support!
 						const now = new Date();
 						const expiryDate = new Date(licenseStatus.expiryDate);
 
-						// Check if license has expired
 						if (expiryDate <= now) {
 							return (
 								<Typography
@@ -484,7 +464,6 @@ Thank you for your support!
 							);
 						}
 
-						// Check if license expires within 30 days
 						const thirtyDaysFromNow = new Date(
 							now.getTime() + 30 * 24 * 60 * 60 * 1000,
 						);
@@ -508,7 +487,6 @@ Thank you for your support!
 
 	return (
 		<>
-			{/* Icons in top right */}
 			<Box sx={{ position: "relative" }}>
 				<Box
 					sx={{
@@ -553,7 +531,6 @@ Thank you for your support!
 				</Box>
 				{renderContent()}
 			</Box>
-			{/* Action buttons - always visible */}
 			<Box>
 				<Divider />
 				<Box
@@ -566,7 +543,6 @@ Thank you for your support!
 						minHeight: "40px",
 					}}
 				>
-					{/* Error text on the left */}
 					{uploadError && (
 						<Typography
 							variant="caption"
@@ -583,7 +559,6 @@ Thank you for your support!
 						</Typography>
 					)}
 
-					{/* Button on the right */}
 					<Box
 						sx={{
 							display: "flex",
@@ -661,7 +636,6 @@ Thank you for your support!
 					</Box>
 				</Box>
 			</Box>
-			{/* Confirmation Dialog */}
 			<Dialog
 				open={showClearConfirmation}
 				onClose={handleClearLicenseCancel}
