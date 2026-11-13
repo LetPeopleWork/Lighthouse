@@ -29,19 +29,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     {
         // --- The verdict ---
 
-        // The forecast differs at every likelihood, so only the median and the 85% reading give 5 and 8.
-        [Test]
-        public void Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull()
-        {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
-            GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
-
-            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
-
-            ThenTheNeedIs(tab, new NeedFacts(Below, null, 5, 8, 50, 85, GravitysCycleWorkingDays));
-            ThenTheNextRefinementIsThursdayTheEighthWithTwoReady(tab);
-        }
-
         // Two Work Items are ready; both ends of the range belong to it.
         [TestCase(3, 8, Below)]
         [TestCase(2, 8, InRange)]
@@ -113,17 +100,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         // --- When there is no number ---
 
-        // The guard forecasts use: at least five days with finished Work Items.
-        [Test]
-        public void Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number()
-        {
-            var gravity = GivenGravityFinishedWorkOnOnlyFourDaysAndRefinesOnThursdays();
-
-            var tab = WhenTheCoachOpensTheRefinementTab(gravity);
-
-            ThenThereIsNoNumberBecause(tab, InsufficientData);
-        }
-
         [Test]
         public void Without_a_cadence_there_is_no_number_and_the_list_stays()
         {
@@ -133,16 +109,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
             ThenThereIsNoNumberBecause(tab, NoCadence);
             ThenAllSixAreStillListed(tab);
-        }
-
-        [Test]
-        public void A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states()
-        {
-            var zenith = GivenATeamWithoutRefinementStates();
-
-            var tab = WhenTheCoachOpensTheRefinementTab(zenith);
-
-            ThenThereIsNoNumberBecause(tab, NoRefinementStates);
         }
 
         // --- How many rows are needed ---

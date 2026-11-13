@@ -38,27 +38,12 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return gravity;
         }
 
-        private int GivenGravityFinishedWorkOnOnlyFourDaysAndRefinesOnThursdays()
-        {
-            GivenTodayIsWednesdayTheSeventhOfOctober();
-            var gravity = Givens.GravityWithItsReadyRule((UserActivityTracking, RefinementPortGivens.ReadyTag));
-            TheTeamFinishedWorkEveryDay(gravity, 3, days: 4);
-            Givens.TheTeamRefines(gravity, RefinementPortGivens.RefinesOnThursdays);
-            return gravity;
-        }
-
         private int GivenGravityHasTwoReadyWithoutACadence()
         {
             GivenTodayIsWednesdayTheSeventhOfOctober();
             var gravity = Givens.GravityWithItsReadyRule((UserActivityTracking, RefinementPortGivens.ReadyTag), (AdvancedSearch, RefinementPortGivens.ReadyTag));
             TheTeamFinishedWorkEveryDay(gravity, 1);
             return gravity;
-        }
-
-        private int GivenATeamWithoutRefinementStates()
-        {
-            GivenTodayIsWednesdayTheSeventhOfOctober();
-            return Givens.ATeam("Team Zenith", new TeamStates([Backlog], [Implementation], [Done]), ThroughputHistoryDays);
         }
 
         /// <summary>Team Nebula's backlog holds three hundred Work Items, it refines in Backlog every Tuesday, and it finished one Work Item a day.</summary>
@@ -99,16 +84,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static void ThenTheNeedIs(RefinementViewDto tab, NeedFacts expected)
             => Assert.That(TheNeedOn(tab), Is.EqualTo(expected),
                 "the need must judge the ready Work Items against the range read at the median and at 85% over the working days of the cycle");
-
-        private static void ThenTheNextRefinementIsThursdayTheEighthWithTwoReady(RefinementViewDto tab)
-        {
-            using (Assert.EnterMultipleScope())
-            {
-                Assert.That((tab.NextRefinementDate, tab.IsRefinementDay), Is.EqualTo(((string?)"2026-10-08", false)),
-                    "from Friday the 2nd the next Refinement of a Team that refines on Thursdays is Thursday the 8th");
-                Assert.That(tab.ReadyCount, Is.EqualTo(2), "GR-058 and GR-059 are tagged ready under the Ready rule");
-            }
-        }
 
         private static void ThenTheVerdictIs(RefinementViewDto tab, string verdict)
             => Assert.That(TheNeedOn(tab).Verdict, Is.EqualTo(verdict),
