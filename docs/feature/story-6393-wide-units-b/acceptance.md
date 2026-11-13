@@ -477,6 +477,277 @@ a key that drops the update moment or adds the name
 
 
 
+### S3
+
+##### Covers
+
+P1
+
+```text
+Open the unbind confirmation, press Cancel, press Stop following twice, close and reopen
+```
+
+```text
+The question names the source and the Delivery, Cancel hands back a cancel, Stop following confirms exactly once then switches off, and is on again after reopening
+```
+
+```text
+The reader is asked before letting go of a source and cannot send the change twice
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+A confirm button that never calls back, calls twice, stays enabled after the first press, or stays off after reopening
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Open the work items tab loading, empty and with two Features
+```
+
+```text
+Loading shows the loading sentence, an empty Delivery says it holds no Features, otherwise each Feature is listed with its Team link
+```
+
+```text
+The Delivery's Features list reads as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+A tab that shows the empty sentence while loading, drops the rows, or loses the Team column
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Press archive, edit and delete on a Delivery row with and without premium
+```
+
+```text
+Each action hands the Delivery back once without opening the row; archive is off without premium while edit and delete stay on
+```
+
+```text
+A reader gets the row actions they may use
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+An action missing for one role, a click that also opens the row, or archive that fires while disabled
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Render the marker beside a Delivery's name for a reader who may and one who may not let go
+```
+
+```text
+No button without the right; with it a button that asks to stop following without opening the row
+```
+
+```text
+Only a reader who may edit is offered the way out
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+A marker that is always a button, never a button, or lets the click through to the row
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Render the teams on a Feature row with and without work
+```
+
+```text
+Only teams with work are linked to their page; otherwise Unassigned
+```
+
+```text
+The row names who carries the work
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+A list of all teams, or no Unassigned word when nobody has work
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Ask how the Features were chosen for bound, rule-based, manual and unbindable Deliveries
+```
+
+```text
+Bound beats rule-based, each state has its own icon and sentence, and the way-out suffix appears only when allowed
+```
+
+```text
+The badge beside a Delivery's name says the same as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+Wrong sentence or icon for one source state, bound ranked below rule-based, or the suffix always or never added
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Ask what the header chip says for a forecast, a capped forecast, a team without history, no likelihood and thin data
+```
+
+```text
+The joint sentence with date and percentage, the capped value, Cannot forecast, Cannot forecast, Not enough data
+```
+
+```text
+The header chip carries the same words as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+Thin data outranking no forecast, a changed wording, or no cap on near-certain values
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Render the source notices for a bound Delivery with an unavailable source and refused forecast, one of them, and an unbound Delivery
+```
+
+```text
+Both, only the one that applies, or none
+```
+
+```text
+A Delivery warns only about a source it follows
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/DeliverySectionParts\.test\.tsx
+
+```text
+Showing a notice for an unbound Delivery, or hiding one of two standing notices
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+Run the size rule over the production files
+```
+
+```text
+DeliverySection stays under the line limit and no production file is listed as an offender
+```
+
+```text
+The section is small enough to read and change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/fileSize\.enforcement\.test\.ts
+
+```text
+A section that stays near 1000 lines or an offender list that quietly grows
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

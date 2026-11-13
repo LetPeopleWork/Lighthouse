@@ -254,12 +254,134 @@
 "stimulus": "F315",
 "user_result": "F317"
 }
+],
+"S3": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F322",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F320",
+"stimulus": "F319",
+"user_result": "F321"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F326",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F324",
+"stimulus": "F323",
+"user_result": "F325"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F330",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F328",
+"stimulus": "F327",
+"user_result": "F329"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F334",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F332",
+"stimulus": "F331",
+"user_result": "F333"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F338",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F336",
+"stimulus": "F335",
+"user_result": "F337"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F342",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F340",
+"stimulus": "F339",
+"user_result": "F341"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F346",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F344",
+"stimulus": "F343",
+"user_result": "F345"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F350",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx"
+},
+"expected": "F348",
+"stimulus": "F347",
+"user_result": "F349"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F354",
+"test": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+},
+"expected": "F352",
+"stimulus": "F351",
+"user_result": "F353"
+}
 ]
 },
 "counters": {
 "D": 6,
 "E": 6,
-"F": 318,
+"F": 354,
 "K": 7,
 "L": 7,
 "P": 4,
@@ -1853,10 +1975,46 @@
 "F316": "The key carries the id and update moment only; equal owners give equal keys; an update gives another key",
 "F317": "An open dashboard asks again after the owner is updated",
 "F318": "a key that drops the update moment or adds the name",
+"F319": "Open the unbind confirmation, press Cancel, press Stop following twice, close and reopen",
 "F32": "A refetch loop, a stale scope landing after a reset, a changed query start order",
+"F320": "The question names the source and the Delivery, Cancel hands back a cancel, Stop following confirms exactly once then switches off, and is on again after reopening",
+"F321": "The reader is asked before letting go of a source and cannot send the change twice",
+"F322": "A confirm button that never calls back, calls twice, stays enabled after the first press, or stays off after reopening",
+"F323": "Open the work items tab loading, empty and with two Features",
+"F324": "Loading shows the loading sentence, an empty Delivery says it holds no Features, otherwise each Feature is listed with its Team link",
+"F325": "The Delivery's Features list reads as before",
+"F326": "A tab that shows the empty sentence while loading, drops the rows, or loses the Team column",
+"F327": "Press archive, edit and delete on a Delivery row with and without premium",
+"F328": "Each action hands the Delivery back once without opening the row; archive is off without premium while edit and delete stay on",
+"F329": "A reader gets the row actions they may use",
 "F33": "Diff reading is the only check on dependency arrays beyond the existing loading and drill-down tests",
+"F330": "An action missing for one role, a click that also opens the row, or archive that fires while disabled",
+"F331": "Render the marker beside a Delivery's name for a reader who may and one who may not let go",
+"F332": "No button without the right; with it a button that asks to stop following without opening the row",
+"F333": "Only a reader who may edit is offered the way out",
+"F334": "A marker that is always a button, never a button, or lets the click through to the row",
+"F335": "Render the teams on a Feature row with and without work",
+"F336": "Only teams with work are linked to their page; otherwise Unassigned",
+"F337": "The row names who carries the work",
+"F338": "A list of all teams, or no Unassigned word when nobody has work",
+"F339": "Ask how the Features were chosen for bound, rule-based, manual and unbindable Deliveries",
 "F34": "A test mocks a moved module by path and stays green whatever the code does",
+"F340": "Bound beats rule-based, each state has its own icon and sentence, and the way-out suffix appears only when allowed",
+"F341": "The badge beside a Delivery's name says the same as before",
+"F342": "Wrong sentence or icon for one source state, bound ranked below rule-based, or the suffix always or never added",
+"F343": "Ask what the header chip says for a forecast, a capped forecast, a team without history, no likelihood and thin data",
+"F344": "The joint sentence with date and percentage, the capped value, Cannot forecast, Cannot forecast, Not enough data",
+"F345": "The header chip carries the same words as before",
+"F346": "Thin data outranking no forecast, a changed wording, or no cap on near-certain values",
+"F347": "Render the source notices for a bound Delivery with an unavailable source and refused forecast, one of them, and an unbound Delivery",
+"F348": "Both, only the one that applies, or none",
+"F349": "A Delivery warns only about a source it follows",
 "F35": "Each moved module is exercised by a real call in the slice oracle",
+"F350": "Showing a notice for an unbound Delivery, or hiding one of two standing notices",
+"F351": "Run the size rule over the production files",
+"F352": "DeliverySection stays under the line limit and no production file is listed as an offender",
+"F353": "The section is small enough to read and change",
+"F354": "A section that stays near 1000 lines or an offender list that quietly grows",
 "F36": "vi.mock of chart components as today",
 "F37": "Mocking the moved unit in its own oracle",
 "F38": "Reviewer reads the oracle for mocks of the unit under test",

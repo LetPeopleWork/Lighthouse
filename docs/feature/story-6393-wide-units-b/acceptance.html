@@ -562,6 +562,241 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 
 
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Open the unbind confirmation, press Cancel, press Stop following twice, close and reopen
+</code></pre>
+
+<pre><code>The question names the source and the Delivery, Cancel hands back a cancel, Stop following confirms exactly once then switches off, and is on again after reopening
+</code></pre>
+
+<pre><code>The reader is asked before letting go of a source and cannot send the change twice
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>A confirm button that never calls back, calls twice, stays enabled after the first press, or stays off after reopening
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Open the work items tab loading, empty and with two Features
+</code></pre>
+
+<pre><code>Loading shows the loading sentence, an empty Delivery says it holds no Features, otherwise each Feature is listed with its Team link
+</code></pre>
+
+<pre><code>The Delivery&#x27;s Features list reads as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>A tab that shows the empty sentence while loading, drops the rows, or loses the Team column
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Press archive, edit and delete on a Delivery row with and without premium
+</code></pre>
+
+<pre><code>Each action hands the Delivery back once without opening the row; archive is off without premium while edit and delete stay on
+</code></pre>
+
+<pre><code>A reader gets the row actions they may use
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>An action missing for one role, a click that also opens the row, or archive that fires while disabled
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Render the marker beside a Delivery&#x27;s name for a reader who may and one who may not let go
+</code></pre>
+
+<pre><code>No button without the right; with it a button that asks to stop following without opening the row
+</code></pre>
+
+<pre><code>Only a reader who may edit is offered the way out
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>A marker that is always a button, never a button, or lets the click through to the row
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Render the teams on a Feature row with and without work
+</code></pre>
+
+<pre><code>Only teams with work are linked to their page; otherwise Unassigned
+</code></pre>
+
+<pre><code>The row names who carries the work
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>A list of all teams, or no Unassigned word when nobody has work
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Ask how the Features were chosen for bound, rule-based, manual and unbindable Deliveries
+</code></pre>
+
+<pre><code>Bound beats rule-based, each state has its own icon and sentence, and the way-out suffix appears only when allowed
+</code></pre>
+
+<pre><code>The badge beside a Delivery&#x27;s name says the same as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>Wrong sentence or icon for one source state, bound ranked below rule-based, or the suffix always or never added
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Ask what the header chip says for a forecast, a capped forecast, a team without history, no likelihood and thin data
+</code></pre>
+
+<pre><code>The joint sentence with date and percentage, the capped value, Cannot forecast, Cannot forecast, Not enough data
+</code></pre>
+
+<pre><code>The header chip carries the same words as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>Thin data outranking no forecast, a changed wording, or no cap on near-certain values
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Render the source notices for a bound Delivery with an unavailable source and refused forecast, one of them, and an unbound Delivery
+</code></pre>
+
+<pre><code>Both, only the one that applies, or none
+</code></pre>
+
+<pre><code>A Delivery warns only about a source it follows
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx</p>
+
+<pre><code>Showing a notice for an unbound Delivery, or hiding one of two standing notices
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the size rule over the production files
+</code></pre>
+
+<pre><code>DeliverySection stays under the line limit and no production file is listed as an offender
+</code></pre>
+
+<pre><code>The section is small enough to read and change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>A section that stays near 1000 lines or an offender list that quietly grows
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
