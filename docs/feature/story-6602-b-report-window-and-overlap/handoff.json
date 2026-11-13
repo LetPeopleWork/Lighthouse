@@ -71,13 +71,39 @@
 "expected": "F164",
 "stimulus": "F163",
 "user_result": "F165"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F182",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs::A_port_registering_the_services_as_the_host_does_differs_in_nothing"
+},
+"expected": "F180",
+"stimulus": "F179",
+"user_result": "F181"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F186",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs::A_registration_that_only_looks_like_the_hosts_is_reported_by_service"
+},
+"expected": "F184",
+"stimulus": "F183",
+"user_result": "F185"
 }
 ]
 },
 "counters": {
 "D": 12,
 "E": 4,
-"F": 178,
+"F": 186,
 "K": 9,
 "L": 4,
 "P": 4,
@@ -866,7 +892,15 @@
 "F176": "A port factory for a forwarder passes on lifetime and the presence of its forward target",
 "F177": "A lookalike type registration of a forwarder passing the check",
 "F178": "What a port factory returns is not observed; a factory returning a lookalike would pass. Observing it needs resolving the port container, which needs a database per check; not built",
+"F179": "The port-fixture lifetime check compares a Reports port that registers its services as the host does with host registrations shaped as the host makes them",
 "F18": "No builder and no PortGivensGuardTest-like guard for the Reports port base: its only Team set-up is one ATeam step in the base itself, used by one class, so no builder rule exists to guard. A shared Reports builder is built when a second Reports class moves to the port.",
+"F180": "The check gives no difference, so the Reports port base can pass it",
+"F181": "A Reports port that mirrors the host is not reported as drifted",
+"F182": "A check that reports every forwarder or repeated service type would fail this row; a check that skips every forwarder, as it does today, still passes it",
+"F183": "The port-fixture lifetime check compares host registrations with a port that plants one lookalike per row: the portfolio repository service built from the repository type, the report reader built from the report repository type, the portfolio repository service as a factory with its forward target missing, and a report metric type the host does not register",
+"F184": "Each planted row gives exactly one difference, and that difference names the planted service",
+"F185": "A Reports port that only looks like the host is reported, naming the service to fix, so a scenario cannot pass on state the product never shares",
+"F186": "A check that skips every declared forwarder unconditionally still reports the unregistered metric type but misses the three forwarder rows; a check that reports a lookalike without naming the service would fail the name assertion; a check that reports two differences for one plant would fail the count",
 "F19": "The repository-root lookup that anchors the shared table (Lighthouse.sln, then its parent) is needed at the port. ReportsAcceptanceTest.RepositoryRoot stays unchanged and is not reachable from the port base, so ReportsAtThePortTest or the moved class owns its own lookup. This repeats a lookup that already exists in several test classes; folding them is outside this Story.",
 "F2": "The report-window class proves its 15 boundary rows without a web host, and the Refinement need rules are proven once, so the backend Integration tier is faster and no rule loses its test",
 "F20": "Slice05NeedAndVerdictTest rows dropped, each mapped to the NeedOverOneCycleTest row with the same Givens in the same order and an assertion superset: (1) Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull maps to The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after (Gravity with GR-058 and GR-059 tagged ready under the Ready rule, one finished a day, refines on Thursdays, today 2 Oct 2026, the 3/5/6/8/10 script over 7 working days; the twin asserts the same need facts Below, 5, 8, 50, 85, 7, next Refinement 8 Oct not today and 2 ready, plus the cycle 8 to 15 Oct). (2) Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number maps to Without_a_number_the_need_names_no_cycle(ThroughputHistory,InsufficientData) (today 7 Oct, Gravity with GR-058 tagged ready, 3 finished a day on 4 days, refines on Thursdays; the twin asserts InsufficientData and no verdict, low or high, plus no cycle). (3) A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states maps to Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) (today 7 Oct, Team Zenith with Backlog, Implementation, Done and 30 days of history; the twin asserts NoRefinementStates and no verdict, low or high, plus no cycle). Slice05NeedAndVerdictTest goes from 17 rows to 14.",

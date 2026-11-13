@@ -288,6 +288,58 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The port-fixture lifetime check compares a Reports port that registers its services as the host does with host registrations shaped as the host makes them
+</code></pre>
+
+<pre><code>The check gives no difference, so the Reports port base can pass it
+</code></pre>
+
+<pre><code>A Reports port that mirrors the host is not reported as drifted
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs::A_port_registering_the_services_as_the_host_does_differs_in_nothing</p>
+
+<pre><code>A check that reports every forwarder or repeated service type would fail this row; a check that skips every forwarder, as it does today, still passes it
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The port-fixture lifetime check compares host registrations with a port that plants one lookalike per row: the portfolio repository service built from the repository type, the report reader built from the report repository type, the portfolio repository service as a factory with its forward target missing, and a report metric type the host does not register
+</code></pre>
+
+<pre><code>Each planted row gives exactly one difference, and that difference names the planted service
+</code></pre>
+
+<pre><code>A Reports port that only looks like the host is reported, naming the service to fix, so a scenario cannot pass on state the product never shares
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs::A_registration_that_only_looks_like_the_hosts_is_reported_by_service</p>
+
+<pre><code>A check that skips every declared forwarder unconditionally still reports the unregistered metric type but misses the three forwarder rows; a check that reports a lookalike without naming the service would fail the name assertion; a check that reports two differences for one plant would fail the count
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

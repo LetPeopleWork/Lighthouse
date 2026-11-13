@@ -27,7 +27,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
 
         private const string ThenAndNowTemplate = "then-and-now";
 
-        private const string EngagementStart = "Then & Now - engagement start";
+        private const string EngagementStart = "Then & Now — engagement start";
 
         private const string CycleTime = "cycle-time";
 
@@ -53,7 +53,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Reports
                 using (Assert.EnterMultipleScope())
                 {
                     Assert.That(answer.Status, Is.EqualTo(ReportOutcomeStatus.Done), $"the report was not created: {answer.Code}");
-                    Assert.That(answer.Value, Is.Not.Null, "a created report is handed back");
+                    Assert.That(answer.Value?.Id, Is.GreaterThan(0), "a created report is handed back with its id");
                 }
             }
             else
