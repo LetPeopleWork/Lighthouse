@@ -1,0 +1,856 @@
+{
+"counters": {
+"D": 12,
+"F": 142,
+"K": 9,
+"L": 4,
+"P": 4,
+"S": 2,
+"T": 2,
+"Y": 5
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F54",
+"driven_ports": [
+"F50",
+"F51",
+"F52",
+"F53"
+],
+"driving_port": "F49"
+},
+"closure": [
+{
+"axis": "Inhabitation",
+"basis": "F81",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F80"
+},
+{
+"axis": "PublicReachability",
+"basis": "F82",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F80"
+},
+{
+"axis": "Safety",
+"basis": "F84",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F83"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F27"
+},
+{
+"id": "K2",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F28"
+},
+{
+"id": "K3",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F29"
+},
+{
+"id": "K4",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F30"
+},
+{
+"id": "K5",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F31"
+},
+{
+"id": "K6",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F32"
+},
+{
+"id": "K7",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F33"
+},
+{
+"id": "K8",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F34"
+},
+{
+"id": "K9",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F35"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1"
+],
+"text": "F15"
+},
+{
+"id": "D2",
+"slices": [
+"S1"
+],
+"text": "F16"
+},
+{
+"id": "D3",
+"slices": [
+"S1"
+],
+"text": "F17"
+},
+{
+"id": "D4",
+"slices": [
+"S1"
+],
+"text": "F18"
+},
+{
+"id": "D5",
+"slices": [
+"S1"
+],
+"text": "F19"
+},
+{
+"id": "D6",
+"slices": [
+"S2"
+],
+"text": "F20"
+},
+{
+"id": "D7",
+"slices": [
+"S2"
+],
+"text": "F21"
+},
+{
+"id": "D8",
+"slices": [
+"S2"
+],
+"text": "F22"
+},
+{
+"id": "D9",
+"slices": [
+"S2"
+],
+"text": "F23"
+},
+{
+"id": "D10",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F24"
+},
+{
+"id": "D11",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F25"
+},
+{
+"id": "D12",
+"slices": [
+"S1",
+"S2"
+],
+"text": "F26"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "ReportsAtThePortTest",
+"statement": "F61",
+"treatment": {
+"cases": [
+"F62"
+],
+"kind": "Finite",
+"reason": "F63"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "RefinementAtThePortTest",
+"statement": "F64",
+"treatment": {
+"cases": [
+"F65",
+"F66",
+"F67"
+],
+"kind": "Finite",
+"reason": "F68"
+}
+},
+{
+"id": "L3",
+"kind": "Refinement",
+"layer": "Application",
+"owner": "NeedOverOneCycleTest",
+"statement": "F69",
+"treatment": {
+"cases": [
+"F70",
+"F71",
+"F72"
+],
+"kind": "Finite",
+"reason": "F73"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "ReportsAtThePortTest",
+"statement": "F74",
+"treatment": {
+"cases": [
+"F75",
+"F76",
+"F77",
+"F78"
+],
+"kind": "Finite",
+"reason": "F79"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F47"
+},
+{
+"analysis": "contract_tests",
+"reason": "F48"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F56",
+"description": "F55",
+"result_type": "TRX outcome per test id"
+},
+{
+"cannot_distinguish": "F58",
+"description": "F57",
+"result_type": "Set difference of test ids"
+},
+{
+"cannot_distinguish": "F60",
+"description": "F59",
+"result_type": "Row outcome under the break"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs:35",
+"reason": "F36",
+"symbol": "ReportsAcceptanceTest"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/TestHelpers/ServicePortHarness.cs:20",
+"reason": "F37",
+"symbol": "ServicePortHarness"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Program.cs:1326",
+"reason": "F38",
+"symbol": "RegisterReports"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs:341",
+"reason": "F39",
+"symbol": "PortFixtures"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:183",
+"reason": "F40",
+"symbol": "HostUsersStillToMove"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:58",
+"reason": "F41",
+"symbol": "ReportWindowPolicyTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs:38",
+"reason": "F42",
+"symbol": "RefinementAtThePortTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs:23",
+"reason": "F43",
+"symbol": "RefinementPortGivens"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs:23",
+"reason": "F44",
+"symbol": "NeedOverOneCycleTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs:28",
+"reason": "F45",
+"symbol": "Slice05NeedAndVerdictTest"
+},
+{
+"decision": "Replace",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickSpecifications.cs:93",
+"reason": "F46",
+"symbol": "TheTabAsReadBy"
+}
+],
+"risks": [
+{
+"allowed": "F87",
+"forbidden": "F88",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "ReportsAtThePortTest",
+"preserved": "F86",
+"residue": "F89",
+"source": "F85"
+},
+{
+"allowed": "F92",
+"forbidden": "F93",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "ReportsAcceptanceTest",
+"preserved": "F91",
+"residue": "F94",
+"source": "F90"
+},
+{
+"allowed": "F97",
+"forbidden": "F98",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "NeedOverOneCycleTest",
+"preserved": "F96",
+"residue": "F99",
+"source": "F95"
+},
+{
+"allowed": "F102",
+"forbidden": "F103",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "ReportsAtThePortTest",
+"preserved": "F101",
+"residue": "F104",
+"source": "F100"
+},
+{
+"allowed": "F87",
+"forbidden": "F107",
+"id": "Y5",
+"kind": "Stressor",
+"owner": "RealityCheckWireContractTest",
+"preserved": "F106",
+"residue": "F108",
+"source": "F105"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs",
+"public_oracle": {
+"expected": "F113",
+"falsifier": "F114",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F112"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter FullyQualifiedName~TestHostUseGuardTest",
+"id": "T1",
+"obligation": "F123",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-base",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs:1",
+"reason": "F116"
+},
+{
+"decision": "Migrated",
+"kind": "acceptance-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs:20",
+"reason": "F117"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "unit-test-consumer",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Reports/ReportWindowPolicyTest.cs:58",
+"reason": "F118"
+},
+{
+"decision": "Changed",
+"kind": "wire-contract-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs:341",
+"reason": "F119"
+},
+{
+"decision": "Changed",
+"kind": "architecture-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs:183",
+"reason": "F120"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "host-base",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs:35",
+"reason": "F121"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F122"
+}
+],
+"reuse": [
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs:1",
+"reason": "F115",
+"symbol": "ReportsAtThePortTest"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs",
+"reason": "F109"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/Forecasting/RealityCheckWireContractTest.cs",
+"reason": "F110"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
+"reason": "F111"
+}
+],
+"verification": [
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter FullyQualifiedName~ReportWindowBoundaryScenarios",
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~RealityCheckWireContractTest|FullyQualifiedName~ReportWindowPolicyTest'",
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken pwsh Lighthouse.Backend/Test-Fast.ps1"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
+"move": "F132",
+"preserved": "F133",
+"verification": [
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~Slice05NeedAndVerdictTest|FullyQualifiedName~NeedOverOneCycleTest|FullyQualifiedName~Slice10SleYardstickTest'"
+]
+},
+"public_oracle": {
+"expected": "F130",
+"falsifier": "F131",
+"promises": [
+"P3",
+"P4"
+],
+"stimulus": "F129"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter FullyQualifiedName~PortGivensGuardTest",
+"id": "T2",
+"obligation": "F142",
+"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "test-base",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs:38",
+"reason": "F135"
+},
+{
+"decision": "Changed",
+"kind": "test-builder",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs:23",
+"reason": "F136"
+},
+{
+"decision": "Changed",
+"kind": "acceptance-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs:28",
+"reason": "F137"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "acceptance-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs:23",
+"reason": "F138"
+},
+{
+"decision": "Changed",
+"kind": "acceptance-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickSpecifications.cs:93",
+"reason": "F139"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "architecture-test",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs:27",
+"reason": "F140"
+},
+{
+"decision": "Changed",
+"kind": "acceptance-test-steps",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleSpecifications.cs:13",
+"reason": "F141"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleSpecifications.cs:13",
+"reason": "F134",
+"symbol": "NeedOverOneCycleTest"
+}
+]
+},
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictSpecifications.cs"
+],
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs",
+"reason": "F124"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementPortGivens.cs",
+"reason": "F125"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleSpecifications.cs",
+"reason": "F126"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
+"reason": "F127"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickSpecifications.cs",
+"reason": "F128"
+}
+],
+"verification": [
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~Slice05NeedAndVerdictTest|FullyQualifiedName~NeedOverOneCycleTest|FullyQualifiedName~Slice10SleYardstickTest'",
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~PortGivensGuardTest|FullyQualifiedName~RefinementWithoutSignInWireContractTest|FullyQualifiedName~RealityCheckWireContractTest'",
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken pwsh Lighthouse.Backend/Test-Fast.ps1"
+]
+}
+}
+},
+"facts": {
+"F1": "Story #6602, feature B: move ReportWindowBoundaryScenarios from the web host to the application-service port on a new Reports port base (ReportsAtThePortTest), behaviour-free, leaving HostUsersStillToMove in the commit that moves it; then drop the Slice05NeedAndVerdictTest rows that repeat NeedOverOneCycleTest, each mapped to its twin, and hoist the duplication the feature A reviews carried forward. Design: docs/feature/story-6602-refinement-and-report-window-at-the-port/feature-delta.md",
+"F10": "Folding the host NeedForecastScript into ScriptedForecasts",
+"F100": "A port class writes a Team directly through the context or a repository",
+"F101": "One Team writer per port base",
+"F102": "The Reports base ATeam step, the only writer there",
+"F103": "A second Team writer in a Reports port class",
+"F104": "No guard on the Reports base until a builder exists; PortGivensGuardTest keeps guarding Refinement",
+"F105": "Assumption negated: the port registrations match the host",
+"F106": "Service lifetimes as on the host",
+"F107": "A scoped service registered as singleton at the port, or the reverse",
+"F108": "The PortFixtures case for ReportsAtThePortTest compares every registration",
+"F109": "The Reports port base: ServicePortHarness with the Reports registrations, the host clock instant, the no-premium licence stand-in, an ATeam step, the Templates and Create steps and WhatItRegisters",
+"F11": "The report-window class runs at the service port on a new Reports port base",
+"F110": "PortFixtures gains the ReportsAtThePortTest case, so its registrations are compared with the host's",
+"F111": "Remove the ReportWindowBoundaryScenarios line (line 183) in the move commit",
+"F112": "Run ReportWindowBoundaryScenarios at the port: for each of the 15 rows of reportWindowBoundaries.json, set up Team Lightspeed keeping finished Work Items for 365 days (or for ever), read IReportQueries.Templates and call IReportCommands.Create with the row's window; run the port-fixture lifetime check and the host-use guard",
+"F113": "15 rows pass with the ids they had on the host; Templates gives today 2026-10-02, the earliest start 2025-10-02 (none for a Team keeping every finished Work Item) and a shortest window of 14 days; rows without a refusal are Done, rows with one are Refused with the table's code; the sorted id lists before and after are equal; HostUsersStillToMove no longer names the class; the ReportsAtThePortTest port-fixture case passes",
+"F114": "ReportWindowPolicy.MinimumLengthDays 14 to 15 turns A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days) red; a Reports registration given another lifetime than on the host turns the ReportsAtThePortTest port-fixture case red; putting the line back on HostUsersStillToMove, or the class starting a host, turns TestHostUseGuardTest red",
+"F115": "No Reports port base exists; ServicePortHarness users are the Reality Check, Refinement and System-wide-access bases, none registers IReportQueries or IReportCommands",
+"F116": "New file; no existing consumer",
+"F117": "Base class and steps move from the host to the port; namespace, class and method names unchanged, so the 15 ids stay",
+"F118": "Reads TheTable and BoundaryRow, which keep their names and visibility",
+"F119": "One more port-fixture case",
+"F12": "ReportWindowBoundaryScenarios proves its 15 boundary rows at the port; the Reports port base exists for any later Reports move",
+"F120": "The ratchet list loses one line",
+"F121": "Loses one derived class; its 17 other users and its members are unchanged",
+"F122": "No preserving move precedes the behaviour: the base is a new file, not a restructuring of existing code, and the move commit is itself the behaviour-free change, observed by the id comparison before and after.",
+"F123": "No class outside HostUsersStillToMove or a named reason starts a web host; ReportWindowBoundaryScenarios leaves the list and no longer starts one",
+"F124": "Takes the need-text constants, GravitysCycleWorkingDays, the five-to-eight script, the shared Gravity-on-Friday-2-October Given and the coach tab reader; TheTabAsSeenBy gains a browser-key overload",
+"F125": "Takes the Gravity ready-rule builder and its ready tag, the one writer of Team set-up",
+"F126": "Drops its copies of the hoisted members and NeedIn/NeedReading; uses TheNeedOn and NeedFacts",
+"F127": "Only if a hoisted step takes another name: the calls change, no test name or assertion changes",
+"F128": "Drops TheTabAsReadBy for the base overload; rewords the stale host-design comment above GivenTodayIsWednesdayTheSeventhOfOctober",
+"F129": "Run Slice05NeedAndVerdictTest, NeedOverOneCycleTest and Slice10SleYardstickTest at the port after the hoist and after the drop, compare sorted ids with the ids before, and apply the deliberate breaks to the twins of the dropped rows",
+"F13": "The need-and-verdict class no longer repeats the need-over-one-cycle rows, and the Refinement port test members exist once",
+"F130": "After the hoist every id of the three classes is unchanged and passes; after the drop the id difference is exactly Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull, Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number and A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states, Slice05NeedAndVerdictTest has 14 rows and all pass; the Gravity ready-rule builder, tab and need readers, shared constants, five-to-eight script and the tab-by-browser-key reader each exist once, in RefinementAtThePortTest or RefinementPortGivens",
+"F131": "RefinementSettings.DefaultHighPercentile 85 to 70 turns The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after red; ForecastDataSufficiencyPolicy.MinimumActiveDays 5 to 4 turns Without_a_number_the_need_names_no_cycle(ThroughputHistory,InsufficientData) red; RefinementNeedCalculator no longer answering NoRefinementStates turns Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) red; any id missing beyond the three, or an extra id, fails the id comparison",
+"F132": "Hoist the members duplicated across Slice05NeedAndVerdictSpecifications, NeedOverOneCycleSpecifications and Slice10SleYardstickSpecifications into RefinementAtThePortTest and RefinementPortGivens, changing no test id or assertion; this makes the row drop a deletion of three rows and their now-unused steps",
+"F133": "Every test id and outcome of Slice05NeedAndVerdictTest (17), NeedOverOneCycleTest and Slice10SleYardstickTest",
+"F134": "Its step definitions lose the copies of the hoisted members and NeedIn/NeedReading and use the base TheNeedOn and NeedFacts; its rows are the twins of the dropped rows",
+"F135": "Gains hoisted members and an overload; every derived port class and PortGivensGuardTest plants still compile",
+"F136": "Gains the Gravity ready-rule builder; the wire contract and other users unchanged",
+"F137": "Three rows dropped, 17 to 14",
+"F138": "Ids and assertions unchanged; only step owners move",
+"F139": "Uses the base overload; ids unchanged",
+"F14": "Each need rule is proven once, each dropped row is mapped to its twin, and the shared port test members live in one place",
+"F140": "Keeps guarding Refinement port classes; the hoisted builder lives in RefinementPortGivens, which it allows",
+"F141": "Copies of hoisted members removed; base readers used; ids and assertions unchanged",
+"F142": "Only RefinementPortGivens writes Team set-up in a Refinement port class, including the hoisted Gravity ready-rule builder",
+"F15": "S1 creates a new Reports port base, ReportsAtThePortTest, under API/Integration/Reports, over ServicePortHarness: no candidate owns IReportQueries or IReportCommands at the port (ServicePortHarness users are the Reality Check, Refinement and System-wide-access bases only). It registers the Reports services as Program.RegisterReports does (the 17 registrations) plus what they read: the team and portfolio repositories, the team metrics service, a TimeProvider and an ILicenseService stand-in that answers no premium licence, as the host fixture does. The clock is a FakeLighthouseClock set to nine in the morning of Friday 2 Oct 2026 in Europe/Zurich, the host fixture instant, because the port harness starts on TestToday.FrozenNow. It exposes WhatItRegisters for the port-fixture lifetime check.",
+"F16": "ReportWindowBoundaryScenarios moves to ReportsAtThePortTest keeping its namespace (Lighthouse.Backend.Tests.API.Integration.Reports), class name, method name and TestCaseSource names, so its 15 test ids stay. It drives IReportQueries.Templates and IReportCommands.Create with ReportOwner.Team and a Models.Reports.NewReport. It keeps TheTable, BoundaryTableFile, BoundaryBounds and BoundaryRow internal or public as now, because ReportWindowPolicyTest reads them.",
+"F17": "Port observation of each window row: ReportTemplatesRead.Today and EarliestStart written as yyyy-MM-dd equal the table bounds (EarliestStart null for a Team keeping every finished Work Item), MinimumLengthDays equals 14; a row without a refusal answers ReportOutcomeStatus.Done with a report; a row with a refusal answers ReportOutcomeStatus.Refused with Code equal to the table refusal. HTTP 400 and the JSON text are not observable at the port and need no new wire row: today, earliestStart and minimumLengthDays on the wire are pinned by the hosted Slice01TeamReportScenarios and CreateForSeveralTeamsScenarios, a null earliestStart by Slice02ThenInThePastScenarios, and the 400 with each of the seven window refusal codes by ThenItIsRefusedFor in Slice01 (then-too-long, now-too-long), Slice02 (then-too-short, then-ends-in-the-future, then-before-cutoff) and Slice07NowLengthScenarios (now-too-short, now-before-cutoff), all of which stay on the host. The role check of the POST stays pinned by the hosted classes; the port has none.",
+"F18": "No builder and no PortGivensGuardTest-like guard for the Reports port base: its only Team set-up is one ATeam step in the base itself, used by one class, so no builder rule exists to guard. A shared Reports builder is built when a second Reports class moves to the port.",
+"F19": "The repository-root lookup that anchors the shared table (Lighthouse.sln, then its parent) is needed at the port. ReportsAcceptanceTest.RepositoryRoot stays unchanged and is not reachable from the port base, so ReportsAtThePortTest or the moved class owns its own lookup. This repeats a lookup that already exists in several test classes; folding them is outside this Story.",
+"F2": "The report-window class proves its 15 boundary rows without a web host, and the Refinement need rules are proven once, so the backend Integration tier is faster and no rule loses its test",
+"F20": "Slice05NeedAndVerdictTest rows dropped, each mapped to the NeedOverOneCycleTest row with the same Givens in the same order and an assertion superset: (1) Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull maps to The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after (Gravity with GR-058 and GR-059 tagged ready under the Ready rule, one finished a day, refines on Thursdays, today 2 Oct 2026, the 3/5/6/8/10 script over 7 working days; the twin asserts the same need facts Below, 5, 8, 50, 85, 7, next Refinement 8 Oct not today and 2 ready, plus the cycle 8 to 15 Oct). (2) Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number maps to Without_a_number_the_need_names_no_cycle(ThroughputHistory,InsufficientData) (today 7 Oct, Gravity with GR-058 tagged ready, 3 finished a day on 4 days, refines on Thursdays; the twin asserts InsufficientData and no verdict, low or high, plus no cycle). (3) A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states maps to Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) (today 7 Oct, Team Zenith with Backlog, Implementation, Done and 30 days of history; the twin asserts NoRefinementStates and no verdict, low or high, plus no cycle). Slice05NeedAndVerdictTest goes from 17 rows to 14.",
+"F21": "Slice05NeedAndVerdictTest rows kept because no NeedOverOneCycleTest row has the same inputs: On_a_Refinement_day_the_number_is_for_the_following_Refinement (the twin On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement has the same Team, cadence, today 8 Oct and 7-day horizon, but a different scripted forecast, 5 to 8 against 6 to 9); Blackout_days_inside_the_cycle_are_not_counted (two blackout days 13 and 14 Oct, horizon 5; no twin blacks out those days); Without_a_cadence_there_is_no_number_and_the_list_stays (two Work Items tagged ready against one in the twin, and it also asserts the six Work Items are still listed); the four verdict rows, the two vote rows, the three high-end rows, the range of nothing and the guardrail, which NeedOverOneCycleTest does not cover.",
+"F22": "Hoist, one owner per member: Team set-up goes to RefinementPortGivens (the Gravity ready-rule builder GravityWithItsReadyRule and its ready tag), because the builder is the only writer of Team set-up; everything else goes to RefinementAtThePortTest as protected members: the need-text constants (Below, NoCadence, InsufficientData, NoRefinementStates and, if still used, In and Above), GravitysCycleWorkingDays, the 3/5/6/8/10 five-to-eight script, the identical Gravity-two-ready-refining-on-Thursdays-on-Friday-2-October Given, and the coach's tab reader. NeedOverOneCycleSpecifications drops NeedIn and NeedReading and uses the base TheNeedOn and NeedFacts; CycleIn and CycleReading stay private to it, because only it reads the cycle. Steps that the three dropped rows alone used are deleted. The base TheTabAsSeenBy gains an overload taking a browser key, and Slice10SleYardstickSpecifications drops TheTabAsReadBy and calls it. The comment above GivenTodayIsWednesdayTheSeventhOfOctober in Slice10SleYardstickSpecifications (and the same sentence in Slice05NeedAndVerdictSpecifications, if it survives the hoist) is reworded so it no longer narrates the old host design.",
+"F23": "S2 commit order: first refactor(test-infra) hoisting the duplicated members, with every test id of Slice05NeedAndVerdictTest, NeedOverOneCycleTest and Slice10SleYardstickTest unchanged; then test(refinement) dropping the three mapped rows and the steps only they used. A scenario file may change only the names of the steps it calls, never a test name.",
+"F24": "Carriers, all test-side, no domain class added: per-scenario state lives in the fixture instance of the port base (ServicePortHarness, FakeLighthouseClock, the licence stand-in for Reports; the RefinementAtThePortTest members as in feature story-6602-a for Refinement); Team set-up decisions live in the base ATeam step for Reports and in RefinementPortGivens for Refinement; outcomes are ReportTemplatesRead and ReportOutcome<ReportRead> from the Reports ports and RefinementViewDto from IRefinementViewQuery. Layers: application/port rows observe those records; HTTP status and JSON text are observed only by the hosted Reports classes and RefinementWithoutSignInWireContractTest, which do not change; no infrastructure or recovery layer is touched.",
+"F25": "Formal verification not applicable: no production code, state, transition, protocol or concurrency changes; the change is test structure only. The laws are finite set equalities of test ids, finite twin mappings and finite deliberate breaks, checked by running code. Quint, TLA+/TLC and Agda would model nothing new, so no model is written and no checker run or claimed. Liveness not applicable: no progress or temporal property exists in a synchronous test move. Property-based testing not applicable: no broad input domain, every row is a named finite case read from a table or written out. Code facts: code-fact answered only through its textsearch provider (noisy) and missed TheTabAsReadBy, so every locator was confirmed by reading the file. Jev: unavailable (unauthorized in this project).",
+"F26": "No ADR change. ADR-237 (test time budget guard) names no port base, so the second port base needs no line there; ADR-270 gains no concept, context or edge (Reports and Refinement contexts only).",
+"F27": "Behaviour-free: no production code change, test code only. Every other API, E2E and response test stays green unmodified.",
+"F28": "Moves are separate from edits: a refactor(test-infra) commit holds only a move or a hoist that changes no test id, and a separate test(...) commit holds an edit. Dropping rows is an edit and is never folded into a move.",
+"F29": "One oracle file per slice, and S1 and S2 share no oracle or support file. S2 edits files that were feature story-6602-a oracles (Slice05NeedAndVerdictSpecifications, NeedOverOneCycleSpecifications, Slice10SleYardstickSpecifications, RefinementAtThePortTest); feature story-6602-a is closed, so that is allowed.",
+"F3": "ReportWindowBoundaryScenarios runs at the application-service port on a new Reports port base, ReportsAtThePortTest, without a web host, and HostUsersStillToMove no longer names it",
+"F30": "Every dotnet test run unsets the seven tracker variables with env -u: AzureDevOpsLighthouseIntegrationTestToken, JiraLighthouseIntegrationTestToken, JiraLighthouseRestrictedIntegrationTestToken, JiraScopedTokenIntegrationTestToken, ServiceNowLighthouseIntegrationTestToken, LinearAPIKey, AzureDevOpsLighthouseE2ETestToken. The unfiltered suite never runs inside a slice. Fast loop: pwsh Lighthouse.Backend/Test-Fast.ps1 plus the slice oracle class by --filter FullyQualifiedName~<Class>.",
+"F31": "No nWave scenario tags in code. Comments are rare, in plain language, and never cite an internal reference (a decision id, a finding id, an ADR number) as the explanation.",
+"F32": "New backend acceptance scenarios drive the application-service port. TestHostUseGuardTest.HostUsersStillToMove loses ReportWindowBoundaryScenarios in the S1 move commit and never gains a line.",
+"F33": "Input bounds: none change. No stored or validated input changes; the window bounds the rows pin (shortest window 14 days, a Team keeping finished Work Items for 365 days or for ever, today 2 Oct 2026) are production values that are only observed.",
+"F34": "Test-writing guidance: .claude/skills/test-writing/SKILL.md and references/backend.md win where they disagree with nWave timing or PBT density rules. Default test budgets apply; no derogation is requested.",
+"F35": "Out of scope: moving any other Reports or Refinement class off the host; folding the host NeedForecastScript into ScriptedForecasts; changing ReportsAcceptanceTest or the host Refinement bases; any ADR change. Mutation testing not applicable: no production file changes; the deliberate breaks prove each kept row can fail.",
+"F36": "Host base, unchanged: 17 other Reports classes still derive from it; the moved class stops deriving from it",
+"F37": "Database per scenario and container; unchanged",
+"F38": "The list of Reports registrations the port base copies with the same lifetimes; production unchanged",
+"F39": "Compares a port fixture's registrations with the host's; gains the ReportsAtThePortTest case",
+"F4": "Every test id of ReportWindowBoundaryScenarios survives the move (15 rows at the port, no new wire row), with no assertion lost, and the port fixture check compares the Reports port registrations with the host's",
+"F40": "The ratchet list; loses the ReportWindowBoundaryScenarios line in the S1 move commit",
+"F41": "Unit test reading TheTable and BoundaryRow of the moved class; unchanged, so those members keep their names and visibility",
+"F42": "Already owns TheNeedOn, NeedFacts, TheTabAsSeenBy and the forecast script; takes the hoisted constants, script, shared Given, coach tab reader and a browser-key overload of TheTabAsSeenBy",
+"F43": "The one writer of Team set-up; takes the Gravity ready-rule builder duplicated in the two need classes",
+"F44": "Holds the twins of the dropped rows; its ids and assertions are unchanged; its specifications use the base readers",
+"F45": "Loses the three rows its twins prove and the steps only they used",
+"F46": "Repeats the base TheTabAsSeenBy; replaced by a browser-key overload on the base",
+"F47": "No shared contract changes: production routes, DTOs, port interfaces and registrations are unchanged; BoundaryRow and TheTable keep their names for ReportWindowPolicyTest, the only other reader, which compiles in the same commit.",
+"F48": "No parties change apart: producers (controllers, ports) and consumers (tests) live in one deployable and one commit; the port-fixture lifetime check is part of S1's verification, not an independent contract obligation.",
+"F49": "Application-service ports: IReportQueries.Templates and IReportCommands.Create reached from ReportsAtThePortTest (S1); IRefinementViewQuery and ISizingLogCommands reached from RefinementAtThePortTest (S2)",
+"F5": "Each Slice05NeedAndVerdictTest row that repeats NeedOverOneCycleTest is dropped only when a NeedOverOneCycleTest row proves the same rule with the same inputs; the id comparison shows exactly the dropped ids and every other id survives",
+"F50": "Real repositories over a database per scenario (ServicePortHarness)",
+"F51": "FakeLighthouseClock set by the port base",
+"F52": "ILicenseService stand-in answering no premium licence (Reports)",
+"F53": "IAppSettingService strict stand-in and ScriptedForecasts (Refinement, unchanged)",
+"F54": "Tests depend on production ports; production depends on nothing in tests; a port class sets up a Team only through its base step (Reports) or RefinementPortGivens (Refinement)",
+"F55": "NUnit outcome of each row at the port, read from TRX",
+"F56": "An HTTP status, a JSON member name or the date text on the wire; those stay pinned by the hosted Reports classes and the Refinement wire contract",
+"F57": "Sorted test ids before against after the slice",
+"F58": "Whether an assertion inside a kept id was weakened; the deliberate breaks cover that",
+"F59": "A named deliberate break in the working tree turns the named row red, then is reverted with git diff showing the file as it was",
+"F6": "The Refinement port test members that feature A's reviews found duplicated (the Gravity ready-rule builder, the tab and need readers, the shared constants and script, TheTabAsReadBy) exist once, in the port base or the port builder",
+"F60": "Rules the break does not touch",
+"F61": "Ids of ReportWindowBoundaryScenarios after the move equal the ids before: 15 rows, no new wire row",
+"F62": "15 ids A_window_at_an_edge_is_answered_as_the_table_says(<case>), one per row of reportWindowBoundaries.json",
+"F63": "Finite named id list",
+"F64": "Ids of Slice05NeedAndVerdictTest after S2 equal the ids before minus exactly the three mapped ids; ids of NeedOverOneCycleTest and Slice10SleYardstickTest are unchanged",
+"F65": "Slice05NeedAndVerdictTest: 17 before, 14 after",
+"F66": "NeedOverOneCycleTest: unchanged",
+"F67": "Slice10SleYardstickTest: unchanged",
+"F68": "Finite named id lists",
+"F69": "Every dropped row has a kept twin with the same Givens in the same order whose assertions include every assertion of the dropped row",
+"F7": "ReportWindowBoundaryScenarios, ReportsAtThePortTest, RealityCheckWireContractTest port fixtures (B13), TestHostUseGuardTest ratchet line; Slice05NeedAndVerdictSpecifications, NeedOverOneCycleSpecifications, Slice10SleYardstickSpecifications, RefinementAtThePortTest, RefinementPortGivens",
+"F70": "Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull -> The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after",
+"F71": "Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number -> Without_a_number_the_need_names_no_cycle(ThroughputHistory,InsufficientData)",
+"F72": "A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states -> Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates)",
+"F73": "Finite mapping of three rows",
+"F74": "Every kept row can fail: a named break turns it red",
+"F75": "S1: ReportWindowPolicy.MinimumLengthDays 14 to 15 turns A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days) red",
+"F76": "S2: RefinementSettings.DefaultHighPercentile 85 to 70 turns The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after red",
+"F77": "S2: ForecastDataSufficiencyPolicy.MinimumActiveDays 5 to 4 turns Without_a_number_the_need_names_no_cycle(ThroughputHistory,InsufficientData) red",
+"F78": "S2: RefinementNeedCalculator no longer answering NoRefinementStates turns Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) red",
+"F79": "Finite deliberate-break table",
+"F8": "Any production code change",
+"F80": "Report-window rows at the Reports port",
+"F81": "Templates and Create are public methods of IReportQueries and IReportCommands with production implementations registered by RegisterReports; the base is not built yet",
+"F82": "Rows call IReportQueries and IReportCommands, the ports TeamReportsController calls",
+"F83": "Report-window and need rows",
+"F84": "Id comparison, the twin mapping and the deliberate breaks exclude lost rows and lost assertions; executed per slice by the host",
+"F85": "Assumption negated: the port clock equals the host clock",
+"F86": "The today, earliest-start and edge rows",
+"F87": "none",
+"F88": "A row passing on a shifted window",
+"F89": "The base sets the host instant, 2 Oct 2026 09:00 Europe/Zurich; the today bound row fails on any other day",
+"F9": "Moving any other Reports or Refinement class off the host",
+"F90": "Assumption negated: every host assertion survives at the port",
+"F91": "Status 400, refusal text and JSON names",
+"F92": "Pinning them on the hosted classes that stay",
+"F93": "A refusal code or wire name no test pins after the move",
+"F94": "Seven window codes, today, earliestStart and minimumLengthDays stay pinned by Slice01, Slice02, Slice07 and CreateForSeveralTeamsScenarios; a later move of those classes must re-check",
+"F95": "Assumption negated: the twin proves the same rule with the same inputs",
+"F96": "Each need rule proven once",
+"F97": "Keeping a row that is only a near-twin",
+"F98": "Dropping a row whose Givens or assertions differ from its twin",
+"F99": "Three rows mapped with identical Givens; near-twins kept, named in the decisions"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_in": [
+"F7"
+],
+"scope_out": [
+"F8",
+"F9",
+"F10"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F11",
+"promises": [
+"P1",
+"P2"
+],
+"work": {
+"size": "M",
+"value": "F12"
+}
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F13",
+"promises": [
+"P3",
+"P4"
+],
+"work": {
+"size": "M",
+"value": "F14"
+}
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6602-b-report-window-and-overlap",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
