@@ -97,12 +97,169 @@
 "stimulus": "F257",
 "user_result": "F259"
 }
+],
+"S2": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5"
+],
+"still_passes_if": "F282",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::Which metrics questions an owner can ask"
+},
+"expected": "F280",
+"stimulus": "F279",
+"user_result": "F281"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F286",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper"
+},
+"expected": "F284",
+"stimulus": "F283",
+"user_result": "F285"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F290",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper"
+},
+"expected": "F288",
+"stimulus": "F287",
+"user_result": "F289"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F234"
+],
+"still_passes_if": "F294",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper"
+},
+"expected": "F292",
+"stimulus": "F291",
+"user_result": "F293"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L7/F235"
+],
+"still_passes_if": "F298",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper"
+},
+"expected": "F296",
+"stimulus": "F295",
+"user_result": "F297"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F302",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics view's requests"
+},
+"expected": "F300",
+"stimulus": "F299",
+"user_result": "F301"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T3"
+],
+"still_passes_if": "F306",
+"test": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts"
+},
+"expected": "F304",
+"stimulus": "F303",
+"user_result": "F305"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T4"
+],
+"still_passes_if": "F310",
+"test": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+},
+"expected": "F308",
+"stimulus": "F307",
+"user_result": "F309"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L5/F224",
+"L5/F225",
+"L5/F226",
+"L5/F227"
+],
+"still_passes_if": "F314",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::Which metrics questions an owner can ask"
+},
+"expected": "F312",
+"stimulus": "F311",
+"user_result": "F313"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L6/F230",
+"L6/F231"
+],
+"still_passes_if": "F318",
+"test": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::Whose metrics a request asks for"
+},
+"expected": "F316",
+"stimulus": "F315",
+"user_result": "F317"
+}
 ]
 },
 "counters": {
 "D": 6,
 "E": 6,
-"F": 278,
+"F": 318,
 "K": 7,
 "L": 7,
 "P": 4,
@@ -1651,11 +1808,51 @@
 "F272": "The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores window changes",
 "F277": "A scope is chosen, then the entity, the window start or the window end changes while the answers are still on their way, then they arrive",
 "F278": "The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores a change of the window start or end",
+"F279": "Ask applicability with some Work Items chosen, one stretch chosen, and for every known question",
 "F28": "Whether fallow counts type-only imports as layer leaks, which decides whether the S2 move adds new pairs to the layer list (see slice S2 risk).",
+"F280": "Each narrowed Cumulative Time per State question follows its own choice, and exactly the known questions are answered",
+"F281": "The narrowed state-time chart is asked only when the reader narrowed it",
+"F282": "the two choice flags swapped, or a question missing from the answer",
+"F283": "Run the query helper for an answer, an empty answer, a disabled question and a failing question",
+"F284": "Fresh no-retry options; the request reaches the question; an empty answer is an answer; a disabled question is not asked; a failure is asked once and logged with its message",
+"F285": "Metrics are asked fresh once and a failure is reported",
+"F286": "retries on failure, caching, or reading an empty answer as still loading",
+"F287": "Move the window while the next answer is on its way, then let it arrive",
+"F288": "The previous window answer stays marked as placeholder, then the new answer replaces it",
+"F289": "The chart shows the previous window dimmed while the next loads",
 "F29": "A moved effect loses a dependency or two effects swap order",
+"F290": "an empty area while loading, or the old answer never replaced",
+"F291": "Draw an answer, then the next window of the same owner fails",
+"F292": "The last drawn answer stays",
+"F293": "The chart stays behind the could-not-load note",
+"F294": "the last-drawn memory not being kept on a failure",
+"F295": "Draw an answer for one owner, then another owner id or another owner type with the same id fails",
+"F296": "No answer and no data are shown",
+"F297": "One owner never sees another owner's numbers behind a failure",
+"F298": "the last answer shown for any owner, or an owner told apart by id only",
+"F299": "Render the metrics hook for a team with every request on and record the service calls",
 "F3": "Each split unit behaves and renders exactly as before: its existing tests stay green unmodified, apart from tests that move with the code they cover, and the order in which the metrics queries start is unchanged",
 "F30": "Same requests, same loading and revert behaviour as before",
+"F300": "Requests start in the one order the view always started them",
+"F301": "Metrics load in the same order as before",
+"F302": "the query calls reordered or split into sub-hooks that start in another order",
+"F303": "Run the layer-boundary rule over the code after the move",
+"F304": "The allowed-leak list names exactly the leaking file pairs and has not grown",
+"F305": "The layer rule stays honest after the split",
+"F306": "a new leak pair added to make the build pass",
+"F307": "Run the size rule over the production files after the move",
+"F308": "No production file reaches 1000 lines and the offender list is empty",
+"F309": "The metrics data hook is split into parts of readable size",
 "F31": "none",
+"F310": "the hook still carrying all three responsibilities under the limit by chance",
+"F311": "Ask which metrics questions a team, a team that also carries portfolio-only methods, a portfolio, a feature-sizes-only service and a bare service can ask",
+"F312": "Each owner shape is left without exactly its own set of questions",
+"F313": "A team, a portfolio and other owners see only the metrics they can have",
+"F314": "the risk question being asked of every owner, or a team with extra methods being treated as a portfolio",
+"F315": "Make the owner key for an owner, the same owner twice with another name, and the owner after an update",
+"F316": "The key carries the id and update moment only; equal owners give equal keys; an update gives another key",
+"F317": "An open dashboard asks again after the owner is updated",
+"F318": "a key that drops the update moment or adds the name",
 "F32": "A refetch loop, a stale scope landing after a reset, a changed query start order",
 "F33": "Diff reading is the only check on dependency arrays beyond the existing loading and drill-down tests",
 "F34": "A test mocks a moved module by path and stays green whatever the code does",

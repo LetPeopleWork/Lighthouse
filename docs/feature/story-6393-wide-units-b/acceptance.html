@@ -303,6 +303,265 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Ask applicability with some Work Items chosen, one stretch chosen, and for every known question
+</code></pre>
+
+<pre><code>Each narrowed Cumulative Time per State question follows its own choice, and exactly the known questions are answered
+</code></pre>
+
+<pre><code>The narrowed state-time chart is asked only when the reader narrowed it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::Which metrics questions an owner can ask</p>
+
+<pre><code>the two choice flags swapped, or a question missing from the answer
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the query helper for an answer, an empty answer, a disabled question and a failing question
+</code></pre>
+
+<pre><code>Fresh no-retry options; the request reaches the question; an empty answer is an answer; a disabled question is not asked; a failure is asked once and logged with its message
+</code></pre>
+
+<pre><code>Metrics are asked fresh once and a failure is reported
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper</p>
+
+<pre><code>retries on failure, caching, or reading an empty answer as still loading
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Move the window while the next answer is on its way, then let it arrive
+</code></pre>
+
+<pre><code>The previous window answer stays marked as placeholder, then the new answer replaces it
+</code></pre>
+
+<pre><code>The chart shows the previous window dimmed while the next loads
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper</p>
+
+<pre><code>an empty area while loading, or the old answer never replaced
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Draw an answer, then the next window of the same owner fails
+</code></pre>
+
+<pre><code>The last drawn answer stays
+</code></pre>
+
+<pre><code>The chart stays behind the could-not-load note
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper</p>
+
+<pre><code>the last-drawn memory not being kept on a failure
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Draw an answer for one owner, then another owner id or another owner type with the same id fails
+</code></pre>
+
+<pre><code>No answer and no data are shown
+</code></pre>
+
+<pre><code>One owner never sees another owner&#x27;s numbers behind a failure
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics query helper</p>
+
+<pre><code>the last answer shown for any owner, or an owner told apart by id only
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Render the metrics hook for a team with every request on and record the service calls
+</code></pre>
+
+<pre><code>Requests start in the one order the view always started them
+</code></pre>
+
+<pre><code>Metrics load in the same order as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::The metrics view&#x27;s requests</p>
+
+<pre><code>the query calls reordered or split into sub-hooks that start in another order
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the layer-boundary rule over the code after the move
+</code></pre>
+
+<pre><code>The allowed-leak list names exactly the leaking file pairs and has not grown
+</code></pre>
+
+<pre><code>The layer rule stays honest after the split
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts</p>
+
+<pre><code>a new leak pair added to make the build pass
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the size rule over the production files after the move
+</code></pre>
+
+<pre><code>No production file reaches 1000 lines and the offender list is empty
+</code></pre>
+
+<pre><code>The metrics data hook is split into parts of readable size
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>the hook still carrying all three responsibilities under the limit by chance
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Ask which metrics questions a team, a team that also carries portfolio-only methods, a portfolio, a feature-sizes-only service and a bare service can ask
+</code></pre>
+
+<pre><code>Each owner shape is left without exactly its own set of questions
+</code></pre>
+
+<pre><code>A team, a portfolio and other owners see only the metrics they can have
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::Which metrics questions an owner can ask</p>
+
+<pre><code>the risk question being asked of every owner, or a team with extra methods being treated as a portfolio
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Make the owner key for an owner, the same owner twice with another name, and the owner after an update
+</code></pre>
+
+<pre><code>The key carries the id and update moment only; equal owners give equal keys; an update gives another key
+</code></pre>
+
+<pre><code>An open dashboard asks again after the owner is updated
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx::Whose metrics a request asks for</p>
+
+<pre><code>a key that drops the update moment or adds the name
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

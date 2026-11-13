@@ -178,6 +178,305 @@ The item ids are missing from the query key, so the old rows stay and no second 
 ###### Obligations
 
 
+### S2
+
+##### Covers
+
+P1
+
+```text
+Ask applicability with some Work Items chosen, one stretch chosen, and for every known question
+```
+
+```text
+Each narrowed Cumulative Time per State question follows its own choice, and exactly the known questions are answered
+```
+
+```text
+The narrowed state-time chart is asked only when the reader narrowed it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:Which metrics questions an owner can ask
+
+```text
+the two choice flags swapped, or a question missing from the answer
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Run the query helper for an answer, an empty answer, a disabled question and a failing question
+```
+
+```text
+Fresh no-retry options; the request reaches the question; an empty answer is an answer; a disabled question is not asked; a failure is asked once and logged with its message
+```
+
+```text
+Metrics are asked fresh once and a failure is reported
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:The metrics query helper
+
+```text
+retries on failure, caching, or reading an empty answer as still loading
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Move the window while the next answer is on its way, then let it arrive
+```
+
+```text
+The previous window answer stays marked as placeholder, then the new answer replaces it
+```
+
+```text
+The chart shows the previous window dimmed while the next loads
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:The metrics query helper
+
+```text
+an empty area while loading, or the old answer never replaced
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Draw an answer, then the next window of the same owner fails
+```
+
+```text
+The last drawn answer stays
+```
+
+```text
+The chart stays behind the could-not-load note
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:The metrics query helper
+
+```text
+the last-drawn memory not being kept on a failure
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Draw an answer for one owner, then another owner id or another owner type with the same id fails
+```
+
+```text
+No answer and no data are shown
+```
+
+```text
+One owner never sees another owner's numbers behind a failure
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:The metrics query helper
+
+```text
+the last answer shown for any owner, or an owner told apart by id only
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Render the metrics hook for a team with every request on and record the service calls
+```
+
+```text
+Requests start in the one order the view always started them
+```
+
+```text
+Metrics load in the same order as before
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:The metrics view\'s requests
+
+```text
+the query calls reordered or split into sub-hooks that start in another order
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P1
+
+```text
+Run the layer-boundary rule over the code after the move
+```
+
+```text
+The allowed-leak list names exactly the leaking file pairs and has not grown
+```
+
+```text
+The layer rule stays honest after the split
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/layerBoundaries\.enforcement\.test\.ts
+
+```text
+a new leak pair added to make the build pass
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the size rule over the production files after the move
+```
+
+```text
+No production file reaches 1000 lines and the offender list is empty
+```
+
+```text
+The metrics data hook is split into parts of readable size
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/fileSize\.enforcement\.test\.ts
+
+```text
+the hook still carrying all three responsibilities under the limit by chance
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+Ask which metrics questions a team, a team that also carries portfolio-only methods, a portfolio, a feature-sizes-only service and a bare service can ask
+```
+
+```text
+Each owner shape is left without exactly its own set of questions
+```
+
+```text
+A team, a portfolio and other owners see only the metrics they can have
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:Which metrics questions an owner can ask
+
+```text
+the risk question being asked of every owner, or a team with extra methods being treated as a portfolio
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+```text
+Make the owner key for an owner, the same owner twice with another name, and the owner after an update
+```
+
+```text
+The key carries the id and update moment only; equal owners give equal keys; an update gives another key
+```
+
+```text
+An open dashboard asks again after the owner is updated
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/hooks\/metricsDataModules\.test\.tsx\:\:Whose metrics a request asks for
+
+```text
+a key that drops the update moment or adds the name
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows
