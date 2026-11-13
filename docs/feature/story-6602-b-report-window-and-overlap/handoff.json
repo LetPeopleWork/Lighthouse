@@ -112,7 +112,7 @@
 "L2/F67"
 ],
 "still_passes_if": "F191",
-"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with ids-expected-after-drop.txt over the TRX of the first declared verification command"
+"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with docs/feature/story-6602-b-report-window-and-overlap/evidence/ids-expected-after-drop.txt over Lighthouse.Backend/Lighthouse.Backend.Tests/TestResults/s2/s2.trx, the TRX the first declared verification command writes"
 },
 "expected": "F189",
 "stimulus": "F188",
@@ -182,7 +182,7 @@
 "L2/F67"
 ],
 "still_passes_if": "F207",
-"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with ids-before.txt over the TRX of the first declared verification command at the hoist commit"
+"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with docs/feature/story-6602-b-report-window-and-overlap/evidence/ids-before.txt over Lighthouse.Backend/Lighthouse.Backend.Tests/TestResults/s2/s2.trx, the TRX the first declared verification command writes, run at the hoist commit"
 },
 "expected": "F205",
 "stimulus": "F204",
@@ -198,7 +198,7 @@
 "T2"
 ],
 "still_passes_if": "F211",
-"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/members-once.py over the Refinement test folder"
+"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/members-once.py over Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement"
 },
 "expected": "F209",
 "stimulus": "F208",

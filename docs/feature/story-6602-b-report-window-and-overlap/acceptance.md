@@ -241,7 +241,7 @@ A maintainer sees each need rule proven once, and no rule silently lost its test
 
 Tested
 
-docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/compare\-ids\.py with ids\-expected\-after\-drop\.txt over the TRX of the first declared verification command
+docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/compare\-ids\.py with docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/ids\-expected\-after\-drop\.txt over Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/TestResults\/s2\/s2\.trx\, the TRX the first declared verification command writes
 
 ```text
 a drop that also renames a kept row to a new name in the same class would be caught as one missing and one extra id; still accepted is a kept row whose body was weakened under an unchanged name, which the twin breaks and the review must catch
@@ -364,7 +364,7 @@ A maintainer can trust the hoist moved shared steps only and changed no rule any
 
 Tested
 
-docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/compare\-ids\.py with ids\-before\.txt over the TRX of the first declared verification command at the hoist commit
+docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/compare\-ids\.py with docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/ids\-before\.txt over Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/TestResults\/s2\/s2\.trx\, the TRX the first declared verification command writes\, run at the hoist commit
 
 ```text
 a hoist that changes the value of a shared constant or the five-to-eight script in a way every row still tolerates would pass; the named twin breaks and the review of the hoist diff catch a changed value
@@ -395,7 +395,7 @@ A maintainer changes a shared Refinement test step in one place and every port c
 
 Tested
 
-docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/members\-once\.py over the Refinement test folder
+docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/members\-once\.py over Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement
 
 ```text
 a copy kept under a new name (for example a second Gravity builder called differently) is not counted; still accepted is a duplicate that does not reuse a known name, which the review of the hoist diff must catch
