@@ -1,9 +1,10 @@
+import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import EditIcon from "@mui/icons-material/Edit";
 import {
 	Alert,
 	Box,
-	Container,
+	CircularProgress,
 	Fade,
 	IconButton,
 	Link as MuiLink,
@@ -14,13 +15,19 @@ import {
 import type { GridValidRowModel } from "@mui/x-data-grid";
 import type React from "react";
 import { useCallback, useContext, useMemo, useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
+import ActionButton from "../../../components/Common/ActionButton/ActionButton";
 import ReconnectBanner from "../../../components/Common/Connections/ReconnectBanner";
 import DataGridBase from "../../../components/Common/DataGrid/DataGridBase";
 import type { DataGridColumn } from "../../../components/Common/DataGrid/types";
 import DeleteConfirmationDialog from "../../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import {
+	useConfiguredConnections,
+	useForgetConfiguredConnections,
+} from "../../../hooks/useConfiguredConnections";
+import {
 	editConnectionPath,
+	newConnectionPath,
 	settingsTabPath,
 } from "../../../models/Settings/settingsAreas";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
@@ -28,14 +35,9 @@ import type { IWorkTrackingSystemConnection } from "../../../models/WorkTracking
 import { ApiError } from "../../../services/Api/ApiError";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../services/TerminologyContext";
+import { reportFailedNavigation } from "../../../utils/navigation";
 
 type ConnectionRow = IWorkTrackingSystemConnection & GridValidRowModel;
-
-interface ConnectionsSettingsProps {
-	readonly connections: IWorkTrackingSystemConnection[];
-	readonly filterText: string;
-	readonly onConnectionDeleted: (connectionId: number) => void;
-}
 
 const linkStyle = (color: string) => ({
 	color,
@@ -45,16 +47,17 @@ const linkStyle = (color: string) => ({
 
 const underlineOnHover = { "&:hover": { textDecoration: "underline" } };
 
-/** The configured connections: their reconnect banners, the list with Edit and Delete, or the way to a first one. */
-const ConnectionsSettings: React.FC<ConnectionsSettingsProps> = ({
-	connections,
-	filterText,
-	onConnectionDeleted,
-}) => {
+export const CONNECTIONS_REFUSED_MESSAGE =
+	"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.";
+
+/** The configured connections, once the list is known: their reconnect banners and the list with Edit and Delete. */
+const ConnectionsList: React.FC<{
+	readonly connections: IWorkTrackingSystemConnection[];
+	readonly onChanged: () => void;
+}> = ({ connections, onChanged }) => {
 	const theme = useTheme();
 	const { getTerm } = useTerminology();
 	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
-	const connectionsTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS);
 	const { workTrackingSystemService } = useContext(ApiServiceContext);
 
 	const [selectedConnection, setSelectedConnection] =
@@ -81,7 +84,7 @@ const ConnectionsSettings: React.FC<ConnectionsSettingsProps> = ({
 			await workTrackingSystemService.deleteWorkTrackingSystemConnection(
 				selectedConnection.id,
 			);
-			onConnectionDeleted(selectedConnection.id);
+			onChanged();
 			closeDeleteDialog();
 		} catch (error) {
 			if (error instanceof ApiError && error.code === 409) {
@@ -171,37 +174,8 @@ const ConnectionsSettings: React.FC<ConnectionsSettingsProps> = ({
 		[theme, iconButtonStyle, askToDelete],
 	);
 
-	const filteredConnections = useMemo(
-		() =>
-			connections.filter((connection) =>
-				connection.name.toLowerCase().includes(filterText.toLowerCase()),
-			),
-		[connections, filterText],
-	);
-
 	return (
-		<Container maxWidth={false} sx={{ pb: 4 }}>
-			<Box
-				sx={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					gap: 2,
-					mb: 2,
-				}}
-			>
-				<Typography
-					variant="h5"
-					sx={{
-						fontWeight: 600,
-						color: theme.palette.primary.main,
-						textTransform: "capitalize",
-					}}
-				>
-					{connectionsTerm}
-				</Typography>
-			</Box>
-
+		<>
 			{connections.length === 0 && (
 				<Fade in={true} timeout={800}>
 					<Alert
@@ -236,31 +210,21 @@ const ConnectionsSettings: React.FC<ConnectionsSettingsProps> = ({
 				</Fade>
 			)}
 
-			{connections.length > 0 && filteredConnections.length === 0 && (
-				<Fade in={true} timeout={500}>
-					<Alert
-						severity="warning"
-						variant="outlined"
-						sx={{ mb: 3, borderRadius: 2, boxShadow: theme.shadows[1] }}
-					>
-						No connections found matching the filter{" "}
-						<strong>{filterText}</strong>
-					</Alert>
-				</Fade>
-			)}
-
-			{filteredConnections
+			{connections
 				.filter((connection) => connection.requiresReconnect === true)
 				.map((connection) => (
 					<Box key={`reconnect-${connection.id}`} sx={{ mb: 2 }}>
-						<ReconnectBanner connection={connection} />
+						<ReconnectBanner
+							connection={connection}
+							onReconnected={onChanged}
+						/>
 					</Box>
 				))}
 
-			{filteredConnections.length > 0 && (
+			{connections.length > 0 && (
 				<Box data-testid="connections-datagrid-container">
 					<DataGridBase
-						rows={filteredConnections as ConnectionRow[]}
+						rows={connections as ConnectionRow[]}
 						columns={columns}
 						storageKey="overview-connection-table"
 					/>
@@ -276,7 +240,81 @@ const ConnectionsSettings: React.FC<ConnectionsSettingsProps> = ({
 					errorMessage={deleteError ?? undefined}
 				/>
 			)}
-		</Container>
+		</>
+	);
+};
+
+/** System, Connections: the one place a System Admin sets up, edits and removes connections. */
+const ConnectionsSettings: React.FC = () => {
+	const theme = useTheme();
+	const navigate = useNavigate();
+	const { getTerm } = useTerminology();
+	const connectionTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEM);
+	const connectionsTerm = getTerm(TERMINOLOGY_KEYS.WORK_TRACKING_SYSTEMS);
+	const list = useConfiguredConnections();
+	const forgetConnections = useForgetConfiguredConnections();
+
+	if (list.status === "loading") {
+		return (
+			<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+				<CircularProgress aria-label={`Loading the ${connectionsTerm}`} />
+			</Box>
+		);
+	}
+	if (list.status === "refused") {
+		return (
+			<Alert severity="warning" data-testid="connections-refused-alert">
+				{CONNECTIONS_REFUSED_MESSAGE}
+			</Alert>
+		);
+	}
+	if (list.status === "failed") {
+		return (
+			<Alert severity="error" data-testid="connections-failed-alert">
+				Could not load the {connectionsTerm}.
+			</Alert>
+		);
+	}
+
+	const connectNewOne = () => {
+		reportFailedNavigation(navigate(newConnectionPath()));
+		return Promise.resolve();
+	};
+
+	return (
+		<Box sx={{ pb: 4 }}>
+			<Box
+				sx={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					gap: 2,
+					mb: 2,
+				}}
+			>
+				<Typography
+					variant="h5"
+					component="h2"
+					sx={{
+						fontWeight: 600,
+						color: theme.palette.primary.main,
+						textTransform: "capitalize",
+					}}
+				>
+					{connectionsTerm}
+				</Typography>
+				<ActionButton
+					buttonText={`Connect ${connectionTerm}`}
+					startIcon={<AddIcon />}
+					onClickHandler={connectNewOne}
+					buttonVariant="contained"
+				/>
+			</Box>
+			<ConnectionsList
+				connections={list.connections}
+				onChanged={forgetConnections}
+			/>
+		</Box>
 	);
 };
 

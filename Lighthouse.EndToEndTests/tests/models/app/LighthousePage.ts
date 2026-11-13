@@ -6,6 +6,7 @@ import { OverviewPage } from "../overview/OverviewPage";
 import { AddPortfolioWizard } from "../portfolios/AddPortfolioWizard";
 import { AllReportsPage } from "../reports/AllReportsPage";
 import { SettingsPage } from "../settings/SettingsPage";
+import type { SystemConnectionsPage } from "../settings/WorkTrackingSystems/SystemConnectionsPage";
 import { AddTeamWizard } from "../teams/AddTeamWizard";
 
 /** One row of the Task Manager's Activity list, in the shape the instance reports it. */
@@ -96,6 +97,12 @@ export class LighthousePage {
 		const settingsPage = new SettingsPage(this.page);
 		await settingsPage.openArea("system");
 		return settingsPage;
+	}
+
+	/** System, Connections, where connections are added, edited and removed. */
+	async goToConnections(): Promise<SystemConnectionsPage> {
+		const settingsPage = await this.goToSettings();
+		return settingsPage.goToConnections();
 	}
 
 	async goToContributors(): Promise<Page> {

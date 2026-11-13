@@ -666,7 +666,9 @@ testWithDemo(
 		expect(testData.teams.map((team) => team.name)).toContain(ESTIMATING_TEAM);
 
 		await overviewPage.lightHousePage.goToOverview();
-		const connection = await overviewPage.editConnection(DEMO_CONNECTION);
+		const systemConnections =
+			await overviewPage.lighthousePage.goToConnections();
+		const connection = await systemConnections.editConnection(DEMO_CONNECTION);
 		await expect(connection.defaultsSection).toBeVisible();
 		await connection.setTheTeamsEstimationDefault("Story Points", "Points");
 
@@ -684,7 +686,9 @@ testWithDemo(
 		await followTheConnectionsEstimation(request, ESTIMATING_TEAM);
 
 		await overviewPage.lightHousePage.goToOverview();
-		const connection = await overviewPage.editConnection(DEMO_CONNECTION);
+		const systemConnections =
+			await overviewPage.lighthousePage.goToConnections();
+		const connection = await systemConnections.editConnection(DEMO_CONNECTION);
 		await connection.setTheTeamsEstimationDefault("Story Points", "Points");
 		const afterTheSave = await connection.saveAnswering(
 			"Change the Estimation default?",
@@ -1345,7 +1349,10 @@ for (const {
 	testWithDemo(
 		`Take @screenshot of ${workTrackingSystemName} Work Tracking System Connection creation`,
 		async ({ overviewPage }) => {
-			const workTrackingSystemEditPage = await overviewPage.addConnection();
+			const systemConnections =
+				await overviewPage.lighthousePage.goToConnections();
+			const workTrackingSystemEditPage =
+				await systemConnections.addConnection();
 
 			await takePageScreenshot(
 				workTrackingSystemEditPage.page,

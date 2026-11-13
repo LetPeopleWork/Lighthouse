@@ -17,7 +17,10 @@ test("should be able to handle a team defined by a ServiceNow Visual Task Board"
 
 	await test.step("Create ServiceNow Work Tracking System Connection", async () => {
 		await overviewPage.lightHousePage.goToOverview();
-		const workTrackingSystemCreationWizard = await overviewPage.addConnection();
+		const systemConnections =
+			await overviewPage.lighthousePage.goToConnections();
+		const workTrackingSystemCreationWizard =
+			await systemConnections.addConnection();
 
 		await workTrackingSystemCreationWizard.selectWorkTrackingSystemType(
 			"ServiceNow",

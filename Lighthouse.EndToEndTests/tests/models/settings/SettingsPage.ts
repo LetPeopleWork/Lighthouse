@@ -8,6 +8,7 @@ import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
 import { CalendarPage } from "./SystemSettings/CalendarPage";
 import { RefreshAndOrderingPage } from "./SystemSettings/RefreshAndOrderingPage";
 import { TerminologyPage } from "./SystemSettings/TerminologyPage";
+import { SystemConnectionsPage } from "./WorkTrackingSystems/SystemConnectionsPage";
 
 export type SettingsArea = "organization" | "access" | "system";
 
@@ -28,6 +29,13 @@ export class SettingsPage {
 	private async openTab(area: SettingsArea, tabTestId: string): Promise<void> {
 		await this.openArea(area);
 		await this.page.getByTestId(tabTestId).click();
+	}
+
+	/** The configured connections, first tab of System and for System Admins only. */
+	async goToConnections(): Promise<SystemConnectionsPage> {
+		await this.openTab("system", "connections-tab");
+
+		return new SystemConnectionsPage(this.page);
 	}
 
 	async goToDemoData(): Promise<DemoDataPage> {

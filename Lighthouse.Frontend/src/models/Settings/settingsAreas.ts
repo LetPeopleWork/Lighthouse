@@ -6,6 +6,7 @@ export type SettingsTabSlug =
 	| "refresh-ordering"
 	| "system-wide"
 	| "api-keys"
+	| "connections"
 	| "demo-data"
 	| "database"
 	| "encryption"
@@ -115,10 +116,10 @@ export const SETTINGS_TABS: readonly SettingsTab[] = [
 	},
 	{
 		area: "system",
-		slug: "demo-data",
-		label: "Demo Data",
-		testId: "demo-data-tab",
-		panelTestId: "demo-data-panel",
+		slug: "connections",
+		label: "Connections",
+		testId: "connections-tab",
+		panelTestId: "connections-panel",
 		whoMayOpen: "system-admin",
 		earlierSlugs: [],
 	},
@@ -137,6 +138,15 @@ export const SETTINGS_TABS: readonly SettingsTab[] = [
 		label: "Encryption",
 		testId: "encryption-tab",
 		panelTestId: "encryption-panel",
+		whoMayOpen: "system-admin",
+		earlierSlugs: [],
+	},
+	{
+		area: "system",
+		slug: "demo-data",
+		label: "Demo Data",
+		testId: "demo-data-tab",
+		panelTestId: "demo-data-panel",
 		whoMayOpen: "system-admin",
 		earlierSlugs: [],
 	},

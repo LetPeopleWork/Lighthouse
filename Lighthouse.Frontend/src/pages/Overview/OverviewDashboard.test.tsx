@@ -347,7 +347,6 @@ describe("OverviewDashboard", () => {
 		}); // Now check for the dashboard header and buttons
 		expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
 		expect(screen.getByText("Add Team")).toBeInTheDocument();
-		expect(screen.getByText("Add Work Tracking System")).toBeInTheDocument();
 	});
 
 	it("shows main filter bar only", async () => {
@@ -360,14 +359,6 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
-	it("renders connections section with connection name", async () => {
-		renderWithProviders(<OverviewDashboard />);
-
-		await waitFor(() => {
-			expect(screen.getByText("My ADO Connection")).toBeInTheDocument();
-		});
-	});
-
 	it("renders one ReconnectBanner per RefreshFailed connection and none for healthy connections", async () => {
 		const connections = [
 			makeReconnectingConnection(101, "Healthy Jira", false),
@@ -377,11 +368,7 @@ describe("OverviewDashboard", () => {
 
 		renderWithProviders(<OverviewDashboard />, {}, { connections });
 
-		await waitFor(() => {
-			expect(screen.getByText("Stale Jira")).toBeInTheDocument();
-		});
-
-		const reconnectButtons = screen.getAllByRole("button", {
+		const reconnectButtons = await screen.findAllByRole("button", {
 			name: /Reconnect/i,
 		});
 		expect(reconnectButtons).toHaveLength(2);
@@ -394,16 +381,6 @@ describe("OverviewDashboard", () => {
 				),
 			);
 		expect(reconnectAlerts).toHaveLength(2);
-	});
-
-	it("shows empty state alert when no connections exist", async () => {
-		renderWithProviders(<OverviewDashboard />, {}, { connections: [] });
-
-		await waitFor(() => {
-			expect(
-				screen.getByText(/No Work Tracking System found/),
-			).toBeInTheDocument();
-		});
 	});
 
 	it("disables Add Team button when no connections exist", async () => {
@@ -465,26 +442,6 @@ describe("OverviewDashboard", () => {
 		await waitFor(() => {
 			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
 			expect(screen.getByText(/Admin User/)).toBeInTheDocument();
-		});
-	});
-
-	it("hides Add Connection button when user is not system admin", async () => {
-		const mockRbacService = createMockRbacService();
-		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
-			isRbacEnabled: true,
-			isSystemAdmin: false,
-			canCreateTeam: true,
-			canCreatePortfolio: true,
-		});
-
-		renderWithProviders(<OverviewDashboard />, {
-			rbacService: mockRbacService,
-		});
-
-		await waitFor(() => {
-			expect(
-				screen.queryByText("Add Work Tracking System"),
-			).not.toBeInTheDocument();
 		});
 	});
 
@@ -550,42 +507,6 @@ describe("OverviewDashboard", () => {
 		});
 	});
 
-	it("shows Add Connection button when user is system admin", async () => {
-		const mockRbacService = createMockRbacService();
-		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
-			isRbacEnabled: true,
-			isSystemAdmin: true,
-			canCreateTeam: true,
-			canCreatePortfolio: true,
-		});
-
-		renderWithProviders(<OverviewDashboard />, {
-			rbacService: mockRbacService,
-		});
-
-		await waitFor(() => {
-			expect(screen.getByText("Add Work Tracking System")).toBeInTheDocument();
-		});
-	});
-
-	it("goes to a new connection from Add Work Tracking System", async () => {
-		mockNavigate.mockClear();
-		const mockRbacService = createMockRbacService();
-		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
-			isRbacEnabled: true,
-			isSystemAdmin: true,
-			canCreateTeam: true,
-			canCreatePortfolio: true,
-		});
-		renderWithProviders(<OverviewDashboard />, {
-			rbacService: mockRbacService,
-		});
-
-		fireEvent.click(await screen.findByText("Add Work Tracking System"));
-
-		expect(mockNavigate).toHaveBeenCalledWith("/connections/new");
-	});
-
 	it("hides Add Team button when RBAC is enabled and canCreateTeam is false", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
@@ -637,57 +558,8 @@ describe("OverviewDashboard", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByText("Add Work Tracking System")).toBeInTheDocument();
 			expect(screen.getByText("Add Team")).toBeInTheDocument();
 			expect(screen.getByText("Add Portfolio")).toBeInTheDocument();
-		});
-	});
-
-	it("hides connections section for non-system-admin viewer", async () => {
-		const mockRbacService = createMockRbacService();
-		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
-			isRbacEnabled: true,
-			isSystemAdmin: false,
-			canCreateTeam: false,
-			canCreatePortfolio: false,
-			systemAdminDisplayNames: ["Admin User"],
-		});
-
-		renderWithProviders(
-			<OverviewDashboard />,
-			{ rbacService: mockRbacService },
-			{ connections: [], teams: [], portfolios: [] },
-		);
-
-		await waitFor(() => {
-			expect(screen.getByTestId("rbac-no-access-alert")).toBeInTheDocument();
-		});
-
-		expect(
-			screen.queryByRole("heading", { name: "Work Tracking Systems" }),
-		).not.toBeInTheDocument();
-		expect(
-			screen.queryByTestId("no-connections-alert"),
-		).not.toBeInTheDocument();
-	});
-
-	it("shows connections section for system admin", async () => {
-		const mockRbacService = createMockRbacService();
-		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
-			isRbacEnabled: true,
-			isSystemAdmin: true,
-			canCreateTeam: true,
-			canCreatePortfolio: true,
-		});
-
-		renderWithProviders(<OverviewDashboard />, {
-			rbacService: mockRbacService,
-		});
-
-		await waitFor(() => {
-			expect(
-				screen.getByRole("heading", { name: "Work Tracking Systems" }),
-			).toBeInTheDocument();
 		});
 	});
 

@@ -22,7 +22,8 @@ test("an admin sets the Teams' Estimation once on the connection and a Team that
 	await followTheConnectionsEstimation(request, THE_DEMO_TEAM);
 
 	const overview = await overviewPage.lighthousePage.open();
-	const connection = await overview.editConnection(DEMO_CONNECTION);
+	const systemConnections = await overview.lighthousePage.goToConnections();
+	const connection = await systemConnections.editConnection(DEMO_CONNECTION);
 	await expect(connection.defaultsSection).toBeVisible();
 	await connection.setTheTeamsEstimationDefault("Story Points", "Points");
 	const afterTheSave = await connection.saveAnswering(
@@ -47,7 +48,8 @@ test("an admin sets the Portfolios' Feature Owner Field once on the connection a
 	await followTheConnectionsFeatureOwnerField(request, THE_DEMO_PORTFOLIO);
 
 	const overview = await overviewPage.lighthousePage.open();
-	const connection = await overview.editConnection(DEMO_CONNECTION);
+	const systemConnections = await overview.lighthousePage.goToConnections();
+	const connection = await systemConnections.editConnection(DEMO_CONNECTION);
 	await connection.setThePortfoliosFeatureOwnerFieldDefault(
 		A_FIELD_OF_THE_CONNECTION,
 	);

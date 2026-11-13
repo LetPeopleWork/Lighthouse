@@ -8,6 +8,7 @@ import ModifyConnectionSettings from "../../../components/Common/Connection/Modi
 import { nowListsSeveralSources } from "../../../components/Common/ConnectionDefault/parentSources";
 import LoadingAnimation from "../../../components/Common/LoadingAnimation/LoadingAnimation";
 import SnackbarErrorHandler from "../../../components/Common/SnackbarErrorHandler/SnackbarErrorHandler";
+import { useForgetConfiguredConnections } from "../../../hooks/useConfiguredConnections";
 import { useRbacGate } from "../../../hooks/useRbacGate";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { UsageDataUpdates } from "../../../models/UsageData/UsageData";
@@ -50,6 +51,7 @@ const EditConnectionPage: React.FC = () => {
 
 	const { workTrackingSystemService } = useContext(ApiServiceContext);
 	const reportUsage = useUsageDataReporter();
+	const forgetConfiguredConnections = useForgetConfiguredConnections();
 
 	const getSupportedSystems = useCallback(
 		() => workTrackingSystemService.getWorkTrackingSystems(),
@@ -114,6 +116,7 @@ const EditConnectionPage: React.FC = () => {
 		choice?: ISaveConnectionChoice,
 	) => {
 		await saveConnectionSettings(connection, choice);
+		forgetConfiguredConnections();
 		// A save that asked nothing reports nothing, and neither does one that changed only defaults:
 		// a default is not an Additional Field.
 		if (choice?.additionalFieldsChanged) {
@@ -178,7 +181,10 @@ const EditConnectionPage: React.FC = () => {
 						validateConnection={validateConnectionSettings}
 						saveConnection={saveConnectionSettings}
 						onCancel={() => navigate("/")}
-						onComplete={() => navigate("/")}
+						onComplete={() => {
+							forgetConfiguredConnections();
+							reportFailedNavigation(navigate("/"));
+						}}
 					/>
 				</Container>
 			</SnackbarErrorHandler>

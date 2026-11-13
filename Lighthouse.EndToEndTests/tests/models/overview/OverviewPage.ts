@@ -5,8 +5,6 @@ import { PortfolioDeletionDialog } from "../portfolios/PortfolioDeletionDialog";
 import { PortfolioDetailPage } from "../portfolios/PortfolioDetailPage";
 import { PortfolioEditPage } from "../portfolios/PortfolioEditPage";
 import { ReportPage } from "../reports/ReportPage";
-import { WorkTrackingSystemCreateWizard } from "../settings/WorkTrackingSystems/WorkTrackingSystemCreateWizard";
-import { WorkTrackingSystemEditPage } from "../settings/WorkTrackingSystems/WorkTrackingSystemEditPage";
 import { AddTeamWizard } from "../teams/AddTeamWizard";
 import { TeamDeletionDialog } from "../teams/TeamDeletionDialog";
 import { TeamDetailPage } from "../teams/TeamDetailPage";
@@ -78,39 +76,6 @@ export class OverviewPage {
 		await portfolioDeleteIcon.click();
 
 		return new PortfolioDeletionDialog(this.page);
-	}
-
-	async addConnection(): Promise<WorkTrackingSystemCreateWizard> {
-		await this.page
-			.getByRole("button", { name: "Add Work Tracking System" })
-			.first()
-			.click();
-
-		return new WorkTrackingSystemCreateWizard(this.page);
-	}
-
-	async deleteConnection(connectionName: string): Promise<void> {
-		await this.search(connectionName);
-		const connectionDeleteIcon = this.page.getByLabel("Delete");
-		await connectionDeleteIcon.click();
-	}
-
-	async editConnection(
-		connectionName: string,
-	): Promise<WorkTrackingSystemEditPage> {
-		await this.search(connectionName);
-
-		const connectionEditIcon = this.page.getByLabel("Edit");
-		await connectionEditIcon.click();
-
-		return new WorkTrackingSystemEditPage(this.page);
-	}
-
-	getConnectionLink(connectionName: string): Locator {
-		const connectionLink = this.page.getByRole("link", {
-			name: connectionName,
-		});
-		return connectionLink;
 	}
 
 	async getTeamLink(teamName: string): Promise<Locator> {

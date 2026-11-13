@@ -13,6 +13,7 @@ import type React from "react";
 import { useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
+import { useForgetConfiguredConnections } from "../../../hooks/useConfiguredConnections";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useOAuthPopup } from "../../../hooks/useOAuthPopup";
 import { settingsTabPath } from "../../../models/Settings/settingsAreas";
@@ -108,6 +109,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 	const [draftConnectionId, setDraftConnectionId] = useState<number | null>(
 		null,
 	);
+	const forgetConfiguredConnections = useForgetConfiguredConnections();
 	const [inlineMessage, setInlineMessage] = useState<InlineMessage | null>(
 		null,
 	);
@@ -316,6 +318,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 		} catch {
 			// If deletion fails the draft is left behind; the user can retry.
 		}
+		forgetConfiguredConnections();
 		setDraftConnectionId(null);
 	};
 
@@ -419,6 +422,7 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 			} catch {
 				// The draft will be left behind if the delete fails; safe to ignore.
 			}
+			forgetConfiguredConnections();
 		}
 		onCancel();
 	};

@@ -31,6 +31,8 @@ export class WorkTrackingSystemCreateWizard {
 		await this.page
 			.getByRole("button", { name: "Create", exact: true })
 			.click();
+		// The app leaves the wizard only once the connection is saved; moving on sooner cancels the save.
+		await this.page.waitForURL((url) => url.pathname === "/");
 		return new OverviewPage(this.page, new LighthousePage(this.page));
 	}
 

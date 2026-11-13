@@ -13,6 +13,7 @@ import { useCallback, useContext, useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import ActionButton from "../../components/Common/ActionButton/ActionButton";
+import ReconnectBanner from "../../components/Common/Connections/ReconnectBanner";
 import DataOverviewTable from "../../components/Common/DataOverviewTable/DataOverviewTable";
 import DeleteConfirmationDialog from "../../components/Common/DeleteConfirmationDialog/DeleteConfirmationDialog";
 import FilterBar from "../../components/Common/FilterBar/FilterBar";
@@ -23,7 +24,6 @@ import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IReportOwner } from "../../models/Reports/Report";
-import { newConnectionPath } from "../../models/Settings/settingsAreas";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -38,10 +38,7 @@ import {
 	reportsQueryKeyOf,
 } from "../Common/Reports/reportOwner";
 import { useOwnerReports } from "../Common/Reports/useOwnerReports";
-import ConnectionsSettings from "../Settings/Connections/ConnectionsSettings";
-
-const connectionsRefusedMessage =
-	"You don't have access to the connections list. Ask a Lighthouse administrator to check your roles.";
+import { CONNECTIONS_REFUSED_MESSAGE } from "../Settings/Connections/ConnectionsSettings";
 
 /** What goes with a Team or Portfolio besides itself, said once its reports have been counted. */
 const reportsClauseOf = (
@@ -243,18 +240,6 @@ const OverviewDashboard: React.FC = () => {
 		}
 	};
 
-	// Connection handlers
-	const handleAddConnection = () => {
-		reportFailedNavigation(navigate(newConnectionPath()));
-		return Promise.resolve();
-	};
-
-	const forgetDeletedConnection = useCallback((connectionId: number) => {
-		setConnections((previous) =>
-			previous.filter((connection) => connection.id !== connectionId),
-		);
-	}, []);
-
 	// Update URL when filter changes
 	const handleFilterChange = (newFilterText: string) => {
 		setFilterText(newFilterText);
@@ -321,7 +306,7 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ mt: 2 }}
 						data-testid="connections-refused-alert"
 					>
-						{connectionsRefusedMessage}
+						{CONNECTIONS_REFUSED_MESSAGE}
 					</Alert>
 				)}
 
@@ -341,6 +326,15 @@ const OverviewDashboard: React.FC = () => {
 					</Box>
 				)}
 
+				{rbac.isSystemAdmin &&
+					connections
+						.filter((connection) => connection.requiresReconnect === true)
+						.map((connection) => (
+							<Box key={`reconnect-${connection.id}`} sx={{ mt: 2 }}>
+								<ReconnectBanner connection={connection} />
+							</Box>
+						))}
+
 				{/* Header with Add buttons */}
 				<Box
 					sx={{
@@ -359,14 +353,6 @@ const OverviewDashboard: React.FC = () => {
 						sx={{ fontWeight: 600 }}
 					></Typography>
 					<Box sx={{ display: "flex", gap: 2 }}>
-						{rbac.isSystemAdmin && (
-							<ActionButton
-								buttonText={`Add ${connectionTerm}`}
-								startIcon={<AddIcon />}
-								onClickHandler={handleAddConnection}
-								buttonVariant="contained"
-							/>
-						)}
 						{rbac.canCreateTeam && (
 							<Tooltip
 								title={
@@ -447,14 +433,6 @@ const OverviewDashboard: React.FC = () => {
 						canDeleteRow={() => rbac.isSystemAdmin}
 						canCloneRow={() => rbac.isSystemAdmin}
 					/>
-
-					{rbac.isSystemAdmin && (
-						<ConnectionsSettings
-							connections={connections}
-							filterText={filterText}
-							onConnectionDeleted={forgetDeletedConnection}
-						/>
-					)}
 				</Box>
 
 				{selectedItem && deleteType && (

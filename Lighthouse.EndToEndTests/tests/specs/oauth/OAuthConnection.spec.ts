@@ -178,7 +178,9 @@ test.describe("Story #5018 — Popup reconnect (migration of slice-02 walking sk
 
 			const lighthousePage = new LighthousePage(page);
 			const overviewPage = await lighthousePage.open();
-			const editPage = await overviewPage.editConnection(connectionName);
+			const systemConnections =
+				await overviewPage.lighthousePage.goToConnections();
+			const editPage = await systemConnections.editConnection(connectionName);
 
 			await expect(editPage.reconnectBanner).toBeVisible();
 

@@ -21,7 +21,10 @@ test("should be able to handle teams and portfolios defined via CSV", async ({
 	};
 
 	await test.step("Create CSV Connector", async () => {
-		const workTrackingSystemCreationWizard = await overviewPage.addConnection();
+		const systemConnections =
+			await overviewPage.lighthousePage.goToConnections();
+		const workTrackingSystemCreationWizard =
+			await systemConnections.addConnection();
 
 		await workTrackingSystemCreationWizard.selectWorkTrackingSystemType("Csv");
 

@@ -1,5 +1,6 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import BugReportIcon from "@mui/icons-material/BugReport";
+import CableIcon from "@mui/icons-material/Cable";
 import DatasetIcon from "@mui/icons-material/Dataset";
 import EventBusyIcon from "@mui/icons-material/EventBusy";
 import HistoryIcon from "@mui/icons-material/History";
@@ -15,6 +16,7 @@ import type React from "react";
 import InputGroup from "../../components/Common/InputGroup/InputGroup";
 import type { SettingsTabSlug } from "../../models/Settings/settingsAreas";
 import ApiKeysSettings from "./ApiKeys/ApiKeysSettings";
+import ConnectionsSettings from "./Connections/ConnectionsSettings";
 import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
 import EncryptionPanel from "./Encryption/EncryptionPanel";
@@ -46,6 +48,7 @@ export const settingsPanels: Readonly<
 	},
 	"system-wide": { icon: <ManageAccountsIcon />, panel: <RbacSettings /> },
 	"api-keys": { icon: <KeyIcon />, panel: <ApiKeysSettings /> },
+	connections: { icon: <CableIcon />, panel: <ConnectionsSettings /> },
 	"demo-data": { icon: <DatasetIcon />, panel: <DemoDataSettings /> },
 	database: {
 		icon: <StorageIcon />,
