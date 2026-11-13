@@ -1,0 +1,1692 @@
+{
+"counters": {
+"D": 6,
+"E": 6,
+"F": 252,
+"K": 7,
+"L": 7,
+"P": 4,
+"S": 4,
+"T": 4,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"constraints": [
+{
+"id": "K1",
+"text": "F19"
+},
+{
+"id": "K2",
+"text": "F20"
+},
+{
+"id": "K3",
+"text": "F21"
+},
+{
+"id": "K4",
+"text": "F22"
+},
+{
+"id": "K5",
+"text": "F23"
+},
+{
+"id": "K6",
+"text": "F24"
+},
+{
+"id": "K7",
+"text": "F25"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F13"
+},
+{
+"id": "D2",
+"text": "F14"
+},
+{
+"id": "D3",
+"text": "F15"
+},
+{
+"id": "D4",
+"text": "F16"
+},
+{
+"id": "D5",
+"text": "F17"
+},
+{
+"id": "D6",
+"text": "F18"
+}
+],
+"risks": [
+{
+"allowed": "F31",
+"forbidden": "F32",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "crafter and whole-candidate reviewer",
+"preserved": "F30",
+"residue": "F33",
+"source": "F29"
+},
+{
+"allowed": "F36",
+"forbidden": "F37",
+"id": "Y2",
+"kind": "Bypass",
+"owner": "acceptance designer",
+"preserved": "F35",
+"residue": "F38",
+"source": "F34"
+},
+{
+"allowed": "F31",
+"forbidden": "F41",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F40",
+"residue": "F42",
+"source": "F39"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "crafter",
+"state": "F26"
+},
+{
+"kind": "Excluded",
+"owner": "crafter",
+"state": "F27"
+},
+{
+"kind": "Unknown",
+"owner": "orchestrator",
+"state": "F28"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx",
+"move": "F49",
+"preserved": "F50",
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F47",
+"falsifier": "F48",
+"promises": [
+"P1",
+"P2"
+],
+"stimulus": "F46"
+},
+"records": {
+"boundaries": {
+"dependency_direction": "F68",
+"driven_ports": [
+"F67"
+],
+"driving_port": "F66"
+},
+"closure": [
+{
+"axis": "Inhabitation",
+"basis": "F80",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F79"
+},
+{
+"axis": "PublicReachability",
+"basis": "F81",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F79"
+}
+],
+"decisions": [
+"F51",
+"F52"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"reason": "F57"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.test.tsx:1",
+"reason": "F58"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx:1",
+"reason": "F59"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx:1",
+"reason": "F60"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useNamedPercentilesScope.ts:1",
+"reason": "F61"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useStateDrillDown.ts:1",
+"reason": "F62"
+}
+],
+"laws": [
+{
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "useNamedPercentilesScope",
+"statement": "F71",
+"treatment": {
+"cases": [
+"F72",
+"F73",
+"F74"
+],
+"kind": "Finite",
+"reason": "F75"
+}
+},
+{
+"id": "L2",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "useStateDrillDown",
+"statement": "F76",
+"treatment": {
+"cases": [
+"F77"
+],
+"kind": "Finite",
+"reason": "F78"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F63"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F64"
+},
+{
+"analysis": "contract_tests",
+"reason": "F65"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F70",
+"description": "F69",
+"result_type": "hook return value plus the requests the fake service received"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:405",
+"reason": "F53",
+"symbol": "dialogRowsOf"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useNamedPercentilesScope.ts:1",
+"reason": "F54",
+"symbol": "useNamedPercentilesScope"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useStateDrillDown.ts:1",
+"reason": "F55",
+"symbol": "useStateDrillDown"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useCumulativeStateTimeChoices.ts:24",
+"reason": "F56",
+"symbol": "useCumulativeScopeChoice"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/useNamedPercentilesScope.ts",
+"reason": "F43"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/useStateDrillDown.ts",
+"reason": "F44"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F45"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.cumulativeStateTimeDialog.test.tsx src/pages/Common/MetricsView/BaseMetricsView.test.tsx"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/hooks/metricsDataModules.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts",
+"move": "F190",
+"preserved": "F191",
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/hooks/useMetricsData.test.ts src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/usePbcOverTime.test.ts src/pages/Common/MetricsView/usePercentilesOverTime.test.ts src/pages/Common/MetricsView/useCumulativeStateTimeChoices.test.ts"
+]
+},
+"public_oracle": {
+"expected": "F188",
+"falsifier": "F189",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F187"
+},
+"records": {
+"agreement": [
+{
+"contract": "MetricsOwnerKey, MetricsOwnerRequest, metricsOwnerKeyOf and metricsQueryOptions exported by hooks/useMetricsData.ts",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts:244",
+"party": "Producer",
+"reason": "F214"
+},
+{
+"contract": "MetricsOwnerKey, MetricsOwnerRequest, metricsOwnerKeyOf and metricsQueryOptions exported by hooks/useMetricsData.ts",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:12",
+"party": "Consumer",
+"reason": "F215"
+},
+{
+"contract": "MetricsOwnerKey, MetricsOwnerRequest, metricsOwnerKeyOf and metricsQueryOptions exported by hooks/useMetricsData.ts",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:28",
+"party": "Consumer",
+"reason": "F215"
+},
+{
+"contract": "MetricsOwnerKey, MetricsOwnerRequest, metricsOwnerKeyOf and metricsQueryOptions exported by hooks/useMetricsData.ts",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useCumulativeStateTimeChoices.ts:6",
+"party": "Consumer",
+"reason": "F215"
+},
+{
+"contract": "MetricsOwnerKey, MetricsOwnerRequest, metricsOwnerKeyOf and metricsQueryOptions exported by hooks/useMetricsData.ts",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useFilteredView.ts:5",
+"party": "Consumer",
+"reason": "F215"
+},
+{
+"contract": "useMetricsData hook signature and return value",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:202",
+"party": "Consumer",
+"reason": "F216"
+}
+],
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/layerBoundaries.enforcement.test.ts",
+"id": "T3",
+"obligation": "F245",
+"oracle": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts"
+},
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts",
+"id": "T4",
+"obligation": "F246",
+"oracle": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+}
+],
+"boundaries": {
+"dependency_direction": "F220",
+"driven_ports": [
+"F219"
+],
+"driving_port": "F218"
+},
+"closure": [
+{
+"axis": "Inhabitation",
+"basis": "F238",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F237"
+},
+{
+"axis": "PublicReachability",
+"basis": "F239",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F237"
+}
+],
+"decisions": [
+"F192",
+"F193",
+"F194",
+"F195"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts:1",
+"reason": "F204"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:12",
+"reason": "F205"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:28",
+"reason": "F206"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useCumulativeStateTimeChoices.ts:6",
+"reason": "F206"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useFilteredView.ts:5",
+"reason": "F206"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx:15",
+"reason": "F207"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx:14",
+"reason": "F59"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.tsx:5",
+"reason": "F208"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.tsx:5",
+"reason": "F59"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts:2",
+"reason": "F207"
+},
+{
+"decision": "Migrated",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts:2",
+"reason": "F59"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.test.ts:3",
+"reason": "F184"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.test.ts:3",
+"reason": "F184"
+},
+{
+"decision": "Migrated",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx:10",
+"reason": "F184"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.test.ts:1",
+"reason": "F209"
+},
+{
+"decision": "Changed",
+"kind": "architecture-list",
+"locator": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts:33",
+"reason": "F210"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/hooks/metricsApplicability.ts:1",
+"reason": "F211"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/hooks/metricsOwnerKey.ts:1",
+"reason": "F212"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsQuery.ts:1",
+"reason": "F213"
+}
+],
+"laws": [
+{
+"id": "L5",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "metricsApplicability",
+"statement": "F223",
+"treatment": {
+"cases": [
+"F224",
+"F225",
+"F226",
+"F227"
+],
+"kind": "Finite",
+"reason": "F228"
+}
+},
+{
+"id": "L6",
+"kind": "Algebraic",
+"layer": "Domain",
+"owner": "metricsOwnerKey",
+"statement": "F229",
+"treatment": {
+"cases": [
+"F230",
+"F231"
+],
+"kind": "Finite",
+"reason": "F232"
+}
+},
+{
+"id": "L7",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "useMetricsQuery",
+"statement": "F233",
+"treatment": {
+"cases": [
+"F234",
+"F235"
+],
+"kind": "Finite",
+"reason": "F236"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F217"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F222",
+"description": "F221",
+"result_type": "return values; the ordered list of service calls on a fake service"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts:342",
+"reason": "F196",
+"symbol": "useMetricsData"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts:251",
+"reason": "F197",
+"symbol": "metricsOwnerKeyOf"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts:175",
+"reason": "F198",
+"symbol": "applicabilityFor"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsData.ts:286",
+"reason": "F199",
+"symbol": "useMetricsQuery"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/metricsApplicability.ts:1",
+"reason": "F200",
+"symbol": "metricsApplicability"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/metricsOwnerKey.ts:1",
+"reason": "F201",
+"symbol": "metricsOwnerKey"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useMetricsQuery.ts:1",
+"reason": "F202",
+"symbol": "useMetricsQueryModule"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:12",
+"reason": "F183",
+"symbol": "BaseMetricsView"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useCumulativeStateTimeChoices.ts:24",
+"reason": "F183",
+"symbol": "useCumulativeScopeChoice"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/useFilteredView.ts:5",
+"reason": "F183",
+"symbol": "useFilteredView"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx:15",
+"reason": "F184",
+"symbol": "PbcOverTimeWidget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx:14",
+"reason": "F184",
+"symbol": "PercentilesOverTimeWidget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.tsx:5",
+"reason": "F184",
+"symbol": "PredictabilityScoreDetailsWidget"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.tsx:5",
+"reason": "F184",
+"symbol": "ThroughputRunChartCard"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts:2",
+"reason": "F184",
+"symbol": "usePbcOverTime"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts:2",
+"reason": "F184",
+"symbol": "usePercentilesOverTime"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts:19",
+"reason": "F203",
+"symbol": "ALLOWED_LEAKS"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:28",
+"reason": "F183",
+"symbol": "useMetricsData"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx:10",
+"reason": "F184",
+"symbol": "MetricsOwnerRequest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.test.ts:3",
+"reason": "F184",
+"symbol": "MetricsOwnerKey"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.test.ts:3",
+"reason": "F184",
+"symbol": "MetricsOwnerKey"
+}
+],
+"risks": [
+{
+"allowed": "F242",
+"forbidden": "F243",
+"id": "Y4",
+"kind": "Stressor",
+"owner": "crafter",
+"preserved": "F241",
+"residue": "F244",
+"source": "F240"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/metricsApplicability.ts",
+"reason": "F179"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/metricsOwnerKey.ts",
+"reason": "F180"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/useMetricsQuery.ts",
+"reason": "F181"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/hooks/useMetricsData.ts",
+"reason": "F182"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx",
+"reason": "F183"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx",
+"reason": "F183"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/useCumulativeStateTimeChoices.ts",
+"reason": "F183"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/useFilteredView.ts",
+"reason": "F183"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/PbcOverTimeWidget.tsx",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/PercentilesOverTimeWidget.tsx",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/PredictabilityScoreDetailsWidget.tsx",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.tsx",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx",
+"reason": "F185"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.ts",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePbcOverTime.test.ts",
+"reason": "F185"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.ts",
+"reason": "F184"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/usePercentilesOverTime.test.ts",
+"reason": "F185"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/layerBoundaries.enforcement.test.ts",
+"reason": "F186"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/hooks/metricsDataModules.test.tsx src/hooks/useMetricsData.test.ts src/pages/Common/MetricsView/usePbcOverTime.test.ts src/pages/Common/MetricsView/usePercentilesOverTime.test.ts src/pages/Common/MetricsView/useCumulativeStateTimeChoices.test.ts src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.loading.test.tsx src/pages/Common/MetricsView/BaseMetricsView.test.tsx src/layerBoundaries.enforcement.test.ts src/fileSize.enforcement.test.ts"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.test.tsx",
+"move": "F90",
+"preserved": "F91",
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection"
+]
+},
+"public_oracle": {
+"expected": "F88",
+"falsifier": "F89",
+"promises": [
+"P1",
+"P3"
+],
+"stimulus": "F87"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts",
+"id": "T1",
+"obligation": "F121",
+"oracle": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+}
+],
+"boundaries": {
+"dependency_direction": "F115",
+"driven_ports": [
+"F114"
+],
+"driving_port": "F113"
+},
+"closure": [
+{
+"axis": "Inhabitation",
+"basis": "F119",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F118"
+},
+{
+"axis": "PublicReachability",
+"basis": "F120",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F118"
+}
+],
+"decisions": [
+"F92"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:450",
+"reason": "F103"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "export",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/index.ts:4",
+"reason": "F104"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/PortfolioDeliveryView.tsx:11",
+"reason": "F105"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.test.tsx:1",
+"reason": "F106"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/UnbindConfirmationDialog.tsx:1",
+"reason": "F107"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/WorkItemsTab.tsx:1",
+"reason": "F108"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:1",
+"reason": "F109"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryHeaderCopy.tsx:1",
+"reason": "F110"
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F111"
+},
+{
+"analysis": "contract_tests",
+"reason": "F112"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F117",
+"description": "F116",
+"result_type": "RTL queries by role and name; function return strings"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:450",
+"reason": "F93",
+"symbol": "DeliverySection"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:882",
+"reason": "F94",
+"symbol": "UnbindConfirmationDialog"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:949",
+"reason": "F95",
+"symbol": "WorkItemsTab"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:321",
+"reason": "F96",
+"symbol": "featureColumns"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx:94",
+"reason": "F97",
+"symbol": "howTheFeaturesWereChosen"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryDialogTestKit.tsx:244",
+"reason": "F98",
+"symbol": "openTheDialog"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/UnbindConfirmationDialog.tsx:1",
+"reason": "F99",
+"symbol": "UnbindConfirmationDialogFile"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/WorkItemsTab.tsx:1",
+"reason": "F100",
+"symbol": "WorkItemsTabFile"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx:1",
+"reason": "F101",
+"symbol": "deliveryFeatureRowFile"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryHeaderCopy.tsx:1",
+"reason": "F102",
+"symbol": "deliveryHeaderCopyFile"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/UnbindConfirmationDialog.tsx",
+"reason": "F82"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/WorkItemsTab.tsx",
+"reason": "F83"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFeatureRow.tsx",
+"reason": "F84"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryHeaderCopy.tsx",
+"reason": "F85"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+"reason": "F86"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySectionParts.test.tsx src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection src/fileSize.enforcement.test.ts"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx",
+"move": "F131",
+"preserved": "F132",
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal src/pages/Portfolios/Detail/Components/DeliveryGrid/deliverySelectionTabs.test.ts"
+]
+},
+"public_oracle": {
+"expected": "F129",
+"falsifier": "F130",
+"promises": [
+"P1",
+"P3",
+"P4"
+],
+"stimulus": "F128"
+},
+"records": {
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend test src/fileSize.enforcement.test.ts",
+"id": "T2",
+"obligation": "F178",
+"oracle": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+}
+],
+"boundaries": {
+"dependency_direction": "F155",
+"driven_ports": [
+"F154"
+],
+"driving_port": "F153"
+},
+"closure": [
+{
+"axis": "Inhabitation",
+"basis": "F176",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F175"
+},
+{
+"axis": "PublicReachability",
+"basis": "F177",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F175"
+}
+],
+"decisions": [
+"F133",
+"F134"
+],
+"equality": [
+{
+"definition": "F158",
+"under": "deliveryFormRules observations"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:582",
+"reason": "F143"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "import",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryModals.tsx:6",
+"reason": "F144"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-support",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryDialogTestKit.tsx:40",
+"reason": "F144"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "test-support",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySourceTabFixture.tsx:25",
+"reason": "F144"
+},
+{
+"decision": "Changed",
+"kind": "test",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx:1",
+"reason": "F145"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "export",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/index.ts:1",
+"reason": "F146"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.ts:1",
+"reason": "F147"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySelectionContent.tsx:1",
+"reason": "F148"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySelectionTabRow.tsx:1",
+"reason": "F149"
+},
+{
+"decision": "Changed",
+"kind": "module",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryDialogParts.tsx:1",
+"reason": "F150"
+}
+],
+"laws": [
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "deliveryFormRules",
+"statement": "F159",
+"treatment": {
+"cases": [
+"F160",
+"F161",
+"F162",
+"F163",
+"F164",
+"F165",
+"F166"
+],
+"kind": "Finite",
+"reason": "F167"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "deliveryFormRules",
+"statement": "F168",
+"treatment": {
+"cases": [
+"F169",
+"F170",
+"F171",
+"F172",
+"F173"
+],
+"kind": "Finite",
+"reason": "F174"
+}
+}
+],
+"not_applicable": [
+{
+"analysis": "agreement",
+"reason": "F151"
+},
+{
+"analysis": "contract_tests",
+"reason": "F152"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F157",
+"description": "F156",
+"result_type": "function return values; RTL queries"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliverySelectionTabs.ts:262",
+"reason": "F135",
+"symbol": "deliveryTabForDelivery"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliverySelectionBody.ts:96",
+"reason": "F136",
+"symbol": "selectionBodyOf"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.ts:1",
+"reason": "F137",
+"symbol": "deliveryFormRules"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySelectionContent.tsx:1",
+"reason": "F138",
+"symbol": "DeliverySelectionContent"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySelectionTabRow.tsx:1",
+"reason": "F139",
+"symbol": "DeliverySelectionTabRow"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryDialogParts.tsx:1",
+"reason": "F140",
+"symbol": "DeliveryDialogParts"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx:582",
+"reason": "F141",
+"symbol": "DeliveryCreateModal"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx:1",
+"reason": "F142",
+"symbol": "DeliveryCreateModal"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.ts",
+"reason": "F122"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySelectionContent.tsx",
+"reason": "F123"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySelectionTabRow.tsx",
+"reason": "F124"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryDialogParts.tsx",
+"reason": "F125"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.tsx",
+"reason": "F126"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal.test.tsx",
+"reason": "F127"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend test src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts src/pages/Portfolios/Detail/Components/DeliveryGrid/deliverySelectionTabs.test.ts src/pages/Portfolios/Detail/Components/DeliveryGrid/DeliveryCreateModal src/fileSize.enforcement.test.ts"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F247"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F248"
+},
+{
+"id": "E3",
+"promises": [
+"P1"
+],
+"text": "F249"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F250"
+},
+{
+"id": "E5",
+"promises": [
+"P3"
+],
+"text": "F251"
+},
+{
+"id": "E6",
+"promises": [
+"P4"
+],
+"text": "F252"
+}
+]
+},
+"facts": {
+"F1": "Story #6393 FE5 Split wide units, part B (slices S6-S9 of docs/feature/story-6393-fe5-split-wide-units/feature-delta.md, which the nwdes slices S1-S4 here map onto in order): move the metrics view's two effectful parts (named-percentiles scope, state drill-down) out of BaseMetricsView.tsx into hooks; split useMetricsData.ts (970 lines) into its applicability rules, owner key and query helper; split DeliverySection.tsx (992) into its dialogs, row parts and header copy; split DeliveryCreateModal.tsx (989) into its selection content, tab row, form rules and small parts, with rule-only render rows moving down to the form-rules unit tests. Behaviour-free; the query order of useMetricsData is kept; the Delivery files stay in their one folder with no barrel.",
+"F10": "useMetricsData.ts gives its applicability rules, owner key and query helper to three modules of their own; every metrics query starts in the same order and answers as before",
+"F100": "New file for the tab moved from DeliverySection.tsx",
+"F101": "New file for the row parts moved from DeliverySection.tsx",
+"F102": "New file for the header copy moved from DeliverySection.tsx",
+"F103": "Loses the four units; default export, props and output unchanged",
+"F104": "Re-exports the default of DeliverySection; untouched",
+"F105": "Default import of DeliverySection; untouched",
+"F106": "The ten DeliverySection test files drive the component through RTL and stay as they are",
+"F107": "New file; receives the dialog unchanged",
+"F108": "New file; receives the tab unchanged",
+"F109": "New file; receives the row parts unchanged",
+"F11": "DeliverySection.tsx gives its unbind dialog, work-items tab, feature-row parts and header copy to files of their own in the same folder; a Delivery section looks and acts exactly as before",
+"F110": "New file; receives the header copy unchanged",
+"F111": "No shared contract changes: the default export of DeliverySection and its props stay; the new files are private to the folder and have only DeliverySection as consumer",
+"F112": "Producer and consumer files are in one folder and change in one commit; the section tests cover the join",
+"F113": "DeliverySection rendered through React Testing Library with DeliveryDialogTestKit; the new components rendered directly with RTL; the copy functions as functions",
+"F114": "None changes: Delivery API services, ApiServiceContext and useDeliveryManagement are untouched",
+"F115": "DeliverySection -> UnbindConfirmationDialog, WorkItemsTab, deliveryFeatureRow, deliveryHeaderCopy; none of them imports DeliverySection",
+"F116": "Rendered text, roles and enabled states of the unbind dialog, work-items tab, row actions and header chip, and the strings returned by the copy functions, equal what the section rendered before",
+"F117": "Pixel layout; covered by the existing @screenshot of retiring a Delivery",
+"F118": "DeliverySection split",
+"F119": "input: delivery, feature rows and handlers from useDeliveryManagement; producers: the four new files; consumer: DeliverySection; public port: PortfolioDeliveryView renders the default export",
+"F12": "DeliveryCreateModal.tsx gives its selection content, tab row, form rules and small parts to files of their own in the same folder; the form rules are tested without rendering; the create and edit dialog looks and acts exactly as before",
+"F120": "PortfolioDeliveryView imports DeliverySection which imports the four files; the oracle reaches each by path",
+"F121": "DeliverySection.tsx ends well under 1000 lines and no production file is listed as an offender",
+"F122": "Owns the form rules: dateInputValue, offeredTabs, boundSourceSelection, isValidFutureDate, nameErrorOf, dateErrorOf, getFirstBlockingError and ValidationOptions",
+"F123": "Owns the selection tab content: ManualSelectionContent, RuleBasedContent, SelectionModeContent, their prop types and selectionTabContent",
+"F124": "Owns SelectionTabButton, BusySelectionTab and SelectionTabRow",
+"F125": "Owns LoadingSpinner, SchemaLoadError, PremiumFeatureNotice, ValidationButton, MatchedFeaturesAlert and MatchedFeaturesGrid",
+"F126": "Keeps the dialog component and its named export; imports the four new files",
+"F127": "Rows that only prove one pure form rule move down to deliveryFormRules.test.ts; the render rows that prove the dialog stay",
+"F128": "Call the seven form rules as functions, importing deliveryFormRules by path, with dates built relative to today at local midnight and delivery and tab fixtures built as the existing deliverySelectionTabs tests build them",
+"F129": "The values listed in the form-rule laws: yesterday and today are refused, tomorrow is accepted; blank name and missing date name their field with the delivery term; a source tab speaks alone; a bound delivery is offered only its own tab; the bound source selection is returned only for a matching source key",
+"F13": "Paradigm: the repository rule is object_oriented; the code is React function components and hooks. No class is added. The cohesive owner of each decision is a hook or a module in the folder of the code it leaves; a decision about one value never moves into a page or component. Procedural smell catalog: none applies; the general classes used are mixed responsibility, long unit, hidden agreement between units and semantic duplicate.",
+"F130": "Make isValidFutureDate accept yesterday (the date rows fail); the oracle imports a module that does not exist before the move so it is RED until it does",
+"F131": "L4 extract: move the form rules (with their rows), the selection content, the tab row and the small parts out of DeliveryCreateModal.tsx in four move commits, before FE2 moves the folder",
+"F132": "The create and edit dialog looks and acts exactly as before",
+"F133": "deliveryFormRules.ts is a pure module (no React, no effects) holding the seven functions with their current signatures; it imports deliveryTabForDelivery and the tab types from deliverySelectionTabs.ts, so the dependency is one way. offeredTabs and boundSourceSelection do not extend deliverySelectionTabs.ts or deliverySelectionBody.ts: deliveryTabForDelivery answers which tab claims a stored delivery, deliverySelectionBody answers what the dialog body shows and whether save is allowed, while offeredTabs answers which tabs an edit dialog offers and boundSourceSelection what the picker is told as current; they change when the edit dialog changes, and the request names them with the other form rules and tests them together. Neither file is edited. The new components import nothing from DeliveryCreateModal.tsx; the section/dialog state stays in the dialog component.",
+"F134": "Rule-only rows move down: a row in the DeliveryCreateModal render tests that only proves one of dateInputValue, offeredTabs, boundSourceSelection, isValidFutureDate, nameErrorOf, dateErrorOf or getFirstBlockingError, and needs the dialog only to reach it, becomes a function row in deliveryFormRules.test.ts and its render row is deleted. A row that proves what the user sees or does stays. The acceptance designer names each moved row before the crafter deletes it.",
+"F135": "offeredTabs calls it; it already owns which tab claims a stored delivery",
+"F136": "Already owns the body of the selection area; the dialog keeps calling it; the moved content component renders what it names",
+"F137": "No existing owner of date, name, blocking-error, offered-tab or bound-source rules: deliverySelectionTabs.ts owns tab values and claims, deliverySelectionBody.ts owns body and save-allowed; they are different questions (see the form-rules decision)",
+"F138": "Moves out of DeliveryCreateModal.tsx; DeliverySourceTab.tsx is the source picker which this content renders, not a competing owner",
+"F139": "Moves out of DeliveryCreateModal.tsx; no other tab row exists in the folder",
+"F14": "Layers for this behaviour-free move. Domain/pure rules: metricsApplicability, metricsOwnerKey, deliveryFormRules (states: input in, value out; operations: pure functions; observation: return value). Application/ports: hooks useNamedPercentilesScope, useStateDrillDown, useMetricsQuery (states: query pending, answered, failed, superseded; observation: hook return value and the requests the service receives). Adapter: none changes; MetricsService and the Delivery API services are untouched. Infrastructure/recovery: none; a failed request keeps today behaviour (revert to Default scope, keep last drawn answer). Presentation: Delivery components get new files with unchanged props.",
+"F140": "Small presentational parts move together; RetryByReopeningNotice.tsx and DeliverySourceUnavailableNotice.tsx are other notices with other copy, not the same parts",
+"F141": "Remains the owner of the dialog state, handlers, effects and JSX",
+"F142": "Existing render test file; only rows that prove one pure rule leave it for the new rules test",
+"F143": "Loses four groups of code; named export, props and output unchanged",
+"F144": "Named import of DeliveryCreateModal; untouched",
+"F145": "Rule-only rows leave for deliveryFormRules.test.ts; other rows and the nine DeliveryCreateModal test files stay unmodified",
+"F146": "Does not export DeliveryCreateModal; untouched, no barrel is added",
+"F147": "New file; receives the form rules unchanged",
+"F148": "New file; receives the selection content unchanged",
+"F149": "New file; receives the tab row unchanged",
+"F15": "Formal verification: no Quint, TLA+ or Agda model is written and no checker is run. A file split and two hook extractions add no state, transition, protocol, concurrency or recovery behaviour; the set of states and effects is the same before and after, so there is nothing for a model to cover that the existing tests do not run. Claims are covered by executed code: existing tests unchanged and green, one new oracle per slice that is RED until the module exists, the two enforcement tests (fileSize, layerBoundaries), tsc -b. Liveness is not applicable: no progress claim is made or changed. Type strength: TypeScript with strict tsc; moved symbols keep their exact types, so tsc -b is the check for exclusion of a wrong import.",
+"F150": "New file; receives the small parts unchanged",
+"F151": "No shared contract changes: the named export of DeliveryCreateModal and its props stay; the new files are private to the folder and have only the dialog as consumer",
+"F152": "Producer and consumer files are in one folder and change in one commit; the dialog tests cover the join",
+"F153": "DeliveryCreateModal rendered through React Testing Library (create and edit); the form rules as pure functions",
+"F154": "None changes: useDeliveryFormQueries, Delivery API services and ApiServiceContext are untouched",
+"F155": "DeliveryCreateModal -> DeliverySelectionContent, DeliverySelectionTabRow, DeliveryDialogParts, deliveryFormRules -> deliverySelectionTabs; none of the new files imports DeliveryCreateModal",
+"F156": "dateErrorOf, nameErrorOf, isValidFutureDate, getFirstBlockingError, offeredTabs, boundSourceSelection and dateInputValue return values; the dialog renders the same tab row, content, notices and errors as before",
+"F157": "Whether the dialog passes the right arguments to a rule; covered by the dialog render tests that stay",
+"F158": "Two implementations are equal when every rule returns the same value for the same arguments, including undefined for no error and the same array of tab objects (same identity of the tab values) for offeredTabs",
+"F159": "isValidFutureDate accepts exactly the dates after today at local midnight; empty is invalid; dateErrorOf and nameErrorOf name the missing or invalid field with the delivery term; getFirstBlockingError lets a source tab speak alone, and otherwise orders name, date, tab error",
+"F16": "Query order in useMetricsData is kept: its useMetricsQuery calls stay in the one hook in the same order, are not split into sub-hooks, and no call moves above or below another. In BaseMetricsView the two new hooks are called at the positions of the code they replace, so the hook order of the component does not change.",
+"F160": "empty date",
+"F161": "yesterday",
+"F162": "today",
+"F163": "tomorrow",
+"F164": "blank and padded name",
+"F165": "source tab with empty name and date",
+"F166": "manual tab with all three errors in order",
+"F167": "Boundary table around local midnight and a three-level precedence; a finite table of rows is the honest oracle, a generated property would need an oracle that copies the rule",
+"F168": "offeredTabs returns all tabs when no delivery is edited or when the delivery is claimed by the manual or rule tab, and only the claiming source tab when a source claims it; boundSourceSelection returns a selection only when the delivery has a source reference and its source key equals the tab source key",
+"F169": "no delivery",
+"F17": "Moves and edits are separate commits: refactor(<area>): move <unit> for each move; import-line edits of importers and the layer-list renames are their own edit commit. No re-export from a file for a symbol it gave away; importers change their import line. The three Delivery-folder slices keep every new file in pages/Portfolios/Detail/Components/DeliveryGrid/, add no barrel, and leave DeliveryGrid/index.ts untouched.",
+"F170": "delivery claimed by a source",
+"F171": "delivery with no source reference",
+"F172": "delivery bound to another source key",
+"F173": "delivery bound to this source",
+"F174": "Five finite cases",
+"F175": "DeliveryCreateModal split",
+"F176": "input: delivery, sources and form values from the dialog; producers: the four new files; consumer: DeliveryCreateModal; public port: DeliveryModals renders the named export; deliveryFormRules imports deliverySelectionTabs one way",
+"F177": "DeliveryModals imports DeliveryCreateModal which imports the new files; the oracle reaches deliveryFormRules by path",
+"F178": "DeliveryCreateModal.tsx ends well under 1000 lines and no production file is listed as an offender",
+"F179": "Owns which metrics questions an owner can ask: the is-service guards, applicabilityFor, the choices-made type and narrowsAChartAlreadyDrawn",
+"F18": "Tests: the existing tests of each split file stay as they are, apart from import lines and the rule-only rows that move down to deliveryFormRules.test.ts. Each slice has one new oracle file that imports the new module from its target path (RED until the move), driven as a user of the code drives it: renderHook with providers for hooks, a function call for pure modules, RTL for components. The test-writing skill rules apply (frontend half); no nWave scenario tags in code; no vi.mock of the unit under test.",
+"F180": "Owns the owner type, MetricsOwnerKey, metricsOwnerKeyOf and the request types",
+"F181": "Owns the keyed query helper with its last-drawn memory, metricsQueryOptions, MetricsQuery, ownerOf, listOf and dayOf",
+"F182": "Keeps the hook and its query calls in the same order; imports the three new modules",
+"F183": "Import lines only",
+"F184": "Import line only",
+"F185": "Import line only; no row changes",
+"F186": "Rename or reduce the two ALLOWED_LEAKS entries of useMetricsData.ts to equal what the ratchet measures after the move; the list never grows",
+"F187": "Call applicabilityFor and metricsOwnerKeyOf as functions and renderHook(useMetricsQuery) and renderHook(useMetricsData) with provider-wrapped fake services, importing the three new modules by path",
+"F188": "Same applicability record per service shape; equal owners give equal keys; the helper keeps the last answer drawn for the owner on a failure and none for another owner; the fake service receives its calls in the order of the old hook",
+"F189": "Make providesSleRisk always true (the bare and portfolio rows fail); drop the lastDrawn update (the failure row fails); the oracle imports modules that do not exist before the move so it is RED until they do",
+"F19": "Behaviour-free: no visible, request-order, copy, timing or accessibility change. Moved code keeps its dependency arrays, memo and callback identities and effect order exactly; comments that already explain a why move with their code and no new internal-reference comment is added.",
+"F190": "L4 extract: move the applicability rules, the owner key and the query helper out of useMetricsData.ts in three move commits, import-line edits in a separate commit, before any later change to the metrics queries",
+"F191": "Every metrics query starts in the same order and answers as before; failures keep the last drawn answer",
+"F192": "Split by the three responsibilities named in the request. metricsOwnerKey.ts: pure types and one pure function, no imports of other metrics modules. metricsApplicability.ts: pure functions over a service object and the choices made, imports only MetricsFetchKey and the service types. useMetricsQuery.ts: the only effectful module; it carries metricsQueryOptions because the helper reads them, which keeps the dependency one way (useMetricsData -> useMetricsQuery); the old export of metricsQueryOptions from useMetricsData is removed and its importers change their line. useMetricsData.ts imports all three and keeps ONE_DAY_MS, allMetricsFetchKeys, CumulativeStateTimeChoices, MetricsData and the hook. State carriers: the last-drawn ref inside useMetricsQuery (per call, per component instance); no per-process state.",
+"F193": "The query calls are not split into sub-hooks and are not reordered: hooks run in call order and the order in which requests start is observable. The helper keeps its enabled, placeholderData and failure-logging behaviour exactly.",
+"F194": "Layer list: useMetricsData.ts keeps its value imports of getMetricsFetchKeys and fetchKeyStateOf, so its two entries stay. The new files import MetricsFetchKey from categoryMetadata (metricsApplicability) and QueryProgress from widgetStatus (useMetricsQuery); if the ratchet counts those type-only imports they are two new pairs, which the constraint forbids adding. In that case the crafter does not edit the list and returns the question to the orchestrator (owner: maintainer); a candidate resolution is to import the two types through a narrower module already allowed by the rules, to be decided by the maintainer, not by the crafter.",
+"F195": "The hook useStateDrillDown.ts created by the first slice imports metricsQueryOptions and the owner key; that one import line moves to the new owners as part of the import-edit commit. The file does not exist when this design is recorded, so it is named here and not as a target: the crafter edits that one import line, and the orchestrator confirms the target authorization when the slice starts.",
+"F196": "Remains the single owner of the query list and the effect; only pure and helper code leaves it",
+"F197": "Same function moves to its own file; no other file decides the owner key (searched the importers)",
+"F198": "Moves to its own file; no other applicability rule exists in the repository",
+"F199": "Moves to its own file; usePbcOverTime and usePercentilesOverTime use their own queries, not this helper, so it has one caller family and no merge is warranted",
+"F2": "The three files just under the 1000-line rule and the metrics view's effectful code are split by responsibility, with room to grow before the size rule would list them",
+"F20": "Size: each of useMetricsData.ts, DeliverySection.tsx and DeliveryCreateModal.tsx ends well under 1000 lines (design estimates about 750, 480 and 470) and src/fileSize.offenders.ts stays empty. The threshold stays 1000. Part A oracle and support files are never edited.",
+"F200": "New file receiving applicabilityFor, the service guards and narrowsAChartAlreadyDrawn; no other owner of applicability",
+"F201": "New file receiving the owner key and request types; no other owner",
+"F202": "New file receiving the query helper and metricsQueryOptions; no other owner",
+"F203": "Existing list is the single owner of the allowed layer leaks; its entries are re-measured after the move",
+"F204": "Gives away three responsibilities; keeps its exported hook, MetricsData and CumulativeStateTimeChoices",
+"F205": "Import of metricsOwnerKeyOf and request types points at metricsOwnerKey; metricsQueryOptions at useMetricsQuery",
+"F206": "Imports per symbol from the new owner",
+"F207": "MetricsOwnerKey now from metricsOwnerKey",
+"F208": "MetricsOwnerRequest now from metricsOwnerKey",
+"F209": "Drives the hook through renderHook; keeps its imports unless it imports a moved symbol, in which case the crafter edits that import line only",
+"F21": "Layer list: src/layerBoundaries.enforcement.test.ts ALLOWED_LEAKS only shrinks or renames; a new pair is never added to make the build pass. The ratchet is run after each move and the list edited to equal what it measures.",
+"F210": "The two entries of useMetricsData.ts are measured again after the move; see the layer-list decision",
+"F211": "New file; receives the applicability rules unchanged",
+"F212": "New file; receives the owner key and request types unchanged",
+"F213": "New file; receives the query helper and metricsQueryOptions unchanged",
+"F214": "Exports move to metricsOwnerKey.ts and useMetricsQuery.ts with unchanged types and values",
+"F215": "Import line edited",
+"F216": "Signature and returned fields stay",
+"F217": "Producers and consumers are in one deployable and change in one commit; the hook and component tests cover the join",
+"F218": "useMetricsData and its consumers through renderHook with QueryClientProvider; metricsApplicability and metricsOwnerKey as pure functions",
+"F219": "IMetricsService family (team, project, feature size) as fake services",
+"F22": "No input bound applies: nothing validated or stored changes. The form rules keep their current acceptance exactly (date must be after today at local midnight; name must be non-blank after trim); no narrower or wider bound is chosen.",
+"F220": "useMetricsData -> useMetricsQuery, metricsApplicability, metricsOwnerKey; useMetricsQuery -> metricsOwnerKey; metricsApplicability -> service types only; no cycle",
+"F221": "applicabilityFor(service, choices) returns the record of fetch keys to booleans; metricsOwnerKeyOf returns id and update moment; useMetricsQuery returns progress and answer, keeps the last drawn answer for an owner on a failure, and keeps the previous window answer while the next loads; useMetricsData starts its requests in the same order",
+"F222": "Timing between requests that start in the same render; only the order of starts is observed",
+"F223": "applicabilityFor is total over the fetch keys and returns for a team-shaped, a portfolio-shaped and a bare service the same record as before the move",
+"F224": "team service",
+"F225": "portfolio service",
+"F226": "service with feature sizes only",
+"F227": "bare service",
+"F228": "Four service shapes times two choice flags is a finite table; the old file is the reference",
+"F229": "metricsOwnerKeyOf is pure and equal owners (same id, same lastUpdated) give equal keys",
+"F23": "Fast loop per slice: cd Lighthouse.Frontend and pnpm test:fast --changed, pnpm test --changed after a component edit, plus the slice oracle by path. Full gates once at the end of a slice: pnpm test and pnpm build (check git status afterwards, no */docs symlink under Lighthouse.Frontend). DeliveryCreateModal.test.tsx may time out under a loaded full run: re-run it alone first. After edits run git grep -n REDACTED -- Lighthouse.Frontend/src.",
+"F230": "same id different update moment",
+"F231": "same owner twice",
+"F232": "Two-field value; rows suffice",
+"F233": "useMetricsQuery on a failure for the same owner returns the last drawn answer; for another owner it returns none",
+"F234": "success, then failure, same owner",
+"F235": "success, then failure, other owner",
+"F236": "Small state machine; renderHook rows",
+"F237": "useMetricsData split",
+"F238": "input: owner and service from the metrics view; producers: the three new modules; consumer: useMetricsData and the eleven importers; public port: renderHook and the component tests; one-way import graph, no cycle",
+"F239": "BaseMetricsView calls useMetricsData which calls the new modules; the oracle reaches each by path",
+"F24": "Mutation testing runs once at the end on frozen code with a config by file listing the new files; not part of any slice here.",
+"F240": "Assumption: useMetricsQuery needs metricsQueryOptions from useMetricsData; negated, the helper and the hook import each other",
+"F241": "A one-way import graph",
+"F242": "metricsQueryOptions moves with the helper",
+"F243": "A cycle between useMetricsData and useMetricsQuery",
+"F244": "tsc and the module load would still accept a cycle between functions; reviewer reads the import lines",
+"F245": "The layer-boundary list names exactly the leaking file pairs after the move and does not grow",
+"F246": "No production file reaches 1000 lines: useMetricsData.ts ends well under the threshold and the offender list stays empty",
+"F247": "A user sees the same content and can do the same things on the metrics and delivery screens after the split as before it.",
+"F248": "The metrics data requests start in the same order as before the split.",
+"F249": "Existing tests for the split units pass without edits, except tests that moved with the code they cover. Not user-observable; the test run record is the only evidence, so candidate review owns it.",
+"F25": "code-fact: CLI query results used for callers are cross-checked with a text search of import lines; the importer lists in the slices come from that text search of Lighthouse.Frontend/src. typesafe: unavailable (Jev refused by configuration; no remote judgment used).",
+"F250": "A user can still use the named-percentiles scope and the state drill-down on the metrics view exactly as before. Where the logic lives is an implementation constraint, not user-observable; candidate review owns it.",
+"F251": "The three named files are each split to well under 1000 lines and the size rule list is empty. Not user-observable; an architectural constraint for candidate review, not a user expectation.",
+"F252": "A user gets the same Delivery form behaviour: invalid or missing dates, a missing or duplicate name, a blocking error, the offered tabs and the bound source behave as before. Testability without rendering the dialog is a developer constraint; candidate review owns it.",
+"F26": "Each moved unit is imported by its new path only; the file it left holds no re-export of it.",
+"F27": "A second copy of a moved function or component left behind in the file it left.",
+"F28": "Whether fallow counts type-only imports as layer leaks, which decides whether the S2 move adds new pairs to the layer list (see slice S2 risk).",
+"F29": "A moved effect loses a dependency or two effects swap order",
+"F3": "Each split unit behaves and renders exactly as before: its existing tests stay green unmodified, apart from tests that move with the code they cover, and the order in which the metrics queries start is unchanged",
+"F30": "Same requests, same loading and revert behaviour as before",
+"F31": "none",
+"F32": "A refetch loop, a stale scope landing after a reset, a changed query start order",
+"F33": "Diff reading is the only check on dependency arrays beyond the existing loading and drill-down tests",
+"F34": "A test mocks a moved module by path and stays green whatever the code does",
+"F35": "Each moved module is exercised by a real call in the slice oracle",
+"F36": "vi.mock of chart components as today",
+"F37": "Mocking the moved unit in its own oracle",
+"F38": "Reviewer reads the oracle for mocks of the unit under test",
+"F39": "Second stressor set: a fourth file crosses 1000 lines during the slices; an importer is missed; a moved layer import keeps its old name in the list",
+"F4": "The metrics view's named-percentiles scope and state drill-down live in their own hooks, outside the metrics view component",
+"F40": "tsc -b and the two enforcement tests fail loudly and name the file",
+"F41": "Silent green",
+"F42": "Walked against the finished design, not executed",
+"F43": "Owns the named-percentiles scope: scope id, scoped values and info, the generation guard, the revert-to-Default on a failed fetch and the reset when entity or window change",
+"F44": "Owns the state drill-down: selected state, open flag, the keyed query for the items, and the work items and days column derived from its rows",
+"F45": "Calls the two hooks at the positions of the code they replace; keeps its render output",
+"F46": "renderHook(useNamedPercentilesScope) and renderHook(useStateDrillDown) with a provider-wrapped fake metrics service and deferred promises; call the scope-change and bar-click handlers",
+"F47": "Scoped values equal the answers of the latest selection only; a failed fetch or a changed entity or window returns to Default; the drill-down returns the rows of the keyed query as work items with the rounded days column and asks again when the selected item ids change",
+"F48": "Drop the generation bump in the reset effect (a response for the old entity re-populates the scope); remove selectedItemIds from the drill-down key (no second request); the oracle imports modules that do not exist before the move, so it is RED until they do",
+"F49": "L4 extract: move the inline named-percentiles scope and the state drill-down of BaseMetricsView into two hooks, each in its own move commit, before any later change to the metrics view",
+"F5": "useMetricsData.ts, DeliverySection.tsx and DeliveryCreateModal.tsx are each split by responsibility to well under 1000 lines, and the size rule's list stays empty",
+"F50": "Every metrics widget loads, draws and drills down as before; same requests, same revert and reset behaviour",
+"F51": "useNamedPercentilesScope takes the metrics service, the entity id and the window (start and end date) and returns the scope definition id, the scoped percentile values, the scoped info and the scope-change handler. It keeps one generation counter in a ref; each selection and each reset bumps it and a response applies only while its generation is current. State carrier: React state and the ref inside the hook; owner: the hook file. Effect: the reset effect keyed on entity id, start date and end date, with its biome-ignore reason, moves unchanged.",
+"F52": "useStateDrillDown takes the metrics service, the owner type, the entity, the window and the selected item ids and returns the drill-down state, open flag, the bar-click handler, a close handler, the dialog status, the work items and the days column. The useQuery keeps its key (owner type, owner key, state, from, to, item ids) and enabled rule; selected item ids stay owned by BaseMetricsView because useMetricsData also reads them. The hook is called after useCumulativeStateTimeCandidates is called today, i.e. where the old code sits; it creates no new query that starts earlier.",
+"F53": "Existing helper that turns a query into dialog status and rows; the drill-down hook calls it unchanged; no other candidate decides this",
+"F54": "No existing owner of the named-percentiles scope: the logic lives inline in BaseMetricsView.tsx l.242-320",
+"F55": "No existing owner of the drill-down state and query: inline in BaseMetricsView.tsx l.342-435",
+"F56": "Style owner for a hook in this folder; shape reused, no code shared",
+"F57": "Loses the inline state, query and effect; calls the hooks; props and output unchanged; its four importers (TeamMetricsView, PortfolioMetricsView, two tests) need no change",
+"F58": "Drives the component through its public surface; no import of the moved code",
+"F59": "Same",
+"F6": "The Delivery form's pure rules (dates, name, blocking error, offered tabs, bound source) are tested without rendering the dialog",
+"F60": "Same; its row on the item-ids query key is the plant for the drill-down hook",
+"F61": "New file; receives the named-percentiles logic of BaseMetricsView unchanged",
+"F62": "New file; receives the drill-down logic of BaseMetricsView unchanged",
+"F63": "No shared contract changes: the hooks are private to the folder, BaseMetricsView props and exports are untouched",
+"F64": "The two new files sit in the folder of the component, import only what it imported, and BaseMetricsView stays under the threshold, so neither the layer list nor the size list can change",
+"F65": "Producer and consumer are in one deployable and change in one commit; the component tests cover the join",
+"F66": "BaseMetricsView rendered through React Testing Library with its providers; each hook through renderHook with QueryClientProvider and a fake metrics service",
+"F67": "IMetricsService (getCycleTimePercentiles, getCycleTimePercentilesInfo, getCumulativeStateTimeItemsForTeam and ForPortfolio)",
+"F68": "BaseMetricsView -> two hooks in the same folder -> hooks/useMetricsData (metricsQueryOptions) and services; the hooks import nothing from BaseMetricsView",
+"F69": "Percentiles scope: after a selection the returned scoped values and info equal the answers of the latest selection only; after a failed fetch or a change of entity or window the scope id is null and no scoped values remain. Drill-down: the work items and days column returned for an open state equal the rows of the keyed query",
+"F7": "BaseMetricsView's two effectful parts as hooks; useMetricsData.ts, DeliverySection.tsx and DeliveryCreateModal.tsx split by responsibility; import-line edits in their importers and the renamed entries of the layer-boundary leak list; rule-only render rows moved down to unit tests",
+"F70": "Rendering details of the percentile widget and dialog; those are observed by the existing BaseMetricsView tests",
+"F71": "A response for a superseded selection, or for an entity or window the reader has left, never changes the returned scope; a failed named fetch returns to Default",
+"F72": "slow response for definition A lands after a fast response for definition B",
+"F73": "fetch fails for a named definition",
+"F74": "entity id changes while a response is in flight",
+"F75": "Finite enumerable cases of one small state machine; table rows through renderHook with deferred promises",
+"F76": "The drill-down query key contains the selected item ids, so narrowing the selection asks again",
+"F77": "open a state, then change the item ids, the service is asked with the new ids",
+"F78": "Finite; one row through renderHook",
+"F79": "named-percentiles scope and drill-down hooks",
+"F8": "Splitting useMetricsData's query calls into sub-hooks; packaging into modules (FE2) or a Delivery module; per-module API ports (FE4); a barrel or a change to DeliveryGrid/index.ts; any visible or behavioural change",
+"F80": "input: entity, window and service from BaseMetricsView; producer: the two hooks; consumer: BaseMetricsView; public port: its rendering and renderHook; import graph is acyclic (hooks do not import the component)",
+"F81": "BaseMetricsView.tsx calls both hooks; the oracle reaches them by path through renderHook",
+"F82": "Owns the unbind confirmation dialog and its props",
+"F83": "Owns the work-items tab of a Delivery and its props",
+"F84": "Owns the feature-row parts: DeliveryRowActions, SelectionModeMarker, OwningTeams, featureColumns and ACTION_BUTTON_SX",
+"F85": "Owns the header copy: howTheFeaturesWereChosen, WhatIsWrongWithTheSource, whatTheHeaderChipSays and the constants they use",
+"F86": "Keeps the section component and its default export; imports the four new files",
+"F87": "Render UnbindConfirmationDialog, WorkItemsTab and the DeliveryRowActions part with RTL, and call whatTheHeaderChipSays and howTheFeaturesWereChosen, importing each new file by path",
+"F88": "The unbind confirm button is disabled until the dialog allows it and fires its handler when enabled; the work-items tab shows its rows; the header chip and how-chosen sentence carry the same words as before for an overdue, a source-bound and a rule-based Delivery",
+"F89": "Make the confirm button always enabled (the disabled row fails); change the Overdue wording (the header copy row fails); the oracle imports files that do not exist before the move so it is RED until they do",
+"F9": "The metrics view's named-percentiles scope and state drill-down are hooks of their own, and every metrics widget loads, draws and drills down exactly as before",
+"F90": "L4 extract: move the unbind dialog, the work-items tab, the feature-row parts and the header copy out of DeliverySection.tsx in four move commits, before FE2 moves the folder",
+"F91": "A Delivery section looks and acts exactly as before",
+"F92": "Four files in the one folder, no barrel, index.ts untouched. Components keep their props and render output; the pure copy functions keep their signatures. The default export of DeliverySection.tsx stays the only export used outside the folder. DeliveryDetailTab and constants stay where their users are: constants used by one new file move with it, constants used by both files are exported from the file that owns the knowledge (deliveryHeaderCopy for the header words, the section for the tab type) and imported one way, section -> parts. The new files import nothing from DeliverySection.tsx.",
+"F93": "Remains the owner of the section state and JSX; only components and copy leave it",
+"F94": "Moves to its own file; ArchiveConfirmationDialog.tsx is a different dialog (archive, other copy and rule), so merging them would be a false abstraction",
+"F95": "Moves to its own file; DeliveryMetricsTab and DeliveryNotesPanel are sibling tabs with other content, not a shared owner",
+"F96": "Moves to its own file; ArchivedFeatureGrid has its own columns for archived rows, so no existing owner decides the live row columns",
+"F97": "Moves to its own file with the other header copy; no other file owns this wording",
+"F98": "Existing support that renders the section dialogs with providers; the ten DeliverySection tests use it and stay as the oracle",
+"F99": "New file for the dialog moved from DeliverySection.tsx"
+},
+"product": {
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+}
+],
+"scope_in": [
+"F7"
+],
+"scope_out": [
+"F8"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F9",
+"promises": [
+"P1",
+"P2"
+]
+},
+{
+"id": "S2",
+"observation": "F10",
+"promises": [
+"P1",
+"P3"
+]
+},
+{
+"id": "S3",
+"observation": "F11",
+"promises": [
+"P1",
+"P3"
+]
+},
+{
+"id": "S4",
+"observation": "F12",
+"promises": [
+"P1",
+"P3",
+"P4"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "story-6393-wide-units-b",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "M",
+"value": "F2"
+}
+}
