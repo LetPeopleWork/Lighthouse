@@ -21,6 +21,7 @@ import Typography from "@mui/material/Typography";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import type React from "react";
 import { useContext, useEffect, useId, useState } from "react";
+import { useForgetConfiguredConnections } from "../../../hooks/useConfiguredConnections";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import type { IDemoDataScenario } from "../../../models/DemoData/IDemoData";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -39,6 +40,7 @@ const DemoDataSettings: React.FC = () => {
 	const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 	const { demoDataService } = useContext(ApiServiceContext);
 	const { licenseStatus } = useLicenseRestrictions();
+	const forgetConfiguredConnections = useForgetConfiguredConnections();
 
 	const dialogTitleId = useId();
 	const dialogDescriptionId = useId();
@@ -68,10 +70,11 @@ const DemoDataSettings: React.FC = () => {
 		try {
 			setLoadingScenarioId(scenarioId);
 			await demoDataService.loadScenario(scenarioId);
-			// Optionally show success message or redirect
 		} catch (error) {
 			console.error("Failed to load scenario:", error);
 		} finally {
+			// A scenario replaces the connections, and even a failed load may have changed some of them.
+			forgetConfiguredConnections();
 			setLoadingScenarioId(null);
 		}
 	};

@@ -50,6 +50,11 @@ vi.mock(
 	}),
 );
 
+const { openOAuthPopup } = vi.hoisted(() => ({ openOAuthPopup: vi.fn() }));
+vi.mock("../../hooks/useOAuthPopup", () => ({
+	useOAuthPopup: () => ({ openOAuthPopup }),
+}));
+
 // Mock the react-router's useNavigate function
 const mockNavigate = vi.fn();
 vi.mock("react-router", async () => {
@@ -357,6 +362,32 @@ describe("OverviewDashboard", () => {
 			const filterInputs = screen.getAllByRole("textbox");
 			expect(filterInputs.length).toBe(1); // Only the main filter
 		});
+	});
+
+	it("a reconnect from the Overview's banner drops the remembered connections list", async () => {
+		openOAuthPopup.mockResolvedValue({ status: "success" });
+		const { queryClient } = renderWithProviders(
+			<OverviewDashboard />,
+			{
+				oauthService: {
+					disconnect: vi.fn().mockResolvedValue(undefined),
+					initiateConnect: vi
+						.fn()
+						.mockResolvedValue({ authorizationUrl: "https://tracker/auth" }),
+				} as unknown as IApiServiceContext["oauthService"],
+			},
+			{ connections: [makeReconnectingConnection(102, "Stale Jira", true)] },
+		);
+		queryClient.setQueryData(["configuredConnections"], []);
+
+		fireEvent.click(await screen.findByRole("button", { name: /Reconnect/i }));
+
+		await waitFor(() =>
+			expect(
+				queryClient.getQueryData(["configuredConnections"]),
+				"System, Connections must ask again after a reconnect, or it keeps showing the connection as needing one",
+			).toBeUndefined(),
+		);
 	});
 
 	it("renders one ReconnectBanner per RefreshFailed connection and none for healthy connections", async () => {

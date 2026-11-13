@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -44,6 +45,15 @@ describe("DemoDataSettings", () => {
 		demoDataService: mockDemoDataService,
 	});
 
+	const renderDemoData = (queryClient = new QueryClient()) =>
+		render(
+			<QueryClientProvider client={queryClient}>
+				<ApiServiceContext.Provider value={mockApiContext}>
+					<DemoDataSettings />
+				</ApiServiceContext.Provider>
+			</QueryClientProvider>,
+		);
+
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
@@ -51,11 +61,7 @@ describe("DemoDataSettings", () => {
 	it("renders demo data management title", async () => {
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue([]);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		renderDemoData();
 
 		await waitFor(() => {
 			expect(screen.getByText("Demo Data Management")).toBeInTheDocument();
@@ -65,11 +71,7 @@ describe("DemoDataSettings", () => {
 	it("displays warning alert about data removal and backup advice", async () => {
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue([]);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		renderDemoData();
 
 		await waitFor(() => {
 			expect(
@@ -88,11 +90,7 @@ describe("DemoDataSettings", () => {
 	it("displays contact information", async () => {
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue([]);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		renderDemoData();
 
 		await waitFor(() => {
 			expect(
@@ -120,11 +118,7 @@ describe("DemoDataSettings", () => {
 
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue(mockScenarios);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		renderDemoData();
 
 		await waitFor(() => {
 			expect(screen.getByText("Small Startup")).toBeInTheDocument();
@@ -133,7 +127,7 @@ describe("DemoDataSettings", () => {
 		expect(screen.getByText("Premium")).toBeInTheDocument();
 	});
 
-	it("loads scenario when load button is clicked and confirmed", async () => {
+	it("loads the confirmed scenario and drops the remembered connections list, which the scenario replaced", async () => {
 		const user = userEvent.setup();
 		const mockScenarios: IDemoDataScenario[] = [
 			{
@@ -147,11 +141,9 @@ describe("DemoDataSettings", () => {
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue(mockScenarios);
 		mockDemoDataService.loadScenario.mockResolvedValue(undefined);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		const queryClient = new QueryClient();
+		queryClient.setQueryData(["configuredConnections"], []);
+		renderDemoData(queryClient);
 
 		await waitFor(() => {
 			expect(screen.getByText("Small Startup")).toBeInTheDocument();
@@ -174,6 +166,12 @@ describe("DemoDataSettings", () => {
 				"small-startup",
 			);
 		});
+		await waitFor(() =>
+			expect(
+				queryClient.getQueryData(["configuredConnections"]),
+				"The empty list from before the load must not be shown as current on System, Connections",
+			).toBeUndefined(),
+		);
 	});
 
 	it("loads scenario with ID '0' when load button is clicked and confirmed", async () => {
@@ -190,11 +188,7 @@ describe("DemoDataSettings", () => {
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue(mockScenarios);
 		mockDemoDataService.loadScenario.mockResolvedValue(undefined);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		renderDemoData();
 
 		await waitFor(() => {
 			expect(screen.getByText("When Will This Be Done?")).toBeInTheDocument();
@@ -232,11 +226,7 @@ describe("DemoDataSettings", () => {
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue(mockScenarios);
 		mockDemoDataService.loadScenario.mockResolvedValue(undefined);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		renderDemoData();
 
 		await waitFor(() => {
 			expect(screen.getByText("Small Startup")).toBeInTheDocument();
@@ -279,11 +269,7 @@ describe("DemoDataSettings", () => {
 
 		mockDemoDataService.getAvailableScenarios.mockResolvedValue(mockScenarios);
 
-		render(
-			<ApiServiceContext.Provider value={mockApiContext}>
-				<DemoDataSettings />
-			</ApiServiceContext.Provider>,
-		);
+		renderDemoData();
 
 		await waitFor(() => {
 			expect(screen.getByText("Enterprise Basic")).toBeInTheDocument();

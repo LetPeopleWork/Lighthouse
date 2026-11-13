@@ -19,6 +19,7 @@ import DeleteConfirmationDialog from "../../components/Common/DeleteConfirmation
 import FilterBar from "../../components/Common/FilterBar/FilterBar";
 import LoadingAnimation from "../../components/Common/LoadingAnimation/LoadingAnimation";
 import OnboardingStepper from "../../components/Common/OnboardingStepper/OnboardingStepper";
+import { useForgetConfiguredConnections } from "../../hooks/useConfiguredConnections";
 import { useLicenseRestrictions } from "../../hooks/useLicenseRestrictions";
 import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
@@ -120,6 +121,7 @@ const OverviewDashboard: React.FC = () => {
 	const [filterText, setFilterText] = useState(initialFilterText);
 
 	const queryClient = useQueryClient();
+	const forgetConfiguredConnections = useForgetConfiguredConnections();
 	const { getTerm } = useTerminology();
 	const teamTerm = getTerm(TERMINOLOGY_KEYS.TEAM);
 	const portfolioTerm = getTerm(TERMINOLOGY_KEYS.PORTFOLIO);
@@ -330,7 +332,10 @@ const OverviewDashboard: React.FC = () => {
 						.filter((connection) => connection.requiresReconnect === true)
 						.map((connection) => (
 							<Box key={`reconnect-${connection.id}`} sx={{ mt: 2 }}>
-								<ReconnectBanner connection={connection} />
+								<ReconnectBanner
+									connection={connection}
+									onReconnected={forgetConfiguredConnections}
+								/>
 							</Box>
 						))}
 
