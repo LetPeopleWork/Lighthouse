@@ -1,7 +1,8 @@
 import AutoModeIcon from "@mui/icons-material/AutoMode";
 import LinkIcon from "@mui/icons-material/Link";
 import TouchAppIcon from "@mui/icons-material/TouchApp";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { MemoryRouter } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 import { Delivery } from "../../../../../models/Delivery";
@@ -37,6 +38,38 @@ vi.mock("../../../../../services/Api/ApiServiceContext", () => ({
 	},
 }));
 
+// The grid draws no rows without layout, so this stand-in lays out each Feature's name and Team cell
+// from the columns it is given, which is all the tab decides.
+vi.mock(
+	"../../../../../components/Common/FeatureListDataGrid/FeatureListDataGrid",
+	() => ({
+		default: ({
+			features,
+			columns,
+			storageKey,
+		}: {
+			features: { id: number }[];
+			columns: {
+				field: string;
+				renderCell?: (params: { row: unknown }) => ReactNode;
+			}[];
+			storageKey: string;
+		}) => (
+			<div data-testid={storageKey}>
+				{features.map((row) => (
+					<div key={row.id} data-testid={`row-${row.id}`}>
+						{columns
+							.filter((c) => c.field === "name" || c.field === "owningTeam")
+							.map((c) => (
+								<div key={c.field}>{c.renderCell?.({ row })}</div>
+							))}
+					</div>
+				))}
+			</div>
+		),
+	}),
+);
+
 vi.mock(
 	"../../../../../components/Common/FeatureListDataGrid/FeatureProgressIndicator",
 	() => ({
@@ -55,6 +88,7 @@ function featureNamed(id: number, name: string, teamWork: number): Feature {
 	const feature = new Feature();
 	feature.id = id;
 	feature.name = name;
+	feature.referenceId = `FTR-${id}`;
 	feature.remainingWork = { "1": teamWork, "2": 0 };
 	feature.totalWork = { "1": teamWork, "2": 0 };
 	feature.forecasts = [];
@@ -204,11 +238,18 @@ describe("the work items tab", () => {
 			features: [featureNamed(1, "Checkout", 3), featureNamed(2, "Search", 4)],
 		});
 
-		expect(screen.getByText("Checkout")).toBeInTheDocument();
-		expect(screen.getByText("Search")).toBeInTheDocument();
+		expect(screen.getByText("FTR-1: Checkout")).toBeInTheDocument();
+		expect(screen.getByText("FTR-2: Search")).toBeInTheDocument();
 		expect(screen.queryByText("Loading Features...")).not.toBeInTheDocument();
 		expect(screen.queryByText("No Features in this Delivery.")).toBeNull();
-		expect(screen.getAllByRole("link", { name: "Team Alpha" })).toHaveLength(2);
+		expect(screen.getByTestId("delivery-features-7")).toBeInTheDocument();
+		for (const id of [1, 2]) {
+			expect(
+				within(screen.getByTestId(`row-${id}`)).getByRole("link", {
+					name: "Team Alpha",
+				}),
+			).toBeInTheDocument();
+		}
 	});
 });
 
