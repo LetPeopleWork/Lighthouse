@@ -748,6 +748,235 @@ A section that stays near 1000 lines or an offender list that quietly grows
 ###### Obligations
 
 
+### S4
+
+##### Covers
+
+P1
+
+P4
+
+```text
+Ask whether no date, yesterday, today and tomorrow are launch dates, and what message each gets
+```
+
+```text
+No date is required; yesterday and today must be in the future; tomorrow is accepted with no message; the delivery word is the tenant's
+```
+
+```text
+A reader who types today or a past day is refused, with a message naming the fix
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/deliveryFormRules\.test\.ts
+
+```text
+Today counts as future, or the message says Delivery instead of the renamed term, or an empty date is called past
+```
+
+###### Obligations
+
+
+
+
+
+
+##### Covers
+
+P1
+
+P4
+
+```text
+Ask whether an empty name, a name of spaces, a name and a padded name are names
+```
+
+```text
+Empty and spaces are refused in the delivery word; real names, padded or not, are accepted
+```
+
+```text
+A launch cannot be saved with a blank name
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/deliveryFormRules\.test\.ts
+
+```text
+A name of spaces passes
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P1
+
+P4
+
+```text
+Ask what the form asks next for a manual tab with all three things wrong and then fixed one by one, for the rule-based tab, and for a source tab with blank name and date
+```
+
+```text
+Name, then date, then past date, then the tab need, then nothing; a source tab speaks alone; rule tab asks for validation
+```
+
+```text
+The reader is told one missing thing at a time in a fixed order; on a Release tab only the Release is asked for
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/deliveryFormRules\.test\.ts
+
+```text
+Date asked before name, a source tab also reporting name and date, or the tab need coming first
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+P4
+
+```text
+Ask which tabs are offered when no delivery, a manual, a rule-based, a Fix Version-bound and a delivery bound to an unoffered source is edited
+```
+
+```text
+All tabs, except a delivery bound to an offered source gets that source tab alone
+```
+
+```text
+Editing a delivery that follows a Release offers no way out of it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/deliveryFormRules\.test\.ts
+
+```text
+Every tab offered to a bound delivery, or the first source tab instead of the matching one
+```
+
+###### Obligations
+
+
+
+
+##### Covers
+
+P1
+
+P4
+
+```text
+Ask what the source picker is told it follows for no delivery, no reference, another tab, Manual tab and the matching tab
+```
+
+```text
+Nothing except on the tab of the followed source, where entry id, name and date are returned
+```
+
+```text
+A bound delivery shows the Release it follows only in that Release's picker
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/deliveryFormRules\.test\.ts
+
+```text
+The followed Release shown in another source's picker or in Manual
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P1
+
+P4
+
+```text
+Write dates held by the tracker into the date field
+```
+
+```text
+Zero-padded year-month-day read in UTC, including 23:30 and 00:00 UTC
+```
+
+```text
+The date field shows the day the tracker's board says
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Portfolios\/Detail\/Components\/DeliveryGrid\/deliveryFormRules\.test\.ts
+
+```text
+Reading local time instead of UTC, or no zero padding
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+Run the existing size rule over the frontend source
+```
+
+```text
+DeliveryCreateModal.tsx ends well under 1000 lines and the offender list stays empty
+```
+
+```text
+No production file in the frontend stays over the size limit
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/fileSize\.enforcement\.test\.ts
+
+```text
+A split that leaves the dialog file over the limit with an entry added to the offender list
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

@@ -376,12 +376,144 @@
 "stimulus": "F351",
 "user_result": "F353"
 }
+],
+"S4": [
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F160",
+"L3/F161",
+"L3/F162",
+"L3/F163"
+],
+"still_passes_if": "F362",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts"
+},
+"expected": "F360",
+"stimulus": "F359",
+"user_result": "F361"
+},
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F164"
+],
+"still_passes_if": "F366",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts"
+},
+"expected": "F364",
+"stimulus": "F363",
+"user_result": "F365"
+},
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F165",
+"L3/F166"
+],
+"still_passes_if": "F370",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts"
+},
+"expected": "F368",
+"stimulus": "F367",
+"user_result": "F369"
+},
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L4/F169",
+"L4/F170"
+],
+"still_passes_if": "F374",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts"
+},
+"expected": "F372",
+"stimulus": "F371",
+"user_result": "F373"
+},
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4",
+"L4/F171",
+"L4/F172",
+"L4/F173"
+],
+"still_passes_if": "F378",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts"
+},
+"expected": "F376",
+"stimulus": "F375",
+"user_result": "F377"
+},
+{
+"covers": [
+"P1",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F382",
+"test": "Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts"
+},
+"expected": "F380",
+"stimulus": "F379",
+"user_result": "F381"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F386",
+"test": "Lighthouse.Frontend/src/fileSize.enforcement.test.ts"
+},
+"expected": "F384",
+"stimulus": "F383",
+"user_result": "F385"
+}
 ]
 },
 "counters": {
 "D": 6,
 "E": 6,
-"F": 358,
+"F": 386,
 "K": 7,
 "L": 7,
 "P": 4,
@@ -2025,9 +2157,37 @@
 "F356": "Make the confirm button always enabled (the disabled row fails); change the how-chosen sentence or the chip text of a source-bound Delivery (the header copy rows fail); the oracle imports files that do not exist before the move so it is RED until they do. The Overdue wording is not a falsifier of this oracle; DeliverySection.overdue.test.tsx covers it",
 "F357": "useStateDrillDown takes the metrics service, the owner type, the entity, the window and the selected item ids and returns the drill-down state, open flag, the bar-click handler, a close handler, the dialog status, the work items and the days column. The useQuery keeps its key (owner type, owner key, state, from, to, item ids) and enabled rule; selected item ids stay owned by BaseMetricsView because useMetricsData also reads them. The hook is called after useCumulativeStateTimeCandidates, where the old query was, so no query starts earlier; the old drill-down state calls moved into the hook with it.",
 "F358": "Calls the two hooks at the positions of the code they replace; render output unchanged",
+"F359": "Ask whether no date, yesterday, today and tomorrow are launch dates, and what message each gets",
 "F36": "vi.mock of chart components as today",
+"F360": "No date is required; yesterday and today must be in the future; tomorrow is accepted with no message; the delivery word is the tenant's",
+"F361": "A reader who types today or a past day is refused, with a message naming the fix",
+"F362": "Today counts as future, or the message says Delivery instead of the renamed term, or an empty date is called past",
+"F363": "Ask whether an empty name, a name of spaces, a name and a padded name are names",
+"F364": "Empty and spaces are refused in the delivery word; real names, padded or not, are accepted",
+"F365": "A launch cannot be saved with a blank name",
+"F366": "A name of spaces passes",
+"F367": "Ask what the form asks next for a manual tab with all three things wrong and then fixed one by one, for the rule-based tab, and for a source tab with blank name and date",
+"F368": "Name, then date, then past date, then the tab need, then nothing; a source tab speaks alone; rule tab asks for validation",
+"F369": "The reader is told one missing thing at a time in a fixed order; on a Release tab only the Release is asked for",
 "F37": "Mocking the moved unit in its own oracle",
+"F370": "Date asked before name, a source tab also reporting name and date, or the tab need coming first",
+"F371": "Ask which tabs are offered when no delivery, a manual, a rule-based, a Fix Version-bound and a delivery bound to an unoffered source is edited",
+"F372": "All tabs, except a delivery bound to an offered source gets that source tab alone",
+"F373": "Editing a delivery that follows a Release offers no way out of it",
+"F374": "Every tab offered to a bound delivery, or the first source tab instead of the matching one",
+"F375": "Ask what the source picker is told it follows for no delivery, no reference, another tab, Manual tab and the matching tab",
+"F376": "Nothing except on the tab of the followed source, where entry id, name and date are returned",
+"F377": "A bound delivery shows the Release it follows only in that Release's picker",
+"F378": "The followed Release shown in another source's picker or in Manual",
+"F379": "Write dates held by the tracker into the date field",
 "F38": "Reviewer reads the oracle for mocks of the unit under test",
+"F380": "Zero-padded year-month-day read in UTC, including 23:30 and 00:00 UTC",
+"F381": "The date field shows the day the tracker's board says",
+"F382": "Reading local time instead of UTC, or no zero padding",
+"F383": "Run the existing size rule over the frontend source",
+"F384": "DeliveryCreateModal.tsx ends well under 1000 lines and the offender list stays empty",
+"F385": "No production file in the frontend stays over the size limit",
+"F386": "A split that leaves the dialog file over the limit with an entry added to the offender list",
 "F39": "Second stressor set: a fourth file crosses 1000 lines during the slices; an importer is missed; a moved layer import keeps its old name in the list",
 "F4": "The metrics view's named-percentiles scope and state drill-down live in their own hooks, outside the metrics view component",
 "F40": "tsc -b and the two enforcement tests fail loudly and name the file",

@@ -797,6 +797,207 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Ask whether no date, yesterday, today and tomorrow are launch dates, and what message each gets
+</code></pre>
+
+<pre><code>No date is required; yesterday and today must be in the future; tomorrow is accepted with no message; the delivery word is the tenant&#x27;s
+</code></pre>
+
+<pre><code>A reader who types today or a past day is refused, with a message naming the fix
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts</p>
+
+<pre><code>Today counts as future, or the message says Delivery instead of the renamed term, or an empty date is called past
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Ask whether an empty name, a name of spaces, a name and a padded name are names
+</code></pre>
+
+<pre><code>Empty and spaces are refused in the delivery word; real names, padded or not, are accepted
+</code></pre>
+
+<pre><code>A launch cannot be saved with a blank name
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts</p>
+
+<pre><code>A name of spaces passes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Ask what the form asks next for a manual tab with all three things wrong and then fixed one by one, for the rule-based tab, and for a source tab with blank name and date
+</code></pre>
+
+<pre><code>Name, then date, then past date, then the tab need, then nothing; a source tab speaks alone; rule tab asks for validation
+</code></pre>
+
+<pre><code>The reader is told one missing thing at a time in a fixed order; on a Release tab only the Release is asked for
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts</p>
+
+<pre><code>Date asked before name, a source tab also reporting name and date, or the tab need coming first
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Ask which tabs are offered when no delivery, a manual, a rule-based, a Fix Version-bound and a delivery bound to an unoffered source is edited
+</code></pre>
+
+<pre><code>All tabs, except a delivery bound to an offered source gets that source tab alone
+</code></pre>
+
+<pre><code>Editing a delivery that follows a Release offers no way out of it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts</p>
+
+<pre><code>Every tab offered to a bound delivery, or the first source tab instead of the matching one
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Ask what the source picker is told it follows for no delivery, no reference, another tab, Manual tab and the matching tab
+</code></pre>
+
+<pre><code>Nothing except on the tab of the followed source, where entry id, name and date are returned
+</code></pre>
+
+<pre><code>A bound delivery shows the Release it follows only in that Release&#x27;s picker
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts</p>
+
+<pre><code>The followed Release shown in another source&#x27;s picker or in Manual
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<p>P4</p>
+
+<pre><code>Write dates held by the tracker into the date field
+</code></pre>
+
+<pre><code>Zero-padded year-month-day read in UTC, including 23:30 and 00:00 UTC
+</code></pre>
+
+<pre><code>The date field shows the day the tracker&#x27;s board says
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Portfolios/Detail/Components/DeliveryGrid/deliveryFormRules.test.ts</p>
+
+<pre><code>Reading local time instead of UTC, or no zero padding
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the existing size rule over the frontend source
+</code></pre>
+
+<pre><code>DeliveryCreateModal.tsx ends well under 1000 lines and the offender list stays empty
+</code></pre>
+
+<pre><code>No production file in the frontend stays over the size limit
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/fileSize.enforcement.test.ts</p>
+
+<pre><code>A split that leaves the dialog file over the limit with an entry added to the offender list
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
