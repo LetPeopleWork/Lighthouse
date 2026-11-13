@@ -185,7 +185,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Any address is resolved by a System Admin, a reader and a person with RBAC off: bare, earlier System Admins address, hidden or unknown area and tab
 </code></pre>
 
-<pre><code>Admin lands on Organization, reader on Access API Keys, hidden or unknown tabs fall back to the first tab the person may open, the earlier System Admins address opens System-wide access
+<pre><code>Admin lands on Organization, reader on Access API Keys, hidden or unknown tabs fall back to the first tab the person may open (Connections for an admin in System), the earlier System Admins address opens System-wide access
 </code></pre>
 
 <pre><code>Nobody lands on a tab they may not open, and old links keep working
@@ -232,7 +232,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>500 generated addresses (visible, hidden, earlier, legacy, unknown, bare) over all 8 access combinations
+<pre><code>500 generated addresses (visible, hidden, earlier, legacy, unknown, bare) over all 8 access combinations, with Connections among System&#x27;s tabs
 </code></pre>
 
 <pre><code>Loading waits; a redirect target shows at once; every shown area and tab is one the person may open; a visible tab&#x27;s own address shows it
@@ -260,10 +260,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A System Admin opens /settings, /settings/access and /settings/system
 </code></pre>
 
-<pre><code>h1 reads Settings &gt; {Area}, each area lists its own tabs in order with the first open at its own address; System lists Demo Data, Database, Encryption, Usage Data, System Info, Logs, Refresh History, License
+<pre><code>h1 reads Settings &gt; {Area}, each area lists its own tabs in order with the first open at its own address; System lists Connections, Database, Encryption, Demo Data, Usage Data, System Info, Logs, Refresh History, License and opens Connections
 </code></pre>
 
-<pre><code>Settings is grouped into Organization, Access and System, each holding its tabs; System Info, Logs and Refresh History are separate tabs
+<pre><code>Settings is grouped into Organization, Access and System, each holding its tabs; connections come first in System
 </code></pre>
 
 <h5>Disposition</h5>
@@ -272,7 +272,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; a System Admin opening address sees heading with its own tabs</p>
 
-<pre><code>The old h1 System Settings, or all tabs under every area, or Logs and Refresh History missing from System
+<pre><code>The old h1 System Settings, or all tabs under every area, or Demo Data still first in System
 </code></pre>
 
 <h6>Obligations</h6>
@@ -422,7 +422,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings from elsewhere in the app</p>
 
-<pre><code>The full log link leaves the person on a tab other than Logs, or the demo data link keeps its old address; the license links and the wizard and Overview links are held by the source scan and the License oracle
+<pre><code>The full log link leaves the person on a tab other than Logs, or the demo data link keeps its old address; the license links and the wizard link are held by the source scan and the License oracle, the connections empty-state demo data link by the Connections oracle
 </code></pre>
 
 <h6>Obligations</h6>
@@ -432,7 +432,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>Every area and tab address is opened, including System Logs, Refresh History and License
+<pre><code>Every area and tab address is opened, including System Connections, Logs, Refresh History and License
 </code></pre>
 
 <pre><code>No page event for any area or tab address
@@ -950,6 +950,292 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h6>Obligations</h6>
 
+
+<h3>S4</h3>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin opens Settings, System, Connections; the instance calls connections Trackers and has Northwind Jira, which needs reconnecting, and Northwind ADO
+</code></pre>
+
+<pre><code>Connections is System&#x27;s first tab and open; the section titled Trackers lists both with Edit and Delete each, one reconnect banner for Northwind Jira, a Connect Tracker button, no text filter and no empty state
+</code></pre>
+
+<pre><code>The admin manages every connection from System, in the instance&#x27;s own word
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; a System Admin finds Connections as System&#x27;s first tab, listing every connection with Edit, Delete and its reconnect banner, under the configured term</p>
+
+<pre><code>The button keeps the old Add wording only in a tooltip, or the banner shows for a healthy connection as well as the broken one when both are listed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A person hid the Type column on the Overview&#x27;s connection list, then opens System, Connections
+</code></pre>
+
+<pre><code>The Type column stays hidden on the tab
+</code></pre>
+
+<pre><code>Saved column choices survive the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; keeps the columns a person hid on the Overview&#x27;s list hidden on the tab</p>
+
+<pre><code>The tab reads the saved state but ignores column widths or order
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin deletes Northwind ADO from the tab and confirms in the dialog
+</code></pre>
+
+<pre><code>The same Confirm Delete dialog names Northwind ADO; the connection is deleted and leaves the list; Northwind Jira stays
+</code></pre>
+
+<pre><code>Retiring a connection works as it did on the Overview
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; deleting a connection asks the same question and takes it off the list</p>
+
+<pre><code>The deleted row is hidden locally while the remembered list keeps it for the next visit
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin opens the tab on an instance with no connection and follows Load Demo Data
+</code></pre>
+
+<pre><code>No Tracker found. Load Demo Data or Check the documentation shows with a Connect Tracker button and the documentation link; Load Demo Data opens System, Demo Data
+</code></pre>
+
+<pre><code>A fresh instance says how to start
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; a fresh instance is told no connection exists, with a link to load demo data that opens System, Demo Data, and a link to the documentation</p>
+
+<pre><code>The documentation link opens in the same window
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin opens the tab while the list is still on its way, then the list arrives
+</code></pre>
+
+<pre><code>Only a spinner shows, no empty state and no Connect button; then the list replaces the spinner
+</code></pre>
+
+<pre><code>A slow connection never looks like an empty instance
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; shows a lone spinner while the list is on its way, never the empty state, then the list</p>
+
+<pre><code>The spinner sits beside a dimmed previous list from another visit
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin opens the tab and the list cannot be loaded
+</code></pre>
+
+<pre><code>Could not load the Trackers. shows; no empty state and no refused message
+</code></pre>
+
+<pre><code>A failed load is not mistaken for no connections
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; a list that cannot be loaded says so in the instance&#x27;s own word, never &#x27;no connection found&#x27;</p>
+
+<pre><code>The alert offers no way to retry
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin opens the tab and the server refuses the list
+</code></pre>
+
+<pre><code>Today&#x27;s refused message shows; no empty state and no could-not-load message
+</code></pre>
+
+<pre><code>A refusal says to ask for roles, not that nothing exists
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; a refused list shows today&#x27;s refused message, never the empty state</p>
+
+<pre><code>The refused message also shows a Connect button that will be refused too
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A reader with RBAC on opens the Connections address
+</code></pre>
+
+<pre><code>No Connections tab; the address moves to System Info; the connection list is never asked for
+</code></pre>
+
+<pre><code>Readers see no connections, as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; a reader sees no Connections tab, and its address leads to a tab they may open</p>
+
+<pre><code>The tab is hidden from readers while the list is still fetched in the background
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin sees the list, creates a connection in the wizard, then returns to the tab within the app&#x27;s cache time
+</code></pre>
+
+<pre><code>The new connection is listed
+</code></pre>
+
+<pre><code>The tab never shows the list from before a change as current
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the connections live in System, Connections &gt; a connection created in the wizard is listed on return to the tab, not the list from before</p>
+
+<pre><code>A saved edit of an existing connection or a discarded wizard draft still leaves the old list remembered
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin opens the Overview with Northwind Jira needing reconnecting and Northwind ADO, then types a filter matching nothing
+</code></pre>
+
+<pre><code>Portfolios and Teams show with one reconnect banner; no connections section, no connection names, no Edit, no Add or Connect Tracker button; Add Team enabled; the banner stays after filtering
+</code></pre>
+
+<pre><code>The Overview is about Portfolios and Teams but still warns of a broken connection
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the Overview without the connections section &gt; shows a System Admin the Portfolios, Teams and reconnect banners, but no connections section and no button to add a connection</p>
+
+<pre><code>The banner shows only for connections whose name matches the filter while the filter is empty
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>A System Admin opens the Overview on an instance with no connection
+</code></pre>
+
+<pre><code>Add Team is disabled and no connections empty state shows
+</code></pre>
+
+<pre><code>Onboarding still waits for a connection before Teams
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx :: the Overview without the connections section &gt; still asks whether a connection exists: with none, Add Team stays disabled for a System Admin</p>
+
+<pre><code>Add Team is disabled while the existence check is still loading and stays disabled after it fails
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

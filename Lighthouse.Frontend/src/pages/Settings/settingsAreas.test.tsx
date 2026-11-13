@@ -43,6 +43,9 @@ vi.mock("./SystemInfo/SystemInfoDisplay", () => ({
 vi.mock("./SystemInfo/ThirdPartyPackagesSection", () => ({
 	default: () => <div>third party packages content</div>,
 }));
+vi.mock("./Connections/ConnectionsSettings", () => ({
+	default: () => <div>connections panel content</div>,
+}));
 vi.mock("./DemoData/DemoDataSettings", () => ({
 	default: () => <div>demo data panel content</div>,
 }));
@@ -141,9 +144,10 @@ const TABS_OF: Readonly<Record<AreaSlug, readonly string[]>> = {
 	organization: ["terminology", "calendar", "refresh-ordering"],
 	access: ["system-wide", "api-keys"],
 	system: [
-		"demo-data",
+		"connections",
 		"database",
 		"encryption",
+		"demo-data",
 		"usage-data",
 		"system-info",
 		"logs",
@@ -531,7 +535,7 @@ describe("which settings area and tab an address opens", () => {
 		expectItShows(
 			whereItEnds(resolve, { area: "system", tab: "nonsense" }, ADMIN),
 			"system",
-			"demo-data",
+			"connections",
 			"An address naming no tab of System",
 		);
 		expectItShows(
@@ -735,19 +739,20 @@ describe("the three settings area pages", () => {
 		},
 		{
 			address: "/settings/system",
-			ends: "/settings/system/demo-data",
+			ends: "/settings/system/connections",
 			heading: "Settings › System",
 			tabs: [
-				"Demo Data",
+				"Connections",
 				"Database",
 				"Encryption",
+				"Demo Data",
 				"Usage Data",
 				"System Info",
 				"Logs",
 				"Refresh History",
 				"License",
 			],
-			panel: "demo data panel content",
+			panel: "connections panel content",
 		},
 	])(
 		"a System Admin opening $address sees $heading with its own tabs",
@@ -1050,6 +1055,7 @@ describe("links into settings from elsewhere in the app", () => {
 		"/settings/organization/refresh-ordering",
 		"/settings/access/system-wide",
 		"/settings/access/api-keys",
+		"/settings/system/connections",
 		"/settings/system/demo-data",
 		"/settings/system/database",
 		"/settings/system/encryption",
