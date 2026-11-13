@@ -4,14 +4,13 @@ import {
 	Box,
 	CircularProgress,
 	Container,
-	Link,
 	Tooltip,
 	Typography,
 } from "@mui/material";
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { Link as RouterLink, useLocation, useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { LicenseTooltip } from "../../components/App/License/LicenseToolTip";
 import ActionButton from "../../components/Common/ActionButton/ActionButton";
 import ReconnectBanner from "../../components/Common/Connections/ReconnectBanner";
@@ -26,7 +25,6 @@ import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IReportOwner } from "../../models/Reports/Report";
-import { connectionsTabPath } from "../../models/Settings/settingsAreas";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -42,6 +40,7 @@ import {
 } from "../Common/Reports/reportOwner";
 import { useOwnerReports } from "../Common/Reports/useOwnerReports";
 import { CONNECTIONS_REFUSED_MESSAGE } from "../Settings/Connections/ConnectionsSettings";
+import ConnectFirstHint from "./ConnectFirstHint";
 
 /** What goes with a Team or Portfolio besides itself, said once its reports have been counted. */
 const reportsClauseOf = (
@@ -95,25 +94,6 @@ const OwnerDeleteDialog: React.FC<{
 			onConfirm={onConfirm}
 			onCancel={onCancel}
 		/>
-	);
-};
-
-/** Says where to connect the first connection, under the Add buttons it keeps disabled. */
-const ConnectFirstHint: React.FC<{
-	hasConnections: boolean;
-	connectionTerm: string;
-}> = ({ hasConnections, connectionTerm }) => {
-	const { isLoading, isSystemAdmin } = useRbac();
-	if (isLoading || !isSystemAdmin || hasConnections) {
-		return null;
-	}
-	return (
-		<Typography variant="body2" color="text.secondary">
-			{`Connect a ${connectionTerm} first: `}
-			<Link component={RouterLink} to={connectionsTabPath()}>
-				Settings › System › Connections
-			</Link>
-		</Typography>
 	);
 };
 

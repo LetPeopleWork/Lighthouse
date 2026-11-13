@@ -152,6 +152,12 @@ const EditConnectionPage: React.FC = () => {
 		reportFailedNavigation(navigate(connectionsTabPath()));
 	};
 
+	// Cancelling also drops the list: the wizard deletes a draft it had already saved.
+	const returnToConnections = () => {
+		forgetConfiguredConnections();
+		reportFailedNavigation(navigate(connectionsTabPath()));
+	};
+
 	const validateConnectionSettings = async (
 		connection: IWorkTrackingSystemConnection,
 	) => {
@@ -193,15 +199,8 @@ const EditConnectionPage: React.FC = () => {
 						getSupportedSystems={getSupportedSystems}
 						validateConnection={validateConnectionSettings}
 						saveConnection={saveConnectionSettings}
-						onCancel={() => {
-							// A draft the wizard saved is deleted on cancel, so the list must be read again.
-							forgetConfiguredConnections();
-							reportFailedNavigation(navigate(connectionsTabPath()));
-						}}
-						onComplete={() => {
-							forgetConfiguredConnections();
-							reportFailedNavigation(navigate(connectionsTabPath()));
-						}}
+						onCancel={returnToConnections}
+						onComplete={returnToConnections}
 					/>
 				</Container>
 			</SnackbarErrorHandler>
