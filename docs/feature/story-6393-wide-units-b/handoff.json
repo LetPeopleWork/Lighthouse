@@ -3,35 +3,6 @@
 "S1": [
 {
 "covers": [
-"P1"
-],
-"disposition": {
-"kind": "Tested",
-"still_passes_if": "F256",
-"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: lists the rows the team|portfolio service returns, with their days rounded to one decimal"
-},
-"expected": "F254",
-"stimulus": "F253",
-"user_result": "F255"
-},
-{
-"covers": [
-"P1"
-],
-"disposition": {
-"kind": "Tested",
-"obligations": [
-"L2/F77"
-],
-"still_passes_if": "F260",
-"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: asks again with the new Work Item selection when the selection changes while a state is open (L2/F77)"
-},
-"expected": "F258",
-"stimulus": "F257",
-"user_result": "F259"
-},
-{
-"covers": [
 "P2"
 ],
 "disposition": {
@@ -40,11 +11,43 @@
 "L1/F72"
 ],
 "still_passes_if": "F264",
-"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: shows the answers of the latest selection only, even when an earlier one answers last (L1/F72)"
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: shows the answers of the latest selection only, even when an earlier one answers last"
 },
 "expected": "F262",
 "stimulus": "F261",
 "user_result": "F263"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F73"
+],
+"still_passes_if": "F268",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: returns to Default when fetching the percentile values or info for a named definition fails"
+},
+"expected": "F266",
+"stimulus": "F265",
+"user_result": "F267"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F74"
+],
+"still_passes_if": "F272",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or window"
+},
+"expected": "F270",
+"stimulus": "F269",
+"user_result": "F271"
 },
 {
 "covers": [
@@ -80,16 +83,19 @@
 },
 {
 "covers": [
-"P2"
+"P1"
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F276",
-"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: returns to Default when the reader picks Default again"
+"obligations": [
+"L2/F77"
+],
+"still_passes_if": "F260",
+"test": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: asks again with the new Work Item selection when the selection changes while a state is open"
 },
-"expected": "F274",
-"stimulus": "F273",
-"user_result": "F275"
+"expected": "F258",
+"stimulus": "F257",
+"user_result": "F259"
 }
 ]
 },
@@ -1625,10 +1631,6 @@
 "F250": "A user can still use the named-percentiles scope and the state drill-down on the metrics view exactly as before. Where the logic lives is an implementation constraint, not user-observable; candidate review owns it.",
 "F251": "The three named files are each split to well under 1000 lines and the size rule list is empty. Not user-observable; an architectural constraint for candidate review, not a user expectation.",
 "F252": "A user gets the same Delivery form behaviour: invalid or missing dates, a missing or duplicate name, a blocking error, the offered tabs and the bound source behave as before. Testability without rendering the dialog is a developer constraint; candidate review owns it.",
-"F253": "The reader clicks a state bar of a team or a portfolio, then closes the dialog",
-"F254": "Nothing is asked before the click; then the owner's own service is asked once for that state and window; rows come back as Work Items with days rounded to one decimal (0 for unknown ids); close hides the dialog",
-"F255": "The drill-down dialog lists the Work Items contributing to the state with their days",
-"F256": "The query starts before a click, the portfolio asks the team service, days are unrounded, or close leaves the dialog open",
 "F257": "A state is open and the reader changes the Work Item selection",
 "F258": "The service is asked again for the same state with the new item ids",
 "F259": "The drill-down shows rows for the narrowed selection, not the old one",
@@ -1647,10 +1649,6 @@
 "F270": "The scope returns to Default at the change and the late answers do not bring it back",
 "F271": "A scope chosen for one team or window never leaks into the next",
 "F272": "The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores window changes",
-"F273": "The reader picks Default again after a named scope was shown",
-"F274": "Scope id, scoped values and scoped info are cleared",
-"F275": "The widget shows the default percentiles again",
-"F276": "Only the scope id is cleared and the named values stay on screen",
 "F28": "Whether fallow counts type-only imports as layer leaks, which decides whether the S2 move adds new pairs to the layer list (see slice S2 risk).",
 "F29": "A moved effect loses a dependency or two effects swap order",
 "F3": "Each split unit behaves and renders exactly as before: its existing tests stay green unmodified, apart from tests that move with the code they cover, and the order in which the metrics queries start is unchanged",

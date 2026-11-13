@@ -6,65 +6,6 @@
 
 ##### Covers
 
-P1
-
-```text
-The reader clicks a state bar of a team or a portfolio, then closes the dialog
-```
-
-```text
-Nothing is asked before the click; then the owner's own service is asked once for that state and window; rows come back as Work Items with days rounded to one decimal (0 for unknown ids); close hides the dialog
-```
-
-```text
-The drill-down dialog lists the Work Items contributing to the state with their days
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: lists the rows the team\|portfolio service returns\, with their days rounded to one decimal
-
-```text
-The query starts before a click, the portfolio asks the team service, days are unrounded, or close leaves the dialog open
-```
-
-###### Obligations
-
-None.
-
-##### Covers
-
-P1
-
-```text
-A state is open and the reader changes the Work Item selection
-```
-
-```text
-The service is asked again for the same state with the new item ids
-```
-
-```text
-The drill-down shows rows for the narrowed selection, not the old one
-```
-
-##### Disposition
-
-Tested
-
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: asks again with the new Work Item selection when the selection changes while a state is open \(L2\/F77\)
-
-```text
-The item ids are missing from the query key, so the old rows stay and no second request is made
-```
-
-###### Obligations
-
-
-##### Covers
-
 P2
 
 ```text
@@ -83,10 +24,68 @@ The percentile widget never shows numbers of a pick the reader has replaced
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: shows the answers of the latest selection only\, even when an earlier one answers last \(L1\/F72\)
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: shows the answers of the latest selection only\, even when an earlier one answers last
 
 ```text
 A response for a superseded selection overwrites the current one (no generation guard on a selection)
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A named definition is picked and either the percentile values fetch or the info fetch fails
+```
+
+```text
+The scope id, scoped values and scoped info all return to Default (null)
+```
+
+```text
+The widget never presents Default numbers under a named selection
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: returns to Default when fetching the percentile values or info for a named definition fails
+
+```text
+Only the failing half is cleared, the scope id stays named, or the failure is swallowed and the old scope stays
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A scope is chosen, then the entity id or the window end changes while the answers are still on their way, then they arrive
+```
+
+```text
+The scope returns to Default at the change and the late answers do not bring it back
+```
+
+```text
+A scope chosen for one team or window never leaks into the next
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: drops a chosen scope and ignores answers still on their way when the reader moves to another entity or window
+
+```text
+The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores window changes
 ```
 
 ###### Obligations
@@ -152,33 +151,32 @@ The reset effect does not bump the generation, so a late answer for the old enti
 
 ##### Covers
 
-P2
+P1
 
 ```text
-The reader picks Default again after a named scope was shown
+A state is open and the reader changes the Work Item selection
 ```
 
 ```text
-Scope id, scoped values and scoped info are cleared
+The service is asked again for the same state with the new item ids
 ```
 
 ```text
-The widget shows the default percentiles again
+The drill-down shows rows for the narrowed selection, not the old one
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: returns to Default when the reader picks Default again
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.hooks\.test\.tsx \:\: asks again with the new Work Item selection when the selection changes while a state is open
 
 ```text
-Only the scope id is cleared and the named values stay on screen
+The item ids are missing from the query key, so the old rows stay and no second request is made
 ```
 
 ###### Obligations
 
-None.
 
 ## Expectations
 

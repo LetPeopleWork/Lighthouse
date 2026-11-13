@@ -78,7 +78,7 @@ describe("the percentiles the reader scopes to a named cycle time definition", (
 		);
 	}
 
-	it("shows the answers of the latest selection only, even when an earlier one answers last (L1/F72)", async () => {
+	it("shows the answers of the latest selection only, even when an earlier one answers last", async () => {
 		const slowValues = deferred<IPercentileValue[]>();
 		const slowInfo = deferred<ICycleTimePercentilesInfo>();
 		const getValues = vi.fn((_id, _from, _to, definitionId: number) =>
@@ -114,7 +114,7 @@ describe("the percentiles the reader scopes to a named cycle time definition", (
 		["the percentile values", true],
 		["the percentile info", false],
 	])(
-		"returns to Default when fetching %s for a named definition fails (L1/F73)",
+		"returns to Default when fetching %s for a named definition fails",
 		async (_which, valuesFail) => {
 			const getValues = vi.fn(() =>
 				valuesFail
@@ -163,7 +163,7 @@ describe("the percentiles the reader scopes to a named cycle time definition", (
 		["another entity", { entityId: 2, endDate: END }],
 		["another window", { entityId: 1, endDate: LATER_END }],
 	])(
-		"drops a chosen scope and ignores answers still on their way when the reader moves to %s (L1/F74)",
+		"drops a chosen scope and ignores answers still on their way when the reader moves to %s",
 		async (_which, next) => {
 			const lateValues = deferred<IPercentileValue[]>();
 			const lateInfo = deferred<ICycleTimePercentilesInfo>();
@@ -283,7 +283,7 @@ describe("the Work Items behind a state bar the reader clicks", () => {
 		},
 	);
 
-	it("asks again with the new Work Item selection when the selection changes while a state is open (L2/F77)", async () => {
+	it("asks again with the new Work Item selection when the selection changes while a state is open", async () => {
 		const { result, answer, rerender } = drillDownFor("team");
 		act(() => result.current.onBarClick("Doing"));
 		await waitFor(() => expect(result.current.drillDownStatus).toBe("ready"));
