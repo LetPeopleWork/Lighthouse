@@ -500,6 +500,56 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>design</p>
 
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The access read fails and a person opens /settings/access/system-wide and bare /settings
+</code></pre>
+
+<pre><code>The page uses the permissive fallback: no spinner left, Access shows API Keys only (no System-wide access, as with RBAC off), bare Settings opens Organization Configuration
+</code></pre>
+
+<pre><code>A failed access read never locks anyone out
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; a failed access read ...</p>
+
+<pre><code>The page keeps the spinner forever, or shows System-wide access with RBAC unknown, or redirects to an empty area
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The old Settings page tests are retired with the old shell (file deleted in the working tree)
+</code></pre>
+
+<pre><code>Each old case is observed by a settingsAreas row: initial tab and heading by the area pages row; demodata/configuration/rbac/database keys by the legacy key table; tab clicks by the choosing another tab row; system admin all tabs, RBAC off hides System Admins, non-admin variants (team admin, portfolio admin, viewer share one access) by the area pages, reader and failed-read rows
+</code></pre>
+
+<pre><code>No second test pins the old System Settings heading
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages</p>
+
+<pre><code>The old Settings.test.tsx is left in place asserting the System Settings heading
+</code></pre>
+
+<h6>Obligations</h6>
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>

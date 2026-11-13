@@ -221,6 +221,38 @@
 "expected": "F337",
 "stimulus": "F336",
 "user_result": "F338"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F348",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > a failed access read ..."
+},
+"expected": "F346",
+"stimulus": "F345",
+"user_result": "F347"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F352",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages"
+},
+"expected": "F350",
+"stimulus": "F349",
+"user_result": "F351"
 }
 ]
 },
@@ -229,7 +261,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 339,
+"F": 352,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -362,7 +394,7 @@
 {
 "condition": "F59",
 "id": "B1",
-"observation": "F60",
+"observation": "F340",
 "outcome": "Indeterminate"
 },
 {
@@ -443,7 +475,7 @@
 "S4",
 "S5"
 ],
-"text": "F35"
+"text": "F344"
 },
 {
 "id": "K2",
@@ -510,7 +542,7 @@
 "S4",
 "S5"
 ],
-"text": "F25"
+"text": "F343"
 },
 {
 "id": "D4",
@@ -800,7 +832,7 @@
 "source": "F123"
 },
 {
-"allowed": "F130",
+"allowed": "F341",
 "forbidden": "F131",
 "id": "Y2",
 "kind": "Stressor",
@@ -872,7 +904,7 @@
 "S1": {
 "oracle": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx",
 "public_oracle": {
-"expected": "F172",
+"expected": "F342",
 "falsifier": "F173",
 "promises": [
 "P1"
@@ -2354,7 +2386,6 @@
 "F128": "Assumption: my-summary succeeds. Negation: it fails",
 "F129": "nobody is locked out",
 "F13": "Area page h1 is 'Settings › {Area}'; bare /settings lands on the first area the person may see, Organization for a System Admin (D4, D7)",
-"F130": "all three areas and tabs shown (permissive fallback); backend refuses what the person may not do",
 "F131": "a blank or endless spinner page",
 "F132": "a reader sees admin tabs whose calls the backend refuses",
 "F133": "Assumption: old links are only the 14 keys. Negation: bookmarks use odd case, earlier slugs or unknown tabs",
@@ -2400,7 +2431,6 @@
 "F17": "System → Usage Data shows the switch row and the docs link only, no sentence about the footer choice (D10)",
 "F170": "goToAccessTab through the same path; same-pathname workaround removed",
 "F171": "Render the app routes in a MemoryRouter at /settings, /settings?tab=database, /settings?tab=LOGS, /settings/access/system-admins (RBAC on, access slow) and for a reader at /settings; open the header Settings menu",
-"F172": "Menu lists Organization, Access, System; area page h1 is Settings > {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization or Log Level; license links land on System",
 "F173": "First-tab bounce of the deep link, a legacy key landing elsewhere, Organization visible to a reader, or old h1 System Settings",
 "F174": "S1 is the walking skeleton: areas Organization (Configuration whole), Access (System-wide access, API Keys), System (Demo Data first, Database, Encryption, System Info) hold today panels unchanged; header menu, h1 Settings > {Area}, 14 legacy keys, bare, unknown and license redirects, in-app link paths, POM menu navigation. System Admins panel moves as is including the Epic 6577 content. Existing Settings.test.tsx (mocks SystemSettingsTab, asserts old h1) moves with the shell; owner is the acceptance designer.",
 "F175": "Shell (heading, Paper, TabList, panels, icons) is extracted and parameterised by area; visibility rules and key map move to the definition",
@@ -2486,7 +2516,6 @@
 "F247": "Holds no navigate or Cancel; wizard steps unchanged",
 "F248": "No behaviour-preserving move precedes this slice; the redirects and return paths are the behaviour change",
 "F249": "section extracted from the Overview",
-"F25": "Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace; failed access read keeps the permissive fallback (all areas and tabs). Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.",
 "F250": "keyed connections query and the one writer-side key removal",
 "F251": "section and Add button out; banners, existence check, stepper stay",
 "F252": "save and wizard completion remove the configuredConnections key",
@@ -2587,7 +2616,19 @@
 "F338": "Reader sees System Info without Log Level",
 "F339": "No production target gates Log Level and the panel moves unchanged; the frontend no longer renders that section, so it cannot be observed",
 "F34": "Test substrate: Vitest + React Testing Library in Lighthouse.Frontend (MemoryRouter at the URL a user opens, renderHook with providers, pure modules as functions); Playwright through page objects in Lighthouse.EndToEndTests. Runner argv: pnpm --dir Lighthouse.Frontend exec vitest run <oracle file>. Test rules follow .claude/skills/test-writing; no nWave scenario tags in code. Test time within default budgets; no derogation requested.",
-"F35": "Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). A failed access read never locks anyone out (permissive fallback). No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.",
+"F340": "permissive answer as today: every area and tab RBAC-off shows, without System-wide access",
+"F341": "what RBAC-off shows today (all three areas, every tab except System-wide access); backend refuses what the person may not do",
+"F342": "Menu lists Organization, Access, System; area page h1 is Settings > {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization; license links land on System",
+"F343": "Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace. A failed access read keeps useRbac() permissive answer (isRbacEnabled false, isSystemAdmin true): the person sees what RBAC-off shows today, which excludes System-wide access as the old page excluded System Admins. Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.",
+"F344": "Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). Gating stays exactly as today: a failed access read gets useRbac() permissive answer (RBAC off, System Admin), so nobody is locked out and the System-wide access tab stays hidden as today. No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.",
+"F345": "The access read fails and a person opens /settings/access/system-wide and bare /settings",
+"F346": "The page uses the permissive fallback: no spinner left, Access shows API Keys only (no System-wide access, as with RBAC off), bare Settings opens Organization Configuration",
+"F347": "A failed access read never locks anyone out",
+"F348": "The page keeps the spinner forever, or shows System-wide access with RBAC unknown, or redirects to an empty area",
+"F349": "The old Settings page tests are retired with the old shell (file deleted in the working tree)",
+"F350": "Each old case is observed by a settingsAreas row: initial tab and heading by the area pages row; demodata/configuration/rbac/database keys by the legacy key table; tab clicks by the choosing another tab row; system admin all tabs, RBAC off hides System Admins, non-admin variants (team admin, portfolio admin, viewer share one access) by the area pages, reader and failed-read rows",
+"F351": "No second test pins the old System Settings heading",
+"F352": "The old Settings.test.tsx is left in place asserting the System Settings heading",
 "F36": "Old addresses keep working with replace redirects: the 14 legacy keys, bare /settings, /settings/license, /connections/new, /connections/:id/edit, any earlier tab slug (the old System Admins slug stays). Tab and panel test ids are kept where their tab survives; new ids license-tab, connections-tab, usage-data-tab, terminology-tab, calendar-tab, refresh-ordering-tab, settings-menu plus one id per area item; configuration-tab and configuration-panel retire in S2.",
 "F37": "Confirmed maintainer decisions bound the copy: D1-D4 header and heading, D5 System-wide access, D6 tab order Connections, Database, Encryption, Demo Data, Usage Data, System Info, License (in S1 alone the first tab stays Demo Data), D7, D8 icons Translate/EventBusy/Sync, D9 Could not load the license., D10 no footer sentence on Usage Data, D11 License natural width in one License group, D12 link text View license options, D13 Task Manager link and empty-text link and configured terms, D13a-wording Connect {Work Tracking System} on the tab button and the stepper action, D13b title, D14 Back to {Work Tracking Systems} link above the title of the connection pages, D15 hint line under the disabled Add buttons; D12b nothing extra when the stepper is dismissed.",
 "F38": "New single owner of every settings and connection path; replaces the tab key map in Settings.tsx and hand-written literals",
@@ -2615,7 +2656,6 @@
 "F58": "pages -> components/hooks/models/services; components may import models but not pages; the definition in models imports nothing from them; panels moved unchanged keep their own service ports",
 "F59": "Access read fails",
 "F6": "System shows a Connections tab, first, with the list, reconnect banners, empty state and a Connect button, and the Overview no longer holds the connections section",
-"F60": "permissive fallback: all three areas and every tab visible",
 "F61": "Connection list or license or optional-feature call fails",
 "F62": "inline could-not-load alert in the view, 403 shows the refused alert, never the empty state or a locked switch",
 "F63": "Person may not see the requested area or tab",

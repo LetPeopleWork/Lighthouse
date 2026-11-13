@@ -171,7 +171,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>D3</h4>
 
-<pre><code>Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace; failed access read keeps the permissive fallback (all areas and tabs). Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.
+<pre><code>Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace. A failed access read keeps useRbac() permissive answer (isRbacEnabled false, isSystemAdmin true): the person sees what RBAC-off shows today, which excludes System-wide access as the old page excluded System Admins. Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.
 </code></pre>
 <p>Governed slices: S1, S2, S3, S4, S5</p>
 
@@ -233,7 +233,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h4>K1</h4>
 
-<pre><code>Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). A failed access read never locks anyone out (permissive fallback). No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.
+<pre><code>Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). Gating stays exactly as today: a failed access read gets useRbac() permissive answer (RBAC off, System Admin), so nobody is locked out and the System-wide access tab stays hidden as today. No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.
 </code></pre>
 <p>Governed slices: S1, S2, S3, S4, S5</p>
 
@@ -451,7 +451,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Indeterminate</p>
 
-<pre><code>permissive fallback: all three areas and every tab visible
+<pre><code>permissive answer as today: every area and tab RBAC-off shows, without System-wide access
 </code></pre>
 
 <h5>B2</h5>
@@ -947,7 +947,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>nobody is locked out
 </code></pre>
 
-<pre><code>all three areas and tabs shown (permissive fallback); backend refuses what the person may not do
+<pre><code>what RBAC-off shows today (all three areas, every tab except System-wide access); backend refuses what the person may not do
 </code></pre>
 
 <pre><code>a blank or endless spinner page
@@ -1199,7 +1199,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Render the app routes in a MemoryRouter at /settings, /settings?tab=database, /settings?tab=LOGS, /settings/access/system-admins (RBAC on, access slow) and for a reader at /settings; open the header Settings menu
 </code></pre>
 
-<pre><code>Menu lists Organization, Access, System; area page h1 is Settings &gt; {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization or Log Level; license links land on System
+<pre><code>Menu lists Organization, Access, System; area page h1 is Settings &gt; {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization; license links land on System
 </code></pre>
 
 <pre><code>First-tab bounce of the deep link, a legacy key landing elsewhere, Organization visible to a reader, or old h1 System Settings

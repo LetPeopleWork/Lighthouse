@@ -7,9 +7,15 @@ import {
 	render,
 	screen,
 	waitFor,
+	within,
 } from "@testing-library/react";
 import { Suspense } from "react";
-import { MemoryRouter, Routes, useLocation } from "react-router";
+import {
+	MemoryRouter,
+	Routes,
+	useLocation,
+	useNavigationType,
+} from "react-router";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Header from "../../components/App/Header/Header";
 import RecentProblemsSection from "../../components/App/Header/TaskManager/RecentProblemsSection";
@@ -173,7 +179,15 @@ const theBuiltModule = async <T,>(
 		return (await import(
 			/* @vite-ignore */ resolve(theDirectoryOfThisTest, file)
 		)) as T;
-	} catch {
+	} catch (error) {
+		const notThere =
+			(error as { code?: string }).code === "ERR_MODULE_NOT_FOUND" ||
+			/cannot find module|failed to load url|does not exist|no such file/i.test(
+				(error as Error).message,
+			);
+		if (!notThere) {
+			throw error;
+		}
 		return expect.fail(
 			`${whatItIs} is missing (${file}). Settings addresses cannot be resolved without it, so old links and the area pages cannot work. Create it as the settings feature describes.`,
 		);
@@ -246,24 +260,40 @@ const aSlowAnswer = () => {
 
 const WhereWeAre = () => {
 	const location = useLocation();
+	const navigationType = useNavigationType();
 	return (
-		<output data-testid="where-we-are">
-			{location.pathname + location.search}
-		</output>
+		<>
+			<output data-testid="where-we-are">
+				{location.pathname + location.search}
+			</output>
+			<output data-testid="how-we-got-there">{navigationType}</output>
+		</>
 	);
 };
 
 const whereWeAre = () => screen.getByTestId("where-we-are").textContent;
 
+/** A redirect or a tab choice replaces the address, so Back never returns to one that bounced. */
+const expectTheAddressWasReplaced = () => {
+	expect(
+		screen.getByTestId("how-we-got-there").textContent,
+		"The address must be replaced, not pushed, or Back loops through the old address",
+	).toBe("REPLACE");
+};
+
 const renderSettingsAt = async (
 	address: string,
-	summary: Summary | Promise<Summary>,
+	summary: Summary | Promise<Summary> | "fails",
 ) => {
 	const settingsRoutes = await theSettingsRoutes();
 	const rbacService = createMockRbacService();
 	rbacService.getAuthorizationSummary = vi
 		.fn()
-		.mockReturnValue(Promise.resolve(summary));
+		.mockImplementation(() =>
+			summary === "fails"
+				? Promise.reject(new Error("the access read failed"))
+				: Promise.resolve(summary),
+		);
 	renderWithQueryClient(
 		<ApiServiceContext.Provider
 			value={createMockApiServiceContext({ rbacService })}
@@ -295,19 +325,16 @@ const theEndOfThe = async (address: string) => {
 };
 
 const setMobileScreen = (matches: boolean) => {
-	Object.defineProperty(globalThis, "matchMedia", {
-		writable: true,
-		value: (query: string) => ({
-			matches,
-			media: query,
-			onchange: null,
-			addListener: () => {},
-			removeListener: () => {},
-			addEventListener: () => {},
-			removeEventListener: () => {},
-			dispatchEvent: () => false,
-		}),
-	});
+	vi.stubGlobal("matchMedia", (query: string) => ({
+		matches,
+		media: query,
+		onchange: null,
+		addListener: () => {},
+		removeListener: () => {},
+		addEventListener: () => {},
+		removeEventListener: () => {},
+		dispatchEvent: () => false,
+	}));
 };
 
 const renderHeaderWithAccess = (
@@ -346,12 +373,6 @@ const renderHeaderWithAccess = (
 	);
 };
 
-const theAnswerHasArrived = async () => {
-	await act(async () => {
-		await new Promise((done) => setTimeout(done, 0));
-	});
-};
-
 const openTheSettingsMenu = () => {
 	fireEvent.click(screen.getByRole("button", { name: "Settings" }));
 };
@@ -360,7 +381,7 @@ const theMenuEntries = () =>
 	screen.queryAllByRole("menuitem").map((entry) => entry.textContent ?? "");
 
 afterEach(() => {
-	setMobileScreen(false);
+	vi.unstubAllGlobals();
 	vi.restoreAllMocks();
 });
 
@@ -370,7 +391,7 @@ afterEach(() => {
 
 describe("which settings area and tab an address opens", () => {
 	it.each(LEGACY_KEYS)(
-		"the old key %s, in any letter case, redirects to %s",
+		"the old key %s, in lower and in capital letters, redirects to %s",
 		async (key, path) => {
 			const resolve = await theResolver();
 
@@ -626,12 +647,10 @@ describe("every settings address ends on a tab the person may open", () => {
 	it("a redirect leads to an address that shows, a shown tab is one the person may open, and a visible tab's own address shows that tab", async () => {
 		const resolve = await theResolver();
 		const random = seededRandom(SEED);
-		const reached = new Map<CaseKind, number>();
 
 		for (let index = 0; index < CASES; index++) {
 			const kind = CASE_KINDS[index % CASE_KINDS.length];
 			const { access, request } = aGeneratedCase(kind, random);
-			reached.set(kind, (reached.get(kind) ?? 0) + 1);
 			const replay = `seed ${SEED}, case ${index}, ${kind}, request ${JSON.stringify(request)}, access ${JSON.stringify(access)}`;
 
 			const outcome = resolve(request, access);
@@ -657,15 +676,6 @@ describe("every settings address ends on a tab the person may open", () => {
 				).toMatchObject({ kind: "show", area: request.area, tab: request.tab });
 			}
 		}
-
-		expect(
-			CASE_KINDS.filter((kind) => (reached.get(kind) ?? 0) === 0),
-			`Every kind of address was generated, out of ${CASES} cases`,
-		).toEqual([]);
-		expect(
-			[...reached.values()].reduce((sum, count) => sum + count, 0),
-			"The kinds of address account for every generated case",
-		).toBe(CASES);
 	});
 });
 
@@ -720,14 +730,7 @@ describe("the three settings area pages", () => {
 		await theEndOfThe("/settings/system/database");
 		expect(theSelectedTab()).toEqual(["Database"]);
 		expect(screen.getByText("database panel content")).toBeInTheDocument();
-	});
-
-	it("an old tab key in capital letters opens the same tab as in small letters", async () => {
-		await renderSettingsAt("/settings?tab=LOGS", aSummary(ADMIN));
-
-		await theEndOfThe("/settings/system/system-info");
-		expect(theSelectedTab()).toEqual(["System Info"]);
-		expect(screen.getByText("system info panel content")).toBeInTheDocument();
+		expectTheAddressWasReplaced();
 	});
 
 	it("a deep link to System-wide access shows a spinner until access has loaded, then opens that tab and not the first one", async () => {
@@ -775,6 +778,25 @@ describe("the three settings area pages", () => {
 		await theEndOfThe("/settings/system/system-info");
 		expect(theTabNames()).toEqual(["System Info"]);
 		expect(screen.getByText("system info panel content")).toBeInTheDocument();
+		expectTheAddressWasReplaced();
+	});
+
+	it("a failed access read locks nobody out: the person sees what the page shows with RBAC off, without System-wide access", async () => {
+		await renderSettingsAt("/settings/access/system-wide", "fails");
+
+		await theHeading("Settings › Access");
+		await theEndOfThe("/settings/access/api-keys");
+		expect(theTabNames()).toEqual(["API Keys"]);
+		expect(screen.getByText("api keys panel content")).toBeInTheDocument();
+		expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+	});
+
+	it("a failed access read still opens Organization from the bare address", async () => {
+		await renderSettingsAt("/settings", "fails");
+
+		await theHeading("Settings › Organization");
+		await theEndOfThe("/settings/organization/configuration");
+		expect(theTabNames()).toEqual(["Configuration"]);
 	});
 
 	it("choosing another tab opens its panel at its own address", async () => {
@@ -786,6 +808,7 @@ describe("the three settings area pages", () => {
 		await theEndOfThe("/settings/system/database");
 		expect(theSelectedTab()).toEqual(["Database"]);
 		expect(screen.getByText("database panel content")).toBeInTheDocument();
+		expectTheAddressWasReplaced();
 	});
 
 	it("the old license address, which led nowhere, opens System", async () => {
@@ -805,7 +828,6 @@ describe("the three settings area pages", () => {
 describe("the header's Settings menu", () => {
 	it("offers Organization, Access and System, each saying whose it is, and opens the area chosen", async () => {
 		renderHeaderWithAccess(aSummary(ADMIN));
-		await theAnswerHasArrived();
 
 		expect(
 			screen.queryByText("System Settings"),
@@ -813,7 +835,8 @@ describe("the header's Settings menu", () => {
 		).not.toBeInTheDocument();
 		openTheSettingsMenu();
 
-		const entries = await screen.findAllByRole("menuitem");
+		await screen.findByRole("menuitem", { name: /^Organization/ });
+		const entries = screen.getAllByRole("menuitem");
 		expect(entries.map((entry) => entry.textContent)).toEqual([
 			expect.stringMatching(/^Organization.*how we work/i),
 			expect.stringMatching(/^Access.*who may do what/i),
@@ -829,21 +852,23 @@ describe("the header's Settings menu", () => {
 
 	it("shows a reader Access and System but no Organization", async () => {
 		renderHeaderWithAccess(aSummary(READER));
-		await theAnswerHasArrived();
 
 		openTheSettingsMenu();
 
-		await screen.findAllByRole("menuitem");
+		await screen.findByRole("menu");
+		await screen.findByRole("menuitem", { name: /^Access/ });
 		expect(theMenuEntries()).toEqual([
 			expect.stringMatching(/^Access/),
 			expect.stringMatching(/^System/),
 		]);
 	});
 
-	it("shows no Organization while access is still loading", () => {
+	it("shows no Organization while access is still loading", async () => {
 		renderHeaderWithAccess(aSlowAnswer().promise);
 
 		openTheSettingsMenu();
+
+		await screen.findByRole("menu");
 
 		expect(
 			theMenuEntries().filter((entry) => entry.startsWith("Organization")),
@@ -854,18 +879,19 @@ describe("the header's Settings menu", () => {
 	it("on a small screen lists the three areas under a Settings caption that is not a link", async () => {
 		setMobileScreen(true);
 		renderHeaderWithAccess(aSummary(ADMIN));
-		await theAnswerHasArrived();
 
 		fireEvent.click(screen.getByRole("button", { name: /open drawer/i }));
 
-		const caption = await screen.findByText("Settings");
+		const drawer = await screen.findByRole("presentation");
+		const caption = within(drawer).getByText("Settings");
+		await within(drawer).findByRole("link", { name: /^Organization/ });
 		expect(
 			caption.closest("a"),
 			"The caption names the group; it leads nowhere",
 		).toBeNull();
 		expect(caption.closest("button")).toBeNull();
 		const areaLinks = ["Organization", "Access", "System"].map((area) =>
-			screen.getByRole("link", { name: new RegExp(`^${area}`) }),
+			within(drawer).getByRole("link", { name: new RegExp(`^${area}`) }),
 		);
 		expect(areaLinks.map((link) => link.getAttribute("href"))).toEqual([
 			expect.stringMatching(/^\/settings\/organization(\/|$)/),

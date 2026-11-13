@@ -407,6 +407,64 @@ No production target gates Log Level and the panel moves unchanged; the frontend
 
 design
 
+##### Covers
+
+P1
+
+```text
+The access read fails and a person opens /settings/access/system-wide and bare /settings
+```
+
+```text
+The page uses the permissive fallback: no spinner left, Access shows API Keys only (no System-wide access, as with RBAC off), bare Settings opens Organization Configuration
+```
+
+```text
+A failed access read never locks anyone out
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> a failed access read \.\.\.
+
+```text
+The page keeps the spinner forever, or shows System-wide access with RBAC unknown, or redirects to an empty area
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+The old Settings page tests are retired with the old shell (file deleted in the working tree)
+```
+
+```text
+Each old case is observed by a settingsAreas row: initial tab and heading by the area pages row; demodata/configuration/rbac/database keys by the legacy key table; tab clicks by the choosing another tab row; system admin all tabs, RBAC off hides System Admins, non-admin variants (team admin, portfolio admin, viewer share one access) by the area pages, reader and failed-read rows
+```
+
+```text
+No second test pins the old System Settings heading
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages
+
+```text
+The old Settings.test.tsx is left in place asserting the System Settings heading
+```
+
+###### Obligations
+
+
 ## Expectations
 
 ### Rows

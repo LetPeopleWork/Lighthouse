@@ -25,7 +25,7 @@ Governed slices: S1, S2, S3, S4, S5
 #### D3
 
 ```text
-Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace; failed access read keeps the permissive fallback (all areas and tabs). Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.
+Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace. A failed access read keeps useRbac() permissive answer (isRbacEnabled false, isSystemAdmin true): the person sees what RBAC-off shows today, which excludes System-wide access as the old page excluded System Admins. Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.
 ```
 Governed slices: S1, S2, S3, S4, S5
 
@@ -97,7 +97,7 @@ Governed slices: S1, S2, S3, S4, S5
 #### K1
 
 ```text
-Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). A failed access read never locks anyone out (permissive fallback). No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.
+Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). Gating stays exactly as today: a failed access read gets useRbac() permissive answer (RBAC off, System Admin), so nobody is locked out and the System-wide access tab stays hidden as today. No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.
 ```
 Governed slices: S1, S2, S3, S4, S5
 
@@ -340,7 +340,7 @@ Access read fails
 Indeterminate
 
 ```text
-permissive fallback: all three areas and every tab visible
+permissive answer as today: every area and tab RBAC-off shows, without System-wide access
 ```
 
 ##### B2
@@ -906,7 +906,7 @@ nobody is locked out
 ```
 
 ```text
-all three areas and tabs shown (permissive fallback); backend refuses what the person may not do
+what RBAC-off shows today (all three areas, every tab except System-wide access); backend refuses what the person may not do
 ```
 
 ```text
@@ -1202,7 +1202,7 @@ Render the app routes in a MemoryRouter at /settings, /settings?tab=database, /s
 ```
 
 ```text
-Menu lists Organization, Access, System; area page h1 is Settings > {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization or Log Level; license links land on System
+Menu lists Organization, Access, System; area page h1 is Settings > {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization; license links land on System
 ```
 
 ```text
