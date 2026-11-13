@@ -7,7 +7,7 @@ import { EncryptionSettingsPage } from "./Encryption/EncryptionSettingsPage";
 import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
 import { SystemConfigurationPage } from "./SystemSettings/SystemConfigurationPage";
 
-type SettingsArea = "organization" | "access" | "system";
+export type SettingsArea = "organization" | "access" | "system";
 
 export class SettingsPage {
 	page: Page;
@@ -16,10 +16,15 @@ export class SettingsPage {
 		this.page = page;
 	}
 
-	/** Opens an area from the header menu, then one of its tabs by test id. */
-	private async openTab(area: SettingsArea, tabTestId: string): Promise<void> {
+	/** Opens an area from the header menu. */
+	async openArea(area: SettingsArea): Promise<void> {
 		await this.page.getByTestId("settings-menu").click();
 		await this.page.getByTestId(`settings-area-${area}`).click();
+	}
+
+	/** Opens an area, then one of its tabs by test id. */
+	private async openTab(area: SettingsArea, tabTestId: string): Promise<void> {
+		await this.openArea(area);
 		await this.page.getByTestId(tabTestId).click();
 	}
 

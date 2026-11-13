@@ -210,10 +210,8 @@ test.describe("@rbac E2E", () => {
 				);
 
 				const settingsPage = await overview.lightHousePage.goToSettings();
+				const rbac = await settingsPage.goToRbacSettings();
 				await expect(settingsPage.page.getByTestId("rbac-tab")).toBeVisible();
-
-				const rbac = new RbacSettingsPage(settingsPage.page);
-				await rbac.goToAccessTab();
 				const testUserRow = rbac.getUserRow(TestConfig.AUTH_TEST_USER_USERNAME);
 				await expect(testUserRow.getByText("Emergency Admin")).toBeVisible();
 				await expect(
@@ -393,18 +391,20 @@ test.describe("@rbac E2E", () => {
 				await overview.page.keyboard.press("Escape");
 
 				const settingsPage = await overview.lightHousePage.goToSettings();
-				await expect(
-					settingsPage.page.getByTestId("rbac-tab"),
-				).not.toBeVisible();
-				await expect(
-					settingsPage.page.getByTestId("log-level-section"),
-				).not.toBeVisible();
+				await settingsPage.openArea("access");
 				await expect(
 					settingsPage.page.getByTestId("api-keys-tab"),
 				).toBeVisible();
 				await expect(
+					settingsPage.page.getByTestId("rbac-tab"),
+				).not.toBeVisible();
+				await settingsPage.openArea("system");
+				await expect(
 					settingsPage.page.getByTestId("system-info-tab"),
 				).toBeVisible();
+				await expect(
+					settingsPage.page.getByTestId("log-level-section"),
+				).not.toBeVisible();
 			});
 
 			await test.step("team reader (individual rights) sees Forecast but not Settings, Access, or write controls", async () => {

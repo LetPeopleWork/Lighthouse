@@ -91,9 +91,11 @@ export class LighthousePage {
 	}
 
 	async goToSettings(): Promise<SettingsPage> {
-		await this.page.getByTestId("settings-menu").click();
-		await this.page.getByRole("menuitem").first().click();
-		return new SettingsPage(this.page);
+		// System is offered to everybody and from the first moment, so it is the one entry a click cannot miss
+		// while access is still loading; the page object then opens the area it needs itself.
+		const settingsPage = new SettingsPage(this.page);
+		await settingsPage.openArea("system");
+		return settingsPage;
 	}
 
 	async goToContributors(): Promise<Page> {
