@@ -449,7 +449,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>useNamedPercentilesScope takes the metrics service, the entity id and the window (start and end date) and returns the scope definition id, the scoped percentile values, the scoped info and the scope-change handler. It keeps one generation counter in a ref; each selection and each reset bumps it and a response applies only while its generation is current. State carrier: React state and the ref inside the hook; owner: the hook file. Effect: the reset effect keyed on entity id, start date and end date, with its biome-ignore reason, moves unchanged.
 </code></pre>
 
-<pre><code>useStateDrillDown takes the metrics service, the owner type, the entity, the window and the selected item ids and returns the drill-down state, open flag, the bar-click handler, a close handler, the dialog status, the work items and the days column. The useQuery keeps its key (owner type, owner key, state, from, to, item ids) and enabled rule; selected item ids stay owned by BaseMetricsView because useMetricsData also reads them. The hook is called after useCumulativeStateTimeCandidates is called today, i.e. where the old code sits; it creates no new query that starts earlier.
+<pre><code>useStateDrillDown takes the metrics service, the owner type, the entity, the window and the selected item ids and returns the drill-down state, open flag, the bar-click handler, a close handler, the dialog status, the work items and the days column. The useQuery keeps its key (owner type, owner key, state, from, to, item ids) and enabled rule; selected item ids stay owned by BaseMetricsView because useMetricsData also reads them. The hook is called after useCumulativeStateTimeCandidates, where the old query was, so no query starts earlier; the old drill-down state calls moved into the hook with it.
 </code></pre>
 
 <h5>Constraints</h5>
@@ -457,15 +457,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>None.</p>
 
 <h5>Reuse</h5>
-
-<p>dialogRowsOf</p>
-
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:405</p>
-
-<p>Reuse</p>
-
-<pre><code>Existing helper that turns a query into dialog status and rows; the drill-down hook calls it unchanged; no other candidate decides this
-</code></pre>
 
 <p>useNamedPercentilesScope</p>
 
@@ -492,6 +483,24 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Reuse</p>
 
 <pre><code>Style owner for a hook in this folder; shape reused, no code shared
+</code></pre>
+
+<p>dialogRowsOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/useStateDrillDown.ts:86</p>
+
+<p>Reuse</p>
+
+<pre><code>Existing helper that turns a query into dialog status and rows; the drill-down hook calls it unchanged; no other candidate decides this
+</code></pre>
+
+<p>useStateDrillDown</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:290</p>
+
+<p>Extend</p>
+
+<pre><code>Calls the two hooks at the positions of the code they replace; render output unchanged
 </code></pre>
 
 <h5>Impact</h5>
@@ -1078,15 +1087,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Existing list is the single owner of the allowed layer leaks; its entries are re-measured after the move
 </code></pre>
 
-<p>useMetricsData</p>
-
-<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:28</p>
-
-<p>Extend</p>
-
-<pre><code>Import lines only
-</code></pre>
-
 <p>MetricsOwnerRequest</p>
 
 <p>Lighthouse.Frontend/src/pages/Common/MetricsView/ThroughputRunChartCard.loading.test.tsx:10</p>
@@ -1112,6 +1112,15 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Extend</p>
 
 <pre><code>Import line only
+</code></pre>
+
+<p>metricsOwnerKeyOf</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:27</p>
+
+<p>Extend</p>
+
+<pre><code>Import lines only
 </code></pre>
 
 <h5>Impact</h5>
@@ -1649,10 +1658,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>Render UnbindConfirmationDialog, WorkItemsTab and the DeliveryRowActions part with RTL, and call whatTheHeaderChipSays and howTheFeaturesWereChosen, importing each new file by path
 </code></pre>
 
-<pre><code>The unbind confirm button is disabled until the dialog allows it and fires its handler when enabled; the work-items tab shows its rows; the header chip and how-chosen sentence carry the same words as before for an overdue, a source-bound and a rule-based Delivery
+<pre><code>The unbind confirm button is disabled until the dialog allows it and fires its handler when enabled; the work-items tab shows its rows; the header chip and how-chosen sentence carry the same words as before for a source-bound, a rule-based and a manual Delivery. The Overdue chip is rendered by the section component itself, does not move, and stays covered by DeliverySection.overdue.test.tsx, which is part of the S3 verification command
 </code></pre>
 
-<pre><code>Make the confirm button always enabled (the disabled row fails); change the Overdue wording (the header copy row fails); the oracle imports files that do not exist before the move so it is RED until they do
+<pre><code>Make the confirm button always enabled (the disabled row fails); change the how-chosen sentence or the chip text of a source-bound Delivery (the header copy rows fail); the oracle imports files that do not exist before the move so it is RED until they do. The Overdue wording is not a falsifier of this oracle; DeliverySection.overdue.test.tsx covers it
 </code></pre>
 
 <h5>Promises</h5>

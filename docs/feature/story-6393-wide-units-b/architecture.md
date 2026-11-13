@@ -343,7 +343,7 @@ useNamedPercentilesScope takes the metrics service, the entity id and the window
 ```
 
 ```text
-useStateDrillDown takes the metrics service, the owner type, the entity, the window and the selected item ids and returns the drill-down state, open flag, the bar-click handler, a close handler, the dialog status, the work items and the days column. The useQuery keeps its key (owner type, owner key, state, from, to, item ids) and enabled rule; selected item ids stay owned by BaseMetricsView because useMetricsData also reads them. The hook is called after useCumulativeStateTimeCandidates is called today, i.e. where the old code sits; it creates no new query that starts earlier.
+useStateDrillDown takes the metrics service, the owner type, the entity, the window and the selected item ids and returns the drill-down state, open flag, the bar-click handler, a close handler, the dialog status, the work items and the days column. The useQuery keeps its key (owner type, owner key, state, from, to, item ids) and enabled rule; selected item ids stay owned by BaseMetricsView because useMetricsData also reads them. The hook is called after useCumulativeStateTimeCandidates, where the old query was, so no query starts earlier; the old drill-down state calls moved into the hook with it.
 ```
 
 ##### Constraints
@@ -351,16 +351,6 @@ useStateDrillDown takes the metrics service, the owner type, the entity, the win
 None.
 
 ##### Reuse
-
-dialogRowsOf
-
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:405
-
-Reuse
-
-```text
-Existing helper that turns a query into dialog status and rows; the drill-down hook calls it unchanged; no other candidate decides this
-```
 
 useNamedPercentilesScope
 
@@ -390,6 +380,26 @@ Reuse
 
 ```text
 Style owner for a hook in this folder; shape reused, no code shared
+```
+
+dialogRowsOf
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/useStateDrillDown\.ts\:86
+
+Reuse
+
+```text
+Existing helper that turns a query into dialog status and rows; the drill-down hook calls it unchanged; no other candidate decides this
+```
+
+useStateDrillDown
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/BaseMetricsView\.tsx\:290
+
+Extend
+
+```text
+Calls the two hooks at the positions of the code they replace; render output unchanged
 ```
 
 ##### Impact
@@ -1048,16 +1058,6 @@ Extend
 Existing list is the single owner of the allowed layer leaks; its entries are re-measured after the move
 ```
 
-useMetricsData
-
-Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/widgetNodes\.tsx\:28
-
-Extend
-
-```text
-Import lines only
-```
-
 MetricsOwnerRequest
 
 Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/ThroughputRunChartCard\.loading\.test\.tsx\:10
@@ -1086,6 +1086,16 @@ Extend
 
 ```text
 Import line only
+```
+
+metricsOwnerKeyOf
+
+Lighthouse\.Frontend\/src\/pages\/Common\/MetricsView\/widgetNodes\.tsx\:27
+
+Extend
+
+```text
+Import lines only
 ```
 
 ##### Impact
@@ -1689,11 +1699,11 @@ Render UnbindConfirmationDialog, WorkItemsTab and the DeliveryRowActions part wi
 ```
 
 ```text
-The unbind confirm button is disabled until the dialog allows it and fires its handler when enabled; the work-items tab shows its rows; the header chip and how-chosen sentence carry the same words as before for an overdue, a source-bound and a rule-based Delivery
+The unbind confirm button is disabled until the dialog allows it and fires its handler when enabled; the work-items tab shows its rows; the header chip and how-chosen sentence carry the same words as before for a source-bound, a rule-based and a manual Delivery. The Overdue chip is rendered by the section component itself, does not move, and stays covered by DeliverySection.overdue.test.tsx, which is part of the S3 verification command
 ```
 
 ```text
-Make the confirm button always enabled (the disabled row fails); change the Overdue wording (the header copy row fails); the oracle imports files that do not exist before the move so it is RED until they do
+Make the confirm button always enabled (the disabled row fails); change the how-chosen sentence or the chip text of a source-bound Delivery (the header copy rows fail); the oracle imports files that do not exist before the move so it is RED until they do. The Overdue wording is not a falsifier of this oracle; DeliverySection.overdue.test.tsx covers it
 ```
 
 ##### Promises
