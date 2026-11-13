@@ -4,10 +4,10 @@ import { DemoDataPage } from "../teams/DemoDataPage";
 import { ApiKeysSettingsPage } from "./ApiKeys/ApiKeysSettingsPage";
 import { DatabaseManagementPage } from "./DatabaseManagement/DatabaseManagementPage";
 import { EncryptionSettingsPage } from "./Encryption/EncryptionSettingsPage";
+import { CalendarPage } from "./Organization/CalendarPage";
+import { RefreshAndOrderingPage } from "./Organization/RefreshAndOrderingPage";
+import { TerminologyPage } from "./Organization/TerminologyPage";
 import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
-import { CalendarPage } from "./SystemSettings/CalendarPage";
-import { RefreshAndOrderingPage } from "./SystemSettings/RefreshAndOrderingPage";
-import { TerminologyPage } from "./SystemSettings/TerminologyPage";
 import { SystemConnectionsPage } from "./WorkTrackingSystems/SystemConnectionsPage";
 
 export type SettingsArea = "organization" | "access" | "system";
@@ -66,20 +66,6 @@ export class SettingsPage {
 		await this.openTab("system", "system-info-tab");
 
 		return new SystemInfoPage(this.page);
-	}
-
-	/** The log level and the log viewer, which sit on their own tab beside System Info. */
-	async goToLogs(): Promise<SystemInfoPage> {
-		await this.openTab("system", "logs-tab");
-
-		return new SystemInfoPage(this.page);
-	}
-
-	/** The license status with its import and clear actions, last tab of System. */
-	async goToLicense(): Promise<Page> {
-		await this.openTab("system", "license-tab");
-
-		return this.page;
 	}
 
 	async goToDatabaseManagement(): Promise<DatabaseManagementPage> {

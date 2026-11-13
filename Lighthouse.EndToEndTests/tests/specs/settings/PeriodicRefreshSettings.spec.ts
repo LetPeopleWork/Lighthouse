@@ -1,5 +1,5 @@
 import { expect, test } from "../../fixutres/LighthouseFixture";
-import type { PeriodicRefreshSettingType } from "../../models/settings/SystemSettings/RefreshAndOrderingPage";
+import type { PeriodicRefreshSettingType } from "../../models/settings/Organization/RefreshAndOrderingPage";
 
 const settings: PeriodicRefreshSettingType[] = ["Team", "Feature"];
 
