@@ -88,7 +88,7 @@ const ConnectionsList: React.FC<{
 			if (error instanceof ApiError && error.code === 409) {
 				setDeleteError(error.message);
 			} else {
-				setDeleteError("Failed to delete connection. Please try again.");
+				setDeleteError(`Failed to delete ${connectionTerm}. Please try again.`);
 			}
 		}
 	};
