@@ -20,6 +20,9 @@ const BehaviourSettingsSection: React.FC<BehaviourSettingsSectionProps> = ({
 }) => {
 	const state = useBehaviourSettings([settingKey]);
 
+	// Without the row there is nothing to show, as the old page showed no group for an empty list.
+	if (state.status === "ready" && state.settings.length === 0) return null;
+
 	return (
 		<InputGroup title={title} initiallyExpanded={true}>
 			{state.status === "loading" && (
