@@ -98,12 +98,151 @@
 "stimulus": "F183",
 "user_result": "F185"
 }
+],
+"S2": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F65",
+"L2/F66",
+"L2/F67"
+],
+"still_passes_if": "F191",
+"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with ids-expected-after-drop.txt over the TRX of the first declared verification command"
+},
+"expected": "F189",
+"stimulus": "F188",
+"user_result": "F190"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F70",
+"L4/F76"
+],
+"still_passes_if": "F195",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs::The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after"
+},
+"expected": "F193",
+"stimulus": "F192",
+"user_result": "F194"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F71",
+"L4/F77"
+],
+"still_passes_if": "F199",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs::Without_a_number_the_need_names_no_cycle(ThroughputHistory,\"InsufficientData\")"
+},
+"expected": "F197",
+"stimulus": "F196",
+"user_result": "F198"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3/F72",
+"L4/F78"
+],
+"still_passes_if": "F203",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs::Without_a_number_the_need_names_no_cycle(RefinementStates,\"NoRefinementStates\")"
+},
+"expected": "F201",
+"stimulus": "F200",
+"user_result": "F202"
+},
+{
+"covers": [
+"P3",
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F65",
+"L2/F66",
+"L2/F67"
+],
+"still_passes_if": "F207",
+"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with ids-before.txt over the TRX of the first declared verification command at the hoist commit"
+},
+"expected": "F205",
+"stimulus": "F204",
+"user_result": "F206"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F211",
+"test": "docs/feature/story-6602-b-report-window-and-overlap/evidence/members-once.py over the Refinement test folder"
+},
+"expected": "F209",
+"stimulus": "F208",
+"user_result": "F210"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T2"
+],
+"still_passes_if": "F215",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs"
+},
+"expected": "F213",
+"stimulus": "F212",
+"user_result": "F214"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F62",
+"L4/F75"
+],
+"still_passes_if": "F219",
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says"
+},
+"expected": "F217",
+"stimulus": "F216",
+"user_result": "F218"
+}
 ]
 },
 "counters": {
 "D": 12,
 "E": 4,
-"F": 187,
+"F": 219,
 "K": 9,
 "L": 4,
 "P": 4,
@@ -903,10 +1042,42 @@
 "F185": "A Reports port that only looks like the host is reported, naming the service to fix, so a scenario cannot pass on state the product never shares",
 "F186": "A check that skips every declared forwarder unconditionally still reports the unregistered metric type but misses the three forwarder rows; a check that reports a lookalike without naming the service would fail the name assertion; a check that reports two differences for one plant would fail the count",
 "F187": "The planted check PortFixtureLifetimesTest lives under Tests/Architecture (namespace Lighthouse.Backend.Tests.Architecture), beside the other architecture guards, because Tests/Contracts holds only wire contracts (fixtures on WireContractTest) and the check starts no host. PortFixtureLifetimes.cs stays in Contracts/PortFixtures.",
+"F188": "After the drop, run the need-and-verdict, need-over-one-cycle and SLE-yardstick classes at the application-service port and compare their sorted test ids with the ids recorded before the slice, less the three repeated rows",
+"F189": "The run holds exactly the 49 ids before less Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull, Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number and A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states: 46 ids, need-and-verdict 17 to 14, need-over-one-cycle 22 and SLE-yardstick 10 unchanged, every id passed; no other id is missing and none is added",
 "F19": "The repository-root lookup that anchors the shared table (Lighthouse.sln, then its parent) is needed at the port. ReportsAcceptanceTest.RepositoryRoot stays unchanged and is not reachable from the port base, so ReportsAtThePortTest or the moved class owns its own lookup. This repeats a lookup that already exists in several test classes; folding them is outside this Story.",
+"F190": "A maintainer sees each need rule proven once, and no rule silently lost its test when the repeats went",
+"F191": "a drop that also renames a kept row to a new name in the same class would be caught as one missing and one extra id; still accepted is a kept row whose body was weakened under an unchanged name, which the twin breaks and the review must catch",
+"F192": "Gravity has GR-058 and GR-059 tagged ready under its Ready rule, finished one Work Item a day, refines on Thursdays; today is Friday 2 October 2026; over its seven-day cycle the Team is likely to pull 3, 5, 6, 8 and 10 at 30, 50, 70, 85 and 95 percent; the coach opens the Refinement tab",
+"F193": "The need reads Below, no unavailable reason, 5 to 8 at the 50th and 85th percentile over 7 working days, cycle from Thursday 8 to Thursday 15 October, ready count 2, and the heading names Thursday 8 October, not a Refinement day: every assertion of the dropped below-range row plus the cycle. Deliberate break: the default high percentile of the Refinement settings from 85 to 70 turns this row red (high end 6 at 70)",
+"F194": "The coach sees how many are ready against the range the Team is likely to pull, proven once by the row that also names the cycle",
+"F195": "a calculator that reads the high end at a fixed 85 percent whatever the setting would still pass when the setting is 85; the break of the default to 70 is the falsifier and must turn this row red",
+"F196": "Today is Wednesday 7 October 2026; Gravity has GR-058 tagged ready under its Ready rule, finished 3 Work Items a day on only 4 days, and refines on Thursdays; the coach opens the Refinement tab",
+"F197": "The need gives the reason InsufficientData, no verdict, no low and no high end, and names no cycle: every assertion of the dropped too-little-history row plus the empty cycle. Deliberate break: the minimum number of days with finished work for a forecast from 5 to 4 turns this row red",
+"F198": "The coach gets the familiar too-little-history guard instead of a number, proven once",
+"F199": "a guard that demands more than five days would still pass with four days of history; still accepted is any limit above four, which the four-day input cannot tell apart and the forecast policy unit rows pin",
 "F2": "The report-window class proves its 15 boundary rows without a web host, and the Refinement need rules are proven once, so the backend Integration tier is faster and no rule loses its test",
 "F20": "Slice05NeedAndVerdictTest rows dropped, each mapped to the NeedOverOneCycleTest row with the same Givens in the same order and an assertion superset: (1) Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull maps to The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after (Gravity with GR-058 and GR-059 tagged ready under the Ready rule, one finished a day, refines on Thursdays, today 2 Oct 2026, the 3/5/6/8/10 script over 7 working days; the twin asserts the same need facts Below, 5, 8, 50, 85, 7, next Refinement 8 Oct not today and 2 ready, plus the cycle 8 to 15 Oct). (2) Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number maps to Without_a_number_the_need_names_no_cycle(ThroughputHistory,InsufficientData) (today 7 Oct, Gravity with GR-058 tagged ready, 3 finished a day on 4 days, refines on Thursdays; the twin asserts InsufficientData and no verdict, low or high, plus no cycle). (3) A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states maps to Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) (today 7 Oct, Team Zenith with Backlog, Implementation, Done and 30 days of history; the twin asserts NoRefinementStates and no verdict, low or high, plus no cycle). Slice05NeedAndVerdictTest goes from 17 rows to 14.",
+"F200": "Today is Wednesday 7 October 2026; Team Zenith has only Backlog, Implementation and Done states and 30 days of history, and nobody set up its refinement states; the coach opens the Refinement tab",
+"F201": "The need gives the reason NoRefinementStates, no verdict, no low and no high end, and names no cycle: every assertion of the dropped nobody-set-up row plus the empty cycle. Deliberate break: the need calculator no longer answering NoRefinementStates turns this row red",
+"F202": "The coach of a Team nobody set up is told it has no refinement states instead of getting a number, proven once",
+"F203": "a calculator that checks the cadence before the refinement states would answer NoCadence for Zenith and is caught by the reason equality; still accepted is a calculator that also answers NoRefinementStates for a Team that has refinement states but nothing in them, which this input cannot tell apart",
+"F204": "After the hoist and before the drop, run the need-and-verdict, need-over-one-cycle and SLE-yardstick classes at the application-service port and compare their sorted test ids with the ids recorded before the slice",
+"F205": "The run holds exactly the same 49 ids as before: need-and-verdict 17, need-over-one-cycle 22, SLE-yardstick 10, and every one passed; the hoist changed no test name and no assertion",
+"F206": "A maintainer can trust the hoist moved shared steps only and changed no rule any test proves",
+"F207": "a hoist that changes the value of a shared constant or the five-to-eight script in a way every row still tolerates would pass; the named twin breaks and the review of the hoist diff catch a changed value",
+"F208": "Read the Refinement port test classes (port base, port builder and the classes on the port base) and count where each shared member is declared",
+"F209": "The Gravity ready-rule builder and its ready tag are declared once, in the port builder; the need-text constants Below, In, Above, NoCadence, InsufficientData and NoRefinementStates, the seven cycle working days, the five-to-eight script, the Gravity-two-ready-on-Thursdays Given, the coach tab reader, the need reader and its facts record are declared once, in the port base; the port base reads the tab both for a voter and for a browser key; the SLE-yardstick class has no tab reader of its own and the need-over-one-cycle class has no need reader of its own",
 "F21": "Slice05NeedAndVerdictTest rows kept because no NeedOverOneCycleTest row has the same inputs: On_a_Refinement_day_the_number_is_for_the_following_Refinement (the twin On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement has the same Team, cadence, today 8 Oct and 7-day horizon, but a different scripted forecast, 5 to 8 against 6 to 9); Blackout_days_inside_the_cycle_are_not_counted (two blackout days 13 and 14 Oct, horizon 5; no twin blacks out those days); Without_a_cadence_there_is_no_number_and_the_list_stays (two Work Items tagged ready against one in the twin, and it also asserts the six Work Items are still listed); the four verdict rows, the two vote rows, the three high-end rows, the range of nothing and the guardrail, which NeedOverOneCycleTest does not cover.",
+"F210": "A maintainer changes a shared Refinement test step in one place and every port class follows",
+"F211": "a copy kept under a new name (for example a second Gravity builder called differently) is not counted; still accepted is a duplicate that does not reuse a known name, which the review of the hoist diff must catch",
+"F212": "Run the port Givens guard over the Refinement port classes after the hoist",
+"F213": "The guard passes: only the port builder writes Team set-up in a Refinement port class, including the hoisted Gravity ready-rule builder; it already passes before the slice and must keep passing",
+"F214": "A maintainer finds every Team set-up decision of the Refinement port tests in one builder",
+"F215": "a builder hoisted into the port base instead of the port builder that writes Team set-up through the builder's own calls would pass the guard; the members-once check places the builder in the port builder",
+"F216": "After the hoist and after the drop, run the report window boundary rows at the application-service port",
+"F217": "The 15 report window rows keep their ids and all pass, as after S1; the Refinement test changes touch none of them. Their deliberate break stays as recorded for S1: the shortest report window from 14 to 15 days turns a row with a Then of 14 days red",
+"F218": "A Team owner still sees the same report window bounds the browser wizard shows",
+"F219": "a change to a Reports file folded into the S2 commits that keeps the 15 ids green would pass; the review of the S2 diff, which must name only Refinement test files, catches it",
 "F22": "Hoist, one owner per member: Team set-up goes to RefinementPortGivens (the Gravity ready-rule builder GravityWithItsReadyRule and its ready tag), because the builder is the only writer of Team set-up; everything else goes to RefinementAtThePortTest as protected members: the need-text constants (Below, NoCadence, InsufficientData, NoRefinementStates and, if still used, In and Above), GravitysCycleWorkingDays, the 3/5/6/8/10 five-to-eight script, the identical Gravity-two-ready-refining-on-Thursdays-on-Friday-2-October Given, and the coach's tab reader. NeedOverOneCycleSpecifications drops NeedIn and NeedReading and uses the base TheNeedOn and NeedFacts; CycleIn and CycleReading stay private to it, because only it reads the cycle. Steps that the three dropped rows alone used are deleted. The base TheTabAsSeenBy gains an overload taking a browser key, and Slice10SleYardstickSpecifications drops TheTabAsReadBy and calls it. The comment above GivenTodayIsWednesdayTheSeventhOfOctober in Slice10SleYardstickSpecifications (and the same sentence in Slice05NeedAndVerdictSpecifications, if it survives the hoist) is reworded so it no longer narrates the old host design.",
 "F23": "S2 commit order: first refactor(test-infra) hoisting the duplicated members, with every test id of Slice05NeedAndVerdictTest, NeedOverOneCycleTest and Slice10SleYardstickTest unchanged; then test(refinement) dropping the three mapped rows and the steps only they used. A scenario file may change only the names of the steps it calls, never a test name.",
 "F24": "Carriers, all test-side, no domain class added: per-scenario state lives in the fixture instance of the port base (ServicePortHarness, FakeLighthouseClock, the licence stand-in for Reports; the RefinementAtThePortTest members as in feature story-6602-a for Refinement); Team set-up decisions live in the base ATeam step for Reports and in RefinementPortGivens for Refinement; outcomes are ReportTemplatesRead and ReportOutcome<ReportRead> from the Reports ports and RefinementViewDto from IRefinementViewQuery. Layers: application/port rows observe those records; HTTP status and JSON text are observed only by the hosted Reports classes and RefinementWithoutSignInWireContractTest, which do not change; no infrastructure or recovery layer is touched.",

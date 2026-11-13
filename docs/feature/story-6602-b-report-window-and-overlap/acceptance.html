@@ -340,6 +340,218 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>After the drop, run the need-and-verdict, need-over-one-cycle and SLE-yardstick classes at the application-service port and compare their sorted test ids with the ids recorded before the slice, less the three repeated rows
+</code></pre>
+
+<pre><code>The run holds exactly the 49 ids before less Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull, Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number and A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states: 46 ids, need-and-verdict 17 to 14, need-over-one-cycle 22 and SLE-yardstick 10 unchanged, every id passed; no other id is missing and none is added
+</code></pre>
+
+<pre><code>A maintainer sees each need rule proven once, and no rule silently lost its test when the repeats went
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with ids-expected-after-drop.txt over the TRX of the first declared verification command</p>
+
+<pre><code>a drop that also renames a kept row to a new name in the same class would be caught as one missing and one extra id; still accepted is a kept row whose body was weakened under an unchanged name, which the twin breaks and the review must catch
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Gravity has GR-058 and GR-059 tagged ready under its Ready rule, finished one Work Item a day, refines on Thursdays; today is Friday 2 October 2026; over its seven-day cycle the Team is likely to pull 3, 5, 6, 8 and 10 at 30, 50, 70, 85 and 95 percent; the coach opens the Refinement tab
+</code></pre>
+
+<pre><code>The need reads Below, no unavailable reason, 5 to 8 at the 50th and 85th percentile over 7 working days, cycle from Thursday 8 to Thursday 15 October, ready count 2, and the heading names Thursday 8 October, not a Refinement day: every assertion of the dropped below-range row plus the cycle. Deliberate break: the default high percentile of the Refinement settings from 85 to 70 turns this row red (high end 6 at 70)
+</code></pre>
+
+<pre><code>The coach sees how many are ready against the range the Team is likely to pull, proven once by the row that also names the cycle
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs::The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after</p>
+
+<pre><code>a calculator that reads the high end at a fixed 85 percent whatever the setting would still pass when the setting is 85; the break of the default to 70 is the falsifier and must turn this row red
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Today is Wednesday 7 October 2026; Gravity has GR-058 tagged ready under its Ready rule, finished 3 Work Items a day on only 4 days, and refines on Thursdays; the coach opens the Refinement tab
+</code></pre>
+
+<pre><code>The need gives the reason InsufficientData, no verdict, no low and no high end, and names no cycle: every assertion of the dropped too-little-history row plus the empty cycle. Deliberate break: the minimum number of days with finished work for a forecast from 5 to 4 turns this row red
+</code></pre>
+
+<pre><code>The coach gets the familiar too-little-history guard instead of a number, proven once
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs::Without_a_number_the_need_names_no_cycle(ThroughputHistory,&quot;InsufficientData&quot;)</p>
+
+<pre><code>a guard that demands more than five days would still pass with four days of history; still accepted is any limit above four, which the four-day input cannot tell apart and the forecast policy unit rows pin
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Today is Wednesday 7 October 2026; Team Zenith has only Backlog, Implementation and Done states and 30 days of history, and nobody set up its refinement states; the coach opens the Refinement tab
+</code></pre>
+
+<pre><code>The need gives the reason NoRefinementStates, no verdict, no low and no high end, and names no cycle: every assertion of the dropped nobody-set-up row plus the empty cycle. Deliberate break: the need calculator no longer answering NoRefinementStates turns this row red
+</code></pre>
+
+<pre><code>The coach of a Team nobody set up is told it has no refinement states instead of getting a number, proven once
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs::Without_a_number_the_need_names_no_cycle(RefinementStates,&quot;NoRefinementStates&quot;)</p>
+
+<pre><code>a calculator that checks the cadence before the refinement states would answer NoCadence for Zenith and is caught by the reason equality; still accepted is a calculator that also answers NoRefinementStates for a Team that has refinement states but nothing in them, which this input cannot tell apart
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<p>P4</p>
+
+<pre><code>After the hoist and before the drop, run the need-and-verdict, need-over-one-cycle and SLE-yardstick classes at the application-service port and compare their sorted test ids with the ids recorded before the slice
+</code></pre>
+
+<pre><code>The run holds exactly the same 49 ids as before: need-and-verdict 17, need-over-one-cycle 22, SLE-yardstick 10, and every one passed; the hoist changed no test name and no assertion
+</code></pre>
+
+<pre><code>A maintainer can trust the hoist moved shared steps only and changed no rule any test proves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py with ids-before.txt over the TRX of the first declared verification command at the hoist commit</p>
+
+<pre><code>a hoist that changes the value of a shared constant or the five-to-eight script in a way every row still tolerates would pass; the named twin breaks and the review of the hoist diff catch a changed value
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Read the Refinement port test classes (port base, port builder and the classes on the port base) and count where each shared member is declared
+</code></pre>
+
+<pre><code>The Gravity ready-rule builder and its ready tag are declared once, in the port builder; the need-text constants Below, In, Above, NoCadence, InsufficientData and NoRefinementStates, the seven cycle working days, the five-to-eight script, the Gravity-two-ready-on-Thursdays Given, the coach tab reader, the need reader and its facts record are declared once, in the port base; the port base reads the tab both for a voter and for a browser key; the SLE-yardstick class has no tab reader of its own and the need-over-one-cycle class has no need reader of its own
+</code></pre>
+
+<pre><code>A maintainer changes a shared Refinement test step in one place and every port class follows
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6602-b-report-window-and-overlap/evidence/members-once.py over the Refinement test folder</p>
+
+<pre><code>a copy kept under a new name (for example a second Gravity builder called differently) is not counted; still accepted is a duplicate that does not reuse a known name, which the review of the hoist diff must catch
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the port Givens guard over the Refinement port classes after the hoist
+</code></pre>
+
+<pre><code>The guard passes: only the port builder writes Team set-up in a Refinement port class, including the hoisted Gravity ready-rule builder; it already passes before the slice and must keep passing
+</code></pre>
+
+<pre><code>A maintainer finds every Team set-up decision of the Refinement port tests in one builder
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortGivensGuardTest.cs</p>
+
+<pre><code>a builder hoisted into the port base instead of the port builder that writes Team set-up through the builder&#x27;s own calls would pass the guard; the members-once check places the builder in the port builder
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>After the hoist and after the drop, run the report window boundary rows at the application-service port
+</code></pre>
+
+<pre><code>The 15 report window rows keep their ids and all pass, as after S1; the Refinement test changes touch none of them. Their deliberate break stays as recorded for S1: the shortest report window from 14 to 15 days turns a row with a Then of 14 days red
+</code></pre>
+
+<pre><code>A Team owner still sees the same report window bounds the browser wizard shows
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs::A_window_at_an_edge_is_answered_as_the_table_says</p>
+
+<pre><code>a change to a Reports file folded into the S2 commits that keeps the 15 ids green would pass; the review of the S2 diff, which must name only Refinement test files, catches it
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+
 <h2>Expectations</h2>
 
 <h3>Rows</h3>
