@@ -1,10 +1,235 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F287",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: which settings area and tab an address opens > the old key %s, in any letter case, redirects to %s"
+},
+"expected": "F285",
+"stimulus": "F284",
+"user_result": "F286"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F291",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: which settings area and tab an address opens (bare, fallback, unknown, earlier address tests)"
+},
+"expected": "F289",
+"stimulus": "F288",
+"user_result": "F290"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F295",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: which settings area and tab an address opens > never decides while the person's access is still loading"
+},
+"expected": "F293",
+"stimulus": "F292",
+"user_result": "F294"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F299",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: every settings address ends on a tab the person may open"
+},
+"expected": "F297",
+"stimulus": "F296",
+"user_result": "F298"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F303",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > a System Admin opening address sees heading with its own tabs"
+},
+"expected": "F301",
+"stimulus": "F300",
+"user_result": "F302"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F307",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > an old tab key ..."
+},
+"expected": "F305",
+"stimulus": "F304",
+"user_result": "F306"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F311",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > a deep link to System-wide access shows a spinner ..."
+},
+"expected": "F309",
+"stimulus": "F308",
+"user_result": "F310"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F315",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > a reader opening Settings ... / a reader asking for the Database tab ..."
+},
+"expected": "F313",
+"stimulus": "F312",
+"user_result": "F314"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F319",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > choosing another tab ... / the old license address ..."
+},
+"expected": "F317",
+"stimulus": "F316",
+"user_result": "F318"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F323",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the header's Settings menu"
+},
+"expected": "F321",
+"stimulus": "F320",
+"user_result": "F322"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F327",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings from elsewhere in the app"
+},
+"expected": "F325",
+"stimulus": "F324",
+"user_result": "F326"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F331",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings ... > opening address is not counted as a page anyone used"
+},
+"expected": "F329",
+"stimulus": "F328",
+"user_result": "F330"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F335",
+"test": "Lighthouse.Frontend/src/models/Settings/settingsPaths.enforcement.test.ts :: one place knows where the settings pages live"
+},
+"expected": "F333",
+"stimulus": "F332",
+"user_result": "F334"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "design",
+"reason": "F339"
+},
+"expected": "F337",
+"stimulus": "F336",
+"user_result": "F338"
+}
+]
+},
 "counters": {
 "B": 3,
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 283,
+"F": 339,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -2299,12 +2524,68 @@
 "F281": "The Overview page no longer shows a connections section.",
 "F282": "Each way to a connection (setup stepper, Task Manager, the no-connection hint and old connection URLs) leads to System, Connections.",
 "F283": "Each connection page offers a way back to System, Connections.",
+"F284": "A System Admin opens each of the 14 old settings tab keys, in small and in capital letters",
+"F285": "Each key redirects to the area and tab that now hold that setting; configuration and system land on Organization, logs on System Info, rbac and authorization on System-wide access",
+"F286": "An old bookmark or runbook link opens the same setting it always opened",
+"F287": "Only the lower-case keys are mapped, or a key lands on the area's first tab instead of its own tab, or a key is dropped from the 14",
+"F288": "Any address is resolved by a System Admin, a reader and a person with RBAC off: bare, earlier System Admins address, hidden or unknown area and tab",
+"F289": "Admin lands on Organization, reader on Access API Keys, hidden or unknown tabs fall back to the first tab the person may open, the earlier System Admins address opens System-wide access",
 "F29": "Claim-to-checker: Quint covers the resolver safety claims (no decision while access loads; shown or redirected area is visible; admin bare address lands on organization): model design/models/settingsResolver.qnt, typecheck, quint run and quint verify executed by the architect. TLA+/TLC and Agda are not selected: no concurrency or proof obligation beyond the finite resolver. Liveness is not applicable: the resolver is a pure synchronous total function and the Wait outcome is left by the access read, which is the existing useRbac() effect outside this design. Executable projection of the model is the resolver table and seeded property test in the S1 oracle.",
+"F290": "Nobody lands on a tab they may not open, and old links keep working",
+"F291": "A reader is shown Organization, or an unknown tab shows an empty page, or the earlier slug is dropped",
+"F292": "The address is resolved while the person's access is still loading, for every access combination",
+"F293": "Every request waits and none is decided early",
+"F294": "A System Admin deep link is not bounced to the first tab before access is known",
+"F295": "The resolver decides with the permissive default while loading",
+"F296": "500 generated addresses (visible, hidden, earlier, legacy, unknown, bare) over all 8 access combinations",
+"F297": "Loading waits; a redirect target shows at once; every shown area and tab is one the person may open; a visible tab's own address shows it",
+"F298": "Every old or odd address ends on something the person may open",
+"F299": "A redirect chain that loops, or a hidden tab shown to a reader for one rare combination",
 "F3": "Settings opens three areas, Organization, Access and System, each holding today's tabs whole, and every old settings link opens the same tab",
 "F30": "Types: TypeScript strict via tsc -b. Invalid states excluded by construction: tab slugs and area slugs are literals from the definition (a path built by hand fails the source-scan test, not the type checker); the resolver takes three plain booleans so tests need no hook. Not excluded by types: a hand-built path from a variable (accepted, review catches it), and the DOM test ids (kept in step by e2eTestIds.test.ts).",
+"F300": "A System Admin opens /settings, /settings/access and /settings/system",
+"F301": "h1 reads Settings > {Area}, each area lists its own tabs in order with the first open at its own address",
+"F302": "Settings is grouped into Organization, Access and System, each holding today's tabs",
+"F303": "The old h1 System Settings, or all seven tabs under every area",
+"F304": "A System Admin opens /settings?tab=database and /settings?tab=LOGS",
+"F305": "Lands on System Database and System System Info with the matching panel and no ?tab= left",
+"F306": "A runbook link opens the same tab",
+"F307": "The key is read but the first tab is shown, or the address keeps ?tab=",
+"F308": "A System Admin deep links to the earlier System Admins address while access loads slowly",
+"F309": "A spinner and no tab row until access has loaded, then the System-wide access tab is open at its own address",
 "F31": "OO reading: no domain entity changes; the decision owners are the definition and resolver in models (data plus its pure decision), the shell for presentation, hooks for server state. No decision about the definition data lives in a component or in the Header; components only ask the resolver and definition. Smell classes applied from nw-code-design-oo: feature envy on route literals (moved to the definition), shotgun surgery on paths (one owner), long components (extract section from OverviewDashboard).",
+"F310": "The deep link opens System-wide access, not the first tab",
+"F311": "The page bounces to the first tab, or shows the tab row while loading, or keeps the System Admins label",
+"F312": "A reader with RBAC on and no System Admin opens Settings and the Database tab",
+"F313": "Lands on Access with API Keys only, and System with System Info only",
+"F314": "A reader sees only what is theirs",
+"F315": "Organization or admin tabs visible to a reader",
+"F316": "A System Admin chooses another tab, and opens the old license address",
+"F317": "The chosen tab panel opens at its own address; the license address opens System",
+"F318": "Tab choice is shareable, and the license link no longer leads to a blank page",
+"F319": "The tab changes without the address changing; license address stays unrouted",
 "F32": "Usage data: the feature adds no usage-data event; settings and connection paths raise no usage-data page opening (usageDataRouteKeys unchanged). Context map, ADR-270 and ARCHITECTURE.md unchanged; ADR-272 records addressing, definition, resolver, redirects and the source-scan enforcement and moves to docs/product/architecture at finalize.",
+"F320": "A person opens the header Settings menu on desktop (admin, reader, access loading) and the mobile drawer",
+"F321": "Menu lists Organization, Access, System with one-line descriptions and opens the chosen area; reader has no Organization; none while loading; drawer has a non-link Settings caption over three area links",
+"F322": "Settings is found by who decides",
+"F323": "The header still says System Settings, or Organization appears for a reader or while loading",
+"F324": "The license link in a connection form, the task manager full log link and the empty-list demo data link are followed",
+"F325": "They lead to System, System Info and System Demo Data",
+"F326": "In-app links open the new place",
+"F327": "A link keeps its old address; wizard and Overview links are held by the source scan only",
+"F328": "Settings addresses are checked by the usage-data page-opening rule",
+"F329": "No page event for any area or tab address",
 "F33": "Terminology: every user-renamable word (Work Tracking System(s), Team, Portfolio, Feature) renders through the configured term via the hook the touched component already uses.",
+"F330": "Opening Settings adds no usage-data event",
+"F331": "Preserved obligation, passes today; a settings route that matched a team or portfolio tab rule",
+"F332": "The whole production source is scanned for hand-written /settings and /connections addresses",
+"F333": "Only the definition and routes hold a /settings address, no new module holds a /connections address, and the definition exists and holds them",
+"F334": "One owner for settings addresses so links cannot lead nowhere again",
+"F335": "Links deleted instead of moved, or a connection address added in a new module",
+"F336": "A reader opens System Info",
+"F337": "System Info without Log Level",
+"F338": "Reader sees System Info without Log Level",
+"F339": "No production target gates Log Level and the panel moves unchanged; the frontend no longer renders that section, so it cannot be observed",
 "F34": "Test substrate: Vitest + React Testing Library in Lighthouse.Frontend (MemoryRouter at the URL a user opens, renderHook with providers, pure modules as functions); Playwright through page objects in Lighthouse.EndToEndTests. Runner argv: pnpm --dir Lighthouse.Frontend exec vitest run <oracle file>. Test rules follow .claude/skills/test-writing; no nWave scenario tags in code. Test time within default budgets; no derogation requested.",
 "F35": "Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). A failed access read never locks anyone out (permissive fallback). No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.",
 "F36": "Old addresses keep working with replace redirects: the 14 legacy keys, bare /settings, /settings/license, /connections/new, /connections/:id/edit, any earlier tab slug (the old System Admins slug stays). Tab and panel test ids are kept where their tab survives; new ids license-tab, connections-tab, usage-data-tab, terminology-tab, calendar-tab, refresh-ordering-tab, settings-menu plus one id per area item; configuration-tab and configuration-panel retire in S2.",
