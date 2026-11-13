@@ -13,7 +13,7 @@ A System Admin opens each of the 14 old settings tab keys, in small and in capit
 ```
 
 ```text
-Each key redirects to the area and tab that now hold that setting; configuration and system land on Organization, logs on System Info, rbac and authorization on System-wide access
+Each key redirects to the area and tab that now hold that setting; configuration and system land on Organization, logs on System, Logs, rbac and authorization on System-wide access
 ```
 
 ```text
@@ -27,7 +27,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: which settings area and tab an address opens \> the old key \%s\, in any letter case\, redirects to \%s
 
 ```text
-Only the lower-case keys are mapped, or a key lands on the area's first tab instead of its own tab, or a key is dropped from the 14
+Only the lower-case keys are mapped, or a key lands on the area's first tab instead of its own tab, or logs still lands on System Info
 ```
 
 ###### Obligations
@@ -129,11 +129,11 @@ A System Admin opens /settings, /settings/access and /settings/system
 ```
 
 ```text
-h1 reads Settings > {Area}, each area lists its own tabs in order with the first open at its own address
+h1 reads Settings > {Area}, each area lists its own tabs in order with the first open at its own address; System lists Demo Data, Database, Encryption, Usage Data, System Info, Logs, Refresh History, License
 ```
 
 ```text
-Settings is grouped into Organization, Access and System, each holding today's tabs
+Settings is grouped into Organization, Access and System, each holding its tabs; System Info, Logs and Refresh History are separate tabs
 ```
 
 ##### Disposition
@@ -143,7 +143,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> a System Admin opening address sees heading with its own tabs
 
 ```text
-The old h1 System Settings, or all seven tabs under every area
+The old h1 System Settings, or all tabs under every area, or Logs and Refresh History missing from System
 ```
 
 ###### Obligations
@@ -158,7 +158,7 @@ A System Admin opens /settings?tab=database and /settings?tab=LOGS
 ```
 
 ```text
-Lands on System Database and System System Info with the matching panel and no ?tab= left
+Lands on System Database and System Logs with the matching panel and no ?tab= left
 ```
 
 ```text
@@ -169,10 +169,10 @@ A runbook link opens the same tab
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> an old tab key \.\.\.
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> an old tab key in \$address opens the area and tab that now hold that setting
 
 ```text
-The key is read but the first tab is shown, or the address keeps ?tab=
+The key is read but the first tab is shown, or logs opens System Info, or the address keeps ?tab=
 ```
 
 ###### Obligations
@@ -216,7 +216,7 @@ A reader with RBAC on and no System Admin opens Settings and the Database tab
 ```
 
 ```text
-Lands on Access with API Keys only, and System with System Info only
+Lands on Access with API Keys only, and System with System Info, Logs, Refresh History and License only
 ```
 
 ```text
@@ -230,7 +230,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> a reader opening Settings \.\.\. \/ a reader asking for the Database tab \.\.\.
 
 ```text
-Organization or admin tabs visible to a reader
+Organization or admin tabs visible to a reader, or Logs, Refresh History or License hidden from a reader
 ```
 
 ###### Obligations
@@ -241,25 +241,25 @@ Organization or admin tabs visible to a reader
 P1
 
 ```text
-A System Admin chooses another tab, and opens the old license address
+A System Admin chooses another tab
 ```
 
 ```text
-The chosen tab panel opens at its own address; the license address opens System
+The chosen tab panel opens at its own address
 ```
 
 ```text
-Tab choice is shareable, and the license link no longer leads to a blank page
+Tab choice is shareable
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> choosing another tab \.\.\. \/ the old license address \.\.\.
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> choosing another tab opens its panel at its own address
 
 ```text
-The tab changes without the address changing; license address stays unrouted
+The tab changes without the address changing
 ```
 
 ###### Obligations
@@ -299,11 +299,11 @@ The header still says System Settings, or Organization appears for a reader or w
 P1
 
 ```text
-The license link in a connection form, the task manager full log link and the empty-list demo data link are followed
+The task manager full log link and the empty-list demo data link are followed
 ```
 
 ```text
-They lead to System, System Info and System Demo Data
+They lead to System Logs and System Demo Data
 ```
 
 ```text
@@ -317,7 +317,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: links into settings from elsewhere in the app
 
 ```text
-A link keeps its old address; wizard and Overview links are held by the source scan only
+A link keeps its old address; wizard and Overview links are held by the source scan only; the full log link opens System Info
 ```
 
 ###### Obligations
@@ -328,7 +328,7 @@ A link keeps its old address; wizard and Overview links are held by the source s
 P1
 
 ```text
-Settings addresses are checked by the usage-data page-opening rule
+Every area and tab address is opened, including System Logs, Refresh History and License
 ```
 
 ```text
@@ -336,17 +336,17 @@ No page event for any area or tab address
 ```
 
 ```text
-Opening Settings adds no usage-data event
+Opening settings raises no usage-data page event
 ```
 
 ##### Disposition
 
 Tested
 
-Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: links into settings \.\.\. \> opening address is not counted as a page anyone used
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: links into settings from elsewhere in the app \> opening \%s is not counted as a page anyone used
 
 ```text
-Preserved obligation, passes today; a settings route that matched a team or portfolio tab rule
+A settings address is counted as a page opening
 ```
 
 ###### Obligations
@@ -460,6 +460,35 @@ Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the th
 
 ```text
 The old Settings.test.tsx is left in place asserting the System Settings heading
+```
+
+###### Obligations
+
+
+##### Covers
+
+P1
+
+```text
+A reader opens System Info, Logs and Refresh History
+```
+
+```text
+System Info holds the system details and third party packages, Logs the log level and viewer, Refresh History the history; none shows another tab's content
+```
+
+```text
+Each of the three has its own tab with only its own content
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: the three settings area pages \> \$address shows its own content and none of the other two tabs\' content
+
+```text
+All three still shown on one System Info tab, or a tab showing another's content
 ```
 
 ###### Obligations
@@ -637,6 +666,269 @@ Design marks the four SystemSettingsTab test files and the licence-asker allow-l
 ```
 
 design
+
+### S3
+
+##### Covers
+
+P3
+
+```text
+A System Admin opens System, License with a valid license
+```
+
+```text
+The tab is the last of System, selected, and shows organization, licensee, expiry, Update License and Clear License in one License section
+```
+
+```text
+An admin sees what the header popover shows, with import and clear
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the License tab in System \> shows a System Admin the license status with import and clear\, in one License section
+
+```text
+The tab shows the status but no import or clear action, or the license is not the last tab
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+A reader opens System, License
+```
+
+```text
+Status and expiry show, and no add, update or clear action
+```
+
+```text
+A reader sees the license without changing it
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the License tab in System \> shows a reader the status and expiry but neither import nor clear
+
+```text
+Import and clear are shown to every person
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+An admin opens System, License while the license call is slow, then it answers
+```
+
+```text
+Loading... shows, neither No License nor an error shows, then the status replaces it
+```
+
+```text
+A slow connection shows loading and never a wrong no-license answer
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the License tab in System \> shows a loading look while the status is on its way and the status once it has arrived
+
+```text
+A blank area or No License while loading
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+An admin opens System, License while the license call fails
+```
+
+```text
+Could not load the license. shows, with no Loading... and no No License
+```
+
+```text
+A failure says so and is not taken for having no license
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the License tab in System \> says the license could not be loaded when the call fails\, and never shows an empty or loading area
+
+```text
+An empty area, or the free-version text, after a failed call
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+An admin clears the license on System, License and confirms
+```
+
+```text
+The clear call is made once and the tab shows No License
+```
+
+```text
+Clearing works from the tab like from the popover
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the License tab in System \> lets an admin clear the license after confirming\, and then shows no license
+
+```text
+Clear is offered but does nothing, or the tab keeps the old license
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+An admin imports a renewed license file on System, License
+```
+
+```text
+The tab shows the new expiry and the header icon popover shows it too, not the old one
+```
+
+```text
+The header icon is current after import
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the License tab in System \> shows a new expiry in the License tab and in the header icon after an admin imports a license file
+
+```text
+The tab updates but the header icon keeps the old expiry
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+An admin and a reader open /settings/license
+```
+
+```text
+Both end on System, License with the address replaced and the status shown
+```
+
+```text
+The old license address is no longer a dead end
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the ways into the License tab \> the old license address opens System\, License for \$who\, replacing the address
+
+```text
+The old address opens System or another tab, or is pushed so Back loops
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+A person follows View license options in the connection form OAuth notice
+```
+
+```text
+The link points to System, License and following it opens that tab with the status
+```
+
+```text
+The link no longer leads to a blank page or System Info
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the ways into the License tab \> the license link in the OAuth premium notice of a connection form opens System\, License
+
+```text
+The link opens System but a different tab
+```
+
+###### Obligations
+
+
+##### Covers
+
+P3
+
+```text
+A person follows View license options in the connection wizard
+```
+
+```text
+The link points to System, License and following it opens that tab with the status
+```
+
+```text
+The wizard link no longer leads to a blank page or System Info
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/System\/LicenseTab\.test\.tsx \:\: the ways into the License tab \> the license link in the connection wizard opens System\, License
+
+```text
+The wizard link opens System but a different tab
+```
+
+###### Obligations
+
 
 ## Expectations
 

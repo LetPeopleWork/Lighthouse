@@ -10,10 +10,10 @@
 "obligations": [
 "L2"
 ],
-"still_passes_if": "F287",
+"still_passes_if": "F380",
 "test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: which settings area and tab an address opens > the old key %s, in any letter case, redirects to %s"
 },
-"expected": "F285",
+"expected": "F379",
 "stimulus": "F284",
 "user_result": "F286"
 },
@@ -74,12 +74,12 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F303",
+"still_passes_if": "F383",
 "test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > a System Admin opening address sees heading with its own tabs"
 },
-"expected": "F301",
+"expected": "F381",
 "stimulus": "F300",
-"user_result": "F302"
+"user_result": "F382"
 },
 {
 "covers": [
@@ -90,10 +90,10 @@
 "obligations": [
 "L2"
 ],
-"still_passes_if": "F307",
-"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > an old tab key ..."
+"still_passes_if": "F385",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > an old tab key in $address opens the area and tab that now hold that setting"
 },
-"expected": "F305",
+"expected": "F384",
 "stimulus": "F304",
 "user_result": "F306"
 },
@@ -122,10 +122,10 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F315",
+"still_passes_if": "F387",
 "test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > a reader opening Settings ... / a reader asking for the Database tab ..."
 },
-"expected": "F313",
+"expected": "F386",
 "stimulus": "F312",
 "user_result": "F314"
 },
@@ -138,12 +138,12 @@
 "obligations": [
 "L1"
 ],
-"still_passes_if": "F319",
-"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > choosing another tab ... / the old license address ..."
+"still_passes_if": "F391",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > choosing another tab opens its panel at its own address"
 },
-"expected": "F317",
-"stimulus": "F316",
-"user_result": "F318"
+"expected": "F389",
+"stimulus": "F388",
+"user_result": "F390"
 },
 {
 "covers": [
@@ -170,11 +170,11 @@
 "obligations": [
 "T1"
 ],
-"still_passes_if": "F327",
+"still_passes_if": "F394",
 "test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings from elsewhere in the app"
 },
-"expected": "F325",
-"stimulus": "F324",
+"expected": "F393",
+"stimulus": "F392",
 "user_result": "F326"
 },
 {
@@ -186,12 +186,12 @@
 "obligations": [
 "L3"
 ],
-"still_passes_if": "F331",
-"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings ... > opening address is not counted as a page anyone used"
+"still_passes_if": "F397",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings from elsewhere in the app > opening %s is not counted as a page anyone used"
 },
 "expected": "F329",
-"stimulus": "F328",
-"user_result": "F330"
+"stimulus": "F395",
+"user_result": "F396"
 },
 {
 "covers": [
@@ -253,6 +253,22 @@
 "expected": "F350",
 "stimulus": "F349",
 "user_result": "F351"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F401",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > $address shows its own content and none of the other two tabs' content"
+},
+"expected": "F399",
+"stimulus": "F398",
+"user_result": "F400"
 }
 ],
 "S2": [
@@ -349,6 +365,152 @@
 "stimulus": "F374",
 "user_result": "F376"
 }
+],
+"S3": [
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F405",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System > shows a System Admin the license status with import and clear, in one License section"
+},
+"expected": "F403",
+"stimulus": "F402",
+"user_result": "F404"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F409",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System > shows a reader the status and expiry but neither import nor clear"
+},
+"expected": "F407",
+"stimulus": "F406",
+"user_result": "F408"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F413",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System > shows a loading look while the status is on its way and the status once it has arrived"
+},
+"expected": "F411",
+"stimulus": "F410",
+"user_result": "F412"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F417",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System > says the license could not be loaded when the call fails, and never shows an empty or loading area"
+},
+"expected": "F415",
+"stimulus": "F414",
+"user_result": "F416"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F421",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System > lets an admin clear the license after confirming, and then shows no license"
+},
+"expected": "F419",
+"stimulus": "F418",
+"user_result": "F420"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F425",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System > shows a new expiry in the License tab and in the header icon after an admin imports a license file"
+},
+"expected": "F423",
+"stimulus": "F422",
+"user_result": "F424"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1"
+],
+"still_passes_if": "F429",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the ways into the License tab > the old license address opens System, License for $who, replacing the address"
+},
+"expected": "F427",
+"stimulus": "F426",
+"user_result": "F428"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F433",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the ways into the License tab > the license link in the OAuth premium notice of a connection form opens System, License"
+},
+"expected": "F431",
+"stimulus": "F430",
+"user_result": "F432"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F436",
+"test": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the ways into the License tab > the license link in the connection wizard opens System, License"
+},
+"expected": "F431",
+"stimulus": "F434",
+"user_result": "F435"
+}
 ]
 },
 "counters": {
@@ -356,7 +518,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 378,
+"F": 436,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -2649,9 +2811,7 @@
 "F282": "Each way to a connection (setup stepper, Task Manager, the no-connection hint and old connection URLs) leads to System, Connections.",
 "F283": "Each connection page offers a way back to System, Connections.",
 "F284": "A System Admin opens each of the 14 old settings tab keys, in small and in capital letters",
-"F285": "Each key redirects to the area and tab that now hold that setting; configuration and system land on Organization, logs on System Info, rbac and authorization on System-wide access",
 "F286": "An old bookmark or runbook link opens the same setting it always opened",
-"F287": "Only the lower-case keys are mapped, or a key lands on the area's first tab instead of its own tab, or a key is dropped from the 14",
 "F288": "Any address is resolved by a System Admin, a reader and a person with RBAC off: bare, earlier System Admins address, hidden or unknown area and tab",
 "F289": "Admin lands on Organization, reader on Access API Keys, hidden or unknown tabs fall back to the first tab the person may open, the earlier System Admins address opens System-wide access",
 "F29": "Claim-to-checker: Quint covers the resolver safety claims (no decision while access loads; shown or redirected area is visible; admin bare address lands on organization): model design/models/settingsResolver.qnt, typecheck, quint run and quint verify executed by the architect. TLA+/TLC and Agda are not selected: no concurrency or proof obligation beyond the finite resolver. Liveness is not applicable: the resolver is a pure synchronous total function and the Wait outcome is left by the access read, which is the existing useRbac() effect outside this design. Executable projection of the model is the resolver table and seeded property test in the S1 oracle.",
@@ -2668,40 +2828,23 @@
 "F3": "Settings opens three areas, Organization, Access and System, each holding today's tabs whole, and every old settings link opens the same tab",
 "F30": "Types: TypeScript strict via tsc -b. Invalid states excluded by construction: tab slugs and area slugs are literals from the definition (a path built by hand fails the source-scan test, not the type checker); the resolver takes three plain booleans so tests need no hook. Not excluded by types: a hand-built path from a variable (accepted, review catches it), and the DOM test ids (kept in step by e2eTestIds.test.ts).",
 "F300": "A System Admin opens /settings, /settings/access and /settings/system",
-"F301": "h1 reads Settings > {Area}, each area lists its own tabs in order with the first open at its own address",
-"F302": "Settings is grouped into Organization, Access and System, each holding today's tabs",
-"F303": "The old h1 System Settings, or all seven tabs under every area",
 "F304": "A System Admin opens /settings?tab=database and /settings?tab=LOGS",
-"F305": "Lands on System Database and System System Info with the matching panel and no ?tab= left",
 "F306": "A runbook link opens the same tab",
-"F307": "The key is read but the first tab is shown, or the address keeps ?tab=",
 "F308": "A System Admin deep links to the earlier System Admins address while access loads slowly",
 "F309": "A spinner and no tab row until access has loaded, then the System-wide access tab is open at its own address",
 "F31": "OO reading: no domain entity changes; the decision owners are the definition and resolver in models (data plus its pure decision), the shell for presentation, hooks for server state. No decision about the definition data lives in a component or in the Header; components only ask the resolver and definition. Smell classes applied from nw-code-design-oo: feature envy on route literals (moved to the definition), shotgun surgery on paths (one owner), long components (extract section from OverviewDashboard).",
 "F310": "The deep link opens System-wide access, not the first tab",
 "F311": "The page bounces to the first tab, or shows the tab row while loading, or keeps the System Admins label",
 "F312": "A reader with RBAC on and no System Admin opens Settings and the Database tab",
-"F313": "Lands on Access with API Keys only, and System with System Info only",
 "F314": "A reader sees only what is theirs",
-"F315": "Organization or admin tabs visible to a reader",
-"F316": "A System Admin chooses another tab, and opens the old license address",
-"F317": "The chosen tab panel opens at its own address; the license address opens System",
-"F318": "Tab choice is shareable, and the license link no longer leads to a blank page",
-"F319": "The tab changes without the address changing; license address stays unrouted",
 "F32": "Usage data: the feature adds no usage-data event; settings and connection paths raise no usage-data page opening (usageDataRouteKeys unchanged). Context map, ADR-270 and ARCHITECTURE.md unchanged; ADR-272 records addressing, definition, resolver, redirects and the source-scan enforcement and moves to docs/product/architecture at finalize.",
 "F320": "A person opens the header Settings menu on desktop (admin, reader, access loading) and the mobile drawer",
 "F321": "Menu lists Organization, Access, System with one-line descriptions and opens the chosen area; reader has no Organization; none while loading; drawer has a non-link Settings caption over three area links",
 "F322": "Settings is found by who decides",
 "F323": "The header still says System Settings, or Organization appears for a reader or while loading",
-"F324": "The license link in a connection form, the task manager full log link and the empty-list demo data link are followed",
-"F325": "They lead to System, System Info and System Demo Data",
 "F326": "In-app links open the new place",
-"F327": "A link keeps its old address; wizard and Overview links are held by the source scan only",
-"F328": "Settings addresses are checked by the usage-data page-opening rule",
 "F329": "No page event for any area or tab address",
 "F33": "Terminology: every user-renamable word (Work Tracking System(s), Team, Portfolio, Feature) renders through the configured term via the hook the touched component already uses.",
-"F330": "Opening Settings adds no usage-data event",
-"F331": "Preserved obligation, passes today; a settings route that matched a team or portfolio tab rule",
 "F332": "The whole production source is scanned for hand-written /settings and /connections addresses",
 "F333": "Only the definition and routes hold a /settings address, no new module holds a /connections address, and the definition exists and holds them",
 "F334": "One owner for settings addresses so links cannot lead nowhere again",
@@ -2751,13 +2894,71 @@
 "F376": "None directly: the behaviour rows moved with their tests",
 "F377": "Design marks the four SystemSettingsTab test files and the licence-asker allow-list entry Migrated or Changed, not oracle files; the crafter moves them and removes the entry with the component",
 "F378": "System Info is split into System Info (details + Third Party Packages), Logs (log level + viewer) and Refresh History tabs, built in S3; System order: Connections, Database, Encryption, Demo Data, Usage Data, System Info, Logs, Refresh History, License; gating as today; ?tab=logs and the Task Manager log link open Logs (D16)",
+"F379": "Each key redirects to the area and tab that now hold that setting; configuration and system land on Organization, logs on System, Logs, rbac and authorization on System-wide access",
 "F38": "New single owner of every settings and connection path; replaces the tab key map in Settings.tsx and hand-written literals",
+"F380": "Only the lower-case keys are mapped, or a key lands on the area's first tab instead of its own tab, or logs still lands on System Info",
+"F381": "h1 reads Settings > {Area}, each area lists its own tabs in order with the first open at its own address; System lists Demo Data, Database, Encryption, Usage Data, System Info, Logs, Refresh History, License",
+"F382": "Settings is grouped into Organization, Access and System, each holding its tabs; System Info, Logs and Refresh History are separate tabs",
+"F383": "The old h1 System Settings, or all tabs under every area, or Logs and Refresh History missing from System",
+"F384": "Lands on System Database and System Logs with the matching panel and no ?tab= left",
+"F385": "The key is read but the first tab is shown, or logs opens System Info, or the address keeps ?tab=",
+"F386": "Lands on Access with API Keys only, and System with System Info, Logs, Refresh History and License only",
+"F387": "Organization or admin tabs visible to a reader, or Logs, Refresh History or License hidden from a reader",
+"F388": "A System Admin chooses another tab",
+"F389": "The chosen tab panel opens at its own address",
 "F39": "Plain System Settings link becomes the SettingsMenu reading the definition",
+"F390": "Tab choice is shareable",
+"F391": "The tab changes without the address changing",
+"F392": "The task manager full log link and the empty-list demo data link are followed",
+"F393": "They lead to System Logs and System Demo Data",
+"F394": "A link keeps its old address; wizard and Overview links are held by the source scan only; the full log link opens System Info",
+"F395": "Every area and tab address is opened, including System Logs, Refresh History and License",
+"F396": "Opening settings raises no usage-data page event",
+"F397": "A settings address is counted as a page opening",
+"F398": "A reader opens System Info, Logs and Refresh History",
+"F399": "System Info holds the system details and third party packages, Logs the log level and viewer, Refresh History the history; none shows another tab's content",
 "F4": "Organization shows Terminology, Calendar and Refresh & ordering tabs, and System shows a Usage Data tab, each with its own loading and failure look",
 "F40": "full log link /settings?tab=system-info moves to the definition path for System Info",
+"F400": "Each of the three has its own tab with only its own content",
+"F401": "All three still shown on one System Info tab, or a tab showing another's content",
+"F402": "A System Admin opens System, License with a valid license",
+"F403": "The tab is the last of System, selected, and shows organization, licensee, expiry, Update License and Clear License in one License section",
+"F404": "An admin sees what the header popover shows, with import and clear",
+"F405": "The tab shows the status but no import or clear action, or the license is not the last tab",
+"F406": "A reader opens System, License",
+"F407": "Status and expiry show, and no add, update or clear action",
+"F408": "A reader sees the license without changing it",
+"F409": "Import and clear are shown to every person",
 "F41": "demo-data link takes the definition path",
+"F410": "An admin opens System, License while the license call is slow, then it answers",
+"F411": "Loading... shows, neither No License nor an error shows, then the status replaces it",
+"F412": "A slow connection shows loading and never a wrong no-license answer",
+"F413": "A blank area or No License while loading",
+"F414": "An admin opens System, License while the license call fails",
+"F415": "Could not load the license. shows, with no Loading... and no No License",
+"F416": "A failure says so and is not taken for having no license",
+"F417": "An empty area, or the free-version text, after a failed call",
+"F418": "An admin clears the license on System, License and confirms",
+"F419": "The clear call is made once and the tab shows No License",
 "F42": "dead /settings/license link takes the definition path (System in S1, License in S3)",
+"F420": "Clearing works from the tab like from the popover",
+"F421": "Clear is offered but does nothing, or the tab keeps the old license",
+"F422": "An admin imports a renewed license file on System, License",
+"F423": "The tab shows the new expiry and the header icon popover shows it too, not the old one",
+"F424": "The header icon is current after import",
+"F425": "The tab updates but the header icon keeps the old expiry",
+"F426": "An admin and a reader open /settings/license",
+"F427": "Both end on System, License with the address replaced and the status shown",
+"F428": "The old license address is no longer a dead end",
+"F429": "The old address opens System or another tab, or is pushed so Back loops",
 "F43": "dead /settings/license link takes the definition path; the notice may have moved to OAuthPremiumNotice.tsx when it runs",
+"F430": "A person follows View license options in the connection form OAuth notice",
+"F431": "The link points to System, License and following it opens that tab with the status",
+"F432": "The link no longer leads to a blank page or System Info",
+"F433": "The link opens System but a different tab",
+"F434": "A person follows View license options in the connection wizard",
+"F435": "The wizard link no longer leads to a blank page or System Info",
+"F436": "The wizard link opens System but a different tab",
 "F44": "stepper opens the connect page path from the definition (S5)",
 "F45": "row edit links and demo-data link move with the extracted list (S4) and take definition paths (S5)",
 "F46": "row Edit takes the definition path; section gains the manage link (S5)",

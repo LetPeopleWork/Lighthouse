@@ -160,7 +160,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A System Admin opens each of the 14 old settings tab keys, in small and in capital letters
 </code></pre>
 
-<pre><code>Each key redirects to the area and tab that now hold that setting; configuration and system land on Organization, logs on System Info, rbac and authorization on System-wide access
+<pre><code>Each key redirects to the area and tab that now hold that setting; configuration and system land on Organization, logs on System, Logs, rbac and authorization on System-wide access
 </code></pre>
 
 <pre><code>An old bookmark or runbook link opens the same setting it always opened
@@ -172,7 +172,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: which settings area and tab an address opens &gt; the old key %s, in any letter case, redirects to %s</p>
 
-<pre><code>Only the lower-case keys are mapped, or a key lands on the area&#x27;s first tab instead of its own tab, or a key is dropped from the 14
+<pre><code>Only the lower-case keys are mapped, or a key lands on the area&#x27;s first tab instead of its own tab, or logs still lands on System Info
 </code></pre>
 
 <h6>Obligations</h6>
@@ -260,10 +260,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A System Admin opens /settings, /settings/access and /settings/system
 </code></pre>
 
-<pre><code>h1 reads Settings &gt; {Area}, each area lists its own tabs in order with the first open at its own address
+<pre><code>h1 reads Settings &gt; {Area}, each area lists its own tabs in order with the first open at its own address; System lists Demo Data, Database, Encryption, Usage Data, System Info, Logs, Refresh History, License
 </code></pre>
 
-<pre><code>Settings is grouped into Organization, Access and System, each holding today&#x27;s tabs
+<pre><code>Settings is grouped into Organization, Access and System, each holding its tabs; System Info, Logs and Refresh History are separate tabs
 </code></pre>
 
 <h5>Disposition</h5>
@@ -272,7 +272,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; a System Admin opening address sees heading with its own tabs</p>
 
-<pre><code>The old h1 System Settings, or all seven tabs under every area
+<pre><code>The old h1 System Settings, or all tabs under every area, or Logs and Refresh History missing from System
 </code></pre>
 
 <h6>Obligations</h6>
@@ -285,7 +285,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A System Admin opens /settings?tab=database and /settings?tab=LOGS
 </code></pre>
 
-<pre><code>Lands on System Database and System System Info with the matching panel and no ?tab= left
+<pre><code>Lands on System Database and System Logs with the matching panel and no ?tab= left
 </code></pre>
 
 <pre><code>A runbook link opens the same tab
@@ -295,9 +295,9 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; an old tab key ...</p>
+<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; an old tab key in $address opens the area and tab that now hold that setting</p>
 
-<pre><code>The key is read but the first tab is shown, or the address keeps ?tab=
+<pre><code>The key is read but the first tab is shown, or logs opens System Info, or the address keeps ?tab=
 </code></pre>
 
 <h6>Obligations</h6>
@@ -335,7 +335,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>A reader with RBAC on and no System Admin opens Settings and the Database tab
 </code></pre>
 
-<pre><code>Lands on Access with API Keys only, and System with System Info only
+<pre><code>Lands on Access with API Keys only, and System with System Info, Logs, Refresh History and License only
 </code></pre>
 
 <pre><code>A reader sees only what is theirs
@@ -347,7 +347,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; a reader opening Settings ... / a reader asking for the Database tab ...</p>
 
-<pre><code>Organization or admin tabs visible to a reader
+<pre><code>Organization or admin tabs visible to a reader, or Logs, Refresh History or License hidden from a reader
 </code></pre>
 
 <h6>Obligations</h6>
@@ -357,22 +357,22 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>A System Admin chooses another tab, and opens the old license address
+<pre><code>A System Admin chooses another tab
 </code></pre>
 
-<pre><code>The chosen tab panel opens at its own address; the license address opens System
+<pre><code>The chosen tab panel opens at its own address
 </code></pre>
 
-<pre><code>Tab choice is shareable, and the license link no longer leads to a blank page
+<pre><code>Tab choice is shareable
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; choosing another tab ... / the old license address ...</p>
+<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; choosing another tab opens its panel at its own address</p>
 
-<pre><code>The tab changes without the address changing; license address stays unrouted
+<pre><code>The tab changes without the address changing
 </code></pre>
 
 <h6>Obligations</h6>
@@ -407,10 +407,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>The license link in a connection form, the task manager full log link and the empty-list demo data link are followed
+<pre><code>The task manager full log link and the empty-list demo data link are followed
 </code></pre>
 
-<pre><code>They lead to System, System Info and System Demo Data
+<pre><code>They lead to System Logs and System Demo Data
 </code></pre>
 
 <pre><code>In-app links open the new place
@@ -422,7 +422,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings from elsewhere in the app</p>
 
-<pre><code>A link keeps its old address; wizard and Overview links are held by the source scan only
+<pre><code>A link keeps its old address; wizard and Overview links are held by the source scan only; the full log link opens System Info
 </code></pre>
 
 <h6>Obligations</h6>
@@ -432,22 +432,22 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<pre><code>Settings addresses are checked by the usage-data page-opening rule
+<pre><code>Every area and tab address is opened, including System Logs, Refresh History and License
 </code></pre>
 
 <pre><code>No page event for any area or tab address
 </code></pre>
 
-<pre><code>Opening Settings adds no usage-data event
+<pre><code>Opening settings raises no usage-data page event
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings ... &gt; opening address is not counted as a page anyone used</p>
+<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings from elsewhere in the app &gt; opening %s is not counted as a page anyone used</p>
 
-<pre><code>Preserved obligation, passes today; a settings route that matched a team or portfolio tab rule
+<pre><code>A settings address is counted as a page opening
 </code></pre>
 
 <h6>Obligations</h6>
@@ -545,6 +545,31 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages</p>
 
 <pre><code>The old Settings.test.tsx is left in place asserting the System Settings heading
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A reader opens System Info, Logs and Refresh History
+</code></pre>
+
+<pre><code>System Info holds the system details and third party packages, Logs the log level and viewer, Refresh History the history; none shows another tab&#x27;s content
+</code></pre>
+
+<pre><code>Each of the three has its own tab with only its own content
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages &gt; $address shows its own content and none of the other two tabs&#x27; content</p>
+
+<pre><code>All three still shown on one System Info tab, or a tab showing another&#x27;s content
 </code></pre>
 
 <h6>Obligations</h6>
@@ -698,6 +723,233 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 </code></pre>
 
 <p>design</p>
+
+<h3>S3</h3>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A System Admin opens System, License with a valid license
+</code></pre>
+
+<pre><code>The tab is the last of System, selected, and shows organization, licensee, expiry, Update License and Clear License in one License section
+</code></pre>
+
+<pre><code>An admin sees what the header popover shows, with import and clear
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System &gt; shows a System Admin the license status with import and clear, in one License section</p>
+
+<pre><code>The tab shows the status but no import or clear action, or the license is not the last tab
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A reader opens System, License
+</code></pre>
+
+<pre><code>Status and expiry show, and no add, update or clear action
+</code></pre>
+
+<pre><code>A reader sees the license without changing it
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System &gt; shows a reader the status and expiry but neither import nor clear</p>
+
+<pre><code>Import and clear are shown to every person
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>An admin opens System, License while the license call is slow, then it answers
+</code></pre>
+
+<pre><code>Loading... shows, neither No License nor an error shows, then the status replaces it
+</code></pre>
+
+<pre><code>A slow connection shows loading and never a wrong no-license answer
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System &gt; shows a loading look while the status is on its way and the status once it has arrived</p>
+
+<pre><code>A blank area or No License while loading
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>An admin opens System, License while the license call fails
+</code></pre>
+
+<pre><code>Could not load the license. shows, with no Loading... and no No License
+</code></pre>
+
+<pre><code>A failure says so and is not taken for having no license
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System &gt; says the license could not be loaded when the call fails, and never shows an empty or loading area</p>
+
+<pre><code>An empty area, or the free-version text, after a failed call
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>An admin clears the license on System, License and confirms
+</code></pre>
+
+<pre><code>The clear call is made once and the tab shows No License
+</code></pre>
+
+<pre><code>Clearing works from the tab like from the popover
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System &gt; lets an admin clear the license after confirming, and then shows no license</p>
+
+<pre><code>Clear is offered but does nothing, or the tab keeps the old license
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>An admin imports a renewed license file on System, License
+</code></pre>
+
+<pre><code>The tab shows the new expiry and the header icon popover shows it too, not the old one
+</code></pre>
+
+<pre><code>The header icon is current after import
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the License tab in System &gt; shows a new expiry in the License tab and in the header icon after an admin imports a license file</p>
+
+<pre><code>The tab updates but the header icon keeps the old expiry
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>An admin and a reader open /settings/license
+</code></pre>
+
+<pre><code>Both end on System, License with the address replaced and the status shown
+</code></pre>
+
+<pre><code>The old license address is no longer a dead end
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the ways into the License tab &gt; the old license address opens System, License for $who, replacing the address</p>
+
+<pre><code>The old address opens System or another tab, or is pushed so Back loops
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A person follows View license options in the connection form OAuth notice
+</code></pre>
+
+<pre><code>The link points to System, License and following it opens that tab with the status
+</code></pre>
+
+<pre><code>The link no longer leads to a blank page or System Info
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the ways into the License tab &gt; the license link in the OAuth premium notice of a connection form opens System, License</p>
+
+<pre><code>The link opens System but a different tab
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>A person follows View license options in the connection wizard
+</code></pre>
+
+<pre><code>The link points to System, License and following it opens that tab with the status
+</code></pre>
+
+<pre><code>The wizard link no longer leads to a blank page or System Info
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx :: the ways into the License tab &gt; the license link in the connection wizard opens System, License</p>
+
+<pre><code>The wizard link opens System but a different tab
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 

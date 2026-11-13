@@ -19,7 +19,6 @@ import {
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Header from "../../components/App/Header/Header";
 import RecentProblemsSection from "../../components/App/Header/TaskManager/RecentProblemsSection";
-import OAuthPremiumNotice from "../../components/Common/Connection/OAuthPremiumNotice";
 import DataOverviewTable from "../../components/Common/DataOverviewTable/DataOverviewTable";
 import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
 import type { ILicensingService } from "../../services/Api/LicensingService";
@@ -32,8 +31,17 @@ import {
 import { renderWithQueryClient } from "../../tests/renderWithQueryClient";
 
 // The panels are not what is under test here: each tab has to open its own panel, whatever the panel shows.
-vi.mock("./SystemInfo/SystemInfoSettings", () => ({
-	default: () => <div>system info panel content</div>,
+vi.mock("./LogSettings/LogSettings", () => ({
+	default: () => <div>logs panel content</div>,
+}));
+vi.mock("./SystemInfo/RefreshHistorySection", () => ({
+	default: () => <div>refresh history panel content</div>,
+}));
+vi.mock("./SystemInfo/SystemInfoDisplay", () => ({
+	default: () => <div>system details content</div>,
+}));
+vi.mock("./SystemInfo/ThirdPartyPackagesSection", () => ({
+	default: () => <div>third party packages content</div>,
 }));
 vi.mock("./DemoData/DemoDataSettings", () => ({
 	default: () => <div>demo data panel content</div>,
@@ -132,12 +140,29 @@ const AREAS: readonly AreaSlug[] = ["organization", "access", "system"];
 const TABS_OF: Readonly<Record<AreaSlug, readonly string[]>> = {
 	organization: ["terminology", "calendar", "refresh-ordering"],
 	access: ["system-wide", "api-keys"],
-	system: ["demo-data", "database", "encryption", "usage-data", "system-info"],
+	system: [
+		"demo-data",
+		"database",
+		"encryption",
+		"usage-data",
+		"system-info",
+		"logs",
+		"refresh-history",
+		"license",
+	],
 };
 
-/** Who may open a tab: everybody reads API Keys and System Info; the rest is for System Admins, and System-wide access also needs RBAC on. */
+/** Tabs everybody reads; the rest is for System Admins, and System-wide access also needs RBAC on. */
+const OPEN_TO_EVERYONE = [
+	"api-keys",
+	"system-info",
+	"logs",
+	"refresh-history",
+	"license",
+];
+
 const mayOpen = (tab: string, access: Access): boolean => {
-	if (tab === "api-keys" || tab === "system-info") return true;
+	if (OPEN_TO_EVERYONE.includes(tab)) return true;
 	if (tab === "system-wide")
 		return access.isSystemAdmin && access.isRbacEnabled;
 	return access.isSystemAdmin;
@@ -162,7 +187,7 @@ const LEGACY_KEYS: ReadonlyArray<readonly [string, string]> = [
 	["encryption", "/settings/system/encryption"],
 	["rbac", "/settings/access/system-wide"],
 	["authorization", "/settings/access/system-wide"],
-	["logs", "/settings/system/system-info"],
+	["logs", "/settings/system/logs"],
 	["systeminfo", "/settings/system/system-info"],
 	["system-info", "/settings/system/system-info"],
 ];
@@ -718,6 +743,9 @@ describe("the three settings area pages", () => {
 				"Encryption",
 				"Usage Data",
 				"System Info",
+				"Logs",
+				"Refresh History",
+				"License",
 			],
 			panel: "demo data panel content",
 		},
@@ -738,15 +766,77 @@ describe("the three settings area pages", () => {
 		},
 	);
 
-	it("an old tab key opens the area and tab that now hold that setting, with no ?tab= left in the address", async () => {
-		await renderSettingsAt("/settings?tab=database", aSummary(ADMIN));
+	it.each([
+		{
+			address: "/settings?tab=database",
+			ends: "/settings/system/database",
+			tab: "Database",
+			panel: "database panel content",
+		},
+		{
+			address: "/settings?tab=LOGS",
+			ends: "/settings/system/logs",
+			tab: "Logs",
+			panel: "logs panel content",
+		},
+	])(
+		"an old tab key in $address opens the area and tab that now hold that setting, with no ?tab= left in the address",
+		async ({ address, ends, tab, panel }) => {
+			await renderSettingsAt(address, aSummary(ADMIN));
 
-		await theHeading("Settings › System");
-		await theEndOfThe("/settings/system/database");
-		expect(theSelectedTab()).toEqual(["Database"]);
-		expect(screen.getByText("database panel content")).toBeInTheDocument();
-		expectTheAddressWasReplaced();
-	});
+			await theHeading("Settings › System");
+			await theEndOfThe(ends);
+			expect(theSelectedTab()).toEqual([tab]);
+			expect(screen.getByText(panel)).toBeInTheDocument();
+			expectTheAddressWasReplaced();
+		},
+	);
+
+	it.each([
+		{
+			address: "/settings/system/system-info",
+			panel: "system details content",
+			alsoShows: "third party packages content",
+		},
+		{
+			address: "/settings/system/logs",
+			panel: "logs panel content",
+			alsoShows: undefined,
+		},
+		{
+			address: "/settings/system/refresh-history",
+			panel: "refresh history panel content",
+			alsoShows: undefined,
+		},
+	])(
+		"$address shows its own content and none of the other two tabs' content",
+		async ({ address, panel, alsoShows }) => {
+			const theThreeTabsContent = [
+				"system details content",
+				"third party packages content",
+				"logs panel content",
+				"refresh history panel content",
+			];
+			await renderSettingsAt(address, aSummary(READER));
+
+			await theHeading("Settings › System");
+			const shown = [panel, alsoShows].filter(Boolean);
+			const found = await Promise.all(
+				shown.map((content) => screen.findByText(content as string)),
+			);
+			for (const element of found) {
+				expect(element).toBeInTheDocument();
+			}
+			for (const content of theThreeTabsContent.filter(
+				(each) => !shown.includes(each),
+			)) {
+				expect(
+					screen.queryByText(content),
+					`${content} belongs to another tab: System Info holds the details and the packages, Logs the log level and viewer, Refresh History the history`,
+				).not.toBeInTheDocument();
+			}
+		},
+	);
 
 	it("a deep link to System-wide access shows a spinner until access has loaded, then opens that tab and not the first one", async () => {
 		const slow = aSlowAnswer();
@@ -791,8 +881,13 @@ describe("the three settings area pages", () => {
 
 		await theHeading("Settings › System");
 		await theEndOfThe("/settings/system/system-info");
-		expect(theTabNames()).toEqual(["System Info"]);
-		expect(screen.getByText("system info panel content")).toBeInTheDocument();
+		expect(theTabNames()).toEqual([
+			"System Info",
+			"Logs",
+			"Refresh History",
+			"License",
+		]);
+		expect(screen.getByText("system details content")).toBeInTheDocument();
 		expectTheAddressWasReplaced();
 	});
 
@@ -828,15 +923,6 @@ describe("the three settings area pages", () => {
 		expect(theSelectedTab()).toEqual(["Database"]);
 		expect(screen.getByText("database panel content")).toBeInTheDocument();
 		expectTheAddressWasReplaced();
-	});
-
-	it("the old license address, which led nowhere, opens System", async () => {
-		await renderSettingsAt("/settings/license", aSummary(ADMIN));
-
-		await theHeading("Settings › System");
-		await waitFor(() =>
-			expect(whereWeAre()).toMatch(/^\/settings\/system(\/|$)/),
-		);
 	});
 });
 
@@ -925,22 +1011,7 @@ describe("the header's Settings menu", () => {
 // ---------------------------------------------------------------------------------------------
 
 describe("links into settings from elsewhere in the app", () => {
-	it("the license link in a connection form leads to the System area", () => {
-		render(
-			<MemoryRouter>
-				<OAuthPremiumNotice />
-			</MemoryRouter>,
-		);
-
-		expect(
-			screen
-				.getByRole("link", { name: "View license options" })
-				.getAttribute("href"),
-			"The license link used to lead to an address no page answers; it must lead to the System area",
-		).toMatch(/^\/settings\/system(\/|$)/);
-	});
-
-	it("the full log link in the task manager opens System Info", () => {
+	it("the full log link in the task manager opens Logs", () => {
 		render(
 			<MemoryRouter>
 				<RecentProblemsSection problems={[]} />
@@ -950,7 +1021,7 @@ describe("links into settings from elsewhere in the app", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: "Open the full log" }));
 
-		expect(whereWeAre()).toBe("/settings/system/system-info");
+		expect(whereWeAre()).toBe("/settings/system/logs");
 	});
 
 	it("the load demo data link in an empty list opens System Demo Data", () => {
@@ -984,6 +1055,9 @@ describe("links into settings from elsewhere in the app", () => {
 		"/settings/system/encryption",
 		"/settings/system/usage-data",
 		"/settings/system/system-info",
+		"/settings/system/logs",
+		"/settings/system/refresh-history",
+		"/settings/system/license",
 	])("opening %s is not counted as a page anyone used", (address) => {
 		expect(
 			usageDataPageOpeningFor(address),
