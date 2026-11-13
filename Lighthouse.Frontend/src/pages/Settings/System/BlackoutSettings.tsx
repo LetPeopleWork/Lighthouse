@@ -64,9 +64,14 @@ const messageFromError = (error: unknown, fallback: string): string =>
 
 interface BlackoutSettingsProps {
 	isPremium: boolean;
+	/** Set while the license has not been read: Premium is then neither granted nor refused. */
+	licenseUnknown?: "loading" | "failed";
 }
 
-const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({ isPremium }) => {
+const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({
+	isPremium,
+	licenseUnknown,
+}) => {
 	const { blackoutPeriodService, recurringBlackoutRuleService } =
 		useContext(ApiServiceContext);
 
@@ -308,7 +313,19 @@ const BlackoutSettings: React.FC<BlackoutSettingsProps> = ({ isPremium }) => {
 				</Alert>
 			)}
 
-			{!isPremium && (
+			{licenseUnknown === "loading" && (
+				<Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+					<CircularProgress size={24} />
+				</Box>
+			)}
+
+			{licenseUnknown === "failed" && (
+				<Alert severity="error" sx={{ mb: 2 }}>
+					Could not load the license.
+				</Alert>
+			)}
+
+			{!isPremium && licenseUnknown === undefined && (
 				<Alert severity="info" sx={{ mb: 2 }}>
 					Managing blackout periods and recurring rules requires a premium
 					license. Existing entries remain active.

@@ -13,7 +13,6 @@ const sourceRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const READ_THE_LICENCE_FOR_OTHER_REASONS = new Set([
 	"services/Api/LicensingService.ts",
 	"components/SurveyNudge/SurveyNudge.tsx",
-	"pages/Settings/System/SystemSettingsTab.tsx",
 ]);
 
 const productionModules = (): string[] =>

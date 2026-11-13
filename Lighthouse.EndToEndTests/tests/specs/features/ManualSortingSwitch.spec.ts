@@ -15,7 +15,7 @@ const testWithFeatures = testWithDemoData(WHEN_WILL_IT_BE_DONE_SCENARIO_ID);
 //   - the five connector Order shapes, the five refreshes, the two ways in agreeing, giving the order
 //     back and taking it over again, the licence and the role -> Slice02ManualRankScenarios.cs
 //   - the switch, its premium affordance, its help text and the column's heading ->
-//     SystemSettingsTab.behaviourSettings.test.tsx and useFeatureOrdering.test.tsx
+//     RefreshAndOrderingTab.behaviourSettings.test.tsx and useFeatureOrdering.test.tsx
 testWithFeatures.beforeEach(async ({ request }) => {
 	await switchFeatureOrdering(request, false);
 });
@@ -36,7 +36,7 @@ testWithFeatures(
 		const beforeTheSwitch = await featuresPage.getListedFeatureNames();
 
 		const settingsPage = await lighthousePage.goToSettings();
-		const systemConfiguration = await settingsPage.goToSystemConfiguration();
+		const systemConfiguration = await settingsPage.goToRefreshAndOrdering();
 		await systemConfiguration.handOrderingOverToThisInstance();
 
 		const featuresPageAgain = await lighthousePage.goToFeatures("Features");

@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { SystemConfigurationPage } from "./SystemConfigurationPage";
+import { CalendarPage } from "./CalendarPage";
 
 export interface RecurringRuleOptions {
 	weekdays: string[];
@@ -46,8 +46,8 @@ export class RecurringBlackoutRuleDialog {
 		}
 	}
 
-	async saveRule(): Promise<SystemConfigurationPage> {
+	async saveRule(): Promise<CalendarPage> {
 		await this.page.getByTestId("save-recurring-blackout-rule").click();
-		return new SystemConfigurationPage(this.page);
+		return new CalendarPage(this.page);
 	}
 }

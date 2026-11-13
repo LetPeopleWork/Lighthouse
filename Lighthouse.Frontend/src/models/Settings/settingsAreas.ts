@@ -1,12 +1,15 @@
 export type SettingsAreaSlug = "organization" | "access" | "system";
 
 export type SettingsTabSlug =
-	| "configuration"
+	| "terminology"
+	| "calendar"
+	| "refresh-ordering"
 	| "system-wide"
 	| "api-keys"
 	| "demo-data"
 	| "database"
 	| "encryption"
+	| "usage-data"
 	| "system-info";
 
 /** The three facts about a person's access that decide what Settings shows them. */
@@ -64,10 +67,28 @@ export const SETTINGS_AREAS: readonly SettingsArea[] = [
 export const SETTINGS_TABS: readonly SettingsTab[] = [
 	{
 		area: "organization",
-		slug: "configuration",
-		label: "Configuration",
-		testId: "configuration-tab",
-		panelTestId: "configuration-panel",
+		slug: "terminology",
+		label: "Terminology",
+		testId: "terminology-tab",
+		panelTestId: "terminology-panel",
+		whoMayOpen: "system-admin",
+		earlierSlugs: ["configuration"],
+	},
+	{
+		area: "organization",
+		slug: "calendar",
+		label: "Calendar",
+		testId: "calendar-tab",
+		panelTestId: "calendar-panel",
+		whoMayOpen: "system-admin",
+		earlierSlugs: [],
+	},
+	{
+		area: "organization",
+		slug: "refresh-ordering",
+		label: "Refresh & ordering",
+		testId: "refresh-ordering-tab",
+		panelTestId: "refresh-ordering-panel",
 		whoMayOpen: "system-admin",
 		earlierSlugs: [],
 	},
@@ -118,6 +139,15 @@ export const SETTINGS_TABS: readonly SettingsTab[] = [
 	},
 	{
 		area: "system",
+		slug: "usage-data",
+		label: "Usage Data",
+		testId: "usage-data-tab",
+		panelTestId: "usage-data-panel",
+		whoMayOpen: "system-admin",
+		earlierSlugs: [],
+	},
+	{
+		area: "system",
 		slug: "system-info",
 		label: "System Info",
 		testId: "system-info-tab",
@@ -129,8 +159,8 @@ export const SETTINGS_TABS: readonly SettingsTab[] = [
 
 /** The keys the old single page opened tabs by (?tab=), matched without regard to case. */
 const LEGACY_TAB_KEYS: ReadonlyMap<string, SettingsTabSlug> = new Map([
-	["configuration", "configuration"],
-	["system", "configuration"],
+	["configuration", "terminology"],
+	["system", "terminology"],
 	["demodata", "demo-data"],
 	["demo-data", "demo-data"],
 	["database", "database"],

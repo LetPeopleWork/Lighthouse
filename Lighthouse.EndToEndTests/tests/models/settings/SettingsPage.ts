@@ -5,7 +5,9 @@ import { ApiKeysSettingsPage } from "./ApiKeys/ApiKeysSettingsPage";
 import { DatabaseManagementPage } from "./DatabaseManagement/DatabaseManagementPage";
 import { EncryptionSettingsPage } from "./Encryption/EncryptionSettingsPage";
 import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
-import { SystemConfigurationPage } from "./SystemSettings/SystemConfigurationPage";
+import { CalendarPage } from "./SystemSettings/CalendarPage";
+import { RefreshAndOrderingPage } from "./SystemSettings/RefreshAndOrderingPage";
+import { TerminologyPage } from "./SystemSettings/TerminologyPage";
 
 export type SettingsArea = "organization" | "access" | "system";
 
@@ -34,10 +36,22 @@ export class SettingsPage {
 		return new DemoDataPage(this.page);
 	}
 
-	async goToSystemConfiguration(): Promise<SystemConfigurationPage> {
-		await this.openTab("organization", "configuration-tab");
+	async goToTerminology(): Promise<TerminologyPage> {
+		await this.openTab("organization", "terminology-tab");
 
-		return new SystemConfigurationPage(this.page);
+		return new TerminologyPage(this.page);
+	}
+
+	async goToCalendar(): Promise<CalendarPage> {
+		await this.openTab("organization", "calendar-tab");
+
+		return new CalendarPage(this.page);
+	}
+
+	async goToRefreshAndOrdering(): Promise<RefreshAndOrderingPage> {
+		await this.openTab("organization", "refresh-ordering-tab");
+
+		return new RefreshAndOrderingPage(this.page);
 	}
 
 	async goToSystemInfo(): Promise<SystemInfoPage> {

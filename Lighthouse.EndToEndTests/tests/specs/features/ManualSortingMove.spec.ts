@@ -32,7 +32,7 @@ testWithFeatures(
 		const lighthousePage = overviewPage.lighthousePage;
 
 		const settingsPage = await lighthousePage.goToSettings();
-		const systemConfiguration = await settingsPage.goToSystemConfiguration();
+		const systemConfiguration = await settingsPage.goToRefreshAndOrdering();
 		await systemConfiguration.handOrderingOverToThisInstance();
 
 		const featuresPage = await lighthousePage.goToFeatures("Features");

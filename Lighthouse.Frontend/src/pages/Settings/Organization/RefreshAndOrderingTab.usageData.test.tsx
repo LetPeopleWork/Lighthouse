@@ -18,7 +18,8 @@ import {
 	createMockSystemInfoService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
-import SystemSettingsTab from "./SystemSettingsTab";
+import UsageDataTab from "../System/UsageDataTab";
+import RefreshAndOrderingTab from "./RefreshAndOrderingTab";
 
 /**
  * What the settings screen reports when somebody switches a behaviour setting, and when it reports
@@ -77,20 +78,6 @@ const theVeto = {
 	isPreview: false,
 };
 
-/**
- * A row usage data has no name for. A setting added to the product later arrives exactly like this,
- * and it reaches the census only when somebody decides it should.
- */
-const aSettingUsageDataHasNoNameFor = {
-	id: 0,
-	key: "NonPremiumExample",
-	name: "An example setting",
-	description: "Does something an example setting would do.",
-	enabled: false,
-	isPremium: false,
-	isPreview: false,
-};
-
 const theOrderingSettingSwitchedOn = {
 	name: "OptionalFeatureToggled",
 	optionalFeature: "FeatureOrder",
@@ -128,10 +115,18 @@ const MockApiServiceProvider = ({
 	);
 };
 
-const renderTheSystemSettings = () => {
+const renderTheOrderingTab = () => {
 	render(
 		<MockApiServiceProvider>
-			<SystemSettingsTab />
+			<RefreshAndOrderingTab />
+		</MockApiServiceProvider>,
+	);
+};
+
+const renderTheUsageDataTab = () => {
+	render(
+		<MockApiServiceProvider>
+			<UsageDataTab />
 		</MockApiServiceProvider>,
 	);
 };
@@ -172,7 +167,7 @@ describe("Reporting a behaviour setting being switched", () => {
 			}),
 		);
 
-		renderTheSystemSettings();
+		renderTheOrderingTab();
 		await userEvent.click(await theSwitchFor("FeatureOrdering"));
 
 		expect(mockUpdateFeature).toHaveBeenCalled();
@@ -191,7 +186,7 @@ describe("Reporting a behaviour setting being switched", () => {
 	// the direction is the new state, read from the row as it was before the
 	// click. Reporting the old one would count every switch backwards.
 	it("reports it switched back off as one more event", async () => {
-		renderTheSystemSettings();
+		renderTheOrderingTab();
 
 		await userEvent.click(await theSwitchFor("FeatureOrdering"));
 		await waitFor(() => expect(reportUsage).toHaveBeenCalledTimes(1));
@@ -207,8 +202,7 @@ describe("Reporting a behaviour setting being switched", () => {
 
 	// the veto is never reported, whichever way it goes. Switching it
 	// on could never arrive, since nothing leaves from that moment, and counting only the times it
-	// was lifted would read as people forever lifting it. The ordering switch after it is the
-	// control: only one of the two was reported.
+	// was lifted would read as people forever lifting it.
 	it.each([
 		[false, "on"],
 		[true, "off"],
@@ -217,14 +211,11 @@ describe("Reporting a behaviour setting being switched", () => {
 		async (storedAs) => {
 			givenTheseSettings({ ...theVeto, enabled: storedAs }, theOrderingSetting);
 
-			renderTheSystemSettings();
+			renderTheUsageDataTab();
 			await userEvent.click(await theSwitchFor("UsageData"));
 			await waitFor(() => expect(mockUpdateFeature).toHaveBeenCalledTimes(1));
 
-			await userEvent.click(await theSwitchFor("FeatureOrdering"));
-			await waitFor(() => expect(reportUsage).toHaveBeenCalledTimes(1));
-
-			expect(reportUsage).toHaveBeenCalledWith(theOrderingSettingSwitchedOn);
+			expect(reportUsage).not.toHaveBeenCalled();
 		},
 	);
 
@@ -234,30 +225,17 @@ describe("Reporting a behaviour setting being switched", () => {
 	it("reports nothing for a switch the server refused", async () => {
 		mockUpdateFeature.mockRejectedValueOnce(new Error("refused"));
 
-		renderTheSystemSettings();
+		renderTheOrderingTab();
 		await userEvent.click(await theSwitchFor("FeatureOrdering"));
 
-		await waitFor(() => expect(mockGetAllFeatures).toHaveBeenCalledTimes(2));
+		await waitFor(async () =>
+			expect(await theSwitchFor("FeatureOrdering")).not.toBeChecked(),
+		);
 		expect(reportUsage).not.toHaveBeenCalled();
 
 		await userEvent.click(await theSwitchFor("FeatureOrdering"));
 
 		await waitFor(() => expect(reportUsage).toHaveBeenCalledTimes(1));
-		expect(reportUsage).toHaveBeenCalledWith(theOrderingSettingSwitchedOn);
-	});
-
-	// a setting usage data has no name for sends nothing rather than a
-	// guess. The ordering switch after it is the control: only one of the two was reported.
-	it("reports nothing for a setting usage data has no name for", async () => {
-		givenTheseSettings(aSettingUsageDataHasNoNameFor, theOrderingSetting);
-
-		renderTheSystemSettings();
-		await userEvent.click(await theSwitchFor("NonPremiumExample"));
-		await waitFor(() => expect(mockUpdateFeature).toHaveBeenCalledTimes(1));
-
-		await userEvent.click(await theSwitchFor("FeatureOrdering"));
-		await waitFor(() => expect(reportUsage).toHaveBeenCalledTimes(1));
-
 		expect(reportUsage).toHaveBeenCalledWith(theOrderingSettingSwitchedOn);
 	});
 });

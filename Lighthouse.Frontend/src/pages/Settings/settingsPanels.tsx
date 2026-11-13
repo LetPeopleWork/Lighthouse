@@ -1,18 +1,24 @@
 import ArticleIcon from "@mui/icons-material/Article";
 import DatasetIcon from "@mui/icons-material/Dataset";
+import EventBusyIcon from "@mui/icons-material/EventBusy";
+import InsightsIcon from "@mui/icons-material/Insights";
 import KeyIcon from "@mui/icons-material/Key";
 import LockIcon from "@mui/icons-material/Lock";
 import ManageAccountsIcon from "@mui/icons-material/ManageAccounts";
-import SettingsSystemDaydreamIcon from "@mui/icons-material/SettingsSystemDaydream";
 import StorageIcon from "@mui/icons-material/Storage";
+import SyncIcon from "@mui/icons-material/Sync";
+import TranslateIcon from "@mui/icons-material/Translate";
 import type React from "react";
 import type { SettingsTabSlug } from "../../models/Settings/settingsAreas";
 import ApiKeysSettings from "./ApiKeys/ApiKeysSettings";
 import DatabaseManagementSettings from "./DatabaseManagement/DatabaseManagementSettings";
 import DemoDataSettings from "./DemoData/DemoDataSettings";
 import EncryptionPanel from "./Encryption/EncryptionPanel";
+import CalendarTab from "./Organization/CalendarTab";
+import RefreshAndOrderingTab from "./Organization/RefreshAndOrderingTab";
+import TerminologyTab from "./Organization/TerminologyTab";
 import RbacSettings from "./Rbac/RbacSettings";
-import SystemSettingsTab from "./System/SystemSettingsTab";
+import UsageDataTab from "./System/UsageDataTab";
 import SystemInfoSettings from "./SystemInfo/SystemInfoSettings";
 
 interface TabPresentation {
@@ -24,9 +30,11 @@ interface TabPresentation {
 export const settingsPanels: Readonly<
 	Record<SettingsTabSlug, TabPresentation>
 > = {
-	configuration: {
-		icon: <SettingsSystemDaydreamIcon />,
-		panel: <SystemSettingsTab />,
+	terminology: { icon: <TranslateIcon />, panel: <TerminologyTab /> },
+	calendar: { icon: <EventBusyIcon />, panel: <CalendarTab /> },
+	"refresh-ordering": {
+		icon: <SyncIcon />,
+		panel: <RefreshAndOrderingTab />,
 	},
 	"system-wide": { icon: <ManageAccountsIcon />, panel: <RbacSettings /> },
 	"api-keys": { icon: <KeyIcon />, panel: <ApiKeysSettings /> },
@@ -36,5 +44,6 @@ export const settingsPanels: Readonly<
 		panel: <DatabaseManagementSettings />,
 	},
 	encryption: { icon: <LockIcon />, panel: <EncryptionPanel /> },
+	"usage-data": { icon: <InsightsIcon />, panel: <UsageDataTab /> },
 	"system-info": { icon: <ArticleIcon />, panel: <SystemInfoSettings /> },
 };

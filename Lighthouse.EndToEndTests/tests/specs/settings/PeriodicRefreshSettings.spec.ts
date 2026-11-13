@@ -1,5 +1,5 @@
 import { expect, test } from "../../fixutres/LighthouseFixture";
-import type { PeriodicRefreshSettingType } from "../../models/settings/SystemSettings/SystemConfigurationPage";
+import type { PeriodicRefreshSettingType } from "../../models/settings/SystemSettings/RefreshAndOrderingPage";
 
 const settings: PeriodicRefreshSettingType[] = ["Team", "Feature"];
 
@@ -8,7 +8,7 @@ for (const settingName of settings) {
 		overviewPage,
 	}) => {
 		const settingsPage = await overviewPage.lighthousePage.goToSettings();
-		let systemSettings = await settingsPage.goToSystemConfiguration();
+		let systemSettings = await settingsPage.goToRefreshAndOrdering();
 
 		await test.step("Save New Settings", async () => {
 			await systemSettings.setInterval(13, settingName);
@@ -21,7 +21,7 @@ for (const settingName of settings) {
 		await test.step("Verify Changes were saved", async () => {
 			await overviewPage.lightHousePage.goToOverview();
 			const settingsPage = await overviewPage.lighthousePage.goToSettings();
-			systemSettings = await settingsPage.goToSystemConfiguration();
+			systemSettings = await settingsPage.goToRefreshAndOrdering();
 
 			const interval = await systemSettings.getInterval(settingName);
 			expect(interval).toBe(13);

@@ -1,30 +1,13 @@
-import path from "node:path";
 import type { Locator, Page } from "@playwright/test";
-import { BlackoutPeriodDialog } from "./BlackoutPeriodDialog";
-import { ImportDialog } from "./ImportDialog";
-import { RecurringBlackoutRuleDialog } from "./RecurringBlackoutRuleDialog";
 
 export type PeriodicRefreshSettingType = "Team" | "Feature" | "Forecast";
 
-export class SystemConfigurationPage {
+/** Settings > Organization > Refresh & ordering. */
+export class RefreshAndOrderingPage {
 	page: Page;
 
 	constructor(page: Page) {
 		this.page = page;
-	}
-
-	async addBlackoutPeriod(): Promise<BlackoutPeriodDialog> {
-		await this.page
-			.getByRole("button", { name: "Add Blackout Period" })
-			.click();
-
-		return new BlackoutPeriodDialog(this.page);
-	}
-
-	async addRecurringRule(): Promise<RecurringBlackoutRuleDialog> {
-		await this.page.getByRole("button", { name: "Add Recurring Rule" }).click();
-
-		return new RecurringBlackoutRuleDialog(this.page);
 	}
 
 	async enableFeature(featureName: string): Promise<void> {
@@ -118,42 +101,6 @@ export class SystemConfigurationPage {
 			.click();
 	}
 
-	async clickImportConfigurationButton(): Promise<void> {
-		await this.page.getByTestId("import-configuration-button").click();
-	}
-
-	async isImportConfigurationDialogOpen(): Promise<boolean> {
-		return await this.page
-			.getByTestId("import-configuration-dialog")
-			.isVisible();
-	}
-
-	async closeImportConfigurationDialog(): Promise<void> {
-		await this.page.getByRole("button", { name: "Cancel" }).click();
-	}
-
-	async exportConfiguration(): Promise<string> {
-		const downloadPromise = this.page.waitForEvent("download");
-
-		await this.page
-			.getByRole("button", { name: "Export Configuration" })
-			.click();
-
-		const download = await downloadPromise;
-		const fileName = download.suggestedFilename();
-		const filePath = path.join(process.cwd(), "temp-downloads", fileName);
-		await download.saveAs(filePath);
-
-		return filePath;
-	}
-
-	async importConfiguration(): Promise<ImportDialog> {
-		await this.page
-			.getByRole("button", { name: "Import Configuration" })
-			.click();
-		return new ImportDialog(this.page);
-	}
-
 	get teamRefreshSettings(): Locator {
 		return this.page.getByText("Team RefreshInterval (Minutes");
 	}
@@ -166,15 +113,5 @@ export class SystemConfigurationPage {
 		return this.page.getByText("Behaviour SettingsNameDescriptionEnabled", {
 			exact: false,
 		});
-	}
-
-	get terminologyConfiguration(): Locator {
-		return this.page.getByText("Terminology ConfigurationUse");
-	}
-
-	get blackoutPeriodsSection(): Locator {
-		return this.page.getByText(
-			"Blackout Periods & Recurring RulesDefine global",
-		);
 	}
 }

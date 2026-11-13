@@ -21,7 +21,7 @@ import {
 	createMockSystemInfoService,
 	createMockTerminologyService,
 } from "../../../tests/MockApiServiceProvider";
-import SystemSettingsTab from "./SystemSettingsTab";
+import RefreshAndOrderingTab from "./RefreshAndOrderingTab";
 
 /**
  * The whole way from the switch to what this browser posts: the real consent answer, the real
@@ -90,7 +90,7 @@ const renderTheSystemSettingsAsTheApplicationDoes = (
 					<UsageDataConsentProvider>
 						<TerminologyProvider>
 							<TheDetector />
-							<SystemSettingsTab />
+							<RefreshAndOrderingTab />
 						</TerminologyProvider>
 					</UsageDataConsentProvider>
 				</ApiServiceContext.Provider>

@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { SystemConfigurationPage } from "./SystemConfigurationPage";
+import { CalendarPage } from "./CalendarPage";
 
 export class BlackoutPeriodDialog {
 	page: Page;
@@ -18,8 +18,8 @@ export class BlackoutPeriodDialog {
 		await this.page.getByLabel("End Date").fill(endDate);
 	}
 
-	async saveBlackoutPeriod(): Promise<SystemConfigurationPage> {
+	async saveBlackoutPeriod(): Promise<CalendarPage> {
 		await this.page.getByRole("button", { name: "Save" }).click();
-		return new SystemConfigurationPage(this.page);
+		return new CalendarPage(this.page);
 	}
 }

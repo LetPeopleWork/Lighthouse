@@ -129,7 +129,7 @@ new PerformanceObserver((list) => {
 }).observe({ type: "paint", buffered: true });
 document.addEventListener("click", () => { if (probe.click === undefined) probe.click = performance.now(); }, true);
 const watched = {
-	settingsUsable: '[data-testid="configuration-panel"] [data-testid^="refresh-interval-"]',
+	settingsUsable: '[data-testid="refresh-ordering-panel"] [data-testid^="refresh-interval-"]',
 	firstFeatureRow: '.MuiDataGrid-row[data-rowindex]',
 };
 const check = () => {

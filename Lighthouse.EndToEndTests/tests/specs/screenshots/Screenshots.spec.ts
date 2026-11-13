@@ -98,25 +98,27 @@ test("Take @screenshot of the system configuration page", async ({
 	overviewPage,
 }) => {
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
-	const systemSettings = await settingsPage.goToSystemConfiguration();
+	const terminology = await settingsPage.goToTerminology();
 
-	await takePageScreenshot(systemSettings.page, "settings/configuration.png");
+	await takePageScreenshot(terminology.page, "settings/configuration.png");
 	await takeElementScreenshot(
-		systemSettings.terminologyConfiguration,
+		terminology.terminologyConfiguration,
 		"settings/terminologyConfiguration.png",
 	);
+
+	const refreshAndOrdering = await settingsPage.goToRefreshAndOrdering();
 	await takeElementScreenshot(
-		systemSettings.teamRefreshSettings,
+		refreshAndOrdering.teamRefreshSettings,
 		"settings/teamrefreshsettings.png",
 	);
 	await takeElementScreenshot(
-		systemSettings.featureRefreshSettings,
+		refreshAndOrdering.featureRefreshSettings,
 		"settings/featurerefreshsettings.png",
 	);
 
-	if (await systemSettings.behaviourSettings.isVisible()) {
+	if (await refreshAndOrdering.behaviourSettings.isVisible()) {
 		await takeElementScreenshot(
-			systemSettings.behaviourSettings,
+			refreshAndOrdering.behaviourSettings,
 			"settings/optionalfeatures.png",
 		);
 	}
@@ -218,7 +220,7 @@ test("Take @screenshot of blackout periods and recurring rules", async ({
 	overviewPage,
 }) => {
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
-	let systemSettings = await settingsPage.goToSystemConfiguration();
+	let systemSettings = await settingsPage.goToCalendar();
 
 	const startDate = formatLocalDate(new Date());
 	const endDate = formatLocalDate(new Date(Date.now() + 24 * 60 * 60 * 1000));
