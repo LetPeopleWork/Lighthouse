@@ -77,13 +77,13 @@
 "counters": {
 "D": 12,
 "E": 4,
-"F": 166,
+"F": 178,
 "K": 9,
 "L": 4,
 "P": 4,
 "S": 2,
 "T": 2,
-"Y": 5
+"Y": 6
 },
 "design": {
 "paradigm": "object_oriented",
@@ -501,13 +501,13 @@
 "S1": {
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportWindowBoundaryScenarios.cs",
 "public_oracle": {
-"expected": "F113",
-"falsifier": "F114",
+"expected": "F169",
+"falsifier": "F170",
 "promises": [
 "P1",
 "P2"
 ],
-"stimulus": "F112"
+"stimulus": "F168"
 },
 "records": {
 "architectural_tests": [
@@ -517,6 +517,9 @@
 "obligation": "F123",
 "oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.cs"
 }
+],
+"decisions": [
+"F171"
 ],
 "impact": [
 {
@@ -554,6 +557,12 @@
 "kind": "host-base",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAcceptanceTest.cs:35",
 "reason": "F121"
+},
+{
+"decision": "Changed",
+"kind": "test-helper",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs:20",
+"reason": "F173"
 }
 ],
 "not_applicable": [
@@ -568,9 +577,30 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Reports/ReportsAtThePortTest.cs:1",
 "reason": "F115",
 "symbol": "ReportsAtThePortTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs:20",
+"reason": "F172",
+"symbol": "PortFixtureLifetimes"
+}
+],
+"risks": [
+{
+"allowed": "F176",
+"forbidden": "F177",
+"id": "Y6",
+"kind": "Bypass",
+"owner": "acceptance-designer",
+"preserved": "F175",
+"residue": "F178",
+"source": "F174"
 }
 ]
 },
+"supports": [
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs"
+],
 "targets": [
 {
 "change": "Create",
@@ -586,11 +616,16 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
 "reason": "F111"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimes.cs",
+"reason": "F167"
 }
 ],
 "verification": [
 "env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter FullyQualifiedName~ReportWindowBoundaryScenarios",
-"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~RealityCheckWireContractTest|FullyQualifiedName~ReportWindowPolicyTest'",
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~RealityCheckWireContractTest|FullyQualifiedName~ReportWindowPolicyTest|FullyQualifiedName~PortFixtureLifetimesTest'",
 "env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken pwsh Lighthouse.Backend/Test-Fast.ps1"
 ]
 },
@@ -761,9 +796,6 @@
 "F11": "The report-window class runs at the service port on a new Reports port base",
 "F110": "PortFixtures gains the ReportsAtThePortTest case, so its registrations are compared with the host's",
 "F111": "Remove the ReportWindowBoundaryScenarios line (line 183) in the move commit",
-"F112": "Run ReportWindowBoundaryScenarios at the port: for each of the 15 rows of reportWindowBoundaries.json, set up Team Lightspeed keeping finished Work Items for 365 days (or for ever), read IReportQueries.Templates and call IReportCommands.Create with the row's window; run the port-fixture lifetime check and the host-use guard",
-"F113": "15 rows pass with the ids they had on the host; Templates gives today 2026-10-02, the earliest start 2025-10-02 (none for a Team keeping every finished Work Item) and a shortest window of 14 days; rows without a refusal are Done, rows with one are Refused with the table's code; the sorted id lists before and after are equal; HostUsersStillToMove no longer names the class; the ReportsAtThePortTest port-fixture case passes",
-"F114": "ReportWindowPolicy.MinimumLengthDays 14 to 15 turns A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days) red; a Reports registration given another lifetime than on the host turns the ReportsAtThePortTest port-fixture case red; putting the line back on HostUsersStillToMove, or the class starting a host, turns TestHostUseGuardTest red",
 "F115": "No Reports port base exists; ServicePortHarness users are the Reality Check, Refinement and System-wide-access bases, none registers IReportQueries or IReportCommands",
 "F116": "New file; no existing consumer",
 "F117": "Base class and steps move from the host to the port; namespace, class and method names unchanged, so the 15 ids stay",
@@ -821,7 +853,19 @@
 "F164": "The class is not named on that list and starts no web host, and the guard passes",
 "F165": "The suite no longer starts a host for the report window rows",
 "F166": "a class that drives the port but keeps a host fixture elsewhere in its hierarchy is caught by the guard; still accepted is a stale ratchet line for a class that no longer exists, which the guard already refuses",
+"F167": "The port-fixture lifetime check learns the two host registration shapes the Reports port base meets, a factory forwarding to another registration and several registrations of one service type, each matched only under the narrow rule of the S1 decision, so a lookalike registration at the port is still reported",
+"F168": "Run ReportWindowBoundaryScenarios at the port: for each of the 15 rows of reportWindowBoundaries.json, set up Team Lightspeed keeping finished Work Items for 365 days (or for ever), read IReportQueries.Templates and call IReportCommands.Create with the row's window; run the port-fixture lifetime check and the host-use guard; run PortFixtureLifetimesTest, which hands PortFixtureLifetimes host registrations shaped as Program registers them (IPortfolioRepository by type, IRepository<Portfolio> as a factory, ReportRepository by type, IReportReader and IReportWriter as factories, four IReportMetric types) and port registrations that differ in one planted way per row",
+"F169": "15 rows pass with the ids they had on the host; Templates gives today 2026-10-02, the earliest start 2025-10-02 (none for a Team keeping every finished Work Item) and a shortest window of 14 days; rows without a refusal are Done, rows with one are Refused with the table's code; the sorted id lists before and after are equal; HostUsersStillToMove no longer names the class; the ReportsAtThePortTest port-fixture case passes; in PortFixtureLifetimesTest the port registering as the host does gives no difference, and each planted row gives exactly one difference naming the planted service",
 "F17": "Port observation of each window row: ReportTemplatesRead.Today and EarliestStart written as yyyy-MM-dd equal the table bounds (EarliestStart null for a Team keeping every finished Work Item), MinimumLengthDays equals 14; a row without a refusal answers ReportOutcomeStatus.Done with a report; a row with a refusal answers ReportOutcomeStatus.Refused with Code equal to the table refusal. HTTP 400 and the JSON text are not observable at the port and need no new wire row: today, earliestStart and minimumLengthDays on the wire are pinned by the hosted Slice01TeamReportScenarios and CreateForSeveralTeamsScenarios, a null earliestStart by Slice02ThenInThePastScenarios, and the 400 with each of the seven window refusal codes by ThenItIsRefusedFor in Slice01 (then-too-long, now-too-long), Slice02 (then-too-short, then-ends-in-the-future, then-before-cutoff) and Slice07NowLengthScenarios (now-too-short, now-before-cutoff), all of which stay on the host. The role check of the POST stays pinned by the hosted classes; the port has none.",
+"F170": "ReportWindowPolicy.MinimumLengthDays 14 to 15 turns A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days) red; a Reports registration given another lifetime than on the host turns the ReportsAtThePortTest port-fixture case red; putting the line back on HostUsersStillToMove, or the class starting a host, turns TestHostUseGuardTest red; planted lookalikes each give a difference naming the service: IRepository<Portfolio> registered as the type PortfolioRepository, IReportReader registered as the type ReportRepository, IRepository<Portfolio> as a factory with IPortfolioRepository missing at the port, and an IReportMetric type the host does not register; restoring the crafter's unconditional forwarder skip turns the IRepository<Portfolio> lookalike row red",
+"F171": "PortFixtureLifetimes matches a service the host builds with a factory forwarding to another registration only through a declared forwarder list naming each service and its forward target: IRepository<Portfolio> to IPortfolioRepository, IReportReader and IReportWriter to ReportRepository. Such a service matches only when the port registers it with a factory too (no implementation type, no instance), with the host's lifetime, and the port registers the forward target with the host's lifetime; the forward target is then compared by what is built like any other registration. A forwarder registered at the port by type or by instance, or one whose forward target the port does not register, is reported. A service type the host registers more than once (every IReportMetric) matches only when the port's implementation type is among the host's registrations of that type; with one host registration the last-registration comparison applies unchanged. What a port factory returns is not observed. The rules live in PortFixtureLifetimes, the one owner of the comparison; the forwarder list is a static member beside StandInsBuiltOnPurpose; the Reality Check and Refinement fixtures register no forwarder and no repeated service type, so all four fixture cases stay green.",
+"F172": "The one owner of the comparison of a port fixture's registrations with the host's; every port fixture case reads it, so the two new registration shapes belong here and nowhere else",
+"F173": "Gains the forwarder and multi-registration rules; its consumers are RealityCheckWireContractTest (four port fixture cases plus the before-the-swaps test reading OnTheHost and WhatIsBuilt, both unchanged in signature) and the new planted-registration support; the Reality Check and Refinement fixtures register no forwarder and no repeated service type, so their outcome is unchanged",
+"F174": "Assumption negated: a port factory for a declared forwarder returns the forward target",
+"F175": "A forwarder registered at the port by type or instance, or without its forward target, is reported",
+"F176": "A port factory for a forwarder passes on lifetime and the presence of its forward target",
+"F177": "A lookalike type registration of a forwarder passing the check",
+"F178": "What a port factory returns is not observed; a factory returning a lookalike would pass. Observing it needs resolving the port container, which needs a database per check; not built",
 "F18": "No builder and no PortGivensGuardTest-like guard for the Reports port base: its only Team set-up is one ATeam step in the base itself, used by one class, so no builder rule exists to guard. A shared Reports builder is built when a second Reports class moves to the port.",
 "F19": "The repository-root lookup that anchors the shared table (Lighthouse.sln, then its parent) is needed at the port. ReportsAcceptanceTest.RepositoryRoot stays unchanged and is not reachable from the port base, so ReportsAtThePortTest or the moved class owns its own lookup. This repeats a lookup that already exists in several test classes; folding them is outside this Story.",
 "F2": "The report-window class proves its 15 boundary rows without a web host, and the Refinement need rules are proven once, so the backend Integration tier is faster and no rule loses its test",

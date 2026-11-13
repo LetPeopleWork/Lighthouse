@@ -755,32 +755,40 @@ Extend
 Remove the ReportWindowBoundaryScenarios line (line 183) in the move commit
 ```
 
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimes\.cs
+
+Extend
+
+```text
+The port-fixture lifetime check learns the two host registration shapes the Reports port base meets, a factory forwarding to another registration and several registrations of one service type, each matched only under the narrow rule of the S1 decision, so a lookalike registration at the port is still reported
+```
+
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Reports\/ReportWindowBoundaryScenarios\.cs
 
 #### Verification
 
 ```text
 env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter FullyQualifiedName~ReportWindowBoundaryScenarios
-env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~RealityCheckWireContractTest|FullyQualifiedName~ReportWindowPolicyTest'
+env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~TestHostUseGuardTest|FullyQualifiedName~RealityCheckWireContractTest|FullyQualifiedName~ReportWindowPolicyTest|FullyQualifiedName~PortFixtureLifetimesTest'
 env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken pwsh Lighthouse.Backend/Test-Fast.ps1
 ```
 
 #### Supports
 
-None.
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimesTest\.cs
 
 #### Public oracle
 
 ```text
-Run ReportWindowBoundaryScenarios at the port: for each of the 15 rows of reportWindowBoundaries.json, set up Team Lightspeed keeping finished Work Items for 365 days (or for ever), read IReportQueries.Templates and call IReportCommands.Create with the row's window; run the port-fixture lifetime check and the host-use guard
+Run ReportWindowBoundaryScenarios at the port: for each of the 15 rows of reportWindowBoundaries.json, set up Team Lightspeed keeping finished Work Items for 365 days (or for ever), read IReportQueries.Templates and call IReportCommands.Create with the row's window; run the port-fixture lifetime check and the host-use guard; run PortFixtureLifetimesTest, which hands PortFixtureLifetimes host registrations shaped as Program registers them (IPortfolioRepository by type, IRepository<Portfolio> as a factory, ReportRepository by type, IReportReader and IReportWriter as factories, four IReportMetric types) and port registrations that differ in one planted way per row
 ```
 
 ```text
-15 rows pass with the ids they had on the host; Templates gives today 2026-10-02, the earliest start 2025-10-02 (none for a Team keeping every finished Work Item) and a shortest window of 14 days; rows without a refusal are Done, rows with one are Refused with the table's code; the sorted id lists before and after are equal; HostUsersStillToMove no longer names the class; the ReportsAtThePortTest port-fixture case passes
+15 rows pass with the ids they had on the host; Templates gives today 2026-10-02, the earliest start 2025-10-02 (none for a Team keeping every finished Work Item) and a shortest window of 14 days; rows without a refusal are Done, rows with one are Refused with the table's code; the sorted id lists before and after are equal; HostUsersStillToMove no longer names the class; the ReportsAtThePortTest port-fixture case passes; in PortFixtureLifetimesTest the port registering as the host does gives no difference, and each planted row gives exactly one difference naming the planted service
 ```
 
 ```text
-ReportWindowPolicy.MinimumLengthDays 14 to 15 turns A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days) red; a Reports registration given another lifetime than on the host turns the ReportsAtThePortTest port-fixture case red; putting the line back on HostUsersStillToMove, or the class starting a host, turns TestHostUseGuardTest red
+ReportWindowPolicy.MinimumLengthDays 14 to 15 turns A_window_at_an_edge_is_answered_as_the_table_says(a Then of 14 days) red; a Reports registration given another lifetime than on the host turns the ReportsAtThePortTest port-fixture case red; putting the line back on HostUsersStillToMove, or the class starting a host, turns TestHostUseGuardTest red; planted lookalikes each give a difference naming the service: IRepository<Portfolio> registered as the type PortfolioRepository, IReportReader registered as the type ReportRepository, IRepository<Portfolio> as a factory with IPortfolioRepository missing at the port, and an IReportMetric type the host does not register; restoring the crafter's unconditional forwarder skip turns the IRepository<Portfolio> lookalike row red
 ```
 
 ##### Promises
@@ -797,7 +805,9 @@ None.
 
 ##### Decisions
 
-None.
+```text
+PortFixtureLifetimes matches a service the host builds with a factory forwarding to another registration only through a declared forwarder list naming each service and its forward target: IRepository<Portfolio> to IPortfolioRepository, IReportReader and IReportWriter to ReportRepository. Such a service matches only when the port registers it with a factory too (no implementation type, no instance), with the host's lifetime, and the port registers the forward target with the host's lifetime; the forward target is then compared by what is built like any other registration. A forwarder registered at the port by type or by instance, or one whose forward target the port does not register, is reported. A service type the host registers more than once (every IReportMetric) matches only when the port's implementation type is among the host's registrations of that type; with one host registration the last-registration comparison applies unchanged. What a port factory returns is not observed. The rules live in PortFixtureLifetimes, the one owner of the comparison; the forwarder list is a static member beside StandInsBuiltOnPurpose; the Reality Check and Refinement fixtures register no forwarder and no repeated service type, so all four fixture cases stay green.
+```
 
 ##### Constraints
 
@@ -813,6 +823,16 @@ CreateNew
 
 ```text
 No Reports port base exists; ServicePortHarness users are the Reality Check, Refinement and System-wide-access bases, none registers IReportQueries or IReportCommands
+```
+
+PortFixtureLifetimes
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimes\.cs\:20
+
+Extend
+
+```text
+The one owner of the comparison of a port fixture's registrations with the host's; every port fixture case reads it, so the two new registration shapes belong here and nowhere else
 ```
 
 ##### Impact
@@ -877,6 +897,16 @@ UnchangedCompatible
 Loses one derived class; its 17 other users and its members are unchanged
 ```
 
+test\-helper
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimes\.cs\:20
+
+Changed
+
+```text
+Gains the forwarder and multi-registration rules; its consumers are RealityCheckWireContractTest (four port fixture cases plus the before-the-swaps test reading OnTheHost and WhatIsBuilt, both unchanged in signature) and the new planted-registration support; the Reality Check and Refinement fixtures register no forwarder and no repeated service type, so their outcome is unchanged
+```
+
 ##### Agreement
 
 None.
@@ -931,7 +961,31 @@ None.
 
 ##### Risks
 
-None.
+###### Y6
+
+Bypass
+
+```text
+Assumption negated: a port factory for a declared forwarder returns the forward target
+```
+
+```text
+A forwarder registered at the port by type or instance, or without its forward target, is reported
+```
+
+```text
+A port factory for a forwarder passes on lifetime and the presence of its forward target
+```
+
+```text
+A lookalike type registration of a forwarder passing the check
+```
+
+```text
+What a port factory returns is not observed; a factory returning a lookalike would pass. Observing it needs resolving the port container, which needs a database per check; not built
+```
+
+acceptance\-designer
 
 ##### Architectural tests
 
