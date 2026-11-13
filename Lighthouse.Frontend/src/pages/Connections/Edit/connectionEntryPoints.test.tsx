@@ -34,6 +34,7 @@ import {
 	createMockWorkTrackingSystemService,
 } from "../../../tests/MockApiServiceProvider";
 import OverviewDashboard from "../../Overview/OverviewDashboard";
+import ConnectionsSettings from "../../Settings/Connections/ConnectionsSettings";
 import { settingsRoutes } from "../../Settings/settingsRoutes";
 
 /**
@@ -220,7 +221,8 @@ const anInstanceWhere = (
 ) => {
 	const rbacService = createMockRbacService();
 	vi.mocked(rbacService.getAuthorizationSummary).mockResolvedValue({
-		isRbacEnabled: false,
+		// Only a reader exists with access control on; an instance without it has no readers.
+		isRbacEnabled: !isSystemAdmin,
 		isSystemAdmin,
 		canCreateTeam: isSystemAdmin,
 		canCreatePortfolio: isSystemAdmin,
@@ -390,6 +392,9 @@ describe("every way to a connection leads to System, Connections", () => {
 			).toBeVisible();
 			await theyAreOn(TheEditPageOfNorthwindJira);
 			expect(
+				screen.getByRole("link", { name: "Back to Overview" }),
+			).toHaveAttribute("href", "/");
+			expect(
 				screen.queryByTestId("settings-area-page"),
 				"A reader must see the no-access alert on the connection page, not be redirected into an area.",
 			).not.toBeInTheDocument();
@@ -475,6 +480,41 @@ describe("the entry points on the other pages", () => {
 		localStorage.clear();
 	});
 
+	describe("System, Connections", () => {
+		const theConnectionsTabListing = () =>
+			inTheApp(
+				anInstanceWhere({ workTrackingSystemService: theServer({}) }),
+				aQueryClient(),
+				<Routes>
+					<Route path="/" element={<ConnectionsSettings />} />
+					{settingsRoutes()}
+				</Routes>,
+				"/",
+			);
+
+		it("Connect {Work Tracking System} opens the new connection page under System", async () => {
+			theConnectionsTabListing();
+
+			fireEvent.click(
+				await screen.findByRole("button", { name: "Connect Data Source" }),
+			);
+
+			expect(
+				await screen.findByText("Create Data Source Connection"),
+			).toBeVisible();
+			await theyAreOn(TheNewConnectionPage);
+		});
+
+		it("a connection's Edit opens its edit page under System", async () => {
+			theConnectionsTabListing();
+
+			fireEvent.click(await screen.findByTestId("edit-connection-button"));
+
+			expect(await screen.findByDisplayValue(NorthwindJira)).toBeVisible();
+			await theyAreOn(TheEditPageOfNorthwindJira);
+		});
+	});
+
 	it("the onboarding stepper offers to connect a Data Source and opens the new connection page under System", async () => {
 		inTheApp(
 			anInstanceWhere({}),
@@ -513,7 +553,10 @@ describe("the entry points on the other pages", () => {
 	});
 
 	describe("the Overview", () => {
-		const theOverviewOf = (connections: IWorkTrackingSystemConnection[]) => {
+		const theOverviewOf = (
+			connections: IWorkTrackingSystemConnection[],
+			isSystemAdmin = true,
+		) => {
 			const server = theServer({ configured: connections });
 			const portfolioService = createMockPortfolioService();
 			vi.mocked(portfolioService.getPortfolios).mockResolvedValue([]);
@@ -525,19 +568,22 @@ describe("the entry points on the other pages", () => {
 				activeCount: 0,
 			});
 			inTheApp(
-				anInstanceWhere({
-					workTrackingSystemService: server,
-					portfolioService,
-					teamService,
-					updateSubscriptionService: updates,
-					licensingService: {
-						getLicenseStatus: vi
-							.fn()
-							.mockResolvedValue({ canUsePremiumFeatures: true }),
-						importLicense: vi.fn(),
-						clearLicense: vi.fn(),
+				anInstanceWhere(
+					{
+						workTrackingSystemService: server,
+						portfolioService,
+						teamService,
+						updateSubscriptionService: updates,
+						licensingService: {
+							getLicenseStatus: vi
+								.fn()
+								.mockResolvedValue({ canUsePremiumFeatures: true }),
+							importLicense: vi.fn(),
+							clearLicense: vi.fn(),
+						},
 					},
-				}),
+					isSystemAdmin,
+				),
 				aQueryClient(),
 				<Routes>
 					<Route path="/" element={<OverviewDashboard />} />
@@ -555,21 +601,24 @@ describe("the entry points on the other pages", () => {
 				name: /Settings\s*›\s*System\s*›\s*Connections/,
 			});
 
-		const theLineAsksInTheirWords = () =>
+		const theLineAsksInTheirWords = (link: HTMLElement) => {
 			expect(
-				document.body,
-				"The line should ask for a connection in this instance's own word.",
+				link.parentElement,
+				"The line holding the link should ask for a connection in this instance's own word.",
 			).toHaveTextContent(/Connect a Data Source first:/);
+			expect(
+				link.closest("[role='tooltip'], .MuiTooltip-popper"),
+				"The link must sit in the text line, not inside a hover tooltip.",
+			).toBeNull();
+		};
 
 		it("with no connection, a line under the disabled Add buttons says where to connect one, with the stepper showing and after it is put away", async () => {
 			theOverviewOf([]);
 			await screen.findByTestId("onboarding-stepper");
 
-			expect(await theLineSayingWhereToConnect()).toHaveAttribute(
-				"href",
-				TheConnectionsTab,
-			);
-			theLineAsksInTheirWords();
+			const line = await theLineSayingWhereToConnect();
+			expect(line).toHaveAttribute("href", TheConnectionsTab);
+			theLineAsksInTheirWords(line);
 			expect(screen.getByRole("button", { name: "Add Squad" })).toBeDisabled();
 
 			await theyDismissTheStepper();
@@ -578,6 +627,21 @@ describe("the entry points on the other pages", () => {
 				"href",
 				TheConnectionsTab,
 			);
+		});
+
+		it("a reader, who cannot open System, Connections, is not offered a link to it", async () => {
+			theOverviewOf([], false);
+			await waitFor(() =>
+				expect(
+					screen.queryByTestId("loading-animation-progress-indicator"),
+				).not.toBeInTheDocument(),
+			);
+
+			expect(
+				screen.queryByRole("link", {
+					name: /Settings\s*›\s*System\s*›\s*Connections/,
+				}),
+			).not.toBeInTheDocument();
 		});
 
 		it("once a connection exists the line is gone", async () => {

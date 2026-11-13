@@ -1327,11 +1327,11 @@ None.
 P5
 
 ```text
-A reader without system-admin access opens the old edit link
+A reader (access control on, not a System Admin) opens the old edit link
 ```
 
 ```text
-They end on the connection page address under System and see the no-access alert; they are not moved into a settings area
+They end on the connection page address under System and see the no-access alert whose Back to Overview link goes to the Overview; they are not moved into a settings area
 ```
 
 ```text
@@ -1345,7 +1345,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:a reader sent along an old link is still told they have no permission\, not moved elsewhere
 
 ```text
-The old link redirects a reader to the settings area resolver, which silently sends them to another tab
+The old link redirects a reader to the settings area resolver, which silently sends them to another tab; App keeping its own old routes is excluded because the source scan forbids App holding a connections address
 ```
 
 ###### Obligations
@@ -1507,15 +1507,15 @@ None.
 P5
 
 ```text
-The Overview with no connection, both with the onboarding stepper showing and with it put away; and the same Overview with a connection
+The Overview with no connection as a System Admin, with the stepper showing and put away; with a connection; and as a reader with access control on
 ```
 
 ```text
-With none, a line under the disabled Add buttons reads Connect a {Work Tracking System} first: followed by a link Settings, System, Connections to the tab; with one, no such link
+A System Admin with none sees, in a text line under the disabled Add buttons and not in a tooltip, Connect a {Work Tracking System} first: followed by the link Settings, System, Connections to the tab; with a connection, or as a reader, no such link
 ```
 
 ```text
-Priya always learns where to connect a first source, whether or not the stepper is showing
+Priya always learns where to connect a first source; a reader is not pointed at a page they cannot open
 ```
 
 ##### Disposition
@@ -1525,7 +1525,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:the Overview
 
 ```text
-The line is a tooltip only, hides while the stepper shows, uses the fixed word Connection, or shows even when a connection exists
+The line is a tooltip only, hides while the stepper shows, uses the fixed word Connection, shows when a connection exists, or is shown to a reader
 ```
 
 ###### Obligations
@@ -1685,6 +1685,36 @@ The allow-list stays non-empty, so old connection addresses survive in the stepp
 ###### Obligations
 
 
+
+##### Covers
+
+P5
+
+```text
+Priya presses Connect {Work Tracking System} on System, Connections, and separately presses Edit on a listed connection
+```
+
+```text
+Connect opens the new connection page and Edit opens that connection's edit page, both under Settings, System, Connections
+```
+
+```text
+From the connections list itself, adding and fixing a connection stay under System
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:System\, Connections
+
+```text
+The tab's Connect and Edit still point at the old connection addresses, which then land nowhere because the old routes are redirects only for bookmarks and the scan forbids the old literals in App
+```
+
+###### Obligations
+
+None.
 
 ## Expectations
 

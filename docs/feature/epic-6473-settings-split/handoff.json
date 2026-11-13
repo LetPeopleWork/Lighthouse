@@ -696,11 +696,11 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F503",
+"still_passes_if": "F562",
 "test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::a reader sent along an old link is still told they have no permission, not moved elsewhere"
 },
-"expected": "F501",
-"stimulus": "F500",
+"expected": "F561",
+"stimulus": "F560",
 "user_result": "F502"
 },
 {
@@ -774,12 +774,12 @@
 ],
 "disposition": {
 "kind": "Tested",
-"still_passes_if": "F559",
+"still_passes_if": "F566",
 "test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::the Overview"
 },
-"expected": "F557",
-"stimulus": "F556",
-"user_result": "F558"
+"expected": "F564",
+"stimulus": "F563",
+"user_result": "F565"
 },
 {
 "covers": [
@@ -865,6 +865,19 @@
 "expected": "F553",
 "stimulus": "F552",
 "user_result": "F554"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F570",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::System, Connections"
+},
+"expected": "F568",
+"stimulus": "F567",
+"user_result": "F569"
 }
 ]
 },
@@ -873,7 +886,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 559,
+"F": 570,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -3374,10 +3387,7 @@
 "F499": "The old link redirects but the wizard is still mounted only at the old address, or the Back link is missing on the create page",
 "F5": "System shows a License tab with the license status, import and clear, and the license links in the connection forms open it",
 "F50": "Existing ids kept where a tab survives; new ids added to the app and the POMs together; configuration ids retire in S2",
-"F500": "A reader without system-admin access opens the old edit link",
-"F501": "They end on the connection page address under System and see the no-access alert; they are not moved into a settings area",
 "F502": "A reader is told they have no permission instead of being bounced elsewhere",
-"F503": "The old link redirects a reader to the settings area resolver, which silently sends them to another tab",
 "F504": "Priya cancels the connection wizard on its first step",
 "F505": "She is on Settings, System, Connections and no connection was created",
 "F506": "Backing out of adding a connection returns her to the connections list, not the Overview",
@@ -3423,12 +3433,19 @@
 "F553": "Only the definition and the routes hold such an address; needs the earlier allow-list of connection addresses emptied",
 "F554": "A missed link is a failing build",
 "F555": "The allow-list stays non-empty, so old connection addresses survive in the stepper, Task Manager or App",
-"F556": "The Overview with no connection, both with the onboarding stepper showing and with it put away; and the same Overview with a connection",
-"F557": "With none, a line under the disabled Add buttons reads Connect a {Work Tracking System} first: followed by a link Settings, System, Connections to the tab; with one, no such link",
-"F558": "Priya always learns where to connect a first source, whether or not the stepper is showing",
-"F559": "The line is a tooltip only, hides while the stepper shows, uses the fixed word Connection, or shows even when a connection exists",
 "F56": "ILicensingService.getLicenseStatus via useLicenseStatusQuery",
+"F560": "A reader (access control on, not a System Admin) opens the old edit link",
+"F561": "They end on the connection page address under System and see the no-access alert whose Back to Overview link goes to the Overview; they are not moved into a settings area",
+"F562": "The old link redirects a reader to the settings area resolver, which silently sends them to another tab; App keeping its own old routes is excluded because the source scan forbids App holding a connections address",
+"F563": "The Overview with no connection as a System Admin, with the stepper showing and put away; with a connection; and as a reader with access control on",
+"F564": "A System Admin with none sees, in a text line under the disabled Add buttons and not in a tooltip, Connect a {Work Tracking System} first: followed by the link Settings, System, Connections to the tab; with a connection, or as a reader, no such link",
+"F565": "Priya always learns where to connect a first source; a reader is not pointed at a page they cannot open",
+"F566": "The line is a tooltip only, hides while the stepper shows, uses the fixed word Connection, shows when a connection exists, or is shown to a reader",
+"F567": "Priya presses Connect {Work Tracking System} on System, Connections, and separately presses Edit on a listed connection",
+"F568": "Connect opens the new connection page and Edit opens that connection's edit page, both under Settings, System, Connections",
+"F569": "From the connections list itself, adding and fixing a connection stay under System",
 "F57": "IOptionalFeatureService via useBehaviourSettings",
+"F570": "The tab's Connect and Edit still point at the old connection addresses, which then land nowhere because the old routes are redirects only for bookmarks and the scan forbids the old literals in App",
 "F58": "pages -> components/hooks/models/services; components may import models but not pages; the definition in models imports nothing from them; panels moved unchanged keep their own service ports",
 "F59": "Access read fails",
 "F6": "System shows a Connections tab, first, with the list, reconnect banners, empty state and a Connect button, and the Overview no longer holds the connections section",
