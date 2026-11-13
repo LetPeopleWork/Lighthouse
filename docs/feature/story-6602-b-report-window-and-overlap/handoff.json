@@ -103,7 +103,7 @@
 "counters": {
 "D": 12,
 "E": 4,
-"F": 186,
+"F": 187,
 "K": 9,
 "L": 4,
 "P": 4,
@@ -545,7 +545,8 @@
 }
 ],
 "decisions": [
-"F171"
+"F171",
+"F187"
 ],
 "impact": [
 {
@@ -625,7 +626,7 @@
 ]
 },
 "supports": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs"
+"Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortFixtureLifetimesTest.cs"
 ],
 "targets": [
 {
@@ -901,6 +902,7 @@
 "F184": "Each planted row gives exactly one difference, and that difference names the planted service",
 "F185": "A Reports port that only looks like the host is reported, naming the service to fix, so a scenario cannot pass on state the product never shares",
 "F186": "A check that skips every declared forwarder unconditionally still reports the unregistered metric type but misses the three forwarder rows; a check that reports a lookalike without naming the service would fail the name assertion; a check that reports two differences for one plant would fail the count",
+"F187": "The planted check PortFixtureLifetimesTest lives under Tests/Architecture (namespace Lighthouse.Backend.Tests.Architecture), beside the other architecture guards, because Tests/Contracts holds only wire contracts (fixtures on WireContractTest) and the check starts no host. PortFixtureLifetimes.cs stays in Contracts/PortFixtures.",
 "F19": "The repository-root lookup that anchors the shared table (Lighthouse.sln, then its parent) is needed at the port. ReportsAcceptanceTest.RepositoryRoot stays unchanged and is not reachable from the port base, so ReportsAtThePortTest or the moved class owns its own lookup. This repeats a lookup that already exists in several test classes; folding them is outside this Story.",
 "F2": "The report-window class proves its 15 boundary rows without a web host, and the Refinement need rules are proven once, so the backend Integration tier is faster and no rule loses its test",
 "F20": "Slice05NeedAndVerdictTest rows dropped, each mapped to the NeedOverOneCycleTest row with the same Givens in the same order and an assertion superset: (1) Below_range_says_how_many_are_ready_against_the_range_the_Team_is_likely_to_pull maps to The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after (Gravity with GR-058 and GR-059 tagged ready under the Ready rule, one finished a day, refines on Thursdays, today 2 Oct 2026, the 3/5/6/8/10 script over 7 working days; the twin asserts the same need facts Below, 5, 8, 50, 85, 7, next Refinement 8 Oct not today and 2 ready, plus the cycle 8 to 15 Oct). (2) Too_little_Throughput_history_gives_the_familiar_guard_instead_of_a_number maps to Without_a_number_the_need_names_no_cycle(ThroughputHistory,InsufficientData) (today 7 Oct, Gravity with GR-058 tagged ready, 3 finished a day on 4 days, refines on Thursdays; the twin asserts InsufficientData and no verdict, low or high, plus no cycle). (3) A_Team_nobody_set_up_has_no_number_because_it_has_no_refinement_states maps to Without_a_number_the_need_names_no_cycle(RefinementStates,NoRefinementStates) (today 7 Oct, Team Zenith with Backlog, Implementation, Done and 30 days of history; the twin asserts NoRefinementStates and no verdict, low or high, plus no cycle). Slice05NeedAndVerdictTest goes from 17 rows to 14.",

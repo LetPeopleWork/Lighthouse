@@ -775,7 +775,7 @@ env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTes
 
 #### Supports
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimesTest\.cs
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PortFixtureLifetimesTest\.cs
 
 #### Public oracle
 
@@ -807,6 +807,10 @@ None.
 
 ```text
 PortFixtureLifetimes matches a service the host builds with a factory forwarding to another registration only through a declared forwarder list naming each service and its forward target: IRepository<Portfolio> to IPortfolioRepository, IReportReader and IReportWriter to ReportRepository. Such a service matches only when the port registers it with a factory too (no implementation type, no instance), with the host's lifetime, and the port registers the forward target with the host's lifetime; the forward target is then compared by what is built like any other registration. A forwarder registered at the port by type or by instance, or one whose forward target the port does not register, is reported. A service type the host registers more than once (every IReportMetric) matches only when the port's implementation type is among the host's registrations of that type; with one host registration the last-registration comparison applies unchanged. What a port factory returns is not observed. The rules live in PortFixtureLifetimes, the one owner of the comparison; the forwarder list is a static member beside StandInsBuiltOnPurpose; the Reality Check and Refinement fixtures register no forwarder and no repeated service type, so all four fixture cases stay green.
+```
+
+```text
+The planted check PortFixtureLifetimesTest lives under Tests/Architecture (namespace Lighthouse.Backend.Tests.Architecture), beside the other architecture guards, because Tests/Contracts holds only wire contracts (fixtures on WireContractTest) and the check starts no host. PortFixtureLifetimes.cs stays in Contracts/PortFixtures.
 ```
 
 ##### Constraints
