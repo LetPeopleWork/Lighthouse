@@ -1,32 +1,25 @@
 import { Grid } from "@mui/material";
-import { useQuery } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
-import { dialogRowsOf } from "../../../components/Common/WorkItemsDialog/workItemsDialogRows";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import {
 	metricsOwnerKeyOf,
-	metricsQueryOptions,
 	useMetricsData,
 } from "../../../hooks/useMetricsData";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IFeature } from "../../../models/Feature";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
-import type { ICumulativeStateTimeItemRow } from "../../../models/Metrics/CumulativeStateTimeItems";
-import type { ICycleTimePercentilesInfo } from "../../../models/Metrics/InfoWidgetData";
 import type {
 	ICycleTimeDefinition,
 	INamedCycleTimeDefinition,
 } from "../../../models/Metrics/NamedCycleTime";
-import type { IPercentileValue } from "../../../models/PercentileValue";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { sleRiskAtRiskSummary } from "../../../utils/charts/sleRisk";
 import { formatLocalDate } from "../../../utils/date/localDate";
-import { fireAndForget } from "../../../utils/fireAndForget";
 import { computeBlockedTrend } from "./blockedTrend";
 import {
 	getFetchKeysForCategories,
@@ -56,7 +49,9 @@ import {
 	useCumulativeStateTimeCandidates,
 } from "./useCumulativeStateTimeChoices";
 import { useDateRange } from "./useDateRange";
+import { useNamedPercentilesScope } from "./useNamedPercentilesScope";
 import { useShowTips } from "./useShowTips";
+import { useStateDrillDown } from "./useStateDrillDown";
 import WidgetShell from "./WidgetShell";
 import { buildWidgetFooters, computeMaxBlockedAgeDays } from "./widgetFooters";
 import { getWidgetInfo, type WidgetInfoOwner } from "./widgetInfoMetadata";
@@ -239,85 +234,17 @@ export const BaseMetricsView = <
 		[metricsService, entity.id, startDate, endDate],
 	);
 
-	const [percentilesScopeDefinitionId, setPercentilesScopeDefinitionId] =
-		useState<number | null>(null);
-	const [scopedPercentileValues, setScopedPercentileValues] = useState<
-		IPercentileValue[] | null
-	>(null);
-	const [scopedPercentilesInfo, setScopedPercentilesInfo] =
-		useState<ICycleTimePercentilesInfo | null>(null);
-
-	const namedPercentilesFetchGeneration = useRef(0);
-
-	const handlePercentilesScopeChange = useCallback(
-		(definitionId: number | null) => {
-			// Each selection supersedes the one before it. Without this guard a slow
-			// response for an earlier definition can land after a fast one for the
-			// current definition and overwrite it, leaving the selector and the table
-			// disagreeing about which window is on screen.
-			const generation = ++namedPercentilesFetchGeneration.current;
-			const isCurrent = () =>
-				generation === namedPercentilesFetchGeneration.current;
-
-			setPercentilesScopeDefinitionId(definitionId);
-			if (definitionId === null) {
-				setScopedPercentileValues(null);
-				setScopedPercentilesInfo(null);
-				return;
-			}
-
-			// A failed named fetch must never leave the Default numbers on screen under
-			// a named selection - the widget would be presenting the default window's
-			// percentiles as if they were the named one's. Snap back to Default instead,
-			// mirroring the invalid-definition self-reset the selector already does.
-			const revertToDefault = () => {
-				if (!isCurrent()) {
-					return;
-				}
-				setPercentilesScopeDefinitionId(null);
-				setScopedPercentileValues(null);
-				setScopedPercentilesInfo(null);
-			};
-
-			fireAndForget(
-				metricsService
-					.getCycleTimePercentiles(entity.id, startDate, endDate, definitionId)
-					.then((values) => {
-						if (isCurrent()) {
-							setScopedPercentileValues(values);
-						}
-					})
-					.catch(revertToDefault),
-			);
-			fireAndForget(
-				metricsService
-					.getCycleTimePercentilesInfo(
-						entity.id,
-						startDate,
-						endDate,
-						definitionId,
-					)
-					.then((info) => {
-						if (isCurrent()) {
-							setScopedPercentilesInfo(info);
-						}
-					})
-					.catch(revertToDefault),
-			);
-		},
-		[metricsService, entity.id, startDate, endDate],
-	);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: entity/window are reset triggers, not values read in the body — a scope chosen for one team/window must not leak into the next.
-	useEffect(() => {
-		// Bumping the generation discards any response still in flight for the
-		// previous entity or window - it would otherwise land after the reset and
-		// re-populate the scope we just cleared.
-		namedPercentilesFetchGeneration.current += 1;
-		setPercentilesScopeDefinitionId(null);
-		setScopedPercentileValues(null);
-		setScopedPercentilesInfo(null);
-	}, [entity.id, startDate, endDate]);
+	const {
+		percentilesScopeDefinitionId,
+		scopedPercentileValues,
+		scopedPercentilesInfo,
+		handlePercentilesScopeChange,
+	} = useNamedPercentilesScope({
+		metricsService,
+		entityId: entity.id,
+		startDate,
+		endDate,
+	});
 
 	const displayedPercentileValues = scopedPercentileValues ?? percentileValues;
 
@@ -339,9 +266,6 @@ export const BaseMetricsView = <
 	const workInProgressTerm = getTerm(TERMINOLOGY_KEYS.WORK_IN_PROGRESS);
 	const blockedTerm = getTerm(TERMINOLOGY_KEYS.BLOCKED);
 
-	const [drillDownState, setDrillDownState] = useState<string | null>(null);
-	const [drillDownOpen, setDrillDownOpen] = useState(false);
-
 	const {
 		candidates: cumulativeCandidates,
 		candidatesLoaded: cumulativeCandidatesLoaded,
@@ -357,82 +281,22 @@ export const BaseMetricsView = <
 
 	const handleCumulativeStateTimeSelectionChange = setSelectedItemIds;
 
-	const handleCumulativeStateTimeBarClick = (stateName: string) => {
-		setDrillDownState(stateName);
-		setDrillDownOpen(true);
-	};
-
-	const drillDownQuery = useQuery({
-		...metricsQueryOptions,
-		queryKey: [
-			"metrics",
-			"cumulativeStateTimeItems",
-			{
-				ownerType,
-				...metricsOwnerKeyOf(entity),
-				state: drillDownState,
-				from: formatLocalDate(startDate),
-				to: formatLocalDate(endDate),
-				itemIds: selectedItemIds,
-			},
-		] as const,
-		queryFn: async (): Promise<ICumulativeStateTimeItemRow[]> => {
-			const stateName = drillDownState ?? "";
-			const activeItemIds =
-				selectedItemIds.length > 0 ? selectedItemIds : undefined;
-			const response =
-				ownerType === "team"
-					? await metricsService.getCumulativeStateTimeItemsForTeam(
-							entity.id,
-							stateName,
-							startDate,
-							endDate,
-							activeItemIds,
-						)
-					: await metricsService.getCumulativeStateTimeItemsForPortfolio(
-							entity.id,
-							stateName,
-							startDate,
-							endDate,
-							activeItemIds,
-						);
-			return response.items;
-		},
-		enabled: drillDownOpen && drillDownState !== null,
+	const {
+		drillDownState,
+		drillDownOpen,
+		onBarClick: handleCumulativeStateTimeBarClick,
+		onClose: closeDrillDown,
+		drillDownStatus,
+		drillDownWorkItems,
+		drillDownDaysColumn,
+	} = useStateDrillDown({
+		metricsService,
+		ownerType,
+		entity,
+		startDate,
+		endDate,
+		selectedItemIds,
 	});
-
-	const { status: drillDownStatus, items: drillDownItems } =
-		dialogRowsOf(drillDownQuery);
-
-	const drillDownWorkItems = useMemo<IWorkItem[]>(
-		() =>
-			drillDownItems.map((item) => ({
-				id: item.workItemId,
-				referenceId: item.referenceId,
-				name: item.title,
-				type: item.type,
-				state: item.state,
-				stateCategory: item.stateCategory,
-				url: item.url,
-				startedDate: new Date(0),
-				closedDate: new Date(0),
-				cycleTime: 0,
-				workItemAge: 0,
-				parentWorkItemReference: "",
-				isBlocked: false,
-			})),
-		[drillDownItems],
-	);
-
-	const drillDownDaysColumn = useMemo(() => {
-		const daysById = new Map(
-			drillDownItems.map((item) => [
-				item.workItemId,
-				Math.round(item.daysContributed * 10) / 10,
-			]),
-		);
-		return { daysFor: (workItem: IWorkItem) => daysById.get(workItem.id) ?? 0 };
-	}, [drillDownItems]);
 
 	const { showTips, toggleShowTips } = useShowTips(ownerType, entity.id);
 
@@ -812,7 +676,7 @@ export const BaseMetricsView = <
 				ownerKind={ownerType}
 				status={drillDownStatus}
 				daysContributedColumn={drillDownDaysColumn}
-				onClose={() => setDrillDownOpen(false)}
+				onClose={closeDrillDown}
 			/>
 		</Grid>
 	);
