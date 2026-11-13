@@ -68,6 +68,64 @@ None.
 
 None.
 
+### S2
+
+#### Targets
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice06EveryPercentileTabSpansTheSamePeriodScenarios\.cs
+
+Extend
+
+None.
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice06EveryPercentileTabSpansTheSamePeriodSpecifications\.cs
+
+Extend
+
+None.
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\_compare\_ids\.py
+
+#### Verification
+
+```text
+python3 docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py
+```
+
+#### Supports
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\-expected\-ids\.txt
+
+#### Public oracle
+
+```text
+Run Slice06EveryPercentileTabSpansTheSamePeriodTest and the unit classes named in the S2 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named unit row
+```
+
+```text
+Slice06EveryPercentileTabSpansTheSamePeriodTest holds exactly one row, Every_tab_covers_the_same_period_once_the_chart_has_filled_in, and it passes; every other id equals the expected list and passes; each of the ten removed host rows maps in the id table to a named unit row, and each deliberate break of that rule's production line turns that row red
+```
+
+```text
+A removed host row whose rule no unit row turns red for, including a loop in the filler or the writer (days, horizons, families) that only the host rows walked; an id missing or extra; Slice06 holding more or fewer than the one tab-route row; a production, guard-list or budget file in the diff
+```
+
+##### Promises
+
+P1
+
+P2
+
+P3
+
+#### Prefactoring
+
+None.
+
+#### Records
+
+None.
+
 ## ADRs
 
 None.

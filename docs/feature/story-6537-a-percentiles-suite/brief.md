@@ -79,3 +79,25 @@ None.
 #### Slice work
 
 None.
+
+### S2
+
+```text
+The rules of Slice06EveryPercentileTabSpansTheSamePeriodTest (every day of the period filled, a longer look-back carrying an older slow stretch, an item counted at the age it had that day, a refilled age day matching the watched day, a portfolio filling cycle time and age, tabs not refilled on a switch, the age tab stopping at the last refresh, a blank day with nothing in flight) are proven by unit tests of the classes that compute them; one host row stays for the tab route
+```
+
+#### Promises
+
+P1
+
+P2
+
+P3
+
+#### Depends on
+
+None.
+
+#### Slice work
+
+None.

@@ -213,6 +213,60 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodScenarios.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice06EveryPercentileTabSpansTheSamePeriodSpecifications.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py</p>
+
+<h4>Verification</h4>
+
+<pre><code>python3 docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s2-expected-ids.txt</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run Slice06EveryPercentileTabSpansTheSamePeriodTest and the unit classes named in the S2 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named unit row
+</code></pre>
+
+<pre><code>Slice06EveryPercentileTabSpansTheSamePeriodTest holds exactly one row, Every_tab_covers_the_same_period_once_the_chart_has_filled_in, and it passes; every other id equals the expected list and passes; each of the ten removed host rows maps in the id table to a named unit row, and each deliberate break of that rule&#x27;s production line turns that row red
+</code></pre>
+
+<pre><code>A removed host row whose rule no unit row turns red for, including a loop in the filler or the writer (days, horizons, families) that only the host rows walked; an id missing or extra; Slice06 holding more or fewer than the one tab-route row; a production, guard-list or budget file in the diff
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<p>None.</p>
+
 <h2>ADRs</h2>
 
 <p>None.</p>
