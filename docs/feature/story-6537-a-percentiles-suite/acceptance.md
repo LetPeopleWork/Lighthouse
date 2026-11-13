@@ -94,6 +94,100 @@ A production file edited in the working tree and not committed, or a guard list 
 
 None.
 
+### S2
+
+##### Covers
+
+P1
+
+P3
+
+```text
+Run the tab-period host class and the unit classes of the id table, compare their sorted ids with the expected list, and check no production, guard-list or budget file changed
+```
+
+```text
+The host class holds exactly its one tab-route row and passes; every other id equals the expected list and passes; no production, guard-list or budget file is in the diff
+```
+
+```text
+The backend Integration tier spends no time on the ten moved rules, and the tab route is still proven by one host row
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\_compare\_ids\.py
+
+```text
+A host row left behind next to the unit rows, or a production file edited to make a unit row pass, would show as an extra id or a changed path; a unit row that only passes on today's code is caught by the breaks, not by this comparison
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P2
+
+```text
+For each of the ten removed host rows, apply one deliberate break to each production rule its path depends on (days walked, families looped, horizons, windows, age as of the day, stored-day kept, held days, last observation, blank day) and run the unit rows
+```
+
+```text
+Every break turns at least one named unit row of the id table red, and the break is put back
+```
+
+```text
+No rule loses its test: a regression in the percentile history fill still turns a fast test red
+```
+
+##### Disposition
+
+Tested
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\_breaks\.py
+
+```text
+A unit row that exercises the rule on a sample where the broken line makes no difference would stay green; the cut windows of S5 and S5b first began on the same day and stayed green, which is why they were rerun
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P3
+
+```text
+A flow coach opens the four percentile tabs of a team that has filled in
+```
+
+```text
+Every tab covers the same period, through the real route
+```
+
+```text
+The tab route still has one host row proving the wiring
+```
+
+##### Disposition
+
+Tested
+
+Slice06EveryPercentileTabSpansTheSamePeriodTest\.Every\_tab\_covers\_the\_same\_period\_once\_the\_chart\_has\_filled\_in
+
+```text
+A route that returned the stored days of one tab for every tab would be caught only if the tabs held different days; the unit rows pin the family set
+```
+
+###### Obligations
+
+None.
+
 ## Expectations
 
 ### Rows

@@ -33,6 +33,8 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
 
         private const int TeamId = 7;
 
+        private const int PortfolioId = 9;
+
         private const string TheStoreRefusedTheDay = "the store refused the day";
 
         private static readonly LogLevel[] OnlyAnError = [LogLevel.Error];
@@ -42,6 +44,14 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
         private static readonly DateOnly Today = new(2026, 9, 22);
 
         private readonly List<WorkItem> storedItems = [];
+
+        private readonly List<Feature> storedDeliveries = [];
+
+        private Mock<IRepository<Portfolio>> portfolioRepositoryMock = null!;
+
+        private Mock<IRepository<Feature>> deliveryRepositoryMock = null!;
+
+        private Portfolio? portfolio;
 
         private Mock<IRepository<Team>> teamRepositoryMock = null!;
 
@@ -63,7 +73,10 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
         public void Setup()
         {
             storedItems.Clear();
+            storedDeliveries.Clear();
 
+            portfolioRepositoryMock = new Mock<IRepository<Portfolio>>();
+            deliveryRepositoryMock = new Mock<IRepository<Feature>>();
             teamRepositoryMock = new Mock<IRepository<Team>>();
             teamMetricsMock = new Mock<ITeamMetricsService>();
             workItemRepositoryMock = new Mock<IWorkItemRepository>();
@@ -74,11 +87,18 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
             workItemRepositoryMock
                 .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<WorkItem, bool>>>()))
                 .Returns((Expression<Func<WorkItem, bool>> predicate) => storedItems.AsQueryable().Where(predicate));
+            deliveryRepositoryMock
+                .Setup(repository => repository.GetAllByPredicate(It.IsAny<Expression<Func<Feature, bool>>>()))
+                .Returns((Expression<Func<Feature, bool>> predicate) => storedDeliveries.AsQueryable().Where(predicate));
             limitWriterMock.Setup(writer => writer.FamiliesFor(It.IsAny<Team>())).Returns([]);
+            limitWriterMock.Setup(writer => writer.FamiliesFor(It.IsAny<Portfolio>())).Returns([]);
 
             services = new ServiceCollection()
                 .AddSingleton(teamRepositoryMock.Object)
                 .AddSingleton(teamMetricsMock.Object)
+                .AddSingleton(portfolioRepositoryMock.Object)
+                .AddSingleton(deliveryRepositoryMock.Object)
+                .AddSingleton(Mock.Of<IPortfolioMetricsService>())
                 .AddSingleton(workItemRepositoryMock.Object)
                 .AddSingleton(percentileWriterMock.Object)
                 .AddSingleton(limitWriterMock.Object)
@@ -327,6 +347,32 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
         }
 
         [Test]
+        public async Task EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam()
+        {
+            var period = DaysUpTo(Today, 7);
+            GivenATeamLastObservedOn(Today);
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-60));
+
+            subject.AskFor(RequestFor(TeamId, period));
+            await subject.DrainAsync(CancellationToken.None);
+
+            AssertEveryDayWorkedOutForEveryFamily(TeamId, OwnerType.Team, period);
+        }
+
+        [Test]
+        public async Task EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfAPortfolio()
+        {
+            var period = DaysUpTo(Today, 7);
+            GivenAPortfolioLastObservedOn(Today);
+            GivenThePortfolioFinishedADeliveryOn(Today.AddDays(-60));
+
+            subject.AskFor(new OverTimeFillRequest(PortfolioId, OwnerType.Portfolio, period));
+            await subject.DrainAsync(CancellationToken.None);
+
+            AssertEveryDayWorkedOutForEveryFamily(PortfolioId, OwnerType.Portfolio, period);
+        }
+
+        [Test]
         public async Task ADayWorkedOut_IsWorkedOutForTheOwnersLimitsToo()
         {
             var family = new ProcessBehaviorFamilyReader(ProcessBehaviorMetricType.Throughput, 30, (_, _, _) => new ProcessBehaviourChart());
@@ -536,6 +582,39 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
         private void VerifyCycleTimeWorkedOutOn(DateOnly day, Times times)
             => percentileWriterMock.Verify(writer => writer.FillDayIfAbsent(
                 TeamId, OwnerType.Team, MetricType.CycleTime, day, It.IsAny<Func<DateTime, DateTime, IEnumerable<PercentileValue>>>()), times);
+
+        private static DateOnly[] DaysUpTo(DateOnly lastDay, int count)
+            => [.. Enumerable.Range(0, count).Select(offset => lastDay.AddDays(offset + 1 - count))];
+
+        private void AssertEveryDayWorkedOutForEveryFamily(int ownerId, OwnerType ownerType, DateOnly[] period)
+        {
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var day in period)
+                {
+                    foreach (var metricType in new[] { MetricType.CycleTime, MetricType.WorkItemAge })
+                    {
+                        percentileWriterMock.Verify(
+                            writer => writer.FillDayIfAbsent(ownerId, ownerType, metricType, day, It.IsAny<Func<DateTime, DateTime, IEnumerable<PercentileValue>>>()),
+                            Times.Once,
+                            $"{metricType} of {day:yyyy-MM-dd} was never worked out for the {ownerType}");
+                    }
+                }
+            }
+        }
+
+        private void GivenAPortfolioLastObservedOn(DateOnly day)
+        {
+            portfolio = new Portfolio { Id = PortfolioId, DoneItemsCutoffDays = 0, UpdateTime = day.ToDateTime(new TimeOnly(9, 0), DateTimeKind.Utc) };
+            portfolioRepositoryMock.Setup(repository => repository.GetById(PortfolioId)).Returns(portfolio);
+        }
+
+        private void GivenThePortfolioFinishedADeliveryOn(DateOnly day)
+        {
+            var delivery = new Feature { ClosedDate = day.ToDateTime(TimeOnly.MinValue, DateTimeKind.Utc) };
+            delivery.Portfolios.Add(portfolio!);
+            storedDeliveries.Add(delivery);
+        }
 
         private Team GivenATeamLastObservedOn(DateOnly day)
         {

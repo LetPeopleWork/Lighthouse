@@ -40,11 +40,53 @@
 "stimulus": "F29",
 "user_result": "F31"
 }
+],
+"S2": [
+{
+"covers": [
+"P1",
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F40",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s2_compare_ids.py"
+},
+"expected": "F38",
+"stimulus": "F37",
+"user_result": "F39"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F44",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s2_breaks.py"
+},
+"expected": "F42",
+"stimulus": "F41",
+"user_result": "F43"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F48",
+"test": "Slice06EveryPercentileTabSpansTheSamePeriodTest.Every_tab_covers_the_same_period_once_the_chart_has_filled_in"
+},
+"expected": "F46",
+"stimulus": "F45",
+"user_result": "F47"
+}
 ]
 },
 "counters": {
 "E": 3,
-"F": 36,
+"F": 48,
 "P": 3,
 "S": 2
 },
@@ -159,7 +201,19 @@
 "F34": "Run Slice06EveryPercentileTabSpansTheSamePeriodTest and the unit classes named in the S2 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named unit row",
 "F35": "Slice06EveryPercentileTabSpansTheSamePeriodTest holds exactly one row, Every_tab_covers_the_same_period_once_the_chart_has_filled_in, and it passes; every other id equals the expected list and passes; each of the ten removed host rows maps in the id table to a named unit row, and each deliberate break of that rule's production line turns that row red",
 "F36": "A removed host row whose rule no unit row turns red for, including a loop in the filler or the writer (days, horizons, families) that only the host rows walked; an id missing or extra; Slice06 holding more or fewer than the one tab-route row; a production, guard-list or budget file in the diff",
+"F37": "Run the tab-period host class and the unit classes of the id table, compare their sorted ids with the expected list, and check no production, guard-list or budget file changed",
+"F38": "The host class holds exactly its one tab-route row and passes; every other id equals the expected list and passes; no production, guard-list or budget file is in the diff",
+"F39": "The backend Integration tier spends no time on the ten moved rules, and the tab route is still proven by one host row",
 "F4": "No rule loses its test: every removed host row has an id-table row naming the test that now proves its rule, and one deliberate break of that rule's production line turns that test red",
+"F40": "A host row left behind next to the unit rows, or a production file edited to make a unit row pass, would show as an extra id or a changed path; a unit row that only passes on today's code is caught by the breaks, not by this comparison",
+"F41": "For each of the ten removed host rows, apply one deliberate break to each production rule its path depends on (days walked, families looped, horizons, windows, age as of the day, stored-day kept, held days, last observation, blank day) and run the unit rows",
+"F42": "Every break turns at least one named unit row of the id table red, and the break is put back",
+"F43": "No rule loses its test: a regression in the percentile history fill still turns a fast test red",
+"F44": "A unit row that exercises the rule on a sample where the broken line makes no difference would stay green; the cut windows of S5 and S5b first began on the same day and stayed green, which is why they were rerun",
+"F45": "A flow coach opens the four percentile tabs of a team that has filled in",
+"F46": "Every tab covers the same period, through the real route",
+"F47": "The tab route still has one host row proving the wiring",
+"F48": "A route that returned the stored days of one tab for every tab would be caught only if the tabs held different days; the unit rows pin the family set",
 "F5": "No production file changes, the test-host guard lists do not grow, and at least one host row per route still proves the wiring",
 "F6": "Pilot: the rules of Slice07WhereTheLimitsActuallyMovedTest (which limit families a team and a portfolio fill, the not-ready and zero-band gates, the retention edge as of a day, a refilled day reading as the watched day) are proven by unit tests of ProcessBehaviorSnapshotWriter and RetentionEdge; one host row stays for the limits route",
 "F7": "Run Slice07WhereTheLimitsActuallyMovedTest, ProcessBehaviorSnapshotWriterTest and RetentionEdgeTest (Debug, tokens removed), compare their sorted test ids with the expected id list, then apply one deliberate break per moved or rewritten rule in the working tree and run the named unit row",
