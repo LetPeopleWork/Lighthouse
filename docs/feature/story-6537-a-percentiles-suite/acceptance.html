@@ -151,6 +151,84 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Compare the ids of the host class and the unit classes with the expected list
+</code></pre>
+
+<pre><code>The host class holds only the one limits-route row; every other id equals the expected list and passes
+</code></pre>
+
+<pre><code>The backend Integration tier no longer fills 200 days of history nine times to prove rules a unit test proves
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py</p>
+
+<pre><code>A host row is removed but its rule has no unit row, or an extra row stays at the host
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>Apply one deliberate break per moved or rewritten rule and run the named unit row
+</code></pre>
+
+<pre><code>Each named unit row turns red for its break; the id table maps each of the nine removed host rows to such a row
+</code></pre>
+
+<pre><code>No rule lost its proof when its host test left
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s1-id-table.md with s1-break-evidence.txt</p>
+
+<pre><code>A unit row mirrors the production computation and stays green after the production line is deleted
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Keep the limits-route host row and check the working tree diff
+</code></pre>
+
+<pre><code>The route row passes and no file under Lighthouse.Backend/Lighthouse.Backend/ changes
+</code></pre>
+
+<pre><code>The limits route is still proven end to end and the product behaves as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py</p>
+
+<pre><code>The route row is deleted along with the rest, or a production file is edited to make a unit row pass
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>

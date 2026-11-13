@@ -1399,6 +1399,47 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         }
 
         [Test]
+        public void GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimitsForEveryDisplayedPeriodHoweverThePeriodsThroughputMoves()
+        {
+            var today = TestToday.AmbientAsUtcMidnight;
+            var baselineStart = today.AddDays(-60);
+            testTeam.ProcessBehaviourChartBaselineStartDate = baselineStart;
+            testTeam.ProcessBehaviourChartBaselineEndDate = today.AddDays(-46);
+
+            for (var day = 0; day < 15; day++)
+            {
+                FinishItemsOn(baselineStart.AddDays(day), 1 + (day % 3));
+            }
+
+            var earlierPeriodStart = today.AddDays(-20);
+            var laterPeriodStart = today.AddDays(-6);
+            for (var day = 0; day < 7; day++)
+            {
+                FinishItemsOn(earlierPeriodStart.AddDays(day), 1);
+                FinishItemsOn(laterPeriodStart.AddDays(day), 6);
+            }
+
+            var earlier = subject.GetThroughputProcessBehaviourChart(testTeam, earlierPeriodStart, earlierPeriodStart.AddDays(6));
+            var later = subject.GetThroughputProcessBehaviourChart(testTeam, laterPeriodStart, laterPeriodStart.AddDays(6));
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(earlier.Average, Is.GreaterThan(0), "The pinned stretch has finished work, so there is a band to compare.");
+                Assert.That(later.Average, Is.EqualTo(earlier.Average), "Limits drawn from a pinned stretch must not follow the displayed period.");
+                Assert.That(later.UpperNaturalProcessLimit, Is.EqualTo(earlier.UpperNaturalProcessLimit));
+                Assert.That(later.LowerNaturalProcessLimit, Is.EqualTo(earlier.LowerNaturalProcessLimit));
+            }
+        }
+
+        private void FinishItemsOn(DateTime day, int count)
+        {
+            for (var item = 0; item < count; item++)
+            {
+                AddWorkItem(StateCategories.Done, 1, string.Empty).ClosedDate = day;
+            }
+        }
+
+        [Test]
         public void GetThroughputProcessBehaviourChart_ValidBaseline_LnplClampedToZero()
         {
             var baselineStart = DateTime.UtcNow.AddDays(-30).Date;

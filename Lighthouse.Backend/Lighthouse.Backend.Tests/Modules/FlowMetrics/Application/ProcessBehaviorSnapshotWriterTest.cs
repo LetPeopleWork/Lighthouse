@@ -120,6 +120,117 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
             await Assert.ThrowsAsync<DbUpdateException>(racing.SaveFilledDay);
         }
 
+        [Test]
+        public void ATeam_ReportsExactlyThroughputWorkItemAgeWipCycleTimeAndArrivals()
+        {
+            var families = subject.FamiliesFor(new Team { ThroughputHistory = 30 });
+
+            Assert.That(
+                families.Select(family => family.MetricType),
+                Is.EquivalentTo(new[]
+                {
+                    ProcessBehaviorMetricType.Throughput,
+                    ProcessBehaviorMetricType.WorkItemAge,
+                    ProcessBehaviorMetricType.Wip,
+                    ProcessBehaviorMetricType.CycleTime,
+                    ProcessBehaviorMetricType.Arrivals,
+                }));
+        }
+
+        [Test]
+        public void APortfolio_ReportsExactlyThroughputWorkItemAgeWipCycleTimeArrivalsAndFeatureSize()
+        {
+            var families = subject.FamiliesFor(new Portfolio());
+
+            Assert.That(
+                families.Select(family => family.MetricType),
+                Is.EquivalentTo(new[]
+                {
+                    ProcessBehaviorMetricType.Throughput,
+                    ProcessBehaviorMetricType.WorkItemAge,
+                    ProcessBehaviorMetricType.Wip,
+                    ProcessBehaviorMetricType.CycleTime,
+                    ProcessBehaviorMetricType.Arrivals,
+                    ProcessBehaviorMetricType.FeatureSize,
+                }));
+        }
+
+        [Test]
+        public void HowBigDeliveriesAreGetting_IsAFamilyOfAPortfolioAndNeverOfATeam()
+        {
+            var ofATeam = subject.FamiliesFor(new Team { ThroughputHistory = 30 }).Select(family => family.MetricType);
+            var ofAPortfolio = subject.FamiliesFor(new Portfolio()).Select(family => family.MetricType);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(ofATeam, Does.Not.Contain(ProcessBehaviorMetricType.FeatureSize));
+                Assert.That(ofAPortfolio, Does.Contain(ProcessBehaviorMetricType.FeatureSize));
+            }
+        }
+
+        [Test]
+        public async Task ADayWhoseLimitsAreNotReady_GetsNoRow_EvenWhenTheChartCarriesABand()
+        {
+            var notReady = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.BaselineInvalid,
+                Average = 3,
+                UpperNaturalProcessLimit = 8,
+                LowerNaturalProcessLimit = 1,
+            };
+
+            subject.FillDayIfAbsent(OwnerId, OwnerType.Team, FamilyReading(notReady), Day);
+            await repository.Save();
+
+            Assert.That(StoredRows(), Is.Empty);
+        }
+
+        [Test]
+        public async Task ADayWhoseReadyLimitsAreAFlatZeroBand_GetsNoRow()
+        {
+            var flatZero = new ProcessBehaviourChart
+            {
+                Status = BaselineStatus.Ready,
+                Average = 0,
+                UpperNaturalProcessLimit = 0,
+                LowerNaturalProcessLimit = 0,
+            };
+
+            subject.FillDayIfAbsent(OwnerId, OwnerType.Team, FamilyReading(flatZero), Day);
+            await repository.Save();
+
+            Assert.That(StoredRows(), Is.Empty);
+        }
+
+        /// <summary>
+        /// The watched day is worked out in a second writer whose own today is later, as it is when a
+        /// day is filled in afterwards. Its answer is a function of the window and the day it is judged
+        /// as of, so any other stretch, or judging as of today, reads differently.
+        /// </summary>
+        [Test]
+        public async Task ADayFilledInAfterwards_ReadsTheSameAsWhenItWasWatched()
+        {
+            var laterToday = Day.AddDays(25);
+            var watchedOnTheDay = WriterOver(repository, ClockOn(Day));
+            watchedOnTheDay.RecordToday(OwnerId, OwnerType.Team, LimitsAsOf(Day));
+            await repository.Save();
+            var asWatched = StoredRows().Single();
+            context.ProcessBehaviorSnapshots.Remove(context.ProcessBehaviorSnapshots.Single(row => row.OwnerId == OwnerId));
+            await context.SaveChangesAsync();
+
+            var filledLater = WriterOver(repository, ClockOn(laterToday));
+            filledLater.FillDayIfAbsent(OwnerId, OwnerType.Team, LimitsAsOf(laterToday), Day);
+            await repository.Save();
+            var filled = StoredRows().Single();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(filled.Average, Is.EqualTo(asWatched.Average));
+                Assert.That(filled.Unpl, Is.EqualTo(asWatched.Unpl));
+                Assert.That(filled.Lnpl, Is.EqualTo(asWatched.Lnpl));
+            }
+        }
+
         private ProcessBehaviorSnapshotWriter WriterRacingAnotherCopyThatStored(ProcessBehaviorMetricType storedFamily)
         {
             var storedByTheOtherCopy = new List<ProcessBehaviorSnapshot>
@@ -154,11 +265,39 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         private static ProcessBehaviorFamilyReader FamilyReading()
             => new(ProcessBehaviorMetricType.Throughput, LookbackDays, (_, _, _) => Limits);
 
+        private static ProcessBehaviorFamilyReader FamilyReading(ProcessBehaviourChart chart)
+            => new(ProcessBehaviorMetricType.Throughput, LookbackDays, (_, _, _) => chart);
+
+        // Stands in for the metrics service: a null day means the service's own today, and the triple
+        // is worked out from the window and that day alone.
+        private static ProcessBehaviorFamilyReader LimitsAsOf(DateOnly serviceToday)
+            => new(ProcessBehaviorMetricType.Throughput, LookbackDays, (start, end, asOf) =>
+            {
+                var judgedOn = asOf ?? serviceToday;
+                return new ProcessBehaviourChart
+                {
+                    Status = BaselineStatus.Ready,
+                    Average = DayNumber(end) + DayNumber(judgedOn),
+                    UpperNaturalProcessLimit = DayNumber(start),
+                    LowerNaturalProcessLimit = DayNumber(end),
+                };
+            });
+
+        private static int DayNumber(DateTime day) => DateOnly.FromDateTime(day).DayNumber;
+
+        private static int DayNumber(DateOnly day) => day.DayNumber;
+
+        private static FakeLighthouseClock ClockOn(DateOnly day)
+            => new(new DateTimeOffset(day.ToDateTime(new TimeOnly(9, 0)), TimeSpan.Zero));
+
         private static ProcessBehaviorSnapshotWriter WriterOver(IProcessBehaviorSnapshotRepository snapshots)
+            => WriterOver(snapshots, new FakeLighthouseClock(new DateTimeOffset(2026, 9, 22, 9, 0, 0, TimeSpan.Zero)));
+
+        private static ProcessBehaviorSnapshotWriter WriterOver(IProcessBehaviorSnapshotRepository snapshots, FakeLighthouseClock clock)
             => new(
                 Mock.Of<ITeamMetricsService>(),
                 Mock.Of<IPortfolioMetricsService>(),
                 snapshots,
-                new FakeLighthouseClock(new DateTimeOffset(2026, 9, 22, 9, 0, 0, TimeSpan.Zero)));
+                clock);
     }
 }

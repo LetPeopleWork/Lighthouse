@@ -1,0 +1,326 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="59231665-b802-4d24-82e6-629923bee2bc" name="@cachy-desktop 2026-11-13 14:49:04" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-11-13T14:49:04.2119894+01:00" queuing="2026-11-13T14:49:04.2119894+01:00" start="2026-11-13T14:48:52.5261301+01:00" finish="2026-11-13T14:49:28.9289698+01:00" />
+  <TestSettings name="default" id="f3095889-2c94-48fe-83fc-4a877a664b30">
+    <Deployment runDeploymentRoot="_cachy-desktop_2026-11-13_14_49_04" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="e8d1fe01-d3b8-41de-b152-198f74c7fc4c" testId="76761916-38e1-34ee-0bcb-97b8a0152bc0" testName="A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too" computerName="cachy-desktop" duration="00:00:10.1758880" startTime="2026-11-13T14:49:04.1811752+01:00" endTime="2026-11-13T14:49:14.3570626+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e8d1fe01-d3b8-41de-b152-198f74c7fc4c">
+      <Output>
+        <StdOut>14:49:04 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:04 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:04 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:04 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:04 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:04 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:04 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:04 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:04 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:04 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="6270e47a-73b7-4a48-8f1f-abe8fd625fbb" testId="9489a3e5-2842-f609-41a5-4168cfe282ab" testName="A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart" computerName="cachy-desktop" duration="00:00:02.1858950" startTime="2026-11-13T14:49:18.9113648+01:00" endTime="2026-11-13T14:49:21.0972596+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6270e47a-73b7-4a48-8f1f-abe8fd625fbb">
+      <Output>
+        <StdOut>14:49:18 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:18 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:18 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:18 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:18 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:18 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:18 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:18 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:18 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:18 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="385d73c6-d93c-4e50-9209-1bb3172779d5" testId="7ad1f0a8-453d-0402-3292-7691bfea7848" testName="A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer" computerName="cachy-desktop" duration="00:00:01.0883470" startTime="2026-11-13T14:49:15.6271902+01:00" endTime="2026-11-13T14:49:16.7155366+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="385d73c6-d93c-4e50-9209-1bb3172779d5">
+      <Output>
+        <StdOut>14:49:15 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:15 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:15 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:15 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:15 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:15 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:15 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:15 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:15 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:15 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e2da3f2d-5b5a-45d7-831a-a3d1d14403fe" testId="e9b437c9-cdff-2d04-0f77-64629226691c" testName="A_stretch_pinned_further_back_than_the_team_keeps_work_reports_no_limits" computerName="cachy-desktop" duration="00:00:00.8205400" startTime="2026-11-13T14:49:14.8066127+01:00" endTime="2026-11-13T14:49:15.6271528+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e2da3f2d-5b5a-45d7-831a-a3d1d14403fe">
+      <Output>
+        <StdOut>14:49:14 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:14 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:14 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:14 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:14 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:14 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:14 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:14 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:14 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:14 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="bc925187-bd9b-40f1-a14a-24ff8383468d" testId="ed87de74-67a3-c6a5-4d01-c64bc5f0f11d" testName="A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one" computerName="cachy-desktop" duration="00:00:00.4494420" startTime="2026-11-13T14:49:14.3571301+01:00" endTime="2026-11-13T14:49:14.8065714+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bc925187-bd9b-40f1-a14a-24ff8383468d">
+      <Output>
+        <StdOut>14:49:14 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:14 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:14 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:14 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:14 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:14 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:14 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:14 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:14 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:14 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="cabe3a40-9804-4cc9-80f3-07ec6636afb1" testId="d73f7373-d14a-dd4e-d416-f758517f3eae" testName="How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team" computerName="cachy-desktop" duration="00:00:05.9352620" startTime="2026-11-13T14:49:21.0973062+01:00" endTime="2026-11-13T14:49:27.0325680+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="cabe3a40-9804-4cc9-80f3-07ec6636afb1">
+      <Output>
+        <StdOut>14:49:21 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:21 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:21 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:21 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:21 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:21 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:21 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:21 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:21 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:21 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="81760f73-b53b-43c1-aca3-e698ffcf5ff8" testId="0baf2896-5208-6f7f-6447-55fe07455ec8" testName="Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing" computerName="cachy-desktop" duration="00:00:01.0415280" startTime="2026-11-13T14:49:27.0326098+01:00" endTime="2026-11-13T14:49:28.0741374+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="81760f73-b53b-43c1-aca3-e698ffcf5ff8">
+      <Output>
+        <StdOut>14:49:27 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:27 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:27 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:27 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:27 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:27 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:27 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:27 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:27 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:27 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="75161948-bfc3-4105-abda-ec9696a444f6" testId="aad98b64-cd65-d2f2-d128-6c9157dded59" testName="A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer" computerName="cachy-desktop" duration="00:00:08.5548439" startTime="2026-11-13T14:48:55.6251209+01:00" endTime="2026-11-13T14:49:04.1799095+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="75161948-bfc3-4105-abda-ec9696a444f6">
+      <Output>
+        <StdOut>14:48:55 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:48:56 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:48:56 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:48:56 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:48:56 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:48:56 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:48:56 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:48:56 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:48:56 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:48:56 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="274168b8-4b28-4c72-91f7-ded7b546a473" testId="2f8ce038-5e22-93ea-a924-ac1cc70777ed" testName="A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history" computerName="cachy-desktop" duration="00:00:02.1957270" startTime="2026-11-13T14:49:16.7155766+01:00" endTime="2026-11-13T14:49:18.9113029+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="274168b8-4b28-4c72-91f7-ded7b546a473">
+      <Output>
+        <StdOut>14:49:16 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:16 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:16 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:16 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:16 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:16 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:16 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:16 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:16 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:16 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="1f01acae-07a8-4075-a76f-18f73a074c92" testId="e2039f76-1492-98bc-eefb-8a5002868fbc" testName="Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched" computerName="cachy-desktop" duration="00:00:00.7520620" startTime="2026-11-13T14:49:28.0741713+01:00" endTime="2026-11-13T14:49:28.8262329+01:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1f01acae-07a8-4075-a76f-18f73a074c92">
+      <Output>
+        <StdOut>14:49:28 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:28 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:28 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:28 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:28 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:28 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:28 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:28 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:28 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:28 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off</StdOut>
+      </Output>
+    </UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="A_stretch_pinned_further_back_than_the_team_keeps_work_reports_no_limits" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="e9b437c9-cdff-2d04-0f77-64629226691c">
+      <Execution id="e2da3f2d-5b5a-45d7-831a-a3d1d14403fe" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="A_stretch_pinned_further_back_than_the_team_keeps_work_reports_no_limits" />
+    </UnitTest>
+    <UnitTest name="Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="e2039f76-1492-98bc-eefb-8a5002868fbc">
+      <Execution id="1f01acae-07a8-4075-a76f-18f73a074c92" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="Limits_worked_out_afterwards_read_the_same_as_the_day_they_were_watched" />
+    </UnitTest>
+    <UnitTest name="A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="aad98b64-cd65-d2f2-d128-6c9157dded59">
+      <Execution id="75161948-bfc3-4105-abda-ec9696a444f6" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="A_portfolio_fills_in_every_behaviour_it_reports_and_not_one_fewer" />
+    </UnitTest>
+    <UnitTest name="A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="2f8ce038-5e22-93ea-a924-ac1cc70777ed">
+      <Execution id="274168b8-4b28-4c72-91f7-ded7b546a473" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="A_team_that_did_not_fix_the_stretch_reads_limits_drawn_from_each_days_own_history" />
+    </UnitTest>
+    <UnitTest name="A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="76761916-38e1-34ee-0bcb-97b8a0152bc0">
+      <Execution id="e8d1fe01-d3b8-41de-b152-198f74c7fc4c" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="A_portfolio_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_too" />
+    </UnitTest>
+    <UnitTest name="A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="9489a3e5-2842-f609-41a5-4168cfe282ab">
+      <Execution id="6270e47a-73b7-4a48-8f1f-abe8fd625fbb" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="A_team_that_fixed_the_stretch_its_limits_come_from_reads_steady_limits_not_an_empty_chart" />
+    </UnitTest>
+    <UnitTest name="How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="d73f7373-d14a-dd4e-d416-f758517f3eae">
+      <Execution id="cabe3a40-9804-4cc9-80f3-07ec6636afb1" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="How_big_deliveries_are_getting_is_filled_in_for_a_portfolio_and_never_for_a_team" />
+    </UnitTest>
+    <UnitTest name="Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="0baf2896-5208-6f7f-6447-55fe07455ec8">
+      <Execution id="81760f73-b53b-43c1-aca3-e698ffcf5ff8" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing" />
+    </UnitTest>
+    <UnitTest name="A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="ed87de74-67a3-c6a5-4d01-c64bc5f0f11d">
+      <Execution id="bc925187-bd9b-40f1-a14a-24ff8383468d" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="A_stretch_in_which_the_team_finished_nothing_reports_no_band_rather_than_a_flat_zero_one" />
+    </UnitTest>
+    <UnitTest name="A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer" storage="/storage/repos/lighthouse/.claude/worktrees/indexed-wondering-panda/lighthouse.backend/lighthouse.backend.tests/bin/release/net10.0/lighthouse.backend.tests.dll" id="7ad1f0a8-453d-0402-3292-7691bfea7848">
+      <Execution id="385d73c6-d93c-4e50-9209-1bb3172779d5" />
+      <TestMethod codeBase="/storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll" adapterTypeName="executor://nunit3testexecutor/" className="Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest" name="A_team_fills_in_every_behaviour_it_reports_and_not_one_fewer" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="76761916-38e1-34ee-0bcb-97b8a0152bc0" executionId="e8d1fe01-d3b8-41de-b152-198f74c7fc4c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9489a3e5-2842-f609-41a5-4168cfe282ab" executionId="6270e47a-73b7-4a48-8f1f-abe8fd625fbb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7ad1f0a8-453d-0402-3292-7691bfea7848" executionId="385d73c6-d93c-4e50-9209-1bb3172779d5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e9b437c9-cdff-2d04-0f77-64629226691c" executionId="e2da3f2d-5b5a-45d7-831a-a3d1d14403fe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ed87de74-67a3-c6a5-4d01-c64bc5f0f11d" executionId="bc925187-bd9b-40f1-a14a-24ff8383468d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d73f7373-d14a-dd4e-d416-f758517f3eae" executionId="cabe3a40-9804-4cc9-80f3-07ec6636afb1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0baf2896-5208-6f7f-6447-55fe07455ec8" executionId="81760f73-b53b-43c1-aca3-e698ffcf5ff8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="aad98b64-cd65-d2f2-d128-6c9157dded59" executionId="75161948-bfc3-4105-abda-ec9696a444f6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2f8ce038-5e22-93ea-a924-ac1cc70777ed" executionId="274168b8-4b28-4c72-91f7-ded7b546a473" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e2039f76-1492-98bc-eefb-8a5002868fbc" executionId="1f01acae-07a8-4075-a76f-18f73a074c92" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Completed">
+    <Counters total="10" executed="10" passed="10" failed="0" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>NUnit Adapter 6.3.1.0: Test execution started
+Running selected tests in /storage/repos/Lighthouse/.claude/worktrees/indexed-wondering-panda/Lighthouse.Backend/Lighthouse.Backend.Tests/bin/Release/net10.0/Lighthouse.Backend.Tests.dll
+   NUnit3TestExecutor discovered 10 of 10 NUnit test cases using Current Discovery mode, Non-Explicit run
+14:48:55 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:48:56 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:48:56 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:48:56 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:48:56 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:48:56 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:48:56 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:48:56 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:48:56 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:48:56 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:04 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:04 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:04 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:04 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:04 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:04 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:04 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:04 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:04 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:04 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:14 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:14 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:14 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:14 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:14 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:14 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:14 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:14 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:14 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:14 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:14 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:14 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:14 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:14 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:14 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:14 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:14 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:14 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:14 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:14 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:15 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:15 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:15 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:15 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:15 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:15 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:15 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:15 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:15 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:15 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:16 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:16 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:16 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:16 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:16 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:16 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:16 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:16 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:16 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:16 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:18 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:18 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:18 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:18 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:18 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:18 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:18 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:18 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:18 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:18 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:21 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:21 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:21 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:21 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:21 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:21 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:21 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:21 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:21 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:21 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:27 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:27 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:27 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:27 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:27 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:27 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:27 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:27 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:27 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:27 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+14:49:28 - INFORMATION - AppSettingSeeder: Seeding AppSettings
+14:49:28 - INFORMATION - AppSettingSeeder: AppSettings seeded successfully
+14:49:28 - INFORMATION - OptionalFeatureSeeder: Seeding OptionalFeatures
+14:49:28 - INFORMATION - OptionalFeatureSeeder: OptionalFeatures seeded successfully
+14:49:28 - INFORMATION - TerminologySeeder: Seeding Terminology
+14:49:28 - INFORMATION - TerminologySeeder: Terminology seeded successfully
+14:49:28 - INFORMATION - RefreshLogSeeder: Cleaning up orphaned Refresh Logs
+14:49:28 - INFORMATION - RefreshLogSeeder: Orphaned Refresh Logs cleaned up successfully
+14:49:28 - INFORMATION - CategoryListNormalisationSeeder: Category lists normalised: 0 scanned, 0 rewritten, 0 legacy-expanded, 0 skipped, 0 owner types not read
+14:49:28 - INFORMATION - EveryoneSignedInSeeder: Stored everyone signed in as off
+
+</StdOut>
+    </Output>
+  </ResultSummary>
+</TestRun>

@@ -1,7 +1,50 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F16",
+"test": "python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py"
+},
+"expected": "F14",
+"stimulus": "F13",
+"user_result": "F15"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F20",
+"test": "docs/feature/story-6537-a-percentiles-suite/evidence/s1-id-table.md with s1-break-evidence.txt"
+},
+"expected": "F18",
+"stimulus": "F17",
+"user_result": "F19"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F24",
+"test": "python3 docs/feature/story-6537-a-percentiles-suite/evidence/s1_compare_ids.py"
+},
+"expected": "F22",
+"stimulus": "F21",
+"user_result": "F23"
+}
+]
+},
 "counters": {
 "E": 3,
-"F": 12,
+"F": 24,
 "P": 3,
 "S": 1
 },
@@ -69,7 +112,19 @@
 "F10": "A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and the tier takes less time than before.",
 "F11": "Every removed PercentilesOverTime host test has a row in the id table naming the lower-layer test that now proves its rule, and breaking that rule's production line in a deliberate probe turns that lower-layer test red, so no rule loses its proof.",
 "F12": "Across the change, no production file differs, the test-host guard lists do not grow, and at least one host test per route remains to prove the wiring end to end.",
+"F13": "Compare the ids of the host class and the unit classes with the expected list",
+"F14": "The host class holds only the one limits-route row; every other id equals the expected list and passes",
+"F15": "The backend Integration tier no longer fills 200 days of history nine times to prove rules a unit test proves",
+"F16": "A host row is removed but its rule has no unit row, or an extra row stays at the host",
+"F17": "Apply one deliberate break per moved or rewritten rule and run the named unit row",
+"F18": "Each named unit row turns red for its break; the id table maps each of the nine removed host rows to such a row",
+"F19": "No rule lost its proof when its host test left",
 "F2": "The backend Integration tier spends far less time re-proving percentile-history rules through a web host, and every rule still has a test that goes red when its production line breaks",
+"F20": "A unit row mirrors the production computation and stays green after the production line is deleted",
+"F21": "Keep the limits-route host row and check the working tree diff",
+"F22": "The route row passes and no file under Lighthouse.Backend/Lighthouse.Backend/ changes",
+"F23": "The limits route is still proven end to end and the product behaves as before",
+"F24": "The route row is deleted along with the rest, or a production file is edited to make a unit row pass",
 "F3": "Each rule a PercentilesOverTime host test proves is proven by a test at the lowest layer that can prove it (a unit test of the computing class, else the service port), so the backend Integration tier takes less time",
 "F4": "No rule loses its test: every removed host row has an id-table row naming the test that now proves its rule, and one deliberate break of that rule's production line turns that test red",
 "F5": "No production file changes, the test-host guard lists do not grow, and at least one host row per route still proves the wiring",
