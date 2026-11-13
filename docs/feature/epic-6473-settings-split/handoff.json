@@ -1,0 +1,2546 @@
+{
+"counters": {
+"B": 3,
+"C": 2,
+"D": 12,
+"E": 12,
+"F": 283,
+"K": 3,
+"L": 4,
+"N": 1,
+"P": 5,
+"S": 5,
+"T": 1,
+"Y": 6
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"agreement": [
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"party": "Producer",
+"reason": "F38"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/App/Header/Header.tsx:66",
+"party": "Consumer",
+"reason": "F39"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx:14",
+"party": "Consumer",
+"reason": "F40"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:354",
+"party": "Consumer",
+"reason": "F41"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:499",
+"party": "Consumer",
+"reason": "F42"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:878",
+"party": "Consumer",
+"reason": "F43"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx:90",
+"party": "Consumer",
+"reason": "F44"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:350",
+"party": "Consumer",
+"reason": "F45"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx:98",
+"party": "Consumer",
+"reason": "F46"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:137",
+"party": "Consumer",
+"reason": "F47"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/App.tsx:283",
+"party": "Consumer",
+"reason": "F48"
+},
+{
+"contract": "Settings and connection addresses (paths, tab and area slugs, legacy keys)",
+"decision": "Migrated",
+"locator": "Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts:93",
+"party": "Consumer",
+"reason": "F49"
+},
+{
+"contract": "Tab and panel test ids",
+"decision": "UnchangedCompatible",
+"locator": "Lighthouse.Frontend/src/tests/e2eTestIds.test.ts:1",
+"party": "Consumer",
+"reason": "F50"
+},
+{
+"contract": "Tab and panel test ids",
+"decision": "Migrated",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"party": "Consumer",
+"reason": "F51"
+}
+],
+"architectural_tests": [
+{
+"command": "pnpm --dir Lighthouse.Frontend exec vitest run src/models/Settings/settingsPaths.enforcement.test.ts src/hooks/licenseStatusOneAsker.enforcement.test.ts src/layerBoundaries.enforcement.test.ts",
+"id": "T1",
+"obligation": "F153",
+"oracle": "Lighthouse.Frontend/src/models/Settings/settingsPaths.enforcement.test.ts"
+}
+],
+"boundaries": {
+"dependency_direction": "F58",
+"driven_ports": [
+"F54",
+"F55",
+"F56",
+"F57"
+],
+"driving_port": "F53",
+"failures": [
+{
+"condition": "F59",
+"id": "B1",
+"observation": "F60",
+"outcome": "Indeterminate"
+},
+{
+"condition": "F61",
+"id": "B2",
+"observation": "F62",
+"outcome": "Indeterminate"
+},
+{
+"condition": "F63",
+"id": "B3",
+"observation": "F64",
+"outcome": "Refusal"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F99",
+"bypass": "F101",
+"constructor": "resolveSettingsLocation",
+"consumer": "SettingsAreaPage and settingsRoutes",
+"harm": "F98",
+"id": "C1",
+"owner": "resolveSettingsLocation",
+"proposition": "F97",
+"public_observation": "F100"
+},
+{
+"admitted_input": "F104",
+"bypass": "F106",
+"constructor": "settingsAreas path helpers",
+"consumer": "Header, OnboardingStepper, TaskManager, DataOverviewTable, wizard and connection pages, E2E POMs",
+"harm": "F103",
+"id": "C2",
+"owner": "settingsAreas",
+"proposition": "F102",
+"public_observation": "F105"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F116",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F115"
+},
+{
+"axis": "Inhabitation",
+"basis": "F118",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F117"
+},
+{
+"axis": "PublicReachability",
+"basis": "F120",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F119"
+},
+{
+"axis": "Liveness",
+"basis": "F122",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F121"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F35"
+},
+{
+"id": "K2",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F36"
+},
+{
+"id": "K3",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F37"
+}
+],
+"constructors": [
+{
+"name": "settingsAreas",
+"signature": "readonly data: areas -> tabs(slug,label,testIds,visibleWhen,earlierSlugs); legacyKeys: 14 -> path; connectionPaths"
+},
+{
+"name": "resolveSettingsLocation",
+"signature": "(request: {area?: string, tab?: string, legacyKey?: string}, access: {isLoading: boolean, isSystemAdmin: boolean, isRbacEnabled: boolean}) -> Show | Redirect | Wait"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F23"
+},
+{
+"id": "D2",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F24"
+},
+{
+"id": "D3",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F25"
+},
+{
+"id": "D4",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F26"
+},
+{
+"id": "D5",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F27"
+},
+{
+"id": "D6",
+"slices": [
+"S2",
+"S3",
+"S4"
+],
+"text": "F28"
+},
+{
+"id": "D7",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F29"
+},
+{
+"id": "D8",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F30"
+},
+{
+"id": "D9",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F31"
+},
+{
+"id": "D10",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F32"
+},
+{
+"id": "D11",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F33"
+},
+{
+"id": "D12",
+"slices": [
+"S1",
+"S2",
+"S3",
+"S4",
+"S5"
+],
+"text": "F34"
+}
+],
+"equality": [
+{
+"definition": "F71",
+"under": "resolver outcome"
+},
+{
+"definition": "F72",
+"under": "rendered location"
+}
+],
+"laws": [
+{
+"evidence": [
+"design/models/settingsResolver.qnt"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "resolveSettingsLocation",
+"statement": "F73",
+"treatment": {
+"cases": [
+"F74",
+"F75",
+"F76",
+"F77"
+],
+"kind": "Finite",
+"reason": "F78"
+}
+},
+{
+"id": "L2",
+"kind": "Algebraic",
+"layer": "Domain",
+"owner": "settingsAreas",
+"statement": "F79",
+"treatment": {
+"cases": [
+"F80",
+"F81"
+],
+"kind": "Finite",
+"reason": "F82"
+}
+},
+{
+"id": "L3",
+"kind": "RoundTrip",
+"layer": "Domain",
+"owner": "resolveSettingsLocation",
+"statement": "F83",
+"treatment": {
+"falsifier": "F90",
+"generator": {
+"domain": "F84",
+"must_include": [
+"F85",
+"F86",
+"F87"
+],
+"seed_policy": "fixed seed in the test, printed on failure",
+"shrinking": "F88",
+"size_bound": "junk strings length at most 12; 500 cases"
+},
+"independent_observation": "F89",
+"kind": "Broad"
+}
+},
+{
+"id": "L4",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "settingsAreas",
+"statement": "F91",
+"treatment": {
+"cases": [
+"F92"
+],
+"kind": "Finite",
+"reason": "F93"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F113"
+],
+"atoms": [
+{
+"kind": "State",
+"name": "loading",
+"site": "Lighthouse.Frontend/src/hooks/useRbac.ts",
+"symbol": "isLoading"
+},
+{
+"kind": "State",
+"name": "admin",
+"site": "Lighthouse.Frontend/src/hooks/useRbac.ts",
+"symbol": "isSystemAdmin"
+},
+{
+"kind": "Action",
+"name": "resolve",
+"site": "Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts",
+"symbol": "resolveSettingsLocation"
+},
+{
+"kind": "Action",
+"name": "accessLoaded",
+"site": "Lighthouse.Frontend/src/hooks/useRbac.ts",
+"symbol": "useRbac"
+}
+],
+"language": "Quint",
+"mutants": [
+{
+"description": "F114",
+"id": "N1"
+}
+],
+"path": "docs/feature/epic-6473-settings-split/design/models/settingsResolver.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "noDecisionWhileLoading",
+"site": "Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts",
+"statement": "F110",
+"symbol": "resolveSettingsLocation"
+},
+{
+"kind": "Invariant",
+"name": "targetVisible",
+"site": "Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts",
+"statement": "F111",
+"symbol": "resolveSettingsLocation"
+},
+{
+"kind": "Invariant",
+"name": "adminBareLandsOnOrganization",
+"site": "Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts",
+"statement": "F112",
+"symbol": "resolveSettingsLocation"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F52"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F66",
+"description": "F65",
+"result_type": "DOM under MemoryRouter"
+},
+{
+"cannot_distinguish": "F68",
+"description": "F67",
+"result_type": "Show(area,tab) | Redirect(path) | Wait"
+},
+{
+"cannot_distinguish": "F70",
+"description": "F69",
+"result_type": "string path"
+}
+],
+"refuted": [
+{
+"cause": "F95",
+"counterexample": "F96",
+"statement": "F94"
+}
+],
+"risks": [
+{
+"allowed": "F125",
+"forbidden": "F126",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "resolveSettingsLocation",
+"preserved": "F124",
+"residue": "F127",
+"source": "F123"
+},
+{
+"allowed": "F130",
+"forbidden": "F131",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "useRbac",
+"preserved": "F129",
+"residue": "F132",
+"source": "F128"
+},
+{
+"allowed": "F135",
+"forbidden": "F136",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "settingsAreas",
+"preserved": "F134",
+"residue": "F137",
+"source": "F133"
+},
+{
+"allowed": "F140",
+"forbidden": "F141",
+"id": "Y4",
+"kind": "SinglePointOfFailure",
+"owner": "settingsAreas",
+"preserved": "F139",
+"residue": "F142",
+"source": "F138"
+},
+{
+"allowed": "F145",
+"forbidden": "F146",
+"id": "Y5",
+"kind": "Bypass",
+"owner": "EditConnection",
+"preserved": "F144",
+"residue": "F147",
+"source": "F143"
+},
+{
+"allowed": "F150",
+"forbidden": "F151",
+"id": "Y6",
+"kind": "Stressor",
+"owner": "useConfiguredConnections",
+"preserved": "F149",
+"residue": "F152",
+"source": "F148"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "resolveSettingsLocation",
+"state": "F107"
+},
+{
+"kind": "Excluded",
+"owner": "resolveSettingsLocation",
+"state": "F108"
+},
+{
+"kind": "Unknown",
+"owner": "useRbac",
+"state": "F109"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx",
+"public_oracle": {
+"expected": "F172",
+"falsifier": "F173",
+"promises": [
+"P1"
+],
+"stimulus": "F171"
+},
+"records": {
+"decisions": [
+"F174"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "public route",
+"locator": "Lighthouse.Frontend/src/App.tsx:283",
+"reason": "F181"
+},
+{
+"decision": "Migrated",
+"kind": "test using old shell",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx:1",
+"reason": "F182"
+},
+{
+"decision": "Changed",
+"kind": "e2e page objects",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"reason": "F183"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "panels moved unchanged",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1",
+"reason": "F184"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/auth/rbac/RbacSettingsPage.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/App.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/App/Header/Header.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/App/Header/SettingsMenu.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/SettingsAreaPage.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Settings.tsx:1",
+"reason": "F185"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F187"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Settings.tsx:49",
+"reason": "F175",
+"symbol": "Settings"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/hooks/useRbac.ts:35",
+"reason": "F176",
+"symbol": "useRbac"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/App/Header/NavigationItem.tsx:1",
+"reason": "F177",
+"symbol": "NavigationItem"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts:1",
+"reason": "F178",
+"symbol": "reportPrintRoutes"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts:1",
+"reason": "F179",
+"symbol": "LighthousePage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/models/auth/rbac/RbacSettingsPage.ts:1",
+"reason": "F179",
+"symbol": "RbacSettingsPage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"reason": "F179",
+"symbol": "SettingsPage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/App.tsx:1",
+"reason": "F179",
+"symbol": "App"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/App/Header/Header.tsx:1",
+"reason": "F179",
+"symbol": "Header"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/App/Header/SettingsMenu.tsx:1",
+"reason": "F180",
+"symbol": "SettingsMenu"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx:1",
+"reason": "F179",
+"symbol": "RecentProblemsSection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1",
+"reason": "F179",
+"symbol": "CreateConnectionWizard"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1",
+"reason": "F179",
+"symbol": "ModifyConnectionSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:1",
+"reason": "F179",
+"symbol": "DataOverviewTable"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts:1",
+"reason": "F180",
+"symbol": "resolveSettingsLocation"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F180",
+"symbol": "settingsAreas"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1",
+"reason": "F179",
+"symbol": "OverviewDashboard"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/SettingsAreaPage.tsx:1",
+"reason": "F180",
+"symbol": "SettingsAreaPage"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F180",
+"symbol": "settingsPanels"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1",
+"reason": "F180",
+"symbol": "settingsRoutes"
+}
+]
+},
+"supports": [
+"Lighthouse.Frontend/src/models/Settings/settingsPaths.enforcement.test.ts"
+],
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts",
+"reason": "F154"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts",
+"reason": "F155"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx",
+"reason": "F156"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/SettingsAreaPage.tsx",
+"reason": "F157"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx",
+"reason": "F158"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/Settings.tsx",
+"reason": "F159"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/App/Header/SettingsMenu.tsx",
+"reason": "F160"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/App/Header/Header.tsx",
+"reason": "F161"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/App.tsx",
+"reason": "F162"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx",
+"reason": "F163"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx",
+"reason": "F164"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+"reason": "F165"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+"reason": "F166"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+"reason": "F167"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts",
+"reason": "F168"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts",
+"reason": "F169"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/auth/rbac/RbacSettingsPage.ts",
+"reason": "F170"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/settingsAreas.test.tsx src/models/Settings/settingsPaths.enforcement.test.ts"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/pages/Settings/Organization/organizationTabs.test.tsx",
+"public_oracle": {
+"expected": "F200",
+"falsifier": "F201",
+"promises": [
+"P2"
+],
+"stimulus": "F199"
+},
+"records": {
+"decisions": [
+"F202"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "license asker allow-list",
+"locator": "Lighthouse.Frontend/src/hooks/licenseStatusOneAsker.enforcement.test.ts:16",
+"reason": "F207"
+},
+{
+"decision": "Migrated",
+"kind": "tests of removed component",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx:1",
+"reason": "F208"
+},
+{
+"decision": "Changed",
+"kind": "test ids",
+"locator": "Lighthouse.Frontend/src/tests/e2eTestIds.test.ts:1",
+"reason": "F209"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SystemSettings/SystemConfigurationPage.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/hooks/useBehaviourSettings.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Organization/CalendarTab.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Organization/RefreshAndOrderingTab.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Organization/TerminologyTab.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/BlackoutSettings.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/UsageDataTab.tsx:1",
+"reason": "F186"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F210"
+}
+],
+"reuse": [
+{
+"decision": "Replace",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx:18",
+"reason": "F203",
+"symbol": "SystemSettingsTab"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/BehaviourSettingsTable.tsx:25",
+"reason": "F204",
+"symbol": "BehaviourSettingsTable"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:35",
+"reason": "F205",
+"symbol": "useLicenseStatusQuery"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/BlackoutSettings.tsx:69",
+"reason": "F206",
+"symbol": "BlackoutSettings"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"reason": "F179",
+"symbol": "SettingsPage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SystemSettings/SystemConfigurationPage.ts:1",
+"reason": "F179",
+"symbol": "SystemConfigurationPage"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useBehaviourSettings.ts:1",
+"reason": "F180",
+"symbol": "useBehaviourSettings"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F180",
+"symbol": "settingsAreas"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Organization/CalendarTab.tsx:1",
+"reason": "F180",
+"symbol": "CalendarTab"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Organization/RefreshAndOrderingTab.tsx:1",
+"reason": "F180",
+"symbol": "RefreshAndOrderingTab"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Organization/TerminologyTab.tsx:1",
+"reason": "F180",
+"symbol": "TerminologyTab"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F180",
+"symbol": "settingsPanels"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/UsageDataTab.tsx:1",
+"reason": "F180",
+"symbol": "UsageDataTab"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/Organization/TerminologyTab.tsx",
+"reason": "F188"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/Organization/CalendarTab.tsx",
+"reason": "F189"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/Organization/RefreshAndOrderingTab.tsx",
+"reason": "F190"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/System/UsageDataTab.tsx",
+"reason": "F191"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/useBehaviourSettings.ts",
+"reason": "F192"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx",
+"reason": "F193"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/System/BlackoutSettings.tsx",
+"reason": "F194"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts",
+"reason": "F195"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx",
+"reason": "F196"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/settings/SystemSettings/SystemConfigurationPage.ts",
+"reason": "F197"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts",
+"reason": "F198"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/Organization/organizationTabs.test.tsx"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx",
+"move": "F223",
+"preserved": "F224",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx src/components/Common/LicenseStatus/LicenseStatusIcon.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F221",
+"falsifier": "F222",
+"promises": [
+"P3"
+],
+"stimulus": "F220"
+},
+"records": {
+"decisions": [
+"F225"
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "license popover consumers",
+"locator": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusIcon.tsx:1",
+"reason": "F228"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusContent.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.tsx:1",
+"reason": "F186"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.tsx:721",
+"reason": "F226",
+"symbol": "LicenseStatusPopover"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:35",
+"reason": "F227",
+"symbol": "useLicenseStatusQuery"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1",
+"reason": "F179",
+"symbol": "SettingsPage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1",
+"reason": "F179",
+"symbol": "CreateConnectionWizard"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1",
+"reason": "F179",
+"symbol": "ModifyConnectionSettings"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusContent.tsx:1",
+"reason": "F180",
+"symbol": "LicenseStatusContent"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F180",
+"symbol": "settingsAreas"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F180",
+"symbol": "settingsPanels"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1",
+"reason": "F180",
+"symbol": "settingsRoutes"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.tsx:1",
+"reason": "F180",
+"symbol": "LicenseTab"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusContent.tsx",
+"reason": "F211"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.tsx",
+"reason": "F212"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.tsx",
+"reason": "F213"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts",
+"reason": "F214"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx",
+"reason": "F215"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx",
+"reason": "F216"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+"reason": "F217"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx",
+"reason": "F218"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts",
+"reason": "F219"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/System/LicenseTab.test.tsx"
+]
+},
+"S4": {
+"oracle": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx",
+"move": "F264",
+"preserved": "F265",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Overview/OverviewDashboard.test.tsx src/pages/Overview/OverviewDashboard.licenseCheck.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F262",
+"falsifier": "F263",
+"promises": [
+"P4"
+],
+"stimulus": "F261"
+},
+"records": {
+"decisions": [
+"F266"
+],
+"impact": [
+{
+"decision": "Migrated",
+"kind": "overview page",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx:1",
+"reason": "F270"
+},
+{
+"decision": "Changed",
+"kind": "e2e page objects and specs",
+"locator": "Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts:1",
+"reason": "F271"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/ado/ado.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/csv/csv.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/jira/jira.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/linear/linear.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/hooks/useConfiguredConnections.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F186"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:586",
+"reason": "F267",
+"symbol": "OverviewDashboard"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:1",
+"reason": "F268",
+"symbol": "DataGridBase"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx:1",
+"reason": "F269",
+"symbol": "ReconnectBanner"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts:1",
+"reason": "F179",
+"symbol": "OverviewPage"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1",
+"reason": "F180",
+"symbol": "SystemConnectionsPage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/ado/ado.spec.ts:1",
+"reason": "F179",
+"symbol": "addConnection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/csv/csv.spec.ts:1",
+"reason": "F179",
+"symbol": "csv"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/jira/jira.spec.ts:1",
+"reason": "F179",
+"symbol": "addConnection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/linear/linear.spec.ts:1",
+"reason": "F179",
+"symbol": "addConnection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts:1",
+"reason": "F179",
+"symbol": "OAuthConnection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts:1",
+"reason": "F179",
+"symbol": "addConnection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts:1",
+"reason": "F179",
+"symbol": "addConnection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts:25",
+"reason": "F179",
+"symbol": "editConnection"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1",
+"reason": "F179",
+"symbol": "CreateConnectionWizard"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/hooks/useConfiguredConnections.ts:1",
+"reason": "F180",
+"symbol": "useConfiguredConnections"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F180",
+"symbol": "settingsAreas"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:38",
+"reason": "F179",
+"symbol": "EditConnectionPage"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:1",
+"reason": "F180",
+"symbol": "ConnectionsSettings"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1",
+"reason": "F180",
+"symbol": "settingsPanels"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx",
+"reason": "F249"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/hooks/useConfiguredConnections.ts",
+"reason": "F250"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+"reason": "F251"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx",
+"reason": "F252"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx",
+"reason": "F253"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts",
+"reason": "F254"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx",
+"reason": "F255"
+},
+{
+"change": "Create",
+"path": "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts",
+"reason": "F256"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts",
+"reason": "F257"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/ado/ado.spec.ts",
+"reason": "F258"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/csv/csv.spec.ts",
+"reason": "F258"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/jira/jira.spec.ts",
+"reason": "F258"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/linear/linear.spec.ts",
+"reason": "F258"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts",
+"reason": "F258"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts",
+"reason": "F258"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts",
+"reason": "F259"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts",
+"reason": "F260"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/Connections/ConnectionsSettings.test.tsx"
+]
+},
+"S5": {
+"oracle": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx",
+"public_oracle": {
+"expected": "F239",
+"falsifier": "F240",
+"promises": [
+"P5"
+],
+"stimulus": "F238"
+},
+"records": {
+"decisions": [
+"F241"
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "connection page routes",
+"locator": "Lighthouse.Frontend/src/App.tsx:259",
+"reason": "F245"
+},
+{
+"decision": "Changed",
+"kind": "e2e spec",
+"locator": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:866",
+"reason": "F246"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "wizard and form components",
+"locator": "Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1",
+"reason": "F247"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/App.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F186"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1",
+"reason": "F185"
+},
+{
+"decision": "Changed",
+"kind": "target file",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1",
+"reason": "F186"
+}
+],
+"not_applicable": [
+{
+"analysis": "prefactoring",
+"reason": "F248"
+}
+],
+"reuse": [
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:38",
+"reason": "F242",
+"symbol": "EditConnectionPage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx:90",
+"reason": "F243",
+"symbol": "OnboardingStepper"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx:56",
+"reason": "F244",
+"symbol": "ConnectionsSection"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1",
+"reason": "F180",
+"symbol": "SystemConnectionsPage"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:866",
+"reason": "F179",
+"symbol": "goto"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/App.tsx:1",
+"reason": "F179",
+"symbol": "App"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1",
+"reason": "F180",
+"symbol": "settingsAreas"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1",
+"reason": "F179",
+"symbol": "OverviewDashboard"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1",
+"reason": "F180",
+"symbol": "settingsRoutes"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx",
+"reason": "F229"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx",
+"reason": "F230"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/App.tsx",
+"reason": "F231"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/models/Settings/settingsAreas.ts",
+"reason": "F232"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx",
+"reason": "F233"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx",
+"reason": "F234"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx",
+"reason": "F235"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts",
+"reason": "F236"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts",
+"reason": "F237"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Connections/Edit/connectionEntryPoints.test.tsx"
+]
+}
+}
+},
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F272"
+},
+{
+"id": "E2",
+"promises": [
+"P1"
+],
+"text": "F273"
+},
+{
+"id": "E3",
+"promises": [
+"P2"
+],
+"text": "F274"
+},
+{
+"id": "E4",
+"promises": [
+"P2"
+],
+"text": "F275"
+},
+{
+"id": "E5",
+"promises": [
+"P2"
+],
+"text": "F276"
+},
+{
+"id": "E6",
+"promises": [
+"P3"
+],
+"text": "F277"
+},
+{
+"id": "E7",
+"promises": [
+"P3"
+],
+"text": "F278"
+},
+{
+"id": "E8",
+"promises": [
+"P4"
+],
+"text": "F279"
+},
+{
+"id": "E9",
+"promises": [
+"P4"
+],
+"text": "F280"
+},
+{
+"id": "E10",
+"promises": [
+"P4"
+],
+"text": "F281"
+},
+{
+"id": "E11",
+"promises": [
+"P5"
+],
+"text": "F282"
+},
+{
+"id": "E12",
+"promises": [
+"P5"
+],
+"text": "F283"
+}
+]
+},
+"facts": {
+"F1": "Epic 6473 Settings split: split today's one System Settings page into three areas by who decides (Organization, Access, System), split the Configuration tab into Terminology, Calendar and Refresh & ordering, give the license and the connections a home under System, and route every way in to its new place, as decided in docs/feature/epic-6473-settings-split/feature-delta.md.",
+"F10": "Anything level-related (Epic 6474) and connection-mapping UI (Epic 6455 vision)",
+"F100": "rendered location at a URL in MemoryRouter",
+"F101": "a link whose path is built from a variable; an outside writer that changes useRbac summary after resolution",
+"F102": "Every in-app link and POM expectation takes its settings or connection path from the definition",
+"F103": "dead links like the old /settings/license",
+"F104": "tab and area slugs, connection id",
+"F105": "source-scan test plus rendered link hrefs",
+"F106": "path built from a variable; docs and bookmarks outside the repo",
+"F107": "Any of 8 access boolean triples, including the permissive failed-read fallback",
+"F108": "Show or Redirect while isLoading; a Redirect target that is hidden for the person; a Redirect loop",
+"F109": "Header and shell each read access once, so they may differ for a moment (neither shows a gated item early); a person whose access changes after load",
+"F11": "Docs prose and screenshots: done at finalize, not in the slices",
+"F110": "While loading the outcome is pending or Wait",
+"F111": "A shown or redirected area is visible to the person",
+"F112": "An admin on a bare address is redirected to organization",
+"F113": "Areas abstracted to integers; access is the pair (loading, admin); organization is admin-only, access and system are visible to everyone",
+"F114": "Resolver ignores isLoading and decides on the permissive summary",
+"F115": "resolver safety claims",
+"F116": "Quint typecheck, quint run and quint verify (8 steps) on settingsResolver.qnt hold; mutant without the loading check is refuted by quint run; runtime resolver not yet built",
+"F117": "Show for every valid tab path",
+"F118": "definition tab -> path helper -> resolveSettingsLocation -> SettingsAreaPage -> rendered tab; acyclic, admitted input is the URL",
+"F119": "settings and connection URLs and menu entries",
+"F12": "Header: text trigger 'Settings' with a down arrow opens a menu of Organization (how we work), Access (who may do what), System (running this server); mobile drawer: non-link caption 'Settings' with the three areas indented (D1-D3)",
+"F120": "URL or Header menu item -> settingsRoutes/SettingsMenu -> SettingsAreaPage in MemoryRouter; new files named as slice targets",
+"F121": "resolver and redirects",
+"F122": "Not applicable: pure synchronous total function; Wait ends when the existing useRbac() read completes, outside this design; a failed read yields the permissive fallback, never an endless Wait",
+"F123": "Assumption: access loads quickly. Negation: my-summary is slow",
+"F124": "deep link opens the requested tab once access loads",
+"F125": "spinner meanwhile",
+"F126": "redirect before load; first-tab bounce",
+"F127": "none beyond the spinner",
+"F128": "Assumption: my-summary succeeds. Negation: it fails",
+"F129": "nobody is locked out",
+"F13": "Area page h1 is 'Settings › {Area}'; bare /settings lands on the first area the person may see, Organization for a System Admin (D4, D7)",
+"F130": "all three areas and tabs shown (permissive fallback); backend refuses what the person may not do",
+"F131": "a blank or endless spinner page",
+"F132": "a reader sees admin tabs whose calls the backend refuses",
+"F133": "Assumption: old links are only the 14 keys. Negation: bookmarks use odd case, earlier slugs or unknown tabs",
+"F134": "an old link opens the same setting or the first visible tab",
+"F135": "fallback to first visible tab for an unknown slug",
+"F136": "blank page or redirect loop",
+"F137": "external docs and screenshots naming old URLs (finalize)",
+"F138": "settingsAreas.ts is the one owner of paths",
+"F139": "every link resolves",
+"F14": "Access tab 'System Admins' is renamed 'System-wide access'; the old slug keeps working (D5)",
+"F140": "a wrong entry is caught by the source scan and POM tests",
+"F141": "a second hand-written path list",
+"F142": "a path built from a variable passes the scan; review owns it",
+"F143": "Direct URL typed or old bookmark skips the menu",
+"F144": "same gating as via the menu",
+"F145": "redirect with replace",
+"F146": "a hidden tab shown",
+"F147": "connection pages sit outside the resolver and use their own no-access alert",
+"F148": "Second set: list call fails, license call fails, tab opened in a worktree with stale cache, two tabs of the browser changing a connection",
+"F149": "no view shows an old or empty value as current",
+"F15": "System tab order after all slices: Connections, Database, Encryption, Demo Data, Usage Data, System Info, License (D6)",
+"F150": "spinner, inline could-not-load alert, refused alert on 403",
+"F151": "empty state after a failure; locked switch for an unreadable license",
+"F152": "a second browser tab may show a list up to the 5-minute stale time until remount; walked through the keyed-query writes, not executed",
+"F153": "No production module other than settingsAreas.ts and settingsRoutes.tsx holds a string literal starting with /settings or /connections; no new direct getLicenseStatus asker; components do not import pages",
+"F154": "single definition of areas, tabs, legacy keys, paths",
+"F155": "pure resolver Show/Redirect/Wait",
+"F156": "route elements and static redirects",
+"F157": "parameterised shell extracted from Settings.tsx",
+"F158": "tab slug to panel binding",
+"F159": "shell content moves to SettingsAreaPage; file reduced or removed",
+"F16": "Organization tab icons: Terminology Translate, Calendar EventBusy, Refresh & ordering Sync; license failure on Calendar reads 'Could not load the license.' (D8, D9)",
+"F160": "text trigger menu and drawer group",
+"F161": "nav link replaced by SettingsMenu",
+"F162": "settingsRoutes() mounted once; old /settings and /connections routes removed in S5 for connections",
+"F163": "path from definition",
+"F164": "demo-data path from definition",
+"F165": "demo-data link path from definition",
+"F166": "license link path from definition",
+"F167": "license link path from definition (or OAuthPremiumNotice.tsx if it has landed)",
+"F168": "goToSettings opens the header menu",
+"F169": "goTo* pick the area then the tab by test id",
+"F17": "System → Usage Data shows the switch row and the docs link only, no sentence about the footer choice (D10)",
+"F170": "goToAccessTab through the same path; same-pathname workaround removed",
+"F171": "Render the app routes in a MemoryRouter at /settings, /settings?tab=database, /settings?tab=LOGS, /settings/access/system-admins (RBAC on, access slow) and for a reader at /settings; open the header Settings menu",
+"F172": "Menu lists Organization, Access, System; area page h1 is Settings > {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization or Log Level; license links land on System",
+"F173": "First-tab bounce of the deep link, a legacy key landing elsewhere, Organization visible to a reader, or old h1 System Settings",
+"F174": "S1 is the walking skeleton: areas Organization (Configuration whole), Access (System-wide access, API Keys), System (Demo Data first, Database, Encryption, System Info) hold today panels unchanged; header menu, h1 Settings > {Area}, 14 legacy keys, bare, unknown and license redirects, in-app link paths, POM menu navigation. System Admins panel moves as is including the Epic 6577 content. Existing Settings.test.tsx (mocks SystemSettingsTab, asserts old h1) moves with the shell; owner is the acceptance designer.",
+"F175": "Shell (heading, Paper, TabList, panels, icons) is extracted and parameterised by area; visibility rules and key map move to the definition",
+"F176": "Only access source; resolver takes its three facts",
+"F177": "Drawer entries for the three areas",
+"F178": "Pattern precedent for a routes module with lazy pages; no existing owner of the settings address contract (CreateNew for the definition and resolver)",
+"F179": "Existing file extended by this slice; owner of the responsibility named in the slice decision",
+"F18": "System → License shows the license content at natural width in one 'License' section; connection forms keep the link text 'View license options', only its target changes (D11, D12)",
+"F180": "New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)",
+"F181": "/settings exact route replaced by nested area routes and redirects",
+"F182": "Mocks SystemSettingsTab and asserts old h1; moves to the area shell",
+"F183": "Menu then tab navigation; method names and specs unchanged",
+"F184": "Panel content and test id rbac-tab unchanged; only label and slug in the definition change",
+"F185": "Edited by this slice; consumers and tests named in the slice records",
+"F186": "New file created by this slice; consumers named in the slice records",
+"F187": "The shell extraction is the slice behaviour change (areas and routes), not a behaviour-preserving move with its own existing oracle",
+"F188": "composes TerminologyConfiguration",
+"F189": "composes BlackoutSettings with license looks",
+"F19": "Connections tab keeps the '{Work Tracking Systems}' title with the button right of it; the button and the stepper action say 'Connect {Work Tracking System}' (D13a, D13b)",
+"F190": "composes RefreshSettingUpdater and the ordering behaviour row",
+"F191": "usage-data behaviour row and docs link",
+"F192": "keyed optionalFeatures query with shared license query",
+"F193": "emptied then deleted; its four test files move with the tabs",
+"F194": "accepts an unknown license state so Premium-gated controls never read unknown as no Premium",
+"F195": "Organization three tabs, Usage Data tab, configuration legacy key to Terminology",
+"F196": "bind new tabs",
+"F197": "split into Terminology, Calendar, Refresh & ordering page objects",
+"F198": "goTo for the new tabs",
+"F199": "Render /settings/organization, /settings/organization/refresh-ordering, /settings/system/usage-data and /settings?tab=configuration in a MemoryRouter with a fake optional-feature service and license service: ready, loading, failing",
+"F2": "Each person finds a setting where its owner looks for it, and every old link still opens the same setting.",
+"F20": "Task Manager connections section gains a 'Manage {Work Tracking Systems}' link, a link in its empty text, and the configured term in its words (D13)",
+"F200": "Organization shows Terminology, Calendar, Refresh & ordering with D8 icons; no usage-data row there; Usage Data tab holds the switch and docs link; failing optional-feature call shows Could not load the behaviour settings.; unreadable license shows the could-not-load alert instead of a locked switch or Premium required; configuration key lands on Terminology; toggle then leave and return shows the new value",
+"F201": "An empty tab or locked switch after a failed call, usage-data row left in Organization, Premium-required shown while the license is unknown, or stale switch after return",
+"F202": "S2 splits SystemSettingsTab into TerminologyTab, CalendarTab, RefreshAndOrderingTab (Organization) and UsageDataTab (System, row plus docs link only), composing existing InputGroup sections unchanged. useBehaviourSettings owns keyed query optionalFeatures plus useLicenseStatusQuery and returns loading | failed | ready rows; rows are matched by key never by id; toggle writes the cache first and restores on refusal. Calendar shows a spinner then Could not load the license. in place of Premium required while the license is unknown. SystemSettingsTab.tsx and its four test files move; its allow-list entry leaves licenseStatusOneAsker.",
+"F203": "Four unrelated groups in one component; split into four thin tabs, panels reused",
+"F204": "Reused with a list filtered by key",
+"F205": "Single license asker; tabs read through it, no new asker",
+"F206": "Owns the Premium lock; extended with a license-unknown input rather than deciding it in CalendarTab",
+"F207": "SystemSettingsTab.tsx leaves the list in the commit that deletes it",
+"F208": "Four SystemSettingsTab test files move to the new tabs",
+"F209": "configuration-tab and configuration-panel retire; new tab ids added with the POMs",
+"F21": "With no connection the Overview shows a text line under the disabled Add buttons linking to Settings › System › Connections; nothing extra when the stepper is dismissed (D15, D12b)",
+"F210": "The split is the behaviour change (tabs, loading and failure looks); panels stay unchanged inside it",
+"F211": "content extracted from the popover",
+"F212": "thin Popover around LicenseStatusContent",
+"F213": "thin tab with useLicenseStatusQuery",
+"F214": "License tab last in System; license redirect target",
+"F215": "bind LicenseTab",
+"F216": "/settings/license redirects to /settings/system/license",
+"F217": "license link target is the License tab",
+"F218": "license link target is the License tab (or OAuthPremiumNotice.tsx if FE5 landed)",
+"F219": "goToLicense",
+"F22": "Connection pages show a 'Back to {Work Tracking Systems}' link to System → Connections above the title (D14)",
+"F220": "Render /settings/system/license and /settings/license as System Admin, as reader, with a failing license call; follow the license link from the connection wizard and the connection form; import a license file",
+"F221": "System License tab shows status, organization, expiry; admin sees import and clear, reader neither; failing call shows Could not load the license.; both links land on System, License; after import the header icon shows the new expiry",
+"F222": "Blank page or System Info after the link, import and clear shown to a reader, or header icon stale after import",
+"F223": "L2 extract LicenseStatusContent from LicenseStatusPopover, popover renders it unchanged",
+"F224": "popover status, import, clear, loading and failure behaviour",
+"F225": "S3 extracts LicenseStatusContent from LicenseStatusPopover (popover becomes a thin Popover around it) and mounts it in LicenseTab inside one InputGroup License at natural width. Import and clear invalidate the licenseStatus query so the header icon updates from the same asker; no new asker. /settings/license redirects to /settings/system/license; the two License links keep the text View license options and take the definition path. Rights are the popover rights.",
+"F226": "Owns import, clear, status and its looks; content extracted so popover and tab share one view, not a second license card",
+"F227": "licenseStatusOneAsker stays green unchanged",
+"F228": "Icon and popover behaviour unchanged",
+"F229": "return paths and Back link",
+"F23": "Style: existing frontend layering (pages over components/hooks/models/services; fallow zones) on the backend ports-and-adapters. Frontend only: no backend, API, payload or schema change; no new dependency. Paradigm object_oriented per project authority; React components and hooks keep their existing shape, no new classes.",
+"F230": "connection page routes and old /connections redirects",
+"F231": "old /connections routes removed so the source scan passes",
+"F232": "connection page path helpers",
+"F233": "connect path and action text",
+"F234": "D15 line under the disabled Add buttons",
+"F235": "Manage link, empty-text link, row Edit path, configured terms",
+"F236": "goto path updated; still expects the no-access alert",
+"F237": "Connect button text",
+"F238": "In a MemoryRouter open /connections/4/edit and /connections/new; click the stepper Connect action with no connection and complete or cancel the wizard; render the Overview with no connection and the Task Manager connections section with a failing and with no connection",
+"F239": "Old addresses redirect (replace) to /settings/system/connections/...; Save, wizard cancel and wizard complete end on System Connections; both pages show Back to {Work Tracking Systems} linking there; Overview shows the connect-first line linking to the tab; Task Manager shows Manage {Work Tracking Systems} and the empty-text link with the configured term; a reader still sees the no-access alert",
+"F24": "Addressing: a setting address is a path /settings/:area/:tab? with areas organization, access, system; License is /settings/system/license; connection pages live at /settings/system/connections/new and /settings/system/connections/:id/edit. One data-only definition models/Settings/settingsAreas.ts (areas, tabs with slug, label, test ids, visibility rule, earlier slugs; the 14 legacy ?tab= keys; connection page paths) is the single owner of every settings and connection path; Header, stepper, Task Manager, links and POM expectations take paths from it. It sits in models so components may import it.",
+"F240": "A save or cancel that lands on the Overview, an old URL that 404s or loops, hard-coded Connection wording in the Task Manager, or a reader redirected instead of shown the alert",
+"F241": "S5 mounts EditConnection at /settings/system/connections/new and /:id/edit (outside the area resolver); /connections/new and /connections/:id/edit become Navigate replace routes keeping the id. Return paths are EditConnection l.137 (save), l.180 (wizard cancel), l.181 (wizard complete): all go to the Connections tab; the no-access alert keeps Back to Overview; the edit page of an existing connection has no Cancel. Both pages show Back to {Work Tracking Systems} above the title. Stepper step opens the new connect path and its action reads Connect {Work Tracking System}; Overview shows the D15 text line under the disabled Add buttons only while no connection exists and the stepper is not the way; Task Manager ConnectionsSection gains Manage {Work Tracking Systems}, a link in its empty text and the configured terms. Bug 6498 is owned by S1 and S3, not here.",
+"F242": "Existing owner of save, wizard and no-access alert; only route, return path and Back link change",
+"F243": "Step action path and label from the definition and configured term",
+"F244": "Existing Task Manager section; gains links and configured terms",
+"F245": "/connections/new and /connections/:id/edit become redirects; pages move under /settings/system/connections",
+"F246": "goto path updated; redirect then the same no-access alert",
+"F247": "Holds no navigate or Cancel; wizard steps unchanged",
+"F248": "No behaviour-preserving move precedes this slice; the redirects and return paths are the behaviour change",
+"F249": "section extracted from the Overview",
+"F25": "Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace; failed access read keeps the permissive fallback (all areas and tabs). Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.",
+"F250": "keyed connections query and the one writer-side key removal",
+"F251": "section and Add button out; banners, existence check, stepper stay",
+"F252": "save and wizard completion remove the configuredConnections key",
+"F253": "draft deletes remove the key",
+"F254": "Connections first System tab, admin only",
+"F255": "bind ConnectionsSettings",
+"F256": "addConnection, editConnection, deleteConnection on the connections grid",
+"F257": "loses the three connection methods",
+"F258": "switch to SystemConnectionsPage",
+"F259": "switch to SystemConnectionsPage (2 calls)",
+"F26": "Routes: pages/Settings/settingsRoutes.tsx returns the settings route elements (lazy pages, reportPrintRoutes pattern) and the static redirects (/settings/license, /connections/new, /connections/:id/edit as Navigate replace); App.tsx calls it once inside AppShell and loses its /settings and /connections routes. Connection pages render outside the area resolver, so a reader still gets the connection page no-access alert.",
+"F260": "switch to SystemConnectionsPage (3 calls)",
+"F261": "Render /settings/system/connections and the Overview in a MemoryRouter with a fake work-tracking-system service: two connections, none, failing, 403; as admin and reader; delete one; create one then return to the tab",
+"F262": "Connections is the first System tab listing both connections with Edit and Delete and reconnect banners; Overview shows Portfolios and Teams and its reconnect banners but no connections section or button; none shows the empty state with Load Demo Data link to System Demo Data and docs link; failure shows the could-not-load alert, never the empty state; reader sees no tab; a created connection is listed after return",
+"F263": "Empty state while loading or after a failure, Overview still listing connections, stale list after a write, or Connections visible to a reader",
+"F264": "L3 extract the Overview connections section into ConnectionsSettings, still rendered on the Overview; makes mounting it as System Connections a move",
+"F265": "Overview connection list, banners, empty state, delete dialog and handlers behave as before",
+"F266": "S4 starts with a behaviour-unchanged extraction commit of the Overview connections section (title, Connect button, empty-state alert, ReconnectBanners, DataGridBase with storageKey overview-connection-table, delete dialog) into ConnectionsSettings, then mounts it as the first System tab and removes it and its button from the Overview. The Overview keeps its existence fetch (stepper, disabled Add Team), the refused alert, its ReconnectBanners and the filter box (no longer narrows connections); the tab has no text filter. useConfiguredConnections owns keyed query configuredConnections; every write (list delete, EditConnection save and wizard completion, wizard draft deletes, ReconnectBanner) removes the key. Looks: lone spinner, 403 refused alert, Could not load the {Work Tracking Systems}. alert, empty state only after success. Button text Connect {Work Tracking System}, section title {Work Tracking Systems}; System Admin only.",
+"F267": "Inline section is the existing owner of the list, banners, empty state and delete; extracted then moved, not rewritten",
+"F268": "Same columns and storageKey so saved column state survives",
+"F269": "Unchanged; shown on Overview and on the tab",
+"F27": "Shell: SettingsAreaPage extracted from Settings.tsx and parameterised by area (same Container, h1 Settings > {Area}, Paper, TabList, TabPanel, icons); lone spinner while resolver says Wait; tab click navigates with replace. Panels are bound to tab slugs in pages/Settings/settingsPanels.tsx. Header SettingsMenu (text trigger Settings with down arrow; items Organization/Access/System each with a one-line description; mobile drawer caption plus three indented items) reads the definition and useRbac(). Tab Access/System Admins is labelled System-wide access with the old slug kept as an earlier slug.",
+"F270": "Connection-list assertions move to the tab oracle; stepper, banners, existence check stay",
+"F271": "11 call sites in 8 specs switch to SystemConnectionsPage",
+"F272": "Settings shows three areas named Organization, Access and System, and each area holds every tab it held before, unchanged as a whole.",
+"F273": "Every settings address the user had before (old settings link or old tab link) opens the same tab it opened before, now inside its new area.",
+"F274": "Organization shows exactly the Terminology, Calendar and Refresh & ordering tabs.",
+"F275": "System shows a Usage Data tab.",
+"F276": "Each of the four tabs shows a loading look while its data is on its way, and a failure look when its data cannot load, never an empty area that reads as no data.",
+"F277": "System shows a License tab that displays the current license status and offers import and clear actions.",
+"F278": "Each license link in a connection form opens the System License tab.",
+"F279": "System shows a Connections tab as its first tab.",
+"F28": "Server state: new keyed TanStack query hooks own the lists (useBehaviourSettings for optionalFeatures plus the shared useLicenseStatusQuery; useConfiguredConnections for configuredConnections). Writes update or remove the key so a remount never shows the old value as current. No component adds a direct license-status asker; licenseStatusOneAsker allow-list loses SystemSettingsTab.tsx when the file is deleted. Every new view has a loading look (lone spinner) and a failure look (inline alert, 403 keeps the refused alert), never the empty state.",
+"F280": "The Connections tab lists connections, shows reconnect banners where a connection needs it, shows an empty state when there are none, and offers a Connect button.",
+"F281": "The Overview page no longer shows a connections section.",
+"F282": "Each way to a connection (setup stepper, Task Manager, the no-connection hint and old connection URLs) leads to System, Connections.",
+"F283": "Each connection page offers a way back to System, Connections.",
+"F29": "Claim-to-checker: Quint covers the resolver safety claims (no decision while access loads; shown or redirected area is visible; admin bare address lands on organization): model design/models/settingsResolver.qnt, typecheck, quint run and quint verify executed by the architect. TLA+/TLC and Agda are not selected: no concurrency or proof obligation beyond the finite resolver. Liveness is not applicable: the resolver is a pure synchronous total function and the Wait outcome is left by the access read, which is the existing useRbac() effect outside this design. Executable projection of the model is the resolver table and seeded property test in the S1 oracle.",
+"F3": "Settings opens three areas, Organization, Access and System, each holding today's tabs whole, and every old settings link opens the same tab",
+"F30": "Types: TypeScript strict via tsc -b. Invalid states excluded by construction: tab slugs and area slugs are literals from the definition (a path built by hand fails the source-scan test, not the type checker); the resolver takes three plain booleans so tests need no hook. Not excluded by types: a hand-built path from a variable (accepted, review catches it), and the DOM test ids (kept in step by e2eTestIds.test.ts).",
+"F31": "OO reading: no domain entity changes; the decision owners are the definition and resolver in models (data plus its pure decision), the shell for presentation, hooks for server state. No decision about the definition data lives in a component or in the Header; components only ask the resolver and definition. Smell classes applied from nw-code-design-oo: feature envy on route literals (moved to the definition), shotgun surgery on paths (one owner), long components (extract section from OverviewDashboard).",
+"F32": "Usage data: the feature adds no usage-data event; settings and connection paths raise no usage-data page opening (usageDataRouteKeys unchanged). Context map, ADR-270 and ARCHITECTURE.md unchanged; ADR-272 records addressing, definition, resolver, redirects and the source-scan enforcement and moves to docs/product/architecture at finalize.",
+"F33": "Terminology: every user-renamable word (Work Tracking System(s), Team, Portfolio, Feature) renders through the configured term via the hook the touched component already uses.",
+"F34": "Test substrate: Vitest + React Testing Library in Lighthouse.Frontend (MemoryRouter at the URL a user opens, renderHook with providers, pure modules as functions); Playwright through page objects in Lighthouse.EndToEndTests. Runner argv: pnpm --dir Lighthouse.Frontend exec vitest run <oracle file>. Test rules follow .claude/skills/test-writing; no nWave scenario tags in code. Test time within default budgets; no derogation requested.",
+"F35": "Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). A failed access read never locks anyone out (permissive fallback). No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.",
+"F36": "Old addresses keep working with replace redirects: the 14 legacy keys, bare /settings, /settings/license, /connections/new, /connections/:id/edit, any earlier tab slug (the old System Admins slug stays). Tab and panel test ids are kept where their tab survives; new ids license-tab, connections-tab, usage-data-tab, terminology-tab, calendar-tab, refresh-ordering-tab, settings-menu plus one id per area item; configuration-tab and configuration-panel retire in S2.",
+"F37": "Confirmed maintainer decisions bound the copy: D1-D4 header and heading, D5 System-wide access, D6 tab order Connections, Database, Encryption, Demo Data, Usage Data, System Info, License (in S1 alone the first tab stays Demo Data), D7, D8 icons Translate/EventBusy/Sync, D9 Could not load the license., D10 no footer sentence on Usage Data, D11 License natural width in one License group, D12 link text View license options, D13 Task Manager link and empty-text link and configured terms, D13a-wording Connect {Work Tracking System} on the tab button and the stepper action, D13b title, D14 Back to {Work Tracking Systems} link above the title of the connection pages, D15 hint line under the disabled Add buttons; D12b nothing extra when the stepper is dismissed.",
+"F38": "New single owner of every settings and connection path; replaces the tab key map in Settings.tsx and hand-written literals",
+"F39": "Plain System Settings link becomes the SettingsMenu reading the definition",
+"F4": "Organization shows Terminology, Calendar and Refresh & ordering tabs, and System shows a Usage Data tab, each with its own loading and failure look",
+"F40": "full log link /settings?tab=system-info moves to the definition path for System Info",
+"F41": "demo-data link takes the definition path",
+"F42": "dead /settings/license link takes the definition path (System in S1, License in S3)",
+"F43": "dead /settings/license link takes the definition path; the notice may have moved to OAuthPremiumNotice.tsx when it runs",
+"F44": "stepper opens the connect page path from the definition (S5)",
+"F45": "row edit links and demo-data link move with the extracted list (S4) and take definition paths (S5)",
+"F46": "row Edit takes the definition path; section gains the manage link (S5)",
+"F47": "Save, wizard cancel and wizard complete (l.137, 180, 181) return to the Connections tab path instead of /",
+"F48": "settings and connection routes come from settingsRoutes()",
+"F49": "POM goToSettings and SettingsPage.goTo* open the header menu, then the tab by its unchanged test id; specs keep their calls",
+"F5": "System shows a License tab with the license status, import and clear, and the license links in the connection forms open it",
+"F50": "Existing ids kept where a tab survives; new ids added to the app and the POMs together; configuration ids retire in S2",
+"F51": "POM reads the same ids; new ids for new tabs",
+"F52": "Producer and consumers of every contract here (the path definition, hooks, existing services) change in one deployable in one commit; no API, payload or persisted data changes; covered by the slice oracles and the source scan.",
+"F53": "In-app links: stepper, Add Team hint, Task Manager, demo-data links, license links, row Edit",
+"F54": "IRbacService.getAuthorizationSummary via useRbac()",
+"F55": "IWorkTrackingSystemService via ApiServiceContext",
+"F56": "ILicensingService.getLicenseStatus via useLicenseStatusQuery",
+"F57": "IOptionalFeatureService via useBehaviourSettings",
+"F58": "pages -> components/hooks/models/services; components may import models but not pages; the definition in models imports nothing from them; panels moved unchanged keep their own service ports",
+"F59": "Access read fails",
+"F6": "System shows a Connections tab, first, with the list, reconnect banners, empty state and a Connect button, and the Overview no longer holds the connections section",
+"F60": "permissive fallback: all three areas and every tab visible",
+"F61": "Connection list or license or optional-feature call fails",
+"F62": "inline could-not-load alert in the view, 403 shows the refused alert, never the empty state or a locked switch",
+"F63": "Person may not see the requested area or tab",
+"F64": "redirect with replace to the first visible area or tab",
+"F65": "Rendered location: area h1, visible tab labels in order, selected tab and panel at a given URL and access",
+"F66": "which internal route element produced it; whether the URL was reached by redirect or directly except through the final location",
+"F67": "Resolver outcome for (request, access)",
+"F68": "the reason a hidden tab fell back (hidden vs unknown slug)",
+"F69": "Final location after redirect (pathname and absence of ?tab=)",
+"F7": "Every way to a connection (stepper, Task Manager, the no-connection hint, old URLs) leads to System, Connections, and the connection pages lead back there",
+"F70": "redirect count; replace vs push except through history length",
+"F71": "Two requests are equal when they resolve to the same Show(area,tab) for the same access; a legacy key in any case equals its table target path",
+"F72": "Equal when final pathname, h1, tab labels and selected panel agree",
+"F73": "Resolver safety: while access is loading the outcome is Wait; once loaded a Show or Redirect target is an area and tab the person may see; an admin on a bare address is sent to organization",
+"F74": "loading x any request -> Wait",
+"F75": "loaded reader x organization -> redirect to access",
+"F76": "loaded admin x bare /settings -> organization",
+"F77": "RBAC off x any request -> permissive, all areas",
+"F78": "Finite domain: 3 access booleans x 5 request classes; also checked by the Quint model settingsResolver.qnt",
+"F79": "Legacy table: each of the 14 old ?tab= keys, in lower and upper case, redirects to the area and tab listed in the feature-delta Navigation table for an admin; configuration lands on Terminology; the old System Admins slug opens System-wide access",
+"F8": "Frontend only: settings routes, area/tab definitions, header menu, tab moves, License and Connections tabs, entry points and redirects, E2E page objects",
+"F80": "each of 14 keys x two cases",
+"F81": "earlier slug of the renamed Access tab",
+"F82": "Closed 14-key table: a native table test, no generator adds coverage",
+"F83": "Convergence and round trip: for any request the resolver outcome is Show, Wait or a Redirect whose target, resolved again with the same access, is Show; every tab path built from the definition resolves to Show of that tab",
+"F84": "requests from definition slugs, earlier slugs, the 14 legacy keys in random case, and junk strings; access over all 8 boolean triples",
+"F85": "a hidden tab for a reader",
+"F86": "an earlier slug",
+"F87": "an unknown area",
+"F88": "seeded hand-rolled generator (no property library installed); shrink junk strings by truncation and request by dropping the tab part",
+"F89": "second resolution of the redirect target and the definition tab list, not the resolver own branch logic",
+"F9": "Any change to what a setting does or stores; any backend change",
+"F90": "a redirect whose target is itself redirected, or a hidden tab shown",
+"F91": "Source scan: no production module other than the definition and settingsRoutes contains a string or template literal starting with /settings or /connections",
+"F92": "whole src tree scanned",
+"F93": "Whole-tree source scan, not a generated domain",
+"F94": "A failed or slow access read can be resolved like a loaded one",
+"F95": "useRbac() starts with a permissive summary and isLoading true, so a loaded-looking admin summary exists before the answer",
+"F96": "deep link /settings/access/system-admins at isLoading true bounces to the first tab on the old page; the resolver carries isLoading as its own input and returns Wait",
+"F97": "A deep link to any settings tab never redirects before access has loaded and never lands on a tab the person may not see",
+"F98": "broken bookmarks and wrong-area first impressions",
+"F99": "request path, optional legacy key, three access booleans"
+},
+"product": {
+"decisions": [
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F12"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F13"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F14"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F15"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F16"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F17"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F18"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F19"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F20"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F21"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F22"
+}
+],
+"promises": [
+{
+"id": "P1",
+"kind": "Outcome",
+"text": "F3"
+},
+{
+"id": "P2",
+"kind": "Outcome",
+"text": "F4"
+},
+{
+"id": "P3",
+"kind": "Outcome",
+"text": "F5"
+},
+{
+"id": "P4",
+"kind": "Outcome",
+"text": "F6"
+},
+{
+"id": "P5",
+"kind": "Outcome",
+"text": "F7"
+}
+],
+"scope_in": [
+"F8"
+],
+"scope_out": [
+"F9",
+"F10",
+"F11"
+],
+"slices": [
+{
+"id": "S1",
+"observation": "F3",
+"promises": [
+"P1"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S2",
+"observation": "F4",
+"promises": [
+"P2"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S3",
+"observation": "F5",
+"promises": [
+"P3"
+]
+},
+{
+"depends_on": [
+"S1"
+],
+"id": "S4",
+"observation": "F6",
+"promises": [
+"P4"
+]
+},
+{
+"depends_on": [
+"S4"
+],
+"id": "S5",
+"observation": "F7",
+"promises": [
+"P5"
+]
+}
+]
+},
+"request": "F1",
+"schema": "nwdes.handoff",
+"scope": {
+"id": "epic-6473-settings-split",
+"kind": "Feature"
+},
+"version": 4,
+"work": {
+"size": "L",
+"value": "F2"
+}
+}

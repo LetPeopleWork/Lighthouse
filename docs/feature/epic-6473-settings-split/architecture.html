@@ -1,0 +1,3407 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><style>:root{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+    --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+    --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+    --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+    --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+  }
+}
+:root[data-theme="light"]{
+  --paper:#fbfaf8; --ink:#14171c; --muted:#5f6672; --rule:#e3e0da;
+  --panel:#ffffff; --accent:#a8590c; --accent-soft:#f5ead9;
+  --ready:#0f766e; --wip:#1d4ed8; --done:#15803d;
+  --quar:#a16207; --cont:#7e22ce; --guard:#475569; --dsn:#c2410c;
+  --keep:#15803d; --simp:#1d4ed8; --drop:#b91c1c; --unk:#6b7280;
+}
+:root[data-theme="dark"]{
+  --paper:#11141a; --ink:#e7e5e0; --muted:#98a0ad; --rule:#252a33;
+  --panel:#171b22; --accent:#e0964a; --accent-soft:#2a2118;
+  --ready:#5eead4; --wip:#93c5fd; --done:#86efac;
+  --quar:#fcd34d; --cont:#d8b4fe; --guard:#94a3b8; --dsn:#fb923c;
+  --keep:#86efac; --simp:#93c5fd; --drop:#fca5a5; --unk:#9ca3af;
+}
+*{box-sizing:border-box}
+body{
+  margin:0; background:var(--paper); color:var(--ink);
+  font-family:var(--nwave-font-stack);
+  font-size:15px; line-height:1.62; -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:2.5rem 1.5rem 6rem;
+  display:flex;flex-direction:column;gap:1.1rem}
+.brandbar{background:#11141a;border-radius:4px;padding:.7rem 1rem;display:flex;align-items:center}
+.brandbar-logo{height:1.9rem;width:auto;display:block}
+.provenance{
+  display:flex;flex-wrap:wrap;gap:.5rem .9rem;align-items:baseline;
+  background:var(--accent-soft);border-left:3px solid var(--accent);
+  padding:.7rem .95rem;border-radius:0 4px 4px 0;font-size:.8rem;color:var(--muted);
+}
+.provenance strong{color:var(--ink);font-weight:600}
+.provenance code{background:none;padding:0;color:var(--accent)}
+h1,h2,h3,h4{text-wrap:balance;line-height:1.22;margin:0;font-weight:640}
+h1{font-size:1.9rem;letter-spacing:-.018em;margin-top:.6rem}
+h2{font-size:1.28rem;letter-spacing:-.01em;margin-top:2.2rem;
+  padding-bottom:.4rem;border-bottom:1px solid var(--rule)}
+h3{font-size:1.02rem;margin-top:1.5rem;color:var(--accent)}
+h4{font-size:.9rem;margin-top:1.1rem;text-transform:uppercase;
+  letter-spacing:.07em;color:var(--muted)}
+p{margin:0;max-width:74ch}
+ul,ol{margin:0;padding-left:1.3rem;display:flex;flex-direction:column;gap:.35rem;max-width:74ch}
+hr{border:0;border-top:1px solid var(--rule);margin:1.6rem 0;width:100%}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+a:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+code{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:.86em;
+  background:var(--accent-soft);padding:.1em .34em;border-radius:3px}
+pre{background:var(--panel);border:1px solid var(--rule);border-radius:5px;
+  padding:1rem 1.1rem;overflow-x:auto;margin:0;font-size:.78rem;line-height:1.5}
+pre code{background:none;padding:0;font-size:inherit}
+blockquote{margin:0;padding:.75rem 1rem;background:var(--panel);
+  border-left:3px solid var(--quar);border-radius:0 4px 4px 0;color:var(--muted);max-width:74ch}
+.tablewrap{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;font-size:.83rem;
+  font-variant-numeric:tabular-nums}
+th{position:sticky;top:0;background:var(--panel);text-align:left;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;
+  color:var(--muted);font-weight:620;padding:.6rem .75rem;
+  border-bottom:1px solid var(--rule);white-space:nowrap}
+td{padding:.55rem .75rem;border-bottom:1px solid var(--rule);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+.chip{display:inline-block;padding:.12em .55em;border-radius:100px;
+  font-size:.7rem;font-weight:650;letter-spacing:.03em;white-space:nowrap;
+  border:1px solid currentColor}
+.s-ready{color:var(--ready)} .s-wip{color:var(--wip)} .s-done{color:var(--done)}
+.s-quar{color:var(--quar)} .s-cont{color:var(--cont)} .s-guard{color:var(--guard)}
+.s-dsn{color:var(--dsn)}
+.v-keep{color:var(--keep)} .v-simp{color:var(--simp)}
+.v-drop{color:var(--drop)} .v-unk{color:var(--unk)}
+/* --- directory tree: connectors drawn with borders, not characters,
+   so the chips stay aligned regardless of name length --- */
+.treewrap{border:1px solid var(--rule);border-radius:5px;background:var(--panel);
+  padding:.9rem 1.1rem;overflow-x:auto}
+ul.tree{list-style:none;margin:0;padding:0;display:block;max-width:none;
+  font-size:.83rem;line-height:1.5}
+ul.tree ul.tree{margin-left:.62rem;padding-left:.95rem;border-left:1px solid var(--rule)}
+ul.tree li{position:relative;padding:.16rem 0 .16rem .95rem;margin:0}
+ul.tree ul.tree>li::before{content:"";position:absolute;left:-.95rem;top:.72rem;
+  width:.82rem;border-top:1px solid var(--rule)}
+ul.tree ul.tree>li:last-child::after{content:"";position:absolute;left:-1.02rem;
+  top:.75rem;bottom:0;width:1px;background:var(--panel)}
+ul.tree summary{cursor:pointer;list-style:none;padding:.16rem 0;margin-left:-.95rem;
+  padding-left:.95rem;border-radius:3px}
+ul.tree summary::-webkit-details-marker{display:none}
+ul.tree summary::before{content:"▾";position:absolute;left:-.15rem;color:var(--muted);
+  font-size:.7rem;transition:transform .12s ease}
+ul.tree details:not([open])>summary::before{content:"▸"}
+ul.tree summary:hover{background:var(--accent-soft)}
+ul.tree summary:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.t-id{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-weight:650;
+  color:var(--accent);margin-right:.55rem;white-space:nowrap}
+.t-name{color:var(--ink);margin-right:.55rem}
+.t-badge{display:inline-block;font-size:.7rem;color:var(--muted);
+  border:1px solid var(--rule);border-radius:3px;padding:.02em .4em;
+  margin-right:.35rem;white-space:nowrap}
+li.t-branch>details>summary .t-id{font-size:.86rem;letter-spacing:.01em}
+/* --- colore del TESTO per stato: si legge la riga intera, non solo la chip --- */
+li.row-s-done>.t-name,li.row-s-done>details>summary .t-name{color:var(--done);
+  text-decoration:line-through;text-decoration-thickness:1px;opacity:.82}
+li.row-s-done>.t-id,li.row-s-done>details>summary .t-id{color:var(--done)}
+li.row-s-wip>.t-name,li.row-s-wip>details>summary .t-name{color:var(--wip);font-weight:560}
+li.row-s-wip>.t-id,li.row-s-wip>details>summary .t-id{color:var(--wip)}
+li.row-s-wip>details>summary{background:color-mix(in srgb,var(--wip) 9%,transparent);
+  border-left:2px solid var(--wip);margin-left:-1.15rem;padding-left:1.1rem}
+li.row-s-quar>.t-name,li.row-s-quar>details>summary .t-name{color:var(--muted);opacity:.72}
+li.row-s-cont>.t-name,li.row-s-cont>details>summary .t-name{color:var(--cont)}
+li.row-s-dsn>.t-name,li.row-s-dsn>details>summary .t-name{color:var(--dsn)}
+li.row-s-dsn>.t-id,li.row-s-dsn>details>summary .t-id{color:var(--dsn)}
+/* leaf with detail: closed by default, so the tree stays scannable
+   and the full row is a click away instead of a table to search */
+li.t-has-detail>details>summary::before{content:"›";font-size:.85rem}
+li.t-has-detail>details[open]>summary::before{content:"⌄";font-size:.7rem}
+li.t-has-detail>details[open]>summary{background:var(--accent-soft)}
+dl.t-detail{display:grid;grid-template-columns:auto 1fr;gap:.28rem .9rem;
+  margin:.45rem 0 .6rem .3rem;padding:.6rem .8rem;font-size:.78rem;
+  background:var(--paper);border:1px solid var(--rule);border-radius:4px}
+dl.t-detail dt{color:var(--muted);font-size:.7rem;text-transform:uppercase;
+  letter-spacing:.05em;font-weight:620;white-space:nowrap;padding-top:.06rem}
+dl.t-detail dd{margin:0;color:var(--ink)}
+@media (max-width:640px){.wrap{padding:1.5rem 1rem 4rem}h1{font-size:1.5rem}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style></head><body><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200.0001 281.99999" width="1200" height="282">
+  <!-- nWave wordmark (nWave-logo-tYW) — yellow n + white Wave, for dark backgrounds -->
+  <g transform="matrix(1.4449288,0,0,1.4449288,-451.84019,-521.62622)">
+    <path
+      d="m 452.34925,552.58492 q -15.46668,0 -25.60003,-10.13335 -10.13334,-10.13334 -10.13334,-26.40003 0,-8.00001 2.13333,-18.66669 2.13334,-10.93335 4.80001,-21.86669 2.93334,-10.93335 5.60001,-19.46669 2.93333,-8.80001 4,-12.80002 3.46667,-11.20001 2.93334,-16.53335 -0.53334,-5.60001 -3.73334,-7.46668 -3.2,-1.86667 -7.73334,-1.86667 -5.86668,0 -13.06669,4.80001 -7.2,4.8 -15.73335,18.13335 -2.66667,4.26668 -8.00001,13.86669 -5.33334,9.33334 -12.00001,21.60002 -6.40001,12.00002 -13.33335,25.33337 -6.93334,13.06668 -13.06668,25.33336 -6.13335,12.00002 -10.66668,21.06669 -2.93334,5.86668 -8.80001,6.40001 -5.86668,0.8 -10.66668,-2.66667 -4.53334,-3.73334 -4.26668,-10.13334 2.13334,-29.86671 6.40001,-60.00008 4.53334,-30.13337 11.73335,-60.00007 1.6,-6.13334 5.86667,-8.26668 4.53334,-2.13333 9.33335,-0.8 5.06667,1.33334 8.00001,5.33334 3.2,3.73334 1.86667,9.60001 -2.66667,11.46668 -5.33334,23.4667 -2.40001,11.73335 -4.53334,23.46669 8.26667,-15.46668 15.20002,-28.2667 7.20001,-12.80001 10.93334,-18.66669 9.86668,-15.46668 22.13336,-25.06669 12.53335,-9.60001 28.00004,-9.60001 15.73335,0 24.53336,8.53334 8.80001,8.26668 10.93335,21.60003 2.13333,13.33334 -2.40001,28.2667 -1.06666,3.73333 -3.73333,12.53335 -2.40001,8.53334 -5.06668,19.20002 -2.66667,10.40001 -4.8,19.73336 -1.86667,9.06667 -1.86667,13.86668 0,4.26667 1.6,8.00001 1.86667,3.46667 8.53334,3.46667 5.06668,0 11.20002,-2.93334 6.40001,-3.2 13.06668,-9.33334 4.53334,-4.26667 9.33335,-3.46667 4.8,0.8 8.00001,4.53334 3.46667,3.73333 3.73333,8.80001 0.53334,4.8 -4,8.80001 -9.06668,8.26667 -19.46669,13.60001 -10.13335,5.06668 -21.8667,5.06668 z"
+      fill="#fbcf09" aria-label="n" />
+    <path
+      fill="#ffffff"
+      d="m 491.73113,362.45678 h 29.19637 q 4.52157,0 7.49288,2.19618 3.1005,2.067 4.134,5.68425 L 564.3345,482.0844 q 1.16269,4.134 2.067,9.04313 1.0335,4.77993 1.93782,10.20581 1.0335,-5.42588 2.19618,-10.20581 1.29188,-4.90913 2.71294,-9.04313 l 36.68925,-111.74719 q 1.0335,-2.97131 4.00481,-5.42587 3.1005,-2.45456 7.49288,-2.45456 h 10.20581 q 4.52156,0 7.49288,2.19618 2.97131,2.067 4.134,5.68425 l 36.43087,111.74719 q 2.84213,8.268 4.90913,18.34463 0.90431,-5.03832 1.80862,-9.68907 1.0335,-4.65075 2.067,-8.65556 l 31.78013,-111.74719 q 0.90431,-3.22968 4.00481,-5.55506 3.1005,-2.32537 7.49287,-2.32537 h 27.25857 L 701.01488,549.2619 H 669.62232 L 628.79907,421.62465 q -0.77513,-2.45456 -1.67944,-5.29669 -0.77513,-2.84212 -1.55025,-6.07181 -0.77513,3.22969 -1.67944,6.07181 -0.77512,2.84213 -1.55025,5.29669 L 581.12888,549.2619 H 549.73632 Z M 868.7002,549.2619 h -14.33981 q -4.52156,0 -7.10531,-1.29187 -2.58375,-1.42107 -3.87563,-5.55507 l -2.84212,-9.43068 q -5.03832,4.52156 -9.94744,8.00962 -4.77994,3.35888 -9.94744,5.68425 -5.1675,2.32538 -10.98094,3.48806 -5.81343,1.16269 -12.91875,1.16269 -8.39718,0 -15.5025,-2.19619 -7.10531,-2.32537 -12.27281,-6.84693 -5.03831,-4.52157 -7.88044,-11.23932 -2.84212,-6.71775 -2.84212,-15.63168 0,-7.49288 3.87562,-14.72738 4.00482,-7.36369 13.17713,-13.17712 9.17231,-5.94263 24.41644,-9.81825 15.24412,-3.87563 37.85193,-4.39238 v -7.75125 q 0,-13.30631 -5.68425,-19.6365 -5.55506,-6.45937 -16.27762,-6.45937 -7.75125,0 -12.91875,1.80862 -5.1675,1.80863 -9.04313,4.134 -3.74643,2.19619 -6.97612,4.00481 -3.22969,1.80863 -7.10531,1.80863 -3.22969,0 -5.55507,-1.67944 -2.32537,-1.67944 -3.74643,-4.134 l -5.81344,-10.20581 q 22.86619,-20.92838 55.16306,-20.92838 11.62688,0 20.67,3.87563 9.17231,3.74644 15.5025,10.59337 6.33019,6.71775 9.55988,16.14844 3.35887,9.43069 3.35887,20.67 z m -62.01,-19.89487 q 4.90913,0 9.04313,-0.90432 4.134,-0.90431 7.75125,-2.71293 3.74643,-1.80863 7.10531,-4.39238 3.48806,-2.71294 6.97612,-6.33019 v -22.34943 q -13.95225,0.64593 -23.38293,2.45456 -9.3015,1.67944 -14.98575,4.39237 -5.68425,2.71294 -8.13882,6.33019 -2.32537,3.61725 -2.32537,7.88044 0,8.39719 4.90912,12.01444 5.03832,3.61725 13.04794,3.61725 z m 155.15439,19.89487 h -28.938 l -52.7085,-132.54637 h 26.48344 q 3.48806,0 5.81344,1.67943 2.45456,1.67944 3.35887,4.26319 l 25.57913,70.79475 q 2.19618,6.201 3.61725,12.14363 1.55025,5.94262 2.71293,11.88525 1.16269,-5.94263 2.58375,-11.88525 1.55025,-5.94263 3.87563,-12.14363 l 26.22506,-70.79475 q 0.90431,-2.58375 3.22969,-4.26319 2.32537,-1.67943 5.55506,-1.67943 h 25.19156 z M 1083.7976,414.64853 q 12.5312,0 22.9954,4.00481 10.5934,4.00481 18.2155,11.75606 7.622,7.62206 11.8852,18.86138 4.2632,11.11012 4.2632,25.44993 0,3.61725 -0.3876,6.07182 -0.2583,2.32537 -1.1627,3.74643 -0.7751,1.29188 -2.1961,1.93782 -1.4211,0.51675 -3.6173,0.51675 h -81.9049 q 1.4211,20.41162 10.981,29.9715 9.5598,9.55987 25.3207,9.55987 7.7513,0 13.3063,-1.80862 5.6843,-1.80863 9.8183,-4.00482 4.2632,-2.19618 7.3637,-4.00481 3.2297,-1.80862 6.201,-1.80862 1.9378,0 3.3588,0.77512 1.4211,0.77513 2.4546,2.19619 l 9.3015,11.62687 q -5.2967,6.201 -11.8852,10.46419 -6.5886,4.134 -13.8231,6.71775 -7.1053,2.45456 -14.5982,3.48806 -7.3637,1.0335 -14.3398,1.0335 -13.8231,0 -25.7083,-4.52156 -11.8853,-4.65075 -20.67,-13.56469 -8.7848,-9.04312 -13.8231,-22.22025 -5.0383,-13.30631 -5.0383,-30.74662 0,-13.56469 4.3924,-25.44994 4.3924,-12.01444 12.5312,-20.79919 8.268,-8.91393 20.024,-14.08143 11.8853,-5.1675 26.7418,-5.1675 z m 0.646,22.86618 q -13.9523,0 -21.8327,7.88044 -7.8804,7.88044 -10.0766,22.34944 h 59.943 q 0,-6.201 -1.6795,-11.62688 -1.6794,-5.55506 -5.1675,-9.68906 -3.488,-4.134 -8.7847,-6.45937 -5.2967,-2.45457 -12.402,-2.45457 z"
+      aria-label="Wave" />
+  </g>
+</svg>
+
+<h1>Architecture brief: epic-6473-settings-split</h1>
+
+<h2>Paradigm</h2>
+
+<p>object_oriented</p>
+
+<h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Style: existing frontend layering (pages over components/hooks/models/services; fallow zones) on the backend ports-and-adapters. Frontend only: no backend, API, payload or schema change; no new dependency. Paradigm object_oriented per project authority; React components and hooks keep their existing shape, no new classes.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D2</h4>
+
+<pre><code>Addressing: a setting address is a path /settings/:area/:tab? with areas organization, access, system; License is /settings/system/license; connection pages live at /settings/system/connections/new and /settings/system/connections/:id/edit. One data-only definition models/Settings/settingsAreas.ts (areas, tabs with slug, label, test ids, visibility rule, earlier slugs; the 14 legacy ?tab= keys; connection page paths) is the single owner of every settings and connection path; Header, stepper, Task Manager, links and POM expectations take paths from it. It sits in models so components may import it.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D3</h4>
+
+<pre><code>Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace; failed access read keeps the permissive fallback (all areas and tabs). Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D4</h4>
+
+<pre><code>Routes: pages/Settings/settingsRoutes.tsx returns the settings route elements (lazy pages, reportPrintRoutes pattern) and the static redirects (/settings/license, /connections/new, /connections/:id/edit as Navigate replace); App.tsx calls it once inside AppShell and loses its /settings and /connections routes. Connection pages render outside the area resolver, so a reader still gets the connection page no-access alert.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D5</h4>
+
+<pre><code>Shell: SettingsAreaPage extracted from Settings.tsx and parameterised by area (same Container, h1 Settings &gt; {Area}, Paper, TabList, TabPanel, icons); lone spinner while resolver says Wait; tab click navigates with replace. Panels are bound to tab slugs in pages/Settings/settingsPanels.tsx. Header SettingsMenu (text trigger Settings with down arrow; items Organization/Access/System each with a one-line description; mobile drawer caption plus three indented items) reads the definition and useRbac(). Tab Access/System Admins is labelled System-wide access with the old slug kept as an earlier slug.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D6</h4>
+
+<pre><code>Server state: new keyed TanStack query hooks own the lists (useBehaviourSettings for optionalFeatures plus the shared useLicenseStatusQuery; useConfiguredConnections for configuredConnections). Writes update or remove the key so a remount never shows the old value as current. No component adds a direct license-status asker; licenseStatusOneAsker allow-list loses SystemSettingsTab.tsx when the file is deleted. Every new view has a loading look (lone spinner) and a failure look (inline alert, 403 keeps the refused alert), never the empty state.
+</code></pre>
+<p>Governed slices: S2, S3, S4</p>
+
+<h4>D7</h4>
+
+<pre><code>Claim-to-checker: Quint covers the resolver safety claims (no decision while access loads; shown or redirected area is visible; admin bare address lands on organization): model design/models/settingsResolver.qnt, typecheck, quint run and quint verify executed by the architect. TLA+/TLC and Agda are not selected: no concurrency or proof obligation beyond the finite resolver. Liveness is not applicable: the resolver is a pure synchronous total function and the Wait outcome is left by the access read, which is the existing useRbac() effect outside this design. Executable projection of the model is the resolver table and seeded property test in the S1 oracle.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D8</h4>
+
+<pre><code>Types: TypeScript strict via tsc -b. Invalid states excluded by construction: tab slugs and area slugs are literals from the definition (a path built by hand fails the source-scan test, not the type checker); the resolver takes three plain booleans so tests need no hook. Not excluded by types: a hand-built path from a variable (accepted, review catches it), and the DOM test ids (kept in step by e2eTestIds.test.ts).
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D9</h4>
+
+<pre><code>OO reading: no domain entity changes; the decision owners are the definition and resolver in models (data plus its pure decision), the shell for presentation, hooks for server state. No decision about the definition data lives in a component or in the Header; components only ask the resolver and definition. Smell classes applied from nw-code-design-oo: feature envy on route literals (moved to the definition), shotgun surgery on paths (one owner), long components (extract section from OverviewDashboard).
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D10</h4>
+
+<pre><code>Usage data: the feature adds no usage-data event; settings and connection paths raise no usage-data page opening (usageDataRouteKeys unchanged). Context map, ADR-270 and ARCHITECTURE.md unchanged; ADR-272 records addressing, definition, resolver, redirects and the source-scan enforcement and moves to docs/product/architecture at finalize.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D11</h4>
+
+<pre><code>Terminology: every user-renamable word (Work Tracking System(s), Team, Portfolio, Feature) renders through the configured term via the hook the touched component already uses.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>D12</h4>
+
+<pre><code>Test substrate: Vitest + React Testing Library in Lighthouse.Frontend (MemoryRouter at the URL a user opens, renderHook with providers, pure modules as functions); Playwright through page objects in Lighthouse.EndToEndTests. Runner argv: pnpm --dir Lighthouse.Frontend exec vitest run &lt;oracle file&gt;. Test rules follow .claude/skills/test-writing; no nWave scenario tags in code. Test time within default budgets; no derogation requested.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). A failed access read never locks anyone out (permissive fallback). No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>K2</h4>
+
+<pre><code>Old addresses keep working with replace redirects: the 14 legacy keys, bare /settings, /settings/license, /connections/new, /connections/:id/edit, any earlier tab slug (the old System Admins slug stays). Tab and panel test ids are kept where their tab survives; new ids license-tab, connections-tab, usage-data-tab, terminology-tab, calendar-tab, refresh-ordering-tab, settings-menu plus one id per area item; configuration-tab and configuration-panel retire in S2.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h4>K3</h4>
+
+<pre><code>Confirmed maintainer decisions bound the copy: D1-D4 header and heading, D5 System-wide access, D6 tab order Connections, Database, Encryption, Demo Data, Usage Data, System Info, License (in S1 alone the first tab stays Demo Data), D7, D8 icons Translate/EventBusy/Sync, D9 Could not load the license., D10 no footer sentence on Usage Data, D11 License natural width in one License group, D12 link text View license options, D13 Task Manager link and empty-text link and configured terms, D13a-wording Connect {Work Tracking System} on the tab button and the stepper action, D13b title, D14 Back to {Work Tracking Systems} link above the title of the connection pages, D15 hint line under the disabled Add buttons; D12b nothing extra when the stepper is dismissed.
+</code></pre>
+<p>Governed slices: S1, S2, S3, S4, S5</p>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>New single owner of every settings and connection path; replaces the tab key map in Settings.tsx and hand-written literals
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/Header.tsx:66</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Plain System Settings link becomes the SettingsMenu reading the definition
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx:14</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>full log link /settings?tab=system-info moves to the definition path for System Info
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:354</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>demo-data link takes the definition path
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:499</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>dead /settings/license link takes the definition path (System in S1, License in S3)
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:878</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>dead /settings/license link takes the definition path; the notice may have moved to OAuthPremiumNotice.tsx when it runs
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx:90</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>stepper opens the connect page path from the definition (S5)
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:350</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>row edit links and demo-data link move with the extracted list (S4) and take definition paths (S5)
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx:98</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>row Edit takes the definition path; section gains the manage link (S5)
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:137</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Save, wizard cancel and wizard complete (l.137, 180, 181) return to the Connections tab path instead of /
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:283</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>settings and connection routes come from settingsRoutes()
+</code></pre>
+
+<p>Settings and connection addresses (paths, tab and area slugs, legacy keys)</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts:93</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>POM goToSettings and SettingsPage.goTo* open the header menu, then the tab by its unchanged test id; specs keep their calls
+</code></pre>
+
+<p>Tab and panel test ids</p>
+
+<p>Lighthouse.Frontend/src/tests/e2eTestIds.test.ts:1</p>
+
+<p>Consumer</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Existing ids kept where a tab survives; new ids added to the app and the POMs together; configuration ids retire in S2
+</code></pre>
+
+<p>Tab and panel test ids</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>POM reads the same ids; new ids for new tabs
+</code></pre>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>Producer and consumers of every contract here (the path definition, hooks, existing services) change in one deployable in one commit; no API, payload or persisted data changes; covered by the slice oracles and the source scan.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>In-app links: stepper, Add Team hint, Task Manager, demo-data links, license links, row Edit
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>IRbacService.getAuthorizationSummary via useRbac()
+</code></pre>
+
+<pre><code>IWorkTrackingSystemService via ApiServiceContext
+</code></pre>
+
+<pre><code>ILicensingService.getLicenseStatus via useLicenseStatusQuery
+</code></pre>
+
+<pre><code>IOptionalFeatureService via useBehaviourSettings
+</code></pre>
+
+<pre><code>pages -&gt; components/hooks/models/services; components may import models but not pages; the definition in models imports nothing from them; panels moved unchanged keep their own service ports
+</code></pre>
+
+<h4>Failures</h4>
+
+<h5>B1</h5>
+
+<pre><code>Access read fails
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>permissive fallback: all three areas and every tab visible
+</code></pre>
+
+<h5>B2</h5>
+
+<pre><code>Connection list or license or optional-feature call fails
+</code></pre>
+
+<p>Indeterminate</p>
+
+<pre><code>inline could-not-load alert in the view, 403 shows the refused alert, never the empty state or a locked switch
+</code></pre>
+
+<h5>B3</h5>
+
+<pre><code>Person may not see the requested area or tab
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>redirect with replace to the first visible area or tab
+</code></pre>
+
+<h3>Observations</h3>
+
+<pre><code>Rendered location: area h1, visible tab labels in order, selected tab and panel at a given URL and access
+</code></pre>
+
+<p>DOM under MemoryRouter</p>
+
+<pre><code>which internal route element produced it; whether the URL was reached by redirect or directly except through the final location
+</code></pre>
+
+<pre><code>Resolver outcome for (request, access)
+</code></pre>
+
+<p>Show(area,tab) | Redirect(path) | Wait</p>
+
+<pre><code>the reason a hidden tab fell back (hidden vs unknown slug)
+</code></pre>
+
+<pre><code>Final location after redirect (pathname and absence of ?tab=)
+</code></pre>
+
+<p>string path</p>
+
+<pre><code>redirect count; replace vs push except through history length
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>resolver outcome</p>
+
+<pre><code>Two requests are equal when they resolve to the same Show(area,tab) for the same access; a legacy key in any case equals its table target path
+</code></pre>
+
+<p>rendered location</p>
+
+<pre><code>Equal when final pathname, h1, tab labels and selected panel agree
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>settingsAreas</p>
+
+<p>readonly data: areas -&gt; tabs(slug,label,testIds,visibleWhen,earlierSlugs); legacyKeys: 14 -&gt; path; connectionPaths</p>
+
+<p>resolveSettingsLocation</p>
+
+<p>(request: {area?: string, tab?: string, legacyKey?: string}, access: {isLoading: boolean, isSystemAdmin: boolean, isRbacEnabled: boolean}) -&gt; Show | Redirect | Wait</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>Resolver safety: while access is loading the outcome is Wait; once loaded a Show or Redirect target is an area and tab the person may see; an admin on a bare address is sent to organization
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>resolveSettingsLocation</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>loading x any request -&gt; Wait
+</code></pre>
+
+<pre><code>loaded reader x organization -&gt; redirect to access
+</code></pre>
+
+<pre><code>loaded admin x bare /settings -&gt; organization
+</code></pre>
+
+<pre><code>RBAC off x any request -&gt; permissive, all areas
+</code></pre>
+
+<pre><code>Finite domain: 3 access booleans x 5 request classes; also checked by the Quint model settingsResolver.qnt
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>design/models/settingsResolver.qnt</p>
+
+<h4>L2</h4>
+
+<pre><code>Legacy table: each of the 14 old ?tab= keys, in lower and upper case, redirects to the area and tab listed in the feature-delta Navigation table for an admin; configuration lands on Terminology; the old System Admins slug opens System-wide access
+</code></pre>
+
+<p>Algebraic</p>
+
+<p>Domain</p>
+
+<p>settingsAreas</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>each of 14 keys x two cases
+</code></pre>
+
+<pre><code>earlier slug of the renamed Access tab
+</code></pre>
+
+<pre><code>Closed 14-key table: a native table test, no generator adds coverage
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L3</h4>
+
+<pre><code>Convergence and round trip: for any request the resolver outcome is Show, Wait or a Redirect whose target, resolved again with the same access, is Show; every tab path built from the definition resolves to Show of that tab
+</code></pre>
+
+<p>RoundTrip</p>
+
+<p>Domain</p>
+
+<p>resolveSettingsLocation</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>requests from definition slugs, earlier slugs, the 14 legacy keys in random case, and junk strings; access over all 8 boolean triples
+</code></pre>
+
+<p>junk strings length at most 12; 500 cases</p>
+
+<p>fixed seed in the test, printed on failure</p>
+
+<h6>Must include</h6>
+
+<pre><code>a hidden tab for a reader
+</code></pre>
+
+<pre><code>an earlier slug
+</code></pre>
+
+<pre><code>an unknown area
+</code></pre>
+
+<p>None.</p>
+
+<pre><code>seeded hand-rolled generator (no property library installed); shrink junk strings by truncation and request by dropping the tab part
+</code></pre>
+
+<pre><code>second resolution of the redirect target and the definition tab list, not the resolver own branch logic
+</code></pre>
+
+<pre><code>a redirect whose target is itself redirected, or a hidden tab shown
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h4>L4</h4>
+
+<pre><code>Source scan: no production module other than the definition and settingsRoutes contains a string or template literal starting with /settings or /connections
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>settingsAreas</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>whole src tree scanned
+</code></pre>
+
+<pre><code>Whole-tree source scan, not a generated domain
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<pre><code>A failed or slow access read can be resolved like a loaded one
+</code></pre>
+
+<pre><code>useRbac() starts with a permissive summary and isLoading true, so a loaded-looking admin summary exists before the answer
+</code></pre>
+
+<pre><code>deep link /settings/access/system-admins at isLoading true bounces to the first tab on the old page; the resolver carries isLoading as its own input and returns Wait
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>A deep link to any settings tab never redirects before access has loaded and never lands on a tab the person may not see
+</code></pre>
+
+<pre><code>broken bookmarks and wrong-area first impressions
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<pre><code>request path, optional legacy key, three access booleans
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<p>SettingsAreaPage and settingsRoutes</p>
+
+<pre><code>rendered location at a URL in MemoryRouter
+</code></pre>
+
+<pre><code>a link whose path is built from a variable; an outside writer that changes useRbac summary after resolution
+</code></pre>
+
+<h4>C2</h4>
+
+<pre><code>Every in-app link and POM expectation takes its settings or connection path from the definition
+</code></pre>
+
+<pre><code>dead links like the old /settings/license
+</code></pre>
+
+<p>settingsAreas</p>
+
+<pre><code>tab and area slugs, connection id
+</code></pre>
+
+<p>settingsAreas path helpers</p>
+
+<p>Header, OnboardingStepper, TaskManager, DataOverviewTable, wizard and connection pages, E2E POMs</p>
+
+<pre><code>source-scan test plus rendered link hrefs
+</code></pre>
+
+<pre><code>path built from a variable; docs and bookmarks outside the repo
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Any of 8 access boolean triples, including the permissive failed-read fallback
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<p>Excluded</p>
+
+<pre><code>Show or Redirect while isLoading; a Redirect target that is hidden for the person; a Redirect loop
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<p>Unknown</p>
+
+<pre><code>Header and shell each read access once, so they may differ for a moment (neither shows a gated item early); a person whose access changes after load
+</code></pre>
+
+<p>useRbac</p>
+
+<h3>Models</h3>
+
+<p>Quint</p>
+
+<p>docs/feature/epic-6473-settings-split/design/models/settingsResolver.qnt</p>
+
+<h5>Properties</h5>
+
+<p>noDecisionWhileLoading</p>
+
+<p>Invariant</p>
+
+<pre><code>While loading the outcome is pending or Wait
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts</p>
+
+<p>targetVisible</p>
+
+<p>Invariant</p>
+
+<pre><code>A shown or redirected area is visible to the person
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts</p>
+
+<p>adminBareLandsOnOrganization</p>
+
+<p>Invariant</p>
+
+<pre><code>An admin on a bare address is redirected to organization
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts</p>
+
+<h5>Atoms</h5>
+
+<p>State</p>
+
+<p>loading</p>
+
+<p>isLoading</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts</p>
+
+<p>None.</p>
+
+<p>State</p>
+
+<p>admin</p>
+
+<p>isSystemAdmin</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>resolve</p>
+
+<p>resolveSettingsLocation</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>accessLoaded</p>
+
+<p>useRbac</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts</p>
+
+<p>None.</p>
+
+<h5>Assumptions</h5>
+
+<pre><code>Areas abstracted to integers; access is the pair (loading, admin); organization is admin-only, access and system are visible to everyone
+</code></pre>
+
+<h5>Mutants</h5>
+
+<h6>N1</h6>
+
+<pre><code>Resolver ignores isLoading and decides on the permissive summary
+</code></pre>
+
+<h6>Kills</h6>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>resolver safety claims
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint typecheck, quint run and quint verify (8 steps) on settingsResolver.qnt hold; mutant without the loading check is refuted by quint run; runtime resolver not yet built
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>Show for every valid tab path
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>definition tab -&gt; path helper -&gt; resolveSettingsLocation -&gt; SettingsAreaPage -&gt; rendered tab; acyclic, admitted input is the URL
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>settings and connection URLs and menu entries
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>URL or Header menu item -&gt; settingsRoutes/SettingsMenu -&gt; SettingsAreaPage in MemoryRouter; new files named as slice targets
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>resolver and redirects
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: pure synchronous total function; Wait ends when the existing useRbac() read completes, outside this design; a failed read yields the permissive fallback, never an endless Wait
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: access loads quickly. Negation: my-summary is slow
+</code></pre>
+
+<pre><code>deep link opens the requested tab once access loads
+</code></pre>
+
+<pre><code>spinner meanwhile
+</code></pre>
+
+<pre><code>redirect before load; first-tab bounce
+</code></pre>
+
+<pre><code>none beyond the spinner
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: my-summary succeeds. Negation: it fails
+</code></pre>
+
+<pre><code>nobody is locked out
+</code></pre>
+
+<pre><code>all three areas and tabs shown (permissive fallback); backend refuses what the person may not do
+</code></pre>
+
+<pre><code>a blank or endless spinner page
+</code></pre>
+
+<pre><code>a reader sees admin tabs whose calls the backend refuses
+</code></pre>
+
+<p>useRbac</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: old links are only the 14 keys. Negation: bookmarks use odd case, earlier slugs or unknown tabs
+</code></pre>
+
+<pre><code>an old link opens the same setting or the first visible tab
+</code></pre>
+
+<pre><code>fallback to first visible tab for an unknown slug
+</code></pre>
+
+<pre><code>blank page or redirect loop
+</code></pre>
+
+<pre><code>external docs and screenshots naming old URLs (finalize)
+</code></pre>
+
+<p>settingsAreas</p>
+
+<h4>Y4</h4>
+
+<p>SinglePointOfFailure</p>
+
+<pre><code>settingsAreas.ts is the one owner of paths
+</code></pre>
+
+<pre><code>every link resolves
+</code></pre>
+
+<pre><code>a wrong entry is caught by the source scan and POM tests
+</code></pre>
+
+<pre><code>a second hand-written path list
+</code></pre>
+
+<pre><code>a path built from a variable passes the scan; review owns it
+</code></pre>
+
+<p>settingsAreas</p>
+
+<h4>Y5</h4>
+
+<p>Bypass</p>
+
+<pre><code>Direct URL typed or old bookmark skips the menu
+</code></pre>
+
+<pre><code>same gating as via the menu
+</code></pre>
+
+<pre><code>redirect with replace
+</code></pre>
+
+<pre><code>a hidden tab shown
+</code></pre>
+
+<pre><code>connection pages sit outside the resolver and use their own no-access alert
+</code></pre>
+
+<p>EditConnection</p>
+
+<h4>Y6</h4>
+
+<p>Stressor</p>
+
+<pre><code>Second set: list call fails, license call fails, tab opened in a worktree with stale cache, two tabs of the browser changing a connection
+</code></pre>
+
+<pre><code>no view shows an old or empty value as current
+</code></pre>
+
+<pre><code>spinner, inline could-not-load alert, refused alert on 403
+</code></pre>
+
+<pre><code>empty state after a failure; locked switch for an unreadable license
+</code></pre>
+
+<pre><code>a second browser tab may show a list up to the 5-minute stale time until remount; walked through the keyed-query writes, not executed
+</code></pre>
+
+<p>useConfiguredConnections</p>
+
+<h3>Architectural tests</h3>
+
+<h4>T1</h4>
+
+<pre><code>No production module other than settingsAreas.ts and settingsRoutes.tsx holds a string literal starting with /settings or /connections; no new direct getLicenseStatus asker; components do not import pages
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsPaths.enforcement.test.ts</p>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/models/Settings/settingsPaths.enforcement.test.ts src/hooks/licenseStatusOneAsker.enforcement.test.ts src/layerBoundaries.enforcement.test.ts
+</code></pre>
+
+<h3>Contract tests</h3>
+
+<p>None.</p>
+
+<h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts</p>
+
+<p>Create</p>
+
+<pre><code>single definition of areas, tabs, legacy keys, paths
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts</p>
+
+<p>Create</p>
+
+<pre><code>pure resolver Show/Redirect/Wait
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx</p>
+
+<p>Create</p>
+
+<pre><code>route elements and static redirects
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/SettingsAreaPage.tsx</p>
+
+<p>Create</p>
+
+<pre><code>parameterised shell extracted from Settings.tsx
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx</p>
+
+<p>Create</p>
+
+<pre><code>tab slug to panel binding
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Settings.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>shell content moves to SettingsAreaPage; file reduced or removed
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/App/Header/SettingsMenu.tsx</p>
+
+<p>Create</p>
+
+<pre><code>text trigger menu and drawer group
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/App/Header/Header.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>nav link replaced by SettingsMenu
+</code></pre>
+
+<p>Lighthouse.Frontend/src/App.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>settingsRoutes() mounted once; old /settings and /connections routes removed in S5 for connections
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>path from definition
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>demo-data path from definition
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>demo-data link path from definition
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>license link path from definition
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>license link path from definition (or OAuthPremiumNotice.tsx if it has landed)
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>goToSettings opens the header menu
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>goTo* pick the area then the tab by test id
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/auth/rbac/RbacSettingsPage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>goToAccessTab through the same path; same-pathname workaround removed
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/settingsAreas.test.tsx src/models/Settings/settingsPaths.enforcement.test.ts
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsPaths.enforcement.test.ts</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render the app routes in a MemoryRouter at /settings, /settings?tab=database, /settings?tab=LOGS, /settings/access/system-admins (RBAC on, access slow) and for a reader at /settings; open the header Settings menu
+</code></pre>
+
+<pre><code>Menu lists Organization, Access, System; area page h1 is Settings &gt; {Area}; each old key opens the area and tab of the Navigation table; deep link shows a spinner then System-wide access; the reader sees Access and System without Organization or Log Level; license links land on System
+</code></pre>
+
+<pre><code>First-tab bounce of the deep link, a legacy key landing elsewhere, Organization visible to a reader, or old h1 System Settings
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>S1 is the walking skeleton: areas Organization (Configuration whole), Access (System-wide access, API Keys), System (Demo Data first, Database, Encryption, System Info) hold today panels unchanged; header menu, h1 Settings &gt; {Area}, 14 legacy keys, bare, unknown and license redirects, in-app link paths, POM menu navigation. System Admins panel moves as is including the Epic 6577 content. Existing Settings.test.tsx (mocks SystemSettingsTab, asserts old h1) moves with the shell; owner is the acceptance designer.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>Settings</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Settings.tsx:49</p>
+
+<p>Extend</p>
+
+<pre><code>Shell (heading, Paper, TabList, panels, icons) is extracted and parameterised by area; visibility rules and key map move to the definition
+</code></pre>
+
+<p>useRbac</p>
+
+<p>Lighthouse.Frontend/src/hooks/useRbac.ts:35</p>
+
+<p>Reuse</p>
+
+<pre><code>Only access source; resolver takes its three facts
+</code></pre>
+
+<p>NavigationItem</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/NavigationItem.tsx:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Drawer entries for the three areas
+</code></pre>
+
+<p>reportPrintRoutes</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/Reports/print/reportPrint.enforcement.test.ts:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Pattern precedent for a routes module with lazy pages; no existing owner of the settings address contract (CreateNew for the definition and resolver)
+</code></pre>
+
+<p>LighthousePage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>RbacSettingsPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/auth/rbac/RbacSettingsPage.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>SettingsPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>App</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>Header</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/Header.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>SettingsMenu</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/SettingsMenu.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>RecentProblemsSection</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>CreateConnectionWizard</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>ModifyConnectionSettings</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>DataOverviewTable</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>resolveSettingsLocation</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsAreas</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>OverviewDashboard</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>SettingsAreaPage</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/SettingsAreaPage.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsPanels</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsRoutes</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>public route</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:283</p>
+
+<p>Changed</p>
+
+<pre><code>/settings exact route replaced by nested area routes and redirects
+</code></pre>
+
+<p>test using old shell</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Settings.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Mocks SystemSettingsTab and asserts old h1; moves to the area shell
+</code></pre>
+
+<p>e2e page objects</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Menu then tab navigation; method names and specs unchanged
+</code></pre>
+
+<p>panels moved unchanged</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Rbac/RbacSettings.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Panel content and test id rbac-tab unchanged; only label and slug in the definition change
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/app/LighthousePage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/auth/rbac/RbacSettingsPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/Header.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/SettingsMenu.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/RecentProblemsSection.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataOverviewTable/DataOverviewTable.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/resolveSettingsLocation.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/SettingsAreaPage.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Settings.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The shell extraction is the slice behaviour change (areas and routes), not a behaviour-preserving move with its own existing oracle
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/TerminologyTab.tsx</p>
+
+<p>Create</p>
+
+<pre><code>composes TerminologyConfiguration
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/CalendarTab.tsx</p>
+
+<p>Create</p>
+
+<pre><code>composes BlackoutSettings with license looks
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/RefreshAndOrderingTab.tsx</p>
+
+<p>Create</p>
+
+<pre><code>composes RefreshSettingUpdater and the ordering behaviour row
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/UsageDataTab.tsx</p>
+
+<p>Create</p>
+
+<pre><code>usage-data behaviour row and docs link
+</code></pre>
+
+<p>Lighthouse.Frontend/src/hooks/useBehaviourSettings.ts</p>
+
+<p>Create</p>
+
+<pre><code>keyed optionalFeatures query with shared license query
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>emptied then deleted; its four test files move with the tabs
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/BlackoutSettings.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>accepts an unknown license state so Premium-gated controls never read unknown as no Premium
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Organization three tabs, Usage Data tab, configuration legacy key to Terminology
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>bind new tabs
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SystemSettings/SystemConfigurationPage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>split into Terminology, Calendar, Refresh &amp; ordering page objects
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>goTo for the new tabs
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/organizationTabs.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/Organization/organizationTabs.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render /settings/organization, /settings/organization/refresh-ordering, /settings/system/usage-data and /settings?tab=configuration in a MemoryRouter with a fake optional-feature service and license service: ready, loading, failing
+</code></pre>
+
+<pre><code>Organization shows Terminology, Calendar, Refresh &amp; ordering with D8 icons; no usage-data row there; Usage Data tab holds the switch and docs link; failing optional-feature call shows Could not load the behaviour settings.; unreadable license shows the could-not-load alert instead of a locked switch or Premium required; configuration key lands on Terminology; toggle then leave and return shows the new value
+</code></pre>
+
+<pre><code>An empty tab or locked switch after a failed call, usage-data row left in Organization, Premium-required shown while the license is unknown, or stale switch after return
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>S2 splits SystemSettingsTab into TerminologyTab, CalendarTab, RefreshAndOrderingTab (Organization) and UsageDataTab (System, row plus docs link only), composing existing InputGroup sections unchanged. useBehaviourSettings owns keyed query optionalFeatures plus useLicenseStatusQuery and returns loading | failed | ready rows; rows are matched by key never by id; toggle writes the cache first and restores on refusal. Calendar shows a spinner then Could not load the license. in place of Premium required while the license is unknown. SystemSettingsTab.tsx and its four test files move; its allow-list entry leaves licenseStatusOneAsker.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>SystemSettingsTab</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx:18</p>
+
+<p>Replace</p>
+
+<pre><code>Four unrelated groups in one component; split into four thin tabs, panels reused
+</code></pre>
+
+<p>BehaviourSettingsTable</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/BehaviourSettingsTable.tsx:25</p>
+
+<p>Reuse</p>
+
+<pre><code>Reused with a list filtered by key
+</code></pre>
+
+<p>useLicenseStatusQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:35</p>
+
+<p>Reuse</p>
+
+<pre><code>Single license asker; tabs read through it, no new asker
+</code></pre>
+
+<p>BlackoutSettings</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/BlackoutSettings.tsx:69</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the Premium lock; extended with a license-unknown input rather than deciding it in CalendarTab
+</code></pre>
+
+<p>SettingsPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>SystemConfigurationPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SystemSettings/SystemConfigurationPage.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>useBehaviourSettings</p>
+
+<p>Lighthouse.Frontend/src/hooks/useBehaviourSettings.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsAreas</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>CalendarTab</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/CalendarTab.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>RefreshAndOrderingTab</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/RefreshAndOrderingTab.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>TerminologyTab</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/TerminologyTab.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsPanels</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>UsageDataTab</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/UsageDataTab.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>license asker allow-list</p>
+
+<p>Lighthouse.Frontend/src/hooks/licenseStatusOneAsker.enforcement.test.ts:16</p>
+
+<p>Changed</p>
+
+<pre><code>SystemSettingsTab.tsx leaves the list in the commit that deletes it
+</code></pre>
+
+<p>tests of removed component</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Four SystemSettingsTab test files move to the new tabs
+</code></pre>
+
+<p>test ids</p>
+
+<p>Lighthouse.Frontend/src/tests/e2eTestIds.test.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>configuration-tab and configuration-panel retire; new tab ids added with the POMs
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SystemSettings/SystemConfigurationPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/hooks/useBehaviourSettings.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/CalendarTab.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/RefreshAndOrderingTab.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Organization/TerminologyTab.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/BlackoutSettings.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/SystemSettingsTab.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/UsageDataTab.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>The split is the behaviour change (tabs, loading and failure looks); panels stay unchanged inside it
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusContent.tsx</p>
+
+<p>Create</p>
+
+<pre><code>content extracted from the popover
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>thin Popover around LicenseStatusContent
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.tsx</p>
+
+<p>Create</p>
+
+<pre><code>thin tab with useLicenseStatusQuery
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts</p>
+
+<p>Extend</p>
+
+<pre><code>License tab last in System; license redirect target
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>bind LicenseTab
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>/settings/license redirects to /settings/system/license
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>license link target is the License tab
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>license link target is the License tab (or OAuthPremiumNotice.tsx if FE5 landed)
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>goToLicense
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/System/LicenseTab.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render /settings/system/license and /settings/license as System Admin, as reader, with a failing license call; follow the license link from the connection wizard and the connection form; import a license file
+</code></pre>
+
+<pre><code>System License tab shows status, organization, expiry; admin sees import and clear, reader neither; failing call shows Could not load the license.; both links land on System, License; after import the header icon shows the new expiry
+</code></pre>
+
+<pre><code>Blank page or System Info after the link, import and clear shown to a reader, or header icon stale after import
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L2 extract LicenseStatusContent from LicenseStatusPopover, popover renders it unchanged
+</code></pre>
+
+<pre><code>popover status, import, clear, loading and failure behaviour
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/LicenseStatus/LicenseStatusPopover.test.tsx src/components/Common/LicenseStatus/LicenseStatusIcon.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>S3 extracts LicenseStatusContent from LicenseStatusPopover (popover becomes a thin Popover around it) and mounts it in LicenseTab inside one InputGroup License at natural width. Import and clear invalidate the licenseStatus query so the header icon updates from the same asker; no new asker. /settings/license redirects to /settings/system/license; the two License links keep the text View license options and take the definition path. Rights are the popover rights.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>LicenseStatusPopover</p>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.tsx:721</p>
+
+<p>Extend</p>
+
+<pre><code>Owns import, clear, status and its looks; content extracted so popover and tab share one view, not a second license card
+</code></pre>
+
+<p>useLicenseStatusQuery</p>
+
+<p>Lighthouse.Frontend/src/hooks/useLicenseRestrictions.ts:35</p>
+
+<p>Reuse</p>
+
+<pre><code>licenseStatusOneAsker stays green unchanged
+</code></pre>
+
+<p>SettingsPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>CreateConnectionWizard</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>ModifyConnectionSettings</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>LicenseStatusContent</p>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusContent.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsAreas</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsPanels</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsRoutes</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>LicenseTab</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>license popover consumers</p>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusIcon.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Icon and popover behaviour unchanged
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/SettingsPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusContent.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/LicenseStatus/LicenseStatusPopover.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/System/LicenseTab.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>None.</p>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S4</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx</p>
+
+<p>Create</p>
+
+<pre><code>section extracted from the Overview
+</code></pre>
+
+<p>Lighthouse.Frontend/src/hooks/useConfiguredConnections.ts</p>
+
+<p>Create</p>
+
+<pre><code>keyed connections query and the one writer-side key removal
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>section and Add button out; banners, existence check, stepper stay
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>save and wizard completion remove the configuredConnections key
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>draft deletes remove the key
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Connections first System tab, admin only
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>bind ConnectionsSettings
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts</p>
+
+<p>Create</p>
+
+<pre><code>addConnection, editConnection, deleteConnection on the connections grid
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>loses the three connection methods
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/ado/ado.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/csv/csv.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/jira/jira.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/linear/linear.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage (2 calls)
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>switch to SystemConnectionsPage (3 calls)
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Settings/Connections/ConnectionsSettings.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render /settings/system/connections and the Overview in a MemoryRouter with a fake work-tracking-system service: two connections, none, failing, 403; as admin and reader; delete one; create one then return to the tab
+</code></pre>
+
+<pre><code>Connections is the first System tab listing both connections with Edit and Delete and reconnect banners; Overview shows Portfolios and Teams and its reconnect banners but no connections section or button; none shows the empty state with Load Demo Data link to System Demo Data and docs link; failure shows the could-not-load alert, never the empty state; reader sees no tab; a created connection is listed after return
+</code></pre>
+
+<pre><code>Empty state while loading or after a failure, Overview still listing connections, stale list after a write, or Connections visible to a reader
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L3 extract the Overview connections section into ConnectionsSettings, still rendered on the Overview; makes mounting it as System Connections a move
+</code></pre>
+
+<pre><code>Overview connection list, banners, empty state, delete dialog and handlers behave as before
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Overview/OverviewDashboard.test.tsx src/pages/Overview/OverviewDashboard.licenseCheck.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>S4 starts with a behaviour-unchanged extraction commit of the Overview connections section (title, Connect button, empty-state alert, ReconnectBanners, DataGridBase with storageKey overview-connection-table, delete dialog) into ConnectionsSettings, then mounts it as the first System tab and removes it and its button from the Overview. The Overview keeps its existence fetch (stepper, disabled Add Team), the refused alert, its ReconnectBanners and the filter box (no longer narrows connections); the tab has no text filter. useConfiguredConnections owns keyed query configuredConnections; every write (list delete, EditConnection save and wizard completion, wizard draft deletes, ReconnectBanner) removes the key. Looks: lone spinner, 403 refused alert, Could not load the {Work Tracking Systems}. alert, empty state only after success. Button text Connect {Work Tracking System}, section title {Work Tracking Systems}; System Admin only.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>OverviewDashboard</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:586</p>
+
+<p>Extend</p>
+
+<pre><code>Inline section is the existing owner of the list, banners, empty state and delete; extracted then moved, not rewritten
+</code></pre>
+
+<p>DataGridBase</p>
+
+<p>Lighthouse.Frontend/src/components/Common/DataGrid/DataGridBase.tsx:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Same columns and storageKey so saved column state survives
+</code></pre>
+
+<p>ReconnectBanner</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connections/ReconnectBanner.tsx:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Unchanged; shown on Overview and on the tab
+</code></pre>
+
+<p>OverviewPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>SystemConnectionsPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>addConnection</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/ado/ado.spec.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>csv</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/csv/csv.spec.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>addConnection</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/jira/jira.spec.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>addConnection</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/linear/linear.spec.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>OAuthConnection</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>addConnection</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>addConnection</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>editConnection</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts:25</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>CreateConnectionWizard</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>useConfiguredConnections</p>
+
+<p>Lighthouse.Frontend/src/hooks/useConfiguredConnections.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsAreas</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>EditConnectionPage</p>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:38</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>ConnectionsSettings</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>settingsPanels</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>overview page</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.test.tsx:1</p>
+
+<p>Migrated</p>
+
+<pre><code>Connection-list assertions move to the tab oracle; stepper, banners, existence check stay
+</code></pre>
+
+<p>e2e page objects and specs</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>11 call sites in 8 specs switch to SystemConnectionsPage
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/overview/OverviewPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/ado/ado.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/csv/csv.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/jira/jira.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/linear/linear.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/oauth/OAuthConnection.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/screenshots/Screenshots.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/servicenow/servicenow.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/settings/ConnectionDefaults.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/CreateConnectionWizard.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/hooks/useConfiguredConnections.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/Connections/ConnectionsSettings.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsPanels.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>None.</p>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S5</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>return paths and Back link
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>connection page routes and old /connections redirects
+</code></pre>
+
+<p>Lighthouse.Frontend/src/App.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>old /connections routes removed so the source scan passes
+</code></pre>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts</p>
+
+<p>Extend</p>
+
+<pre><code>connection page path helpers
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>connect path and action text
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>D15 line under the disabled Add buttons
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Manage link, empty-text link, row Edit path, configured terms
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts</p>
+
+<p>Extend</p>
+
+<pre><code>goto path updated; still expects the no-access alert
+</code></pre>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Connect button text
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/pages/Connections/Edit/connectionEntryPoints.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>In a MemoryRouter open /connections/4/edit and /connections/new; click the stepper Connect action with no connection and complete or cancel the wizard; render the Overview with no connection and the Task Manager connections section with a failing and with no connection
+</code></pre>
+
+<pre><code>Old addresses redirect (replace) to /settings/system/connections/...; Save, wizard cancel and wizard complete end on System Connections; both pages show Back to {Work Tracking Systems} linking there; Overview shows the connect-first line linking to the tab; Task Manager shows Manage {Work Tracking Systems} and the empty-text link with the configured term; a reader still sees the no-access alert
+</code></pre>
+
+<pre><code>A save or cancel that lands on the Overview, an old URL that 404s or loops, hard-coded Connection wording in the Task Manager, or a reader redirected instead of shown the alert
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P5</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<pre><code>S5 mounts EditConnection at /settings/system/connections/new and /:id/edit (outside the area resolver); /connections/new and /connections/:id/edit become Navigate replace routes keeping the id. Return paths are EditConnection l.137 (save), l.180 (wizard cancel), l.181 (wizard complete): all go to the Connections tab; the no-access alert keeps Back to Overview; the edit page of an existing connection has no Cancel. Both pages show Back to {Work Tracking Systems} above the title. Stepper step opens the new connect path and its action reads Connect {Work Tracking System}; Overview shows the D15 text line under the disabled Add buttons only while no connection exists and the stepper is not the way; Task Manager ConnectionsSection gains Manage {Work Tracking Systems}, a link in its empty text and the configured terms. Bug 6498 is owned by S1 and S3, not here.
+</code></pre>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>EditConnectionPage</p>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:38</p>
+
+<p>Extend</p>
+
+<pre><code>Existing owner of save, wizard and no-access alert; only route, return path and Back link change
+</code></pre>
+
+<p>OnboardingStepper</p>
+
+<p>Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx:90</p>
+
+<p>Extend</p>
+
+<pre><code>Step action path and label from the definition and configured term
+</code></pre>
+
+<p>ConnectionsSection</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx:56</p>
+
+<p>Extend</p>
+
+<pre><code>Existing Task Manager section; gains links and configured terms
+</code></pre>
+
+<p>SystemConnectionsPage</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>goto</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:866</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>App</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>settingsAreas</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<p>OverviewDashboard</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1</p>
+
+<p>Extend</p>
+
+<pre><code>Existing file extended by this slice; owner of the responsibility named in the slice decision
+</code></pre>
+
+<p>settingsRoutes</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New file; no existing symbol owns this responsibility (see slice decision and shared reuse analysis)
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>connection page routes</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:259</p>
+
+<p>Changed</p>
+
+<pre><code>/connections/new and /connections/:id/edit become redirects; pages move under /settings/system/connections
+</code></pre>
+
+<p>e2e spec</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:866</p>
+
+<p>Changed</p>
+
+<pre><code>goto path updated; redirect then the same no-access alert
+</code></pre>
+
+<p>wizard and form components</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Connection/ModifyConnectionSettings.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Holds no navigate or Cancel; wizard steps unchanged
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/settings/WorkTrackingSystems/SystemConnectionsPage.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.EndToEndTests/tests/specs/auth/RoleBasedAccessControl.spec.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/App.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/App/Header/TaskManager/ConnectionsSection.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/components/Common/OnboardingStepper/OnboardingStepper.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/models/Settings/settingsAreas.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Connections/Edit/EditConnection.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Overview/OverviewDashboard.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Edited by this slice; consumers and tests named in the slice records
+</code></pre>
+
+<p>target file</p>
+
+<p>Lighthouse.Frontend/src/pages/Settings/settingsRoutes.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New file created by this slice; consumers named in the slice records
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>None.</p>
+
+<h5>Not applicable</h5>
+
+<p>prefactoring</p>
+
+<pre><code>No behaviour-preserving move precedes this slice; the redirects and return paths are the behaviour change
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h2>ADRs</h2>
+
+<p>None.</p>
+
+</body></html>
