@@ -100,9 +100,12 @@ are reviewed is complete.
       2. `git fetch` and check `origin/main`. If it moved and the push would need a rebase or merge,
          that is a stop ("Trunk moved"): never rebase or merge on your own.
       3. Push, move the slice's Story to Resolved (`/ado-sync`), and start watching the CI run in the
-         background (Bash `run_in_background`, e.g. `gh run watch <id> --exit-status`) the way
-         `/clean-ci` does. Carry on with the next slice meanwhile; do not wait for CI.
-      4. When the watch fires: green → move the Story to Closed. Red → diagnose it the `/clean-ci` way
+         background with `/clean-ci`'s Step 3 poll loop (Bash `run_in_background`). **Never use
+         `gh run watch`**: on `main` the Standalone packaging jobs park at the release-approval gate
+         (`waiting`), so the watch never exits and the Story stays Resolved for hours. Carry on with
+         the next slice meanwhile; do not wait for CI.
+      4. When the loop fires: `failed=0` (only `waiting` packaging jobs left) is green → move the
+         Story, and any Bug the push fixed, to Closed at once. Red → diagnose it the `/clean-ci` way
          between two steps (not in the middle of one), fix it as its own commit, and push the fix with
          its gates green. A CI failure still red after one fix is a stop.
    5. **Review window — 5 minutes.** Post a slice summary (what the slice delivered, its commits, the
