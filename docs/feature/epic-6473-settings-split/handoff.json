@@ -662,6 +662,210 @@
 "stimulus": "F478",
 "user_result": "F491"
 }
+],
+"S5": [
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F495",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::an old edit link opens the same connection under System, with a way back and no Cancel"
+},
+"expected": "F493",
+"stimulus": "F492",
+"user_result": "F494"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F499",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::an old new-connection link opens the wizard under System, with a way back"
+},
+"expected": "F497",
+"stimulus": "F496",
+"user_result": "F498"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F503",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::a reader sent along an old link is still told they have no permission, not moved elsewhere"
+},
+"expected": "F501",
+"stimulus": "F500",
+"user_result": "F502"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F507",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::cancelling the wizard returns to System, Connections and creates nothing"
+},
+"expected": "F505",
+"stimulus": "F504",
+"user_result": "F506"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F511",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::completing the wizard returns to System, Connections and the list asks again"
+},
+"expected": "F509",
+"stimulus": "F508",
+"user_result": "F510"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F515",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::saving an existing connection returns to System, Connections and the list asks again"
+},
+"expected": "F513",
+"stimulus": "F512",
+"user_result": "F514"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F519",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::cancelling after the wizard saved a draft deletes it, returns to System, Connections and the list asks again"
+},
+"expected": "F517",
+"stimulus": "F516",
+"user_result": "F518"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F523",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::the onboarding stepper offers to connect a Data Source and opens the new connection page under System"
+},
+"expected": "F521",
+"stimulus": "F520",
+"user_result": "F522"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F559",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::the Overview"
+},
+"expected": "F557",
+"stimulus": "F556",
+"user_result": "F558"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F531",
+"test": "Lighthouse.Frontend/src/pages/Connections/Edit/connectionEntryPoints.test.tsx::the Task Manager's connections section"
+},
+"expected": "F529",
+"stimulus": "F528",
+"user_result": "F530"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L1/F74",
+"L1/F75",
+"L1/F76",
+"L1/F77"
+],
+"still_passes_if": "F543",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx::which settings area and tab an address opens"
+},
+"expected": "F541",
+"stimulus": "F540",
+"user_result": "F542"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2/F80",
+"L2/F81"
+],
+"still_passes_if": "F547",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx::which settings area and tab an address opens"
+},
+"expected": "F545",
+"stimulus": "F544",
+"user_result": "F546"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3",
+"L3/F85",
+"L3/F86",
+"L3/F87"
+],
+"still_passes_if": "F551",
+"test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx::every settings address ends on a tab the person may open"
+},
+"expected": "F549",
+"stimulus": "F548",
+"user_result": "F550"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L4/F92",
+"T1"
+],
+"still_passes_if": "F555",
+"test": "Lighthouse.Frontend/src/models/Settings/settingsPaths.enforcement.test.ts::no module that did not already hold a connection address starts writing one"
+},
+"expected": "F553",
+"stimulus": "F552",
+"user_result": "F554"
+}
 ]
 },
 "counters": {
@@ -669,7 +873,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 491,
+"F": 559,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -3160,13 +3364,69 @@
 "F49": "POM goToSettings and SettingsPage.goTo* open the header menu, then the tab by its unchanged test id; specs keep their calls",
 "F490": "Add Team is disabled and the Overview shows no connections empty-state alert",
 "F491": "Onboarding still waits for a connection before Teams, and the empty state lives only on System, Connections",
+"F492": "Tomasz opens the old edit link for an existing connection",
+"F493": "The address is replaced by the one under Settings, System, Connections; the edit page of that connection shows, with a Back to {Work Tracking Systems} link to System, Connections and no Cancel",
+"F494": "A runbook link from before the move still opens the right connection, and he can get back to the connections list",
+"F495": "The old link redirects with a pushed history entry, or the Back link carries a fixed Connection word or points to the Overview",
+"F496": "Priya opens the old new-connection link",
+"F497": "The address is replaced by the one under Settings, System, Connections; the wizard shows with the title in the configured term and a Back to {Work Tracking Systems} link to System, Connections",
+"F498": "An old bookmark to add a connection opens the wizard where it now lives",
+"F499": "The old link redirects but the wizard is still mounted only at the old address, or the Back link is missing on the create page",
 "F5": "System shows a License tab with the license status, import and clear, and the license links in the connection forms open it",
 "F50": "Existing ids kept where a tab survives; new ids added to the app and the POMs together; configuration ids retire in S2",
+"F500": "A reader without system-admin access opens the old edit link",
+"F501": "They end on the connection page address under System and see the no-access alert; they are not moved into a settings area",
+"F502": "A reader is told they have no permission instead of being bounced elsewhere",
+"F503": "The old link redirects a reader to the settings area resolver, which silently sends them to another tab",
+"F504": "Priya cancels the connection wizard on its first step",
+"F505": "She is on Settings, System, Connections and no connection was created",
+"F506": "Backing out of adding a connection returns her to the connections list, not the Overview",
+"F507": "Cancel still lands on the Overview, or creates the connection before leaving",
+"F508": "Priya picks a system, fills it in, names it and creates the connection",
+"F509": "She ends on Settings, System, Connections, the remembered connections list is dropped so the list asks the server again, and exactly one connection was added",
 "F51": "POM reads the same ids; new ids for new tabs",
+"F510": "She sees the new connection where connections live, not a stale list",
+"F511": "Completion lands on the Overview, or lands on the tab but keeps the old list",
+"F512": "Tomasz saves changes to an existing connection",
+"F513": "He ends on Settings, System, Connections, the remembered list is dropped (and was kept until then), and the connection was updated once",
+"F514": "After fixing a connection he sees the connections list showing the change",
+"F515": "Save lands on the Overview, or the list key is dropped before the save so a stale refetch sneaks in",
+"F516": "Priya starts an OAuth connection, the wizard saves a draft, and she cancels at the naming step",
+"F517": "The draft is deleted on the server, the remembered list is dropped, and she is on Settings, System, Connections",
+"F518": "A cancelled draft does not linger in the connections list",
+"F519": "The draft is deleted but the list still shows it from the remembered answer, or Cancel lands on the Overview",
 "F52": "Producer and consumers of every contract here (the path definition, hooks, existing services) change in one deployable in one commit; no API, payload or persisted data changes; covered by the slice oracles and the source scan.",
+"F520": "The Overview shows the onboarding stepper with no connection and Priya clicks its action",
+"F521": "The action reads Connect {Work Tracking System} in the configured term and opens the new-connection page under Settings, System, Connections",
+"F522": "The first-time path starts on System, Connections with words the instance uses",
+"F523": "The action says Add {term}, or opens the old connections address which then lands nowhere",
+"F528": "The Task Manager lists a failing connection and Tomasz presses Edit; and the Task Manager with nothing configured",
+"F529": "A Manage {Work Tracking Systems} link leads to the tab, Edit opens that connection under System, the empty text links to the tab, and the section has no hard-coded connection word",
 "F53": "In-app links: stepper, Add Team hint, Task Manager, demo-data links, license links, row Edit",
+"F530": "A warning in the Task Manager leads to the connection under System, in the instance's own words",
+"F531": "Edit still opens the old address, or the section keeps the words Test connection, Edit connection or No connections",
 "F54": "IRbacService.getAuthorizationSummary via useRbac()",
+"F540": "Access is still loading, a reader opens Organization, an admin opens bare Settings, or RBAC is off or its read failed",
+"F541": "Wait while loading; reader sent to Access; admin lands on Organization; RBAC off or failed read shows every area RBAC-off shows",
+"F542": "Settings never decides before access is known and never locks anyone out",
+"F543": "Not changed by this slice: a resolver that decides while loading is caught only by these first-slice tests",
+"F544": "Each of the 14 old tab keys in both cases, and the old System Admins slug",
+"F545": "Each opens the tab listed in the navigation table; the old slug opens System-wide access",
+"F546": "Old Settings links keep working",
+"F547": "Not changed by this slice; first-slice table test",
+"F548": "Generated addresses including a hidden tab, an earlier slug and an unknown area",
+"F549": "Every redirect target shows, and every visible tab's own address shows that tab",
 "F55": "IWorkTrackingSystemService via ApiServiceContext",
+"F550": "No settings address ends on a page the person may not open",
+"F551": "Not changed by this slice; first-slice round-trip test",
+"F552": "The whole production source scanned for hand-written settings and connection addresses",
+"F553": "Only the definition and the routes hold such an address; needs the earlier allow-list of connection addresses emptied",
+"F554": "A missed link is a failing build",
+"F555": "The allow-list stays non-empty, so old connection addresses survive in the stepper, Task Manager or App",
+"F556": "The Overview with no connection, both with the onboarding stepper showing and with it put away; and the same Overview with a connection",
+"F557": "With none, a line under the disabled Add buttons reads Connect a {Work Tracking System} first: followed by a link Settings, System, Connections to the tab; with one, no such link",
+"F558": "Priya always learns where to connect a first source, whether or not the stepper is showing",
+"F559": "The line is a tooltip only, hides while the stepper shows, uses the fixed word Connection, or shows even when a connection exists",
 "F56": "ILicensingService.getLicenseStatus via useLicenseStatusQuery",
 "F57": "IOptionalFeatureService via useBehaviourSettings",
 "F58": "pages -> components/hooks/models/services; components may import models but not pages; the definition in models imports nothing from them; panels moved unchanged keep their own service ports",

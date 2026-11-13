@@ -13,12 +13,7 @@ const THE_ROUTES = "pages/Settings/settingsRoutes.tsx";
  * Modules that still hold a connection address of their own. They move to the definition when the connection pages
  * move; the list may shrink, and a module that is not on it may not start holding one.
  */
-const STILL_HOLDING_A_CONNECTION_ADDRESS = new Set([
-	"App.tsx",
-	"components/App/Header/TaskManager/ConnectionsSection.tsx",
-	"components/Common/OnboardingStepper/OnboardingStepper.tsx",
-	"pages/Overview/OverviewDashboard.tsx",
-]);
+const STILL_HOLDING_A_CONNECTION_ADDRESS = new Set<string>();
 
 const productionModules = (): string[] =>
 	readdirSync(sourceRoot, { recursive: true, encoding: "utf8" })

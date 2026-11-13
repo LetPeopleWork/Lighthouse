@@ -1260,6 +1260,432 @@ Add Team is disabled while the existence check is still loading and stays disabl
 
 None.
 
+### S5
+
+##### Covers
+
+P5
+
+```text
+Tomasz opens the old edit link for an existing connection
+```
+
+```text
+The address is replaced by the one under Settings, System, Connections; the edit page of that connection shows, with a Back to {Work Tracking Systems} link to System, Connections and no Cancel
+```
+
+```text
+A runbook link from before the move still opens the right connection, and he can get back to the connections list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:an old edit link opens the same connection under System\, with a way back and no Cancel
+
+```text
+The old link redirects with a pushed history entry, or the Back link carries a fixed Connection word or points to the Overview
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+Priya opens the old new-connection link
+```
+
+```text
+The address is replaced by the one under Settings, System, Connections; the wizard shows with the title in the configured term and a Back to {Work Tracking Systems} link to System, Connections
+```
+
+```text
+An old bookmark to add a connection opens the wizard where it now lives
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:an old new\-connection link opens the wizard under System\, with a way back
+
+```text
+The old link redirects but the wizard is still mounted only at the old address, or the Back link is missing on the create page
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+A reader without system-admin access opens the old edit link
+```
+
+```text
+They end on the connection page address under System and see the no-access alert; they are not moved into a settings area
+```
+
+```text
+A reader is told they have no permission instead of being bounced elsewhere
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:a reader sent along an old link is still told they have no permission\, not moved elsewhere
+
+```text
+The old link redirects a reader to the settings area resolver, which silently sends them to another tab
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+Priya cancels the connection wizard on its first step
+```
+
+```text
+She is on Settings, System, Connections and no connection was created
+```
+
+```text
+Backing out of adding a connection returns her to the connections list, not the Overview
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:cancelling the wizard returns to System\, Connections and creates nothing
+
+```text
+Cancel still lands on the Overview, or creates the connection before leaving
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+Priya picks a system, fills it in, names it and creates the connection
+```
+
+```text
+She ends on Settings, System, Connections, the remembered connections list is dropped so the list asks the server again, and exactly one connection was added
+```
+
+```text
+She sees the new connection where connections live, not a stale list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:completing the wizard returns to System\, Connections and the list asks again
+
+```text
+Completion lands on the Overview, or lands on the tab but keeps the old list
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+Tomasz saves changes to an existing connection
+```
+
+```text
+He ends on Settings, System, Connections, the remembered list is dropped (and was kept until then), and the connection was updated once
+```
+
+```text
+After fixing a connection he sees the connections list showing the change
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:saving an existing connection returns to System\, Connections and the list asks again
+
+```text
+Save lands on the Overview, or the list key is dropped before the save so a stale refetch sneaks in
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+Priya starts an OAuth connection, the wizard saves a draft, and she cancels at the naming step
+```
+
+```text
+The draft is deleted on the server, the remembered list is dropped, and she is on Settings, System, Connections
+```
+
+```text
+A cancelled draft does not linger in the connections list
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:cancelling after the wizard saved a draft deletes it\, returns to System\, Connections and the list asks again
+
+```text
+The draft is deleted but the list still shows it from the remembered answer, or Cancel lands on the Overview
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The Overview shows the onboarding stepper with no connection and Priya clicks its action
+```
+
+```text
+The action reads Connect {Work Tracking System} in the configured term and opens the new-connection page under Settings, System, Connections
+```
+
+```text
+The first-time path starts on System, Connections with words the instance uses
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:the onboarding stepper offers to connect a Data Source and opens the new connection page under System
+
+```text
+The action says Add {term}, or opens the old connections address which then lands nowhere
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The Overview with no connection, both with the onboarding stepper showing and with it put away; and the same Overview with a connection
+```
+
+```text
+With none, a line under the disabled Add buttons reads Connect a {Work Tracking System} first: followed by a link Settings, System, Connections to the tab; with one, no such link
+```
+
+```text
+Priya always learns where to connect a first source, whether or not the stepper is showing
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:the Overview
+
+```text
+The line is a tooltip only, hides while the stepper shows, uses the fixed word Connection, or shows even when a connection exists
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+The Task Manager lists a failing connection and Tomasz presses Edit; and the Task Manager with nothing configured
+```
+
+```text
+A Manage {Work Tracking Systems} link leads to the tab, Edit opens that connection under System, the empty text links to the tab, and the section has no hard-coded connection word
+```
+
+```text
+A warning in the Task Manager leads to the connection under System, in the instance's own words
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Connections\/Edit\/connectionEntryPoints\.test\.tsx\:\:the Task Manager\'s connections section
+
+```text
+Edit still opens the old address, or the section keeps the words Test connection, Edit connection or No connections
+```
+
+###### Obligations
+
+None.
+
+##### Covers
+
+P5
+
+```text
+Access is still loading, a reader opens Organization, an admin opens bare Settings, or RBAC is off or its read failed
+```
+
+```text
+Wait while loading; reader sent to Access; admin lands on Organization; RBAC off or failed read shows every area RBAC-off shows
+```
+
+```text
+Settings never decides before access is known and never locks anyone out
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx\:\:which settings area and tab an address opens
+
+```text
+Not changed by this slice: a resolver that decides while loading is caught only by these first-slice tests
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P5
+
+```text
+Each of the 14 old tab keys in both cases, and the old System Admins slug
+```
+
+```text
+Each opens the tab listed in the navigation table; the old slug opens System-wide access
+```
+
+```text
+Old Settings links keep working
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx\:\:which settings area and tab an address opens
+
+```text
+Not changed by this slice; first-slice table test
+```
+
+###### Obligations
+
+
+
+##### Covers
+
+P5
+
+```text
+Generated addresses including a hidden tab, an earlier slug and an unknown area
+```
+
+```text
+Every redirect target shows, and every visible tab's own address shows that tab
+```
+
+```text
+No settings address ends on a page the person may not open
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx\:\:every settings address ends on a tab the person may open
+
+```text
+Not changed by this slice; first-slice round-trip test
+```
+
+###### Obligations
+
+
+
+
+
+##### Covers
+
+P5
+
+```text
+The whole production source scanned for hand-written settings and connection addresses
+```
+
+```text
+Only the definition and the routes hold such an address; needs the earlier allow-list of connection addresses emptied
+```
+
+```text
+A missed link is a failing build
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/models\/Settings\/settingsPaths\.enforcement\.test\.ts\:\:no module that did not already hold a connection address starts writing one
+
+```text
+The allow-list stays non-empty, so old connection addresses survive in the stepper, Task Manager or App
+```
+
+###### Obligations
+
+
+
 ## Expectations
 
 ### Rows
