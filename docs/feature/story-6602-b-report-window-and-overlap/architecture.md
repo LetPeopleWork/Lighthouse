@@ -259,14 +259,14 @@ Extend
 Loses the three rows its twins prove and the steps only they used
 ```
 
-TheTabAsReadBy
+TheTabAsSeenBy
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice10SleYardstickSpecifications\.cs\:93
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/RefinementAtThePortTest\.cs\:206
 
 Replace
 
 ```text
-Repeats the base TheTabAsSeenBy; replaced by a browser-key overload on the base
+Slice10SleYardstickTest's TheTabAsReadBy repeated the base TheTabAsSeenBy; replaced by a browser-key overload on the base
 ```
 
 ### Impact
@@ -1055,17 +1055,39 @@ Drops TheTabAsReadBy for the base overload; rewords the stale host-design commen
 
 Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice05NeedAndVerdictScenarios\.cs
 
+Extend
+
+```text
+Three rows that repeat NeedOverOneCycleTest are deleted, 17 to 14, with any step now unused; every other id and assertion unchanged
+```
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice05NeedAndVerdictSpecifications\.cs
+
+Extend
+
+```text
+Loses its copies of the hoisted members and uses the port base and port builder owners; then loses the steps only the dropped rows used; remaining ids and assertions unchanged
+```
+
+docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/compare\-ids\.py
+
 #### Verification
 
 ```text
-env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~Slice05NeedAndVerdictTest|FullyQualifiedName~NeedOverOneCycleTest|FullyQualifiedName~Slice10SleYardstickTest'
+env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger 'trx;LogFileName=s2.trx' --results-directory Lighthouse.Backend/Lighthouse.Backend.Tests/TestResults/s2 --filter 'FullyQualifiedName~Slice05NeedAndVerdictTest|FullyQualifiedName~NeedOverOneCycleTest|FullyQualifiedName~Slice10SleYardstickTest'
 env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~PortGivensGuardTest|FullyQualifiedName~RefinementWithoutSignInWireContractTest|FullyQualifiedName~RealityCheckWireContractTest'
 env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken pwsh Lighthouse.Backend/Test-Fast.ps1
+python3 -I docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py Lighthouse.Backend/Lighthouse.Backend.Tests/TestResults/s2/s2.trx docs/feature/story-6602-b-report-window-and-overlap/evidence/ids-expected-after-drop.txt
+python3 -I docs/feature/story-6602-b-report-window-and-overlap/evidence/members-once.py Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement
 ```
 
 #### Supports
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice05NeedAndVerdictSpecifications\.cs
+docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/members\-once\.py
+
+docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/ids\-before\.txt
+
+docs\/feature\/story\-6602\-b\-report\-window\-and\-overlap\/evidence\/ids\-expected\-after\-drop\.txt
 
 #### Public oracle
 
@@ -1125,6 +1147,26 @@ Extend
 
 ```text
 Its step definitions lose the copies of the hoisted members and NeedIn/NeedReading and use the base TheNeedOn and NeedFacts; its rows are the twins of the dropped rows
+```
+
+Slice05NeedAndVerdictTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice05NeedAndVerdictSpecifications\.cs\:14
+
+Extend
+
+```text
+The step half of the need-and-verdict class; its copies of the shared members give way to the port base and port builder, and the steps only the dropped rows used go with them
+```
+
+Slice10SleYardstickTest
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice10SleYardstickSpecifications\.cs\:11
+
+Extend
+
+```text
+Its step half reads the tab through the base browser-key TheTabAsSeenBy overload instead of its own copy; ids and assertions unchanged
 ```
 
 ##### Impact
@@ -1197,6 +1239,16 @@ Changed
 
 ```text
 Copies of hoisted members removed; base readers used; ids and assertions unchanged
+```
+
+acceptance\-test\-steps
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/Refinement\/Slice05NeedAndVerdictSpecifications\.cs\:14
+
+Changed
+
+```text
+Copies of hoisted members removed and unused steps deleted; remaining ids and assertions unchanged
 ```
 
 ##### Agreement

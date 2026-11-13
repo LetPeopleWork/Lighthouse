@@ -242,7 +242,7 @@
 "counters": {
 "D": 12,
 "E": 4,
-"F": 219,
+"F": 225,
 "K": 9,
 "L": 4,
 "P": 4,
@@ -604,9 +604,9 @@
 },
 {
 "decision": "Replace",
-"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickSpecifications.cs:93",
-"reason": "F46",
-"symbol": "TheTabAsReadBy"
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/RefinementAtThePortTest.cs:206",
+"reason": "F220",
+"symbol": "TheTabAsSeenBy"
 }
 ],
 "risks": [
@@ -796,7 +796,7 @@
 ]
 },
 "S2": {
-"oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs",
+"oracle": "docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py",
 "prefactoring": {
 "existing_oracle": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleScenarios.cs",
 "move": "F132",
@@ -865,6 +865,12 @@
 "kind": "acceptance-test-steps",
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleSpecifications.cs:13",
 "reason": "F141"
+},
+{
+"decision": "Changed",
+"kind": "acceptance-test-steps",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictSpecifications.cs:14",
+"reason": "F225"
 }
 ],
 "reuse": [
@@ -873,11 +879,25 @@
 "locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/NeedOverOneCycleSpecifications.cs:13",
 "reason": "F134",
 "symbol": "NeedOverOneCycleTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictSpecifications.cs:14",
+"reason": "F223",
+"symbol": "Slice05NeedAndVerdictTest"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickSpecifications.cs:11",
+"reason": "F224",
+"symbol": "Slice10SleYardstickTest"
 }
 ]
 },
 "supports": [
-"Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictSpecifications.cs"
+"docs/feature/story-6602-b-report-window-and-overlap/evidence/members-once.py",
+"docs/feature/story-6602-b-report-window-and-overlap/evidence/ids-before.txt",
+"docs/feature/story-6602-b-report-window-and-overlap/evidence/ids-expected-after-drop.txt"
 ],
 "targets": [
 {
@@ -904,12 +924,24 @@
 "change": "Extend",
 "path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice10SleYardstickSpecifications.cs",
 "reason": "F128"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictScenarios.cs",
+"reason": "F221"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement/Slice05NeedAndVerdictSpecifications.cs",
+"reason": "F222"
 }
 ],
 "verification": [
-"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~Slice05NeedAndVerdictTest|FullyQualifiedName~NeedOverOneCycleTest|FullyQualifiedName~Slice10SleYardstickTest'",
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger 'trx;LogFileName=s2.trx' --results-directory Lighthouse.Backend/Lighthouse.Backend.Tests/TestResults/s2 --filter 'FullyQualifiedName~Slice05NeedAndVerdictTest|FullyQualifiedName~NeedOverOneCycleTest|FullyQualifiedName~Slice10SleYardstickTest'",
 "env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken dotnet test Lighthouse.Backend/Lighthouse.Backend.Tests -c Debug --logger trx --filter 'FullyQualifiedName~PortGivensGuardTest|FullyQualifiedName~RefinementWithoutSignInWireContractTest|FullyQualifiedName~RealityCheckWireContractTest'",
-"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken pwsh Lighthouse.Backend/Test-Fast.ps1"
+"env -u AzureDevOpsLighthouseIntegrationTestToken -u JiraLighthouseIntegrationTestToken -u JiraLighthouseRestrictedIntegrationTestToken -u JiraScopedTokenIntegrationTestToken -u ServiceNowLighthouseIntegrationTestToken -u LinearAPIKey -u AzureDevOpsLighthouseE2ETestToken pwsh Lighthouse.Backend/Test-Fast.ps1",
+"python3 -I docs/feature/story-6602-b-report-window-and-overlap/evidence/compare-ids.py Lighthouse.Backend/Lighthouse.Backend.Tests/TestResults/s2/s2.trx docs/feature/story-6602-b-report-window-and-overlap/evidence/ids-expected-after-drop.txt",
+"python3 -I docs/feature/story-6602-b-report-window-and-overlap/evidence/members-once.py Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/Refinement"
 ]
 }
 }
@@ -1079,6 +1111,12 @@
 "F218": "A Team owner still sees the same report window bounds the browser wizard shows",
 "F219": "a change to a Reports file folded into the S2 commits that keeps the 15 ids green would pass; the review of the S2 diff, which must name only Refinement test files, catches it",
 "F22": "Hoist, one owner per member: Team set-up goes to RefinementPortGivens (the Gravity ready-rule builder GravityWithItsReadyRule and its ready tag), because the builder is the only writer of Team set-up; everything else goes to RefinementAtThePortTest as protected members: the need-text constants (Below, NoCadence, InsufficientData, NoRefinementStates and, if still used, In and Above), GravitysCycleWorkingDays, the 3/5/6/8/10 five-to-eight script, the identical Gravity-two-ready-refining-on-Thursdays-on-Friday-2-October Given, and the coach's tab reader. NeedOverOneCycleSpecifications drops NeedIn and NeedReading and uses the base TheNeedOn and NeedFacts; CycleIn and CycleReading stay private to it, because only it reads the cycle. Steps that the three dropped rows alone used are deleted. The base TheTabAsSeenBy gains an overload taking a browser key, and Slice10SleYardstickSpecifications drops TheTabAsReadBy and calls it. The comment above GivenTodayIsWednesdayTheSeventhOfOctober in Slice10SleYardstickSpecifications (and the same sentence in Slice05NeedAndVerdictSpecifications, if it survives the hoist) is reworded so it no longer narrates the old host design.",
+"F220": "Slice10SleYardstickTest's TheTabAsReadBy repeated the base TheTabAsSeenBy; replaced by a browser-key overload on the base",
+"F221": "Three rows that repeat NeedOverOneCycleTest are deleted, 17 to 14, with any step now unused; every other id and assertion unchanged",
+"F222": "Loses its copies of the hoisted members and uses the port base and port builder owners; then loses the steps only the dropped rows used; remaining ids and assertions unchanged",
+"F223": "The step half of the need-and-verdict class; its copies of the shared members give way to the port base and port builder, and the steps only the dropped rows used go with them",
+"F224": "Its step half reads the tab through the base browser-key TheTabAsSeenBy overload instead of its own copy; ids and assertions unchanged",
+"F225": "Copies of hoisted members removed and unused steps deleted; remaining ids and assertions unchanged",
 "F23": "S2 commit order: first refactor(test-infra) hoisting the duplicated members, with every test id of Slice05NeedAndVerdictTest, NeedOverOneCycleTest and Slice10SleYardstickTest unchanged; then test(refinement) dropping the three mapped rows and the steps only they used. A scenario file may change only the names of the steps it calls, never a test name.",
 "F24": "Carriers, all test-side, no domain class added: per-scenario state lives in the fixture instance of the port base (ServicePortHarness, FakeLighthouseClock, the licence stand-in for Reports; the RefinementAtThePortTest members as in feature story-6602-a for Refinement); Team set-up decisions live in the base ATeam step for Reports and in RefinementPortGivens for Refinement; outcomes are ReportTemplatesRead and ReportOutcome<ReportRead> from the Reports ports and RefinementViewDto from IRefinementViewQuery. Layers: application/port rows observe those records; HTTP status and JSON text are observed only by the hosted Reports classes and RefinementWithoutSignInWireContractTest, which do not change; no infrastructure or recovery layer is touched.",
 "F25": "Formal verification not applicable: no production code, state, transition, protocol or concurrency changes; the change is test structure only. The laws are finite set equalities of test ids, finite twin mappings and finite deliberate breaks, checked by running code. Quint, TLA+/TLC and Agda would model nothing new, so no model is written and no checker run or claimed. Liveness not applicable: no progress or temporal property exists in a synchronous test move. Property-based testing not applicable: no broad input domain, every row is a named finite case read from a table or written out. Code facts: code-fact answered only through its textsearch provider (noisy) and missed TheTabAsReadBy, so every locator was confirmed by reading the file. Jev: unavailable (unauthorized in this project).",
@@ -1104,7 +1142,6 @@
 "F43": "The one writer of Team set-up; takes the Gravity ready-rule builder duplicated in the two need classes",
 "F44": "Holds the twins of the dropped rows; its ids and assertions are unchanged; its specifications use the base readers",
 "F45": "Loses the three rows its twins prove and the steps only they used",
-"F46": "Repeats the base TheTabAsSeenBy; replaced by a browser-key overload on the base",
 "F47": "No shared contract changes: production routes, DTOs, port interfaces and registrations are unchanged; BoundaryRow and TheTable keep their names for ReportWindowPolicyTest, the only other reader, which compiles in the same commit.",
 "F48": "No parties change apart: producers (controllers, ports) and consumers (tests) live in one deployable and one commit; the port-fixture lifetime check is part of S1's verification, not an independent contract obligation.",
 "F49": "Application-service ports: IReportQueries.Templates and IReportCommands.Create reached from ReportsAtThePortTest (S1); IRefinementViewQuery and ISizingLogCommands reached from RefinementAtThePortTest (S2)",
