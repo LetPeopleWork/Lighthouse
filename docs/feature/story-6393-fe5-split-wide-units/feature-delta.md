@@ -376,3 +376,15 @@ the renamed update and remove texts. `frontend-tests` was improved on the way (c
 `--help`, message rows quote their text). Maintainer's choice: one more haiku run, then accept the gap; taken.
 Other evidence for the four promises: each slice's observed RED, the accepted whole-candidate review, the full
 suite (9736 pass), mutation 97.06 %.
+
+### Part B EXAMINE outcome (2026-11-13) — observation gaps, no product fault
+
+One source-blind EXAMINE run (haiku), closed with the examiner's record complete (nwdes records it as rejected because
+verdicts stay unmet). E1, E2 and E4 met: 2655 rows over 149 frontend files pass, including the pinned order in
+which the metrics queries start. E3 and E5 unmet as `observation_gap`: unmodified tests and file sizes are developer
+constraints that only the whole-candidate review can see. E6 unmet as `observation_gap`: the examiner found no
+public row for a duplicate-name refusal (the form has no such rule; the expectation's wording went beyond P4) and
+did not see the blocking-error rows (`getFirstBlockingError` in `deliveryFormRules.test.ts`, and the dialog row
+"names one missing thing at a time"). Taken in AFK mode, following the part A precedent (maintainer accepted the
+same kind of gap): no rework. Other evidence for P1-P4: each slice's observed RED, four accepted slice reviews and
+an accepted whole-candidate review, the full suite (9814/9814), CI green on S1-S3.

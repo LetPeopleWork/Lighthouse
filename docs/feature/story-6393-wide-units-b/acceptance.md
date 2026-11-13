@@ -1047,4 +1047,84 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+met
+
+#### Observations
+
+```text
+Probe 1 (frontend-tests, fragments useMetricsData,DeliverySection,DeliveryCreateModal,NamedPercentiles,StateDrillDown,deliveryFormRules,UnbindConfirmation,WorkItemsTab,deliverySelectionTabs,metrics,Metrics,Delivery): summary 'Test Files 149 passed (149)', 'Tests 2655 passed (2655)', exit 0. Rows shown as user-facing test titles include: metrics widgets loading/could-not-load per request (widgetStatus.test.ts, BaseMetricsView.loading.test.tsx); useMetricsData owner/window/baseline fetch rows (useMetricsData.test.ts: 'should call all core metrics service methods on mount', 'A failed window ... shows nothing rather than the previous owner's answer'); Delivery create dialog rows (DeliveryCreateModal.test.tsx 'should have Save button disabled for past date'; deliveryFormRules.test.ts 'yesterday is judged by whether it is after today', 'today is answered with the message that names its fix', 'a name of nothing but spaces is no name'); DeliverySection overdue rows (DeliverySection.overdue.test.tsx 'says a target that has been and gone is overdue'); DeliverySection.metrics.test.tsx 'does not fetch metrics history while the Work Items tab is active'. No row title names useNamedPercentilesScope, useStateDrillDown, applicabilityFor, metricsOwnerKeyOf, UnbindConfirmationDialog or WorkItemsTab by function name; the named-percentiles scope and state drill-down rows were not found in this run.
+```
+
+```text
+Saved output of probe 1 (grep of its rows, no new probe): named-percentiles scope rows pass in BaseMetricsView.test.tsx ('Cycle Time Percentiles named scope (lifted state)': Default selection reads default cycle time; Named selection reads the named cycle time and filters rows; no SLE line in dialog). Drill-down rows pass: BaseMetricsView.test.tsx 'passes the active selection to the drill-down items fetch' and 'maps the drill-down payload into rows with a linked name and rounded days contributed'; BaseMetricsView.cumulativeStateTimeDialog.test.tsx 'a late answer for the bar clicked before never lands in the next bar's dialog'. Unbind rows pass: DeliverySection.provenance.test.tsx 'never unbinds on its own', 'asks before unbinding, and says what the delivery keeps'. Header-copy rows pass: DeliverySectionParts.test.tsx 'says a source-bound Delivery is bound to its source, ahead of any rule'. Overdue rows pass: DeliverySection.overdue.test.tsx (AC-03.2). Form rows pass: deliveryFormRules.test.ts (yesterday/today refused, tomorrow accepted, blank name, missing date, one-thing-next ordering); DeliveryCreateModal.test.tsx Save disabled for empty name and past date. Not located by title in the run: any row for duplicate-name refusal, for a blocking error in the Delivery form, for a request-start-order check, or for the UnbindConfirmationDialog/WorkItemsTab part by name.
+```
+
+### E2
+
+met
+
+#### Observations
+
+```text
+Probe 2 (frontend-tests metricsDataModules,deliveryFormRules, no name filter, unedited output): summary 'Test Files 2 passed (2)', 'Tests 47 passed (47)', exit 0. Rows: src/hooks/metricsDataModules.test.tsx > 'The metrics view's requests > start in the order the view has always started them' passes; 'Whose metrics a request asks for' and 'The metrics query helper' rows pass (keeps last answer drawn for same owner when next window fails; shows no answer when another owner id fails). src/pages/.../deliveryFormRules.test.ts rows pass: dates (yesterday and today refused, tomorrow accepted, no date answered with fix message); name ('nothing typed', 'only spaces' refused); 'one thing the form asks for next'; 'the tabs an edit dialog offers' (offers only the tab of the source a delivery follows); 'what the source picker is told it already follows'. No row in this probe names a duplicate-name refusal or a blocking error of the Delivery form.
+```
+
+### E3
+
+unmet
+
+#### Observations
+
+```text
+Probe 1 (frontend-tests, fragments useMetricsData,DeliverySection,DeliveryCreateModal,NamedPercentiles,StateDrillDown,deliveryFormRules,UnbindConfirmation,WorkItemsTab,deliverySelectionTabs,metrics,Metrics,Delivery): summary 'Test Files 149 passed (149)', 'Tests 2655 passed (2655)', exit 0. Rows shown as user-facing test titles include: metrics widgets loading/could-not-load per request (widgetStatus.test.ts, BaseMetricsView.loading.test.tsx); useMetricsData owner/window/baseline fetch rows (useMetricsData.test.ts: 'should call all core metrics service methods on mount', 'A failed window ... shows nothing rather than the previous owner's answer'); Delivery create dialog rows (DeliveryCreateModal.test.tsx 'should have Save button disabled for past date'; deliveryFormRules.test.ts 'yesterday is judged by whether it is after today', 'today is answered with the message that names its fix', 'a name of nothing but spaces is no name'); DeliverySection overdue rows (DeliverySection.overdue.test.tsx 'says a target that has been and gone is overdue'); DeliverySection.metrics.test.tsx 'does not fetch metrics history while the Work Items tab is active'. No row title names useNamedPercentilesScope, useStateDrillDown, applicabilityFor, metricsOwnerKeyOf, UnbindConfirmationDialog or WorkItemsTab by function name; the named-percentiles scope and state drill-down rows were not found in this run.
+```
+
+```text
+Non-probe, examiner-side: user-observable behaviour of split units was judged from the captured test titles and their pass status only. No browser capture, no before/after baseline, no network trace was taken; the request start order (E2) and the line counts of the three named files (E5) are not visible from any public surface in this workspace; the candidate checkout and its diffs were not read (source-blind). Test-file unmodified status (E3) cannot be established publicly. Public docs read attempt: nwdes examine read docs/guides refused, path absent; workspace root read returned no listing.
+```
+
+observation_gap
+
+### E4
+
+met
+
+#### Observations
+
+```text
+Saved output of probe 1 (grep of its rows, no new probe): named-percentiles scope rows pass in BaseMetricsView.test.tsx ('Cycle Time Percentiles named scope (lifted state)': Default selection reads default cycle time; Named selection reads the named cycle time and filters rows; no SLE line in dialog). Drill-down rows pass: BaseMetricsView.test.tsx 'passes the active selection to the drill-down items fetch' and 'maps the drill-down payload into rows with a linked name and rounded days contributed'; BaseMetricsView.cumulativeStateTimeDialog.test.tsx 'a late answer for the bar clicked before never lands in the next bar's dialog'. Unbind rows pass: DeliverySection.provenance.test.tsx 'never unbinds on its own', 'asks before unbinding, and says what the delivery keeps'. Header-copy rows pass: DeliverySectionParts.test.tsx 'says a source-bound Delivery is bound to its source, ahead of any rule'. Overdue rows pass: DeliverySection.overdue.test.tsx (AC-03.2). Form rows pass: deliveryFormRules.test.ts (yesterday/today refused, tomorrow accepted, blank name, missing date, one-thing-next ordering); DeliveryCreateModal.test.tsx Save disabled for empty name and past date. Not located by title in the run: any row for duplicate-name refusal, for a blocking error in the Delivery form, for a request-start-order check, or for the UnbindConfirmationDialog/WorkItemsTab part by name.
+```
+
+### E5
+
+unmet
+
+#### Observations
+
+```text
+Non-probe, examiner-side: user-observable behaviour of split units was judged from the captured test titles and their pass status only. No browser capture, no before/after baseline, no network trace was taken; the request start order (E2) and the line counts of the three named files (E5) are not visible from any public surface in this workspace; the candidate checkout and its diffs were not read (source-blind). Test-file unmodified status (E3) cannot be established publicly. Public docs read attempt: nwdes examine read docs/guides refused, path absent; workspace root read returned no listing.
+```
+
+observation_gap
+
+### E6
+
+unmet
+
+#### Observations
+
+```text
+Probe 1 (frontend-tests, fragments useMetricsData,DeliverySection,DeliveryCreateModal,NamedPercentiles,StateDrillDown,deliveryFormRules,UnbindConfirmation,WorkItemsTab,deliverySelectionTabs,metrics,Metrics,Delivery): summary 'Test Files 149 passed (149)', 'Tests 2655 passed (2655)', exit 0. Rows shown as user-facing test titles include: metrics widgets loading/could-not-load per request (widgetStatus.test.ts, BaseMetricsView.loading.test.tsx); useMetricsData owner/window/baseline fetch rows (useMetricsData.test.ts: 'should call all core metrics service methods on mount', 'A failed window ... shows nothing rather than the previous owner's answer'); Delivery create dialog rows (DeliveryCreateModal.test.tsx 'should have Save button disabled for past date'; deliveryFormRules.test.ts 'yesterday is judged by whether it is after today', 'today is answered with the message that names its fix', 'a name of nothing but spaces is no name'); DeliverySection overdue rows (DeliverySection.overdue.test.tsx 'says a target that has been and gone is overdue'); DeliverySection.metrics.test.tsx 'does not fetch metrics history while the Work Items tab is active'. No row title names useNamedPercentilesScope, useStateDrillDown, applicabilityFor, metricsOwnerKeyOf, UnbindConfirmationDialog or WorkItemsTab by function name; the named-percentiles scope and state drill-down rows were not found in this run.
+```
+
+```text
+Saved output of probe 1 (grep of its rows, no new probe): named-percentiles scope rows pass in BaseMetricsView.test.tsx ('Cycle Time Percentiles named scope (lifted state)': Default selection reads default cycle time; Named selection reads the named cycle time and filters rows; no SLE line in dialog). Drill-down rows pass: BaseMetricsView.test.tsx 'passes the active selection to the drill-down items fetch' and 'maps the drill-down payload into rows with a linked name and rounded days contributed'; BaseMetricsView.cumulativeStateTimeDialog.test.tsx 'a late answer for the bar clicked before never lands in the next bar's dialog'. Unbind rows pass: DeliverySection.provenance.test.tsx 'never unbinds on its own', 'asks before unbinding, and says what the delivery keeps'. Header-copy rows pass: DeliverySectionParts.test.tsx 'says a source-bound Delivery is bound to its source, ahead of any rule'. Overdue rows pass: DeliverySection.overdue.test.tsx (AC-03.2). Form rows pass: deliveryFormRules.test.ts (yesterday/today refused, tomorrow accepted, blank name, missing date, one-thing-next ordering); DeliveryCreateModal.test.tsx Save disabled for empty name and past date. Not located by title in the run: any row for duplicate-name refusal, for a blocking error in the Delivery form, for a request-start-order check, or for the UnbindConfirmationDialog/WorkItemsTab part by name.
+```
+
+```text
+Probe 2 (frontend-tests metricsDataModules,deliveryFormRules, no name filter, unedited output): summary 'Test Files 2 passed (2)', 'Tests 47 passed (47)', exit 0. Rows: src/hooks/metricsDataModules.test.tsx > 'The metrics view's requests > start in the order the view has always started them' passes; 'Whose metrics a request asks for' and 'The metrics query helper' rows pass (keeps last answer drawn for same owner when next window fails; shows no answer when another owner id fails). src/pages/.../deliveryFormRules.test.ts rows pass: dates (yesterday and today refused, tomorrow accepted, no date answered with fix message); name ('nothing typed', 'only spaces' refused); 'one thing the form asks for next'; 'the tabs an edit dialog offers' (offers only the tab of the source a delivery follows); 'what the source picker is told it already follows'. No row in this probe names a duplicate-name refusal or a blocking error of the Delivery form.
+```
+
+observation_gap
