@@ -72,12 +72,16 @@ BREAKS = [
      "Application.PercentileFamilies.For(portfolio, metrics).Select(retention.Guard)", "Application.PercentileFamilies.For(portfolio, metrics).Take(1).Select(retention.Guard)"),
     ("S17b team target keeps one percentile family", T,
      "Application.PercentileFamilies.For(team, metrics).Select(retention.Guard)", "Application.PercentileFamilies.For(team, metrics).Take(1).Select(retention.Guard)"),
+    ("S18 team cycle time window fixed to 30 days", TM,
+     "GetWorkItemsClosedInDateRange(team, startDate, endDate);\n                var cycleTimes",
+     "GetWorkItemsClosedInDateRange(team, endDate.AddDays(-30), endDate);\n                var cycleTimes",
+     "FullyQualifiedName~TeamMetricsServiceTests.GetCycleTimePercentilesForTeam_"),
     ("S7b portfolio age counted at the age of the next day", PM,
      "f.AgeOnDay(Clock.Zone, DateOnly.FromDateTime(endDate))", "f.AgeOnDay(Clock.Zone, DateOnly.FromDateTime(endDate).AddDays(1))"),
 ]
 
 only = sys.argv[1:]
-for name, path, old, new in BREAKS:
+for name, path, old, new, *own in BREAKS:
     if only and name.split()[0] not in only:
         continue
     full = os.path.join(R, path)
@@ -88,7 +92,7 @@ for name, path, old, new in BREAKS:
     open(full, "w", encoding="utf-8").write(src.replace(old, new))
     try:
         p = subprocess.run(["env", "-u", "LinearAPIKey", "dotnet", "test", "Lighthouse.Backend/Lighthouse.Backend.Tests",
-                            "-c", "Debug", "--filter", UNITS], cwd=R, capture_output=True, text=True)
+                            "-c", "Debug", "--filter", own[0] if own else UNITS], cwd=R, capture_output=True, text=True)
         out = p.stdout + p.stderr
         print("=== " + name)
         for line in out.splitlines():

@@ -18,7 +18,7 @@ Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,5,0,0) [1 ms]
 Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,0,5,0) [10 ms]
 Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(0,0,0,5) [1 ms]
 Failed!  - Failed:     6, Passed:    57, Skipped:     0, Total:    63, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S4 writer reads every horizon over 30 days
+=== S4 writer reads every horizon over 30 days [superseded: no compile; see the S4 block under Reruns]
 NO SUMMARY (the edit did not compile)
 === S5 team cycle time reader drops the window start
 Passed!  - Failed:     0, Passed:    63, Skipped:     0, Total:    63, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
@@ -38,7 +38,7 @@ Failed!  - Failed:     2, Passed:    61, Skipped:     0, Total:    63, Duration:
 Failed APeriodReachingPastToday_AsksForNoDayAfterToday [99 ms]
 Failed DaysTheChartHoldsAndDaysNoPassCanWrite_AreLeftOutOfTheAsk [6 ms]
 Failed!  - Failed:     2, Passed:    61, Skipped:     0, Total:    63, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S9 reconciler ignores the days the chart holds
+=== S9 reconciler ignores the days the chart holds [superseded: no compile; see the last S9 block under Reruns]
 NO SUMMARY (the edit did not compile)
 === S10 gap-asking query passes no held days
 Failed APercentileSeries_IsServedAsStored_AndTheDaysItHoldsArePassedOnForThePeriodAsked [34 ms]
@@ -61,7 +61,7 @@ Failed ADayWithoutRows_IsWorkedOutAtEveryHorizon_OverAWindowEndingOnThatDay [141
 Failed AnAgeDayFilledInAfterwards_ReadsTheSameAsWhenItWasRecordedOnTheDay [19 ms]
 Failed AWorkItemAgeDay_IsOneRowUnderNoHorizon_ReadAsOfThatDayAlone [4 ms]
 Failed!  - Failed:     3, Passed:    60, Skipped:     0, Total:    63, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S14 a day with nothing to report gets a row
+=== S14 a day with nothing to report gets a row [superseded: no compile; see the S14 block under Reruns]
 NO SUMMARY (the edit did not compile)
 === S15 work item age filed under a 30-day horizon
 Failed AWorkItemAgeDay_IsOneRowUnderNoHorizon_ReadAsOfThatDayAlone [40 ms]
@@ -90,7 +90,7 @@ Failed!  - Failed:     1, Passed:    62, Skipped:     0, Total:    63, Duration:
 === S5b portfolio cycle time reader drops the window start
 Failed APortfolioRecordsItsCycleTimeOverTheWindowAndItsWorkItemAgeAsOfTheWindowEnd [126 ms]
 Failed!  - Failed:     1, Passed:    62, Skipped:     0, Total:    63, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
-=== S9 reconciler ignores the days the chart holds
+=== S9 reconciler ignores the days the chart holds [superseded: no compile; see the last S9 block under Reruns]
 NO SUMMARY (the edit did not compile)
 === S14 a day with nothing to report gets a row
 Failed ADayOnWhichNothingFinished_GetsNoRow [1 s]
@@ -100,5 +100,10 @@ Failed!  - Failed:     2, Passed:    61, Skipped:     0, Total:    63, Duration:
 Failed APeriodTheChartAlreadyHoldsInFull_AsksForNothing [32 ms]
 Failed DaysTheChartHoldsAndDaysNoPassCanWrite_AreLeftOutOfTheAsk [35 ms]
 Failed!  - Failed:     2, Passed:    61, Skipped:     0, Total:    63, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+
+### Added for row 2 (the team's 90-day cycle time window)
+=== S18 team cycle time window fixed to 30 days (TeamMetricsService.GetCycleTimePercentilesForTeam reads the closed items from endDate minus 30 days; run over TeamMetricsServiceTests.GetCycleTimePercentilesForTeam_ only)
+Failed GetCycleTimePercentilesForTeam_ItemClosedSixtyDaysAgo_IsCountedOverNinetyDaysAndNotOverThirty [31 ms]
+Failed!  - Failed:     1, Passed:     2, Skipped:     0, Total:     3, Duration: 158 ms - Lighthouse.Backend.Tests.dll (net10.0)
 
 Each break was reverted; no file under Lighthouse.Backend/Lighthouse.Backend/ is changed.

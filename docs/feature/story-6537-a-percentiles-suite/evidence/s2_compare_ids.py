@@ -23,6 +23,7 @@ FILTER = (
     "|FullyQualifiedName~FlowMetrics.Application.OverTimeGapReconcilerTest."
     "|FullyQualifiedName~FlowMetrics.Application.OverTimeFillTargetTest."
     "|FullyQualifiedName~FlowMetrics.Application.GapAskingSeriesQueryTest."
+    "|FullyQualifiedName~FlowMetrics.Application.TeamMetricsServiceTests.GetCycleTimePercentilesForTeam_ItemClosedSixtyDaysAgo_"
     "|FullyQualifiedName~FlowMetrics.Application.TeamWorkItemAgeAsOfDateTest."
     "|FullyQualifiedName~FlowMetrics.Application.PortfolioWorkItemAgeAsOfDateTest."
     "|FullyQualifiedName~OverTimeHistoryFillerTest.EveryDayOfTheAskedPeriod_"

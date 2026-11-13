@@ -133,7 +133,7 @@ None.
 P2
 
 ```text
-For each of the ten removed host rows, apply one deliberate break to each production rule its path depends on (days walked, families looped, horizons, windows, age as of the day, stored-day kept, held days, last observation, blank day) and run the unit rows
+For each of the ten removed host rows, apply one deliberate break to each production rule its path depends on (days walked, families looped, horizons, windows including the team's cycle time window, age as of the day, stored-day kept, held days, last observation, blank day) and run the unit rows
 ```
 
 ```text
@@ -151,7 +151,7 @@ Tested
 docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s2\_breaks\.py
 
 ```text
-A unit row that exercises the rule on a sample where the broken line makes no difference would stay green; the cut windows of S5 and S5b first began on the same day and stayed green, which is why they were rerun
+A unit row that exercises the rule on a sample where the broken line makes no difference would stay green; the cut windows of S5 and S5b first began on the same day, and a team window fixed to 30 days stayed green under every earlier row until the 60-day item row was added, which is why they were rerun
 ```
 
 ###### Obligations

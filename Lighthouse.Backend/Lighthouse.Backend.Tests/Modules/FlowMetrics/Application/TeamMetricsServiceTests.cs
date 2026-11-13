@@ -704,6 +704,30 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Application
         }
 
         [Test]
+        public void GetCycleTimePercentilesForTeam_ItemClosedSixtyDaysAgo_IsCountedOverNinetyDaysAndNotOverThirty()
+        {
+            var today = DateTime.UtcNow;
+            var recent = AddWorkItem(StateCategories.Done, 1, string.Empty);
+            recent.ClosedDate = today.AddDays(-5);
+            recent.StartedDate = recent.ClosedDate?.AddDays(-1);
+            for (var count = 0; count < 3; count++)
+            {
+                var older = AddWorkItem(StateCategories.Done, 1, string.Empty);
+                older.ClosedDate = today.AddDays(-60);
+                older.StartedDate = older.ClosedDate?.AddDays(-20);
+            }
+
+            var overNinetyDays = subject.GetCycleTimePercentilesForTeam(testTeam, today.AddDays(-90), today).ToList();
+            var overThirtyDays = subject.GetCycleTimePercentilesForTeam(testTeam, today.AddDays(-30), today).ToList();
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(overNinetyDays[0].Value, Is.EqualTo(21), "the 90-day window must reach back to the items closed 60 days ago, so the slow stretch shows in the longer look-back");
+                Assert.That(overThirtyDays[0].Value, Is.EqualTo(2), "the 30-day window must leave the items closed 60 days ago out");
+            }
+        }
+
+        [Test]
         public void GetCycleTimePercentilesForTeam_NoClosedItems_ReturnsZeros()
         {
             var cycleTimePercentiles = subject.GetCycleTimePercentilesForTeam(testTeam, DateTime.UtcNow.AddDays(-10), DateTime.UtcNow).ToList();
