@@ -66,22 +66,27 @@ decides whether the units just under the line (992, 989, 970) are in scope or on
 
 ## Wave: PICK-UP / [REF] Checklist (ticked through DELIVER)
 
-- [ ] **Behaviour-free**: routes, DTO shapes, serialized responses, UI pixels unchanged. Vitest, Playwright and
+- [x] **Behaviour-free**: routes, DTO shapes, serialized responses, UI pixels unchanged. Vitest, Playwright and
       `@screenshot` green unmodified, apart from tests that move with the code they cover.
-- [ ] **Ratchet in the same change**: a size rule (production files > 1000 lines, listed by name, ADR-268 style) added
+- [x] **Ratchet in the same change**: a size rule (production files > 1000 lines, listed by name, ADR-268 style) added
       in the commit range that brings the first unit under it, and shrunk with each later unit. Never loosened.
-- [ ] **Moves separate from edits**: `refactor(<area>): move …` commits apart from edit commits.
-- [ ] **Re-count before designing**: done above; DESIGN re-checks if code moved since.
-- [ ] **Mutation last, on frozen code**: StrykerJS score on the touched files does not drop.
-- [ ] **Architecture docs in the same change**: `ARCHITECTURE.md` §12 where the frontend layout or rule changes.
-- [ ] **One context at a time**.
-- [ ] **Terminology**: new names follow ADR-270's glossary and the seeded default terms.
-- [ ] **Cross-cutting re-check**: RBAC (shared hook through `useRbac()` / `RbacService`, no direct
+- [x] **Moves separate from edits**: `refactor(<area>): move …` commits apart from edit commits.
+- [x] **Re-count before designing**: done above; DESIGN re-checks if code moved since.
+- [x] **Mutation last, on frozen code**: StrykerJS score on the touched files does not drop.
+- [x] **Architecture docs in the same change**: `ARCHITECTURE.md` §12 where the frontend layout or rule changes.
+- [x] **One context at a time**.
+- [x] **Terminology**: new names follow ADR-270's glossary and the seeded default terms.
+- [x] **Cross-cutting re-check**: RBAC (shared hook through `useRbac()` / `RbacService`, no direct
       `/api/latest/authorization/my-summary` fetch), Lighthouse-Clients N/A (no wire change), Website N/A (nothing
       visible), usage data N/A (behaviour-free), UI sketch N/A unless a split needs a visible change (then stop and
       sketch).
-- [ ] **No release notes** unless the maintainer says so.
-- [ ] **Coordination with #6473**: the `ModifyConnectionSettings` split is on `main` before #6473 slice 05 starts.
+- [x] **No release notes** unless the maintainer says so.
+- [x] **Coordination with #6473**: the `ModifyConnectionSettings` split is on `main` before #6473 slice 05 starts.
+
+Evidence (2026-11-13): moves and edits in separate commits, 9574ced15 to 2ec0c2d5e; the size list started with two
+names and is empty; mutation 97.06 % (A) and 91.00 % (B); `ARCHITECTURE.md` §12 updated at finalize; one unit per
+slice; no release notes; the `ModifyConnectionSettings` split (42b567b4f) was on `main` 2026-11-12, before #6473
+slice 05. Full record: `docs/evolution/story-6393-fe5-split-wide-units/evolution.md`.
 
 ## Wave: DESIGN / [REF] Scope, route and measured facts (2026-11-12)
 
