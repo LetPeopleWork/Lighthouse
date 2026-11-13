@@ -179,6 +179,15 @@ Connection pages show a 'Back to {Work Tracking Systems}' link to System → Con
 Confirmed
 
 
+```text
+System Info is split into System Info (details + Third Party Packages), Logs (log level + viewer) and Refresh History tabs, built in S3; System order: Connections, Database, Encryption, Demo Data, Usage Data, System Info, Logs, Refresh History, License; gating as today; ?tab=logs and the Task Manager log link open Logs (D16)
+```
+
+#### Status
+
+Confirmed
+
+
 ## Journey
 
 None.

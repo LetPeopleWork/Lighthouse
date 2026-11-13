@@ -1688,3 +1688,23 @@ Every sketch decision is now settled. Where a sketch above differs from this blo
 ### AFK run options (2026-11-13)
 
 Slice wrap-up: refactor + review; mutation runs once in the final gates on frozen code. Push: per slice, CI watched.
+
+## Wave: DELIVER / [REF] Maintainer guided review of S1 and S2 (2026-11-13)
+
+Walked through on a local instance (RBAC off; Access with RBAC on checked by the maintainer separately). Every S1
+and S2 check met expectations: header menu and mobile caption, area titles, tab URLs and Back, all old links and
+unknown addresses, in-app log and demo-data links, slow connection, the three Organization tabs, the old
+configuration link, Usage Data (no footer sentence, value kept), and both failure looks. Not checked locally: the
+connection forms' "View license options" link (no premium-gated option shown); covered by the S1 oracle's source scan
+and pinned rendered in S3.
+
+New decisions from the review:
+
+- **D16**: System Info is split into dedicated tabs. **System Info** keeps the system details and Third Party
+  Packages; **Logs** holds the log level and the log viewer; **Refresh History** holds the refresh history table.
+  System tab order after all slices: Connections, Database, Encryption, Demo Data, Usage Data, System Info, Logs,
+  Refresh History, License. Gating as today (whoever saw System Info sees all three). The old `?tab=logs` key and
+  the Task Manager "the full log" link open Logs. Built inside slice 03 (S3 grows from S to M).
+- **D17**: the Team and Feature refresh settings themselves (which are needed at all) are to be rethought. Out of
+  scope here; after the Epic, propose an ADO item (Ideas) describing what each refresh setting does today, created
+  only on the maintainer's yes.

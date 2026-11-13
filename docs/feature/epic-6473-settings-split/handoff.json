@@ -356,7 +356,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 377,
+"F": 378,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -2750,6 +2750,7 @@
 "F375": "Moved to the new tabs; entry removed in the commit that deletes the component",
 "F376": "None directly: the behaviour rows moved with their tests",
 "F377": "Design marks the four SystemSettingsTab test files and the licence-asker allow-list entry Migrated or Changed, not oracle files; the crafter moves them and removes the entry with the component",
+"F378": "System Info is split into System Info (details + Third Party Packages), Logs (log level + viewer) and Refresh History tabs, built in S3; System order: Connections, Database, Encryption, Demo Data, Usage Data, System Info, Logs, Refresh History, License; gating as today; ?tab=logs and the Task Manager log link open Logs (D16)",
 "F38": "New single owner of every settings and connection path; replaces the tab key map in Settings.tsx and hand-written literals",
 "F39": "Plain System Settings link becomes the SettingsMenu reading the definition",
 "F4": "Organization shows Terminology, Calendar and Refresh & ordering tabs, and System shows a Usage Data tab, each with its own loading and failure look",
@@ -2885,6 +2886,12 @@
 "kind": "Confirmed"
 },
 "text": "F22"
+},
+{
+"status": {
+"kind": "Confirmed"
+},
+"text": "F378"
 }
 ],
 "promises": [
