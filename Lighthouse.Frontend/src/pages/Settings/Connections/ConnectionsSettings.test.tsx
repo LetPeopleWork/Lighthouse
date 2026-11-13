@@ -16,7 +16,10 @@ import {
 	useLocation,
 	useNavigate,
 } from "react-router";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+// The routes load these pages lazily; importing them here loads them before any test runs, so the first test does not pay for it.
+import "../SettingsAreaPage";
+import "../../Connections/Edit/EditConnection";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { WorkTrackingSystemConnection } from "../../../models/WorkTracking/WorkTrackingSystemConnection";
 import { ApiError } from "../../../services/Api/ApiError";
@@ -37,12 +40,6 @@ import OverviewDashboard from "../../Overview/OverviewDashboard";
 import { settingsRoutes } from "../settingsRoutes";
 
 // The other System tabs are not under test: they only need to open without fetching anything.
-// The routes load these pages on first use; a cold load must not count against the first test.
-beforeAll(async () => {
-	await import("../SettingsAreaPage");
-	await import("../../Connections/Edit/EditConnection");
-});
-
 vi.mock("../DemoData/DemoDataSettings", () => ({
 	default: () => <div>demo data panel content</div>,
 }));

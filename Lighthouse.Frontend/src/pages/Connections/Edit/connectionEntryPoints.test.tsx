@@ -13,7 +13,10 @@ import {
 	useLocation,
 	useNavigationType,
 } from "react-router";
-import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+// The routes load these pages lazily; importing them here loads them before any test runs, so the first test does not pay for it.
+import "./EditConnection";
+import "../../Settings/SettingsAreaPage";
 import ConnectionsSection from "../../../components/App/Header/TaskManager/ConnectionsSection";
 import OnboardingStepper from "../../../components/Common/OnboardingStepper/OnboardingStepper";
 import {
@@ -72,12 +75,6 @@ vi.mock("../../../hooks/useLicenseRestrictions", () => ({
 vi.mock("../../Settings/Connections/AdditionalFieldsEditor", () => ({
 	default: () => <div data-testid="additional-fields-editor" />,
 }));
-
-// The routes load the connection page on first use; a cold load must not count against the first test.
-beforeAll(async () => {
-	await import("../../Connections/Edit/EditConnection");
-	await import("../../Settings/SettingsAreaPage");
-});
 
 const TheConnectionsTab = "/settings/system/connections";
 const TheEditPageOfNorthwindJira = "/settings/system/connections/4/edit";

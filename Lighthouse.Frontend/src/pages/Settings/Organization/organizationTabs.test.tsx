@@ -12,7 +12,9 @@ import {
 	useLocation,
 	useNavigationType,
 } from "react-router";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+// The area page is loaded lazily; importing it here loads it before any test runs, so no test pays for it.
+import "../SettingsAreaPage";
 import type { ILicenseStatus } from "../../../models/ILicenseStatus";
 import type { IOptionalFeature } from "../../../models/OptionalFeatures/OptionalFeature";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
@@ -240,12 +242,6 @@ const theSwitchFor = async (key: string) =>
 	(await screen.findByTestId(`${key}-toggle`)).querySelector(
 		"input",
 	) as HTMLInputElement;
-
-// The area page is loaded lazily on first use; a cold worker can take longer than a wait lasts, so it is
-// loaded once before any test runs and no test pays for it.
-beforeAll(async () => {
-	await import("../SettingsAreaPage");
-});
 
 afterEach(() => {
 	vi.restoreAllMocks();
