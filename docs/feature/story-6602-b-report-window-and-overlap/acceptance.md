@@ -179,7 +179,7 @@ A Reports port that mirrors the host is not reported as drifted
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimesTest\.cs\:\:A\_port\_registering\_the\_services\_as\_the\_host\_does\_differs\_in\_nothing
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PortFixtureLifetimesTest\.cs\:\:A\_port\_registering\_the\_services\_as\_the\_host\_does\_differs\_in\_nothing
 
 ```text
 A check that reports every forwarder or repeated service type would fail this row; a check that skips every forwarder, as it does today, still passes it
@@ -209,7 +209,7 @@ A Reports port that only looks like the host is reported, naming the service to 
 
 Tested
 
-Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Contracts\/PortFixtures\/PortFixtureLifetimesTest\.cs\:\:A\_registration\_that\_only\_looks\_like\_the\_hosts\_is\_reported\_by\_service
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/Architecture\/PortFixtureLifetimesTest\.cs\:\:A\_registration\_that\_only\_looks\_like\_the\_hosts\_is\_reported\_by\_service
 
 ```text
 A check that skips every declared forwarder unconditionally still reports the unregistered metric type but misses the three forwarder rows; a check that reports a lookalike without naming the service would fail the name assertion; a check that reports two differences for one plant would fail the count

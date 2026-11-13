@@ -6,8 +6,9 @@ using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Reports;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
+using Lighthouse.Backend.Tests.Contracts.PortFixtures;
 
-namespace Lighthouse.Backend.Tests.Contracts.PortFixtures
+namespace Lighthouse.Backend.Tests.Architecture
 {
     /// <summary>
     /// A port fixture that registers a service the way the host does gives no difference; a registration that only

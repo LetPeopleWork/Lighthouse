@@ -79,7 +79,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F182",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs::A_port_registering_the_services_as_the_host_does_differs_in_nothing"
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortFixtureLifetimesTest.cs::A_port_registering_the_services_as_the_host_does_differs_in_nothing"
 },
 "expected": "F180",
 "stimulus": "F179",
@@ -92,7 +92,7 @@
 "disposition": {
 "kind": "Tested",
 "still_passes_if": "F186",
-"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Contracts/PortFixtures/PortFixtureLifetimesTest.cs::A_registration_that_only_looks_like_the_hosts_is_reported_by_service"
+"test": "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/PortFixtureLifetimesTest.cs::A_registration_that_only_looks_like_the_hosts_is_reported_by_service"
 },
 "expected": "F184",
 "stimulus": "F183",
