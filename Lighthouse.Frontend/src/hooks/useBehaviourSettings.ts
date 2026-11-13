@@ -55,6 +55,9 @@ export const useBehaviourSettings = (
 				await optionalFeatureService.updateFeature({ ...toggled, enabled });
 			} catch {
 				queryClient.setQueryData(OPTIONAL_FEATURES_KEY, before);
+				await queryClient.invalidateQueries({
+					queryKey: OPTIONAL_FEATURES_KEY,
+				});
 				return;
 			}
 

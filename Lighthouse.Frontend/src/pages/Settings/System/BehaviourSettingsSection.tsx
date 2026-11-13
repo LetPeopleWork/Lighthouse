@@ -20,8 +20,9 @@ const BehaviourSettingsSection: React.FC<BehaviourSettingsSectionProps> = ({
 }) => {
 	const state = useBehaviourSettings([settingKey]);
 
-	// Without the row there is nothing to show, as the old page showed no group for an empty list.
-	if (state.status === "ready" && state.settings.length === 0) return null;
+	// With no row and nothing else to show there is no group, as the old page showed none for an empty list.
+	const hasNoRow = state.status === "ready" && state.settings.length === 0;
+	if (hasNoRow && !children) return null;
 
 	return (
 		<InputGroup title={title} initiallyExpanded={true}>
@@ -33,7 +34,7 @@ const BehaviourSettingsSection: React.FC<BehaviourSettingsSectionProps> = ({
 			{state.status === "failed" && (
 				<Alert severity="error">Could not load the behaviour settings.</Alert>
 			)}
-			{state.status === "ready" && (
+			{state.status === "ready" && !hasNoRow && (
 				<BehaviourSettingsTable
 					settings={state.settings}
 					canUsePremiumFeatures={state.canUsePremiumFeatures}

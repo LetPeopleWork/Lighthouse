@@ -109,3 +109,21 @@ describe("Usage Data tab", () => {
 		await waitFor(async () => expect(await theSwitch()).not.toBeChecked());
 	});
 });
+
+describe("Usage Data tab when the server sends no usage-data row", () => {
+	it("keeps the heading and the link to what is sent, with no switch row", async () => {
+		mockGetAllFeatures.mockResolvedValue([]);
+		mockGetLicenseStatus.mockResolvedValue({
+			hasLicense: false,
+			isValid: false,
+			canUsePremiumFeatures: false,
+		});
+
+		renderTheTab();
+
+		expect(await screen.findByText("What Lighthouse sends")).toBeVisible();
+		expect(screen.getByText("Usage Data")).toBeVisible();
+		expect(screen.queryByTestId("optional-features-table")).toBeNull();
+		expect(screen.queryByTestId("UsageData-toggle")).toBeNull();
+	});
+});

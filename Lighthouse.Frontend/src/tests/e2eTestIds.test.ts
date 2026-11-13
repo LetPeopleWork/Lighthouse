@@ -13,12 +13,6 @@ const frontendSource = resolve(__dirname, "..");
 const NOT_SPELLED_OUT_IN_SOURCE: Readonly<Record<string, string>> = {
 	"recurring-interval-weeks":
 		"built from the dialog's prefix and 'interval-weeks' by WeeklyRecurrenceFields",
-	"import-configuration-button":
-		"stale: the frontend no longer renders it, so the E2E page object has to change",
-	"import-configuration-dialog":
-		"stale: the frontend no longer renders it, so the E2E page object has to change",
-	"validation-results":
-		"stale: the frontend no longer renders it, so the E2E page object has to change",
 	"log-level-section":
 		"stale: the frontend no longer renders it, so the RBAC spec's not-visible check proves nothing",
 };

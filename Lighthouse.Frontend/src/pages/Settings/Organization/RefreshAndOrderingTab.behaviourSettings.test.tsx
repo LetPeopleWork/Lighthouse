@@ -212,3 +212,24 @@ describe("Behaviour Settings on Refresh & ordering", () => {
 		expect(mockGetKeyState).not.toHaveBeenCalled();
 	});
 });
+
+describe("Refresh & ordering when the server sends no ordering row", () => {
+	it("shows no Behaviour Settings group, only the refresh sections", async () => {
+		mockGetAllFeatures.mockResolvedValue([]);
+		mockGetLicenseStatus.mockResolvedValue({
+			hasLicense: true,
+			isValid: true,
+			canUsePremiumFeatures: true,
+		});
+		mockGetAllTerminology.mockResolvedValue([]);
+
+		renderTheTab();
+
+		expect(await screen.findByText("Team Refresh")).toBeVisible();
+		await waitFor(() =>
+			expect(screen.queryByRole("progressbar")).not.toBeInTheDocument(),
+		);
+		expect(screen.queryByText("Behaviour Settings")).not.toBeInTheDocument();
+		expect(screen.queryByTestId("optional-features-table")).toBeNull();
+	});
+});
