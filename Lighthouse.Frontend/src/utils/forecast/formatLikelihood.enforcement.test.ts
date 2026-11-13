@@ -6,9 +6,9 @@ import { describe, expect, it } from "vitest";
 const here = dirname(fileURLToPath(import.meta.url));
 
 const renderSites = {
-	DeliverySection: resolve(
+	deliveryHeaderCopy: resolve(
 		here,
-		"../../pages/Portfolios/Detail/Components/DeliveryGrid/DeliverySection.tsx",
+		"../../pages/Portfolios/Detail/Components/DeliveryGrid/deliveryHeaderCopy.tsx",
 	),
 	ArchivedDeliveriesSection: resolve(
 		here,
