@@ -781,3 +781,42 @@ classes, 111 rows**; the flat `API.Integration` namespace 211.4 s (86 unrelated 
 **What this changes against DESIGN's estimate.** DESIGN expected the Refinement and Reports leftovers to rank top, at about 0.6 to 0.7 % each.
 They do not: after Story 6602 they are about 3.5 % each in total, and the two largest families are `PercentilesOverTime`, slow in its history
 fill and reachable only by a rewrite (now allowed), and `ConfigureOncePerConnection`. The top five classes go to the screen (step 2).
+
+## Wave: DELIVER / [REF] Step 2 — the screen, the pilot and its measurement (2026-11-13, AFK)
+
+**Screen.** `evidence/step2/screen.md`, the top five non-container classes. Counts (move + rewrite + stays = rows): `Slice05Reconstruct…`
+14 + 2 + 3 = 19; `Slice07WhereTheLimits…` 6 + 3 + 1 = 10; `Slice06EveryPercentileTab…` 9 + 1 + 1 = 11; `ConnectionFieldChange.Slice01…`
+0 + 4 + 9 = 13 (update queue and Task Manager, mostly stays); `FasterUpdates.Slice05FetchFingerprint…` 42 + 0 + 5 = 47 (short rows; a saving
+only of host and queue overhead, and it needs two `WorkItemService` unit rows and one `Contracts` row first).
+
+**Suite 1 = the `PercentilesOverTime` family.** Its three slowest classes are slow in their history fill, and the rewrite the maintainer
+allowed reaches them. **Pilot = `Slice07WhereTheLimitsActuallyMovedTest`**, nwdes feature `story-6537-a-percentiles-suite`, slice S1:
+oracle `5f57ae64e` (10 unit rows, each red under its own deliberate break; RED = 9 host rows still present), oracle approved `c240f1e3c`,
+GREEN `37922dfdb` (9 host rows and their steps removed, the limits-route row stays). No production file changed.
+
+**Pilot measurement** (Release, 3 rounds each, quiet machine, `evidence/step2/timing/`):
+
+| | Before | After |
+|---|---|---|
+| `Slice07…` class, summed | 33.2 s (33.21, 33.17, 33.20), 10 rows | 3.5 s, 1 row |
+| New unit rows, summed | — | about 1.9 s, 10 rows; 1.7 s of it is the first EF in-memory model build in `ProcessBehaviorSnapshotWriterTest`, paid by whichever row touches the store first |
+| Host set-up per row, `u` | 125 ms (1,251 / 10) | 606 ms for the one row left: the first row of a fixture carries the warm-up the others shared |
+| Set-up per row at the lower layer, `c` | | about 0: plain unit rows, no fixture |
+| `hop` | | **Not separable here.** Every moved row also lost its 200- to 250-day fill, so the residual is body, not HTTP. Reported as such, not as a number |
+
+**By-class saving, local:** 33.2 s → about 5.4 s, so **about 27.8 s, 84 %**. CI runs this class 2.66 times slower than this machine
+(88.3 s median against 33.2 s), so the predicted CI saving is **about 74 s, 3.6 % of the tier** (2,031.7 s), on the pilot alone. That is
+above the 1 % line (20.3 s) by itself, so the stop rule (pair reading, question 0) does not fire.
+
+**Stage 3, suite 1, projected from the pilot** (class median × share of rows leaving × the pilot's 84 %; a projection, not a measurement):
+`Slice05` 89.7 × 16/19 × 0.84 ≈ 63 s; `Slice06` 48.6 × 10/11 × 0.84 ≈ 37 s; with the pilot ≈ 174 s. The other fill-base classes
+(`Slice08`, `Slice09`, `Slice10`, `Story6084`) are not screened yet. **Suite 2 is not chosen:** `ConfigureOncePerConnection` (164 s) ranks
+second by family but none of its classes was in the top five, so it has no screen. The next candidates by the screen
+(`FasterUpdates`, `ConnectionFieldChange`) save little.
+
+**Proposed measured target `P` = 5.0 %** of the baseline, for the maintainer to ratify before suite 2 starts (scenario 2.3). It is suite 1's
+projected saving (about 174 s, 8.6 %) less a margin for the projection, rounded down, and it does not count on suite 2. It is above the 1 % line.
+The baseline it divides is the 10 ranking runs' median, 2,031.7 s, until the before set has its 5 runs.
+
+**Budget entry:** `Slice07…`'s allowlist entry (229 s) stays until five CI runs show its largest time × 2.1 at or under 34 s (scenario 3.3).
+Its guard line stays: the class still starts a host.
