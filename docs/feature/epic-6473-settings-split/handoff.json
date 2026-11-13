@@ -170,7 +170,7 @@
 "obligations": [
 "T1"
 ],
-"still_passes_if": "F394",
+"still_passes_if": "F437",
 "test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: links into settings from elsewhere in the app"
 },
 "expected": "F393",
@@ -518,7 +518,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 436,
+"F": 437,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -2911,7 +2911,6 @@
 "F391": "The tab changes without the address changing",
 "F392": "The task manager full log link and the empty-list demo data link are followed",
 "F393": "They lead to System Logs and System Demo Data",
-"F394": "A link keeps its old address; wizard and Overview links are held by the source scan only; the full log link opens System Info",
 "F395": "Every area and tab address is opened, including System Logs, Refresh History and License",
 "F396": "Opening settings raises no usage-data page event",
 "F397": "A settings address is counted as a page opening",
@@ -2959,6 +2958,7 @@
 "F434": "A person follows View license options in the connection wizard",
 "F435": "The wizard link no longer leads to a blank page or System Info",
 "F436": "The wizard link opens System but a different tab",
+"F437": "The full log link leaves the person on a tab other than Logs, or the demo data link keeps its old address; the license links and the wizard and Overview links are held by the source scan and the License oracle",
 "F44": "stepper opens the connect page path from the definition (S5)",
 "F45": "row edit links and demo-data link move with the extracted list (S4) and take definition paths (S5)",
 "F46": "row Edit takes the definition path; section gains the manage link (S5)",

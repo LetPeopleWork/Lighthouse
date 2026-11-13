@@ -317,7 +317,7 @@ Tested
 Lighthouse\.Frontend\/src\/pages\/Settings\/settingsAreas\.test\.tsx \:\: links into settings from elsewhere in the app
 
 ```text
-A link keeps its old address; wizard and Overview links are held by the source scan only; the full log link opens System Info
+The full log link leaves the person on a tab other than Logs, or the demo data link keeps its old address; the license links and the wizard and Overview links are held by the source scan and the License oracle
 ```
 
 ###### Obligations
