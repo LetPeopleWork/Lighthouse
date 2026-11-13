@@ -234,7 +234,7 @@
 "still_passes_if": "F348",
 "test": "Lighthouse.Frontend/src/pages/Settings/settingsAreas.test.tsx :: the three settings area pages > a failed access read ..."
 },
-"expected": "F346",
+"expected": "F353",
 "stimulus": "F345",
 "user_result": "F347"
 },
@@ -254,6 +254,101 @@
 "stimulus": "F349",
 "user_result": "F351"
 }
+],
+"S2": [
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F357",
+"test": "Lighthouse.Frontend/src/pages/Settings/Organization/organizationTabs.test.tsx :: Organization holds only how the organisation works > offers Terminology, Calendar and Refresh & ordering ..."
+},
+"expected": "F355",
+"stimulus": "F354",
+"user_result": "F356"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L2"
+],
+"still_passes_if": "F361",
+"test": "Lighthouse.Frontend/src/pages/Settings/Organization/organizationTabs.test.tsx :: Organization holds only how the organisation works > the old Configuration link opens Terminology ..."
+},
+"expected": "F359",
+"stimulus": "F358",
+"user_result": "F360"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F365",
+"test": "Lighthouse.Frontend/src/pages/Settings/Organization/organizationTabs.test.tsx :: Calendar tab"
+},
+"expected": "F363",
+"stimulus": "F362",
+"user_result": "F364"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F369",
+"test": "Lighthouse.Frontend/src/pages/Settings/Organization/organizationTabs.test.tsx :: Refresh & ordering tab"
+},
+"expected": "F367",
+"stimulus": "F366",
+"user_result": "F368"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"L3"
+],
+"still_passes_if": "F373",
+"test": "Lighthouse.Frontend/src/pages/Settings/Organization/organizationTabs.test.tsx :: Usage Data tab"
+},
+"expected": "F371",
+"stimulus": "F370",
+"user_result": "F372"
+},
+{
+"covers": [
+"P2"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "design",
+"reason": "F377"
+},
+"expected": "F375",
+"stimulus": "F374",
+"user_result": "F376"
+}
 ]
 },
 "counters": {
@@ -261,7 +356,7 @@
 "C": 2,
 "D": 12,
 "E": 12,
-"F": 352,
+"F": 377,
 "K": 3,
 "L": 4,
 "N": 1,
@@ -2622,15 +2717,39 @@
 "F343": "Resolver: one pure function resolveSettingsLocation(request, access) returning Show(area, tab) | Redirect(path) | Wait, where access is (isLoading, isSystemAdmin, isRbacEnabled) read from useRbac(). It never decides while isLoading; bare /settings lands on organization for a System Admin, else on the first visible area; an unknown, hidden or earlier slug falls back or redirects with replace. A failed access read keeps useRbac() permissive answer (isRbacEnabled false, isSystemAdmin true): the person sees what RBAC-off shows today, which excludes System-wide access as the old page excluded System Admins. Carrier of decisions: the Show/Redirect/Wait choice type in models/Settings. Effects (navigate replace, spinner) stay in the shell and settingsRoutes.",
 "F344": "Scope out: any change to what a setting does or stores; any backend change; levels (Epic 6474); connection mapping UI; docs prose and screenshots (finalize). Gating stays exactly as today: a failed access read gets useRbac() permissive answer (RBAC off, System Admin), so nobody is locked out and the System-wide access tab stays hidden as today. No component fetches my-summary directly; all gating derives from useRbac(). A fallback redirect resolves only after access has loaded. Input bounds: legacy ?tab= keys are exactly the 14 the old page accepted, matched case-insensitively; no new bound on stored data.",
 "F345": "The access read fails and a person opens /settings/access/system-wide and bare /settings",
-"F346": "The page uses the permissive fallback: no spinner left, Access shows API Keys only (no System-wide access, as with RBAC off), bare Settings opens Organization Configuration",
 "F347": "A failed access read never locks anyone out",
 "F348": "The page keeps the spinner forever, or shows System-wide access with RBAC unknown, or redirects to an empty area",
 "F349": "The old Settings page tests are retired with the old shell (file deleted in the working tree)",
 "F350": "Each old case is observed by a settingsAreas row: initial tab and heading by the area pages row; demodata/configuration/rbac/database keys by the legacy key table; tab clicks by the choosing another tab row; system admin all tabs, RBAC off hides System Admins, non-admin variants (team admin, portfolio admin, viewer share one access) by the area pages, reader and failed-read rows",
 "F351": "No second test pins the old System Settings heading",
 "F352": "The old Settings.test.tsx is left in place asserting the System Settings heading",
+"F353": "The page uses the permissive fallback: no spinner left, Access shows API Keys only (no System-wide access, as with RBAC off), bare Settings opens Organization on Terminology with Terminology, Calendar and Refresh & ordering",
+"F354": "A System Admin opens Organization",
+"F355": "Tabs Terminology, Calendar, Refresh & ordering with Translate, EventBusy, Sync icons, opened on Terminology; no blackout, refresh, behaviour or usage-data content on it",
+"F356": "Organization shows only how the organisation works, in three tabs",
+"F357": "The old single Configuration tab, or the usage-data row left on a tab of Organization",
+"F358": "A person opens the old link /settings?tab=configuration",
+"F359": "Ends on Organization Terminology with the Terminology section shown, address replaced",
 "F36": "Old addresses keep working with replace redirects: the 14 legacy keys, bare /settings, /settings/license, /connections/new, /connections/:id/edit, any earlier tab slug (the old System Admins slug stays). Tab and panel test ids are kept where their tab survives; new ids license-tab, connections-tab, usage-data-tab, terminology-tab, calendar-tab, refresh-ordering-tab, settings-menu plus one id per area item; configuration-tab and configuration-panel retire in S2.",
+"F360": "The old Configuration link opens Terminology",
+"F361": "Landing on a dead or first-visible tab other than Terminology",
+"F362": "A System Admin opens Calendar with a Premium licence, then with a slow licence call, then with a failing licence call",
+"F363": "Blackout section with usable Add buttons and one licence request; a spinner and no Premium required while loading; Could not load the license. instead of Premium required on failure",
+"F364": "An unreadable licence never looks like no Premium",
+"F365": "Premium required shown while the licence is unknown or failed, or a second licence request by the tab",
+"F366": "A System Admin opens Refresh & ordering with ready, locked, slow, failing settings and failing licence",
+"F367": "Refresh sections and only the ordering row in the configured words, usable with Premium, locked without; spinner while loading; Could not load the behaviour settings. when either call fails, never an empty tab or locked switch; no usage-data row though both rows share id 0",
+"F368": "Feature ordering keeps its Premium rule and says when it cannot be loaded",
+"F369": "An empty section or a locked switch after a failed call, or matching rows by id",
 "F37": "Confirmed maintainer decisions bound the copy: D1-D4 header and heading, D5 System-wide access, D6 tab order Connections, Database, Encryption, Demo Data, Usage Data, System Info, License (in S1 alone the first tab stays Demo Data), D7, D8 icons Translate/EventBusy/Sync, D9 Could not load the license., D10 no footer sentence on Usage Data, D11 License natural width in one License group, D12 link text View license options, D13 Task Manager link and empty-text link and configured terms, D13a-wording Connect {Work Tracking System} on the tab button and the stepper action, D13b title, D14 Back to {Work Tracking Systems} link above the title of the connection pages, D15 hint line under the disabled Add buttons; D12b nothing extra when the stepper is dismissed.",
+"F370": "A System Admin opens System Usage Data, switches the veto on, leaves for Database and returns; slow and failing settings calls",
+"F371": "Row and docs link only (no footer sentence, no ordering row), switch usable without Premium; first switch shown on return is on; spinner while loading; Could not load the behaviour settings. on failure",
+"F372": "The usage-data veto lives with the server's settings and keeps its value",
+"F373": "A stale switch after return, an empty tab after a failed call, or a footer sentence",
+"F374": "The four SystemSettingsTab test files and the licence-asker allow-list entry",
+"F375": "Moved to the new tabs; entry removed in the commit that deletes the component",
+"F376": "None directly: the behaviour rows moved with their tests",
+"F377": "Design marks the four SystemSettingsTab test files and the licence-asker allow-list entry Migrated or Changed, not oracle files; the crafter moves them and removes the entry with the component",
 "F38": "New single owner of every settings and connection path; replaces the tab key map in Settings.tsx and hand-written literals",
 "F39": "Plain System Settings link becomes the SettingsMenu reading the definition",
 "F4": "Organization shows Terminology, Calendar and Refresh & ordering tabs, and System shows a Usage Data tab, each with its own loading and failure look",

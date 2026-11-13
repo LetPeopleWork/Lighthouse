@@ -416,7 +416,7 @@ The access read fails and a person opens /settings/access/system-wide and bare /
 ```
 
 ```text
-The page uses the permissive fallback: no spinner left, Access shows API Keys only (no System-wide access, as with RBAC off), bare Settings opens Organization Configuration
+The page uses the permissive fallback: no spinner left, Access shows API Keys only (no System-wide access, as with RBAC off), bare Settings opens Organization on Terminology with Terminology, Calendar and Refresh & ordering
 ```
 
 ```text
@@ -464,6 +464,179 @@ The old Settings.test.tsx is left in place asserting the System Settings heading
 
 ###### Obligations
 
+
+### S2
+
+##### Covers
+
+P2
+
+```text
+A System Admin opens Organization
+```
+
+```text
+Tabs Terminology, Calendar, Refresh & ordering with Translate, EventBusy, Sync icons, opened on Terminology; no blackout, refresh, behaviour or usage-data content on it
+```
+
+```text
+Organization shows only how the organisation works, in three tabs
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Organization\/organizationTabs\.test\.tsx \:\: Organization holds only how the organisation works \> offers Terminology\, Calendar and Refresh \& ordering \.\.\.
+
+```text
+The old single Configuration tab, or the usage-data row left on a tab of Organization
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A person opens the old link /settings?tab=configuration
+```
+
+```text
+Ends on Organization Terminology with the Terminology section shown, address replaced
+```
+
+```text
+The old Configuration link opens Terminology
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Organization\/organizationTabs\.test\.tsx \:\: Organization holds only how the organisation works \> the old Configuration link opens Terminology \.\.\.
+
+```text
+Landing on a dead or first-visible tab other than Terminology
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A System Admin opens Calendar with a Premium licence, then with a slow licence call, then with a failing licence call
+```
+
+```text
+Blackout section with usable Add buttons and one licence request; a spinner and no Premium required while loading; Could not load the license. instead of Premium required on failure
+```
+
+```text
+An unreadable licence never looks like no Premium
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Organization\/organizationTabs\.test\.tsx \:\: Calendar tab
+
+```text
+Premium required shown while the licence is unknown or failed, or a second licence request by the tab
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A System Admin opens Refresh & ordering with ready, locked, slow, failing settings and failing licence
+```
+
+```text
+Refresh sections and only the ordering row in the configured words, usable with Premium, locked without; spinner while loading; Could not load the behaviour settings. when either call fails, never an empty tab or locked switch; no usage-data row though both rows share id 0
+```
+
+```text
+Feature ordering keeps its Premium rule and says when it cannot be loaded
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Organization\/organizationTabs\.test\.tsx \:\: Refresh \& ordering tab
+
+```text
+An empty section or a locked switch after a failed call, or matching rows by id
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+A System Admin opens System Usage Data, switches the veto on, leaves for Database and returns; slow and failing settings calls
+```
+
+```text
+Row and docs link only (no footer sentence, no ordering row), switch usable without Premium; first switch shown on return is on; spinner while loading; Could not load the behaviour settings. on failure
+```
+
+```text
+The usage-data veto lives with the server's settings and keeps its value
+```
+
+##### Disposition
+
+Tested
+
+Lighthouse\.Frontend\/src\/pages\/Settings\/Organization\/organizationTabs\.test\.tsx \:\: Usage Data tab
+
+```text
+A stale switch after return, an empty tab after a failed call, or a footer sentence
+```
+
+###### Obligations
+
+
+##### Covers
+
+P2
+
+```text
+The four SystemSettingsTab test files and the licence-asker allow-list entry
+```
+
+```text
+Moved to the new tabs; entry removed in the commit that deletes the component
+```
+
+```text
+None directly: the behaviour rows moved with their tests
+```
+
+##### Disposition
+
+NotTested
+
+```text
+Design marks the four SystemSettingsTab test files and the licence-asker allow-list entry Migrated or Changed, not oracle files; the crafter moves them and removes the entry with the component
+```
+
+design
 
 ## Expectations
 

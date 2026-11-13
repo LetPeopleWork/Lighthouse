@@ -38,8 +38,17 @@ vi.mock("./SystemInfo/SystemInfoSettings", () => ({
 vi.mock("./DemoData/DemoDataSettings", () => ({
 	default: () => <div>demo data panel content</div>,
 }));
-vi.mock("./System/SystemSettingsTab", () => ({
-	default: () => <div>configuration panel content</div>,
+vi.mock("./Organization/TerminologyTab", () => ({
+	default: () => <div>terminology panel content</div>,
+}));
+vi.mock("./Organization/CalendarTab", () => ({
+	default: () => <div>calendar panel content</div>,
+}));
+vi.mock("./Organization/RefreshAndOrderingTab", () => ({
+	default: () => <div>refresh and ordering panel content</div>,
+}));
+vi.mock("./System/UsageDataTab", () => ({
+	default: () => <div>usage data panel content</div>,
 }));
 vi.mock("./Rbac/RbacSettings", () => ({
 	default: () => <div>system-wide access panel content</div>,
@@ -121,9 +130,9 @@ const AREAS: readonly AreaSlug[] = ["organization", "access", "system"];
 
 /** The tabs of each area in the order a person reads them. */
 const TABS_OF: Readonly<Record<AreaSlug, readonly string[]>> = {
-	organization: ["configuration"],
+	organization: ["terminology", "calendar", "refresh-ordering"],
 	access: ["system-wide", "api-keys"],
-	system: ["demo-data", "database", "encryption", "system-info"],
+	system: ["demo-data", "database", "encryption", "usage-data", "system-info"],
 };
 
 /** Who may open a tab: everybody reads API Keys and System Info; the rest is for System Admins, and System-wide access also needs RBAC on. */
@@ -142,8 +151,8 @@ const visibleAreasOf = (access: Access): AreaSlug[] =>
 
 /** The 14 keys the old page opened by, and where each one leads now. */
 const LEGACY_KEYS: ReadonlyArray<readonly [string, string]> = [
-	["configuration", "/settings/organization/configuration"],
-	["system", "/settings/organization/configuration"],
+	["configuration", "/settings/organization/terminology"],
+	["system", "/settings/organization/terminology"],
 	["demodata", "/settings/system/demo-data"],
 	["demo-data", "/settings/system/demo-data"],
 	["database", "/settings/system/database"],
@@ -421,13 +430,13 @@ describe("which settings area and tab an address opens", () => {
 		expectItShows(
 			whereItEnds(resolve, {}, ADMIN),
 			"organization",
-			"configuration",
+			"terminology",
 			"A System Admin opening Settings",
 		);
 		expectItShows(
 			whereItEnds(resolve, {}, ADMIN_WITHOUT_RBAC),
 			"organization",
-			"configuration",
+			"terminology",
 			"Anyone opening Settings when RBAC is off",
 		);
 		expectItShows(
@@ -444,7 +453,7 @@ describe("which settings area and tab an address opens", () => {
 		expectItShows(
 			whereItEnds(
 				resolve,
-				{ area: "organization", tab: "configuration" },
+				{ area: "organization", tab: "terminology" },
 				READER,
 			),
 			"access",
@@ -491,7 +500,7 @@ describe("which settings area and tab an address opens", () => {
 		expectItShows(
 			whereItEnds(resolve, { area: "nonsense" }, ADMIN),
 			"organization",
-			"configuration",
+			"terminology",
 			"An address naming no area",
 		);
 		expectItShows(
@@ -687,10 +696,10 @@ describe("the three settings area pages", () => {
 	it.each([
 		{
 			address: "/settings",
-			ends: "/settings/organization/configuration",
+			ends: "/settings/organization/terminology",
 			heading: "Settings › Organization",
-			tabs: ["Configuration"],
-			panel: "configuration panel content",
+			tabs: ["Terminology", "Calendar", "Refresh & ordering"],
+			panel: "terminology panel content",
 		},
 		{
 			address: "/settings/access",
@@ -703,7 +712,13 @@ describe("the three settings area pages", () => {
 			address: "/settings/system",
 			ends: "/settings/system/demo-data",
 			heading: "Settings › System",
-			tabs: ["Demo Data", "Database", "Encryption", "System Info"],
+			tabs: [
+				"Demo Data",
+				"Database",
+				"Encryption",
+				"Usage Data",
+				"System Info",
+			],
 			panel: "demo data panel content",
 		},
 	])(
@@ -795,8 +810,12 @@ describe("the three settings area pages", () => {
 		await renderSettingsAt("/settings", "fails");
 
 		await theHeading("Settings › Organization");
-		await theEndOfThe("/settings/organization/configuration");
-		expect(theTabNames()).toEqual(["Configuration"]);
+		await theEndOfThe("/settings/organization/terminology");
+		expect(theTabNames()).toEqual([
+			"Terminology",
+			"Calendar",
+			"Refresh & ordering",
+		]);
 	});
 
 	it("choosing another tab opens its panel at its own address", async () => {
@@ -955,12 +974,15 @@ describe("links into settings from elsewhere in the app", () => {
 	});
 
 	it.each([
-		"/settings/organization/configuration",
+		"/settings/organization/terminology",
+		"/settings/organization/calendar",
+		"/settings/organization/refresh-ordering",
 		"/settings/access/system-wide",
 		"/settings/access/api-keys",
 		"/settings/system/demo-data",
 		"/settings/system/database",
 		"/settings/system/encryption",
+		"/settings/system/usage-data",
 		"/settings/system/system-info",
 	])("opening %s is not counted as a page anyone used", (address) => {
 		expect(
