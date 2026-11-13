@@ -439,6 +439,7 @@ const OverviewDashboard: React.FC = () => {
 				<FilterBar
 					filterText={filterText}
 					onFilterTextChange={handleFilterChange}
+					data-testid="overview-filter-bar"
 				/>
 
 				{showRbacNoAccessAlert && (

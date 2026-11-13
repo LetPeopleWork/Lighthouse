@@ -26,7 +26,10 @@ export class OverviewPage {
 	}
 
 	async search(searchTerm: string): Promise<void> {
-		await this.page.getByPlaceholder("Search").fill(searchTerm);
+		await this.page
+			.getByTestId("overview-filter-bar")
+			.getByRole("textbox")
+			.fill(searchTerm);
 	}
 
 	async getPortfolioLink(portfolio: string): Promise<Locator> {
