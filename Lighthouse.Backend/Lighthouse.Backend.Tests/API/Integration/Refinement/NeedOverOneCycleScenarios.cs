@@ -28,7 +28,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public void The_need_covers_the_working_days_from_the_next_Refinement_to_the_one_after()
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
 
             var tab = WhenTheCoachOpensTheRefinementTab(gravity);
@@ -44,7 +44,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(7)]
         public void Every_day_before_the_next_Refinement_reads_the_same_number(int todayInOctober)
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenTodayIsOctober(todayInOctober);
             GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
 
@@ -59,7 +59,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(6)]
         public void With_weekends_blacked_out_Monday_and_Tuesday_both_read_the_five_working_days_of_the_cycle(int todayInOctober)
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenWeekendsAreBlackedOut();
             GivenTodayIsOctober(todayInOctober);
             GivenTheTeamIsLikelyToPull(5, (50, 4), (85, 6));
@@ -73,7 +73,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public void On_a_Refinement_day_the_cycle_runs_from_today_to_the_next_Refinement()
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenTodayIsOctober(8);
             GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
 
@@ -111,7 +111,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [TestCase(5, 7)]
         public void Only_a_blackout_day_inside_the_cycle_shortens_it(int blackoutDayInOctober, int workingDays)
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenABlackoutDayOn(new DateOnly(2026, 10, blackoutDayInOctober));
             GivenTheTeamIsLikelyToPull(workingDays, (50, 4), (85, 9));
 
@@ -125,7 +125,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public void A_blacked_out_Refinement_after_the_next_is_skipped_and_the_cycle_runs_to_the_one_that_happens()
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenABlackoutDayOn(new DateOnly(2026, 10, 15));
             GivenTheTeamIsLikelyToPull(13, (50, 9), (85, 14));
 
@@ -138,7 +138,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public void A_blacked_out_next_Refinement_is_skipped_and_the_cycle_starts_at_the_one_that_happens()
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenABlackoutDayOn(new DateOnly(2026, 10, 8));
             GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
 
@@ -152,7 +152,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public void Today_a_blacked_out_Refinement_day_starts_no_cycle_and_the_next_Refinement_does()
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenABlackoutDayOn(new DateOnly(2026, 10, 8));
             GivenTodayIsOctober(8);
             GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle();
@@ -171,7 +171,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public void A_blackout_on_the_Refinement_after_the_next_is_honoured_even_a_year_ahead()
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenEveryDayIsBlackedOutFrom(new DateOnly(2026, 10, 3), new DateOnly(2027, 9, 29));
             GivenOnlyThursdayIsBlackedOutByAWeeklyRule(new DateOnly(2027, 10, 7));
             GivenTheTeamIsLikelyToPull(13, (50, 9), (85, 14));
@@ -188,7 +188,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         [Test]
         public void A_year_of_blacked_out_Refinements_after_the_next_leaves_no_cycle_and_no_number()
         {
-            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdaysOnFridayTheSecond();
+            var gravity = GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth();
             GivenEveryDayIsBlackedOutFrom(new DateOnly(2026, 10, 9), new DateOnly(2027, 11, 12));
 
             var tab = WhenTheCoachOpensTheRefinementTab(gravity);

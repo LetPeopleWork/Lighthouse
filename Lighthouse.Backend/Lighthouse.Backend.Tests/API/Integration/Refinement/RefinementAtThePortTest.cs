@@ -49,6 +49,24 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         protected const string AdvancedSearch = RefinementPortGivens.AdvancedSearch;
 
+        /// <summary>
+        /// Gravity refines every Thursday. From any day up to Thursday 8 October its cycle runs from Thursday 8 October
+        /// to Thursday 15 October: the seven days after the 8th, none of them blacked out.
+        /// </summary>
+        protected const int GravitysCycleWorkingDays = 7;
+
+        protected const string Below = "Below";
+
+        protected const string InRange = "In";
+
+        protected const string Above = "Above";
+
+        protected const string NoCadence = "NoCadence";
+
+        protected const string InsufficientData = "InsufficientData";
+
+        protected const string NoRefinementStates = "NoRefinementStates";
+
         private ServicePortHarness harness = null!;
 
         private FakeLighthouseClock clock = null!;
@@ -87,11 +105,39 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         protected void TheTeamIsLikelyToPull(int overWorkingDays, params (int Percentile, int Count)[] likelihoods)
             => forecasts.Script(overWorkingDays, likelihoods);
 
+        /// <summary>
+        /// Over the working days of Gravity's cycle the Team is likely to pull a different number at every
+        /// likelihood: 3 at 30%, 5 at the median, 6 at 70%, 8 at 85% and 10 at 95%.
+        /// </summary>
+        protected void GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle()
+            => TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (30, 3), (50, 5), (70, 6), (85, 8), (95, 10));
+
+        /// <summary>
+        /// Gravity's GR-058 and GR-059 are tagged ready under a Ready rule, it refines on Thursdays every week,
+        /// and today is Friday 2 October 2026 - six days before Thursday 8 October. It finished one Work Item a
+        /// day over its Throughput window, which is enough history for a forecast.
+        /// </summary>
+        protected int GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth()
+        {
+            var gravity = Givens.GravityWithItsReadyRule((UserActivityTracking, RefinementPortGivens.ReadyTag), (AdvancedSearch, RefinementPortGivens.ReadyTag));
+            TheTeamFinishedWorkEveryDay(gravity, 1);
+            Givens.TheTeamRefines(gravity, RefinementPortGivens.RefinesOnThursdays);
+            TodayIs(2026, 10, 2);
+            return gravity;
+        }
+
         /// <summary>The tab as an anonymous reader opens it, or null when no such Team is stored.</summary>
         protected RefinementView? TheRefinementTabOf(int teamId)
         {
             using var scope = harness.NewScope();
             return scope.ServiceProvider.GetRequiredService<IRefinementViewQuery>().ForTeam(teamId, null);
+        }
+
+        /// <summary>The tab as the coach's browser receives it, before it is written out as JSON.</summary>
+        protected RefinementViewDto WhenTheCoachOpensTheRefinementTab(int team)
+        {
+            var view = TheRefinementTabOf(team) ?? throw new InvalidOperationException($"no Team {team} is stored, so it has no Refinement tab");
+            return new RefinementViewDto(view);
         }
 
         /// <summary>What the votes on this tab are cast against: the source as the browser reads its text, and both numbers.</summary>
@@ -154,10 +200,13 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         }
 
         /// <summary>The tab as the reader's browser reads it: the view the controller wraps for the wire, with the reader's own votes marked.</summary>
-        protected RefinementViewDto TheTabAsSeenBy(PortVoter reader, int teamId)
+        protected RefinementViewDto TheTabAsSeenBy(PortVoter reader, int teamId) => TheTabAsSeenBy(reader.BrowserKey, teamId);
+
+        /// <summary>The tab as the browser that keeps this key reads it, with the votes cast from that browser marked as its own.</summary>
+        protected RefinementViewDto TheTabAsSeenBy(string browserKey, int teamId)
         {
             using var scope = harness.NewScope();
-            var view = scope.ServiceProvider.GetRequiredService<IRefinementViewQuery>().ForTeam(teamId, reader.BrowserKey)
+            var view = scope.ServiceProvider.GetRequiredService<IRefinementViewQuery>().ForTeam(teamId, browserKey)
                 ?? throw new InvalidOperationException($"no Team {teamId} is stored to open the tab of");
             return new RefinementViewDto(view);
         }

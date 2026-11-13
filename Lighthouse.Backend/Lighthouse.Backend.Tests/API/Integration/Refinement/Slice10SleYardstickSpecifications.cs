@@ -1,6 +1,4 @@
 using Lighthouse.Backend.API.DTO;
-using Lighthouse.Backend.Services.Interfaces.Refinement;
-using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.Refinement
@@ -81,22 +79,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             => Givens.TheTeamFinished(team,
                 [.. Enumerable.Range(1, 5).Select(index => new FinishedWorkItem($"SLOW-{index}", CycleTimeDays: 60, FinishedDaysAgo: daysAgo))]);
 
-        /// <summary>The day the scenarios on a web host started on, nine in the morning.</summary>
+        /// <summary>Today is Wednesday 7 October 2026, nine in the morning: the day every scenario of this class reads the tab on.</summary>
         private void GivenTodayIsWednesdayTheSeventhOfOctober() => TodayIs(2026, 10, 7);
 
         // --- When ---
 
-        private RefinementViewDto WhenJonasOpensTheRefinementTab(int team) => TheTabAsReadBy(JonasesBrowserKey, team);
+        private RefinementViewDto WhenJonasOpensTheRefinementTab(int team) => TheTabAsSeenBy(JonasesBrowserKey, team);
 
-        private RefinementViewDto WhenAnaOpensTheRefinementTab(int team) => TheTabAsReadBy(AnasBrowserKey, team);
-
-        private RefinementViewDto TheTabAsReadBy(string browserKey, int team)
-        {
-            using var scope = NewScope();
-            var view = scope.ServiceProvider.GetRequiredService<IRefinementViewQuery>().ForTeam(team, browserKey)
-                ?? throw new InvalidOperationException($"no Team {team} is stored, so it has no Refinement tab");
-            return new RefinementViewDto(view);
-        }
+        private RefinementViewDto WhenAnaOpensTheRefinementTab(int team) => TheTabAsSeenBy(AnasBrowserKey, team);
 
         // --- Then ---
 

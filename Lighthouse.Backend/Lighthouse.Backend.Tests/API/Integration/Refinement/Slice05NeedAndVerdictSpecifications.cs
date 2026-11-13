@@ -13,26 +13,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
     /// </summary>
     public partial class Slice05NeedAndVerdictTest
     {
-        /// <summary>
-        /// Gravity refines every Thursday. From Friday 2 October its cycle runs from Thursday 8 October to
-        /// Thursday 15 October: the seven days after the 8th, none of them blacked out.
-        /// </summary>
-        private const int GravitysCycleWorkingDays = 7;
-
-        private const string ReadyTag = "ready";
-
-        private const string Below = "Below";
-
-        private const string InRange = "In";
-
-        private const string Above = "Above";
-
-        private const string NoCadence = "NoCadence";
-
-        private const string InsufficientData = "InsufficientData";
-
-        private const string NoRefinementStates = "NoRefinementStates";
-
         private static readonly TimeSpan TwoSeconds = TimeSpan.FromSeconds(2);
 
         private static readonly PortVoter Jonas = ABrowserOf("Jonas Weber");
@@ -42,27 +22,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private static readonly PortVoter Mo = ABrowserOf("Mo Okafor");
 
         // --- Given ---
-
-        /// <summary>
-        /// Gravity's GR-058 and GR-059 are tagged ready under a Ready rule, it refines on Thursdays every week,
-        /// and today is Friday 2 October 2026 - six days before Thursday 8 October. It finished one Work Item a
-        /// day over its Throughput window, which is enough history for a forecast.
-        /// </summary>
-        private int GivenGravityHasTwoReadyAndRefinesOnThursdayTheEighth()
-        {
-            var gravity = GravityWithItsReadyRule((UserActivityTracking, ReadyTag), (AdvancedSearch, ReadyTag));
-            TheTeamFinishedWorkEveryDay(gravity, 1);
-            Givens.TheTeamRefines(gravity, RefinementPortGivens.RefinesOnThursdays);
-            TodayIs(2026, 10, 2);
-            return gravity;
-        }
-
-        /// <summary>
-        /// Over the working days of Gravity's cycle the Team is likely to pull a different number at every
-        /// likelihood: 3 at 30%, 5 at the median, 6 at 70%, 8 at 85% and 10 at 95%.
-        /// </summary>
-        private void GivenTheTeamIsLikelyToPullFiveToEightOverItsCycle()
-            => TheTeamIsLikelyToPull(GravitysCycleWorkingDays, (30, 3), (50, 5), (70, 6), (85, 8), (95, 10));
 
         /// <summary>Over the working days of Gravity's cycle the Team is likely to pull the low end at the median and the high end at 85%.</summary>
         private void GivenTheTeamIsLikelyToPullOverItsCycle(int low, int high)
@@ -82,7 +41,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private int GivenGravityFinishedWorkOnOnlyFourDaysAndRefinesOnThursdays()
         {
             GivenTodayIsWednesdayTheSeventhOfOctober();
-            var gravity = GravityWithItsReadyRule((UserActivityTracking, ReadyTag));
+            var gravity = Givens.GravityWithItsReadyRule((UserActivityTracking, RefinementPortGivens.ReadyTag));
             TheTeamFinishedWorkEveryDay(gravity, 3, days: 4);
             Givens.TheTeamRefines(gravity, RefinementPortGivens.RefinesOnThursdays);
             return gravity;
@@ -91,7 +50,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         private int GivenGravityHasTwoReadyWithoutACadence()
         {
             GivenTodayIsWednesdayTheSeventhOfOctober();
-            var gravity = GravityWithItsReadyRule((UserActivityTracking, ReadyTag), (AdvancedSearch, ReadyTag));
+            var gravity = Givens.GravityWithItsReadyRule((UserActivityTracking, RefinementPortGivens.ReadyTag), (AdvancedSearch, RefinementPortGivens.ReadyTag));
             TheTeamFinishedWorkEveryDay(gravity, 1);
             return gravity;
         }
@@ -112,23 +71,10 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
             return nebula;
         }
 
-        private int GravityWithItsReadyRule(params (string WorkItem, string Tag)[] tags)
-        {
-            var gravity = GravityRefinesSixWorkItems(tags);
-            Givens.TheTeamRefines(gravity, RefinementPortGivens.ReadyWhenTaggedReady);
-            return gravity;
-        }
-
-        /// <summary>The day the scenarios on a web host started on, nine in the morning.</summary>
+        /// <summary>Today is Wednesday 7 October 2026, nine in the morning, unless a Given names another day.</summary>
         private void GivenTodayIsWednesdayTheSeventhOfOctober() => TodayIs(2026, 10, 7);
 
         // --- When ---
-
-        private RefinementViewDto WhenTheCoachOpensTheRefinementTab(int team)
-        {
-            var view = TheRefinementTabOf(team) ?? throw new InvalidOperationException($"no Team {team} is stored, so it has no Refinement tab");
-            return new RefinementViewDto(view);
-        }
 
         private void WhenThreeVotersSayYesOn(int team, string workItem)
         {

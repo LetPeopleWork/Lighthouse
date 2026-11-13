@@ -34,6 +34,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
 
         public const int ThroughputHistoryDays = 30;
 
+        /// <summary>The tag that makes a Work Item Ready under <see cref="ReadyWhenTaggedReady"/>.</summary>
+        public const string ReadyTag = "ready";
+
         public const string BillingExport = "GR-040";
 
         public const string AdvancedReporting = "GR-051";
@@ -95,7 +98,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
                 Ready = new WorkItemRuleSet
                 {
                     Mode = WorkItemRuleSet.ModeAnd,
-                    Conditions = [new WorkItemRuleCondition { FieldKey = TagsField, Operator = ContainsOperator, Value = "ready" }],
+                    Conditions = [new WorkItemRuleCondition { FieldKey = TagsField, Operator = ContainsOperator, Value = ReadyTag }],
                 },
                 BeingRefined = null,
             });
@@ -183,6 +186,17 @@ namespace Lighthouse.Backend.Tests.API.Integration.Refinement
         /// </summary>
         public int GravityRefinesSixWorkItems(params (string WorkItem, string Tag)[] tags)
             => GravityRefines("Team Gravity", sleProbability: 85, sleRange: 7, tags, GravitysTracker, TrackerReadOn);
+
+        /// <summary>
+        /// Team Gravity as in <see cref="GravityRefinesSixWorkItems"/>, with the given Work Items carrying the given
+        /// tags, and a Work Item tagged <see cref="ReadyTag"/> is Ready under <see cref="ReadyWhenTaggedReady"/>.
+        /// </summary>
+        public int GravityWithItsReadyRule(params (string WorkItem, string Tag)[] tags)
+        {
+            var gravity = GravityRefinesSixWorkItems(tags);
+            TheTeamRefines(gravity, ReadyWhenTaggedReady);
+            return gravity;
+        }
 
         /// <summary>
         /// A Team with Gravity's states and Throughput history and this SLE refines in Backlog, Analysing and Next,
