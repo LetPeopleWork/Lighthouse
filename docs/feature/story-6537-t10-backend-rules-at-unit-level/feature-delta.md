@@ -820,3 +820,6 @@ The baseline it divides is the 10 ranking runs' median, 2,031.7 s, until the bef
 
 **Budget entry:** `Slice07…`'s allowlist entry (229 s) stays until five CI runs show its largest time × 2.1 at or under 34 s (scenario 3.3).
 Its guard line stays: the class still starts a host.
+
+- **Target `P` = 5.0 %, ratified** by the maintainer on 2026-11-13 (scenario 2.3). Baseline: the before set median once it has 5 runs; until then the 10 ranking runs (2,031.7 s).
+- **After suite 1, hold** (maintainer, 2026-11-13): AFK finishes suite 1 and its final gates, then holds. Suite 2 starts with the maintainer.
