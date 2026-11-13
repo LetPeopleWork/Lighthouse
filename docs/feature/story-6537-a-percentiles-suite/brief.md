@@ -101,3 +101,25 @@ None.
 #### Slice work
 
 None.
+
+### S3
+
+```text
+The rules of Slice05ReconstructCycleTimeHistoryTest (the filler walks every asked day within what the stored items support, caps a pass at 90 days and at its time budget, leaves quiet days blank on fill and on the daily recording, never rewrites a watched or backdated day, asks for nothing when the period is held, stands down for a restore and blocks a restore while it runs, and two copies filling one day leave one row) are proven by unit tests and one service-port scenario; three host rows stay for the read route, the read-fill-read loop and a refresh landing mid-fill
+```
+
+#### Promises
+
+P1
+
+P2
+
+P3
+
+#### Depends on
+
+None.
+
+#### Slice work
+
+None.

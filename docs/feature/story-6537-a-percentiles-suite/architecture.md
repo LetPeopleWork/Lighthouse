@@ -126,6 +126,64 @@ None.
 
 None.
 
+### S3
+
+#### Targets
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice05ReconstructCycleTimeHistoryScenarios\.cs
+
+Extend
+
+None.
+
+Lighthouse\.Backend\/Lighthouse\.Backend\.Tests\/API\/Integration\/PercentilesOverTime\/Slice05ReconstructCycleTimeHistorySpecifications\.cs
+
+Extend
+
+None.
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\_compare\_ids\.py
+
+#### Verification
+
+```text
+python3 docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py
+```
+
+#### Supports
+
+docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s3\-expected\-ids\.txt
+
+#### Public oracle
+
+```text
+Run Slice05ReconstructCycleTimeHistoryTest and the unit and port classes named in the S3 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named row
+```
+
+```text
+Slice05ReconstructCycleTimeHistoryTest holds exactly three rows (Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits, The_days_the_first_visit_could_not_show_are_there_on_the_next_one, A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one) and they pass; every other id equals the expected list and passes; each of the sixteen removed host rows maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red
+```
+
+```text
+A removed host row whose rule, or a loop, cap, budget, gate or unique-day path it walked, no unit or port row turns red for; an id missing or extra; Slice05 holding other than the three staying rows; a production, guard-list or budget file in the diff
+```
+
+##### Promises
+
+P1
+
+P2
+
+P3
+
+#### Prefactoring
+
+None.
+
+#### Records
+
+None.
+
 ## ADRs
 
 None.

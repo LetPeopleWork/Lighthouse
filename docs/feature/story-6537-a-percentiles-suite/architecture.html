@@ -267,6 +267,60 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>None.</p>
 
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistoryScenarios.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend.Tests/API/Integration/PercentilesOverTime/Slice05ReconstructCycleTimeHistorySpecifications.cs</p>
+
+<p>Extend</p>
+
+<p>None.</p>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py</p>
+
+<h4>Verification</h4>
+
+<pre><code>python3 docs/feature/story-6537-a-percentiles-suite/evidence/s3_compare_ids.py
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>docs/feature/story-6537-a-percentiles-suite/evidence/s3-expected-ids.txt</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Run Slice05ReconstructCycleTimeHistoryTest and the unit and port classes named in the S3 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production, guard-list or budget file changed since the slice base, then apply one deliberate break per moved or rewritten rule and run its named row
+</code></pre>
+
+<pre><code>Slice05ReconstructCycleTimeHistoryTest holds exactly three rows (Opening_the_trend_answers_with_what_is_there_and_writes_nothing_while_the_coach_waits, The_days_the_first_visit_could_not_show_are_there_on_the_next_one, A_refresh_landing_mid_fill_neither_loses_its_day_nor_duplicates_one) and they pass; every other id equals the expected list and passes; each of the sixteen removed host rows maps in the id table to a named unit or port row, and each deliberate break of a production line on its path turns that row red
+</code></pre>
+
+<pre><code>A removed host row whose rule, or a loop, cap, budget, gate or unique-day path it walked, no unit or port row turns red for; an id missing or extra; Slice05 holding other than the three staying rows; a production, guard-list or budget file in the diff
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<p>None.</p>
+
+<h4>Records</h4>
+
+<p>None.</p>
+
 <h2>ADRs</h2>
 
 <p>None.</p>
