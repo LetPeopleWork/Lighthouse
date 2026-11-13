@@ -2,7 +2,7 @@ import { Alert, Link, Typography } from "@mui/material";
 import Grid from "@mui/material/Grid";
 import type React from "react";
 import { Link as RouterLink } from "react-router";
-import { settingsAreaPath } from "../../../models/Settings/settingsAreas";
+import { settingsTabPath } from "../../../models/Settings/settingsAreas";
 
 const OAuthPremiumNotice: React.FC = () => (
 	<Grid size={{ xs: 12 }}>
@@ -13,7 +13,7 @@ const OAuthPremiumNotice: React.FC = () => (
 			<Typography variant="body2">
 				OAuth 2.0 authentication is a Premium feature. Upgrade to Premium to
 				connect via OAuth.{" "}
-				<Link component={RouterLink} to={settingsAreaPath("system")}>
+				<Link component={RouterLink} to={settingsTabPath("system", "license")}>
 					View license options
 				</Link>
 			</Typography>

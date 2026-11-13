@@ -1512,7 +1512,7 @@ describe("TaskManagerIcon", () => {
 			);
 
 			expect(await screen.findByTestId("log-viewer-page")).toHaveTextContent(
-				"system-info",
+				"logs",
 			);
 		});
 

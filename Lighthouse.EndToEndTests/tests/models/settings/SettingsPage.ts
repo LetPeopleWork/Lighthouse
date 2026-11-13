@@ -60,6 +60,20 @@ export class SettingsPage {
 		return new SystemInfoPage(this.page);
 	}
 
+	/** The log level and the log viewer, which sit on their own tab beside System Info. */
+	async goToLogs(): Promise<SystemInfoPage> {
+		await this.openTab("system", "logs-tab");
+
+		return new SystemInfoPage(this.page);
+	}
+
+	/** The license status with its import and clear actions, last tab of System. */
+	async goToLicense(): Promise<Page> {
+		await this.openTab("system", "license-tab");
+
+		return this.page;
+	}
+
 	async goToDatabaseManagement(): Promise<DatabaseManagementPage> {
 		await this.openTab("system", "database-tab");
 

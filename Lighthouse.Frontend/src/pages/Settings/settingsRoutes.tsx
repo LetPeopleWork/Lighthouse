@@ -4,7 +4,7 @@ import { lazy } from "react";
 import { Navigate, Route, useLocation, useParams } from "react-router";
 import { useRbac } from "../../hooks/useRbac";
 import { resolveSettingsLocation } from "../../models/Settings/resolveSettingsLocation";
-import { settingsAreaPath } from "../../models/Settings/settingsAreas";
+import { settingsTabPath } from "../../models/Settings/settingsAreas";
 
 const SettingsAreaPage = lazy(() => import("./SettingsAreaPage"));
 
@@ -45,7 +45,7 @@ export const settingsRoutes = (): React.ReactElement => (
 		<Route path="/settings" element={<SettingsAddress />} />
 		<Route
 			path="/settings/license"
-			element={<Navigate to={settingsAreaPath("system")} replace />}
+			element={<Navigate to={settingsTabPath("system", "license")} replace />}
 		/>
 		<Route path="/settings/:area/:tab?" element={<SettingsAddress />} />
 	</>

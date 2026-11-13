@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { SystemInfo } from "../../../models/SystemInfo/SystemInfo";
+import type { SystemInfo } from "../../models/SystemInfo/SystemInfo";
 
 vi.mock("@melloware/react-logviewer", () => ({
 	LazyLog: ({ text }: { text: string }) => (
@@ -21,15 +21,15 @@ vi.mock("@mui/x-data-grid", async () => {
 	return { ...actual };
 });
 
-import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
-import type { ILogService } from "../../../services/Api/LogService";
-import type { ISystemInfoService } from "../../../services/Api/SystemInfoService";
+import { ApiServiceContext } from "../../services/Api/ApiServiceContext";
+import type { ILogService } from "../../services/Api/LogService";
+import type { ISystemInfoService } from "../../services/Api/SystemInfoService";
 import {
 	createMockApiServiceContext,
 	createMockLogService,
 	createMockSystemInfoService,
-} from "../../../tests/MockApiServiceProvider";
-import SystemInfoSettings from "./SystemInfoSettings";
+} from "../../tests/MockApiServiceProvider";
+import { settingsPanels } from "./settingsPanels";
 
 const mockGetSystemInfo = vi.fn();
 const mockSystemInfoService: ISystemInfoService = createMockSystemInfoService();
@@ -70,7 +70,7 @@ const MockProvider = ({ children }: { children: React.ReactNode }) => (
 	</ApiServiceContext.Provider>
 );
 
-describe("SystemInfoSettings", () => {
+describe("the System Info, Logs and Refresh History tabs", () => {
 	beforeEach(() => {
 		Object.defineProperty(globalThis, "matchMedia", {
 			writable: true,
@@ -91,11 +91,7 @@ describe("SystemInfoSettings", () => {
 	it("renders System Info section", async () => {
 		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
 
-		render(
-			<MockProvider>
-				<SystemInfoSettings />
-			</MockProvider>,
-		);
+		render(<MockProvider>{settingsPanels["system-info"].panel}</MockProvider>);
 
 		await waitFor(() => {
 			expect(screen.getByText("System Info")).toBeInTheDocument();
@@ -105,11 +101,7 @@ describe("SystemInfoSettings", () => {
 	it("renders Logs section", async () => {
 		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
 
-		render(
-			<MockProvider>
-				<SystemInfoSettings />
-			</MockProvider>,
-		);
+		render(<MockProvider>{settingsPanels.logs.panel}</MockProvider>);
 
 		await waitFor(() => {
 			expect(screen.getByText("Logs")).toBeInTheDocument();
@@ -120,9 +112,7 @@ describe("SystemInfoSettings", () => {
 		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
 
 		render(
-			<MockProvider>
-				<SystemInfoSettings />
-			</MockProvider>,
+			<MockProvider>{settingsPanels["refresh-history"].panel}</MockProvider>,
 		);
 
 		await waitFor(() => {
@@ -133,11 +123,7 @@ describe("SystemInfoSettings", () => {
 	it("renders system info data", async () => {
 		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
 
-		render(
-			<MockProvider>
-				<SystemInfoSettings />
-			</MockProvider>,
-		);
+		render(<MockProvider>{settingsPanels["system-info"].panel}</MockProvider>);
 
 		await waitFor(() => {
 			expect(screen.getByText("Linux 5.15.0")).toBeInTheDocument();
@@ -147,11 +133,7 @@ describe("SystemInfoSettings", () => {
 	it("renders Third Party Packages section", async () => {
 		mockGetSystemInfo.mockResolvedValue(mockSystemInfo);
 
-		render(
-			<MockProvider>
-				<SystemInfoSettings />
-			</MockProvider>,
-		);
+		render(<MockProvider>{settingsPanels["system-info"].panel}</MockProvider>);
 
 		await waitFor(() => {
 			expect(screen.getByText("Third Party Packages")).toBeInTheDocument();

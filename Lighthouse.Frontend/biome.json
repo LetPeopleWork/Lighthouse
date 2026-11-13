@@ -211,7 +211,7 @@
 				"src/components/Common/DataOverviewTable/DataOverviewTable.tsx",
 				"src/components/Common/LicenseStatus/LicenseStatusDialog.tsx",
 				"src/components/Common/LicenseStatus/LicenseStatusIcon.tsx",
-				"src/components/Common/LicenseStatus/LicenseStatusPopover.tsx",
+				"src/components/Common/LicenseStatus/LicenseStatusContent.tsx",
 				"src/components/Common/ProjectSettings/ModifyProjectSettings.tsx",
 				"src/components/Common/Team/ModifyTeamSettings.tsx",
 				"src/hooks/useAuthGuard.ts",

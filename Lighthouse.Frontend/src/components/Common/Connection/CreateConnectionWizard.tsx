@@ -15,7 +15,7 @@ import { Link as RouterLink } from "react-router";
 import { useBaseUrl } from "../../../hooks/useBaseUrl";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
 import { useOAuthPopup } from "../../../hooks/useOAuthPopup";
-import { settingsAreaPath } from "../../../models/Settings/settingsAreas";
+import { settingsTabPath } from "../../../models/Settings/settingsAreas";
 import type { IConnectionValidationResult } from "../../../models/WorkTracking/ConnectionValidationResult";
 import type {
 	IAuthenticationMethod,
@@ -497,7 +497,10 @@ const CreateConnectionWizard: React.FC<CreateConnectionWizardProps> = ({
 						<Typography variant="body2">
 							OAuth 2.0 authentication is a Premium feature. Upgrade to Premium
 							to connect via OAuth.{" "}
-							<Link component={RouterLink} to={settingsAreaPath("system")}>
+							<Link
+								component={RouterLink}
+								to={settingsTabPath("system", "license")}
+							>
 								View license options
 							</Link>
 						</Typography>

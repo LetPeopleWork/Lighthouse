@@ -12,7 +12,7 @@ import SectionHeading from "./SectionHeading";
  * Where the rest of it still lives. Being shown the last few problems with no way on to the full log
  * is a dead end.
  */
-const THE_FULL_LOG = settingsTabPath("system", "system-info");
+const THE_FULL_LOG = settingsTabPath("system", "logs");
 
 /**
  * A misconfigured connector does not go wrong once - it goes wrong on every refresh, and the instance

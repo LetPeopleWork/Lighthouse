@@ -10,7 +10,10 @@ export type SettingsTabSlug =
 	| "database"
 	| "encryption"
 	| "usage-data"
-	| "system-info";
+	| "system-info"
+	| "logs"
+	| "refresh-history"
+	| "license";
 
 /** The three facts about a person's access that decide what Settings shows them. */
 export interface SettingsAccess {
@@ -155,6 +158,33 @@ export const SETTINGS_TABS: readonly SettingsTab[] = [
 		whoMayOpen: "everyone",
 		earlierSlugs: [],
 	},
+	{
+		area: "system",
+		slug: "logs",
+		label: "Logs",
+		testId: "logs-tab",
+		panelTestId: "logs-panel",
+		whoMayOpen: "everyone",
+		earlierSlugs: [],
+	},
+	{
+		area: "system",
+		slug: "refresh-history",
+		label: "Refresh History",
+		testId: "refresh-history-tab",
+		panelTestId: "refresh-history-panel",
+		whoMayOpen: "everyone",
+		earlierSlugs: [],
+	},
+	{
+		area: "system",
+		slug: "license",
+		label: "License",
+		testId: "license-tab",
+		panelTestId: "license-panel",
+		whoMayOpen: "everyone",
+		earlierSlugs: [],
+	},
 ];
 
 /** The keys the old single page opened tabs by (?tab=), matched without regard to case. */
@@ -170,7 +200,7 @@ const LEGACY_TAB_KEYS: ReadonlyMap<string, SettingsTabSlug> = new Map([
 	["encryption", "encryption"],
 	["rbac", "system-wide"],
 	["authorization", "system-wide"],
-	["logs", "system-info"],
+	["logs", "logs"],
 	["systeminfo", "system-info"],
 	["system-info", "system-info"],
 ]);
