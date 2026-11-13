@@ -39,15 +39,15 @@ None.
 P2
 
 ```text
-Apply one deliberate break per moved or rewritten rule and run the named unit row
+Apply one deliberate break to the production line of each moved or rewritten rule (a family line removed from the families a team or portfolio reports, the history fill cut to one family per day, the zero-band gate removed, the retention edge drawn from today instead of the last observed day, the filled day reading as of nothing, the pinned baseline replaced by the displayed period) and run the unit row the id table names
 ```
 
 ```text
-Each named unit row turns red for its break; the id table maps each of the nine removed host rows to such a row
+Every removed host row has an id-table row naming the unit test that now proves its rule, including the fill of every family on each past day and the steady limits of a pinned baseline for a team and for a portfolio, and its break turns that row red, with the assertion that carries the rule failing
 ```
 
 ```text
-No rule lost its proof when its host test left
+A rule that used to be proven through the web host is still proven, and a change to its production line is caught by a fast unit test
 ```
 
 ##### Disposition
@@ -57,7 +57,7 @@ Tested
 docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\-id\-table\.md with s1\-break\-evidence\.txt
 
 ```text
-A unit row mirrors the production computation and stays green after the production line is deleted
+A unit row that goes red only on a precondition, a fill loop that reaches one family only, or a steady-limits row that covers the team and not the portfolio would still be accepted
 ```
 
 ###### Obligations
@@ -69,15 +69,15 @@ None.
 P3
 
 ```text
-Keep the limits-route host row and check the working tree diff
+Compare the working tree and HEAD with the slice base for any file under the production project, the test-host guard list or the time budget list, and run the host class
 ```
 
 ```text
-The route row passes and no file under Lighthouse.Backend/Lighthouse.Backend/ changes
+The oracle prints no changed production, guard-list or budget-list path, and Slice07 holds the one limits-route row, which passes
 ```
 
 ```text
-The limits route is still proven end to end and the product behaves as before
+The test speed-up changes no production behaviour, the guard lists do not grow and the limits route is still proven through the host
 ```
 
 ##### Disposition
@@ -87,7 +87,7 @@ Tested
 python3 docs\/feature\/story\-6537\-a\-percentiles\-suite\/evidence\/s1\_compare\_ids\.py
 
 ```text
-The route row is deleted along with the rest, or a production file is edited to make a unit row pass
+A production file edited in the working tree and not committed, or a guard list that grew, would still be accepted by an id comparison alone
 ```
 
 ###### Obligations

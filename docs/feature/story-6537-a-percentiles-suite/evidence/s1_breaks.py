@@ -6,7 +6,9 @@ E = A + "RetentionEdge.cs"
 M = A + "BaseMetricsService.cs"
 UW = "FullyQualifiedName~FlowMetrics.Application.ProcessBehaviorSnapshotWriterTest."
 UR = "FullyQualifiedName~FlowMetrics.Application.RetentionEdgeTest."
-UT = "FullyQualifiedName~TeamMetricsServiceTests.GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimits"
+UT = "FullyQualifiedName~GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimits"
+UF = "FullyQualifiedName~OverTimeHistoryFillerTest.ADayWorkedOut_IsWorkedOutFor"
+F = "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFiller.cs"
 BREAKS = [
  ("B1 team family line removed (Arrivals)", W,
   "                new(ProcessBehaviorMetricType.Arrivals, lookbackDays, (startDate, endDate, asOf) => teamMetricsService.GetArrivalsProcessBehaviourChart(team, startDate, endDate, asOf)),\n", "", UW),
@@ -18,6 +20,7 @@ BREAKS = [
  ("B4 FillDayIfAbsent passes asOf null", W, "stored: null, asOf: day);", "stored: null, asOf: null);", UW),
  ("B4b FillDayIfAbsent window ends today", W, "ownerId, ownerType, family, day, InstanceCalendar.AsUtcMidnight(day), stored: null", "ownerId, ownerType, family, day, clock.TodayAsUtcMidnight, stored: null", UW),
  ("B5 pinned stretch ignored by the edge guard", E, "ReachesPastTheEdge(pinnedStretchStartsOn ?? windowStart)", "pinnedStretchStartsOn is null && ReachesPastTheEdge(windowStart)", UR),
+ ("B7 history fill loop reaches one family only", F, "foreach (var family in target.ProcessBehaviorFamilies)", "foreach (var family in target.ProcessBehaviorFamilies.Take(1))", UF),
  ("B6 pinned baseline ignored (display window used)", M, "return new ResolvedBaseline(configuredStart, configuredEnd, true, validation);", "return new ResolvedBaseline(displayStart, displayEnd, true, validation);", UT),
 ]
 only = sys.argv[1:] 

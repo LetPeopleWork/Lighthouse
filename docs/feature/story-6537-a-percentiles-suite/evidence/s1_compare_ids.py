@@ -21,7 +21,30 @@ FILTER = (
     "|FullyQualifiedName~FlowMetrics.Application.ProcessBehaviorSnapshotWriterTest."
     "|FullyQualifiedName~FlowMetrics.Application.RetentionEdgeTest."
     "|FullyQualifiedName~TeamMetricsServiceTests.GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimits"
+    "|FullyQualifiedName~PortfolioMetricsServiceTests.GetThroughputProcessBehaviourChart_PinnedBaseline_GivesTheSameLimits"
+    "|FullyQualifiedName~OverTimeHistoryFillerTest.ADayWorkedOut_IsWorkedOutFor"
 )
+SLICE_BASE = "46b01fa37"
+UNTOUCHED = [
+    "Lighthouse.Backend/Lighthouse.Backend/",
+    "Lighthouse.Backend/Lighthouse.Backend.Tests/Architecture/TestHostUseGuardTest.HostUsersStillToMove.cs",
+    "Scripts/test-timings/test-time-budget.json",
+]
+
+
+def touched_paths():
+    """Production files and the test-host guard and budget lists that differ from the slice base,
+    committed or in the working tree. The guard lists must not change in this slice."""
+    paths = set()
+    for args in (["git", "diff", "--name-only", SLICE_BASE, "HEAD", "--"] + UNTOUCHED,
+                 ["git", "diff", "--name-only", "HEAD", "--"] + UNTOUCHED,
+                 ["git", "ls-files", "--others", "--exclude-standard", "--", UNTOUCHED[0]]):
+        done = subprocess.run(args, cwd=ROOT, capture_output=True, text=True)
+        if done.returncode != 0:
+            print("BROKEN: git failed: " + done.stderr.strip())
+            sys.exit(2)
+        paths.update(line for line in done.stdout.splitlines() if line.strip())
+    return sorted(paths)
 
 
 def run_ids():
@@ -55,6 +78,9 @@ def main():
         expected = dict(line.rstrip("\n").split("\t") for line in handle if line.strip())
     observed = run_ids()
     failed = 0
+    for path in touched_paths():
+        print(f"CHANGED  {path} (no production file, guard list or budget list may change)")
+        failed += 1
     for test_id in sorted(set(expected) | set(observed)):
         want, got = expected.get(test_id), observed.get(test_id)
         if want is None:

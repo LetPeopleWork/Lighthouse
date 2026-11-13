@@ -343,6 +343,31 @@ namespace Lighthouse.Backend.Tests.Modules.FlowMetrics.Adapters.Background
         }
 
         [Test]
+        public async Task ADayWorkedOut_IsWorkedOutForEveryOneOfTheOwnersLimitFamilies()
+        {
+            var families = new[] { ProcessBehaviorMetricType.Throughput, ProcessBehaviorMetricType.WorkItemAge, ProcessBehaviorMetricType.Arrivals }
+                .Select(metric => new ProcessBehaviorFamilyReader(metric, 30, (_, _, _) => new ProcessBehaviourChart()))
+                .ToList();
+            var team = GivenATeamLastObservedOn(Today);
+            GivenTheTeamFinishedAnItemOn(Today.AddDays(-60));
+            limitWriterMock.Setup(writer => writer.FamiliesFor(team)).Returns(families);
+
+            subject.AskFor(RequestFor(TeamId, Today.AddDays(-1)));
+            await subject.DrainAsync(CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                foreach (var family in families)
+                {
+                    limitWriterMock.Verify(
+                        writer => writer.FillDayIfAbsent(TeamId, OwnerType.Team, It.Is<ProcessBehaviorFamilyReader>(f => f.MetricType == family.MetricType), Today.AddDays(-1)),
+                        Times.Once,
+                        $"the {family.MetricType} limits of the day were never worked out");
+                }
+            }
+        }
+
+        [Test]
         public async Task ADayWrittenInFull_IsNotAskedForAgain()
         {
             GivenATeamLastObservedOn(Today);
