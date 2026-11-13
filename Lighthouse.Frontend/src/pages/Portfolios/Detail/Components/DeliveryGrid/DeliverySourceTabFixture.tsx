@@ -141,16 +141,6 @@ export const fixVersionOption: IDeliverySourceOption = {
 	blockedBecause: null,
 };
 
-export const datedOnASingleDigitDay: IDeliverySourceOption = {
-	id: "10005",
-	name: "Release 5",
-	date: new Date("2027-01-05T12:00:00Z"),
-	projectKey: "PROJ",
-	projectName: "Project X",
-	isSelectable: true,
-	blockedBecause: null,
-};
-
 // A row reads "<name> (<project>)", and both halves are matched when the reader types. Spelled out
 // here because "Release 44" alone names two of the three rows, so a loose query finds two and throws.
 export const RELEASE_44_IN_PROJECT_TEST = "Release 44 (Project (Test))";

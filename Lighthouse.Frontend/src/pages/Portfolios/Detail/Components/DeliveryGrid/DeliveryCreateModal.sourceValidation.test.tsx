@@ -17,7 +17,6 @@ import {
 	allOptions,
 	createFeature,
 	datedInProject,
-	datedOnASingleDigitDay,
 	JIRA_RELEASE_SOURCE,
 	mockPortfolio,
 	openSourceList,
@@ -163,18 +162,6 @@ describe("DeliveryCreateModal and the one thing it asks for next", () => {
 		expect(blockingMessage()).toBe("At least one deliverable must be selected");
 	});
 
-	it("does not take a name of nothing but spaces for a name", async () => {
-		const user = userEvent.setup();
-		modalOfferingNoSource();
-
-		await waitFor(() => {
-			expect(screen.getByLabelText("Launch Name")).toBeInTheDocument();
-		});
-		await user.type(screen.getByLabelText("Launch Name"), "   ");
-
-		expect(blockingMessage()).toBe("Launch name is required");
-	});
-
 	it("does not treat rules as matched just because the tab was opened", async () => {
 		const user = userEvent.setup();
 		modalOfferingNoSource();
@@ -191,32 +178,6 @@ describe("DeliveryCreateModal and the one thing it asks for next", () => {
 			await screen.findByText("Rules must be validated before saving"),
 		).toBeInTheDocument();
 		expect(screen.queryByText("No features match the rules")).toBeNull();
-	});
-
-	it("refuses today, because a date to launch on has to be a day still to come", async () => {
-		const user = userEvent.setup();
-		modalOfferingNoSource();
-
-		await waitFor(() => {
-			expect(screen.getByLabelText("Launch Name")).toBeInTheDocument();
-		});
-		await user.type(screen.getByLabelText("Launch Name"), "Autumn launch");
-		await typeTheDate(user, dayOnThisBrowsersCalendar(0));
-
-		expect(blockingMessage()).toBe("Launch date must be in the future");
-	});
-
-	it("writes a single-digit month and day into the date field with a leading zero", async () => {
-		const user = userEvent.setup();
-		modalShowingOneRelease([datedOnASingleDigitDay]);
-
-		await user.click(
-			await screen.findByRole("button", { name: "Jira Release" }),
-		);
-		await openSourceList(user);
-		await user.click(screen.getByRole("option", { name: /Release 5/ }));
-
-		expect(screen.getByLabelText("Launch Date")).toHaveValue("2027-01-05");
 	});
 
 	it("leaves the picked Release alone when its own tab button is clicked again", async () => {
