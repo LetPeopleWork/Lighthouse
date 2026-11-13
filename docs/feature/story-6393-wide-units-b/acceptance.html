@@ -151,6 +151,158 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>The reader clicks a state bar of a team or a portfolio, then closes the dialog
+</code></pre>
+
+<pre><code>Nothing is asked before the click; then the owner&#x27;s own service is asked once for that state and window; rows come back as Work Items with days rounded to one decimal (0 for unknown ids); close hides the dialog
+</code></pre>
+
+<pre><code>The drill-down dialog lists the Work Items contributing to the state with their days
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: lists the rows the team|portfolio service returns, with their days rounded to one decimal</p>
+
+<pre><code>The query starts before a click, the portfolio asks the team service, days are unrounded, or close leaves the dialog open
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>A state is open and the reader changes the Work Item selection
+</code></pre>
+
+<pre><code>The service is asked again for the same state with the new item ids
+</code></pre>
+
+<pre><code>The drill-down shows rows for the narrowed selection, not the old one
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: asks again with the new Work Item selection when the selection changes while a state is open (L2/F77)</p>
+
+<pre><code>The item ids are missing from the query key, so the old rows stay and no second request is made
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The reader picks a named cycle time definition for the percentiles, a slower earlier pick answers after a faster later one
+</code></pre>
+
+<pre><code>The scoped values and info are those of the latest pick only; the scope id is the latest pick
+</code></pre>
+
+<pre><code>The percentile widget never shows numbers of a pick the reader has replaced
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: shows the answers of the latest selection only, even when an earlier one answers last (L1/F72)</p>
+
+<pre><code>A response for a superseded selection overwrites the current one (no generation guard on a selection)
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A named definition is picked and either the percentile values fetch or the info fetch fails
+</code></pre>
+
+<pre><code>The scope id, scoped values and scoped info all return to Default (null)
+</code></pre>
+
+<pre><code>The widget never presents Default numbers under a named selection
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: returns to Default when fetching ... fails (L1/F73)</p>
+
+<pre><code>Only the failing half is cleared, the scope id stays named, or the failure is swallowed and the old scope stays
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>A scope is chosen, then the entity id or the window end changes while the answers are still on their way, then they arrive
+</code></pre>
+
+<pre><code>The scope returns to Default at the change and the late answers do not bring it back
+</code></pre>
+
+<pre><code>A scope chosen for one team or window never leaks into the next
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: drops a chosen scope and ignores answers still on their way (L1/F74)</p>
+
+<pre><code>The reset effect does not bump the generation, so a late answer for the old entity repopulates the scope; or the reset ignores window changes
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P2</p>
+
+<pre><code>The reader picks Default again after a named scope was shown
+</code></pre>
+
+<pre><code>Scope id, scoped values and scoped info are cleared
+</code></pre>
+
+<pre><code>The widget shows the default percentiles again
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.hooks.test.tsx :: returns to Default when the reader picks Default again</p>
+
+<pre><code>Only the scope id is cleared and the named values stay on screen
+</code></pre>
+
+<h6>Obligations</h6>
+
 <p>None.</p>
 
 <h2>Expectations</h2>
