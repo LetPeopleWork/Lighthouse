@@ -4,19 +4,12 @@ using NUnit.Framework;
 namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 {
     /// <summary>
-    /// DISTILL acceptance scenarios for story 6053, slice 03 - where the process limits actually moved.
-    /// A delivery lead opens Predictability - PBC Over Time and reads the upper limit, the average and
-    /// the lower limit as three dated lines across the period under review, for every behaviour the
-    /// toggle offers, rather than the three points the recorder happened to catch.
-    ///
-    /// Driving port: the shipped process-behavior-over-time read endpoint, team and portfolio routes.
-    ///
-    /// Step definitions live in Slice07WhereTheLimitsActuallyMovedSpecifications.cs.
+    /// The limits route, read through a web host: a team's limits stop on the last day it was watched,
+    /// and a second look changes nothing. Which limits are filled, and how, is proven at unit level by
+    /// ProcessBehaviorSnapshotWriterTest and RetentionEdgeTest.
     /// </summary>
     [TestFixture]
     [Category("acceptance")]
-    [Category("story-6053-reconstruct-over-time-history")]
-    [Category("slice-07")]
     public partial class Slice07WhereTheLimitsActuallyMovedTest
     {
         [Test]

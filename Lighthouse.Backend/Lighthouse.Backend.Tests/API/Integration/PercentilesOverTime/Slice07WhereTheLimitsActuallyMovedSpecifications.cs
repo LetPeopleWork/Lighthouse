@@ -3,11 +3,6 @@ using NUnit.Framework;
 
 namespace Lighthouse.Backend.Tests.API.Integration.PercentilesOverTime
 {
-    /// <summary>
-    /// Step definitions for Slice 07 - the natural process limits a delivery lead needs in order to tell
-    /// a genuine shift from one odd week. Only the route read stays here: the rules behind the limits are
-    /// pinned at unit level.
-    /// </summary>
     public partial class Slice07WhereTheLimitsActuallyMovedTest : ReconstructOverTimeHistoryAcceptanceTest
     {
         // --- Given ---
