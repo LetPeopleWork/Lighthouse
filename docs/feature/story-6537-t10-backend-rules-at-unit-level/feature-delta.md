@@ -739,3 +739,45 @@ T5 #6469 also closed, at its slice E checkpoint. The remaining host-to-port move
   maintainer's ratification before suite 2 (scenario 2.3).
 - Still open, not blocking step 1: questions 2 to 5 in DISTILL's "For the maintainer". Question 3 (top two by stage-3 saving) is taken as
   DESIGN recommends, to be confirmed.
+
+## Wave: DELIVER / [REF] Step 1 — the ranking and its source runs (2026-11-13, AFK)
+
+**Source runs.** 38 `main` runs of `ci.yml` since 2026-11-09 whose `Verify Backend` job passed were downloaded. A run is eligible when its CSV
+has no `Failed` row and it is not force-full. Force-full is read from the CSV itself: a force-full run holds the live connector classes
+(`JiraWorkTrackingConnectorTest` and its siblings, +265 to +272 rows), a plain run does not. 23 are eligible, 15 are force-full; none had a
+`Failed` row. Full table, with run id, commit, rows, `Integration` count, sum and mean: `evidence/step1/runs-and-class-ranking.txt`, made by
+`evidence/step1/rank.py`.
+
+**The ranking** uses the 10 newest eligible runs (`61cda4e8e` back to `7e4b6506d`, 2026-11-12 17:53 to 2026-11-13 08:12), all after T5's last
+move push and T6's slice F, as D-6537-1 asks. A class is ranked only if it is `Integration` in the newest run, so the classes Story 6602
+moved to the port are out. Per class: median over the runs of its summed seconds.
+
+**Before set: 2 of 5.** The before set must start after Story 6602's last move push (`b8c425ce6`). Since then only `b8c425ce6` and
+`61cda4e8e` are eligible; `6df820432` was force-full and four pushes ran no backend tests. **The first move push waits for 3 more** (scenario
+1.1). Nothing is pushed in this AFK run, so local work goes on.
+
+**Runner noise is larger than DESIGN assumed.** Over the 10 ranking runs the summed `Integration` seconds run from 1,403 s to 2,268 s: a
+spread of 1.62, not the 1.13 of T4. The by-class fall, not the tier median, is what can show a saving.
+
+**The 1 % line, provisional:** 1 % of the 10 runs' median summed `Integration` seconds, 2,031.7 s, is **20.3 s**. It is re-based on the
+before set's median once that set has 5 runs.
+
+**Top classes** (median s, rows, spread), left-out classes struck by reason:
+
+| # | Class | s | rows | spread | In or out |
+|---|---|---|---|---|---|
+| 1 | `PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest` | 89.7 | 19 | 1.87 | in |
+| 2 | `PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest` | 88.3 | 10 | 1.91 | in |
+| 3 | `Integration.Containers.CategoryListNormalisationSeederOnBothProvidersTests` | 69.0 | 18 | 1.84 | out: container |
+| 4 | `PercentilesOverTime.Slice06EveryPercentileTabSpansTheSamePeriodTest` | 48.6 | 11 | 1.88 | in |
+| 5 | `ConnectionFieldChange.Slice01FieldChangeUpdatesItsOwnersTest` | 40.8 | 13 | 1.74 | in |
+| 6 | `FasterUpdates.Slice05FetchFingerprintTest` | 39.5 | 47 | 1.71 | in |
+| 7 | `Integration.Containers.ConnectionDefaultsUpgradeMigrationTests` | 37.3 | 14 | 1.71 | out: container |
+
+**By family** (`evidence/step1/family-ranking.txt`): containers 469.8 s (out); **`PercentilesOverTime` 282.1 s, 13.9 % of the tier, 12
+classes, 111 rows**; the flat `API.Integration` namespace 211.4 s (86 unrelated classes, not a family); **`ConfigureOncePerConnection` 164.4 s,
+8.1 %, 13 classes, 163 rows**; then `FasterUpdates` 74.0 s, `Refinement` 73.7 s, `Reports` 69.9 s, each about 3.5 %.
+
+**What this changes against DESIGN's estimate.** DESIGN expected the Refinement and Reports leftovers to rank top, at about 0.6 to 0.7 % each.
+They do not: after Story 6602 they are about 3.5 % each in total, and the two largest families are `PercentilesOverTime`, slow in its history
+fill and reachable only by a rewrite (now allowed), and `ConfigureOncePerConnection`. The top five classes go to the screen (step 2).

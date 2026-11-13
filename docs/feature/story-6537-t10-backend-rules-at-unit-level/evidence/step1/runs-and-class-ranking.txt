@@ -1,0 +1,74 @@
+run | commit | at | rows | Failed | force-full | Integration n | sum s | mean s | eligible
+43418810585 | 6df820432 | 2026-11-13T11:39:28Z | 13726 | 0 | True | 3587 | 1787.9 | 0.498 | False
+43391361941 | 61cda4e8e | 2026-11-13T08:12:04Z | 13461 | 0 | False | 3322 | 1506.8 | 0.454 | True
+43389215087 | b8c425ce6 | 2026-11-13T07:55:18Z | 13461 | 0 | False | 3322 | 1927.9 | 0.580 | True
+43383069573 | ecdb28783 | 2026-11-13T07:04:11Z | 13464 | 0 | False | 3322 | 1926.6 | 0.580 | True
+43311419564 | 8e42328bc | 2026-11-12T21:33:30Z | 13458 | 0 | False | 3336 | 2267.6 | 0.680 | True
+43308085806 | 9b4c41665 | 2026-11-12T21:13:20Z | 13458 | 0 | False | 3336 | 1803.6 | 0.541 | True
+43291094808 | e6a8c322a | 2026-11-12T19:31:50Z | 13449 | 0 | False | 3349 | 1403.2 | 0.419 | True
+43288395407 | 1568c69f5 | 2026-11-12T19:16:06Z | 13449 | 0 | False | 3349 | 2195.5 | 0.656 | True
+43287417523 | c245df2b0 | 2026-11-12T19:10:26Z | 13449 | 0 | False | 3349 | 2153.6 | 0.643 | True
+43277644085 | 8f7114247 | 2026-11-12T18:13:50Z | 13443 | 0 | False | 3360 | 2135.5 | 0.636 | True
+43274121470 | 7e4b6506d | 2026-11-12T17:53:19Z | 13443 | 0 | False | 3360 | 2250.0 | 0.670 | True
+43272953195 | edc942cc5 | 2026-11-12T17:46:28Z | 13443 | 0 | False | 3360 | 1474.9 | 0.439 | True
+43266374278 | 3b0286477 | 2026-11-12T17:09:15Z | 13699 | 0 | True | 3634 | 2751.9 | 0.757 | False
+43245885387 | af4b82ff1 | 2026-11-12T15:15:48Z | 13699 | 0 | True | 3634 | 2586.5 | 0.712 | False
+43238552934 | 0ed9675ad | 2026-11-12T14:34:14Z | 13699 | 0 | True | 3634 | 2111.7 | 0.581 | False
+43238262290 | 3d5aa2e2f | 2026-11-12T14:32:35Z | 13699 | 0 | True | 3634 | 2681.0 | 0.738 | False
+43163288249 | f85d6a6aa | 2026-11-12T05:43:36Z | 13699 | 0 | True | 3634 | 2603.3 | 0.716 | False
+43163173633 | 376904eb9 | 2026-11-12T05:42:34Z | 13699 | 0 | True | 3634 | 2774.2 | 0.763 | False
+43163168902 | 5840ddacc | 2026-11-12T05:42:31Z | 13699 | 0 | True | 3634 | 2168.7 | 0.597 | False
+43162681120 | 1e7456015 | 2026-11-12T05:38:01Z | 13699 | 0 | True | 3634 | 2687.4 | 0.740 | False
+43159279384 | d74710db2 | 2026-11-12T05:07:45Z | 13699 | 0 | True | 3634 | 1931.4 | 0.531 | False
+42980090924 | 5705b3239 | 2026-11-11T07:31:19Z | 13699 | 0 | True | 3634 | 2783.2 | 0.766 | False
+42892952957 | 1dabf048b | 2026-11-10T20:12:22Z | 13434 | 0 | False | 3369 | 2254.3 | 0.669 | True
+42884870319 | 898c5a8b2 | 2026-11-10T19:23:59Z | 13361 | 0 | False | 3369 | 1773.6 | 0.526 | True
+42879378952 | ca54bf761 | 2026-11-10T18:51:17Z | 13357 | 0 | False | 3365 | 1903.1 | 0.566 | True
+42869790001 | 1752302ac | 2026-11-10T17:54:57Z | 13357 | 0 | False | 3365 | 1827.3 | 0.543 | True
+42868174121 | 099db8960 | 2026-11-10T17:45:22Z | 13357 | 0 | False | 3365 | 2105.4 | 0.626 | True
+42825171820 | a57046047 | 2026-11-10T13:30:44Z | 13327 | 0 | False | 3365 | 1812.7 | 0.539 | True
+42768448504 | 6f5a4d098 | 2026-11-10T06:25:49Z | 13592 | 0 | True | 3630 | 2032.0 | 0.560 | False
+42738684584 | d9925df14 | 2026-11-10T01:51:13Z | 13592 | 0 | True | 3630 | 1957.2 | 0.539 | False
+42683145914 | 4711f8960 | 2026-11-09T19:25:11Z | 13592 | 0 | True | 3630 | 2609.3 | 0.719 | False
+42682900307 | 4fb1cfcdb | 2026-11-09T19:23:37Z | 13327 | 0 | False | 3365 | 1784.4 | 0.530 | True
+42672201507 | 9af65f736 | 2026-11-09T18:13:56Z | 13327 | 0 | False | 3365 | 1518.0 | 0.451 | True
+42655417792 | 4ebba0e51 | 2026-11-09T16:30:13Z | 13533 | 0 | True | 3630 | 2545.5 | 0.701 | False
+42644045725 | b01919d5d | 2026-11-09T15:22:41Z | 13235 | 0 | False | 3351 | 1800.7 | 0.537 | True
+42643124403 | 4da5fff46 | 2026-11-09T15:17:13Z | 13235 | 0 | False | 3351 | 1778.0 | 0.531 | True
+42640531415 | 4ad8c0fd8 | 2026-11-09T15:02:09Z | 13235 | 0 | False | 3351 | 1711.2 | 0.511 | True
+42626426378 | 9e62bd83a | 2026-11-09T13:32:53Z | 13209 | 0 | False | 3339 | 2180.9 | 0.653 | True
+
+ranking runs: 61cda4e8e, b8c425ce6, ecdb28783, 8e42328bc, 9b4c41665, e6a8c322a, 1568c69f5, c245df2b0, 8f7114247, 7e4b6506d
+
+sum of class medians 1995.3 s over 370 classes
+rank | median s | rows | spread | class
+1 | 89.7 | 19 | 1.87 | API.Integration.PercentilesOverTime.Slice05ReconstructCycleTimeHistoryTest
+2 | 88.3 | 10 | 1.91 | API.Integration.PercentilesOverTime.Slice07WhereTheLimitsActuallyMovedTest
+3 | 69.0 | 18 | 1.84 | Integration.Containers.CategoryListNormalisationSeederOnBothProvidersTests
+4 | 48.6 | 11 | 1.88 | API.Integration.PercentilesOverTime.Slice06EveryPercentileTabSpansTheSamePeriodTest
+5 | 40.8 | 13 | 1.74 | API.Integration.ConnectionFieldChange.Slice01FieldChangeUpdatesItsOwnersTest
+6 | 39.5 | 47 | 1.71 | API.Integration.FasterUpdates.Slice05FetchFingerprintTest
+7 | 37.3 | 14 | 1.71 | Integration.Containers.ConnectionDefaultsUpgradeMigrationTests
+8 | 26.0 | 15 | 1.85 | API.Integration.SkipUnchangedForecasts.Slice01InputChangeScenarios
+9 | 23.2 | 4 | 1.47 | Integration.Containers.BlockedRuleSetMigrationTests
+10 | 21.7 | 3 | 1.25 | Integration.Containers.BlockedCountSnapshotMigrationTests
+11 | 21.0 | 12 | 1.87 | API.Integration.BehaviourSettings.Story6084HistoryFillAlwaysOnTest
+12 | 19.7 | 3 | 1.75 | Integration.Containers.LighterRoundsOnPostgresTests
+13 | 19.6 | 32 | 1.86 | API.Integration.ConfigureOncePerConnection.Slice05bReferencedFieldsAndOlderPayloadsScenarios
+14 | 19.5 | 9 | 1.91 | Integration.Containers.DeliveryMetricSnapshotDayKeyMigrationTests
+15 | 19.1 | 7 | 1.70 | API.Integration.ConfigureOncePerConnection.Slice02NamedLinkThatMatchedNothingScenarios
+16 | 18.8 | 2 | 1.29 | Integration.Containers.BlockedDurationMigrationTests
+17 | 18.3 | 2 | 1.57 | API.Integration.PercentilesOverTime.Story6084TheFillRunsEverywhereTest
+18 | 17.3 | 15 | 1.70 | API.Integration.OnlyFeaturesAsParentCandidates.Slice01NarrowToFeaturesTest
+19 | 17.2 | 16 | 1.74 | API.Integration.FasterUpdates.Slice03JiraCloudPortfolioDeltaTest
+20 | 17.0 | 32 | 1.90 | API.Integration.TeamFeatureSize.Slice01TeamFeatureSizeTest
+21 | 16.5 | 19 | 1.71 | API.Integration.ConfigureOncePerConnection.Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios
+22 | 16.4 | 2 | 1.30 | Integration.Containers.BlockedStalenessThresholdMigrationTests
+23 | 16.2 | 10 | 1.89 | API.Integration.SkipUnchangedForecasts.Slice01UserPressScenarios
+24 | 15.8 | 20 | 1.86 | API.Integration.ConfigureOncePerConnection.Slice12EstimationDefaultScenarios
+25 | 15.7 | 3 | 1.22 | Architecture.TestHostIsReleasedAfterDisposeTest
+26 | 15.7 | 44 | 2.01 | API.Integration.Refinement.Slice13ReadinessTest
+27 | 15.4 | 5 | 1.86 | Integration.Containers.CatalogueBodiesOnPostgresTests
+28 | 15.3 | 23 | 1.60 | API.Integration.Dependencies.Slice02DependencyDetailTest
+29 | 15.2 | 5 | 1.80 | API.Integration.ConfigureOncePerConnection.Slice06DefaultChangeUpdatesTheFollowersScenarios
+30 | 14.8 | 22 | 1.83 | API.Integration.SleRisk.Slice01SleRiskReadTest
