@@ -1376,7 +1376,7 @@ Overview needing the list for stepper and disabled Add {Team}, `licenseStatusOne
 
 ---
 
-## Wave: DELIVER / [REF] Sketches for the walk-through (PROPOSED, not approved)
+## Wave: DELIVER / [REF] Sketches for the walk-through (decided 2026-11-13, see the walk-through block below)
 
 Nothing here is decided. Each sketch names the control it reuses and lists the decisions the maintainer has to
 make, one per line with options and my recommendation. Terms in braces are the configurable seeded defaults
@@ -1644,3 +1644,47 @@ Manual check for each: browser throttled to a slow connection (CLAUDE.md "Design
 - **D14**: the connection pages get one back link at the top, **"Back to {Work Tracking Systems}"** (configured term),
   to System → Connections.
 - Every other decision in "Sketches for the walk-through" stays open for the walk-through.
+
+## Wave: DELIVER / [REF] Maintainer decisions at the walk-through (2026-11-13)
+
+Every sketch decision is now settled. Where a sketch above differs from this block, this block wins.
+
+- **D1**: the Settings menu entries carry a one-line description (Organization "how we work", Access "who may do
+  what", System "running this server").
+- **D2**: the trigger is the text "Settings" with a down arrow, same weight as the other nav items.
+- **D3**: mobile drawer shows a non-link caption "Settings" with the three areas indented below it.
+- **D4**: the area page h1 is "Settings › {Area}".
+- **D6**: System tab order after all slices is Connections, Database, Encryption, Demo Data, Usage Data, System Info,
+  License. In slice 01 alone the first tab stays Demo Data.
+- **D7**: bare `/settings` lands on Organization for a System Admin, otherwise on the first area the person may see.
+- **D8**: tab icons Terminology `Translate`, Calendar `EventBusy`, Refresh & ordering `Sync`.
+- **D9**: a licence that cannot be loaded shows "Could not load the license." on the Calendar tab.
+- **D10**: System → Usage Data shows the row and the docs link only, **no** sentence about the footer choice
+  (the maintainer did not take the recommendation).
+- **D11**: System → License shows the content at its natural width inside one `InputGroup` "License".
+- **D12**: the connection forms keep the link text "View license options"; only the target changes (Bug #6498).
+- **D13a**: the connect button sits right of the section title in the extracted section's flex row.
+- **D13a-wording (new, maintainer note)**: the button says **"Connect {Work Tracking System}"** instead of
+  "Add {Work Tracking System}", on the Connections tab **and** the onboarding stepper action, to match the stepper
+  step already labelled "Connect". The Overview's own button goes away with slice 04. Slice 04 changes the section
+  button, slice 05 the stepper action; E2E page objects and docs follow in the same slice.
+- **D13b**: the tab keeps the "{Work Tracking Systems}" section title.
+- **D13**: the Task Manager connections section gets a "Manage {Work Tracking Systems}" link to the tab, a link in
+  its empty text, and the configurable term in its hard-coded words.
+- **D15**: with no connection, the Overview shows a text line under the disabled Add buttons:
+  "Connect a {Work Tracking System} first: Settings › System › Connections" (linked); no link inside the tooltip.
+- Earlier (2026-11-12): D5, D12b, D14 as recorded above.
+
+### Rigor profile (agreed 2026-11-13)
+
+| Slice | Profile | Crafter, acceptance designer | Reviewers, EXAMINE |
+|---|---|---|---|
+| 01 Three areas | standard | sonnet | haiku |
+| 02 Organization tabs | standard | sonnet | haiku |
+| 03 License in System | standard | sonnet | haiku |
+| 04 Connections in System | thorough | opus | sonnet |
+| 05 Connection entry points | standard | sonnet | haiku |
+
+### AFK run options (2026-11-13)
+
+Slice wrap-up: refactor + review; mutation runs once in the final gates on frozen code. Push: per slice, CI watched.
