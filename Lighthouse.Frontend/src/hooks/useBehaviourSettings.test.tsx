@@ -148,10 +148,18 @@ describe("useBehaviourSettings", () => {
 		await waitFor(() => expect(result.current.status).toBe("failed"));
 	});
 
-	it("does not wait for the license when the row it shows is free", async () => {
+	it("needs the license as soon as one of the rows it shows is Premium", async () => {
+		mockGetLicenseStatus.mockRejectedValue(new Error("down"));
+		const { result } = renderTheSettings("UsageData", "FeatureOrdering");
+
+		await waitFor(() => expect(result.current.status).toBe("failed"));
+	});
+
+	it("does not wait for the license when the row it shows is free, and grants no Premium without one", async () => {
 		mockGetLicenseStatus.mockRejectedValue(new Error("down"));
 		const { result } = renderTheSettings("UsageData");
 
 		await waitFor(() => expect(result.current.status).toBe("ready"));
+		expect(readyOf(result.current).canUsePremiumFeatures).toBe(false);
 	});
 });

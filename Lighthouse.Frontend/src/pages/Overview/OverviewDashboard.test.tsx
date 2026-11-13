@@ -354,6 +354,24 @@ describe("OverviewDashboard", () => {
 		expect(screen.getByText("Add Team")).toBeInTheDocument();
 	});
 
+	it("lists no connections and offers no Add connection button, since connections live under System, Connections", async () => {
+		renderWithProviders(<OverviewDashboard />);
+
+		await waitFor(() => {
+			expect(screen.getByText("Portfolios")).toBeInTheDocument();
+		});
+		expect(screen.queryByText("My ADO Connection")).not.toBeInTheDocument();
+		expect(
+			screen.queryByTestId("connections-datagrid-container"),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: /Add Work Tracking System/i }),
+		).not.toBeInTheDocument();
+		expect(
+			screen.queryByText("Work Tracking Systems", { selector: "h1,h2,h3,h4,h5,h6" }),
+		).not.toBeInTheDocument();
+	});
+
 	it("shows main filter bar only", async () => {
 		renderWithProviders(<OverviewDashboard />);
 
@@ -618,7 +636,7 @@ describe("OverviewDashboard", () => {
 		expect(addTeamButton).toBeEnabled();
 	});
 
-	it("disables Add Team for system admin with no connections", async () => {
+	it("disables Add Team for system admin with no connections and says why", async () => {
 		const mockRbacService = createMockRbacService();
 		mockRbacService.getAuthorizationSummary = vi.fn().mockResolvedValue({
 			isRbacEnabled: true,
@@ -637,6 +655,11 @@ describe("OverviewDashboard", () => {
 			const addTeamButton = screen.getByRole("button", { name: "Add Team" });
 			expect(addTeamButton).toBeDisabled();
 		});
+		const addTeamButton = screen.getByRole("button", { name: "Add Team" });
+		fireEvent.mouseOver(addTeamButton.parentElement as HTMLElement);
+		expect(await screen.findByRole("tooltip")).toHaveTextContent(
+			"Create a Work Tracking System before adding a Team",
+		);
 	});
 
 	it("hides OnboardingStepper for pure viewer with no create permissions", async () => {
