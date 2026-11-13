@@ -7,10 +7,12 @@ import { connectionsTabPath } from "../../models/Settings/settingsAreas";
 /** Says where to connect the first connection, under the Add buttons it keeps disabled. */
 const ConnectFirstHint: React.FC<{
 	hasConnections: boolean;
+	/** A refused read says nothing about whether connections exist, so no hint then. */
+	connectionsRefused: boolean;
 	connectionTerm: string;
-}> = ({ hasConnections, connectionTerm }) => {
+}> = ({ hasConnections, connectionsRefused, connectionTerm }) => {
 	const { isLoading, isSystemAdmin } = useRbac();
-	if (isLoading || !isSystemAdmin || hasConnections) {
+	if (isLoading || !isSystemAdmin || hasConnections || connectionsRefused) {
 		return null;
 	}
 	return (

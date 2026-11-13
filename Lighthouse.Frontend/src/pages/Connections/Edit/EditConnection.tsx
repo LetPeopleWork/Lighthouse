@@ -218,6 +218,7 @@ const EditConnectionPage: React.FC = () => {
 	if (connectionQuery.isLoadingError) {
 		return (
 			<Container maxWidth={false}>
+				<BackToConnections connectionsTerm={connectionsTerm} />
 				<Alert
 					severity="error"
 					action={

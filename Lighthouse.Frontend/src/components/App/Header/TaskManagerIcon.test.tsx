@@ -55,7 +55,13 @@ vi.mock("../../../hooks/useRbac", () => ({
 	}),
 }));
 
-const mockGetTerm = vi.fn((key: string) => key);
+// The connection words are the seeded ones, as a real instance shows them; other keys come back as written.
+const seededConnectionWords: Record<string, string> = {
+	workTrackingSystem: "Work Tracking System",
+	workTrackingSystems: "Work Tracking Systems",
+};
+const seededWordOrKey = (key: string) => seededConnectionWords[key] ?? key;
+const mockGetTerm = vi.fn(seededWordOrKey);
 
 vi.mock("../../../services/TerminologyContext", async () => {
 	const actual = await vi.importActual<
@@ -306,7 +312,7 @@ const theShapeOfTheIconNamed = (name: string): string => {
 describe("TaskManagerIcon", () => {
 	beforeEach(() => {
 		mockIsSystemAdmin.mockReturnValue(true);
-		mockGetTerm.mockImplementation((key: string) => key);
+		mockGetTerm.mockImplementation(seededWordOrKey);
 	});
 
 	// AC-02.3 — an id is not an answer to "what is running"; the name is what an operator recognises.
@@ -1105,7 +1111,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test workTrackingSystem Jira Cloud/i,
+					name: /test Work Tracking System Jira Cloud/i,
 				}),
 			);
 
@@ -1127,7 +1133,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test workTrackingSystem Jira Cloud/i,
+					name: /test Work Tracking System Jira Cloud/i,
 				}),
 			);
 
@@ -1148,7 +1154,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test workTrackingSystem Jira Cloud/i,
+					name: /test Work Tracking System Jira Cloud/i,
 				}),
 			);
 
@@ -1168,7 +1174,7 @@ describe("TaskManagerIcon", () => {
 
 			expect(
 				await screen.findByRole("button", {
-					name: /edit workTrackingSystem Jira Cloud/i,
+					name: /edit Work Tracking System Jira Cloud/i,
 				}),
 			).toBeInTheDocument();
 		});
@@ -1254,7 +1260,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /edit workTrackingSystem Jira Cloud/i,
+					name: /edit Work Tracking System Jira Cloud/i,
 				}),
 			);
 
@@ -1270,7 +1276,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 
 			expect(
-				await screen.findByText(/no workTrackingSystems are configured/i),
+				await screen.findByText(/no Work Tracking Systems are configured/i),
 			).toBeInTheDocument();
 		});
 
@@ -1398,7 +1404,7 @@ describe("TaskManagerIcon", () => {
 			await openThePopover();
 			await userEvent.click(
 				await screen.findByRole("button", {
-					name: /test workTrackingSystem Jira Cloud/i,
+					name: /test Work Tracking System Jira Cloud/i,
 				}),
 			);
 

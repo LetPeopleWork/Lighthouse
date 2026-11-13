@@ -283,5 +283,6 @@ export const EDIT_CONNECTION_ROUTE = `${connectionsTabPath()}/:id/edit`;
 export const newConnectionPath = (): string => NEW_CONNECTION_ROUTE;
 
 /** Where an existing connection is edited. */
-export const editConnectionPath = (connectionId: number | null): string =>
-	`${connectionsTabPath()}/${connectionId}/edit`;
+export const editConnectionPath = (
+	connectionId: number | string | null,
+): string => `${connectionsTabPath()}/${connectionId}/edit`;

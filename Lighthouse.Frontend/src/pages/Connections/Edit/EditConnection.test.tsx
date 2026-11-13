@@ -241,6 +241,22 @@ describe("EditConnectionPage", () => {
 			});
 		});
 
+		it("leads back to the Connections tab even when the connection could not be loaded", async () => {
+			mockParamsId = "42";
+			renderWithContext({
+				getConfiguredWorkTrackingSystems: vi
+					.fn()
+					.mockRejectedValue(new Error("down")),
+			});
+
+			expect(
+				await screen.findByText("Could not load this connection."),
+			).toBeVisible();
+			expect(
+				screen.getByRole("link", { name: "Back to Work Tracking Systems" }),
+			).toHaveAttribute("href", "/settings/system/connections");
+		});
+
 		it("renders the ReconnectBanner inline when the loaded connection requiresReconnect", async () => {
 			const staleConnection = new WorkTrackingSystemConnection({
 				id: 42,

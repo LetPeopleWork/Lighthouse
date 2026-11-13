@@ -18,9 +18,7 @@ const EditConnection = lazy(() => import("../Connections/Edit/EditConnection"));
 /** An old bookmark to a connection's edit page keeps its connection. */
 const OldEditConnectionAddress: React.FC = () => {
 	const { id } = useParams();
-	return (
-		<Navigate to={editConnectionPath(Number.parseInt(id ?? "", 10))} replace />
-	);
+	return <Navigate to={editConnectionPath(id ?? null)} replace />;
 };
 
 /** Asks the resolver what the address opens, and acts on the answer: wait, move on, or show the area. */

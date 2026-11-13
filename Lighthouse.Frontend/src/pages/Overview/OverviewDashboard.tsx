@@ -417,6 +417,7 @@ const OverviewDashboard: React.FC = () => {
 						</Box>
 						<ConnectFirstHint
 							hasConnections={hasConnections}
+							connectionsRefused={connectionsRefused}
 							connectionTerm={connectionTerm}
 						/>
 					</Box>
