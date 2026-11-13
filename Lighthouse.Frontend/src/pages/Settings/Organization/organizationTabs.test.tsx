@@ -502,7 +502,9 @@ describe("Usage Data tab", () => {
 			features: slowFeatures.promise,
 		});
 
-		expect(await screen.findByRole("progressbar")).toBeInTheDocument();
+		// The tab row only appears once access has loaded, so a spinner seen after it is the section's own.
+		await waitFor(() => expect(theSelectedTab()).toEqual(["Usage Data"]));
+		expect(screen.getByRole("progressbar")).toBeInTheDocument();
 		expect(screen.queryByTestId("UsageData-toggle")).toBeNull();
 
 		await act(async () =>
