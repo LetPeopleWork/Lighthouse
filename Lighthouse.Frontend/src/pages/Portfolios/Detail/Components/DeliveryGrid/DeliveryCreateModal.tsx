@@ -2,14 +2,11 @@ import {
 	Alert,
 	Box,
 	Button,
-	ButtonGroup,
-	CircularProgress,
 	Dialog,
 	DialogActions,
 	DialogContent,
 	DialogTitle,
 	TextField,
-	Typography,
 } from "@mui/material";
 import type React from "react";
 import {
@@ -20,10 +17,6 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { LicenseTooltip } from "../../../../../components/App/License/LicenseToolTip";
-import { DeliveryRuleBuilder } from "../../../../../components/Common/DeliveryRuleBuilder";
-import { FeatureGrid } from "../../../../../components/Common/FeatureGrid";
-import { FeatureSelector } from "../../../../../components/Common/FeatureSelector";
 import { useLicenseRestrictions } from "../../../../../hooks/useLicenseRestrictions";
 import type { IDelivery } from "../../../../../models/Delivery";
 import type { IDeliverySourceOption } from "../../../../../models/Delivery/DeliverySource";
@@ -33,27 +26,25 @@ import { TERMINOLOGY_KEYS } from "../../../../../models/TerminologyKeys";
 import type {
 	DeliverySelectionMode,
 	IWorkItemRuleCondition,
-	IWorkItemRuleSchema,
 } from "../../../../../models/WorkItemRules";
 import { ApiServiceContext } from "../../../../../services/Api/ApiServiceContext";
 import { useTerminology } from "../../../../../services/TerminologyContext";
+import { SelectionModeContent } from "./DeliverySelectionContent";
+import { SelectionTabRow } from "./DeliverySelectionTabRow";
 import {
-	type DeliverySourceCurrentSelection,
-	DeliverySourceTab,
-	DeliverySourceTabLoading,
-} from "./DeliverySourceTab";
+	boundSourceSelection,
+	dateErrorOf,
+	dateInputValue,
+	getFirstBlockingError,
+	nameErrorOf,
+	offeredTabs,
+} from "./deliveryFormRules";
 import {
 	awaitsBoundSourceTab,
 	dialogKnowsItsAnswer,
-	FEATURE_LIST_FAILED,
-	FEATURE_LIST_LOADING,
-	PREMIUM_NOTICE,
-	type SelectionBody,
 	type SelectionBodyQuestion,
 	saveIsAllowed,
 	selectionBodyOf,
-	selectionTabIsLocked,
-	UNAVAILABLE,
 } from "./deliverySelectionBody";
 import {
 	type DeliveryRuleMode,
@@ -64,21 +55,15 @@ import {
 	deliverySelectionTabsFor,
 	deliveryTabForDelivery,
 	emptySelectionValues,
-	MANUAL_SELECTION_TAB_KEY,
 	RULE_BASED_SELECTION_TAB_KEY,
 	ruleInputError,
 } from "./deliverySelectionTabs";
-import { type PremiumVerdict, premiumVerdictOf } from "./premiumVerdict";
-import { RetryByReopeningNotice } from "./RetryByReopeningNotice";
+import { premiumVerdictOf } from "./premiumVerdict";
 import {
 	useDialogFeatureList,
 	useDialogRuleSchema,
 } from "./useDeliveryFormQueries";
-import type { DeliverySourceOptionsState } from "./useDeliverySourceOptions";
-import {
-	type SourcesStatus,
-	useDialogDeliverySources,
-} from "./useDialogDeliverySources";
+import { useDialogDeliverySources } from "./useDialogDeliverySources";
 
 interface DeliveryCreateModalProps {
 	open: boolean;
@@ -110,474 +95,6 @@ interface DeliveryCreateModalProps {
 		concurrencyToken?: string;
 	}) => void;
 }
-
-const LoadingSpinner: React.FC = () => (
-	<Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-		<CircularProgress />
-	</Box>
-);
-
-const SchemaLoadError: React.FC = () => (
-	<Alert severity="warning">
-		Failed to load rule schema. Please try again.
-	</Alert>
-);
-
-const PremiumFeatureNotice: React.FC<{ message: string }> = ({ message }) => (
-	<Alert severity="info" data-testid="premium-feature-notice">
-		{message}
-	</Alert>
-);
-
-const ValidationButton: React.FC<{
-	validatingRules: boolean;
-	rulesLength: number;
-	onClick: () => void;
-}> = ({ validatingRules, rulesLength, onClick }) => (
-	<Button
-		variant="outlined"
-		onClick={onClick}
-		disabled={validatingRules || rulesLength === 0}
-	>
-		{validatingRules && <CircularProgress size={20} sx={{ mr: 1 }} />}
-		Validate Rules
-	</Button>
-);
-
-const MatchedFeaturesAlert: React.FC<{ count: number }> = ({ count }) => (
-	<Alert severity="success" sx={{ flex: 1 }}>
-		<span data-testid="matched-count">{count} feature(s) matched</span>
-	</Alert>
-);
-
-const MatchedFeaturesGrid: React.FC<{
-	features: IFeature[];
-	featuresTerm: string;
-	portfolioId: number;
-}> = ({ features, featuresTerm, portfolioId }) => (
-	<Box sx={{ mt: 2 }}>
-		<Typography variant="subtitle2" sx={{ mb: 1 }}>
-			Matched {featuresTerm}:
-		</Typography>
-		<Box sx={{ height: 200 }}>
-			<FeatureGrid
-				features={features}
-				selectedFeatureIds={features.map((f) => f.id)}
-				storageKey={`delivery-matched-features-${portfolioId}`}
-				mode="readonly"
-			/>
-		</Box>
-	</Box>
-);
-
-interface CommonSelectionContentProps {
-	errors: { features?: string; rules?: string };
-	featuresTerm: string;
-	portfolioId: number;
-}
-
-interface ManualSelectionContentProps extends CommonSelectionContentProps {
-	listedFeatures: IFeature[];
-	listIsLoading: boolean;
-	selectedFeatureIds: number[];
-	onSelectedFeaturesChange: (ids: number[]) => void;
-}
-
-interface RuleBasedContentProps extends CommonSelectionContentProps {
-	ruleSchema: IWorkItemRuleSchema | undefined;
-	rules: IWorkItemRuleCondition[];
-	mode: DeliveryRuleMode;
-	validatingRules: boolean;
-	rulesValidated: boolean;
-	matchedFeatures: IFeature[];
-	onRulesChange: (rules: IWorkItemRuleCondition[]) => void;
-	onModeChange: (mode: DeliveryRuleMode) => void;
-	onValidateRules: () => void;
-}
-
-/**
- * The bag the form hands to whichever tab is showing. It is the sum of what every tab needs, so a
- * tab component that asks for less still fits the registry below and stays free to ignore the rest.
- */
-type SelectionContentProps = ManualSelectionContentProps &
-	RuleBasedContentProps;
-
-const ManualSelectionContent: React.FC<ManualSelectionContentProps> = ({
-	errors,
-	listedFeatures,
-	listIsLoading,
-	selectedFeatureIds,
-	featuresTerm,
-	portfolioId,
-	onSelectedFeaturesChange,
-}) => (
-	<>
-		<Typography variant="h6" sx={{ mb: 2 }}>
-			Select {featuresTerm}
-		</Typography>
-		{errors.features && (
-			<Typography color="error" sx={{ mb: 1 }}>
-				{errors.features}
-			</Typography>
-		)}
-		<Box sx={{ height: 300 }}>
-			<FeatureSelector
-				features={listedFeatures}
-				loading={listIsLoading}
-				selectedFeatureIds={selectedFeatureIds}
-				onChange={onSelectedFeaturesChange}
-				storageKey={`delivery-create-features-${portfolioId}`}
-			/>
-		</Box>
-	</>
-);
-
-const RuleBasedContent: React.FC<RuleBasedContentProps> = ({
-	ruleSchema,
-	errors,
-	rules,
-	mode,
-	validatingRules,
-	rulesValidated,
-	matchedFeatures,
-	featuresTerm,
-	portfolioId,
-	onRulesChange,
-	onModeChange,
-	onValidateRules,
-}) => {
-	if (!ruleSchema) {
-		return <SchemaLoadError />;
-	}
-
-	const hasMatchedFeatures = rulesValidated && matchedFeatures.length > 0;
-
-	return (
-		<>
-			{errors.rules && (
-				<Alert severity="error" sx={{ mb: 2 }}>
-					{errors.rules}
-				</Alert>
-			)}
-			<DeliveryRuleBuilder
-				rules={rules}
-				onChange={onRulesChange}
-				fields={ruleSchema.fields}
-				operators={ruleSchema.operators}
-				maxRules={ruleSchema.maxRules}
-				maxValueLength={ruleSchema.maxValueLength}
-				mode={mode}
-				onModeChange={onModeChange}
-			/>
-			<Box sx={{ mt: 2, display: "flex", alignItems: "center", gap: 2 }}>
-				<ValidationButton
-					validatingRules={validatingRules}
-					rulesLength={rules.length}
-					onClick={onValidateRules}
-				/>
-				{hasMatchedFeatures && (
-					<MatchedFeaturesAlert count={matchedFeatures.length} />
-				)}
-			</Box>
-			{hasMatchedFeatures && (
-				<MatchedFeaturesGrid
-					features={matchedFeatures}
-					featuresTerm={featuresTerm}
-					portfolioId={portfolioId}
-				/>
-			)}
-		</>
-	);
-};
-
-const selectionTabContent: Record<
-	string,
-	React.FC<SelectionContentProps> | undefined
-> = {
-	[MANUAL_SELECTION_TAB_KEY]: ManualSelectionContent,
-	[RULE_BASED_SELECTION_TAB_KEY]: RuleBasedContent,
-};
-
-const SelectionModeContent: React.FC<
-	Omit<SelectionContentProps, "listIsLoading"> & {
-		tab: DeliverySelectionTab;
-		body: SelectionBody;
-		portfolioTerm: string;
-		currentSelection: DeliverySourceCurrentSelection | null;
-		onSourceOptionPicked: (option: IDeliverySourceOption) => void;
-		publishForecastToSource: boolean;
-		onPublishForecastChange: (publish: boolean) => void;
-		sourceOptionsOf: (sourceKey: string) => DeliverySourceOptionsState;
-	}
-> = ({
-	tab,
-	body,
-	portfolioTerm,
-	currentSelection,
-	onSourceOptionPicked,
-	publishForecastToSource,
-	onPublishForecastChange,
-	sourceOptionsOf,
-	...contentProps
-}) => {
-	if (body.kind === PREMIUM_NOTICE) {
-		return <PremiumFeatureNotice message={body.notice} />;
-	}
-
-	if (body.kind === "loading" && tab.source) {
-		return <DeliverySourceTabLoading sourceName={tab.source.displayName} />;
-	}
-
-	if (body.kind === "loading") {
-		return <LoadingSpinner />;
-	}
-
-	if (body.kind === UNAVAILABLE) {
-		return null;
-	}
-
-	if (body.kind === FEATURE_LIST_FAILED) {
-		return (
-			<RetryByReopeningNotice
-				problem={`Couldn't load this ${portfolioTerm}'s ${contentProps.featuresTerm}.`}
-			/>
-		);
-	}
-
-	if (tab.source) {
-		return (
-			<DeliverySourceTab
-				portfolioId={contentProps.portfolioId}
-				sourceKey={tab.source.key}
-				sourceName={tab.source.displayName}
-				featuresTerm={contentProps.featuresTerm}
-				portfolioTerm={portfolioTerm}
-				currentSelection={currentSelection}
-				onOptionPicked={onSourceOptionPicked}
-				publishForecast={publishForecastToSource}
-				onPublishForecastChange={onPublishForecastChange}
-				optionList={sourceOptionsOf(tab.source.key)}
-			/>
-		);
-	}
-
-	// A tab that neither saves a selection nor reads one from the work tracking system has no body
-	// registered here. Showing nothing keeps a tab added later from taking the whole form down.
-	const Content = selectionTabContent[tab.key];
-	return Content === undefined ? null : (
-		<Content
-			{...contentProps}
-			listIsLoading={body.kind === FEATURE_LIST_LOADING}
-		/>
-	);
-};
-
-const SelectionTabButton: React.FC<
-	Readonly<{
-		tab: DeliverySelectionTab;
-		activeTabKey: string | null;
-		verdict: PremiumVerdict;
-		awaitingBoundTab: boolean;
-		onSelect: (tab: DeliverySelectionTab) => void;
-	}>
-> = ({ tab, activeTabKey, verdict, awaitingBoundTab, onSelect }) => {
-	const gate = tab.premiumGate;
-	const isLocked = selectionTabIsLocked(tab, verdict, awaitingBoundTab);
-	const isSelected = activeTabKey === tab.key;
-	const button = (
-		<Button
-			variant={isSelected ? "contained" : "outlined"}
-			onClick={() => onSelect(tab)}
-			disabled={isLocked}
-			aria-pressed={isSelected}
-		>
-			{tab.label}
-		</Button>
-	);
-
-	// Until the licence answers there is nothing true to say about it, so no tooltip says anything.
-	if (gate?.tooltipExtraInfo === undefined || verdict === "unknown") {
-		return button;
-	}
-
-	return (
-		<LicenseTooltip
-			canUseFeature={verdict === "premium"}
-			defaultTooltip=""
-			premiumExtraInfo={gate.tooltipExtraInfo}
-		>
-			<span>{button}</span>
-		</LicenseTooltip>
-	);
-};
-
-const BusySelectionTab: React.FC = () => (
-	<Button disabled aria-busy="true">
-		<CircularProgress size={20} sx={{ mr: 1 }} />
-		Loading…
-	</Button>
-);
-
-const SelectionTabRow: React.FC<
-	Readonly<{
-		tabs: DeliverySelectionTab[];
-		activeTabKey: string | null;
-		verdict: PremiumVerdict;
-		awaitingBoundTab: boolean;
-		sourcesStatus: SourcesStatus;
-		portfolioTerm: string;
-		onSelect: (tab: DeliverySelectionTab) => void;
-	}>
-> = ({
-	tabs,
-	activeTabKey,
-	verdict,
-	awaitingBoundTab,
-	sourcesStatus,
-	portfolioTerm,
-	onSelect,
-}) => (
-	<Box sx={{ mb: 2 }}>
-		<Typography variant="subtitle2" sx={{ mb: 1 }}>
-			Selection Mode
-		</Typography>
-		<ButtonGroup size="small" aria-label="Selection Mode">
-			{tabs.map((tab) => (
-				<SelectionTabButton
-					key={tab.key}
-					tab={tab}
-					activeTabKey={activeTabKey}
-					verdict={verdict}
-					awaitingBoundTab={awaitingBoundTab}
-					onSelect={onSelect}
-				/>
-			))}
-			{sourcesStatus === "loading" && <BusySelectionTab />}
-		</ButtonGroup>
-		{sourcesStatus === "error" && (
-			<RetryByReopeningNotice
-				problem={`Couldn't check what this ${portfolioTerm}'s connection offers.`}
-				sx={{ mt: 1 }}
-			/>
-		)}
-	</Box>
-);
-
-/**
- * A date the work tracking system holds, in the form the date field wants. Read in UTC, because that
- * is the day the tracker holds and the day that gets stored. Read as this browser's day instead, a
- * reader west of UTC would be shown the day before the one their board says, and the field would
- * quietly disagree with the record.
- */
-const dateInputValue = (date: Date): string => {
-	const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
-	const day = `${date.getUTCDate()}`.padStart(2, "0");
-
-	return `${date.getUTCFullYear()}-${month}-${day}`;
-};
-
-/**
- * A delivery that follows a source is released from it by an action of its own, never by wandering
- * onto another tab: a save made that way has everything typed alongside it discarded by the server,
- * so the edit would vanish without a word. Offering only the tab it is bound to closes that road.
- */
-const offeredTabs = (
-	tabs: DeliverySelectionTab[],
-	editingDelivery: IDelivery | null | undefined,
-): DeliverySelectionTab[] => {
-	if (!editingDelivery) {
-		return tabs;
-	}
-
-	const claimed = deliveryTabForDelivery(editingDelivery, tabs);
-	return claimed.source ? [claimed] : tabs;
-};
-
-/**
- * The entry a delivery being edited already follows, when the tab on screen is the one offering it.
- * The picker is told separately because the offered list hides entries whose Release has shipped or
- * been archived, and a binding to one of those has to survive that.
- */
-const boundSourceSelection = (
-	delivery: IDelivery | null | undefined,
-	tab: DeliverySelectionTab,
-): DeliverySourceCurrentSelection | null => {
-	if (!delivery?.sourceReference) {
-		return null;
-	}
-
-	if (delivery.sourceKey !== tab.source?.key) {
-		return null;
-	}
-
-	return {
-		id: delivery.sourceReference,
-		name: delivery.name,
-		date: new Date(delivery.date),
-	};
-};
-
-const isValidFutureDate = (date: string): boolean => {
-	if (!date) {
-		return false;
-	}
-
-	const selectedDate = new Date(date);
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	selectedDate.setHours(0, 0, 0, 0);
-
-	return selectedDate > today;
-};
-
-const nameErrorOf = (name: string, deliveryTerm: string): string | undefined =>
-	name.trim() ? undefined : `${deliveryTerm} name is required`;
-
-const dateErrorOf = (
-	date: string,
-	deliveryTerm: string,
-): string | undefined => {
-	if (!date) {
-		return `${deliveryTerm} date is required`;
-	}
-	if (!isValidFutureDate(date)) {
-		return `${deliveryTerm} date must be in the future`;
-	}
-	return undefined;
-};
-
-interface ValidationOptions {
-	name: string;
-	date: string;
-	tab: DeliverySelectionTab;
-	state: DeliverySelectionState;
-	terms: DeliverySelectionTerms;
-	deliveryTerm: string;
-}
-
-const getFirstBlockingError = ({
-	name,
-	date,
-	tab,
-	state,
-	terms,
-	deliveryTerm,
-}: ValidationOptions): string | null => {
-	const tabError = tab.firstBlockingError(state, terms);
-
-	// A tab that fills the name and the date in itself owns them, so it speaks first. Asking someone
-	// to fill in a field they cannot type into names a fix that does not exist, and saying nothing
-	// would be kinder than that.
-	if (tab.source !== undefined) {
-		return tabError;
-	}
-
-	return (
-		nameErrorOf(name, deliveryTerm) ??
-		dateErrorOf(date, deliveryTerm) ??
-		tabError
-	);
-};
 
 export const DeliveryCreateModal: React.FC<DeliveryCreateModalProps> = ({
 	open,
