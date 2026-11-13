@@ -632,7 +632,7 @@ describe("DataOverviewTable", () => {
 			expect(demoDataLink).toBeInTheDocument();
 			expect(demoDataLink.closest("a")).toHaveAttribute(
 				"href",
-				"/settings?tab=demodata",
+				"/settings/system/demo-data",
 			);
 
 			// Check that the documentation link is also present

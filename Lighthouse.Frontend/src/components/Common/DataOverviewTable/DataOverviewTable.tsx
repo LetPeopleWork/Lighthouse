@@ -21,6 +21,7 @@ import { useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { IPortfolio } from "../../../models/Portfolio/Portfolio";
+import { settingsTabPath } from "../../../models/Settings/settingsAreas";
 import { TERMINOLOGY_KEYS } from "../../../models/TerminologyKeys";
 import { useTerminology } from "../../../services/TerminologyContext";
 import { reportFailedNavigation } from "../../../utils/navigation";
@@ -351,7 +352,7 @@ const DataOverviewTable: React.FC<DataOverviewTableProps<IFeatureOwner>> = ({
 							No {title} found.{" "}
 							<MuiLink
 								component={Link}
-								to="/settings?tab=demodata"
+								to={settingsTabPath("system", "demo-data")}
 								style={{
 									color: theme.palette.primary.main,
 									textDecoration: "none",

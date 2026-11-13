@@ -1,12 +1,6 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import {
-	MemoryRouter,
-	Route,
-	Routes,
-	useParams,
-	useSearchParams,
-} from "react-router";
+import { MemoryRouter, Route, Routes, useParams } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiServiceContext } from "../../../services/Api/ApiServiceContext";
 import type {
@@ -183,7 +177,7 @@ const renderIconWithProblems = (
 				{/* Somewhere for the link to the full log to actually arrive, so "it offers a way there" and
 				    "it goes to the log viewer" are different claims. */}
 				<Routes>
-					<Route path="/settings" element={<LogViewerPage />} />
+					<Route path="/settings/system/:tab" element={<LogViewerPage />} />
 				</Routes>
 			</ApiServiceContext.Provider>
 		</MemoryRouter>,
@@ -193,9 +187,9 @@ const renderIconWithProblems = (
 };
 
 const LogViewerPage = () => {
-	const [searchParams] = useSearchParams();
+	const { tab } = useParams();
 
-	return <div data-testid="log-viewer-page">{searchParams.get("tab")}</div>;
+	return <div data-testid="log-viewer-page">{tab}</div>;
 };
 
 const EditConnectionPage = () => {

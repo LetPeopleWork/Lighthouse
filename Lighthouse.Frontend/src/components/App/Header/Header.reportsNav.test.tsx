@@ -64,7 +64,7 @@ const theNavigationLabels = () =>
 		.map((link) => link.textContent);
 
 describe("Header — the way in to every report", () => {
-	it("Reports sits between Features and System Settings", async () => {
+	it("Reports sits after Features", async () => {
 		renderTheHeader();
 
 		await waitFor(() =>
@@ -72,7 +72,6 @@ describe("Header — the way in to every report", () => {
 				"Overview",
 				"Features",
 				"Reports",
-				"System Settings",
 			]),
 		);
 	});

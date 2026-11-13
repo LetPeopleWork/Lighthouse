@@ -24,6 +24,7 @@ import { UsageDataAsk } from "./components/UsageData/UsageDataAsk";
 import { useAuthGuard } from "./hooks/useAuthGuard";
 import { UsageDataConsentProvider } from "./hooks/useUsageDataConsent";
 import { reportPrintRoutes } from "./pages/Common/Reports/print/reportPrintRoutes";
+import { settingsRoutes } from "./pages/Settings/settingsRoutes";
 import "./App.css";
 import SurveyNudge from "./components/SurveyNudge/SurveyNudge";
 import {
@@ -39,7 +40,6 @@ import { hasTauriBackendUrl, isTauriEnv } from "./utils/tauri";
 const OverviewDashboard = lazy(
 	() => import("./pages/Overview/OverviewDashboard"),
 );
-const Settings = lazy(() => import("./pages/Settings/Settings"));
 const OAuthPopupComplete = lazy(
 	() => import("./components/Common/Connections/OAuthPopupComplete"),
 );
@@ -280,7 +280,7 @@ const App: React.FC = () => {
 									</Route>
 									<Route path="/features" element={<FeaturesView />} />
 									<Route path="/reports" element={<ReportsPage />} />
-									<Route path="/settings" element={<Settings />} />
+									{settingsRoutes()}
 								</Route>
 								{reportPrintRoutes()}
 							</Routes>

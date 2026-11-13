@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 
 /**
- * Page Object Model for the System Settings → Access (System Admins) tab.
+ * Page Object Model for the Settings → Access → System-wide access tab.
  *
  * Wraps interactions with the RBAC administration UI surface, including:
  * - Bootstrap banner and self-bootstrap action
@@ -24,10 +24,9 @@ export class RbacSettingsPage {
 	// -------------------------------------------------------------------------
 
 	async goToAccessTab(): Promise<void> {
-		// Click the "System Admins" tab to switch into the RBAC settings view.
-		// We click rather than navigate via URL because client-side routing on the
-		// same /settings pathname can be a no-op for page.goto.
-		await this.page.getByRole("tab", { name: "System Admins" }).click();
+		await this.page.getByTestId("settings-menu").click();
+		await this.page.getByTestId("settings-area-access").click();
+		await this.page.getByTestId("rbac-tab").click();
 		await this.rbacStatusIndicator.waitFor({ state: "visible" });
 	}
 

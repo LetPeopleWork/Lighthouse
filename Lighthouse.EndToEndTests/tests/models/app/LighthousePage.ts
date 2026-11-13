@@ -91,7 +91,8 @@ export class LighthousePage {
 	}
 
 	async goToSettings(): Promise<SettingsPage> {
-		await this.page.getByRole("link", { name: "Settings" }).click();
+		await this.page.getByTestId("settings-menu").click();
+		await this.page.getByRole("menuitem").first().click();
 		return new SettingsPage(this.page);
 	}
 

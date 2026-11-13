@@ -3,6 +3,7 @@ import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import { useNavigate } from "react-router";
+import { settingsTabPath } from "../../../../models/Settings/settingsAreas";
 import type { IRecentProblem } from "../../../../services/Api/LogService";
 import LocalDateTimeDisplay from "../../../Common/LocalDateTimeDisplay/LocalDateTimeDisplay";
 import SectionHeading from "./SectionHeading";
@@ -11,7 +12,7 @@ import SectionHeading from "./SectionHeading";
  * Where the rest of it still lives. Being shown the last few problems with no way on to the full log
  * is a dead end.
  */
-const THE_FULL_LOG = "/settings?tab=system-info";
+const THE_FULL_LOG = settingsTabPath("system", "system-info");
 
 /**
  * A misconfigured connector does not go wrong once - it goes wrong on every refresh, and the instance

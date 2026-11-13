@@ -25,6 +25,7 @@ import LighthouseLogo from "../LetPeopleWork/LighthouseLogo";
 import ExternalLinkButton from "./ExternalLinkButton";
 import FeedbackDialog from "./FeedbackDialog";
 import NavigationItem from "./NavigationItem";
+import { SettingsDrawerGroup, SettingsMenu } from "./SettingsMenu";
 import TaskManagerIcon from "./TaskManagerIcon";
 import UpdateAllButton from "./UpdateAllButton";
 
@@ -63,7 +64,6 @@ const Header: React.FC<HeaderProps> = ({
 		// The instance's own word for its Features, never a hard-coded "Features".
 		{ path: "/features", text: getTerm(TERMINOLOGY_KEYS.FEATURES) },
 		{ path: "/reports", text: "Reports" },
-		{ path: "/settings", text: "System Settings" },
 	];
 
 	const drawer = (
@@ -73,6 +73,11 @@ const Header: React.FC<HeaderProps> = ({
 					<NavigationItem path={link.path} text={link.text} />
 				</ListItem>
 			))}
+			<ListItem>
+				<Box>
+					<SettingsDrawerGroup onNavigate={() => setMobileOpen(false)} />
+				</Box>
+			</ListItem>
 			<ListItem>
 				<ThemeToggler />
 			</ListItem>
@@ -156,6 +161,7 @@ const Header: React.FC<HeaderProps> = ({
 									text={link.text}
 								/>
 							))}
+							<SettingsMenu />
 						</Box>
 						<Box sx={{ display: "flex", alignItems: "center" }}>
 							{rbac.isSystemAdmin && <UpdateAllButton />}

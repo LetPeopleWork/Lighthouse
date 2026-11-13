@@ -33,6 +33,7 @@ import { useRbac } from "../../hooks/useRbac";
 import type { IFeatureOwner } from "../../models/IFeatureOwner";
 import type { Portfolio } from "../../models/Portfolio/Portfolio";
 import type { IReportOwner } from "../../models/Reports/Report";
+import { settingsTabPath } from "../../models/Settings/settingsAreas";
 import type { Team } from "../../models/Team/Team";
 import { TERMINOLOGY_KEYS } from "../../models/TerminologyKeys";
 import type { IWorkTrackingSystemConnection } from "../../models/WorkTracking/WorkTrackingSystemConnection";
@@ -623,7 +624,7 @@ const OverviewDashboard: React.FC = () => {
 											No {connectionTerm} found.{" "}
 											<MuiLink
 												component={Link}
-												to="/settings?tab=demodata"
+												to={settingsTabPath("system", "demo-data")}
 												style={{
 													color: theme.palette.primary.main,
 													textDecoration: "none",

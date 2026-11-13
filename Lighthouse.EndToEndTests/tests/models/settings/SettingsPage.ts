@@ -7,6 +7,8 @@ import { EncryptionSettingsPage } from "./Encryption/EncryptionSettingsPage";
 import { SystemInfoPage } from "./SystemInfo/SystemInfoPage";
 import { SystemConfigurationPage } from "./SystemSettings/SystemConfigurationPage";
 
+type SettingsArea = "organization" | "access" | "system";
+
 export class SettingsPage {
 	page: Page;
 
@@ -14,32 +16,39 @@ export class SettingsPage {
 		this.page = page;
 	}
 
+	/** Opens an area from the header menu, then one of its tabs by test id. */
+	private async openTab(area: SettingsArea, tabTestId: string): Promise<void> {
+		await this.page.getByTestId("settings-menu").click();
+		await this.page.getByTestId(`settings-area-${area}`).click();
+		await this.page.getByTestId(tabTestId).click();
+	}
+
 	async goToDemoData(): Promise<DemoDataPage> {
-		await this.page.getByTestId("demo-data-tab").click();
+		await this.openTab("system", "demo-data-tab");
 
 		return new DemoDataPage(this.page);
 	}
 
 	async goToSystemConfiguration(): Promise<SystemConfigurationPage> {
-		await this.page.getByTestId("configuration-tab").click();
+		await this.openTab("organization", "configuration-tab");
 
 		return new SystemConfigurationPage(this.page);
 	}
 
 	async goToSystemInfo(): Promise<SystemInfoPage> {
-		await this.page.getByTestId("system-info-tab").click();
+		await this.openTab("system", "system-info-tab");
 
 		return new SystemInfoPage(this.page);
 	}
 
 	async goToDatabaseManagement(): Promise<DatabaseManagementPage> {
-		await this.page.getByTestId("database-tab").click();
+		await this.openTab("system", "database-tab");
 
 		return new DatabaseManagementPage(this.page);
 	}
 
 	async goToEncryption(): Promise<EncryptionSettingsPage> {
-		await this.page.getByTestId("encryption-tab").click();
+		await this.openTab("system", "encryption-tab");
 
 		const encryptionPage = new EncryptionSettingsPage(this.page);
 		await encryptionPage.keyRing.waitFor();
@@ -48,13 +57,13 @@ export class SettingsPage {
 	}
 
 	async goToApiKeys(): Promise<ApiKeysSettingsPage> {
-		await this.page.getByTestId("api-keys-tab").click();
+		await this.openTab("access", "api-keys-tab");
 
 		return new ApiKeysSettingsPage(this.page);
 	}
 
 	async goToRbacSettings(): Promise<RbacSettingsPage> {
-		await this.page.getByTestId("rbac-tab").click();
+		await this.openTab("access", "rbac-tab");
 
 		return new RbacSettingsPage(this.page);
 	}

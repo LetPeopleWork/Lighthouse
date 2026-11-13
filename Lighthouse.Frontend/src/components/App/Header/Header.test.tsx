@@ -132,7 +132,9 @@ describe("Header component", () => {
 		renderHeader();
 
 		expect(screen.getByText("Overview")).toBeInTheDocument();
-		expect(screen.getByText("System Settings")).toBeInTheDocument();
+		expect(
+			screen.getByRole("button", { name: "Settings" }),
+		).toBeInTheDocument();
 	});
 
 	it("should render external link buttons and feedback button with correct behavior", async () => {

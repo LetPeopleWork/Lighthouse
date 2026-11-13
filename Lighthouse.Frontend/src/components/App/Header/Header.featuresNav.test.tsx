@@ -23,7 +23,7 @@ vi.mock("../../../hooks/useUpdateAll", () => ({
 	}),
 }));
 
-// A third way in, between Overview and System Settings, wearing whatever this instance calls its Features.
+// A third way in, before the Settings menu, wearing whatever this instance calls its Features.
 const renderHeaderWhereFeaturesAreCalled = (featuresTerm: string) => {
 	const terminology: ITerminology[] = [
 		{
@@ -62,7 +62,7 @@ const renderHeaderWhereFeaturesAreCalled = (featuresTerm: string) => {
 };
 
 describe("Header — the way in to the Features view", () => {
-	it("offers a third way in beside Overview and System Settings", async () => {
+	it("offers a third way in beside Overview and Reports", async () => {
 		renderHeaderWhereFeaturesAreCalled("Features");
 
 		await waitFor(() => {
@@ -85,12 +85,7 @@ describe("Header — the way in to the Features view", () => {
 			.getAllByRole("link")
 			.map((link) => link.textContent);
 
-		expect(navigationLabels).toEqual([
-			"Overview",
-			"Features",
-			"Reports",
-			"System Settings",
-		]);
+		expect(navigationLabels).toEqual(["Overview", "Features", "Reports"]);
 	});
 
 	it("leads to the Features view", async () => {
