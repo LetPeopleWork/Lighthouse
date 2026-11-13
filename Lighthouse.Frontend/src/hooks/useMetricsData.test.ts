@@ -13,15 +13,13 @@ import { RunChartData } from "../models/Metrics/RunChartData";
 import type { IPercentileValue } from "../models/PercentileValue";
 import type { IPerStatePercentileValues } from "../models/PerStatePercentileValues";
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
-import {
-	getFetchKeysForCategories,
-	type MetricsFetchKey,
-} from "../pages/Common/MetricsView/categoryMetadata";
+import { getFetchKeysForCategories } from "../pages/Common/MetricsView/categoryMetadata";
 import type {
 	IProjectMetricsService,
 	ITeamMetricsService,
 } from "../services/Api/MetricsService";
 import { createMockApiServiceContext } from "../tests/MockApiServiceProvider";
+import type { MetricsFetchKey } from "./metricsFetchKeys";
 import { useMetricsData } from "./useMetricsData";
 
 const mockBlackoutPeriodService = {

@@ -7,7 +7,7 @@ import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { addDays } from "date-fns";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { MetricsOwnerRequest } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerRequest } from "../../../hooks/metricsOwnerKey";
 import { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";

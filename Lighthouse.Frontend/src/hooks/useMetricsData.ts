@@ -1,5 +1,4 @@
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { useContext, useEffect, useMemo, useRef, useState } from "react";
+import { useContext, useEffect, useMemo, useState } from "react";
 import type { IBlackoutPeriod } from "../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../models/BlockedCountSnapshot";
 import type { IFeature } from "../models/Feature";
@@ -27,14 +26,10 @@ import type { IPerStatePercentileValues } from "../models/PerStatePercentileValu
 import type { IPortfolio } from "../models/Portfolio/Portfolio";
 import { TERMINOLOGY_KEYS } from "../models/TerminologyKeys";
 import type { IWorkItem } from "../models/WorkItem";
-import {
-	getMetricsFetchKeys,
-	type MetricsFetchKey,
-} from "../pages/Common/MetricsView/categoryMetadata";
+import { getMetricsFetchKeys } from "../pages/Common/MetricsView/categoryMetadata";
 import {
 	type FetchKeyStates,
 	fetchKeyStateOf,
-	type QueryProgress,
 } from "../pages/Common/MetricsView/widgetStatus";
 import { ApiServiceContext } from "../services/Api/ApiServiceContext";
 import type {
@@ -44,7 +39,26 @@ import type {
 	ITeamMetricsService,
 } from "../services/Api/MetricsService";
 import { useTerminology } from "../services/TerminologyContext";
-import { formatLocalDate, parseLocalDate } from "../utils/date/localDate";
+import { formatLocalDate } from "../utils/date/localDate";
+import {
+	applicabilityFor,
+	isTeamOwnedMetricsService,
+	narrowsAChartAlreadyDrawn,
+} from "./metricsApplicability";
+import type { MetricsFetchKey } from "./metricsFetchKeys";
+import {
+	type AsOfRequest,
+	type MetricsOwnerRequest,
+	metricsOwnerKeyOf,
+	type OwnerType,
+	type WindowRequest,
+} from "./metricsOwnerKey";
+import {
+	dayOf,
+	listOf,
+	type QueryProgress,
+	useMetricsQuery,
+} from "./useMetricsQuery";
 
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -56,19 +70,6 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const allMetricsFetchKeys: ReadonlySet<MetricsFetchKey> = new Set(
 	getMetricsFetchKeys(),
 );
-
-/**
- * Every metrics request is asked fresh for the window on screen and forgotten once nothing shows
- * it: a dashboard answer is only true for the moment it was asked, so caching it, retrying it or
- * refetching it behind the reader's back would show numbers the reader did not ask for.
- */
-export const metricsQueryOptions = {
-	staleTime: 0,
-	gcTime: 0,
-	retry: false,
-	refetchOnWindowFocus: false,
-	refetchOnReconnect: false,
-} as const;
 
 export interface MetricsData<T> {
 	blackoutPeriods: IBlackoutPeriod[];
@@ -126,218 +127,16 @@ export interface MetricsData<T> {
 	setThroughputPbcView: (view: "raw" | "filtered") => void;
 }
 
-// Feature sizes alone do not make a Portfolio: a Team has them too. The Feature Size process
-// behaviour chart and the size estimate are configured on a Portfolio only, so a Team is never
-// treated as one, even when its service happens to carry those methods.
-function isProjectMetricsService(
-	service: object,
-): service is IProjectMetricsService {
-	return (
-		providesFeatureSize(service) &&
-		"getFeatureSizePbc" in service &&
-		"getFeatureSizeEstimation" in service &&
-		!isTeamOwnedMetricsService(service)
-	);
-}
-
-// Teams and Portfolios both have Feature sizes; a Team counts only its own Work Items in each.
-function providesFeatureSize(
-	service: object,
-): service is IFeatureSizeMetricsService {
-	return (
-		"getAllFeaturesForSizeChart" in service &&
-		"getSizePercentiles" in service &&
-		"getFeatureSizePercentilesInfo" in service
-	);
-}
-
-function isTeamMetricsService(service: object): service is ITeamMetricsService {
-	return "getFeaturesWorkedOnInfo" in service;
-}
-
-// The risk is a team question — a feature can sit in several portfolios, each with its own target —
-// so only the team service answers it, and its presence is what says which kind of service this is.
-function providesSleRisk(service: object): service is ITeamMetricsService {
-	return "getSleRisk" in service;
-}
-
-// Owner type is discriminated exactly as BaseMetricsView does it, on `getFeaturesInProgress`.
-// Deliberately NOT isTeamMetricsService: that predicate keys off getFeaturesWorkedOnInfo, which
-// portfolio-shaped services also expose, so it answers "does this service report features worked
-// on", not "is this a team".
-function isTeamOwnedMetricsService(service: object): boolean {
-	return "getFeaturesInProgress" in service;
-}
-
-// Whether this owner has the question at all. A key that does not apply is never asked, and is
-// never waited for either. Every key is listed, so a new one does not build until someone says
-// which owners can ask it.
-function applicabilityFor(
-	service: object,
-	choices: CumulativeStateTimeChoicesMade,
-): Record<MetricsFetchKey, boolean> {
-	const isPortfolioShaped = isProjectMetricsService(service);
-	const hasFeatureSizes = providesFeatureSize(service);
-	return {
-		blackoutPeriods: true,
-		predictability: true,
-		totalWorkItemAge: true,
-		throughput: true,
-		inProgressItems: true,
-		blockedItems: true,
-		wipOverTime: true,
-		cycleTimeData: true,
-		cycleTimePercentiles: true,
-		workItemAgePercentiles: true,
-		ageInStatePercentiles: true,
-		cumulativeStateTime: true,
-		flowEfficiency: true,
-		estimationVsCycleTime: true,
-		arrivals: true,
-		throughputInfo: true,
-		arrivalsInfo: true,
-		wipOverviewInfo: true,
-		totalWorkItemAgeInfo: true,
-		predictabilityScoreInfo: true,
-		cycleTimePercentilesInfo: true,
-		blockedCountHistory: true,
-		pbcCore: true,
-		pbcCharts: true,
-		throughputPbc: true,
-		sleRisk: providesSleRisk(service),
-		featureSizeData: hasFeatureSizes,
-		featureSizePbc: isPortfolioShaped,
-		featureSizeEstimation: isPortfolioShaped,
-		featureSizePercentilesInfo: hasFeatureSizes,
-		featuresWorkedOnInfo: isTeamMetricsService(service),
-		cumulativeStateTimeSelection: choices.selection,
-		cumulativeStateTimeScope: choices.scope,
-	};
-}
-
-// Narrowing Cumulative Time per State counts again a chart its totals have already drawn, so only
-// the totals say whether there is a chart on screen. Its controls then stay put while the narrowed
-// count is on its way.
-const narrowsAChartAlreadyDrawn: ReadonlySet<string> = new Set<MetricsFetchKey>(
-	["cumulativeStateTimeSelection", "cumulativeStateTimeScope"],
-);
-
 /** How the reader narrowed Cumulative Time per State: to some Work Items, or to one stretch. */
 export type CumulativeStateTimeChoices = {
 	readonly itemIds: readonly number[];
 	readonly scopeDefinitionId: number | null;
 };
 
-type CumulativeStateTimeChoicesMade = {
-	readonly selection: boolean;
-	readonly scope: boolean;
-};
-
 const noCumulativeStateTimeChoices: CumulativeStateTimeChoices = {
 	itemIds: [],
 	scopeDefinitionId: null,
 };
-
-type OwnerType = "team" | "portfolio";
-
-/** Whose metrics a request asks for, as every metrics request key names it. */
-export type MetricsOwnerKey = {
-	readonly ownerId: number;
-	readonly ownerUpdatedAt: number;
-};
-
-// An update recomputes the owner's metrics, so its moment is in the key: an open dashboard asks
-// again once the update is done rather than keeping the answer from before it.
-export function metricsOwnerKeyOf(
-	owner: Pick<IFeatureOwner, "id" | "lastUpdated">,
-): MetricsOwnerKey {
-	return {
-		ownerId: owner.id,
-		ownerUpdatedAt: new Date(owner.lastUpdated).getTime(),
-	};
-}
-
-/** Whose metrics a request asks for, and whether that owner is a team or a portfolio. */
-export type MetricsOwnerRequest = MetricsOwnerKey & {
-	readonly ownerType: OwnerType;
-};
-type AsOfRequest = MetricsOwnerRequest & { readonly asOf: string };
-type WindowRequest = MetricsOwnerRequest & {
-	readonly from: string;
-	readonly to: string;
-};
-
-function dayOf(localDay: string): Date {
-	const day = parseLocalDate(localDay);
-	if (day === null) {
-		throw new TypeError(`${localDay} is not a calendar day.`);
-	}
-	return day;
-}
-
-type MetricsQuery<V> = {
-	readonly progress: QueryProgress;
-	/** The answer for the selected window or, while it has none, the previous window's answer. */
-	readonly answer: V | null;
-};
-
-// The key holds everything the request sends, so an answer for a window the reader has already
-// left lands under that window's key and is never read.
-function useMetricsQuery<R extends MetricsOwnerRequest, V>(
-	fetchName: string,
-	request: R,
-	ask: (request: R) => Promise<V | undefined> | V | undefined,
-	enabled: boolean,
-	failureMessage?: string,
-): MetricsQuery<V> {
-	const query = useQuery({
-		...metricsQueryOptions,
-		queryKey: ["metrics", fetchName, request] as const,
-		queryFn: async ({ queryKey }) => {
-			try {
-				// An empty answer is an answer: undefined would read as still on its way.
-				return (await ask(queryKey[2])) ?? null;
-			} catch (error) {
-				if (failureMessage) console.error(failureMessage, error);
-				throw error;
-			}
-		},
-		enabled,
-		placeholderData: keepPreviousData,
-	});
-
-	// A failure keeps the answer the chart last drew for this owner, so the chart stays mounted out of
-	// sight behind the could-not-load note and comes back with whatever the reader set inside it.
-	const lastDrawn = useRef<LastDrawn<typeof query.data>>(undefined);
-	const owner = ownerOf(request);
-	if (query.isSuccess && !query.isPlaceholderData) {
-		lastDrawn.current = { owner, answer: query.data };
-	}
-	const data =
-		query.isError && lastDrawn.current?.owner === owner
-			? lastDrawn.current.answer
-			: query.data;
-
-	return {
-		progress: {
-			isPending: query.isPending,
-			isError: query.isError,
-			isPlaceholderData: query.isPlaceholderData,
-			data,
-		},
-		answer: data ?? null,
-	};
-}
-
-type LastDrawn<V> = { readonly owner: string; readonly answer: V } | undefined;
-
-function ownerOf(request: MetricsOwnerRequest): string {
-	return `${request.ownerType}:${request.ownerId}`;
-}
-
-function listOf<V>(query: MetricsQuery<V[]>): V[] {
-	return query.answer ?? [];
-}
 
 export function useMetricsData<
 	T extends IWorkItem | IFeature,

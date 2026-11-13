@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import { LineChart } from "@mui/x-charts";
 import type React from "react";
-import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerKey } from "../../../hooks/metricsOwnerKey";
 import type { IFeature } from "../../../models/Feature";
 import type {
 	ProcessBehaviorMetricType,

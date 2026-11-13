@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
-import {
-	type MetricsOwnerKey,
-	metricsQueryOptions,
-} from "../../../hooks/useMetricsData";
+import type { MetricsOwnerKey } from "../../../hooks/metricsOwnerKey";
+import { metricsQueryOptions } from "../../../hooks/useMetricsQuery";
 import type { IFeature } from "../../../models/Feature";
 import type { ICumulativeStateTimeCandidateRow } from "../../../models/Metrics/CumulativeStateTimeCandidates";
 import type { IWorkItem } from "../../../models/WorkItem";

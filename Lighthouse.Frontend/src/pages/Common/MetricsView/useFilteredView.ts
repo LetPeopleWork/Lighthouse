@@ -1,8 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import {
-	type MetricsOwnerRequest,
-	metricsQueryOptions,
-} from "../../../hooks/useMetricsData";
+import type { MetricsOwnerRequest } from "../../../hooks/metricsOwnerKey";
+import { metricsQueryOptions } from "../../../hooks/useMetricsQuery";
 import { formatLocalDate } from "../../../utils/date/localDate";
 import { fetchKeyStateOf, type WidgetStatus } from "./widgetStatus";
 

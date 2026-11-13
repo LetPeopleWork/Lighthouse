@@ -2,7 +2,7 @@ import { Box, Card, CardContent, Typography } from "@mui/material";
 import { useState } from "react";
 import PredictabilityScore from "../../../components/Common/Charts/PredictabilityScore";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
-import type { MetricsOwnerRequest } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerRequest } from "../../../hooks/metricsOwnerKey";
 import type { IForecastPredictabilityScore } from "../../../models/Forecasts/ForecastPredictabilityScore";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";

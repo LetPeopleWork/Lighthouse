@@ -11,7 +11,7 @@ import {
 import { LineChart } from "@mui/x-charts";
 import type React from "react";
 import { ForecastLevel } from "../../../components/Common/Forecasts/ForecastLevel";
-import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerKey } from "../../../hooks/metricsOwnerKey";
 import type { IFeature } from "../../../models/Feature";
 import type {
 	PercentilesOverTimeSnapshot,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerKey } from "../../../hooks/metricsOwnerKey";
 import type { IFeature } from "../../../models/Feature";
 import type {
 	PercentilesOverTimeSnapshot,

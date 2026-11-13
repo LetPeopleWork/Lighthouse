@@ -25,7 +25,7 @@ import type { WorkItemsDialogOwnerKind } from "../../../components/Common/WorkIt
 import {
 	type MetricsOwnerRequest,
 	metricsOwnerKeyOf,
-} from "../../../hooks/useMetricsData";
+} from "../../../hooks/metricsOwnerKey";
 import type { IBlackoutPeriod } from "../../../models/BlackoutPeriod";
 import type { BlockedCountSnapshot } from "../../../models/BlockedCountSnapshot";
 import type { IStateMapping } from "../../../models/Common/StateMapping";

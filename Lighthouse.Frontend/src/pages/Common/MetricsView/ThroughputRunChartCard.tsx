@@ -2,7 +2,7 @@ import { Box } from "@mui/material";
 import { useState } from "react";
 import BarRunChart from "../../../components/Common/Charts/BarRunChart";
 import ThroughputChartFilterToggle from "../../../components/Common/Charts/ThroughputChart/ThroughputChartFilterToggle";
-import type { MetricsOwnerRequest } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerRequest } from "../../../hooks/metricsOwnerKey";
 import type { RunChartData } from "../../../models/Metrics/RunChartData";
 import type { IWorkItem } from "../../../models/WorkItem";
 import type { IMetricsService } from "../../../services/Api/MetricsService";

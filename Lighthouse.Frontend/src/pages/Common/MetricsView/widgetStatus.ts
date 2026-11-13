@@ -1,8 +1,7 @@
 import { createContext, useContext, useLayoutEffect } from "react";
-import {
-	getFetchRequirementsForWidget,
-	type MetricsFetchKey,
-} from "./categoryMetadata";
+import type { MetricsFetchKey } from "../../../hooks/metricsFetchKeys";
+import type { QueryProgress } from "../../../hooks/useMetricsQuery";
+import { getFetchRequirementsForWidget } from "./categoryMetadata";
 
 export type WidgetStatus = "loading" | "error" | "ready";
 
@@ -13,17 +12,6 @@ export type FetchKeyState = {
 };
 
 export type FetchKeyStates = Partial<Record<MetricsFetchKey, FetchKeyState>>;
-
-/**
- * What a widget needs to know about one request: is it still on its way, did it fail, and which
- * answer its chart has meanwhile, if any.
- */
-export type QueryProgress = {
-	readonly isPending: boolean;
-	readonly isError: boolean;
-	readonly isPlaceholderData: boolean;
-	readonly data: unknown;
-};
 
 const notAskedFor: FetchKeyState = { status: "ready", hasData: true };
 

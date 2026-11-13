@@ -1,10 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { dialogRowsOf } from "../../../components/Common/WorkItemsDialog/workItemsDialogRows";
-import {
-	metricsOwnerKeyOf,
-	metricsQueryOptions,
-} from "../../../hooks/useMetricsData";
+import { metricsOwnerKeyOf } from "../../../hooks/metricsOwnerKey";
+import { metricsQueryOptions } from "../../../hooks/useMetricsQuery";
 import type { IFeature } from "../../../models/Feature";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
 import type { ICumulativeStateTimeItemRow } from "../../../models/Metrics/CumulativeStateTimeItems";

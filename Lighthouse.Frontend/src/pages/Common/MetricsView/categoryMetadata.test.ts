@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { MetricsFetchKey } from "../../../hooks/metricsFetchKeys";
 import {
 	type CategoryDefinition,
 	type CategoryKey,
@@ -9,7 +10,6 @@ import {
 	getMetricsFetchKeys,
 	getTrendPolicy,
 	getWidgetsForCategory,
-	type MetricsFetchKey,
 } from "./categoryMetadata";
 
 describe("categoryMetadata", () => {

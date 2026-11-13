@@ -1,18 +1,18 @@
 import { renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { MetricsFetchKey } from "../../../hooks/metricsFetchKeys";
+import type { QueryProgress } from "../../../hooks/useMetricsQuery";
 import {
 	type CategoryKey,
 	getFetchRequirementsForWidget,
 	getMetricsFetchKeys,
 	getWidgetsForCategory,
-	type MetricsFetchKey,
 } from "./categoryMetadata";
 import {
 	combineWidgetStatuses,
 	type FetchKeyState,
 	type FetchKeyStates,
 	fetchKeyStateOf,
-	type QueryProgress,
 	useReportWidgetStatus,
 	type WidgetStatus,
 	widgetHasData,

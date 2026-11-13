@@ -1,6 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import type { MetricsOwnerKey } from "../../../hooks/useMetricsData";
+import type { MetricsOwnerKey } from "../../../hooks/metricsOwnerKey";
 import type { IFeature } from "../../../models/Feature";
 import type { ProcessBehaviorSnapshot } from "../../../models/Metrics/ProcessBehaviorSnapshot";
 import type { IWorkItem } from "../../../models/WorkItem";

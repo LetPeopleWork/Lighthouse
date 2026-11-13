@@ -2,11 +2,9 @@ import { Grid } from "@mui/material";
 import { useCallback, useMemo, useState } from "react";
 import type { EvaluatorCondition } from "../../../components/Common/Charts/ThroughputChart/evaluateCondition";
 import WorkItemsDialog from "../../../components/Common/WorkItemsDialog/WorkItemsDialog";
+import { metricsOwnerKeyOf } from "../../../hooks/metricsOwnerKey";
 import { useLicenseRestrictions } from "../../../hooks/useLicenseRestrictions";
-import {
-	metricsOwnerKeyOf,
-	useMetricsData,
-} from "../../../hooks/useMetricsData";
+import { useMetricsData } from "../../../hooks/useMetricsData";
 import type { IStateMapping } from "../../../models/Common/StateMapping";
 import type { IFeature } from "../../../models/Feature";
 import type { IFeatureOwner } from "../../../models/IFeatureOwner";
