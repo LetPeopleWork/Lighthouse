@@ -82,7 +82,8 @@ are reviewed is complete.
 4. **DISTILL** (`nw-distill`), including its mandatory multi-reviewer gate.
 5. **DELIVER** (`nw-deliver`, the nwdes route in CLAUDE.md): feature and slices recorded in nwdes (≤ 5)
    → per slice: oracle approved with its RED observed → craft to GREEN → plain `git commit` with hooks on.
-   No lane unless the run works on several features at once. Stop after the last slice; the
+   No lane unless the run works on several features at once. **When a slice starts** (before its first
+   dispatch), move its Story to Active (`/ado-sync`) and check the state took. Stop after the last slice; the
    whole-candidate review and EXAMINE belong to step 6. **Do not** push outside the push rules below.
    **At the end of every slice** (its GREEN commit is in), before the next slice starts:
    1. **Refactor** the slice's code (L1–L6, `nw-refactor`), scoped to what the slice touched. End it
