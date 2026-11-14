@@ -387,7 +387,7 @@ None.
 P1
 
 ```text
-A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and the tier takes less time than before.
+A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and that the PercentilesOverTime host classes keep only the rows that prove a route.
 ```
 
 #### E2

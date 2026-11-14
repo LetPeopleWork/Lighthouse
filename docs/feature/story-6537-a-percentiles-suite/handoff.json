@@ -170,7 +170,7 @@
 },
 "counters": {
 "E": 3,
-"F": 87,
+"F": 88,
 "P": 3,
 "S": 4
 },
@@ -353,7 +353,7 @@
 "promises": [
 "P1"
 ],
-"text": "F10"
+"text": "F88"
 },
 {
 "id": "E2",
@@ -373,7 +373,6 @@
 },
 "facts": {
 "F1": "Story 6537 (T10), suite 1: the PercentilesOverTime family. Move each rule its host tests prove to the lowest layer that can prove it (a unit test of the computing class, else the service port), or rewrite it there on a smaller input where the host row is slow in its history fill (the maintainer said yes to rewrites on 2026-11-13). Start with the pilot class Slice07WhereTheLimitsActuallyMovedTest. Behaviour-free: no production file changes.",
-"F10": "A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and the tier takes less time than before.",
 "F11": "Every removed PercentilesOverTime host test has a row in the id table naming the lower-layer test that now proves its rule, and breaking that rule's production line in a deliberate probe turns that lower-layer test red, so no rule loses its proof.",
 "F12": "Across the change, no production file differs, the test-host guard lists do not grow, and at least one host test per route remains to prove the wiring end to end.",
 "F13": "Compare the ids of the host class and the unit classes with the expected list",
@@ -443,6 +442,7 @@
 "F85": "Run the unit classes named in the S4 id table and the two former host classes, compare their test ids with the expected list, and check the guard list and production files",
 "F86": "Every expected id is present and passes; an id that no slice of the suite lists is the only kind of extra id; neither class holds a host row and both leave the host-user guard list; no production or budget file changed",
 "F87": "The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests that start no web host, and no rule loses its test; how much time the Integration tier saves is read from CI runs, not observed by this check",
+"F88": "A user running the backend Integration tier sees that each PercentilesOverTime rule is now proven by the lowest-layer test that can prove it (a unit test of the computing class, else a service-port test), and that the PercentilesOverTime host classes keep only the rows that prove a route.",
 "F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
 },
 "product": {
