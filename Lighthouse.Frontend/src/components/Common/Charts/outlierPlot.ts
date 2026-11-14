@@ -79,6 +79,15 @@ export function buildPlotLines({
 	return lines;
 }
 
+/** Every percentile and the SLE of the data shown, whether ticked or not. */
+export const allLineValues = (
+	percentiles: readonly IPercentileValue[],
+	sle: IPercentileValue | null,
+): number[] => [
+	...percentiles.map((p) => p.value),
+	...(sle ? [sle.value] : []),
+];
+
 /**
  * How many lines the axis leaves out, ticked or not, whenever an outlier shapes the axis. The margin
  * is kept for all of them, so ticking one never moves the plot.
@@ -90,11 +99,8 @@ export function reservedMarkerRows(
 	hasOutliers: boolean,
 ): number {
 	if (!hasOutliers) return 0;
-	const values = [
-		...percentiles.map((p) => p.value),
-		...(sle ? [sle.value] : []),
-	];
-	return values.filter((value) => value > axisMax).length;
+	return allLineValues(percentiles, sle).filter((value) => value > axisMax)
+		.length;
 }
 
 const formatClosedDate = (date: Date): string =>

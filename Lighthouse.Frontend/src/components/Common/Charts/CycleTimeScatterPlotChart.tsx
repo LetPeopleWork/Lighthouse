@@ -55,6 +55,7 @@ import LegendChip from "./LegendChip";
 import OffScaleLineMarkers, { MARKER_ROW_HEIGHT } from "./OffScaleLineMarkers";
 import { outlierHeaderChip } from "./outlierHeaderChip";
 import {
+	allLineValues,
 	buildPlotLines,
 	currentNamedPercentiles,
 	type INamedAnswer,
@@ -306,10 +307,10 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		() =>
 			axisTop({
 				typicalValues: analysis.typical.map((item) => item.cycleTime),
-				lineValues: [
-					...effectivePercentiles.map((p) => p.value),
-					...(serviceLevelExpectation ? [serviceLevelExpectation.value] : []),
-				],
+				lineValues: allLineValues(
+					effectivePercentiles,
+					serviceLevelExpectation,
+				),
 				cut: analysis.cut,
 				hasOutliers: analysis.outliers.length > 0,
 			}),
