@@ -1,0 +1,9 @@
+# Slice05ReconstructCycleTimeHistoryTest, local timing, Release, 2026-11-14, quiet machine
+# Summed row seconds from the TRX of each round. before = git archive of c95a6d02f; after = HEAD of suite 1 (after S4).
+before-1: rows=19 summed=25.4s
+before-2: rows=19 summed=24.6s
+before-3: rows=19 summed=24.3s
+after-1: rows=3 summed=7.2s
+after-2: rows=3 summed=7.3s
+after-3: rows=3 summed=7.0s
+median: 24.6 s -> 7.2 s, about -17.4 s (71 %)
