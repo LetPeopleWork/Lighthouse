@@ -66,10 +66,17 @@ export const isValidFutureDate = (date: string): boolean => {
 		return false;
 	}
 
-	const selectedDate = new Date(date);
+	const dayParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+	if (!dayParts) {
+		return false;
+	}
+
+	// The field holds a calendar day. Parsing the string directly reads it as UTC midnight, which
+	// west of UTC is still the evening before, so tomorrow would count as today.
+	const [, year, month, day] = dayParts;
+	const selectedDate = new Date(Number(year), Number(month) - 1, Number(day));
 	const today = new Date();
 	today.setHours(0, 0, 0, 0);
-	selectedDate.setHours(0, 0, 0, 0);
 
 	return selectedDate > today;
 };
