@@ -137,6 +137,28 @@ describe("widgetInfoMetadata", () => {
 		},
 	);
 
+	it("words the scatterplot with the seeded terms and the outlier rule when no owner is given", () => {
+		const description = getWidgetInfo("cycleScatter")?.description;
+
+		expect(description).toContain(
+			"Scatter plot of completed Work Items showing Cycle Time trends and outliers over time.",
+		);
+		expect(description).toBe(
+			getWidgetInfo("cycleScatter", {
+				kind: "portfolio",
+				terms: {
+					feature: "Feature",
+					features: "Features",
+					team: "Team",
+					workItem: "Work Item",
+					workItems: "Work Items",
+					cycleTime: "Cycle Time",
+				},
+			})?.description,
+		);
+		expect(description?.length).toBeGreaterThan(100);
+	});
+
 	it("no two widgets share the same description", () => {
 		const descriptions = Object.values(widgetInfoMetadata).map(
 			(e: WidgetInfoEntry) => e.description,

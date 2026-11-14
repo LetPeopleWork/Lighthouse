@@ -445,15 +445,28 @@ const alwaysWorded: Record<string, (terms: WidgetInfoTerms) => string> = {
 		`Scatter plot of completed ${workItems} showing ${cycleTime} trends and outliers over time. ${outlierRuleSentence({ workItem: workItem ?? "item", workItems, cycleTime })}`,
 };
 
+// What a reader sees when no owner supplies their own terms.
+const seededTerms: WidgetInfoTerms = {
+	feature: "Feature",
+	features: "Features",
+	team: "Team",
+	workItem: "Work Item",
+	workItems: "Work Items",
+	cycleTime: "Cycle Time",
+};
+
 export function getWidgetInfo(
 	widgetKey: string,
 	owner?: WidgetInfoOwner,
 ): WidgetInfoEntry | undefined {
 	const entry = widgetInfoMetadata[widgetKey];
 	const describeAlways = alwaysWorded[widgetKey];
-	if (owner && entry && describeAlways) {
-		const reworded = { ...entry, description: describeAlways(owner.terms) };
-		return owner.kind === "team" && teamWordings[widgetKey]
+	if (entry && describeAlways) {
+		const reworded = {
+			...entry,
+			description: describeAlways(owner?.terms ?? seededTerms),
+		};
+		return owner?.kind === "team" && teamWordings[widgetKey]
 			? { ...reworded, ...teamWordings[widgetKey](owner.terms) }
 			: reworded;
 	}
