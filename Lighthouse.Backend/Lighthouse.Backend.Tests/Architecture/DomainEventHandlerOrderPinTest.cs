@@ -45,6 +45,22 @@ namespace Lighthouse.Backend.Tests.Architecture
             "DemoPercentilesBackfillHandler",
         ];
 
+        private static readonly string[] FeatureOrderingPolicyChangedOrder =
+        [
+            "FeatureOrderingPolicyChangedForecastTriggerHandler",
+        ];
+
+        private static readonly string[] FeatureRankChangedOrder =
+        [
+            "FeatureRankChangedForecastTriggerHandler",
+        ];
+
+        private static readonly string[] TeamDeletedOrder =
+        [
+            "TeamDeletedRefreshLogCleanupHandler",
+            "TeamDeletedForecastRetriggerHandler",
+        ];
+
         private IServiceCollection registrations = null!;
         private ServiceProvider services = null!;
 
@@ -80,6 +96,39 @@ namespace Lighthouse.Backend.Tests.Architecture
             Assert.That(handedOut, Is.EqualTo(PortfolioFeaturesRefreshedOrder),
                 "The handlers of a portfolio refresh no longer come in the order the start-up code registers them today. " +
                 "The metrics cache must be dropped before the three recorders read the metrics, or they record what the previous refresh knew. " +
+                "Put the registrations back in their old order, or, if the new order is intended, change the list in this test in the same commit and say why.");
+        }
+
+        [Test]
+        public void HandlersOfAFeatureOrderingPolicyChange_AreTheForecastTriggerAlone()
+        {
+            var handedOut = HandlersInTheOrderTheContainerHandsThemOut<FeatureOrderingPolicyChanged>();
+
+            Assert.That(handedOut, Is.EqualTo(FeatureOrderingPolicyChangedOrder),
+                "The handlers of a feature ordering policy change are no longer the forecast trigger alone, as the start-up code registers them today. " +
+                "Without that registration, changing the ordering policy no longer retriggers the forecasts. " +
+                "Put the registration back, or, if the change is intended, change the list in this test in the same commit and say why.");
+        }
+
+        [Test]
+        public void HandlersOfAFeatureRankChange_AreTheForecastTriggerAlone()
+        {
+            var handedOut = HandlersInTheOrderTheContainerHandsThemOut<FeatureRankChanged>();
+
+            Assert.That(handedOut, Is.EqualTo(FeatureRankChangedOrder),
+                "The handlers of a feature rank change are no longer the forecast trigger alone, as the start-up code registers them today. " +
+                "Without that registration, ranking a feature no longer retriggers the forecasts. " +
+                "Put the registration back, or, if the change is intended, change the list in this test in the same commit and say why.");
+        }
+
+        [Test]
+        public void HandlersOfATeamDeletion_ForgetTheRefreshLogBeforeTheForecastsRetrigger()
+        {
+            var handedOut = HandlersInTheOrderTheContainerHandsThemOut<TeamDeleted>();
+
+            Assert.That(handedOut, Is.EqualTo(TeamDeletedOrder),
+                "The handlers of a team deletion no longer come in the order the start-up code registers them today. " +
+                "The dispatcher runs them in this order, so a new order changes what the forecast retrigger finds after a team is deleted. " +
                 "Put the registrations back in their old order, or, if the new order is intended, change the list in this test in the same commit and say why.");
         }
 

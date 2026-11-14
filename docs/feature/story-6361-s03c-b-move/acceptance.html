@@ -458,32 +458,33 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P3</p>
 
-<pre><code>Run the domain event handler order pin after the move
+<pre><code>Run the domain event handler order pin after the move, for team refresh, portfolio refresh, feature ordering policy change, feature rank change and team deletion
 </code></pre>
 
-<pre><code>The pin stays green unmodified
+<pre><code>Each event&#x27;s handlers come out in the exact order and set the start-up code registers today; the pins stay green
 </code></pre>
 
-<pre><code>Handlers run in the same order, so forecasts refresh as before
+<pre><code>Handlers run in the same order, so forecasts refresh and retrigger as before
 </code></pre>
 
 <h5>Disposition</h5>
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest</p>
+<p>Lighthouse\.Backend\.Tests\.Architecture\.DomainEventHandlerOrderPinTest</p>
 
-<pre><code>A handler dropped from registration if the pin does not list it; it lists the trigger
+<pre><code>A reordered or dropped registration fails the pin of its event, so only a change to a handler outside these five events passes
 </code></pre>
 
 <h6>Obligations</h6>
 
+<p>None.</p>
 
 <h5>Covers</h5>
 
 <p>P4</p>
 
-<pre><code>Compare seeded forecasts and forecast answers before and after the move
+<pre><code>Compare seeded forecasts and forecast answers before and after the move; this existing guard runs unmodified
 </code></pre>
 
 <pre><code>Identical
@@ -496,13 +497,92 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>Tested</p>
 
-<p>Lighthouse.Backend.Tests.Architecture.SeededForecastsStayTheSameTest</p>
+<p>Lighthouse\.Backend\.Tests\.Architecture\.SeededForecastsStayTheSameTest</p>
 
-<pre><code>A change outside the seeded cases; the compare script covers base against HEAD
+<pre><code>A change outside the seeded cases; the base-against-HEAD compare in the next row covers that
 </code></pre>
 
 <h6>Obligations</h6>
 
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the existing behaviour tests of the forecast updater and the four forecast triggers after the move
+</code></pre>
+
+<pre><code>They pass unmodified apart from using lines
+</code></pre>
+
+<pre><code>Forecast refresh and retriggering behave as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse\.Backend\.Tests\.Services\.Implementation\.BackgroundServices\.Update</p>
+
+<pre><code>A behaviour change in a path those suites do not exercise
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P3</p>
+
+<pre><code>Run the existing behaviour tests of the start-up forecast seeder after the move
+</code></pre>
+
+<pre><code>They pass unmodified apart from using lines
+</code></pre>
+
+<pre><code>Start-up forecast seeding behaves as before
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse\.Backend\.Tests\.Services\.Implementation\.Seeding\.ForecastInputsForgottenAtStartSeederTests</p>
+
+<pre><code>A behaviour change in a path that suite does not exercise
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Run the forecast answers compare between base commit 39a7f598f and the candidate
+</code></pre>
+
+<pre><code>Forecast answers are identical
+</code></pre>
+
+<pre><code>Forecast answers a user sees do not change
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>bash Scripts/examine/bin/forecast-answers-compare</p>
+
+<pre><code>A difference in an input the compare does not seed
+</code></pre>
+
+<h6>Obligations</h6>
+
+<p>None.</p>
 
 <h2>Expectations</h2>
 

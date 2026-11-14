@@ -200,15 +200,12 @@
 ],
 "disposition": {
 "kind": "Tested",
-"obligations": [
-"T1"
-],
-"still_passes_if": "F155",
-"test": "Lighthouse.Backend.Tests.Architecture.DomainEventHandlerOrderPinTest"
+"still_passes_if": "F163",
+"test": "Lighthouse\\.Backend\\.Tests\\.Architecture\\.DomainEventHandlerOrderPinTest"
 },
-"expected": "F153",
-"stimulus": "F152",
-"user_result": "F154"
+"expected": "F161",
+"stimulus": "F160",
+"user_result": "F162"
 },
 {
 "covers": [
@@ -216,22 +213,58 @@
 ],
 "disposition": {
 "kind": "Tested",
-"obligations": [
-"T1"
-],
-"still_passes_if": "F159",
-"test": "Lighthouse.Backend.Tests.Architecture.SeededForecastsStayTheSameTest"
+"still_passes_if": "F165",
+"test": "Lighthouse\\.Backend\\.Tests\\.Architecture\\.SeededForecastsStayTheSameTest"
 },
 "expected": "F157",
-"stimulus": "F156",
+"stimulus": "F164",
 "user_result": "F158"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F169",
+"test": "Lighthouse\\.Backend\\.Tests\\.Services\\.Implementation\\.BackgroundServices\\.Update"
+},
+"expected": "F167",
+"stimulus": "F166",
+"user_result": "F168"
+},
+{
+"covers": [
+"P3"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F172",
+"test": "Lighthouse\\.Backend\\.Tests\\.Services\\.Implementation\\.Seeding\\.ForecastInputsForgottenAtStartSeederTests"
+},
+"expected": "F167",
+"stimulus": "F170",
+"user_result": "F171"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"still_passes_if": "F176",
+"test": "bash Scripts/examine/bin/forecast-answers-compare"
+},
+"expected": "F174",
+"stimulus": "F173",
+"user_result": "F175"
 }
 ]
 },
 "counters": {
 "D": 4,
 "E": 4,
-"F": 159,
+"F": 176,
 "K": 3,
 "P": 4,
 "S": 3,
@@ -822,16 +855,27 @@
 "F15": "Checker mapping: no state machine or temporal claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable; liveness is not applicable (no new progress claim, no scheduling change). The dependency-direction and placement claims are checked by the IL-reading ArchUnit rules in the three slice oracles; behaviour preservation is checked by SeededForecastsStayTheSameTest and bash Scripts/examine/bin/forecast-answers-compare (base 39a7f598f vs HEAD). No property-based law: the finite relocation has no broad input domain.",
 "F150": "List the production source files and look for the four trigger files",
 "F151": "Each file sits only in the module's policies folder",
-"F152": "Run the domain event handler order pin after the move",
-"F153": "The pin stays green unmodified",
-"F154": "Handlers run in the same order, so forecasts refresh as before",
-"F155": "A handler dropped from registration if the pin does not list it; it lists the trigger",
-"F156": "Compare seeded forecasts and forecast answers before and after the move",
 "F157": "Identical",
 "F158": "Forecast answers do not change",
-"F159": "A change outside the seeded cases; the compare script covers base against HEAD",
 "F16": "Paradigm object_oriented: owners are unchanged; every moved type keeps its owner and responsibility. No domain decision moves into a service, no new class is created, no type is split or merged. Carriers: decisions stay in Domain policies and ForecastSimulation; effects stay in ForecastUpdater, ForecastLane and the seeder; per-process state stays in ForecastLane.",
+"F160": "Run the domain event handler order pin after the move, for team refresh, portfolio refresh, feature ordering policy change, feature rank change and team deletion",
+"F161": "Each event's handlers come out in the exact order and set the start-up code registers today; the pins stay green",
+"F162": "Handlers run in the same order, so forecasts refresh and retrigger as before",
+"F163": "A reordered or dropped registration fails the pin of its event, so only a change to a handler outside these five events passes",
+"F164": "Compare seeded forecasts and forecast answers before and after the move; this existing guard runs unmodified",
+"F165": "A change outside the seeded cases; the base-against-HEAD compare in the next row covers that",
+"F166": "Run the existing behaviour tests of the forecast updater and the four forecast triggers after the move",
+"F167": "They pass unmodified apart from using lines",
+"F168": "Forecast refresh and retriggering behave as before",
+"F169": "A behaviour change in a path those suites do not exercise",
 "F17": "Handler order and registrations stay: Program.cs lines are untouched apart from using lines (DomainEventHandlerOrderPinTest stays green and unmodified). Tests covering moved types stay where they are; only their using lines change. Stryker file path in stryker.6094.backend.json follows ForecastRealityCheckService in B2.",
+"F170": "Run the existing behaviour tests of the start-up forecast seeder after the move",
+"F171": "Start-up forecast seeding behaves as before",
+"F172": "A behaviour change in a path that suite does not exercise",
+"F173": "Run the forecast answers compare between base commit 39a7f598f and the candidate",
+"F174": "Forecast answers are identical",
+"F175": "Forecast answers a user sees do not change",
+"F176": "A difference in an input the compare does not seed",
 "F18": "Behaviour-free: routes, DTOs, serialized responses, forecast results, schema, handler order unchanged. Existing API, E2E and response tests stay green and unmodified apart from using lines. No bound on stored or validated inputs changes.",
 "F19": "One oracle file per slice; earlier slices' oracle files are never edited. Rules are never loosened; Flow metrics list strings are rewritten to the new full names, both directions still compared. Made-up offenders live in fixture namespaces under Lighthouse.Backend.Modules.ForecastingFixtures.*. Per-test and property budgets are the defaults; no derogation.",
 "F2": "Forecasting lives in its own module folder, so feature C can give it its own rules and break the cycle with Flow metrics",
