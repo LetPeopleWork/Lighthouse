@@ -285,6 +285,7 @@ describe("The outlier chip stays truthful while the reader changes the view", ()
 
 		expect(outlierChip()).toHaveTextContent("2 outliers");
 		expect(drawnHeights()).toEqual([1, 2, 2, 2, 3, 10]);
+		expect(axisTop()).toBeCloseTo(10, 5);
 		fireEvent.click(outlierChip());
 		expect(listedIds()).toEqual(["TZ-301", "TZ-402"]);
 	});
