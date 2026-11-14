@@ -1,0 +1,65 @@
+# S3 id table: host rows that leave and the unit rows that prove their rules
+
+Slice base: d7326c838. Breaks: `s3_breaks.py` (ids A1 to A36), observed output in `s3-break-evidence.txt`; the row names under each break id there are the rows that turned red. Row numbers are those of section 7.3 and the Slice03 part of 7.6 of the screen (`docs/feature/story-6537-t10-backend-rules-at-unit-level/evidence/step2/screen.md`).
+
+The oracle (`s3_compare_ids.py`) holds the host rows that stay (Slice04 rows 1 and 17, Slice03 row 1) and every unit row. Before craft it reports the 40 host rows below as EXTRA (observed 95, expected 55): the craft removes them.
+
+Every unit row lands in `Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs`, which carries no live-connector category and runs the real `AzureDevOpsWorkTrackingConnector` over a mocked `WorkItemTrackingHttpClient` (the connector's own decisions run; only the HTTP client answers are stubbed). One row stays in `TeamUpdaterTest.cs`. Row names below are abbreviated by their method name in that class.
+
+## Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios (17 rows leave, 2 stay)
+
+| Row | Removed host row | Path it walks | Now proven by | Break | Red rows |
+|---|---|---|---|---|---|
+| 2 | Naming_the_reverse_end_reads_the_other_direction | the named end picks one direction of the relation | `GetFeaturesForProject_WhenTheReverseEndIsNamed_ReadsTheOtherDirection` (new) | A1 | that row |
+| 3 | Naming_a_relation_end_replaces_Predecessor_for_that_Portfolio | a named end replaces the Predecessor link | `GetFeaturesForProject_WhenTheNamedEndIsCarried_ReadsThatEndAloneAsALinkDrawnInTheTracker` | A2 | that row |
+| 4 | A_Parent_Override_Field_on_the_same_Portfolio_does_not_stop_the_relation_being_read | relations are downloaded when the parent comes from a field too | `GetFeaturesForProject_WhenAParentOverrideFieldIsAlsoSet_StillReadsTheNamedRelationEnd` (new) | A3 | that row |
+| 5 | A_relation_type_named_without_its_end_reads_nothing_and_names_both_ends | a base name is read as nothing and names both ends | `..._WhenTheBaseNameIsNamed_ReadsNothingAndNamesBothEnds` | A7 | that row |
+| 6 | Related_has_no_direction_so_it_reads_nothing_and_says_so | a type without direction reads nothing | `..._WhenARelationTypeWithoutDirectionIsNamed_ReadsNothingAndSaysWhy` | A8 | that row (and nine more) |
+| 7 | Nothing_carrying_the_named_end_says_so_once_and_lists_the_relation_types_seen | one finding, the types seen | `..._WhenNoFeatureCarriesTheNamedEnd_SaysSoNamingOnlyTheWorkItemLinksSeen` | A4, A5, A8 | that row |
+| 8 | Features_carrying_only_their_hierarchy_say_nothing_about_the_named_end | hierarchy is no relation type seen | `..._WhenTheFeaturesCarryOnlyTheirHierarchy_SaysNothingAboutTheNamedEnd` (new) | A4, A6 | that row |
+| 9 | The_hierarchy_is_left_out_of_the_relation_types_seen | hierarchy left out of the seen list | `..._WhenNoFeatureCarriesTheNamedEnd_...` | A4 | that row |
+| 10 | Features_carrying_no_relations_at_all_say_nothing_about_the_named_end | no relations, no finding | `..._WhenTheFeaturesCarryNoRelationsAtAll_SaysNothing` | A6 | that row |
+| 11 | Resource_links_are_left_out_of_the_relation_types_seen | attachments, hyperlinks, artifact links left out | `..._WhenNoFeatureCarriesTheNamedEnd_...` | A5 | that row |
+| 12 | A_relation_type_named_without_its_end_validates... | Validate accepts a base name | `ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("Contoso.DependsOn")` | A33 | that row |
+| 13 | Related_validates... | Validate accepts a type without direction | same row, `("System.LinkTypes.Related")` | A35 | that row and the listing-once row |
+| 14 | A_name_without_an_end_whose_ends_are_not_both_listed_is_still_a_typo | Validate refuses a half-listed name | `ValidateConnection_WhenAReferenceNamesNoFieldAndNoRelationType_RefusesIt` | A34 | its three rows |
+| 15 | Naming_a_relation_end_costs_one_relation_type_listing_and_nothing_per_work_item | one listing, no request per work item | `GetFeaturesForProject_WhenARelationEndIsNamed_CostsOneRelationTypeListingAndNothingPerWorkItem` (new) | A10 | that row |
+| 16 | Two_organisations_on_one_shared_connector_... | no listing kept between organisations | `..._TwoOrganisationsOnOneSharedConnector_EachAnswerWithTheirOwnRelationTypes` (new, shared connector double) | A10, A8 | that row |
+| 18 | Refreshing_the_first_organisation_again_... | no stale listing on the next refresh | `..._RefreshingTheFirstOrganisationAgain_ListsItsRelationTypesAgain` (new) | A8, A10 | that row |
+| 19 | A_Portfolio_naming_nothing_still_reads_Predecessor_without_listing_relation_types | the Predecessor link is read, no listing | `..._WhenNoRelationEndIsNamed_ReadsThePredecessorLinkWithoutListingRelationTypes` (new), `..._WhenOnlyAnUnusedDefinitionNamesNoField_DoesNotListTheRelationTypes` | A36, A21 | the new row; A21 the second |
+
+Stays: row 1 (refresh, store and the Feature Dependencies route), row 17 (the stopped refresh keeps what the store holds; the connector half is `..._WhenTheDependencyFieldCannotBeLookedUp_StopsWithASentenceAnOperatorCanActOn`, red under A20).
+
+## Slice03AzureDevOpsRelationTypeAcceptedScenarios (23 rows leave, 1 stays)
+
+| Row | Removed host row | Path it walks | Now proven by | Break | Red rows |
+|---|---|---|---|---|---|
+| 2 | A_relation_type_reference_matches_in_any_case | match ignores case | `ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("contoso.dependson-reverse")` | A14 | that row |
+| 3 | A_field_that_exists_validates_without_asking_for_the_relation_types | a field is checked before any listing | `ValidateConnection_WhenEveryReferenceIsAField_DoesNotListTheRelationTypes` | A13 | that row |
+| 4 | The_shared_connector_keeps_no_relation_type_listing_between_calls | the listing is asked for afresh per call | `ValidateConnection_ASharedConnectorKeepsNoRelationTypeListingBetweenCalls` (new) | A11 | that row |
+| 5 | A_typo_still_fails_and_lists_the_relation_types_the_organisation_defines | refusal lists what exists | `..._WhenReferencesNameNothing_ListsThemAndTheRelationTypesThatDoExist` | A15 | that row |
+| 6 | A_link_to_something_other_than_a_work_item_... | resource links refused | `..._WhenAReferenceNamesNoFieldAndNoRelationType_RefusesIt("AttachedFile")` | A15 | that row |
+| 7 | The_relation_types_offered_on_a_typo_leave_out_... | resource links not offered | `..._ListsThemAndTheRelationTypesThatDoExist` | A15 | that row |
+| 8-9 | An_organisation_that_listed_no_relation_types... (2) | an empty or missing list says none | `..._WhenTheOrganisationListsNoRelationTypes_SaysSo`, `..._AnswersTheListingWithoutAList_SaysItListedNone` (new) | A16, A11 | the second; A11 the first too |
+| 10 | An_organisation_that_will_not_list... | refusal answered as unreadable | `..._WhenTheRelationTypesAreRefused_SaysTheReferenceCouldNotBeChecked` | A20 | that row |
+| 11-13 | A_relation_type_listing_that_failed_on_the_way... (3) | timeout, ran out of time, never reached | `..._WhenListingTheRelationTypesTimesOut_ReadsItAsUnreadable`; `..._FailsOnTheWay_ReadsItAsUnreadable(TimeoutException)` and `(HttpRequestException)` (new) | A19, A17, A18 | one each |
+| 14 | Validate_asks_the_organisation_for_its_relation_types_at_most_once | one listing for several references | `ValidateConnection_WhenSeveralReferencesNameRelationTypes_ListsThemOnce` (new) | A12 | that row |
+| 15 | A_refresh_naming_only_fields_asks_for_no_relation_types_... | a stale definition no setting names costs no listing (Team) | `GetWorkItemsForTeam_WhenOnlyAStaleDefinitionNamesNoField_ReadsTheParentFromTheFieldAndListsNoRelationTypes` (new), the Portfolio twin | A21 | both |
+| 16 | A_refresh_does_not_report_a_relation_type_reference_as_a_missing_field | no "no field" warning, no finding | `..._WhenTheDependencyFieldNamesARelationEnd_DoesNotSayAFieldIsMissing` (new, recording logger) | A22 | that row |
+| 17 | A_relation_type_named_as_Parent_Override_Field_keeps_the_native_parent_and_says_why | native parent stands, one finding | `..._WhenTheParentOverrideFieldNamesARelationEnd_KeepsTheTrackersParentAndSaysWhy` (new) | A24 | that row |
+| 18 | A_field_named_exactly_like_a_relation_type_end_is_read_as_the_field | the field list wins (Team) | `GetWorkItemsForTeam_WhenAFieldIsCalledLikeARelationTypeEnd_ReadsTheFieldAndSaysNothing` (new) | A23 | that row |
+| 19 | A_relation_type_named_as_a_Teams_Parent_Override_Field_keeps_the_native_parent_and_says_why | Team: native parent, one finding; a cheap refresh keeps the full download's finding | `GetWorkItemsForTeam_WhenARelationTypeIsNamedAsTheParentOverrideField_KeepsTheTrackersParentAndSaysWhy` (new); `TeamUpdaterTest.TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid` (file TeamUpdaterTest.cs, already there) | A24, A31; A32 | those rows |
+| 20 | ...keeps_the_native_parent_when_the_relation_types_cannot_be_listed | Team: a refused listing leaves the parent | `GetWorkItemsForTeam_WhenTheRelationTypesCannotBeListed_KeepsTheTrackersParent` (new) | A20 | that row |
+| 21 | A_Teams_parent_source_naming_nothing_... | Team: warns, reads no parent | `GetWorkItemsForTeam_WhenTheParentSourceNamesNothingTheOrganisationDefines_ReadsNoParentAndWarns` (new) | A29, A30 | that row |
+| 22-24 | A_relation_type_named_in_another_setting... (3) | Size, Owner, Estimation naming a type read nothing and say why | `GetFeaturesForProject_WhenOnlyAnotherSettingNamesARelationType_ReadsNothingNamedAndSaysWhy` (3 cases, new) | A26, A27, A28 | one case each |
+
+Stays: row 1 (the validate route: status, `isValid`, message member).
+
+## Touched paths
+
+| Path | Why | Break showing its older rows still fail when they should |
+|---|---|---|
+| `Lighthouse.Backend.Tests/Services/Implementation/WorkTrackingConnectors/AzureDevOps/AzureDevOpsNamedRelationEndTest.cs` | new rows; the test organisation gained optional fields, field values, a URL, a recording logger and an answer without a list; a shared-connector double was added | A2, A4 to A8, A13 to A15, A17 to A20, A24, A25 turn older rows red |
+| `Lighthouse.Backend.Tests/Services/Implementation/BackgroundServices/Update/TeamUpdaterTest.cs` | not changed | A32 turns its two older rows red |
+
+The host classes are changed by the craft, not by this slice's oracle; both keep host rows, so their guard lines stay.
