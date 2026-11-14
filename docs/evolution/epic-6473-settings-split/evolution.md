@@ -49,6 +49,4 @@ fixes. Decisions are in `docs/feature/epic-6473-settings-split/feature-delta.md`
 
 ## Knowingly left open
 
-- **D17:** which Team and Feature refresh settings are needed at all is to be rethought. Proposed as its own ADO item.
-- `licensing/licensing.md` still lists "export and import the configuration through the settings" as a Premium limit,
-  although no such control exists. Left for a licensing check rather than changed here.
+- **D17:** which Team and Feature refresh settings are needed at all is to be rethought: Story #6627, New, top of the backlog.

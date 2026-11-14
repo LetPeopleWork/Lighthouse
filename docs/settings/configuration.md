@@ -1,8 +1,9 @@
 ---
 title: Configuration
 layout: home
-parent: Settings
-nav_order: 2
+parent: Organization
+grand_parent: Settings
+nav_order: 1
 ---
 
 # Configuration

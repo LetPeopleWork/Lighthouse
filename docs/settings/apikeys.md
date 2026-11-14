@@ -1,8 +1,9 @@
 ---
 title: API Keys
 layout: home
-parent: Settings
-nav_order: 5
+parent: Access
+grand_parent: Settings
+nav_order: 2
 ---
 
 # API Keys

@@ -1,8 +1,9 @@
 ---
 title: Role-Based Access Control
 layout: home
-parent: Settings
-nav_order: 6
+parent: Access
+grand_parent: Settings
+nav_order: 1
 ---
 
 Lighthouse supports **Role-Based Access Control (RBAC)** for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [Authentication](../Installation/authentication.html) and is configured under **Settings → Access → System-wide access**.

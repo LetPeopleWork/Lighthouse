@@ -1,7 +1,8 @@
 ---
 title: Work Tracking Systems
 layout: home
-parent: Settings
+parent: System
+grand_parent: Settings
 nav_order: 1
 ---
 

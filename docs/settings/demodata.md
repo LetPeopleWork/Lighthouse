@@ -1,8 +1,9 @@
 ---
 title: Demo Data
 layout: home
-parent: Settings
-nav_order: 3
+parent: System
+grand_parent: Settings
+nav_order: 4
 ---
 
 # Demo Data

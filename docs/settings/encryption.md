@@ -1,8 +1,9 @@
 ---
 title: Secret Encryption Key
 layout: home
-parent: Settings
-nav_order: 7
+parent: System
+grand_parent: Settings
+nav_order: 3
 ---
 
 # Secret Encryption Key

@@ -780,3 +780,11 @@ Settings only to move them again. B is the Epic with the customer value and shou
    walking skeleton.
 
 Nothing is mirrored to the ADO board until the maintainer has walked through each candidate.
+
+## Input for #6476 "One page per unit": the top bar (maintainer, 2026-11-14)
+
+At the end of Epic 6473 the maintainer said the top bar (Overview, Features, Reports, Settings, and the icon row on
+the right) is "not specifically well done" and should be looked at too, not only what sits under the Overview.
+ADR-271 so far only plans the unit pages, the per-level Overview and a possible Deliveries entry (Decision 6); it says
+nothing about the top bar as a whole. When #6476 reaches DISCUSS, take the top bar into its scope or split it into its
+own item, and ask the maintainer what in it does not work for them.

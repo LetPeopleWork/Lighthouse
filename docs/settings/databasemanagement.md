@@ -1,8 +1,9 @@
 ---
 title: Database Management
 layout: home
-parent: Settings
-nav_order: 4
+parent: System
+grand_parent: Settings
+nav_order: 2
 ---
 
 # Database Management

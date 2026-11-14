@@ -117,7 +117,6 @@ There are two kind of "Premium Features" that you unlock with a license. Some fe
 - Maximum of three teams per Lighthouse instance (compared to unlimited teams with a license)
 - Maximum of one portfolio per Lighthouse instance (compared to unlimited portfolios with a license)
 - One [report](../reports/reports.html#community-and-premium) of each type per team and per portfolio, for example one Then & Now report (compared to unlimited reports with a license)
-- No possibility to export and import the Lighthouse configuration through the settings
 - No possibility to configure [Mappings](../settings/worktrackingsystems.html#write-back-mappings) to sync metrics and forecasts back to your work tracking system
 
 {: .important}

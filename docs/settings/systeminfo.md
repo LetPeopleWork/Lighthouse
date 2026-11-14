@@ -1,7 +1,8 @@
 ---
 title: System Info
 layout: home
-parent: Settings
+parent: System
+grand_parent: Settings
 nav_order: 6
 ---
 

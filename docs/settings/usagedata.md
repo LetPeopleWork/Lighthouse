@@ -1,8 +1,9 @@
 ---
 title: Usage Data
 layout: home
-parent: Settings
-nav_order: 8
+parent: System
+grand_parent: Settings
+nav_order: 5
 ---
 
 # Usage Data
