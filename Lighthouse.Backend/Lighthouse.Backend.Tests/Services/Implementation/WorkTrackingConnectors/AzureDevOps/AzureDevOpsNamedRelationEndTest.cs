@@ -491,7 +491,7 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
                 relations: new() { [TheFeature] = [ARelation(DependsOnForward, TheItemItWaitsOn)] });
             var portfolio = APortfolioWhoseDependencyFieldNames(DependsOnForward);
             portfolio.WorkTrackingSystemConnection.AdditionalFieldDefinitions.Add(new AdditionalFieldDefinition { Id = 10, DisplayName = "Remote", Reference = ARemoteParentField });
-            portfolio.OwnParentOverride(10);
+            portfolio.OwnParentSources(ParentSources.Of([ParentSourceEntry.Field(10)]).List!);
 
             var features = await organisation.Connector.GetFeaturesForProject(portfolio, CancellationToken.None);
 
@@ -782,6 +782,20 @@ namespace Lighthouse.Backend.Tests.Services.Implementation.WorkTrackingConnector
             {
                 Assert.That(items.Single(item => item.ReferenceId == $"{TheFeature}").ParentReferenceId, Is.Empty);
                 Assert.That(organisation.Log.Warnings, Has.Some.Contain("No field in this Azure DevOps organisation is called Custom.NoSuchParent"));
+            }
+        }
+
+        [Test]
+        public async Task GetFeaturesForProject_WhenNoRelationEndIsNamed_ReadsThePredecessorLinkWithoutListingRelationTypes()
+        {
+            var organisation = new Organisation(relations: new() { [TheFeature] = [ARelation(Predecessor, TheItemItWaitsOn), ARelation(DependsOnForward, TheItemItsPredecessorLinkPointsAt)] });
+
+            var features = await organisation.Connector.GetFeaturesForProject(APortfolio(), CancellationToken.None);
+
+            using (Assert.EnterMultipleScope())
+            {
+                Assert.That(WhatTheFeatureWaitsOn(features, TheFeature), Is.EqualTo(TheOneItemItWaitsOn));
+                organisation.Client.Verify(client => client.GetRelationTypesAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Never);
             }
         }
 

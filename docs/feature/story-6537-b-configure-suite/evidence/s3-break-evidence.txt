@@ -1,0 +1,163 @@
+=== A1 naming one end reads both ends of the relation
+Failed GetFeaturesForProject_WhenTheReverseEndIsNamed_ReadsTheOtherDirection [30 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 494 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A2 the Predecessor link still counts once an end is named
+Failed GetFeaturesForProject_WhenTheNamedEndIsCarried_ReadsThatEndAloneAsALinkDrawnInTheTracker [31 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 480 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A3 a Parent Override Field stops the relations being downloaded
+Failed GetFeaturesForProject_WhenAParentOverrideFieldIsAlsoSet_StillReadsTheNamedRelationEnd [37 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 527 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A4 the hierarchy counts among the relation types seen
+Failed GetFeaturesForProject_WhenNoFeatureCarriesTheNamedEnd_SaysSoNamingOnlyTheWorkItemLinksSeen [36 ms]
+Failed GetFeaturesForProject_WhenTheFeaturesCarryOnlyTheirHierarchy_SaysNothingAboutTheNamedEnd [4 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 510 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A5 resource links count among the relation types seen
+Failed GetFeaturesForProject_WhenNoFeatureCarriesTheNamedEnd_SaysSoNamingOnlyTheWorkItemLinksSeen [27 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 483 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A6 Features carrying no relations at all still say nothing matched
+Failed GetFeaturesForProject_WhenTheFeaturesCarryNoRelationsAtAll_SaysNothing [33 ms]
+Failed GetFeaturesForProject_WhenTheFeaturesCarryOnlyTheirHierarchy_SaysNothingAboutTheNamedEnd [5 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 570 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A7 a relation type named without its end is not recognised
+Failed GetFeaturesForProject_WhenTheBaseNameIsNamed_ReadsNothingAndNamesBothEnds [42 ms]
+Failed GetFeaturesForProject_WhenTheParentOverrideFieldNamesARelationTypeWithoutItsEnd_SaysItReadsNoParentFromIt [5 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 501 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A8 a relation type without direction is read as having one
+Failed GetFeaturesForProject_RefreshingTheFirstOrganisationAgain_ListsItsRelationTypesAgain [56 ms]
+Failed GetFeaturesForProject_TwoOrganisationsOnOneSharedConnector_EachAnswerWithTheirOwnRelationTypes [8 ms]
+Failed GetFeaturesForProject_WhenAParentOverrideFieldIsAlsoSet_StillReadsTheNamedRelationEnd [4 ms]
+Failed GetFeaturesForProject_WhenARelationTypeWithoutDirectionIsNamed_ReadsNothingAndSaysWhy [13 ms]
+Failed GetFeaturesForProject_WhenNoFeatureCarriesTheNamedEnd_SaysSoNamingOnlyTheWorkItemLinksSeen [6 ms]
+Failed GetFeaturesForProject_WhenTheDependencyFieldNamesARelationEnd_DoesNotSayAFieldIsMissing [5 ms]
+Failed GetFeaturesForProject_WhenTheFeaturesCarryNoRelationsAtAll_SaysNothing [3 ms]
+Failed GetFeaturesForProject_WhenTheFeaturesCarryOnlyTheirHierarchy_SaysNothingAboutTheNamedEnd [4 ms]
+Failed GetFeaturesForProject_WhenTheNamedEndIsCarried_ReadsThatEndAloneAsALinkDrawnInTheTracker [5 ms]
+Failed GetFeaturesForProject_WhenTheReverseEndIsNamed_ReadsTheOtherDirection [4 ms]
+Failed!  - Failed:    10, Passed:    42, Skipped:     0, Total:    52, Duration: 564 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A9 the relation types are listed again for every reference
+Failed GetFeaturesForProject_WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce [22 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 468 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A10 a refresh keeps the relation type listing between calls
+Failed GetFeaturesForProject_RefreshingTheFirstOrganisationAgain_ListsItsRelationTypesAgain [54 ms]
+Failed GetFeaturesForProject_TwoOrganisationsOnOneSharedConnector_EachAnswerWithTheirOwnRelationTypes [25 ms]
+Failed GetFeaturesForProject_WhenARelationEndIsNamed_CostsOneRelationTypeListingAndNothingPerWorkItem [7 ms]
+Failed GetFeaturesForProject_WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce [6 ms]
+Failed GetFeaturesForProject_WhenTheDependencyFieldCannotBeLookedUp_StopsWithASentenceAnOperatorCanActOn [15 ms]
+Failed GetFeaturesForProject_WhenTheRelationTypesCouldNotBeListed_DoesNotClaimAParentSourceMatchedNothing [4 ms]
+Failed!  - Failed:     6, Passed:    46, Skipped:     0, Total:    52, Duration: 585 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A11 Validate keeps the relation type listing between calls
+Failed ValidateConnection_ASharedConnectorKeepsNoRelationTypeListingBetweenCalls [36 ms]
+Failed ValidateConnection_WhenListingTheRelationTypesFailsOnTheWay_ReadsItAsUnreadable(System.TimeoutException) [4 ms]
+Failed ValidateConnection_WhenListingTheRelationTypesFailsOnTheWay_ReadsItAsUnreadable(System.Net.Http.HttpRequestException) [3 ms]
+Failed ValidateConnection_WhenListingTheRelationTypesFailsUnexpectedly_DoesNotPassItOffAsARefusal [3 ms]
+Failed ValidateConnection_WhenListingTheRelationTypesTimesOut_ReadsItAsUnreadable [3 ms]
+Failed ValidateConnection_WhenSeveralReferencesNameRelationTypes_ListsThemOnce [3 ms]
+Failed ValidateConnection_WhenTheOrganisationAnswersTheListingWithoutAList_SaysItListedNone [3 ms]
+Failed ValidateConnection_WhenTheOrganisationListsNoRelationTypes_SaysSo [8 ms]
+Failed ValidateConnection_WhenTheRelationTypesAreRefused_SaysTheReferenceCouldNotBeChecked [4 ms]
+Failed!  - Failed:     9, Passed:    43, Skipped:     0, Total:    52, Duration: 492 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A12 Validate lists the relation types twice
+Failed ValidateConnection_ASharedConnectorKeepsNoRelationTypeListingBetweenCalls [32 ms]
+Failed ValidateConnection_WhenSeveralReferencesNameRelationTypes_ListsThemOnce [4 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 501 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A13 Validate lists the relation types even when every reference is a field
+Failed ValidateConnection_WhenEveryReferenceIsAField_DoesNotListTheRelationTypes [27 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 487 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A14 a relation type is matched in the case it is written
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("contoso.dependson-reverse") [22 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 475 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A15 links to anything but a work item are accepted as relation types
+Failed ValidateConnection_WhenAReferenceNamesNoFieldAndNoRelationType_RefusesIt("AttachedFile") [35 ms]
+Failed ValidateConnection_WhenReferencesNameNothing_ListsThemAndTheRelationTypesThatDoExist [3 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 525 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A16 an answer without a list is not read as an empty one
+Failed ValidateConnection_WhenTheOrganisationAnswersTheListingWithoutAList_SaysItListedNone [31 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 533 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A17 a listing that ran out of time is not read as unreadable
+Failed ValidateConnection_WhenListingTheRelationTypesFailsOnTheWay_ReadsItAsUnreadable(System.TimeoutException) [24 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 518 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A18 a listing that never reached Azure DevOps is not read as unreadable
+Failed ValidateConnection_WhenListingTheRelationTypesFailsOnTheWay_ReadsItAsUnreadable(System.Net.Http.HttpRequestException) [29 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 588 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A19 a listing cancelled by nobody is not read as unreadable
+Failed ValidateConnection_WhenListingTheRelationTypesTimesOut_ReadsItAsUnreadable [30 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 603 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A20 a refused listing is not handled
+Failed GetFeaturesForProject_WhenTheDependencyFieldCannotBeLookedUp_StopsWithASentenceAnOperatorCanActOn [58 ms]
+Failed GetFeaturesForProject_WhenTheRelationTypesCouldNotBeListed_DoesNotClaimAParentSourceMatchedNothing [5 ms]
+Failed GetWorkItemsForTeam_WhenTheRelationTypesCannotBeListed_KeepsTheTrackersParent [4 ms]
+Failed ValidateConnection_WhenTheRelationTypesAreRefused_SaysTheReferenceCouldNotBeChecked [11 ms]
+Failed!  - Failed:     4, Passed:    48, Skipped:     0, Total:    52, Duration: 533 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A21 a definition nobody names is looked up among the relation types
+Failed GetFeaturesForProject_WhenOnlyAnUnusedDefinitionNamesNoField_DoesNotListTheRelationTypes [25 ms]
+Failed GetWorkItemsForTeam_WhenOnlyAStaleDefinitionNamesNoField_ReadsTheParentFromTheFieldAndListsNoRelationTypes [4 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 500 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A22 a relation type reference is reported as a missing field
+Failed GetFeaturesForProject_WhenTheDependencyFieldNamesARelationEnd_DoesNotSayAFieldIsMissing [29 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 502 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A23 a field called like a relation type end is not read as the field
+Failed GetWorkItemsForTeam_WhenAFieldIsCalledLikeARelationTypeEnd_ReadsTheFieldAndSaysNothing [36 ms]
+Failed GetWorkItemsForTeam_WhenOnlyAStaleDefinitionNamesNoField_ReadsTheParentFromTheFieldAndListsNoRelationTypes [4 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 497 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A24 a relation type named as a parent source is not said to be unreadable
+Failed GetFeaturesForProject_WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce [38 ms]
+Failed GetFeaturesForProject_WhenTheParentOverrideFieldNamesARelationEnd_KeepsTheTrackersParentAndSaysWhy [3 ms]
+Failed GetFeaturesForProject_WhenTheParentOverrideFieldNamesARelationTypeWithoutItsEnd_SaysItReadsNoParentFromIt [3 ms]
+Failed GetWorkItemsForTeam_WhenARelationTypeIsNamedAsTheParentOverrideField_KeepsTheTrackersParentAndSaysWhy [3 ms]
+Failed!  - Failed:     4, Passed:    48, Skipped:     0, Total:    52, Duration: 498 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A25 a relation type named as a parent source reads as a value
+Failed GetFeaturesForProject_ARelationTypeCannotBeReadWhereAnEmptyFieldReadsNoValue [270 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 512 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A26 Size Estimate Field naming a relation type is not reported
+Failed GetFeaturesForProject_WhenOnlyAnotherSettingNamesARelationType_ReadsNothingNamedAndSaysWhy(SizeEstimateField) [31 ms]
+Failed GetFeaturesForProject_WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce [5 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 471 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A27 Feature Owner Field naming a relation type is not reported
+Failed GetFeaturesForProject_WhenOnlyAnotherSettingNamesARelationType_ReadsNothingNamedAndSaysWhy(FeatureOwnerField) [30 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 500 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A28 Estimation field naming a relation type is not reported
+Failed GetFeaturesForProject_WhenOnlyAnotherSettingNamesARelationType_ReadsNothingNamedAndSaysWhy(EstimationField) [36 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 582 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A29 a name no field carries is not warned about
+Failed GetWorkItemsForTeam_WhenTheParentSourceNamesNothingTheOrganisationDefines_ReadsNoParentAndWarns [29 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 487 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A30 a parent source naming nothing reads a parent anyway
+Failed GetFeaturesForProject_ARelationTypeCannotBeReadWhereAnEmptyFieldReadsNoValue [321 ms]
+Failed GetWorkItemsForTeam_WhenTheParentSourceNamesNothingTheOrganisationDefines_ReadsNoParentAndWarns [5 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 558 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A31 a Team's refresh findings are dropped
+Failed GetWorkItemsForTeam_WhenARelationTypeIsNamedAsTheParentOverrideField_KeepsTheTrackersParentAndSaysWhy [32 ms]
+Failed!  - Failed:     1, Passed:    51, Skipped:     0, Total:    52, Duration: 530 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A32 a cheap Team refresh records findings of its own
+Failed TriggerUpdate_ACheapRefresh_LeavesTheFindingsOfItsRowUnsaid [63 ms]
+Failed TriggerUpdate_TheRefreshFoundSomethingWrongWithASetting_RecordsTheFindingOnItsRow [8 ms]
+Failed!  - Failed:     2, Passed:    50, Skipped:     0, Total:    52, Duration: 476 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A33 a relation type named without its end is not accepted by Validate
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("Contoso.DependsOn") [32 ms]
+Failed!  - Failed:     1, Passed:    52, Skipped:     0, Total:    53, Duration: 567 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A34 Validate accepts what names nothing and refuses what exists
+Failed ValidateConnection_ASharedConnectorKeepsNoRelationTypeListingBetweenCalls [46 ms]
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("Contoso.DependsOn-Forward") [3 ms]
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("contoso.dependson-reverse") [2 ms]
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("Contoso.DependsOn") [2 ms]
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("System.LinkTypes.Related") [2 ms]
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("Contoso.Plain-Forward") [2 ms]
+Failed ValidateConnection_WhenAReferenceNamesNoFieldAndNoRelationType_RefusesIt("Contoso.HalfListed") [4 ms]
+Failed ValidateConnection_WhenAReferenceNamesNoFieldAndNoRelationType_RefusesIt("AttachedFile") [2 ms]
+Failed ValidateConnection_WhenAReferenceNamesNoFieldAndNoRelationType_RefusesIt("Contoso.Missing") [2 ms]
+Failed ValidateConnection_WhenListingTheRelationTypesFailsOnTheWay_ReadsItAsUnreadable(System.TimeoutException) [3 ms]
+Failed ValidateConnection_WhenListingTheRelationTypesFailsOnTheWay_ReadsItAsUnreadable(System.Net.Http.HttpRequestException) [2 ms]
+Failed ValidateConnection_WhenListingTheRelationTypesTimesOut_ReadsItAsUnreadable [3 ms]
+Failed ValidateConnection_WhenReferencesNameNothing_ListsThemAndTheRelationTypesThatDoExist [3 ms]
+Failed ValidateConnection_WhenSeveralReferencesNameRelationTypes_ListsThemOnce [3 ms]
+Failed ValidateConnection_WhenTheOrganisationAnswersTheListingWithoutAList_SaysItListedNone [3 ms]
+Failed ValidateConnection_WhenTheOrganisationListsNoRelationTypes_SaysSo [3 ms]
+Failed ValidateConnection_WhenTheRelationTypesAreRefused_SaysTheReferenceCouldNotBeChecked [3 ms]
+Failed!  - Failed:    17, Passed:    36, Skipped:     0, Total:    53, Duration: 513 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A35 a relation type without direction is not accepted by Validate
+Failed ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt("System.LinkTypes.Related") [25 ms]
+Failed ValidateConnection_WhenSeveralReferencesNameRelationTypes_ListsThemOnce [4 ms]
+Failed!  - Failed:     2, Passed:    51, Skipped:     0, Total:    53, Duration: 507 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== A36 a Portfolio naming nothing no longer reads the Predecessor link
+Failed GetFeaturesForProject_WhenNoRelationEndIsNamed_ReadsThePredecessorLinkWithoutListingRelationTypes [30 ms]
+Failed!  - Failed:     1, Passed:    52, Skipped:     0, Total:    53, Duration: 478 ms - Lighthouse.Backend.Tests.dll (net10.0)
