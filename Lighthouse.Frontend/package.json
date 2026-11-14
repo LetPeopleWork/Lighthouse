@@ -68,7 +68,7 @@
 		"@vitest/coverage-v8": "^5.1.0",
 		"@vitest/spy": "5.1.0",
 		"cross-env": "^10.1.0",
-		"fallow": "3.40.0",
+		"fallow": "3.41.0",
 		"fast-check": "4.10.2",
 		"jsdom": "^31.0.0",
 		"parse5": "^8.1.0",
