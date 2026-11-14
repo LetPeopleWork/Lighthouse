@@ -607,4 +607,82 @@ None.
 
 ## Examination
 
-None.
+### E1
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart.outlier,widgetInfoMetadata: exit 0, 4 files, 36 of 36 passed. Passing test names only, not a user-facing capture by the examiner: 58-day item shown as header outlier with statistics unchanged; flags an item one day over 5 times the median; tells the reader about a percentile and an SLE line above the axis; keeps a line exactly at the top of the axis in place; lists the ten longest of eleven outliers and says how many more; replaces plot and chip with could-not-load; shows no outlier count while loading; keeps cut and axis still while types are hidden and shown; lists only outliers of visible types; ignores a late answer for a named Cycle Time; help names the rule on a team and a portfolio; titles the list in the reader's own words. Names alone do not establish the asserted behaviour.
+```
+
+```text
+Non-probe gap: no declared public probe renders CycleTimeScatterPlotChart, clicks the chip, toggles Work Item types, throttles loading or failure, or activates Open in a list. Not observed by examiner: axis top value, top-edge marker placement, popover text and row values, and k more text, dialog contents, sort, export and tracker links, focus return, help text under configured terms, loading and failed visuals, numbers unchanged on a live view. Evidence-capture owner: the candidate's declared probe set (nwdes host registration); examiner cannot add a probe.
+```
+
+observation_gap
+
+### E2
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart.outlier,widgetInfoMetadata: exit 0, 4 files, 36 of 36 passed. Passing test names only, not a user-facing capture by the examiner: 58-day item shown as header outlier with statistics unchanged; flags an item one day over 5 times the median; tells the reader about a percentile and an SLE line above the axis; keeps a line exactly at the top of the axis in place; lists the ten longest of eleven outliers and says how many more; replaces plot and chip with could-not-load; shows no outlier count while loading; keeps cut and axis still while types are hidden and shown; lists only outliers of visible types; ignores a late answer for a named Cycle Time; help names the rule on a team and a portfolio; titles the list in the reader's own words. Names alone do not establish the asserted behaviour.
+```
+
+```text
+Non-probe gap: no declared public probe renders CycleTimeScatterPlotChart, clicks the chip, toggles Work Item types, throttles loading or failure, or activates Open in a list. Not observed by examiner: axis top value, top-edge marker placement, popover text and row values, and k more text, dialog contents, sort, export and tracker links, focus return, help text under configured terms, loading and failed visuals, numbers unchanged on a live view. Evidence-capture owner: the candidate's declared probe set (nwdes host registration); examiner cannot add a probe.
+```
+
+observation_gap
+
+### E3
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart.outlier,widgetInfoMetadata: exit 0, 4 files, 36 of 36 passed. Passing test names only, not a user-facing capture by the examiner: 58-day item shown as header outlier with statistics unchanged; flags an item one day over 5 times the median; tells the reader about a percentile and an SLE line above the axis; keeps a line exactly at the top of the axis in place; lists the ten longest of eleven outliers and says how many more; replaces plot and chip with could-not-load; shows no outlier count while loading; keeps cut and axis still while types are hidden and shown; lists only outliers of visible types; ignores a late answer for a named Cycle Time; help names the rule on a team and a portfolio; titles the list in the reader's own words. Names alone do not establish the asserted behaviour.
+```
+
+```text
+Non-probe gap: no declared public probe renders CycleTimeScatterPlotChart, clicks the chip, toggles Work Item types, throttles loading or failure, or activates Open in a list. Not observed by examiner: axis top value, top-edge marker placement, popover text and row values, and k more text, dialog contents, sort, export and tracker links, focus return, help text under configured terms, loading and failed visuals, numbers unchanged on a live view. Evidence-capture owner: the candidate's declared probe set (nwdes host registration); examiner cannot add a probe.
+```
+
+observation_gap
+
+### E4
+
+unmet
+
+#### Observations
+
+```text
+Probe frontend-tests CycleTimeScatterPlotChart.outlier,widgetInfoMetadata: exit 0, 4 files, 36 of 36 passed. Passing test names only, not a user-facing capture by the examiner: 58-day item shown as header outlier with statistics unchanged; flags an item one day over 5 times the median; tells the reader about a percentile and an SLE line above the axis; keeps a line exactly at the top of the axis in place; lists the ten longest of eleven outliers and says how many more; replaces plot and chip with could-not-load; shows no outlier count while loading; keeps cut and axis still while types are hidden and shown; lists only outliers of visible types; ignores a late answer for a named Cycle Time; help names the rule on a team and a portfolio; titles the list in the reader's own words. Names alone do not establish the asserted behaviour.
+```
+
+```text
+Non-probe gap: no declared public probe renders CycleTimeScatterPlotChart, clicks the chip, toggles Work Item types, throttles loading or failure, or activates Open in a list. Not observed by examiner: axis top value, top-edge marker placement, popover text and row values, and k more text, dialog contents, sort, export and tracker links, focus return, help text under configured terms, loading and failed visuals, numbers unchanged on a live view. Evidence-capture owner: the candidate's declared probe set (nwdes host registration); examiner cannot add a probe.
+```
+
+observation_gap
+
+### E5
+
+unmet
+
+#### Observations
+
+```text
+Probe backend-tests Percentile: exit 0, 427 of 427 passed. Visible names are percentile, forecast write-back and percentile-history tests (ResolveForecastWriteBackForPortfolio, UpdateFeaturesForProject_UseCalculatedDefault, Migration_OnPostgres_PersistsPercentilesOverTimeSnapshotTable). No outlier-named backend test appeared in the captured output tail. Supports only that percentile and forecast computations pass their named tests. Not a capture of tiles, SLE share, RAG, View Data or forecast values with outliers included.
+```
+
+```text
+Non-probe gap: no declared public probe renders CycleTimeScatterPlotChart, clicks the chip, toggles Work Item types, throttles loading or failure, or activates Open in a list. Not observed by examiner: axis top value, top-edge marker placement, popover text and row values, and k more text, dialog contents, sort, export and tracker links, focus return, help text under configured terms, loading and failed visuals, numbers unchanged on a live view. Evidence-capture owner: the candidate's declared probe set (nwdes host registration); examiner cannot add a probe.
+```
+
+observation_gap
