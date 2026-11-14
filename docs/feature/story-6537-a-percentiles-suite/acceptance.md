@@ -321,15 +321,15 @@ P2
 P3
 
 ```text
-Run the unit classes named in the S4 id table and the two host classes, compare their test ids with the expected list, and check the guard list and production files
+Run the unit classes named in the S4 id table and the two former host classes, compare their test ids with the expected list, and check the guard list and production files
 ```
 
 ```text
-Every expected id is present and passes; the nine host rows of the two classes are the only extra ids; both classes leave the host-user guard list; no production or budget file changed
+Every expected id is present and passes; an id that no slice of the suite lists is the only kind of extra id; neither class holds a host row and both leave the host-user guard list; no production or budget file changed
 ```
 
 ```text
-The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests, so the Integration tier takes less time and no rule loses its test
+The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests that start no web host, and no rule loses its test; how much time the Integration tier saves is read from CI runs, not observed by this check
 ```
 
 ##### Disposition

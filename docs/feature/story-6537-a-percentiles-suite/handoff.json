@@ -149,9 +149,9 @@
 "still_passes_if": "F80",
 "test": "docs/feature/story-6537-a-percentiles-suite/evidence/s4_compare_ids.py"
 },
-"expected": "F78",
-"stimulus": "F77",
-"user_result": "F79"
+"expected": "F86",
+"stimulus": "F85",
+"user_result": "F87"
 },
 {
 "covers": [
@@ -170,7 +170,7 @@
 },
 "counters": {
 "E": 3,
-"F": 84,
+"F": 87,
 "P": 3,
 "S": 4
 },
@@ -391,15 +391,15 @@
 "F74": "Run the unit classes named in the S4 id table (Debug, tokens removed), compare their sorted test ids with the expected id list, check that no production or budget file changed since the slice base and that Slice10 and Slice08 left the host-user guard list, then apply one deliberate break per moved or rewritten rule and run its named row",
 "F75": "Slice10OnlyWhatTheTeamStillKeepsTest and Slice08NothingToShowTest hold no host rows and their guard-list lines are gone; every expected id is present and passes; each removed host row maps in the S4 id table to a named unit row, and each deliberate break of a production line on its path, including the retention guard and edge applied by the fill target for a team and a portfolio, turns that row red",
 "F76": "A removed host row whose rule, or a loop, gate or retention path it walked, no unit row turns red for; an id missing or extra; a production or budget file in the diff; a guard-list line left for a class that no longer starts a host",
-"F77": "Run the unit classes named in the S4 id table and the two host classes, compare their test ids with the expected list, and check the guard list and production files",
-"F78": "Every expected id is present and passes; the nine host rows of the two classes are the only extra ids; both classes leave the host-user guard list; no production or budget file changed",
-"F79": "The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests, so the Integration tier takes less time and no rule loses its test",
 "F8": "Slice07WhereTheLimitsActuallyMovedTest holds exactly one row, Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing, and it passes; every other id of the three classes equals the expected list and passes; each of the nine removed host rows maps in the id table to a named unit row; each deliberate break (a family line removed from FamiliesFor, the zero-band gate removed, the retention edge anchored on today instead of the last observed day, FillDayIfAbsent passing asOf null) turns its named unit row red",
 "F80": "a unit row exists but no deliberate break of the retention guard, edge, first-day gate or pass allowance turns it red",
 "F81": "Apply one deliberate break to each production line a removed Slice10 or Slice08 host row walked: the retention guard and edge of the fill target for a team and a portfolio, the first-day and last-day gates of the filler, the pass allowance and the 90-day pass cap, the instance day of a team's last refresh, the span of a team's limits window and the start of the window a limits day or percentile day reads, then run the unit rows",
 "F82": "Every break turns at least one named unit row of the id table red, and the production file is put back",
 "F83": "No retention or nothing-to-show rule loses its proof when its host row is removed",
 "F84": "a removed host row walks a production line, such as the pass cap, the last refresh day or the limits window span, that no unit row turns red for",
+"F85": "Run the unit classes named in the S4 id table and the two former host classes, compare their test ids with the expected list, and check the guard list and production files",
+"F86": "Every expected id is present and passes; an id that no slice of the suite lists is the only kind of extra id; neither class holds a host row and both leave the host-user guard list; no production or budget file changed",
+"F87": "The retention and nothing-to-show rules of the percentiles fill are proven by fast unit tests that start no web host, and no rule loses its test; how much time the Integration tier saves is read from CI runs, not observed by this check",
 "F9": "A removed host row with no unit row that turns red for its rule's production line; an id missing or extra beyond the nine removed and the added unit rows; Slice07 holding more or fewer than the one route row; a production file in the diff"
 },
 "product": {
