@@ -57,6 +57,8 @@ levels exist (Epic 6455); until then a change to one page keeps the two pages pa
 | **Access** | System Admins, roles, members per unit, IdP group mappings, system-wide rules (Viewer on all, Admin on all, the everyone signed in switch), API keys | Access | System Settings → Access (SSO Groups and the everyone signed in switch), System Admins, API Keys; unit settings; a unit's Access tab lists, read-only, the system-wide rules that also reach it |
 | **System** | Connections (credentials, health), database and backups, encryption, demo data, log level, usage data, system info, licence | Tracker integration (connections), Licensing, platform lane | System Settings tabs |
 
+**Done (2026-11-14, Epic 6473 "Settings split").** The Settings page is now three areas at `/settings/<area>/<tab>`: Organization (Terminology, Calendar, Refresh & ordering, which holds Feature ordering), Access (System-wide access, API Keys) and System (Connections, Database, Encryption, Demo Data, Usage Data, System Info, Logs, Refresh History, License). Connections moved out of the Overview into System; the License moved from the header popover into System (the popover stays too). The old `?tab=` keys and the earlier addresses redirect to the new ones. Still open from this decision: levels and their names, the connection mapping and the per-unit overrides (U2, U3), which stay where they were.
+
 A unit's own Settings tab holds only its overrides and its local-only settings (Feature WIP, throughput window).
 
 ## Decision 3: one "follows the default / set here" control for every bucket-2 setting
@@ -112,7 +114,7 @@ Steps that are worth doing as their own Story, in a sensible order:
 
 | Step | What | Depends on |
 |---|---|---|
-| U1 | Split System Settings into Organisation, Access and System | nothing; planned inside Epic 6455 |
+| U1 | Split System Settings into Organisation, Access and System | nothing; planned inside Epic 6455. **Done 2026-11-14 by Epic 6473**; Connections left the Overview for System and the License gained a System tab on the way |
 | U2 | One "follows the default / set here" control, used by every bucket-2 setting | nothing; easier after U1 |
 | U3 | Mapping moves from the connection page to Organisation → Connection mapping, one tab per connection, with per-unit overrides | U1, U2 |
 | U4 | One unit page and per-level navigation; Overview lists units by level and lands on the person's level | Epic 6455 |

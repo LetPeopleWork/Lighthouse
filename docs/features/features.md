@@ -6,7 +6,7 @@ nav_order: 25
 
 # Features
 
-The Features page lists every Feature Lighthouse knows about, across all your Portfolios, in the order it forecasts them. You reach it from the top navigation, between *Overview* and *System Settings*.
+The Features page lists every Feature Lighthouse knows about, across all your Portfolios, in the order it forecasts them. You reach it from the top navigation, between *Overview* and *Settings*.
 
 Every other list in Lighthouse shows you a slice: the Features of one Portfolio, or the Features one Team contributes to. This page shows the whole backlog in one place, which is the only view that matches how forecasting actually works — Lighthouse always takes all Features of all Portfolios into account. See [Why the Backlog Order Matters](../concepts/howlighthouseforecasts.html#why-the-backlog-order-matters).
 
@@ -27,7 +27,7 @@ So the position tells you where a Feature sits in the real forecast sequence, no
 
 By default it comes from your work tracking system — the rank or backlog order your Features already carry there. Lighthouse reads it on every refresh, and never writes it back.
 
-That also means the tracker decides: a rank someone changes there re-sequences your forecast. If you would rather Lighthouse owned the order, turn on *Feature Order* under [System Settings → Configuration](../settings/configuration.html#feature-order-premium). Nothing moves when you do — Lighthouse records the order you are already looking at — but from then on refreshes stop re-sequencing it, and this column's heading reads *Manual* so you can tell which order you are reading. Turning it back off returns your tracker's order immediately.
+That also means the tracker decides: a rank someone changes there re-sequences your forecast. If you would rather Lighthouse owned the order, turn on *Feature Order* under [Settings → Organization → Refresh & ordering](../settings/configuration.html#feature-order-premium). Nothing moves when you do — Lighthouse records the order you are already looking at — but from then on refreshes stop re-sequencing it, and this column's heading reads *Manual* so you can tell which order you are reading. Turning it back off returns your tracker's order immediately.
 
 {: .note}
 Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability. Reading it — this page and this column — is not.

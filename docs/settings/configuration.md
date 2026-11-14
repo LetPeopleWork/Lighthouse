@@ -1,12 +1,12 @@
 ---
 title: Configuration
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 2
 ---
 
 # Configuration
-The Configuration Page shows some generally applicable settings that affect the overall Lighthouse behaviour.
+This page covers the settings that affect the overall Lighthouse behaviour. They live under **Settings → Organization**, on the *Calendar*, *Terminology* and *Refresh & ordering* tabs, and each section below says which one. *Never send usage data* sits on the *Usage Data* tab under **Settings → System**; see [Usage Data](usagedata.html).
 
 ![Configuration Overview](../assets/settings/configuration.png)
 
@@ -25,7 +25,7 @@ Lighthouse uses this information in two ways:
 ![Throughput with Blackout](../assets/features/metrics/throughput_blackout.png)
 
 ### Adding and Managing Blackout Periods
-1. Navigate to *System Settings* → *Configuration*.
+1. Navigate to *Settings* → *Organization* → *Calendar*.
 2. Locate the *Blackout Periods* section.
 3. Click *Add Blackout Period* and provide:
    - **Start date** — the first day of the blackout.
@@ -60,7 +60,9 @@ Use a recurring rule for weekends or any regularly repeating closure, and reserv
 Managing blackout periods and recurring rules requires a [Premium license](../licensing/licensing.html#licensed-features). Existing entries remain active for forecasting and metrics even if a license lapses — only the ability to add, edit, or delete them is gated.
 
 ## Behaviour Settings
-Some behaviour does not make sense to have on in every situation. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. Both live in *Behaviour Settings*: one table of instance-wide switches, each with its own row, that you can selectively enable or disable.
+*Let Lighthouse own the order of your Features* is on **Settings → Organization → Refresh & ordering**; *Never send usage data* is on **Settings → System → Usage Data**.
+
+Some behaviour does not make sense to have on in every situation. And occasionally some new features will be deployed with the latest version of Lighthouse that we deem not ready for general use. Both are *Behaviour Settings*: instance-wide switches, each with its own row, that you can selectively enable or disable.
 
 ![Behaviour Settings](../assets/settings/optionalfeatures.png)
 
@@ -114,6 +116,8 @@ There is no setting for this any more. It used to be a Preview under Behaviour S
 If you are enabling Lighthouse features for AI clients, MCP, or automation workflows, continue with [AI and Automation](../aiintegration.html). If the target instance requires authentication, create credentials in [API Keys](apikeys.html).
 
 ## Terminology Configuration
+Found on **Settings → Organization → Terminology**.
+
 Lighthouse allows you to customize the terminology used throughout the application to better align with your organization's language and workflow conventions. This feature helps eliminate confusion by ensuring consistent terminology that matches how your team and organization refers to work items and concepts.
 
 ![Terminology Configuration](../assets/settings/terminologyConfiguration.png)
@@ -148,7 +152,7 @@ The terminology configuration allows you to customize the following terms:
 | **Refinements** | Refinements | Plural form of refinement | Groomings, Preparations |
 
 ### How to Configure
-1. Navigate to *System Settings* → *Configuration*
+1. Navigate to *Settings* → *Organization* → *Terminology*
 2. Locate the *Terminology Configuration* section
 3. For each term you want to customize:
    - View the current default value and description
@@ -174,6 +178,8 @@ The terminology configuration allows you to customize the following terms:
 Changes to terminology are applied immediately throughout the entire application interface. All existing data and configurations remain unchanged - only the display labels are updated.
 
 ## Periodic Refresh Settings
+Found on **Settings → Organization → Refresh & ordering**.
+
 One of the main advantages of Lighthouse is the fact that it's not only offering to run the forecasts on demand, but also **continuously**. To fine-tune this, you can adjust the several settings:
 
 ![Team Refresh Settings](../assets/settings/teamrefreshsettings.png)

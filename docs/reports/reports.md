@@ -98,7 +98,7 @@ If printing does not work for you, please let us know in our [Slack community](h
 
 ![Reports page](../assets/features/reports_page.png)
 
-**Reports** in the top navigation, between *Features* and *System Settings*, opens one table with every report you can read, across all Teams and Portfolios. Use it when you want to find a report without knowing which Team or Portfolio holds it, or to act on several reports at once.
+**Reports** in the top navigation, between *Features* and *Settings*, opens one table with every report you can read, across all Teams and Portfolios. Use it when you want to find a report without knowing which Team or Portfolio holds it, or to act on several reports at once.
 
 The table has the columns **Name**, **Type**, **Owner**, **Created** and *Actions*. The **Owner** column shows the name of the Team or Portfolio the report belongs to, with an icon for which of the two it is. Click the name to open that Team or Portfolio. Portfolios are listed first, then Teams, each sorted by name. Click a column header to sort the table differently.
 

@@ -135,6 +135,9 @@ For an up to date list of Premium Features please consult our [Website](https://
 In Lighthouse, you can see the License Status in the toolbar:
 ![Toolbar](../assets/licensing/toolbar.png)
 
+The same details are on **Settings → System → License**, which also holds the buttons to load, update and clear a license:
+![License tab](../assets/settings/license.png)
+
 The color of the 🛡️ icon indicates the license status. You will also see this on hover:
 - Gray: No License (Free user)
 - Green: License Valid

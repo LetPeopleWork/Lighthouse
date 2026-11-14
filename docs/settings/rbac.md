@@ -1,11 +1,11 @@
 ---
 title: Role-Based Access Control
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 6
 ---
 
-Lighthouse supports **Role-Based Access Control (RBAC)** for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [Authentication](../Installation/authentication.html) and is configured under **Settings → Access**.
+Lighthouse supports **Role-Based Access Control (RBAC)** for fine-grained control over who can read and edit teams and portfolios. RBAC builds on top of [Authentication](../Installation/authentication.html) and is configured under **Settings → Access → System-wide access**.
 
 {: .note}
 RBAC is a **Premium** feature. A valid Premium license is required, [OIDC authentication](../Installation/authentication.html) must be enabled first, and RBAC itself is switched off until you [enable it](#enabling-rbac).
@@ -98,7 +98,7 @@ The team-existence check is **system-wide**, not visibility-filtered: even if yo
 
 ## Enabling RBAC
 
-RBAC is off by default, even with authentication enabled and a Premium license in place. While it is off, every signed-in user has full access and **Settings → Access** shows RBAC as disabled.
+RBAC is off by default, even with authentication enabled and a Premium license in place. While it is off, every signed-in user has full access and **Settings → Access** shows only API Keys: the **System-wide access** tab appears once RBAC is on.
 
 Turn it on under the `Authorization` key in `appsettings.json`:
 
@@ -147,8 +147,8 @@ Greenfield install with auth enabled, in order:
 2. On the **Premium License Required** screen, upload your Premium license. *(In bootstrap mode — i.e. before any System Admin has been granted — license upload is open to any authenticated user. Once a System Admin exists, only the System Admin or an Emergency Admin can upload / replace the license.)*
 3. Set `Authorization__Enabled=true` and restart Lighthouse (see [Enabling RBAC](#enabling-rbac)).
 4. Sign in as the user you want to become the first System Admin.
-5. Go to **Settings → Access → Become First System Admin**.
-6. Add at least one **work tracking system connection** (Settings → Configuration, or directly on the Overview).
+5. Go to **Settings → Access → System-wide access** and select **Become First System Admin**.
+6. Add at least one **work tracking system connection** (Settings → System → Connections).
 7. Create your first **team** on the Overview.
 8. The **Add Portfolio** button becomes visible once a team exists.
 
@@ -187,7 +187,7 @@ For the **license-upload bootstrap path**, the Emergency Admin does NOT count as
 
 Once you are a System Admin, you can grant roles from two places.
 
-**System Admin** is granted in **Settings → Access**, in the Users table:
+**System Admin** is granted in **Settings → Access → System-wide access**, in the Users table:
 
 1. Sign-in events automatically create a user row the first time someone authenticates. If a user has not signed in yet, ask them to sign in once so their row appears.
 2. Click **Grant** next to the user's row. **Revoke** takes the role away again.
@@ -210,13 +210,13 @@ If your identity provider issues group claims, you can grant roles to entire gro
 
 A group can get a role in three ways:
 
-- **System Admin**, in **Settings → Access → SSO Groups**.
+- **System Admin**, in **Settings → Access → System-wide access → SSO Groups**.
 - **Viewer on all** or **Admin on all**, also in **SSO Groups**. These are [system-wide rules](#system-wide-rules).
 - **Team Admin, Portfolio Admin or Viewer on one team or portfolio**, on that team's or portfolio's **Access** tab, under **Add Group Mapping**. Only a System Admin can add or remove these. A team or portfolio admin sees the list but not the form.
 
 To add a group in **SSO Groups**:
 
-1. Go to **Settings → Access** and find **SSO Groups**.
+1. Go to **Settings → Access → System-wide access** and find **SSO Groups**.
 2. Enter the **Group value** as it appears in the user's token claims (case-sensitive — copy/paste from your IdP).
 3. Choose the **Role**: **System Admin**, **Viewer on all** or **Admin on all**.
 4. Click **Add Mapping**. The mapping applies immediately.
@@ -244,7 +244,7 @@ There are three kinds:
 
 ### Viewer on all and Admin on all
 
-Add them under **Settings → Access → SSO Groups**: enter the group value, choose **Viewer on all** or **Admin on all**, and click **Add Mapping**. The table lists each rule with the group, the role, and **Applies to**, which reads *All Teams and Portfolios*. Click **Remove** to take a rule away.
+Add them under **Settings → Access → System-wide access → SSO Groups**: enter the group value, choose **Viewer on all** or **Admin on all**, and click **Add Mapping**. The table lists each rule with the group, the role, and **Applies to**, which reads *All Teams and Portfolios*. Click **Remove** to take a rule away.
 
 **Admin on all** is for someone who looks after every team's settings and should not run the instance. It can **not**:
 
@@ -322,7 +322,7 @@ To restrict what a key can reach, give it [scopes](./apikeys.html) when you crea
 
 ### Let a group read every team and portfolio
 
-1. **Settings → Access → SSO Groups**.
+1. **Settings → Access → System-wide access → SSO Groups**.
 2. Enter the group value, choose **Viewer on all**, and click **Add Mapping**.
 
 ### Revoke a user's access entirely
@@ -372,13 +372,13 @@ Up to and including v26.11.1.2, the Settings tab stays blank for a Team Admin or
 
 If you cannot update yet, a Team Admin can still change the SLE, WIP and forecast settings through the Quick Settings at the top of the team page. For anything else, ask a System Admin to make the change.
 
-### Settings → Access says RBAC is disabled
+### Settings → Access has no System-wide access tab
 
 RBAC has its own switch, separate from authentication and the license. Set `Authorization__Enabled=true` and restart Lighthouse — see [Enabling RBAC](#enabling-rbac).
 
 ### The bootstrap banner does not appear for the first user
 
-If **Settings → Access** says RBAC is disabled, [enable it](#enabling-rbac) first. Otherwise: the bootstrap flow only triggers when **no** System Admin exists in the database. If you have already bootstrapped (or restored a database that contains a System Admin), the banner is correctly hidden. To recover, either sign in as that System Admin or use the Emergency Admin path described above.
+If **Settings → Access** has no **System-wide access** tab, RBAC is off: [enable it](#enabling-rbac) first. Otherwise: the bootstrap flow only triggers when **no** System Admin exists in the database. If you have already bootstrapped (or restored a database that contains a System Admin), the banner is correctly hidden. To recover, either sign in as that System Admin or use the Emergency Admin path described above.
 
 ### I uploaded the license but it says "License could not be loaded"
 

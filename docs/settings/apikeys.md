@@ -1,7 +1,7 @@
 ---
 title: API Keys
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 5
 ---
 
@@ -33,7 +33,7 @@ API keys are intended for non-browser clients. They complement interactive sign-
 
 ## Creating a New API Key
 
-1. Open *System Settings*.
+1. Open *Settings*, then *Access*.
 2. Go to *API Keys*.
 3. Click *New API Key*.
 4. Enter a **Name** and, optionally, a **Description**.

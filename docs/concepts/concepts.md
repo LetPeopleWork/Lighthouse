@@ -50,7 +50,7 @@ ServiceNow is supported at **team level only** — portfolios are not available 
 The general workflow is the same for any Work Tracking System, the difference is in the information required to connect to the system and how to write the [queries](#query).
 
 ## Creating a Work Tracking System Connection
-You can create a new connection to your work tracking system via the Overview page.
+You can create a new connection to your work tracking system under **Settings → System → Connections**.
 
 Once defined, you can reference them via name when you set up your teams and portfolio. What information is needed for the connection depends on the specific Work Tracking System, please check in the subpages for your system to get more detailed information.
 

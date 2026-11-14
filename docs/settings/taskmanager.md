@@ -1,7 +1,7 @@
 ---
 title: Task Manager
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 9
 ---
 

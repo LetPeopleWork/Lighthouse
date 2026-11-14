@@ -1,12 +1,12 @@
 ---
 title: System Info
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 6
 ---
 
 # System Info
-The *System Info* tab gives you an overview over your system:
+Under **Settings → System**, the *System Info*, *Refresh History* and *Logs* tabs give you an overview over your system. *System Info* shows the instance:
 ![System Info](../assets/settings/systeminfo.png)
 
 ## System Info
@@ -20,7 +20,7 @@ You also have a link to the API documentation, which will bring you to a swagger
 One of the rows is **Encryption**, and it answers who owns the key your stored credentials are encrypted with — this instance, or you. It is the fastest way to tell whether an instance still needs a key of its own; what to do about the answer is on the [Secret Encryption Key](encryption.html) page. Like every value here, the row names the key, never the key material.
 
 ## Refresh History
-In order to observe the refresh times of your teams and portfolios, Lighthouse is tracking the last 30 runs and visualizing them:
+The *Refresh History* tab shows this. In order to observe the refresh times of your teams and portfolios, Lighthouse is tracking the last 30 runs and visualizing them:
 
 ![Refresh History](../assets/settings/RefreshHistory.png)
 
@@ -65,7 +65,7 @@ While the history is loading, a spinner shows in its place. If it cannot be load
 
 
 ## Logs
-We really hope you don't need this...but then again, Software is complex and it's very possible that once you run into a problem and need some more details on what was going on (or we ask for this info to better find the problem).  
+The *Logs* tab holds this. We really hope you don't need this...but then again, Software is complex and it's very possible that once you run into a problem and need some more details on what was going on (or we ask for this info to better find the problem).  
 For this case, you can check the *Logs*.
 
 {: .note}

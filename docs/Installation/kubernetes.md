@@ -150,13 +150,13 @@ operator would overwrite the change on its next sync anyway.
 
 That is also why rotating is a sequence rather than a button. You add the new key to the Secret **ahead
 of** the old one, wait for the running pods to re-read the file — no restart is needed — then press
-**Move stored secrets** in Settings → Encryption, and only then remove the old key from the Secret.
+**Move stored secrets** in Settings → System → Encryption, and only then remove the old key from the Secret.
 
 The wait is made of two parts, and only the second is Lighthouse's. Kubernetes projects a changed Secret
 into a running pod on its own schedule, which on a default cluster can take up to a minute; Lighthouse
 then re-reads the mounted file about every thirty seconds, tunable with `encryption.keysReloadSeconds`.
 Measured end to end on a default cluster it took **around seventy seconds** from writing the Secret to
-the new key being the one in force. Watch **Settings → Encryption** and move the secrets when the new key
+the new key being the one in force. Watch **Settings → System → Encryption** and move the secrets when the new key
 id appears there, rather than counting seconds. Nothing is re-entered and no
 connection breaks. The four steps in full, with the values and the `kubectl` commands, are in the
 [chart README](https://github.com/LetPeopleWork/Lighthouse/blob/main/chart/README.md#the-encryption-key),
@@ -177,7 +177,7 @@ returns `Blocked`) and no one can sign in.
 {: .important}
 **Import your licence _before_ you enable OIDC.** The licence-import API requires an authenticated
 system admin, but with OIDC on and no valid Premium licence yet there is no way to authenticate —
-a chicken-and-egg. So: install with auth off → open the app → import the licence (Settings → Licence)
+a chicken-and-egg. So: install with auth off → open the app → import the licence (Settings → System → License)
 → *then* `helm upgrade --set oidc.enabled=true`.
 
 Key OIDC values:
@@ -241,7 +241,7 @@ the API does not crash-loop on a cold database.)
 Turn on sign-in against your identity provider. This is a **Premium** feature, and the order matters —
 read [Login (OIDC)](#login-oidc) for the full why. In short:
 
-**Step 1 — import your licence while auth is still off** (Settings → Licence in the app from Scenario 1).
+**Step 1 — import your licence while auth is still off** (Settings → System → License in the app from Scenario 1).
 Without a valid Premium licence the instance stays in *blocked* mode and nobody can sign in; and once
 OIDC is on you can no longer reach the licence import unauthenticated. So licence first, OIDC second.
 

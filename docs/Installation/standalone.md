@@ -87,7 +87,7 @@ Everything the Standalone edition keeps sits in one folder:
 
 It holds `LighthouseAppContext.db`, your logs, and `data-protection-keys` — the folder with the key
 that encrypts the credentials you enter for your work tracking systems. The startup line names the
-same path, and **Settings → Encryption** shows which key is in force.
+same path, and **Settings → System → Encryption** shows which key is in force.
 
 {: .important}
 A backup of the database without that key folder cannot be restored. The credentials in it stay

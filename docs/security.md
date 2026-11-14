@@ -62,7 +62,7 @@ Lighthouse never writes to the place a key came from. That is what makes the Kub
 add a key to your Secret, Lighthouse reads it, and nothing in the cluster grants the application
 permission to change it back.
 
-**Rotation costs no credentials.** Settings → Encryption, System Administrator only, moves every stored
+**Rotation costs no credentials.** Settings → System → Encryption, System Administrator only, moves every stored
 credential onto a new key without asking anyone to re-enter anything, and reports each one it could not
 read rather than overwriting it. The full procedure — for both the key Lighthouse owns and the key you
 own — is in [Configuration](Installation/configuration.html#changing-the-key-without-re-entering-a-single-credential),
@@ -111,7 +111,7 @@ None of your data. Lighthouse makes these outbound connections, and no others:
 | PostHog Cloud EU (`eu.i.posthog.com`) | [Usage data](settings/usagedata.html): which parts of Lighthouse get used | **Only after a person on the instance has agreed**, and only a closed list of events that carry no names, no work items and no content. Kept for one year |
 
 Usage data is **off until somebody agrees to it**, and anyone can take that back with one click. With a
-licence, an administrator can also switch on **Never send usage data** under Settings → System, which
+licence, an administrator can also switch on **Never send usage data** under Settings → System → Usage Data, which
 stops it for the whole instance and means nobody is asked at all. The [Usage Data](settings/usagedata.html)
 page lists every event and every field.
 
