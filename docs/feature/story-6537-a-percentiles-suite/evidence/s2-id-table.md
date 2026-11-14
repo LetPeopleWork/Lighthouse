@@ -23,3 +23,14 @@ A removed host row runs the whole path, so each row lists every rule its path de
 Portfolio side of row 2: no portfolio host row reads a window longer than 30 days (host rows 5 and 6 use 30 days), so no portfolio window row is needed; the portfolio's window start is pinned by S5b.
 
 Not claimed by the unit rows: the age reader's `age > 0` filter, which no observation reaches (the work-in-progress predicate already requires the item to have started on or before the day, so an item with age zero never gets to the filter); the tab route and the read of the stored days stay with row 8.
+
+## Touched paths (test files outside the host class that this slice changed)
+
+All four files below received added rows only: `git diff --numstat` against the candidate base shows 0 removed lines in each, so no pre-existing row or its set-up changed.
+
+| File | Why it changed | Pre-existing rows |
+|---|---|---|
+| `Modules/FlowMetrics/Application/PercentileFamiliesTest.cs` | new file | none |
+| `Modules/FlowMetrics/Application/PercentileSnapshotWriterTest.cs` | rows added for the horizon span and the day window | none changed; the added rows keep their breaks in `s2-break-evidence.txt` |
+| `Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs` | a row added for a stretch 60 days back counting over 90 days and not over 30 | none changed |
+| `Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFillerTest.cs` | rows added for every day of the asked period and for the first and last supported day | none changed |

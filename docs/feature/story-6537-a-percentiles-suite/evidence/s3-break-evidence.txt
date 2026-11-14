@@ -115,3 +115,14 @@ Failed!  - Failed:     3, Passed:    81, Skipped:     0, Total:    84, Duration:
 === S20 a reading above zero on the first percentile only counts as nothing to report
 Failed AnyOnePercentileAboveZero_IsAReadingWorthARow(5,0,0,0) [44 ms]
 Failed!  - Failed:     1, Passed:    83, Skipped:     0, Total:    84, Duration: 2 s - Lighthouse.Backend.Tests.dll (net10.0)
+
+################ CURRENT RUN (H1, H2: the remaining host rows of the shared acceptance base; an earlier one-family H2 edit stayed green and was replaced)
+=== H1 the daily recording writes tomorrow and not today
+Failed A_quiet_day_is_still_left_blank_by_the_daily_recording [1 s]
+Failed The_daily_recording_still_writes_today [384 ms]
+Failed!  - Failed:     2, Passed:     3, Skipped:     0, Total:     5, Duration: 8 s - Lighthouse.Backend.Tests.dll (net10.0)
+=== H2 the filler walks one limit family only
+=== H2 the filler walks only the first asked day
+Failed A_chart_waiting_its_turn_still_fills_in_whatever_an_old_fill_setting_says [1 s]
+Failed After_the_upgrade_an_instance_whose_admin_had_switched_the_fill_off_fills_in_both_over_time_charts [2 s]
+Failed!  - Failed:     2, Passed:     3, Skipped:     0, Total:     5, Duration: 4 s - Lighthouse.Backend.Tests.dll (net10.0)

@@ -22,6 +22,7 @@ UNITS = (
     "|FullyQualifiedName~TwoCopiesFillingTheSameDayAtThePortTest"
 )
 
+HOSTS = "FullyQualifiedName~Slice09TheFillShipsOptInTest|FullyQualifiedName~Story6084TheFillRunsEverywhereTest"
 BREAKS = [
     ("S1 filler walks only the first asked day", F,
      "foreach (var day in request.CandidateDays)", "foreach (var day in request.CandidateDays.Take(1))"),
@@ -96,6 +97,10 @@ BREAKS = [
     ("S20 a reading above zero on the first percentile only counts as nothing to report", W,
      "public bool AreEmpty => P50 == 0 && P70 == 0 && P85 == 0 && P95 == 0;",
      "public bool AreEmpty => P70 == 0 && P85 == 0 && P95 == 0;"),
+    ("H1 the daily recording writes tomorrow and not today", W,
+     "var day = clock.Today;\n\n            foreach (var horizon in HorizonsFor(metricType))", "var day = clock.Today.AddDays(1);\n\n            foreach (var horizon in HorizonsFor(metricType))", HOSTS),
+    ("H2 the filler walks only the first asked day", F,
+     "foreach (var day in request.CandidateDays)", "foreach (var day in request.CandidateDays.Take(1))", HOSTS),
 ]
 
 only = sys.argv[1:]

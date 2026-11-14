@@ -98,3 +98,28 @@ Failed EveryDayOfTheAskedPeriod_IsWorkedOutForEveryPercentileFamilyOfATeam [9 ms
 Failed TheFirstAndTheLastDayTheStoredItemsSupport_AreBothWorkedOut_AndTheDaysEitherSideAreNot [4 ms]
 Failed TwoDaysThatCannotBeWritten_AreTalliedOnceTheCauseHasBeenReported [5 ms]
 Failed!  - Failed:     7, Passed:    84, Skipped:     0, Total:    91, Duration: 1 s - Lighthouse.Backend.Tests.dll (net10.0)
+
+################ CURRENT RUN (F1 to F6: breaks of the pre-existing rows of OverTimeFillTargetTest)
+=== F1 a portfolio's last refresh is read as a UTC day and not an instance day
+Failed APortfolioLastSeenInTheEveningWestOfUtc_WasLastObservedOnThatEveningsDay [142 ms]
+Failed APortfoliosLimitFamilies_AreNotReadyForAStretchReachingPastWhatItKeeps_AndReadyForOneStartingOnTheEdge [5 ms]
+Failed APortfoliosPercentileFamilies_ReadNothingForAWindowReachingPastWhatItKeeps_AndReadAWindowStartingOnTheEdge [9 ms]
+Failed APortfolioThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [4 ms]
+Failed!  - Failed:     4, Passed:     9, Skipped:     0, Total:    13, Duration: 204 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F2 a team that no longer exists is not refused
+Failed ATeamThatNoLongerExists_HasNothingToFill [14 ms]
+Failed!  - Failed:     1, Passed:    12, Skipped:     0, Total:    13, Duration: 189 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F3 a portfolio that no longer exists is not refused
+Failed APortfolioThatNoLongerExists_HasNothingToFill [14 ms]
+Failed!  - Failed:     1, Passed:    12, Skipped:     0, Total:    13, Duration: 249 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F4 the first day is taken from the latest finished item
+Failed APortfoliosHistory_BeginsOnTheEarliestDayOneOfItsOwnDeliveriesFinished [32 ms]
+Failed ATeamsHistory_BeginsOnTheEarliestDayOneOfItsOwnItemsFinished [3 ms]
+Failed!  - Failed:     2, Passed:    11, Skipped:     0, Total:    13, Duration: 168 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F5 a team's first day looks at other teams' items
+Failed ATeamsHistory_BeginsOnTheEarliestDayOneOfItsOwnItemsFinished [23 ms]
+Failed ATeamThatKeepsWorkForThirtyDays_HasNoHistoryBeforeTheEdge [2 ms]
+Failed!  - Failed:     2, Passed:    11, Skipped:     0, Total:    13, Duration: 172 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== F6 a portfolio's first day ignores deliveries it shares with another portfolio
+Failed APortfoliosHistory_BeginsOnTheEarliestDayOneOfItsOwnDeliveriesFinished [40 ms]
+Failed!  - Failed:     1, Passed:    12, Skipped:     0, Total:    13, Duration: 194 ms - Lighthouse.Backend.Tests.dll (net10.0)

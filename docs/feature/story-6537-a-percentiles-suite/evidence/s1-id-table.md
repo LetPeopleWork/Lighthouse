@@ -18,3 +18,12 @@ Each break is applied to the production line in the working tree, the named unit
 | 10 | Limits_stop_where_the_team_stopped_being_watched_and_a_second_look_changes_nothing | stays (the one limits-route row) | - | - |
 
 Not claimed by the unit rows: that the metrics service reads "asOf null" as today (a different class).
+
+## Touched paths (test files outside the host class that this slice changed)
+
+| File | Why it changed | Pre-existing rows and the break that turns them red |
+|---|---|---|
+| `Modules/FlowMetrics/Application/ProcessBehaviorSnapshotWriterTest.cs` | new rows for the limit families, the gates and the refill rule; its writer set-up gained a second overload that takes a clock, and the old one calls it with the same instant (2026-09-22 09:00 UTC) it built before, so the four rows that were already there run on unchanged input | `ADayWithoutLimits_IsReadOverTheSpanEndingOnThatDay_AsOfThatDay` (B4, B4b), `ADayThatAlreadyCarriesLimits_KeepsWhatWasObserved` (B8), `ARowRefusedBecauseAnotherCopyStoredThatDayFirst_IsAbsorbed` (B10), `ARowRefusedWhileOnlyAnotherFamilyOfThatDayIsStored_IsThrownOn` (B9, B10); each is red in the current run of `s1-break-evidence.txt` |
+| `Modules/FlowMetrics/Application/RetentionEdgeTest.cs` | added rows only, no pre-existing line removed | none changed; the rows have their own breaks above |
+| `Modules/FlowMetrics/Application/TeamMetricsServiceTests.cs` and `PortfolioMetricsServiceTests.cs` | added rows only (the pinned-baseline rows); no pre-existing line removed | none changed; B6 turns the added rows red |
+| `Modules/FlowMetrics/Adapters/Background/OverTimeHistoryFillerTest.cs` | added rows only; no pre-existing line removed | none changed; B7 turns the added every-family row red |

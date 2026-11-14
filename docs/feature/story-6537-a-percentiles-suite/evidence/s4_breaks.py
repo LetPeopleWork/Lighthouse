@@ -21,6 +21,7 @@ UNITS = (
     "|FullyQualifiedName~Adapters.Background.OverTimeHistoryFillerTest."
 )
 
+OWN = "FullyQualifiedName~FlowMetrics.Application.OverTimeFillTargetTest."
 TEAM_EDGE = "retention.NoEarlierThanTheEdge(EarliestFinishedDay(\n                    clock,\n                    workItems"
 PORTFOLIO_EDGE = "retention.NoEarlierThanTheEdge(EarliestFinishedDay(\n                    clock,\n                    deliveries"
 
@@ -77,6 +78,18 @@ BREAKS = [
      "private const int MostDaysOnePassWorksOut = 90;", "private const int MostDaysOnePassWorksOut = 1;"),
     ("D1 the window a day reads starts a day early", W,
      "readPercentiles(windowEnd.AddDays(-horizon), windowEnd)", "readPercentiles(windowEnd.AddDays(-horizon - 1), windowEnd)"),
+    ("F1 a portfolio's last refresh is read as a UTC day and not an instance day", T,
+     "clock.ToInstanceDay(portfolio.UpdateTime)", "DateOnly.FromDateTime(portfolio.UpdateTime)", OWN),
+    ("F2 a team that no longer exists is not refused", T,
+     "if (team is null)", "if (team is null && teamId < 0)", OWN),
+    ("F3 a portfolio that no longer exists is not refused", T,
+     "if (portfolio is null)", "if (portfolio is null && portfolioId < 0)", OWN),
+    ("F4 the first day is taken from the latest finished item", T,
+     "var earliest = finishedInstants.Min();", "var earliest = finishedInstants.Max();", OWN),
+    ("F5 a team's first day looks at other teams' items", T,
+     "item.TeamId == teamId &&", "item.TeamId != teamId &&", OWN),
+    ("F6 a portfolio's first day ignores deliveries it shares with another portfolio", T,
+     "delivery.Portfolios.Any(owner => owner.Id == portfolioId)", "delivery.Portfolios.All(owner => owner.Id == portfolioId)", OWN),
 ]
 
 only = sys.argv[1:]
