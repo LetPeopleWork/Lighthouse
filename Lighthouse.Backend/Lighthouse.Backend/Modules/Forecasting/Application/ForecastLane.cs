@@ -3,7 +3,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using Lighthouse.Backend.Models.Forecast;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Application
 {
     /// <summary>
     /// Threads of Lighthouse's own that background forecast rounds run on, so a long round never takes the

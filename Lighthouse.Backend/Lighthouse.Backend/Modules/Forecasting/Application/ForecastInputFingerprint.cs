@@ -7,7 +7,7 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Application
 {
     /// <summary>
     /// Everything one Portfolio forecast is about to hand the simulation, as the simulation would receive it.

@@ -11,7 +11,7 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Application
 {
 #pragma warning disable S107 // The run marks the Portfolio's recorded inputs right beside saving its forecasts, so the Portfolio repository joins. Every other collaborator is used on its own, and grouping any of them would invent a concept.
     public class ForecastService(

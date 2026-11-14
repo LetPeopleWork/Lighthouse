@@ -4,7 +4,7 @@ using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 
-namespace Lighthouse.Backend.Services.Implementation.Forecast
+namespace Lighthouse.Backend.Modules.Forecasting.Application
 {
     public sealed class ForecastFilterRuleService(
         IRuleEvaluator<WorkItem> ruleEvaluator,
