@@ -128,6 +128,17 @@ namespace Lighthouse.Backend.Tests.API.DTO
 
         [Test]
         [Category("contract-shape:pure-function")]
+        public void A_Parent_default_left_out_of_the_save_keeps_what_the_connection_holds()
+        {
+            var connection = new WorkTrackingSystemConnection { ParentOverrideForTeams = 5 };
+
+            var defaults = new ConnectionDefaultsDto(connection);
+
+            Assert.That(defaults.FieldOf(ConnectionDefaultSetting.ParentOverrideForTeams), Is.EqualTo(5), "A save that names no Parent default must not clear the one the connection holds.");
+        }
+
+        [Test]
+        [Category("contract-shape:pure-function")]
         public void An_Estimation_default_left_out_of_the_save_is_not_sent()
         {
             var defaults = new ConnectionDefaultsDto { ParentOverrideForTeams = 5 };

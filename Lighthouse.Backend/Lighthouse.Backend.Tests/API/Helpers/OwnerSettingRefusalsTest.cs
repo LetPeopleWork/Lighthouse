@@ -55,16 +55,21 @@ namespace Lighthouse.Backend.Tests.API.Helpers
 
         private static ProblemDetails RefusalOf(SettingsOwnerDtoBase save, WorkTrackingSystemOptionsOwner owner, SettingsOwnerKind kind)
         {
+            var refusal = TheRefusalIfAny(save, owner, kind);
+
+            Assert.That(refusal?.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+            return (ProblemDetails)refusal!.Value!;
+        }
+
+        private static ObjectResult? TheRefusalIfAny(SettingsOwnerDtoBase save, WorkTrackingSystemOptionsOwner owner, SettingsOwnerKind kind)
+        {
             var connections = new Mock<IRepository<WorkTrackingSystemConnection>>();
             connections.Setup(repository => repository.GetById(TheOtherConnection))
                 .Returns(AConnection(TheOtherConnection, (AFieldOfTheOtherConnection, "Initiative")));
             var terminology = new Mock<ITerminologyService>();
             terminology.Setup(service => service.GetAll()).Returns([]);
 
-            var refusal = new OwnerSettingRefusals(connections.Object, terminology.Object).RefusalOf(new AController(), kind, owner, save);
-
-            Assert.That(refusal?.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
-            return (ProblemDetails)refusal!.Value!;
+            return new OwnerSettingRefusals(connections.Object, terminology.Object).RefusalOf(new AController(), kind, owner, save);
         }
 
         private static IEnumerable<TestCaseData> ListsThatCannotBeKept()
@@ -122,6 +127,14 @@ namespace Lighthouse.Backend.Tests.API.Helpers
                 Assert.That(problem.Extensions["code"], Is.EqualTo("portfolio-parent-sources-refused"));
                 Assert.That(problem.Title, Is.EqualTo("The Portfolio names parent sources that cannot be kept."));
             }
+        }
+
+        [Test]
+        public void A_list_whose_every_field_the_connection_holds_is_not_refused()
+        {
+            var refusal = TheRefusalIfAny(ASaveOf(Field(AFieldOfTheConnection), Field(AnotherFieldOfTheConnection)), ATeam(), SettingsOwnerKind.Team);
+
+            Assert.That(refusal, Is.Null, "Every field of the list is one the Team's connection holds, so there is nothing to refuse.");
         }
 
         [Test]
