@@ -65,7 +65,7 @@ and anyone can withdraw with one click.
   no work items, no Team or Portfolio names, no content.
 - **Who receives it:** PostHog Cloud EU, with data at rest in the EU, kept for one year.
 - **Switching it off for everybody:** with a licence, an administrator can switch on **Never send usage
-  data** under Settings → System. Nothing is sent and nobody is asked.
+  data** under Settings → System → Usage Data. Nothing is sent and nobody is asked.
 
 The full list of events and fields is on the [Usage Data](settings/usagedata.html) page.
 

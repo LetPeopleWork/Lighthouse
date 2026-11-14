@@ -151,7 +151,7 @@ The features that are used for this calculation are based on the closed features
 On top of the default size, which will be similar for any feature, you can also specify a field that would include an estimate. This allows you to use the default size for features you have not looked at at all, while providing more details for some things that you may have started to refine, but have no child items yet.
 
 {: .note}
-The Size Estimate Field is configured by selecting an Additional Field that has been defined on your Work Tracking System connection. Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field.
+The Size Estimate Field is configured by selecting an Additional Field that has been defined on your Work Tracking System connection. Go to **Settings → System → Connections** to define Additional Fields, then return here to select the appropriate field.
 
 If the field is empty or 0 for a feature, it will fall back to the default/historical feature size.
 
@@ -191,7 +191,7 @@ If defined, the owning team will be used unless a [Feature Owner](#feature-owner
 You can specify a Feature Owner field that contains information about a team that owns a Feature.
 
 {: .note}
-The Feature Owner Field is configured by selecting an Additional Field that has been defined on your Work Tracking System connection. Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field.
+The Feature Owner Field is configured by selecting an Additional Field that has been defined on your Work Tracking System connection. Go to **Settings → System → Connections** to define Additional Fields, then return here to select the appropriate field.
 
 If defined, Lighthouse will get the data in this field for every feature. It will then check if the name of any team is included in the data (so it does not need to **match**, it just needs to be **contained**).
 
@@ -295,7 +295,7 @@ What counts as yielding a parent depends on the source:
 Use **Add a source** to add the tracker's own Parent or an Additional Field not yet in the list, and the arrows on each row to change the order. A list holds at most five sources and names each of them once. The only remaining row cannot be removed, because a list needs at least one source.
 
 {: .note}
-Go to **Settings > Connections** to define Additional Fields, then return here to add them to the list.
+Go to **Settings → System → Connections** to define Additional Fields, then return here to add them to the list.
 
 A changed list costs one full update, see [Faster Updates](../settings/configuration.html#faster-updates).
 
@@ -368,7 +368,7 @@ Every refresh that had to decide writes a warning listing what it did, for examp
 
 `Portfolio "Payments" placed 1 record whose links name more than one issue: PAY-88 under PAY-7 (oldest link, 2026-03-04; set aside PAY-9, 2026-06-17)`
 
-The day is the UTC day the link was made. **Settings > System Info** shows, in the refresh history, the most Features one refresh placed this way. See [Refresh History](../settings/systeminfo.html#refresh-history).
+The day is the UTC day the link was made. **Settings → System → System Info** shows, in the refresh history, the most Features one refresh placed this way. See [Refresh History](../settings/systeminfo.html#refresh-history).
 
 {: .note}
 A Feature that already had several parent links is placed the first time Lighthouse reads it again after an update. It can move once at that point, to the parent these rules pick.
@@ -391,7 +391,7 @@ If your teams record dependencies in a custom field instead — a list of work i
 While a Dependency Field is set, the native links are **not read at all** for this portfolio: the field replaces them, it does not add to them. Entries that don't resolve to a Feature Lighthouse knows are skipped, and the remaining ones are still read.
 
 {: .note}
-Go to **Settings > Connections** to define Additional Fields, then return here to select the appropriate field.
+Go to **Settings → System → Connections** to define Additional Fields, then return here to select the appropriate field.
 
 {: .important}
 The Dependency Field is read for **Azure DevOps** and **Jira** portfolios. Linear exposes no fields of its own for a portfolio to point at, so a Linear portfolio keeps reading its Project relations whatever is selected here. A CSV upload names its column on the connection instead — see [Depends On Column](../concepts/worktrackingsystems/csv.html#dependencies).

@@ -94,12 +94,40 @@ test("Take @screenshot of the demo data settings page", async ({
 	await takePageScreenshot(demoDataPage.page, "settings/demodata.png");
 });
 
+test("Take @screenshot of the license settings tab", async ({
+	overviewPage,
+}) => {
+	const settingsPage = await overviewPage.lightHousePage.goToSettings();
+	const license = await settingsPage.goToLicense();
+	await expect(license.panel).toBeVisible();
+
+	await takePageScreenshot(license.page, "settings/license.png");
+});
+
+testWithDemo(
+	"Take @screenshot of the connections settings tab",
+	async ({ testData, overviewPage }) => {
+		expect(testData.teams).not.toHaveLength(0);
+
+		await overviewPage.lightHousePage.goToOverview();
+		const connections = await overviewPage.lightHousePage.goToConnections();
+		await expect(connections.panel).toBeVisible();
+		await expect(connections.panel.getByText(DEMO_CONNECTION)).toBeVisible();
+
+		await takePageScreenshot(
+			connections.page,
+			"settings/worktrackingsystems.png",
+		);
+	},
+);
+
 test("Take @screenshot of the system configuration page", async ({
 	overviewPage,
 }) => {
 	const settingsPage = await overviewPage.lightHousePage.goToSettings();
 	const terminology = await settingsPage.goToTerminology();
 
+	await terminology.page.evaluate(() => window.scrollTo(0, 0));
 	await takePageScreenshot(terminology.page, "settings/configuration.png");
 	await takeElementScreenshot(
 		terminology.terminologyConfiguration,

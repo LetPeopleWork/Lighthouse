@@ -1,7 +1,7 @@
 ---
 title: Usage Data
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 8
 ---
 
@@ -50,7 +50,7 @@ The complete list of events:
 | A work tracking system was connected | Somebody finished setting up a connection | Which kind it is — one of `Azure DevOps`, `Jira`, `Linear`, `CSV`, `ServiceNow`. **Never its address, never its name, never anything typed while setting it up** |
 | A Team's data was refreshed by hand | Somebody pressed refresh on a Team, or ran `lh team refresh` or the MCP tool `lighthouse_team_refresh`, rather than waiting for the next automatic one | Nothing |
 | A Portfolio's data was refreshed by hand | Somebody pressed refresh on a Portfolio, or ran `lh portfolio refresh` or the MCP tool `lighthouse_portfolio_refresh`, rather than waiting for the next automatic one | Nothing |
-| A setting was switched | Somebody switched a setting under **Settings → System** and your server accepted the change. **Never a switch your server refused** | Which setting it was — only *Let Lighthouse own the order of your Features* — and whether it is now on or off. **Never the setting's key, its name or its description** |
+| A setting was switched | Somebody switched a setting under **Settings → Organization → Refresh & ordering** and your server accepted the change. **Never a switch your server refused** | Which setting it was — only *Let Lighthouse own the order of your Features* — and whether it is now on or off. **Never the setting's key, its name or its description** |
 | A forecast reality check was run | Somebody ran a forecast reality check on a Team page and got an answer back. **A check whose history was too thin to judge still counts; a check that failed to come back never does** | Nothing. **Not which Team, not its sampling window, not what the check found** |
 | A Team's refinement was set up | Somebody chose which states mean refinement for a Team that had none, and your server accepted it. **Changing the states of a Team that already has some is never reported** | Nothing. **Not which Team, not which states were chosen** |
 | A sizing vote was cast | Somebody voted on whether a Work Item in refinement is ready to be worked on, on the Refinement tab or with `lh refinement vote` or the MCP tool `lighthouse_team_refinement_vote`, and your server took the vote | When it was cast, relative to the Team's Refinement: `OnRefinementDay` on a day the Team has a Refinement, `OnOtherDay` on any other day, and `NoCadence` while the Team has no Refinement cadence. **Never who voted, never their name or anything that tells one voter from another, never the answer or a comment, never which Team or which Work Item** |
@@ -66,7 +66,7 @@ The complete list of events:
 | Several reports were removed at once | Somebody confirmed **Remove** for the reports selected on the **Reports** page and the request went to your server. Each report it removed is also counted as *A report was deleted* | Nothing. **Not how many, not which, not their Teams or Portfolios** |
 | Several reports were exported as one PDF | Somebody chose **Export PDF** for two or more reports selected on the **Reports** page. Counted when chosen, before anything is printed, so it also counts a print dialog that was then cancelled; a **Retry** or **Leave it out** after a report could not be loaded is not counted again. One report selected is counted as *A report was exported as a PDF* | Nothing. **Not how many, not which, not their Teams or Portfolios, and never whether a file was saved** |
 | Parent sources were saved with several entries | Somebody saved the parent sources of a Team, a Portfolio or a connection default with two or more entries, the saved list differs from the one last saved, and your server accepted it. A new order counts as a difference. Saving the same list again, a list of one entry, or switching to follow the default is not counted | Nothing. **Not which fields, not how many, not whose** |
-| Access to all Teams and Portfolios was granted | A System Admin added an SSO group rule under **Settings → Access → SSO Groups** that gives **Viewer on all** or **Admin on all**, or turned on **Settings → Access → Everyone signed in**, and your server accepted it. **Removing a rule, turning the switch off, or adding a System Admin group, is never reported** | Nothing. **Not which group, not who added it, not how many people it reaches** |
+| Access to all Teams and Portfolios was granted | A System Admin added an SSO group rule under **Settings → Access → System-wide access → SSO Groups** that gives **Viewer on all** or **Admin on all**, or turned on **Settings → Access → System-wide access → Everyone signed in**, and your server accepted it. **Removing a rule, turning the switch off, or adding a System Admin group, is never reported** | Nothing. **Not which group, not who added it, not how many people it reaches** |
 
 That is the whole vocabulary. It is a closed list in the code — not a pattern that quietly matches new
 things — and the build fails if anything outside it is sent.

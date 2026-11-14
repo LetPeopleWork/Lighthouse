@@ -66,7 +66,7 @@ You need an Entra ID app registration in the same tenant that owns the Azure Dev
 
 ### Configure the connection in Lighthouse
 
-1. **Settings → Connections** → **New Azure DevOps connection** (or **Edit** an existing one if you are migrating off a PAT).
+1. **Settings → System → Connections** → **New Azure DevOps connection** (or **Edit** an existing one if you are migrating off a PAT).
 2. Set **Authentication** to **Azure DevOps (OAuth)**. Hidden if your instance has no Premium licence.
 3. Fill in: **Organization URL** (`https://dev.azure.com/<org>`), **Client ID**, **Directory (Tenant) ID** (single-tenant) or leave empty (multi-tenant), **Client Secret**.
 4. Verify the read-only **Callback URL** matches exactly what you registered in the Entra app. If it shows a warning, set `Lighthouse:BaseUrl` on the server to the public `https://` URL first and reload the page — Entra rejects non-HTTPS redirect URIs for every host except `localhost`.

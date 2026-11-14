@@ -58,7 +58,7 @@ Features are ordered based on the [order in your Work Tracking System](../../con
 The order is crucial, as Lighthouse forecasts based on the [Feature WIP of each Team](#feature-wip) from highest to lowest ordered Feature. Note that the order is instance-wide: the Features of every Portfolio compete for the same Teams, so this list shows one slice of a longer sequence. The [Features page](../features/features.html) shows the whole of it.
 
 {: .note}
-If you would rather Lighthouse owned the order than your Work Tracking System, turn on [Feature Order](../settings/configuration.html#feature-order-premium) under System Settings. Each row then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom* — see [Moving a Feature](../features/features.html#moving-a-feature). Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
+If you would rather Lighthouse owned the order than your Work Tracking System, turn on [Feature Order](../settings/configuration.html#feature-order-premium) under Settings → Organization → Refresh & ordering. Each row then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom* — see [Moving a Feature](../features/features.html#moving-a-feature). Owning the order is a [Premium](../licensing/licensing.html#licensed-features) capability.
 
 ### Feature Name
 The name of the feature. This is also a clickable link, that points to this specific item in your work tracking system.
@@ -378,7 +378,7 @@ Features keep the same colour here as on the fever chart above, and hold their p
 Click **Legend** to open it, then click features to show only those bars — useful once a delivery carries more than a handful. The Count line is a delivery-level fact and is never filtered.
 
 {: .note}
-> This chart uses whatever you call features in **Settings → Terminology**, so it may be titled *Epics over Time*, *Initiatives over Time*, or something else on your instance.
+> This chart uses whatever you call features in **Settings → Organization → Terminology**, so it may be titled *Epics over Time*, *Initiatives over Time*, or something else on your instance.
 
 {: .note}
 > The feature **count** is drawn from the same daily snapshots the other charts use, so it goes back as far as this delivery's history. Feature **sizes** and the estimated/counted distinction were added later and are recorded from that point forward, so bars begin on the first day Lighthouse recorded them — earlier days show the count line alone. Features with no items at all are not counted.
@@ -483,7 +483,7 @@ That is the timeline reporting your board, not misreading it. The forecast is te
 Where one team works several features in sequence, you will see each bar begin on the same day the one above it ends, with no gap. That is correct. A team that finishes a feature part-way through a day pulls the next one the same day, so the handover is not a day long. A gap appears only where a *different* team has to pick the work up.
 
 {: .note}
-> This tab uses whatever you call features in **Settings → Terminology**, so its bars may be titled with your own word for them throughout.
+> This tab uses whatever you call features in **Settings → Organization → Terminology**, so its bars may be titled with your own word for them throughout.
 
 # Metrics
 Similar to the Team Details, the Portfolio contains metrics. The visuals are mostly the same as for the teams, the difference is that they are applied at feature level on the Portfolio. Check the [Metrics Page](../metrics/metrics.html) for more details.

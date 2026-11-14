@@ -1,13 +1,13 @@
 ---
 title: Database Management
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 4
 ---
 
 # Database Management
 
-The **Database Management** page (found under *System Settings → Database Management*) lets you back up, restore, and clear the Lighthouse database directly from the UI — no command-line access or manual file system operations required.
+The **Database Management** page (found under *Settings → System → Database*) lets you back up, restore, and clear the Lighthouse database directly from the UI — no command-line access or manual file system operations required.
 
 ![Database Management](../assets/settings/databasemanagement.png)
 

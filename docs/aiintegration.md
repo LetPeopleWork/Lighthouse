@@ -48,7 +48,7 @@ Think of these as two different deliverables:
 
 If your Lighthouse instance runs without authentication, the examples on this page usually work with just the target URL.
 
-If authentication is enabled, non-browser clients should use an API key. Create and manage those keys from [System Settings > API Keys](./settings/apikeys.html). The full authentication setup is described in [Authentication](./Installation/authentication.html).
+If authentication is enabled, non-browser clients should use an API key. Create and manage those keys from [Settings → Access → API Keys](./settings/apikeys.html). The full authentication setup is described in [Authentication](./Installation/authentication.html).
 
 {: .note}
 API keys are intended for CLI usage, MCP servers, scripts, and other non-browser automation paths. Browser sign-in still uses the normal Lighthouse authentication flow.
@@ -254,7 +254,7 @@ Copilot Studio calls MCP servers over the network, so it needs the MCP HTTP serv
 Before you start, make sure you have:
 
 - A reachable `@letpeoplework/lighthouse-mcp-http` deployment served over HTTPS with a certificate Copilot Studio trusts.
-- A Lighthouse API key created under [System Settings > API Keys](./settings/apikeys.html).
+- A Lighthouse API key created under [Settings → Access → API Keys](./settings/apikeys.html).
 
 ### Add Lighthouse as an MCP Tool
 
@@ -291,7 +291,7 @@ If you build a custom connector in Power Apps instead of using the wizard, the s
 | `404` when the connector is tested | The server URL is missing `/mcp`, or `/mcp` was set in both the base URL and the operation path | Use exactly one `/mcp` in the final URL |
 | `401` with a `WWW-Authenticate` header | No credential reached the server | Check that the header name is `X-Api-Key` and that the connection actually holds a key |
 | `406 Not Acceptable` | The request did not accept both `application/json` and `text/event-stream` | Expected when probing by hand with `curl`; Copilot Studio sends the correct `Accept` header itself |
-| Tools appear, but every call reports `unauthorized` | The API key is wrong, revoked, or lacks permission for the requested data | Re-create the key under System Settings > API Keys and update the connection |
+| Tools appear, but every call reports `unauthorized` | The API key is wrong, revoked, or lacks permission for the requested data | Re-create the key under Settings → Access → API Keys and update the connection |
 
 ## Lighthouse Agent Skill
 
@@ -382,7 +382,7 @@ The clients ask before they send any usage data to your Lighthouse, and nothing 
 
 ## Related Documentation
 
-- [System Settings > API Keys](./settings/apikeys.html)
+- [Settings → Access → API Keys](./settings/apikeys.html)
 - [Authentication](./Installation/authentication.html)
 - [Configuration](./settings/configuration.html)
-- [System Settings](./settings/settings.html)
+- [Settings](./settings/settings.html)

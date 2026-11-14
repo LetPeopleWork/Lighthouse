@@ -200,7 +200,7 @@ Set the length to 32 as otherwise it will not work.
 {: .note}
 Instances created before this version encrypted with a key that ships inside the product. After an upgrade, Lighthouse keeps that key for reading only, so everything already stored keeps working, and writes anything new under a key of its own.
 
-**Upgrading re-encrypts nothing.** What you stored before it stays exactly where it was, under the key that is published with every copy of Lighthouse and can be read out of the public source — so it stays readable by anyone holding one, until you run a rotation. **Settings → Encryption** says how many credentials that applies to on this instance and moves them across without asking you to re-enter a single one; the procedure is [below](#changing-the-key-without-re-entering-a-single-credential).
+**Upgrading re-encrypts nothing.** What you stored before it stays exactly where it was, under the key that is published with every copy of Lighthouse and can be read out of the public source — so it stays readable by anyone holding one, until you run a rotation. **Settings → System → Encryption** says how many credentials that applies to on this instance and moves them across without asking you to re-enter a single one; the procedure is [below](#changing-the-key-without-re-entering-a-single-credential).
 
 ### Supplying more than one key
 
@@ -296,7 +296,7 @@ The sequence back to a working instance:
 
 1. **First give the instance somewhere durable to keep a key**, if it does not have one. This is the step that is easy to skip and the one that decides whether the rest of the sequence ends. In a container, removing the setting in step 4 means recreating the container — and if the key store is on the container's writable layer, that destroys the key again, so the credentials you just re-entered are unreadable on the very next start. Set `Encryption__KeyStorePath` to a directory on a volume that outlives the container, or supply the key with `Encryption__Key`, *before* re-entering anything.
 2. Set `Encryption__StartEvenIfNothingStoredCanBeRead=true` and start Lighthouse.
-3. Open **Settings → Encryption** and press **Check secrets**. Every credential that cannot be read is listed with the Connection and the field that holds it.
+3. Open **Settings → System → Encryption** and press **Check secrets**. Every credential that cannot be read is listed with the Connection and the field that holds it.
 4. Edit each of those Connections and enter the credential again. It is stored under the key this instance is using now.
 5. Check again. When nothing is listed as unreadable, remove the setting and restart.
 
@@ -305,7 +305,7 @@ While the setting is in force it is printed on every start and shown on the encr
 
 ### Changing the key without re-entering a single credential
 
-If a key may have been exposed, you don't have to reconfigure every work tracking system. **Settings → Encryption**, visible to System Administrators only, moves every stored secret onto a new key from inside Lighthouse. Nothing is asked for, nothing is re-entered, and every connection keeps working straight afterwards.
+If a key may have been exposed, you don't have to reconfigure every work tracking system. **Settings → System → Encryption**, visible to System Administrators only, moves every stored secret onto a new key from inside Lighthouse. Nothing is asked for, nothing is re-entered, and every connection keeps working straight afterwards.
 
 The screen shows where the key in force came from, which keys the instance currently holds, and where they are kept. What it offers depends on who owns the key.
 
@@ -315,7 +315,7 @@ The screen shows where the key in force came from, which keys the instance curre
 
 1. Put the new key **ahead of** the old one, so the ring reads `new:<base64 key>,old:<base64 key>`. On Kubernetes this is an edit to the Secret you already keep.
 2. Restart Lighthouse — or roll the pod — so it picks the new ring up. New secrets are now written under the new key; everything already stored is still read with the old one.
-3. Open **Settings → Encryption** and choose **Move stored secrets onto the active key**.
+3. Open **Settings → System → Encryption** and choose **Move stored secrets onto the active key**.
 4. Once the result reports nothing left unreadable, remove the old key from your Secret and restart again.
 
 Do not remove the old key before step 3. Nothing is destroyed if you do — the stored secrets are still there — but Lighthouse can no longer read them, and it will name each connection and field it cannot read rather than guessing.

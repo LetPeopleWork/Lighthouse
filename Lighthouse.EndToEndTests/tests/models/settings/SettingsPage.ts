@@ -4,6 +4,7 @@ import { DemoDataPage } from "../teams/DemoDataPage";
 import { ApiKeysSettingsPage } from "./ApiKeys/ApiKeysSettingsPage";
 import { DatabaseManagementPage } from "./DatabaseManagement/DatabaseManagementPage";
 import { EncryptionSettingsPage } from "./Encryption/EncryptionSettingsPage";
+import { LicensePage } from "./License/LicensePage";
 import { CalendarPage } from "./Organization/CalendarPage";
 import { RefreshAndOrderingPage } from "./Organization/RefreshAndOrderingPage";
 import { TerminologyPage } from "./Organization/TerminologyPage";
@@ -60,6 +61,12 @@ export class SettingsPage {
 		await this.openTab("organization", "refresh-ordering-tab");
 
 		return new RefreshAndOrderingPage(this.page);
+	}
+
+	async goToLicense(): Promise<LicensePage> {
+		await this.openTab("system", "license-tab");
+
+		return new LicensePage(this.page);
 	}
 
 	async goToSystemInfo(): Promise<SystemInfoPage> {

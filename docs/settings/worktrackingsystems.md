@@ -1,12 +1,12 @@
 ---
 title: Work Tracking Systems
 layout: home
-parent: System Settings
+parent: Settings
 nav_order: 1
 ---
 
 # Work Tracking Systems
-Work Tracking System connections are managed from the [Overview](../index.html) page.
+Work Tracking System connections are managed under **Settings → System → Connections**.
 
 ![Work Tracking Systems](../../assets/settings/worktrackingsystems.png)
 
@@ -21,7 +21,7 @@ You can do so by clicking on the 🖊️ icon on the right side of the work trac
 {: .important}
 As the secret information (like API Tokens) are not available to the end user, you will **always** have to provide this information again on any change.
 
-If your change touches the [Additional Fields](#additional-fields) of a connection that Teams or Portfolios use, saving asks how many of them it will update. **Save and update** updates them now and returns to the overview, **Save only** leaves them to their next scheduled update, and **Cancel** keeps your edits on the page. A connection nobody uses saves without asking.
+If your change touches the [Additional Fields](#additional-fields) of a connection that Teams or Portfolios use, saving asks how many of them it will update. **Save and update** updates them now and returns to the Connections tab, **Save only** leaves them to their next scheduled update, and **Cancel** keeps your edits on the page. A connection nobody uses saves without asking.
 
 ## Deleting Systems
 You can also delete Work Tracking Systems if they are not needed anymore. To do so, you can click on the 🗑️ icon on the right side of the work tracking system. This will permanently delete this work tracking system.
@@ -182,7 +182,7 @@ Removing the mapping stops future writes immediately. It does **not** clear valu
 those stay in your work tracking system until you remove them yourself.
 
 ### Adding a Mapping
-1. Open the connection editor from the *Overview* page (🖊️ icon).
+1. Open the connection editor from **Settings → System → Connections** (🖊️ icon).
 2. Navigate to the *Mappings* section.
 3. Click *Add Mapping* and fill in the fields above.
 4. Save the connection.

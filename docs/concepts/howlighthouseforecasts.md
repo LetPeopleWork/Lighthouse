@@ -119,7 +119,7 @@ The [Feature View](../teams/detail.html#features) in the Teams Detail Page will 
 ### Who decides that order
 By default your work tracking system does, through the rank your Features already carry there. Lighthouse re-reads it on every refresh, which means a rank changed in Azure DevOps, Jira, or Linear moves your forecasted dates without anyone on your team deciding it — and on a connector with no meaningful rank, such as ServiceNow, there was never an order worth reading.
 
-You can hand that decision to Lighthouse instead, with [Feature Order](../settings/configuration.html#feature-order-premium) under System Settings. Nothing moves when you turn it on; from then on refreshes no longer re-sequence the forecast.
+You can hand that decision to Lighthouse instead, with [Feature Order](../settings/configuration.html#feature-order-premium) under Settings → Organization → Refresh & ordering. Nothing moves when you turn it on; from then on refreshes no longer re-sequence the forecast.
 
 Every Feature list then offers *Move to Top*, *Move Up*, *Move Down* and *Move to Bottom*, and a move re-forecasts straight away rather than waiting for the next refresh — so you can try an order and read the dates it produces. See [Moving a Feature](../features/features.html#moving-a-feature).
 

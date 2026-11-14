@@ -406,7 +406,7 @@ What counts as yielding a parent depends on the source:
 Use **Add a source** to add the tracker's own Parent or an Additional Field not yet in the list, and the arrows on each row to change the order. A list holds at most five sources and names each of them once. The only remaining row cannot be removed, because a list needs at least one source.
 
 {: .note}
-Go to **Settings > Connections** to define Additional Fields, then return here to add them to the list.
+Go to **Settings → System → Connections** to define Additional Fields, then return here to add them to the list.
 
 A changed list costs one full update, see [Faster Updates](../settings/configuration.html#faster-updates).
 
@@ -483,7 +483,7 @@ Every refresh that had to decide writes a warning listing what it did, for examp
 
 `Team "Payments" placed 1 record whose links name more than one issue: PAY-420 under PAY-88 (oldest link, 2026-03-04; set aside PAY-91, 2026-06-17)`
 
-The day is the UTC day the link was made. **Settings > System Info** shows, in the refresh history, the most Work Items one refresh placed this way and the most it could not place. Both figures appear only when there was something to count. See [Refresh History](../settings/systeminfo.html#refresh-history).
+The day is the UTC day the link was made. **Settings → System → System Info** shows, in the refresh history, the most Work Items one refresh placed this way and the most it could not place. Both figures appear only when there was something to count. See [Refresh History](../settings/systeminfo.html#refresh-history).
 
 {: .note}
 A link is dated from the Work Item's own history. When the issue at the other end of a link was moved to another project or renamed, the history names it by its old key, so that link counts as undated. When Jira hands over only part of a long history, none of the Work Item's links are dated, because the missing part could have removed and re-added any of them.
