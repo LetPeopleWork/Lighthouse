@@ -1511,6 +1511,8 @@ These answer A-Q1–A-Q9 and take precedence over every A-D and AM row above.
 
 ### Prerequisites (DELIVER)
 
+*Extended 2026-11-14: three #6510 Stories come first. See "Plan update: improvement Stories become prerequisites" at the end of this file.*
+
 - **Epic 6264 S02 (Metrics pilot)** is merged first: it fixes the `Modules/` and `src/modules/` folder names and
   spelling that MA1 uses. Slice 01 (test-only) may start before it; slices 02 onward wait.
 - **#6473's Organization shell** for slice 05 (M5), with the American slugs (MA10).
@@ -1794,6 +1796,7 @@ unit count minus the three exception groups; Organization shows two levels; one 
 | Standalone / Helm / Docker | same migrator on every start; no chart or env change | same process |
 
 ### Pre-requisites (DELIVER)
+*Extended 2026-11-14: see "Plan update: improvement Stories become prerequisites" at the end of this file.*
 1. Epic 6264 S02 (Metrics pilot) merged before slice 02; slice 01 (test-only) may start earlier.
 2. #6473's Organization shell before slice 05 (M5); slices 02, 03, 04, 07, 10, 12, 13 are decoupled from it.
 3. Re-check `UsageDataEventName` still ends at 21 before appending 22 and 23.
@@ -1897,3 +1900,52 @@ stays and its expected result changes. **KPI OUT-1**: exception (ii) narrows to 
 **Rollback.** MA9 stands; the new tables are additive.
 **ADR-270 and ADR-271** carry this now (revised 2026-11-06), so the proposed edits above that put types on the level are
 superseded where they disagree.
+
+---
+
+## Plan update: improvement Stories become prerequisites (maintainer, 2026-11-14)
+
+The maintainer set the next focus: rebuild the structure (UI and code), so that future work stays fast. The order
+is **three improvement Stories from Epic #6510, then this Epic**. After this Epic, the maintainer collects more
+feedback and decides what comes next. Nothing starts on this date: this section only records the plan.
+
+S02 #6358 (the earlier prerequisite) is Closed. The maintainer decided go-with-changes on 2026-11-09 (ADR-270,
+"Gate decision"). This section adds to the two "Prerequisites (DELIVER)" lists above. It does not replace them.
+
+### Prerequisites, in this order
+
+| # | Story | Why before this Epic |
+|---|---|---|
+| 1 | **S03c Package Forecasting (#6361)** | Slice 07 moves the leaf capacity inputs (Feature WIP, throughput window, forecast filter rules) into a Forecasting extension keyed by unit id. With S03c done first, slice 07 writes into a finished `Modules/Forecasting` and does not need a second move. S03c also decides the Flow metrics ↔ Forecasting cycle (ADR-270 gate, change 5). |
+| 2 | **S03b Package Work Items (#6360)** | Slice 04 (a unit reads its subset of types) and slice 12 (one refresh per unit) read and refresh Work Items. A packaged Work Items context gives them a port to call, not today's services. S03b decides the Work Items → Flow metrics edge (gate change 5). **To verify at the start of S03b's DESIGN:** the exact Work Items seams that slices 04 and 12 use. |
+| 3 | **S09a Context contracts + contracts-only cross-context rule (#6382)** | The new Organisation set-up module is created in slice 02 (MA1). With S09a done first, the module follows the contracts-only rule from its first commit. Without it, the module's cross-context calls must be ratcheted down later. |
+
+The first of these Stories also does the lift of the shared module rules (ADR-270 gate, change 3).
+
+### Conditions on the prerequisite DESIGNs
+
+- Each one reads this delta, ADR-274 and the open mockup feedback (the "[SUPER] Epic" point: one Jira type on two
+  levels, told apart by a title marker). It must not fix a shape that this Epic reverses.
+- Each one is behaviour-free, as all of #6510 is, and runs through `/continuous-improvement` as its own item.
+
+### What does not change
+
+- S03i (#6468) and the Portfolio-as-unit half of S03d (#6362) stay as decided in "6264 re-cut (amended)". This Epic
+  builds the units, levels and terminology split straight into `Modules/OrganisationSetup/`. S03i keeps blackouts,
+  refresh cadence, ordering policy and connection defaults. The other #6510 Stories (S03a, S03d's Deliveries half,
+  S03e to S03h, S04b, S09b) are fitted in between other work later.
+- The hold for mockup feedback (2026-11-08) still applies to this Epic. Look at it again when the three
+  prerequisites are Closed, and before the sketch walk-through at the start of DELIVER.
+- All slices, slice 01 included, wait for the three prerequisites. Slice 01 pins today's numbers. If it runs after
+  the moves, it pins them against the layout the other slices build on.
+
+### Story #6627 joins this Epic as slice 16 (maintainer, 2026-11-14)
+
+Story #6627 (Rethink the periodic refresh settings) becomes this Epic's **slice 16**, delivered right after
+slice 12, with **one setting**: the oldest any unit's data may be. Slice 12 makes one refresh per unit and leaves out
+new refresh behaviour, so after it the "Team" and "Feature" refresh types no longer match the code. One value works
+for any number of levels, so the Story no longer waits for #6455. Start Delay leaves the Organization page. Brief:
+`slices/slice-16-one-refresh-setting.md`. The slice is visible, so it joins the sketch walk-through at the start of
+DELIVER.
+
+Slices are now 17. Delivery order: as in "Final slice list", with 16 right after 12.
