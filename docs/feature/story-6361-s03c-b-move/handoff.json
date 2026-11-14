@@ -1,7 +1,92 @@
 {
+"acceptance": {
+"S1": [
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F110",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.TheForecastSimulationAndItsPureParts_LiveInTheModuleDomain_AndNoneIsLeftUnderServices"
+},
+"expected": "F108",
+"stimulus": "F107",
+"user_result": "F109"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F114",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.TheForecastSimulationAndItsPurePartsFiles_SitInTheModuleDomainFolder_AndNowhereElse"
+},
+"expected": "F112",
+"stimulus": "F111",
+"user_result": "F113"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F118",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.TheForecastingDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary"
+},
+"expected": "F116",
+"stimulus": "F115",
+"user_result": "F117"
+},
+{
+"covers": [
+"P1"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F122",
+"test": "Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.AForecastingDomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot"
+},
+"expected": "F120",
+"stimulus": "F119",
+"user_result": "F121"
+},
+{
+"covers": [
+"P4"
+],
+"disposition": {
+"kind": "Tested",
+"obligations": [
+"T1"
+],
+"still_passes_if": "F126",
+"test": "Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs"
+},
+"expected": "F124",
+"stimulus": "F123",
+"user_result": "F125"
+}
+]
+},
 "counters": {
 "D": 4,
-"F": 102,
+"E": 4,
+"F": 126,
 "K": 3,
 "P": 4,
 "S": 3,
@@ -500,14 +585,70 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F103"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F104"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F105"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F106"
+}
+]
+},
 "facts": {
 "F1": "Story #6361 S03c Package Forecasting, nwdes feature B of three (the move). Move the 31 Forecasting files out of Services into Modules/Forecasting: the simulation, draw streams, run plan and the two forecast policies into Domain; the forecast, reality-check and filter-rule services, their ports, ForecastLane and IForecastUpdater into Application; the forecast updater and the start-up seeder into Adapters/Background; the four forecast triggers into Application/Policies. Pure moves in their own commits, namespace edits apart. The Flow metrics rule lists name the moved types in their new place. Behaviour-free: routes, DTOs, responses, forecast results, handler order and the schema stay the same. Design: docs/feature/story-6361-s03c-package-forecasting/feature-delta.md (slices B1-B3, Component decomposition, D-4, D-8).",
 "F10": "Any behaviour, route, DTO, schema, handler-order or response change",
 "F100": "A trigger left in BackgroundServices.Update or the updater outside Adapters.Background fails and names the type; a reordered registration fails the order pin",
 "F101": "L1 pure move: git mv the six files; then a separate edit commit for using lines",
 "F102": "Handler order, hosted-service and seeder registration order, forecast answers",
+"F103": "Forecast simulation, draw streams, run plan and both forecast policies behave for the user as before the move. Their Domain folder placement is not user-observable and is referred to candidate review.",
+"F104": "Forecast, reality-check and filter-rule behaviour is unchanged for the user, and the Flow metrics rule lists still apply the same rules after the move. Application folder placement is not user-observable and is referred to candidate review.",
+"F105": "Forecast updates, start-up forecast seeding and the four forecast triggers happen for the user as before, with the same domain-event handler order. Adapter and policy folder placement is not user-observable and is referred to candidate review.",
+"F106": "Given identical inputs, the forecasts and forecast answers a user sees are identical before and after the move.",
+"F107": "Read the compiled production assembly and ask where the sixteen simulation, draw stream, run plan and policy types live",
+"F108": "All sixteen live in the Forecasting Domain namespace and none remains under Services",
+"F109": "A developer opening the Forecasting module sees its pure simulation parts in one Domain folder, not scattered in Services",
 "F11": "No Domain-layer Forecasting type remains in Services; Modules/Forecasting/Domain reaches only the kernel and the BCL",
+"F110": "A copy left under Services, or a type moved to the folder but keeping the old namespace",
+"F111": "Check the sixteen source files by name across the production project",
+"F112": "Each file sits in the Forecasting Domain folder and in no other folder",
+"F113": "The folder layout matches the namespace so the module reads as built",
+"F114": "A namespace edit without moving the file, or a duplicate file elsewhere",
+"F115": "Apply the Domain dependency rule to the compiled Forecasting Domain",
+"F116": "Domain types reach only the Domain itself, the shared Models and the base library",
+"F117": "The simulation stays a pure calculation that cannot read a database, setting or logger",
+"F118": "A Domain type reaching Application, Adapters or Services",
+"F119": "Run the same Domain rule on made-up Domain types, one per forbidden layer, each beside a compliant twin, and on an empty Domain",
 "F12": "The forecast services and their ports live in Modules/Forecasting/Application and the Flow metrics lists name them there",
+"F120": "Only the offender is named with the forbidden type it reached, the twin is not, and an empty Domain fails naming its pattern",
+"F121": "The rule is trusted because it is shown to catch an offender and spare a clean type",
+"F122": "A rule that flags everything or nothing",
+"F123": "Seed the same forecast inputs and run the forecast",
+"F124": "Forecast results equal the recorded answers",
+"F125": "Users see the same forecasts after the move",
+"F126": "A move that changes draw order but is not caught by the recorded answers",
 "F13": "The forecast updater and seeder live in Adapters/Background and the four triggers in Application/Policies; handler order unchanged",
 "F14": "Pure moves only: 31 Forecasting files git-mv from Services into Modules/Forecasting, type and file names unchanged, namespace = folder (Lighthouse.Backend.Modules.Forecasting.{Domain,Application,Application.Policies,Adapters.Background}). Each slice is a pure-move commit, then a separate edit commit for using lines, Flow metrics list strings and the Stryker path. Layers per D-4: Domain = 16 types reaching only kernel and BCL; Application = services, ports, ForecastLane, IForecastUpdater; Policies = four triggers; Adapters/Background = ForecastUpdater and ForecastInputsForgottenAtStartSeeder.",
 "F15": "Checker mapping: no state machine or temporal claim exists (behaviour-free relocation), so Quint, TLA+/TLC and Agda are not applicable; liveness is not applicable (no new progress claim, no scheduling change). The dependency-direction and placement claims are checked by the IL-reading ArchUnit rules in the three slice oracles; behaviour preservation is checked by SeededForecastsStayTheSameTest and bash Scripts/examine/bin/forecast-answers-compare (base 39a7f598f vs HEAD). No property-based law: the finite relocation has no broad input domain.",

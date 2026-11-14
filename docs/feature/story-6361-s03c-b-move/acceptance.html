@@ -151,11 +151,172 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Slices</h2>
 
-<p>None.</p>
+<h3>S1</h3>
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Read the compiled production assembly and ask where the sixteen simulation, draw stream, run plan and policy types live
+</code></pre>
+
+<pre><code>All sixteen live in the Forecasting Domain namespace and none remains under Services
+</code></pre>
+
+<pre><code>A developer opening the Forecasting module sees its pure simulation parts in one Domain folder, not scattered in Services
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.TheForecastSimulationAndItsPureParts_LiveInTheModuleDomain_AndNoneIsLeftUnderServices</p>
+
+<pre><code>A copy left under Services, or a type moved to the folder but keeping the old namespace
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Check the sixteen source files by name across the production project
+</code></pre>
+
+<pre><code>Each file sits in the Forecasting Domain folder and in no other folder
+</code></pre>
+
+<pre><code>The folder layout matches the namespace so the module reads as built
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.TheForecastSimulationAndItsPurePartsFiles_SitInTheModuleDomainFolder_AndNowhereElse</p>
+
+<pre><code>A namespace edit without moving the file, or a duplicate file elsewhere
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Apply the Domain dependency rule to the compiled Forecasting Domain
+</code></pre>
+
+<pre><code>Domain types reach only the Domain itself, the shared Models and the base library
+</code></pre>
+
+<pre><code>The simulation stays a pure calculation that cannot read a database, setting or logger
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.TheForecastingDomain_ReachesOnlyTheSharedKernelAndTheBaseLibrary</p>
+
+<pre><code>A Domain type reaching Application, Adapters or Services
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P1</p>
+
+<pre><code>Run the same Domain rule on made-up Domain types, one per forbidden layer, each beside a compliant twin, and on an empty Domain
+</code></pre>
+
+<pre><code>Only the offender is named with the forbidden type it reached, the twin is not, and an empty Domain fails naming its pattern
+</code></pre>
+
+<pre><code>The rule is trusted because it is shown to catch an offender and spare a clean type
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests.Architecture.ForecastingDomainLayoutArchUnitTest.AForecastingDomainTypeThatReachesAForbiddenLayer_IsReportedAndItsCompliantTwinIsNot</p>
+
+<pre><code>A rule that flags everything or nothing
+</code></pre>
+
+<h6>Obligations</h6>
+
+
+<h5>Covers</h5>
+
+<p>P4</p>
+
+<pre><code>Seed the same forecast inputs and run the forecast
+</code></pre>
+
+<pre><code>Forecast results equal the recorded answers
+</code></pre>
+
+<pre><code>Users see the same forecasts after the move
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>Tested</p>
+
+<p>Lighthouse.Backend.Tests/Acceptance/Forecasting/SeededForecastsStayTheSameTest.cs</p>
+
+<pre><code>A move that changes draw order but is not caught by the recorded answers
+</code></pre>
+
+<h6>Obligations</h6>
+
 
 <h2>Expectations</h2>
 
-<p>None.</p>
+<h3>Rows</h3>
+
+<h4>E1</h4>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<pre><code>Forecast simulation, draw streams, run plan and both forecast policies behave for the user as before the move. Their Domain folder placement is not user-observable and is referred to candidate review.
+</code></pre>
+
+<h4>E2</h4>
+
+<h5>Promises</h5>
+
+<p>P2</p>
+
+<pre><code>Forecast, reality-check and filter-rule behaviour is unchanged for the user, and the Flow metrics rule lists still apply the same rules after the move. Application folder placement is not user-observable and is referred to candidate review.
+</code></pre>
+
+<h4>E3</h4>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<pre><code>Forecast updates, start-up forecast seeding and the four forecast triggers happen for the user as before, with the same domain-event handler order. Adapter and policy folder placement is not user-observable and is referred to candidate review.
+</code></pre>
+
+<h4>E4</h4>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<pre><code>Given identical inputs, the forecasts and forecast answers a user sees are identical before and after the move.
+</code></pre>
 
 <h2>Charter</h2>
 
