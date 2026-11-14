@@ -8,8 +8,6 @@
 
 P1
 
-P5
-
 ```text
 A reader views a Cycle Time chart where no closed Work Item is longer than 5 times the median, including one exactly at 5 times
 ```
@@ -52,7 +50,7 @@ The 58-day item is not drawn, the axis top is 1.1 times the largest drawn value 
 ```
 
 ```text
-Typical work is readable, the extreme item is disclosed one click away and no statistic changes
+The extreme item is left off the plot and disclosed one click away, while the chart's percentile and SLE lines keep their values
 ```
 
 ##### Disposition
@@ -426,6 +424,32 @@ A count shown before any answer exists fails; this case already holds today
 ###### Obligations
 
 None.
+
+##### Covers
+
+P5
+
+```text
+A chart with an outlier is open; the reader opens View Data or clicks a dot to see its Work Items
+```
+
+```text
+View Data and the dot dialog still list every closed Work Item including the outlier
+```
+
+```text
+No number or list outside the chart's drawing changes
+```
+
+##### Disposition
+
+NotTested
+
+```text
+View Data and the dot dialog are built outside the chart's outlier filter (the data list for View Data is the full list, unchanged by this slice); the oracle stubs the dialog, so the final review and EXAMINE verify it
+```
+
+examiner
 
 ## Expectations
 

@@ -157,8 +157,6 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P1</p>
 
-<p>P5</p>
-
 <pre><code>A reader views a Cycle Time chart where no closed Work Item is longer than 5 times the median, including one exactly at 5 times
 </code></pre>
 
@@ -194,7 +192,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <pre><code>The 58-day item is not drawn, the axis top is 1.1 times the largest drawn value or line, the 50%, 85%, 95% and SLE lines keep their given values 6, 8, 15 and 7, the header chip reads 1 outlier, the popover says &#x27;Not drawn: longer than 30 days (5 times the median, 6 days).&#x27; and &#x27;Still counted in the percentiles, SLE and View Data.&#x27;, and lists the item with closed date, 58 and 9.7x (9.7 times the median)
 </code></pre>
 
-<pre><code>Typical work is readable, the extreme item is disclosed one click away and no statistic changes
+<pre><code>The extreme item is left off the plot and disclosed one click away, while the chart&#x27;s percentile and SLE lines keep their values
 </code></pre>
 
 <h5>Disposition</h5>
@@ -519,6 +517,28 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 <h6>Obligations</h6>
 
 <p>None.</p>
+
+<h5>Covers</h5>
+
+<p>P5</p>
+
+<pre><code>A chart with an outlier is open; the reader opens View Data or clicks a dot to see its Work Items
+</code></pre>
+
+<pre><code>View Data and the dot dialog still list every closed Work Item including the outlier
+</code></pre>
+
+<pre><code>No number or list outside the chart&#x27;s drawing changes
+</code></pre>
+
+<h5>Disposition</h5>
+
+<p>NotTested</p>
+
+<pre><code>View Data and the dot dialog are built outside the chart&#x27;s outlier filter (the data list for View Data is the full list, unchanged by this slice); the oracle stubs the dialog, so the final review and EXAMINE verify it
+</code></pre>
+
+<p>examiner</p>
 
 <h2>Expectations</h2>
 

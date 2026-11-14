@@ -3,8 +3,7 @@
 "S1": [
 {
 "covers": [
-"P1",
-"P5"
+"P1"
 ],
 "disposition": {
 "kind": "Tested",
@@ -34,7 +33,7 @@
 },
 "expected": "F242",
 "stimulus": "F197",
-"user_result": "F199"
+"user_result": "F264"
 },
 {
 "covers": [
@@ -216,6 +215,19 @@
 "expected": "F261",
 "stimulus": "F260",
 "user_result": "F262"
+},
+{
+"covers": [
+"P5"
+],
+"disposition": {
+"kind": "NotTested",
+"owner": "examiner",
+"reason": "F268"
+},
+"expected": "F266",
+"stimulus": "F265",
+"user_result": "F267"
 }
 ]
 },
@@ -224,7 +236,7 @@
 "C": 1,
 "D": 12,
 "E": 5,
-"F": 263,
+"F": 268,
 "K": 3,
 "L": 3,
 "P": 5,
@@ -1269,7 +1281,6 @@
 "F195": "A chart with no extreme item looks exactly as it did before",
 "F196": "A rule using at-least instead of more-than at 5 times would hide the 30-day item; that wrong rule is rejected here",
 "F197": "A reader opens a Team chart where one closed Work Item took 58 days against a median of 6, with percentile and SLE lines, then clicks the header chip",
-"F199": "Typical work is readable, the extreme item is disclosed one click away and no statistic changes",
 "F2": "A flow coach reads the picture of normal work on the Cycle Time scatterplot without one extreme item squashing it, and still knows which items were left out and why.",
 "F20": "Edge markers (maintainer S-5): a percentile or SLE line above the new axis top is drawn as a labelled triangle marker in the plot's top margin via OffScaleLineMarkers (aria-hidden, reads only useDrawingArea); fallback if the browser spike fails is a text line under the legend row. The Zenith demo has no line above the cut, so markers are proven by RTL and unit tests on fixtures, not E2E geometry.",
 "F201": "A closed Work Item one day over 5 times the median (31 days against 6)",
@@ -1336,6 +1347,11 @@
 "F261": "No outlier count and no popover appear in the header",
 "F262": "A first load never shows an outlier count",
 "F263": "A count shown before any answer exists fails; this case already holds today",
+"F264": "The extreme item is left off the plot and disclosed one click away, while the chart's percentile and SLE lines keep their values",
+"F265": "A chart with an outlier is open; the reader opens View Data or clicks a dot to see its Work Items",
+"F266": "View Data and the dot dialog still list every closed Work Item including the outlier",
+"F267": "No number or list outside the chart's drawing changes",
+"F268": "View Data and the dot dialog are built outside the chart's outlier filter (the data list for View Data is the full list, unchanged by this slice); the oracle stubs the dialog, so the final review and EXAMINE verify it",
 "F27": "Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.",
 "F28": "No external service, wire format or independently released consumer changes; the usage event name is a same-commit enum pair covered by the slice 1 oracle and existing backend tests.",
 "F29": "The existing fallow layer check (layerBoundaries.enforcement.test.ts) already forbids utils importing services, hooks and pages and components importing pages, and it governs the new modules by directory; the design adds no new dependency law.",
