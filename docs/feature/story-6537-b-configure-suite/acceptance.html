@@ -319,10 +319,10 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>P2</p>
 
-<pre><code>Break one production line on the path of each removed host row, then run the unit rows
+<pre><code>Break one production line on the path of each removed host row, including the once-per-refresh collapse and the refused connection check, then run the unit rows
 </code></pre>
 
-<pre><code>Each deliberate break turns at least one named unit or port row red, and the id table names that row for every removed host row
+<pre><code>Each deliberate break turns at least one named unit or port row red, the id table names that row for every removed host row, a refused connection check reports not valid in its unit row, and an existing controller row pins the 400 answer
 </code></pre>
 
 <pre><code>No Azure DevOps relation rule loses its test when the host rows leave
@@ -334,7 +334,7 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <p>python3 docs/feature/story-6537-b-configure-suite/evidence/s3_breaks.py</p>
 
-<pre><code>a removed host row whose rule, loop, gate or branch no unit row turns red for
+<pre><code>a removed host row whose rule, loop, gate or branch no unit row turns red for, including one finding per refresh, one warning line, a refusal reported as valid, or a failed check answered with success
 </code></pre>
 
 <h6>Obligations</h6>

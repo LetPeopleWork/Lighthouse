@@ -195,11 +195,11 @@ None.
 P2
 
 ```text
-Break one production line on the path of each removed host row, then run the unit rows
+Break one production line on the path of each removed host row, including the once-per-refresh collapse and the refused connection check, then run the unit rows
 ```
 
 ```text
-Each deliberate break turns at least one named unit or port row red, and the id table names that row for every removed host row
+Each deliberate break turns at least one named unit or port row red, the id table names that row for every removed host row, a refused connection check reports not valid in its unit row, and an existing controller row pins the 400 answer
 ```
 
 ```text
@@ -213,7 +213,7 @@ Tested
 python3 docs\/feature\/story\-6537\-b\-configure\-suite\/evidence\/s3\_breaks\.py
 
 ```text
-a removed host row whose rule, loop, gate or branch no unit row turns red for
+a removed host row whose rule, loop, gate or branch no unit row turns red for, including one finding per refresh, one warning line, a refusal reported as valid, or a failed check answered with success
 ```
 
 ###### Obligations
