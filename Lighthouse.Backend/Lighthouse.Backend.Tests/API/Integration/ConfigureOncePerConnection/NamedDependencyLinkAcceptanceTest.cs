@@ -118,8 +118,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private readonly List<JiraLinkType> jiraLinkTypes = [];
 
-        private readonly List<string> jiraFieldNames = [];
-
         private readonly List<string> requestsJiraAnswered = [];
 
         private bool jiraRefusesToListItsLinkTypes;
@@ -245,7 +243,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             jiraFeatures.Clear();
             jiraLinkTypes.Clear();
             jiraLinkTypes.AddRange([Blocks, Dependency, Relates]);
-            jiraFieldNames.Clear();
             requestsJiraAnswered.Clear();
             RequestsJiraAnsweredDuringTheLastRefresh = 0;
             jiraRefusesToListItsLinkTypes = false;
@@ -319,28 +316,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
-        /// <summary>An administrator renamed the inward end of the stock Blocks link, which Jira allows.</summary>
-        protected void JiraRenamedTheBlocksInwardPhraseTo(string phrase)
-        {
-            jiraLinkTypes.Remove(Blocks);
-            jiraLinkTypes.Add(Blocks with { Inward = phrase });
-        }
-
-        protected void JiraDefinesTheField(string name) => jiraFieldNames.Add(name);
-
         /// <summary>The instance answers its issue link type list with 503 Service Unavailable.</summary>
         protected void JiraRefusesToListItsLinkTypes() => jiraRefusesToListItsLinkTypes = true;
 
         /// <summary>The instance answers its issue link type list with 200 OK and a page no JSON reader can parse.</summary>
         protected void JiraAnswersItsLinkTypeListUnreadably() => jiraAnswersItsLinkTypeListUnreadably = true;
-
-        protected void OnJiraTheFieldOf(string key, string fieldName, string value)
-        {
-            var index = jiraFieldNames.IndexOf(fieldName);
-            Assert.That(index, Is.GreaterThanOrEqualTo(0), $"The scenario fills '{fieldName}' on {key} before saying the instance defines it.");
-
-            TheJiraFeature(key).FieldValues[JiraWireFormat.TheCustomFieldIdAt(index)] = value;
-        }
 
         // ----- What the administrator configured --------------------------------------------------------
 
@@ -375,73 +355,9 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         protected Task PaymentsPlatformRefreshes() => ThePortfolioRefreshes(theJiraPortfolio);
 
-        /// <summary>
-        /// A Portfolio in steady use, so its next refresh only downloads what moved. The first refresh on a
-        /// new connection also registers the fields the tracker predefines, which changes what the next one
-        /// asks for, so it takes two before the cheap path is in use.
-        /// </summary>
-        protected async Task PaymentsPlatformIsInSteadyUse()
-        {
-            await PaymentsPlatformRefreshes();
-            await PaymentsPlatformRefreshes();
-        }
-
-        /// <summary>
-        /// Refreshes until one refresh downloads only what moved, and answers with when the last refresh that
-        /// downloaded everything ran and with what Refresh History shows after the cheap one. A new connection's
-        /// first refreshes download everything, because the first one also registers the fields the tracker
-        /// predefines, so how many it takes is the application's business and not the scenario's.
-        /// </summary>
-        protected async Task<(string LastFullDownloadAt, WhatRefreshHistoryShows AfterACheapRefresh)> PaymentsPlatformRefreshesUntilARefreshDownloadsOnlyWhatMoved()
-        {
-            var lastFullDownloadAt = string.Empty;
-
-            for (var refresh = 0; refresh < 4; refresh++)
-            {
-                await PaymentsPlatformRefreshes();
-                var shown = await WhatRefreshHistoryShowsForPaymentsPlatform();
-
-                if (shown.NewestRunMode == "Delta" && lastFullDownloadAt.Length > 0)
-                {
-                    return (lastFullDownloadAt, shown);
-                }
-
-                lastFullDownloadAt = shown.NewestRunAt;
-            }
-
-            Assert.Fail("Four refreshes of an unchanged Portfolio in a row all downloaded everything, so no cheap refresh could be observed.");
-            return (lastFullDownloadAt, null!);
-        }
-
-        /// <summary>Refreshes once more than Refresh History keeps rows for, so its oldest rows are pruned.</summary>
-        protected async Task PaymentsPlatformRefreshesMoreTimesThanRefreshHistoryKeeps()
-        {
-            int kept;
-            using (var scope = TheRunningLighthouse().CreateScope())
-            {
-                kept = scope.ServiceProvider.GetRequiredService<IAppSettingService>().GetRefreshLogRetentionRuns();
-            }
-
-            for (var refresh = 0; refresh <= kept; refresh++)
-            {
-                await PaymentsPlatformRefreshes();
-            }
-        }
-
-        /// <summary>
-        /// Something the next refresh asks the tracker for has changed, so that refresh downloads everything
-        /// again; the administrator lengthened how far back closed Features are kept.
-        /// </summary>
-        protected Task SomethingMakesPaymentsPlatformsNextRefreshDownloadEverything()
-            => TheAdminSavesTheSettingsOf(theJiraPortfolio, LengthenHowLongClosedFeaturesAreKept);
-
         /// <summary>The same change on an Azure DevOps Portfolio, whose next refresh then downloads everything again.</summary>
         protected Task SomethingMakesTheNextRefreshDownloadEverything(string adoPortfolio)
             => TheAdminSavesTheSettingsOf(adoPortfolios[adoPortfolio], LengthenHowLongClosedFeaturesAreKept);
-
-        /// <summary>The admin picks None as the Dependency Field again; the link stays registered on the connection.</summary>
-        protected Task PaymentsPlatformStopsNamingADependencyField()
-            => TheAdminSavesTheSettingsOf(theJiraPortfolio, settings => settings["dependencyOverrideAdditionalFieldDefinitionId"] = null);
 
         // ----- What anybody can see afterwards ----------------------------------------------------------
 
@@ -1005,7 +921,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 _ when path.EndsWith(JiraWireFormat.ServerInfoEndpoint, StringComparison.Ordinal) => JiraWireFormat.ACloudDeployment,
                 _ when JiraWireFormat.TheNameListAnsweredAt(path) is { } theNameList => theNameList,
                 _ when path.EndsWith(JiraWireFormat.CredentialCheckEndpoint, StringComparison.Ordinal) => "{\"accountId\":\"someone\"}",
-                _ when path.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal) => JiraWireFormat.TheFieldListDefining(jiraFieldNames),
+                _ when path.EndsWith(JiraWireFormat.FieldListEndpoint, StringComparison.Ordinal) => JiraWireFormat.TheFieldListDefining([]),
                 _ when path.EndsWith(JiraWireFormat.IssueLinkTypeEndpoint, StringComparison.Ordinal)
                     => JiraWireFormat.TheLinkTypeListDefining(jiraLinkTypes.Select((type, index) => JiraWireFormat.ALinkTypeDefinition(index, type))),
                 _ when path.EndsWith("/changelog", StringComparison.Ordinal) => JiraWireFormat.AChangelogPageHolding([]),
@@ -1050,18 +966,14 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             public List<string> Links { get; } = [];
 
-            public Dictionary<string, string> FieldValues { get; } = [];
-
             public string OnTheWire()
             {
-                var furtherFields = string.Concat(FieldValues.Select(field => ", \"" + field.Key + "\": \"" + field.Value + "\""));
-
                 return JiraWireFormat.AnIssueWithItsHistory(
                     Key,
                     FeatureType,
                     JiraWireFormat.AnInstant(WhenEverythingWasCreated),
                     JiraWireFormat.AnInstant(WhenEverythingWasCreated),
-                    furtherFields,
+                    string.Empty,
                     Links,
                     []);
             }
