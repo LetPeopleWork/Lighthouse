@@ -27,10 +27,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Category("us-03")]
-        [Category("ac-3.1")]
-        [Category("driving_port")]
-        [Category("contract-shape:pure-function")]
         public async Task A_relation_type_reference_with_its_end_validates_where_a_field_name_goes()
         {
             var answer = await TheAdministratorValidatesAConnectionTo(ContosoOrganisation, ContosoDependsOnForward);

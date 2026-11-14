@@ -39,12 +39,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         }
 
         [Test]
-        [Category("us-03")]
-        [Category("ac-3.4")]
-        [Category("walking_skeleton")]
-        [Category("driving_port")]
-        [Category("kpi")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_Feature_waits_on_the_work_item_at_the_other_end_of_the_named_relation()
         {
             RetailRolloutHolds4711DependingOn4702();
@@ -62,10 +56,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         // Every Feature handed back overwrites what is stored for it, so a refresh that could not tell what the
         // Dependency Field names would empty every wait the last good refresh read.
         [Test]
-        [Category("us-03")]
-        [Category("ac-3.7")]
-        [Category("error")]
-        [Category("contract-shape:bounded-change")]
         public async Task A_refresh_that_cannot_list_the_relation_types_stops_and_keeps_what_the_last_one_read()
         {
             RetailRolloutHolds4711DependingOn4702();
@@ -104,6 +94,5 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             AnAzureDevOpsPortfolio(RetailRollout, ContosoOrganisation);
             NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
         }
-
     }
 }
