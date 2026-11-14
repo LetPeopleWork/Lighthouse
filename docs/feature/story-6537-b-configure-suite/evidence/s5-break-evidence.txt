@@ -1,0 +1,268 @@
+=== K1 a save without Save and update still queues the updates
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/Services/Implementation/Connections/ConnectionSaveService.cs(164,112): error S1172: Remove this unus
+NO SUMMARY (the edit did not compile)
+=== K2 a Team never follows the Teams' default
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [37 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [5 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed!  - Failed:     8, Passed:   155, Skipped:     0, Total:   163, Duration: 438 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K3 a Portfolio reads the Teams' Parent override default
+Failed A_new_Portfolio_follows_the_connections_Portfolio_default [32 ms]
+Failed A_Portfolio_has_no_Teams_default_to_follow [1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,null,null,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,null,9,9) [1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,5,null,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_Portfolios_Parent_default_and_never_the_Teams(False,"ConnectionDefault",null,null) [1 ms]
+Failed A_Portfolios_settings_page_names_the_Portfolios_Parent_default_and_never_the_Teams(True,"Own",null,52) [< 1 ms]
+Failed!  - Failed:     8, Passed:   155, Skipped:     0, Total:   163, Duration: 380 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K4 a Team reads the Portfolios' Parent override default
+Failed A_Team_has_no_Portfolios_default_to_follow [23 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed!  - Failed:     3, Passed:   160, Skipped:     0, Total:   163, Duration: 383 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K5 every owner counts as moved by a save
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs(14,33): error S1125: Remove the unnecessary Boolean literal(s). [/st
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/Models/OwnersWhoseFetchMoved.cs(14,72): error S1481: Remove the unused local variable 'fetchBefore'.
+NO SUMMARY (the edit did not compile)
+=== K6 an owner is judged a follower when it is not
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [25 ms]
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [6 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [3 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [10 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [5 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [2 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [2 ms]
+Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [3 ms]
+Failed!  - Failed:    16, Passed:   147, Skipped:     0, Total:   163, Duration: 401 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K7 the entry says nothing when nobody follows
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [18 ms]
+Failed!  - Failed:     1, Passed:   162, Skipped:     0, Total:   163, Duration: 408 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K8 an unchanged default is logged and a changed one is not
+Failed Commit_AParentSourcesDefaultOfAFieldThenTheOwnParent_IsLoggedByThatFieldAlone [147 ms]
+Failed Commit_AParentSourcesDefaultOfSeveralSources_IsLoggedAsTheListItIs [4 ms]
+Failed Commit_AParentSourcesDefaultOfTheOwnParentThenAField_NamesBoth [3 ms]
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [21 ms]
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [6 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [9 ms]
+Failed Commit_TheParentDefaultChangedButTheListsCouldNotBeReadBack_LogsThatTheCountIsNotKnown [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [4 ms]
+Failed Commit_ThePortfoliosDefaultLeftAsItWas_LogsNothingAndPublishesNothing [4 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [4 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [8 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [5 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [5 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_NamesNoPortfolioInItsLogEntry [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultUnchanged_LogsNothing [3 ms]
+Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [3 ms]
+Failed!  - Failed:    24, Passed:   139, Skipped:     0, Total:   163, Duration: 458 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K9 a default naming a field added in the save points at nothing
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [19 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed!  - Failed:     2, Passed:   161, Skipped:     0, Total:   163, Duration: 386 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K10 the Portfolios' default is written to the Teams' default
+SKIPPED: the line occurs 0 times in Lighthouse.Backend/Lighthouse.Backend/Models/ConnectionFieldDefaults.cs
+=== K11 a default the save leaves out counts as sent
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/API/DTO/ConnectionDefaultsDto.cs(103,21): error S2325: Make 'Sends' a static method. [/storage/repos
+NO SUMMARY (the edit did not compile)
+=== K12 a list sent without its old field is no choice
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/API/DTO/ConnectionDefaultsDto.cs(125,17): error S1125: Remove the unnecessary Boolean literal(s). [/
+NO SUMMARY (the edit did not compile)
+=== K13 an emptied old field beside a list is not the edit
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/API/DTO/ConnectionDefaultsDto.cs(126,21): error S1125: Remove the unnecessary Boolean literal(s). [/
+/storage/repos/Lighthouse/.claude/worktrees/warm-yawning-kahn/Lighthouse.Backend/Lighthouse.Backend/API/DTO/ConnectionDefaultsDto.cs(126,55): error S1481: Remove the unused local variable 'oldField'. 
+NO SUMMARY (the edit did not compile)
+=== K14 a cleared Portfolios' default stays
+SKIPPED: the line occurs 0 times in Lighthouse.Backend/Lighthouse.Backend/Models/ConnectionFieldDefaults.cs
+=== K15 a follower reads its own field
+Failed A_new_Portfolio_follows_the_connections_Dependency_Field_default [30 ms]
+Failed A_new_Portfolio_follows_the_connections_Feature_Owner_Field_default [< 1 ms]
+Failed A_new_Portfolio_follows_the_connections_Portfolio_default [< 1 ms]
+Failed A_new_Portfolio_follows_the_connections_Size_Estimate_Field_default [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,null,9,9) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(ConnectionDefault,5,9,9) [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"dependencyField","Release Train",31,"ConnectionDefault") [31 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"sizeEstimate","Story Points",32,"ConnectionDefault") [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(False,"featureOwner","Product Lead",33,"ConnectionDefault") [< 1 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [8 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed!  - Failed:    20, Passed:   143, Skipped:     0, Total:   163, Duration: 427 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K16 an owner reads the connection's default
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,null,9,null) [30 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Feature_Owner_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Portfolio_reads_its_own_Size_Estimate_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,null,9,null) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,5,null,5) [< 1 ms]
+Failed A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source(Own,5,9,5) [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"dependencyField","Release Train",41,"Own") [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"sizeEstimate","Story Points",42,"Own") [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_default_of_each_field_setting_and_not_a_neighbours(True,"featureOwner","Product Lead",43,"Own") [< 1 ms]
+Failed EverySettingOfAPortfolioSurvivesBeingSavedAndReadBack [29 ms]
+Failed EverySettingOfATeamSurvivesBeingSavedAndReadBack [8 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [8 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed!  - Failed:    23, Passed:   140, Skipped:     0, Total:   163, Duration: 386 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K17 a Portfolio never follows the Portfolios' Parent default
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [25 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [4 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [4 ms]
+Failed!  - Failed:     3, Passed:   160, Skipped:     0, Total:   163, Duration: 424 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K18 a Team reads its parent list from the Portfolios' default
+Failed A_single_default_saved_through_the_Portfolios_registry_row_moves_the_Portfolio_followers_effective_list [28 ms]
+Failed A_single_default_saved_through_the_Teams_registry_row_moves_the_Teams_followers_effective_list [< 1 ms]
+Failed A_single_default_set_on_the_old_connection_member_moves_the_followers_effective_list [< 1 ms]
+Failed An_owner_that_follows_again_keeps_no_list_of_its_own(Following through the old member) [1 ms]
+Failed An_owner_that_follows_again_keeps_no_list_of_its_own(Sent with the source Connection Default) [< 1 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [3 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [7 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_UpdatesTheFollowersAndNeitherTheOwnersNorThePortfolios [6 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [2 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [2 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,True,True,False) [1 ms]
+Failed!  - Failed:    15, Passed:   148, Skipped:     0, Total:   163, Duration: 396 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K19 a Portfolio reads its parent list from the Teams' default
+Failed A_single_default_saved_through_the_Portfolios_registry_row_moves_the_Portfolio_followers_effective_list [27 ms]
+Failed A_single_default_saved_through_the_Teams_registry_row_moves_the_Teams_followers_effective_list [< 1 ms]
+Failed A_single_default_set_on_the_old_connection_member_moves_the_followers_effective_list [< 1 ms]
+Failed A_Portfolios_settings_page_names_the_Portfolios_Parent_default_and_never_the_Teams(False,"ConnectionDefault",null,null) [1 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [9 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_UpdatesTheFollowersAndNeitherTheOwnersNorThePortfolios [5 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,ChangesTheTeamsDefault,True,False,False) [3 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,True,True,False) [1 ms]
+Failed!  - Failed:     9, Passed:   154, Skipped:     0, Total:   163, Duration: 383 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K1 a save without Save and update still queues the updates
+Failed Commit_FieldAddedButUpdatesLeftForLater_PublishesNothing [18 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [14 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [8 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,AddsAField,False,False,False) [2 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,False,False,False) [1 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,AddsAField,False,False,False) [1 ms]
+Failed!  - Failed:    10, Passed:   153, Skipped:     0, Total:   163, Duration: 413 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K5 every owner counts as moved by a save
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [26 ms]
+Failed Commit_OnlyTheNameChanged_PublishesNothing [10 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [5 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [4 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [7 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_ThePortfoliosDefaultLeftAsItWas_LogsNothingAndPublishesNothing [3 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [7 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_UpdatesTheFollowersAndNeitherTheOwnersNorThePortfolios [5 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,ChangesTheTeamsDefault,True,False,False) [3 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(Own,RenamesTheConnection,True,False,False) [1 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,ChangesTheTeamsDefault,True,True,False) [1 ms]
+Failed Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved(FollowsTheDefault,RenamesTheConnection,True,False,False) [1 ms]
+Failed!  - Failed:    20, Passed:   143, Skipped:     0, Total:   163, Duration: 422 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K10 the Portfolios' default is written to the Teams' default
+Failed A_changed_single_default_replaces_a_richer_default(The Portfolios' default) [28 ms]
+Failed A_single_default_cleared_removes_the_default_list(The Portfolios' default) [1 ms]
+Failed A_single_default_saved_through_the_Portfolios_registry_row_moves_the_Portfolio_followers_effective_list [1 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [5 ms]
+Failed!  - Failed:     4, Passed:   159, Skipped:     0, Total:   163, Duration: 394 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K11 a default the save leaves out counts as sent
+Failed A_save_naming_neither_the_field_nor_the_list_of_a_Parent_default_does_not_send_it(ParentOverrideForTeams) [38 ms]
+Failed A_save_naming_neither_the_field_nor_the_list_of_a_Parent_default_does_not_send_it(ParentOverrideForPortfolios) [< 1 ms]
+Failed An_Estimation_default_left_out_of_the_save_is_not_sent [< 1 ms]
+Failed!  - Failed:     3, Passed:   160, Skipped:     0, Total:   163, Duration: 420 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K12 a list sent without its old field is no choice
+Failed A_save_sending_the_list_the_page_read_without_its_old_field_keeps_that_list(ParentOverrideForTeams,"parentSourcesForTeams") [39 ms]
+Failed A_save_sending_the_list_the_page_read_without_its_old_field_keeps_that_list(ParentOverrideForPortfolios,"parentSourcesForPortfolios") [< 1 ms]
+Failed An_explicit_null_list_clears_the_default_rather_than_saying_nothing [1 ms]
+Failed An_old_field_beside_a_new_list_leaves_the_list_as_the_edit [< 1 ms]
+Failed The_fields_of_a_sent_list_are_all_the_fields_it_names [2 ms]
+Failed!  - Failed:     5, Passed:   158, Skipped:     0, Total:   163, Duration: 383 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K13 an emptied old field beside a list is not the edit
+Failed A_changed_old_field_beside_the_list_the_client_read_edits_the_field [32 ms]
+Failed An_old_field_sent_as_empty_beside_the_list_the_page_read_clears_the_default(ParentOverrideForTeams,"parentOverrideForTeams","parentSourcesForTeams") [2 ms]
+Failed An_old_field_sent_as_empty_beside_the_list_the_page_read_clears_the_default(ParentOverrideForPortfolios,"parentOverrideForPortfolios","parentSourcesForPortfolios") [< 1 ms]
+Failed!  - Failed:     3, Passed:   160, Skipped:     0, Total:   163, Duration: 396 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K14 a cleared Portfolios' default stays
+Failed A_single_default_cleared_removes_the_default_list(The Portfolios' default) [89 ms]
+Failed!  - Failed:     1, Passed:   162, Skipped:     0, Total:   163, Duration: 846 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K17 a Portfolio never follows the Portfolios' Parent default
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [13 ms]
+Failed FollowerGroupsByConnection_CountsEachOwnerOnceUnderTheDefaultsItFollows [49 ms]
+Failed FollowersByConnection_CountsOnlyTheOwnersThatFollowTheirParentOverrideDefault [3 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [4 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed!  - Failed:     5, Passed:   163, Skipped:     0, Total:   168, Duration: 386 ms - Lighthouse.Backend.Tests.dll (net10.0)
+=== K20 the entry of a Teams' default is worded for the Portfolios
+Failed Commit_BothDefaultsChangedWithUpdates_LogsForEachDefaultTheUpdatesQueuedForItsOwnGrain [25 ms]
+Failed Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter [6 ms]
+Failed Commit_PointingBothDefaultsAtFieldsAddedInThisSaveFails_SaysNeitherDefaultWasApplied [7 ms]
+Failed Commit_PointingTheDefaultAtAFieldAddedInThisSaveFails_FailsTheSaveSayingWhichDefaultWasNotApplied [2 ms]
+Failed Commit_PointingThePortfoliosDefaultAtAFieldAddedInThisSaveFails_SaysThePortfoliosDefaultWasNotApplied [2 ms]
+Failed Commit_PublishingFailsAfterTheParentDefaultChanged_StillLogsHowManyTheListMoved [4 ms]
+Failed Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField [3 ms]
+Failed Commit_TheParentDefaultChangedButTheListsCouldNotBeReadBack_LogsThatTheCountIsNotKnown [2 ms]
+Failed Commit_TheParentDefaultChangedWhileOneTeamKeepsItsOwnList_CountsOnlyTheOwnersTheListMoved [3 ms]
+Failed Commit_ThePortfoliosDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_ThePortfoliosDefaultNamesAFieldAddedInThisSave_PointsOnlyThePortfoliosDefaultAtTheStoredField [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(Dependency,"Dependency Field") [5 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(SizeEstimate,"Size Estimate Field") [3 ms]
+Failed Commit_ThePortfoliosFieldDefaultChangedWithUpdates_QueuesOnlyThePortfoliosThatFollowItAndNamesThem(FeatureOwner,"Feature Owner Field") [3 ms]
+Failed Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated [4 ms]
+Failed Commit_TheTeamsDefaultChangedForOneFollowerWithUpdates_LogsOneUpdateQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_LogsHowManyWereQueued [3 ms]
+Failed Commit_TheTeamsDefaultChangedWithUpdates_NamesNoPortfolioInItsLogEntry [3 ms]
+Failed Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas [3 ms]
+Failed Commit_TheTeamsDefaultSetAndOneTeamFollowsIt_LogsOneEntrySayingTheTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt [3 ms]
+Failed Commit_TheTeamsEstimationDefaultSetToANumericField_LogsTheFieldAndUnitWithoutItsCategories [3 ms]
+Failed!  - Failed:    22, Passed:   146, Skipped:     0, Total:   168, Duration: 413 ms - Lighthouse.Backend.Tests.dll (net10.0)

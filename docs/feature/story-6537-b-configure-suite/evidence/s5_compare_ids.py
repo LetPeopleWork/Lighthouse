@@ -27,6 +27,7 @@ FILTER = (
     "|FullyQualifiedName~ParentSourcesBridgeTest."
     "|FullyQualifiedName~ConnectionDefaultsDtoTest."
     "|FullyQualifiedName~SettingsOwnerDtoRoundTripTest."
+    "|FullyQualifiedName~WorkTrackingSystemConnectionUsageTest."
 )
 SLICE_BASE = "4b4991176"
 
