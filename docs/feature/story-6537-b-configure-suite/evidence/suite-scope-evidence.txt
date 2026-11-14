@@ -1,0 +1,26 @@
+suite_scope_check.py, run on HEAD 26d4596ac (2026-11-14)
+
+== --self-test
+ok   production edit: 1 finding(s), expected 1
+ok   budget edit: 1 finding(s), expected 1
+ok   guard line added: 1 finding(s), expected 1
+ok   guard line of a kept class removed: 1 finding(s), expected 1
+ok   guard line of a class that left removed: 0 finding(s), expected 0
+ok   test-only change: 0 finding(s), expected 0
+exit=0
+
+== HEAD, clean tree
+suite commits=69 findings=0
+exit=0
+
+== HEAD with a deliberate line appended to Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs (restored afterwards)
+SCOPE    uncommitted change to Lighthouse.Backend/Lighthouse.Backend/Models/Team.cs
+suite commits=69 findings=1
+exit=1
+
+The one suite commit that changed the guard list is e64325dc8 (Slice09's line removed, which the check admits).
+Before merges were skipped, the check reported 2000176a5 changing UsageDataEventName.cs: that is a merge of origin/main
+bringing another story's commit, not a change of this suite.
+
+The per-slice sN_compare_ids.py scope checks compare with the merge base of origin/main and HEAD. They held each slice
+until its push; after the push they compare HEAD with itself. This script is the scope check for the suite as pushed.
