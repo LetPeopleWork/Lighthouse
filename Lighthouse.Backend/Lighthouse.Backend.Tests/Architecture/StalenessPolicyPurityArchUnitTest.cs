@@ -13,7 +13,7 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string StalenessNamespace = "Lighthouse.Backend.Models.Staleness";
 
-        private const string ServicesPattern = @"^Lighthouse\.Backend\.Services($|\..*)";
+        private const string ServicesPattern = ApplicationCoreRules.ApplicationCore;
         private const string ApiPattern = @"^Lighthouse\.Backend\.API($|\..*)";
         private const string DataPattern = @"^Lighthouse\.Backend\.Data($|\..*)";
 

@@ -15,7 +15,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         private const string WorkItemsSyncPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.(WorkItems|TeamData|WorkItemRules)($|\..*)";
         internal const string ForecastingPattern =
-            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Forecast($|\..*)";
+            @"^Lighthouse\.Backend\.Services\.(Implementation|Interfaces)\.Forecast($|\..*)|^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
         internal const string PortfolioDeliveryPattern =
             @"^Lighthouse\.Backend\.Services\.(Implementation\.BackgroundServices|Interfaces\.Update)($|\..*)";
         private const string RbacIdentityPattern =

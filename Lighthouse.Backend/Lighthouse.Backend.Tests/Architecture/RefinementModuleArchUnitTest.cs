@@ -37,6 +37,9 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string NeedBandAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Refinement\.NeedBand($|\+.*)";
 
+        private const string BackgroundUpdatesPattern =
+            ModuleBoundariesArchUnitTest.PortfolioDeliveryPattern + @"|^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters(\.|$)";
+
         private static readonly string[] RepositoryWriters = ["Save", "Add", "Append", "Update", "Remove", "Delete", "Apply"];
 
         private static readonly string[] SizingLogRewrites = ["ExecuteUpdate", "ExecuteDelete", "Remove"];
@@ -180,7 +183,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.RefinementPattern)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.WorkTrackingIntegrationPattern)
-                    .Or().ResideInNamespaceMatching(ModuleBoundariesArchUnitTest.PortfolioDeliveryPattern))
+                    .Or().ResideInNamespaceMatching(BackgroundUpdatesPattern))
                 .Because("refinement reads what Lighthouse already holds; it never asks a tracker or starts an update to answer.")
                 .Check(Architecture);
         }

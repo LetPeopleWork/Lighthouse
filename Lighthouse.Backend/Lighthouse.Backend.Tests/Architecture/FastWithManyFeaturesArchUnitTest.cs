@@ -15,9 +15,10 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string ProductionProjectDirectory = "Lighthouse.Backend";
 
-        private const string TheForecastService = "Services/Implementation/Forecast/ForecastService.cs";
+        // The round files are found by their name alone, so the rules keep reading them wherever the forecast lives.
+        private const string TheForecastService = "ForecastService.cs";
 
-        private const string TheForecastUpdater = "Services/Implementation/BackgroundServices/Update/ForecastUpdater.cs";
+        private const string TheForecastUpdater = "ForecastUpdater.cs";
 
         private const string TheCompositionRoot = "Program.cs";
 
@@ -33,7 +34,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Category("kpi-OUT-6400-no-stall-during-rounds")]
         public void The_forecast_service_never_hands_a_simulation_to_the_shared_pool()
         {
-            var code = TheCodeOf(TheForecastService);
+            var code = TheCodeOf(TheOnlyFileNamed(TheForecastService));
 
             Assert.That(TheCallsThatLandOnTheSharedPool(code), Is.Empty,
                 "ForecastService hands work to the threads that answer pages. A background round must simulate on the " +
@@ -48,7 +49,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             var lane = TheLaneFile();
 
-            var offenders = new[] { TheForecastService, TheForecastUpdater, lane }
+            var offenders = new[] { TheOnlyFileNamed(TheForecastService), TheOnlyFileNamed(TheForecastUpdater), lane }
                 .OfType<string>()
                 .Where(path => ConfigureAwaitFalse().IsMatch(TheCodeOf(path)))
                 .ToList();
@@ -67,7 +68,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void Only_the_forecast_updater_and_the_composition_root_reach_the_forecast_threads()
         {
             var lane = TheLaneFile();
-            var allowed = new HashSet<string>(StringComparer.Ordinal) { TheForecastUpdater, TheCompositionRoot };
+            var allowed = new HashSet<string>(StringComparer.Ordinal) { TheOnlyFileNamed(TheForecastUpdater), TheCompositionRoot };
             if (lane is not null)
             {
                 allowed.Add(lane);
@@ -168,6 +169,17 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         [GeneratedRegex(@"//[^\n]*|/\*.*?\*/", RegexOptions.Singleline)]
         private static partial Regex Comments();
+
+        private static string TheOnlyFileNamed(string fileName)
+        {
+            var found = EveryProductionSourceFile().Where(path => Path.GetFileName(path) == fileName).ToList();
+
+            Assert.That(found, Has.Count.EqualTo(1),
+                $"The round rules find {fileName} by its name alone, so the production project must hold exactly one file of that name, " +
+                "or the rules would read the wrong file or none. Found: " + string.Join(", ", found));
+
+            return found[0];
+        }
 
         private static string? TheLaneFile()
             => EveryProductionSourceFile().FirstOrDefault(path => Path.GetFileName(path) == TheLaneFileName);

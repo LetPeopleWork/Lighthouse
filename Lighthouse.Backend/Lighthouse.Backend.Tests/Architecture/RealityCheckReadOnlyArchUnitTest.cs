@@ -3,6 +3,7 @@ using ArchUnitNET.NUnit;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using System.Text.RegularExpressions;
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
+using Lighthouse.Backend.Services.Implementation.Forecast;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -27,11 +28,9 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private const string FeatureWord = "RealityCheck";
 
-        private const string ForecastNamespace = "Lighthouse.Backend.Services.Implementation.Forecast";
+        private static readonly string VerdictPolicy = typeof(RealityCheckVerdictPolicy).FullName!;
 
-        private const string VerdictPolicy = ForecastNamespace + ".RealityCheckVerdictPolicy";
-
-        private const string VerdictPolicyAndItsNestedTypesPattern = @"^Lighthouse\.Backend\.Services\.Implementation\.Forecast\.RealityCheckVerdictPolicy($|\+.*)";
+        private static readonly string VerdictPolicyAndItsNestedTypesPattern = $@"^{Regex.Escape(VerdictPolicy)}($|\+.*)";
 
         private const string ModelsNamespace = "Lighthouse.Backend.Models.Forecast";
 
@@ -45,7 +44,7 @@ namespace Lighthouse.Backend.Tests.Architecture
 
         private const string PersistencePattern = @"^Lighthouse\.Backend\.Data($|\..*)";
 
-        private const string ImplementationPattern = @"^Lighthouse\.Backend\.Services\.Implementation($|\..*)";
+        private const string ImplementationPattern = ApplicationCoreRules.ApplicationCore;
 
         private const string Controller = "Lighthouse.Backend.API.ForecastRealityCheckController";
 
@@ -65,7 +64,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         [Test]
         public void The_sweep_and_its_verdict_rules_exist_where_these_rules_look_for_them()
         {
-            var production = typeof(Lighthouse.Backend.Services.Implementation.Forecast.ForecastDataSufficiencyPolicy).Assembly;
+            var production = typeof(ForecastDataSufficiencyPolicy).Assembly;
             var policy = production.GetType(VerdictPolicy);
             var sweep = production.GetTypes()
                 .Where(type => type.IsClass && !type.IsAbstract && type.Name == "ForecastRealityCheckService")
@@ -135,7 +134,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         {
             Types().That().HaveFullName(VerdictPolicy)
                 .Should().NotDependOnAny(Types().That().ResideInNamespaceMatching(ImplementationPattern)
-                    .And().DoNotHaveFullName("Lighthouse.Backend.Services.Implementation.Forecast.ForecastDataSufficiencyPolicy")
+                    .And().DoNotHaveFullName(typeof(ForecastDataSufficiencyPolicy).FullName!)
                     .And().DoNotHaveFullNameMatching(VerdictPolicyAndItsNestedTypesPattern))
                 .Because("the verdict is decided from values alone, so every rule can be checked without a database or a simulation")
                 .Check(Architecture);

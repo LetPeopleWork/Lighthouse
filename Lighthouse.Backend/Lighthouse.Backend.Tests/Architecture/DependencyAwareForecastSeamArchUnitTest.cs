@@ -1,4 +1,6 @@
+using System.Text.RegularExpressions;
 using ArchUnitNET.NUnit;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.Integration.Containers;
@@ -13,16 +15,18 @@ namespace Lighthouse.Backend.Tests.Architecture
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
         private const string TheUpdateComponents =
-            "Lighthouse.Backend.Services.Implementation.BackgroundServices.Update";
+            @"^Lighthouse\.Backend\.Services\.Implementation\.BackgroundServices\.Update$|^Lighthouse\.Backend\.Modules\.Forecasting\.Adapters\.Background(\.|$)";
 
-        private const string TheOnlyOneThatMayForecast = "ForecastUpdater";
+        // Its async methods compile into nested types beside it, and those are the updater too.
+        private static readonly string TheOnlyOneThatMayForecastAndItsNestedTypes =
+            $@"^{Regex.Escape(typeof(ForecastUpdater).FullName!)}($|\+.*)";
 
         [Test]
         public void OnlyTheForecastUpdater_ReachesForTheForecastService()
         {
             Types().That()
-                .ResideInNamespace(TheUpdateComponents).And()
-                .DoNotHaveFullNameContaining(TheOnlyOneThatMayForecast)
+                .ResideInNamespaceMatching(TheUpdateComponents).And()
+                .DoNotHaveFullNameMatching(TheOnlyOneThatMayForecastAndItsNestedTypes)
                 .Should().NotDependOnAny(Types().That().Are(typeof(IForecastService)))
                 .Because(
                     "Only the forecast updater may start a forecast among the update components. It is the one " +

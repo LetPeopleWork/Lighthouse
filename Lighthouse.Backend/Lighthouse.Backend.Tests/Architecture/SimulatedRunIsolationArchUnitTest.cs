@@ -23,7 +23,8 @@ namespace Lighthouse.Backend.Tests.Architecture
     {
         private static readonly ArchitectureModel Architecture = LighthouseArchitecture.Production;
 
-        private const string TheForecastComponents = "Lighthouse.Backend.Services.Implementation.Forecast";
+        private const string TheForecastComponents =
+            @"^Lighthouse\.Backend\.Services\.Implementation\.Forecast$|^Lighthouse\.Backend\.Modules\.Forecasting(\.|$)";
 
         [Test]
         public void WhatEverySimulatedRunReads_CannotBeWrittenTo()
@@ -61,7 +62,7 @@ namespace Lighthouse.Backend.Tests.Architecture
         public void WhatOneSimulatedRunKnows_IsReachableFromNowhereElse()
         {
             Types().That()
-                .DoNotResideInNamespace(TheForecastComponents)
+                .DoNotResideInNamespaceMatching(TheForecastComponents)
                 .Should().NotDependOnAny(Types().That().Are(typeof(TrialState), typeof(TrialRecordings)))
                 .Because(
                     "What one simulated run has left to do, and what it has finished, belong to that run. " +
