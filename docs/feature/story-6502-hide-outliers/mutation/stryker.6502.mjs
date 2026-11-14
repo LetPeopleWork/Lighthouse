@@ -20,7 +20,6 @@ const config = {
 		"src/utils/charts/offScaleLines.ts",
 		"src/utils/charts/outlierWording.ts",
 		`${C}OutlierChip.tsx`,
-		`${C}OutlierPopoverContent.tsx`,
 		`${C}OffScaleLineMarkers.tsx`,
 		`${C}outlierHeaderChip.tsx`,
 		`${C}outlierPlot.ts`,

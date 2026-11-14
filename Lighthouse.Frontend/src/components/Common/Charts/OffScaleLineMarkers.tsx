@@ -11,7 +11,8 @@ interface OffScaleLineMarkersProps {
 
 /**
  * Names, at the top edge of the plot, every percentile or SLE line that lies above the axis. The
- * popover says the same in words, so the markers are hidden from assistive technology.
+ * outlier chip's accessible name says the same in words, so the markers are hidden from assistive
+ * technology.
  */
 const OffScaleLineMarkers: React.FC<OffScaleLineMarkersProps> = ({
 	markers,
