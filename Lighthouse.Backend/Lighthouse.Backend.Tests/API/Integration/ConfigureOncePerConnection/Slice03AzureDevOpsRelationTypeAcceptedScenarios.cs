@@ -1,6 +1,4 @@
 using System.Net;
-using System.Reflection;
-using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 {
@@ -18,19 +16,7 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
     [Category("acceptance")]
     public class Slice03AzureDevOpsRelationTypeAcceptedScenarios : NamedDependencyLinkAcceptanceTest
     {
-        private const int Item4711 = 4711;
-
-        private const int Item4702 = 4702;
-
-        private const string StoreOperations = "Store Operations";
-
         private const string AcceptedAsTheButtonReadsIt = "The Validate button is answered with OK.";
-
-        private const string RefusedAsTheButtonReadsIt = "A refused connection is answered as a bad request, as the Validate button reads it.";
-
-        private const string TheNativeParentStands = "The native parent stands.";
-
-        private static readonly string[] Nothing = [];
 
         [SetUp]
         public void ContosoListsItsCustomRelationType()

@@ -1,4 +1,3 @@
-using System.Net;
 using Lighthouse.Backend.Models.Dependencies;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
@@ -24,29 +23,11 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
         private const int Item4690 = 4690;
 
-        private const int Item5101 = 5101;
-
-        private const int Item5102 = 5102;
-
         private const string FabrikamNeedsForward = "Fabrikam.Needs-Forward";
-
-        private const string HierarchyForward = "System.LinkTypes.Hierarchy-Forward";
 
         private static readonly string[] Nothing = [];
 
         private static readonly string[] Waits4702 = ["4702"];
-
-        private static readonly string[] Waits4711 = ["4711"];
-
-        private static readonly string[] Waits5102 = ["5102"];
-
-        private static readonly string[] TheRelationTypesSeen = [Predecessor, Related];
-
-        private static readonly string[] OnlyRelated = [Related];
-
-        private static readonly string[] BothEndsOfContosoDependsOn = [ContosoDependsOnForward, ContosoDependsOnReverse];
-
-        private static readonly string[] TheNoDirectionFinding = ["RelationTypeHasNoDirection"];
 
         private static readonly DependencySource[] FromTheTrackersLink = [DependencySource.TrackerLink];
 
@@ -124,10 +105,5 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             NamesAsItsDependencyField(RetailRollout, ContosoDependsOnForward);
         }
 
-        private string NorthernStoresOnContoso()
-        {
-            AnAzureDevOpsPortfolio(NorthernStores, ContosoOrganisation);
-            return NorthernStores;
-        }
     }
 }

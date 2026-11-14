@@ -367,9 +367,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             }
         }
 
-        /// <summary>The settings of an owner as a script read them, kept to be saved back later.</summary>
-        protected Task<JsonObject> GivenAScriptReadTheSettingsOf(string owner) => TheSettingsOf(owner);
-
         /// <summary>The connection as an admin's page read it, kept to be saved later by that admin.</summary>
         protected Task<JsonObject> GivenAnAdminOpenedTheConnection() => TheConnectionAsThePageReadsIt(JiraDcPayments);
 
