@@ -13,6 +13,10 @@
       "path": "Scripts/examine/bin/metrics-answers-compare"
     },
     {
+      "name": "forecast-answers-compare",
+      "path": "Scripts/examine/bin/forecast-answers-compare"
+    },
+    {
       "name": "backend-tests",
       "path": "Scripts/examine/bin/backend-tests"
     },

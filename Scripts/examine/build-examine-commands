@@ -70,6 +70,336 @@ echo "candidate manifest:"; cat "\$work/candidate/_manifest.txt"
 EOF
 chmod +x "$out/metrics-answers-compare"
 
+# The forecast comparison runs each revision's backend inside a small program that pins the forecast's
+# random numbers; the product itself has no switch for that.
+cat > "$out/forecast-answers-capture.cs" <<'EOF'
+#:project @BACKEND@/Lighthouse.Backend/Lighthouse.Backend.csproj
+#:project @BACKEND@/Lighthouse.Migrations.Sqlite/Lighthouse.Migrations.Sqlite.csproj
+#:project @BACKEND@/Lighthouse.Migrations.Postgres/Lighthouse.Migrations.Postgres.csproj
+#:package Microsoft.AspNetCore.Mvc.Testing@10.0.14
+#:property TreatWarningsAsErrors=false
+#:property Nullable=enable
+#:property PublishAot=false
+#:property ValidateExecutableReferencesMatchSelfContained=false
+
+// Starts the backend of one revision in this process with its forecast draws started from one fixed number,
+// loads each demo scenario in turn, waits until its updates and forecasts have run, and writes the body of
+// every forecast answer. Arguments: <output-folder> <work-folder> <seed> [licence-file]
+using System.Net.Http.Json;
+using System.Reflection;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+
+var outDir = args[0];
+var workDir = args[1];
+PinnedDraws.Seed = long.Parse(args[2]);
+var licence = args.Length > 3 && File.Exists(args[3]) ? args[3] : null;
+Directory.CreateDirectory(outDir);
+
+Environment.SetEnvironmentVariable("Database__Provider", "sqlite");
+Environment.SetEnvironmentVariable("Database__ConnectionString", $"Data Source={Path.Combine(workDir, "LighthouseAppContext.db")}");
+Environment.SetEnvironmentVariable("Encryption__KeyStorePath", Path.Combine(workDir, "keys"));
+Environment.SetEnvironmentVariable("Encryption__StartEvenIfNothingStoredCanBeRead", "true");
+Environment.SetEnvironmentVariable("Serilog__WriteTo__0__Args__path", Path.Combine(workDir, "logs", "log-.txt"));
+Environment.SetEnvironmentVariable("RateLimits__Enabled", "false");
+Environment.SetEnvironmentVariable("Lighthouse__TimeZone", "UTC");
+
+// Found by name, so the same driver builds against a revision where the forecasting code lives elsewhere.
+var lighthouse = typeof(Lighthouse.Backend.Program).Assembly;
+Type Named(string name) => lighthouse.GetTypes().SingleOrDefault(t => t.Name == name)
+    ?? throw new InvalidOperationException($"no type named {name} in this revision");
+var drawFactoryType = Named("IDrawStreamFactory");
+PinnedDraws.StreamType = Named("AddressableDrawStream");
+var numbersType = Named("IRandomNumberService");
+
+await using var factory = new WebApplicationFactory<Lighthouse.Backend.Program>().WithWebHostBuilder(builder =>
+    builder.ConfigureServices(services =>
+    {
+        services.RemoveAll(drawFactoryType);
+        services.AddSingleton(drawFactoryType, DispatchProxy.Create(drawFactoryType, typeof(PinnedDraws)));
+        // A fresh sequence for every request, so an answer does not depend on what was asked before it.
+        services.RemoveAll(numbersType);
+        services.AddScoped(numbersType, _ => PinnedNumbers.Fresh(numbersType));
+    }));
+var client = factory.CreateClient();
+client.Timeout = TimeSpan.FromMinutes(3);
+
+async Task<JsonNode> Get(string path) =>
+    JsonNode.Parse(await client.GetStringAsync(path)) ?? throw new InvalidOperationException($"empty answer from {path}");
+
+if (licence is not null)
+{
+    using var form = new MultipartFormDataContent();
+    form.Add(new ByteArrayContent(await File.ReadAllBytesAsync(licence)), "file", "licence.json");
+    var imported = await client.PostAsync("/api/v1/license/import", form);
+    Console.WriteLine($"licence import: {(int)imported.StatusCode}");
+}
+else
+{
+    Console.WriteLine("licence: none, so scenarios above the free limits refresh only in part");
+}
+
+async Task WaitUntilNothingIsUpdating()
+{
+    var quiet = 0;
+    for (var i = 0; i < 600 && quiet < 3; i++)
+    {
+        await Task.Delay(300);
+        var status = await Get("/api/v1/update/status");
+        quiet = status["hasActiveUpdates"]!.GetValue<bool>() ? 0 : quiet + 1;
+    }
+    if (quiet < 3)
+    {
+        throw new InvalidOperationException("updates still running after 3 minutes");
+    }
+}
+
+var writeOptions = new JsonSerializerOptions { WriteIndented = true };
+var today = DateTime.UtcNow.Date;
+string Day(int offset) => today.AddDays(offset).ToString("yyyy-MM-dd");
+
+var scenarios = (await Get("/api/v1/demo/scenarios")).AsArray()
+    .Select(s => s!["id"]!.GetValue<int>()).Order().ToList();
+var total = 0;
+foreach (var scenario in scenarios)
+{
+    var load = await client.PostAsync($"/api/v1/demo/scenarios/{scenario}/load", null);
+    if (!load.IsSuccessStatusCode)
+    {
+        Console.Error.WriteLine($"scenario {scenario}: load answered {(int)load.StatusCode}");
+        return 1;
+    }
+    await WaitUntilNothingIsUpdating();
+    var requests = await RequestsForWhatIsLoaded();
+    Dictionary<string, string>? previous = null;
+    Dictionary<string, string>? settled = null;
+    var round = 0;
+    while (settled is null && round < 5)
+    {
+        round++;
+        var answers = await Round(requests);
+        if (previous is not null && previous.All(p => answers[p.Key] == p.Value))
+        {
+            settled = answers;
+        }
+        else if (previous is not null)
+        {
+            Console.WriteLine($"scenario {scenario}: changed between rounds: {string.Join(", ", previous.Where(p => answers[p.Key] != p.Value).Select(p => p.Key))}");
+            await WaitUntilNothingIsUpdating();
+        }
+        previous = answers;
+    }
+    if (settled is null)
+    {
+        Console.Error.WriteLine($"scenario {scenario}: forecast answers still changed after {round} rounds");
+        return 1;
+    }
+    foreach (var (name, json) in settled)
+    {
+        var file = Path.Combine(outDir, $"scenario-{scenario}", name + ".json");
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        await File.WriteAllTextAsync(file, json + "\n");
+    }
+    total += settled.Count;
+    Console.WriteLine($"scenario {scenario}: {settled.Count} answers, settled after {round} rounds");
+}
+Console.WriteLine($"captured {total} answers over {scenarios.Count} scenarios");
+return 0;
+
+async Task<List<(string Name, string Path, object? Body)>> RequestsForWhatIsLoaded()
+{
+    var teamIds = (await Get("/api/v1/teams")).AsArray().Select(t => t!["id"]!.GetValue<int>()).Order().ToList();
+    var portfolioIds = (await Get("/api/v1/portfolios")).AsArray().Select(p => p!["id"]!.GetValue<int>()).Order().ToList();
+    var requests = new List<(string Name, string Path, object? Body)>();
+    foreach (var team in teamIds)
+    {
+        var types = (await Get($"/api/v1/teams/{team}/settings"))["workItemTypes"]!.AsArray().Select(t => t!.GetValue<string>()).ToArray();
+        requests.Add(($"team-{team}/manual-when-and-how-many", $"/api/v1/forecast/manual/{team}", new { remainingItems = 10, targetDate = Day(30) }));
+        requests.Add(($"team-{team}/manual-how-many", $"/api/v1/forecast/manual/{team}", new { targetDate = Day(60) }));
+        requests.Add(($"team-{team}/manual-when-filtered", $"/api/v1/forecast/manual/{team}", new { remainingItems = 25, targetDate = Day(45), applyFilterOverride = true }));
+        requests.Add(($"team-{team}/item-creation-prediction", $"/api/v1/forecast/itemprediction/{team}", new { startDate = Day(-90), endDate = Day(0), targetDate = Day(30), workItemTypes = types }));
+        requests.Add(($"team-{team}/backtest", $"/api/v1/forecast/backtest/{team}", new { startDate = Day(-30), endDate = Day(0), historicalStartDate = Day(-90), historicalEndDate = Day(-30) }));
+        requests.Add(($"team-{team}/reality-check", $"/api/v1/forecast/reality-check/{team}", new { }));
+        requests.Add(($"team-{team}/feature-list", $"/api/v1/teams/{team}/feature-list", null));
+    }
+    foreach (var portfolio in portfolioIds)
+    {
+        requests.Add(($"portfolio-{portfolio}/feature-list", $"/api/v1/portfolios/{portfolio}/feature-list", null));
+        requests.Add(($"portfolio-{portfolio}/deliveries", $"/api/v1/deliveries/portfolio/{portfolio}", null));
+    }
+    requests.Add(("features", "/api/v1/features", null));
+    return requests;
+}
+
+async Task<Dictionary<string, string>> Round(List<(string Name, string Path, object? Body)> requests)
+{
+    var answers = new Dictionary<string, string>();
+    foreach (var (name, path, body) in requests)
+    {
+        var response = body is null ? await client.GetAsync(path) : await client.PostAsJsonAsync(path, body);
+        var text = await response.Content.ReadAsStringAsync();
+        JsonNode? parsed = null;
+        try { parsed = JsonNode.Parse(text); } catch (JsonException) { }
+        var answer = new JsonObject
+        {
+            ["status"] = (int)response.StatusCode,
+            ["request"] = path,
+            ["body"] = parsed is null ? JsonValue.Create(text) : Normalised(parsed),
+        };
+        answers[name] = answer.ToJsonString(writeOptions);
+    }
+    return answers;
+}
+
+// When a stored forecast was made, and the token a write leaves behind, depend on the run, not on the answer.
+static JsonNode Normalised(JsonNode node)
+{
+    switch (node)
+    {
+        case JsonObject obj:
+            foreach (var key in obj.Select(p => p.Key).ToList())
+            {
+                if (key is "lastUpdated" or "creationTime" or "concurrencyToken")
+                {
+                    obj[key] = "<differs per run>";
+                }
+                else if (obj[key] is { } child)
+                {
+                    Normalised(child);
+                }
+            }
+            break;
+        case JsonArray array:
+            foreach (var item in array) { if (item is not null) { Normalised(item); } }
+            break;
+    }
+    return node;
+}
+
+public class PinnedDraws : DispatchProxy
+{
+    public static long Seed;
+    public static Type StreamType = typeof(object);
+
+    protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
+        Activator.CreateInstance(StreamType, Seed);
+}
+
+public class PinnedNumbers : DispatchProxy
+{
+    private Random numbers = new(0);
+
+    public static object Fresh(Type numbersType)
+    {
+        var proxy = DispatchProxy.Create(numbersType, typeof(PinnedNumbers));
+        ((PinnedNumbers)proxy).numbers = new Random((int)(PinnedDraws.Seed % int.MaxValue));
+        return proxy;
+    }
+
+    protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
+        numbers.Next((int)args![0]!);
+}
+EOF
+
+cat > "$out/forecast-answers-compare" <<EOF
+#!/usr/bin/env bash
+# Captures every forecast answer on two git revisions, on the seeded demo data with the forecast's random
+# numbers pinned, and compares them. Each demo scenario is loaded in turn; per scenario it asks every Team for
+# a manual When and How Many forecast, an item creation prediction, a backtest and a reality check, and reads
+# the feature lists, the Delivery likelihoods and the Feature forecasts. Prints one line per kind of answer and
+# a last VERDICT line; exit 0 and "IDENTICAL" mean every answer matches.
+# Usage: forecast-answers-compare [base-revision [candidate-revision]]   (takes about 2 to 4 minutes)
+# With no arguments it compares the last revision before the forecasting code moves (39a7f598f) with HEAD.
+# Given the same revision twice it shows the capture itself is repeatable.
+set -euo pipefail
+# The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
+export HOME="$home" DOTNET_CLI_HOME="$home" DOTNET_NOLOGO=1 DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+repo="$repo"
+driver="$out/forecast-answers-capture.cs"
+EOF
+cat >> "$out/forecast-answers-compare" <<'EOF'
+base="${1:-39a7f598f}"
+candidate="${2:-HEAD}"
+base_sha="$(git -C "$repo" rev-parse --verify "${base}^{commit}")"
+candidate_sha="$(git -C "$repo" rev-parse --verify "${candidate}^{commit}")"
+echo "comparing base ${base_sha:0:9} with candidate ${candidate_sha:0:9}"
+seed=7310492118
+licence="$repo/Lighthouse.Backend/Lighthouse.Backend.Tests/Services/Implementation/Licensing/valid_not_expired_license.json"
+[ -f "$licence" ] || echo "no premium licence file, so the larger demo scenarios refresh only in part (the same on both sides)"
+# The physical path: a symlink in it makes the compiler miss the .editorconfig sections and the build fails.
+work="$(cd "$(mktemp -d)" && pwd -P)"
+cleanup() {
+  local status=$?
+  for tree in "$work"/src-*; do
+    [ -d "$tree" ] && git -C "$repo" worktree remove --force "$tree" >/dev/null 2>&1 || true
+  done
+  git -C "$repo" worktree prune || true
+  rm -rf "$work"
+  exit "$status"
+}
+trap cleanup EXIT INT TERM
+
+prepare() {
+  local sha=$1 src="$work/src-$1"
+  [ -d "$src" ] && return 0
+  git -C "$repo" worktree add --detach --quiet "$src" "$sha"
+  local backend="$src/Lighthouse.Backend" log="$work/build-$sha.log"
+  # The backend references the migration assemblies by path, so they are built first, and the backend again
+  # without the incremental shortcut so its output lists them.
+  { dotnet build "$backend/Lighthouse.Migrations.Sqlite" -nologo -v quiet \
+    && dotnet build "$backend/Lighthouse.Migrations.Postgres" -nologo -v quiet \
+    && dotnet build "$backend/Lighthouse.Backend" --no-incremental -nologo -v quiet; } >"$log" 2>&1 \
+    || { tail -20 "$log"; echo "VERDICT: build of ${sha:0:9} failed"; exit 1; }
+  mkdir -p "$work/driver-$sha"
+  sed "s|@BACKEND@|$backend|" "$driver" > "$work/driver-$sha/capture.cs"
+  dotnet build "$work/driver-$sha/capture.cs" >>"$log" 2>&1 \
+    || { tail -20 "$log"; echo "VERDICT: capture driver did not build against ${sha:0:9}"; exit 1; }
+}
+
+capture() {
+  local sha=$1 side=$2 content="$work/src-$1/Lighthouse.Backend/Lighthouse.Backend"
+  mkdir -p "$work/run-$side"
+  # The demo data files are read relative to the working directory, which must be the backend's folder.
+  ( cd "$content" && ASPNETCORE_TEST_CONTENTROOT_LIGHTHOUSE="$content" \
+      dotnet run --no-build --file "$work/driver-$sha/capture.cs" -- "$work/$side" "$work/run-$side" "$seed" "$licence" ) \
+    >"$work/$side.log" 2>&1
+}
+
+prepare "$base_sha"
+prepare "$candidate_sha"
+capture "$base_sha" base & base_pid=$!
+capture "$candidate_sha" candidate & candidate_pid=$!
+failed=0
+wait "$base_pid" || { grep -E "^(scenario|licence|FATAL)" "$work/base.log" | tail -5; echo "base capture failed"; failed=1; }
+wait "$candidate_pid" || { grep -E "^(scenario|licence|FATAL)" "$work/candidate.log" | tail -5; echo "candidate capture failed"; failed=1; }
+[ "$failed" = 0 ] || { echo "VERDICT: capture failed"; exit 1; }
+grep -E "^(licence|captured)" "$work/base.log" | sed 's/^/base: /'
+
+# One line per kind of forecast answer: how many were compared and how many differ.
+different=0
+compared=0
+for kind in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" && find . -name '*.json') \
+    | sed -E 's|.*/||; s|\.json$||' | sort -u); do
+  same=0; differ=0
+  for file in $( (cd "$work/base" && find . -name "$kind.json"; cd "$work/candidate" && find . -name "$kind.json") | sort -u); do
+    if cmp -s "$work/base/$file" "$work/candidate/$file"; then same=$((same + 1)); else differ=$((differ + 1)); fi
+  done
+  compared=$((compared + same + differ)); different=$((different + differ))
+  echo "$kind: $((same + differ)) compared, $differ different"
+done
+if [ "$different" -gt 0 ]; then
+  echo "differences (first lines):"
+  diff -r -u "$work/base" "$work/candidate" | grep -E '^(\+\+\+|Only in|[-+] )' | head -30
+  echo "VERDICT: DIFFERENT, $different of $compared forecast answers differ"
+  exit 1
+fi
+echo "VERDICT: IDENTICAL, all $compared forecast answers match"
+EOF
+chmod +x "$out/forecast-answers-compare"
+
 cat > "$out/backend-tests" <<EOF
 #!/usr/bin/env bash
 # Runs the whole backend test suite except the tests that talk to real Jira, Linear, Azure DevOps, ServiceNow
