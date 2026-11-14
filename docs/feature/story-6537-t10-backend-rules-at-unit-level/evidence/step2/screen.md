@@ -393,3 +393,309 @@ Is it worth moving? No. Both rows stay under the screen's own table (a stored se
 | Story6084TheFillRunsEverywhereTest | No | Both rows stay (setting through the host; a held pass); nothing to move |
 
 S4 therefore carries Slice10 and Slice08: 9 host rows leave, two classes leave the host, and the new rows land on `OverTimeFillTargetTest` and `OverTimeHistoryFillerTest`. Dependency on S3: S3 edits `OverTimeHistoryFillerTest` and `PercentileSnapshotWriterTest`, and S4 adds rows to `OverTimeHistoryFillerTest`, so S4 starts after S3 is committed. The saving per class is not measured: Slice08 plus Slice10 are at most 37.2 s together by the family bound, and at most 14.8 s each by the ranking cutoff, and the measured saving comes from the step 3 before/after runs. After S4, what is left of the family on the host is: Slice01 to Slice04 (different base, wire and read shape, no fill), Slice09, Story6084 and the stays of Slices 05, 06 and 07.
+
+---
+
+## 7. Suite 2 — the ConfigureOncePerConnection family (screened 2026-11-14)
+
+Read before screening, in full mode, fresh. Last line of each file, quoted back: `.claude/skills/test-writing/SKILL.md`: `End of SKILL.md`; `.claude/skills/test-writing/references/backend.md`: `End of backend.md`.
+
+Rules used: "The screen: what a unit test can pin" of feature-delta.md. Three of its rows decide most of the family: a rule whose Given is built through the real save route stays unless a builder on the model can make the Given; logic in a controller (mapping, status choice) stays and is recorded for #6508; whatever needs the update queue stays. The words (move / move (pin exists) / rewrite / stays) are those of section 1. **No rewrite is proposed**: no host row of this family is slow in a fill (there is none); a row that has no unit twin gets the same Given on the connector's or the save service's own doubles, written here as `move (add row)`. So the maintainer's yes to rewrites is not needed for suite 2.
+
+**This family is fake-tracker only. No row touches a live tracker.** Jira rows run the real `JiraWorkTrackingConnector` over a mocked `HttpMessageHandler` (`AJiraAnsweringForThatInstance`); Azure DevOps rows run the real `AzureDevOpsWorkTrackingConnector` over a mocked `WorkItemTrackingHttpClient` (`AnAzureDevOpsOrganisation`); the ConnectionDefaults classes hand the host a `Mock<IWorkTrackingConnector>`. Rows that are connector-specific code (Jira, Azure DevOps) are marked **[connector]**. They move only to the connector's own unit class, which already uses the same kind of double. None of them is proven only through a live connector, so none stays for that reason.
+
+### How the seconds were got
+
+Rows: counted from the source (each `[Test]` and each `[TestCase]`): 13 + 7 + 24 + 19 + 18 + 32 + 5 + 9 + 3 + 5 + 6 + 20 + 2 = 163, which agrees with `evidence/step1/family-ranking.txt` (13 classes, 163 rows, 164.4 s). Measured per-class CI seconds exist only for the five classes in the top 30 of `evidence/step1/runs-and-class-ranking.txt`: Slice05b 19.6 s / 32 rows, Slice02 19.1 s / 7, Slice04 16.5 s / 19, Slice12 15.8 s / 20, Slice06 15.2 s / 5. Together 86.2 s. **Bounds, not measurements, for the other eight classes** (Slice01, 03, 05a, 08, 09, 10, 11, ClockIsolation): the cut-off of the top 30 is 14.8 s, so each is at most 14.8 s; together they hold 164.4 - 86.2 = 78.2 s over 80 rows (an average of about 0.98 s a row, which is arithmetic, not a measurement). Where a split inside a class between "set-up" and "refresh" is given, it is read from the source and is not measured per row.
+
+### Where the time goes in this family (read from the source)
+
+Two bases, same pattern. `ConnectionDefaultsAcceptanceTest` (Slice05a, 05b, 06, 08, 09, 10, 11, 12): one host built per fixture (`OneTimeSetUp`); per row `rootFactory.UseFreshDatabase()`, `EnsureCreated`, every `ISeeder`, then `SeedThePaymentsDepartment` (2 connections, 4 Teams, 2 Portfolios, each through its repository) and, at tear-down, `TheQueueGoesIdle` and `EnsureDeleted`. `GivenEveryTeamAndPortfolioHasBeenUpdatedOnce` then runs **6 refreshes** (4 Teams, 2 Portfolios), each one a `TriggerUpdate` and a wait for the queue to go idle; `WhatRanSinceTheSave` polls every 50 ms up to 30 s. `NamedDependencyLinkAcceptanceTest` (Slice01 to 04, ClockIsolation): one host per fixture; per row `UseFreshDatabase`, `EnsureCreated`, seeders, the Portfolio saved, then one `TriggerUpdate` plus a wait for the queue (60 s ceiling) for each refresh the row asks for; tear-down `LeaveTheHostIdleOrFail` and `EnsureDeleted`. So the cost per row is set-up and refresh, never a fill. This is why seconds a row differ: Slice02 (2.7 s a row) and Slice06 (3.0 s a row) are slow because their rows run 4 to many refreshes (Slice02 rows 6 and 7 refresh until a cheap run, then once more than the retention count; Slice06 runs the 6-refresh Given in 4 of 5 rows); Slice05b (0.61 s), Slice12 (0.79 s) and Slice04 (0.87 s) are mostly per-row set-up. A saved row moved to unit level removes its set-up and refreshes. Each class that keeps even one host row keeps its host build (the backend half measures 1.8 s for a host build outside a TRX); that cost is **not measured here**.
+
+Names of the unit homes used below (all exist; found with `ctx_search`): `ConnectionSaveServiceTest` (Commit_* rows: logs, followers, publish matrix `Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved`, refusal of a removed field), `EffectiveSettingTest` (source and default per setting, for Team and Portfolio), `IncomingSettingTest` (18-row matrix of what a save sends), `OwnerSettingRefusalsTest`, `EstimationBundleTest`, `SupportedConnectionDefaultsTest`, `ConnectionDefaultsDtoTest`, `SettingsOwnerDtoRoundTripTest`, `WorkTrackingSystemConnectionUsageTest` (followers), `RefreshLogServiceTest`, `JiraNamedDependencyLinkTest` **[connector]**, `AzureDevOpsNamedRelationEndTest` **[connector]**. "Pin exists" is claimed **by name only**: the crafter still shows, by one deliberate break per rule, that the existing row goes red for the same production line; if it does not, add one row first.
+
+All 13 classes are on `HostUsersStillToMove` (lines 41 to 48 of `TestHostUseGuardTest.HostUsersStillToMove.cs` name ClockIsolation and Slice01 to 06; the remaining lines were not read for this screen). A class leaves the list in the commit that takes its last host row away.
+
+---
+
+### 7.1 Slice05bReferencedFieldsAndOlderPayloadsScenarios (19.6 s, 32 rows, about 0.61 s a row)
+
+Base: ConnectionDefaults. Time: per-row set-up plus the save route; rows 4 to 8 and 16 to 29 are TestCase groups. A row that removes a field reads the seeded Teams and Portfolios.
+
+| # | Test method (short) | What it asserts | Rule or wire | Destination / reason |
+|---|---|---|---|---|
+| 1 | A_field_the_default_and_a_Team_use_cannot_be_removed... | 409, code `additional-field-in-use`, exact message, nothing saved | wire plus rule | **stays** (wire: status, code, the saved-or-not read-back). The wording is pinned by the rule rows below |
+| 2 | A_field_only_a_Team_uses_as_its_own... | refusal names "Ledger uses it as its own" | rule | move (pin exists): `ConnectionSaveServiceTest.Commit_RemovingAFieldTeamsOnThisConnectionChoseThemselves_IsRefusedNamingThoseTeamsInTheOrderTheyWereCreated` |
+| 3 | A_field_only_a_Teams_estimation_uses... | message for the Team's estimation field | rule | move (add row): same class, estimation-field variant (`WorkTrackingSystemConnectionUsage` / refusal builder) |
+| 4-8 | A_field_only_a_Portfolio_uses_as_its_own (5 TestCase: Parent, Dependency, Size, Owner, Estimation) | message per setting | rule | move (pin exists, partial): `Commit_RemovingAFieldPortfoliosOnThisConnectionChoseForAnySetting_...` and the four `Commit_RemovingTheFieldThePortfolios{Dependency,SizeEstimate,FeatureOwner,Estimation}DefaultNames_...`; add one TestCase per setting that has none |
+| 9 | A_field_only_a_default_names_cannot_be_removed | message "It is the Teams' Parent sources default" | rule | move (pin exists): `Commit_RemovingTheFieldThePortfoliosDefaultNames_IsRefusedNamingThatDefault` and `Commit_RemovingAFieldBothDefaultsName_...`; add the Teams-default variant if the break does not flip |
+| 10 | A_field_nobody_uses_is_removed_as_today | an unused field is removed | rule | move (add row): `ConnectionSaveServiceTest`, the happy path of a removal (`Commit_RemovingAFieldATeamListedBeforeItWentBackToTheDefault_IsSaved` is the nearest) |
+| 11 | A_Team_that_starts_using_the_field_while_the_removal_is_being_saved_still_blocks_it | a save that lands in the gap (`ASaveLandsInTheGap` decorates `IConnectionSaveService`) | race on the real store | **stays**: needs the real save pipeline and the real store; a mock would assert itself |
+| 12 | A_stale_copy_that_removes_a_field_in_use_is_refused_as_stale | 409 `concurrency-conflict`, nothing changed | wire plus concurrency token | **stays**: the token check lives in the real store; the status is the controller's. Unit side already: `Commit_TheCopyIsStale_LetsTheConflictThroughAndLogsAndPublishesNothing` |
+| 13 | A_Team_cannot_name_a_field_its_connection_does_not_have | 400, code `team-field-not-on-connection`, nothing saved | wire plus rule | **stays** (400 and code through the controller). The rule: `OwnerSettingRefusalsTest.One_field_the_connection_lacks_refuses_a_list_whose_other_fields_it_holds` |
+| 14 | A_new_Team_cannot_name_a_field_its_connection_does_not_have | same for a new Team | rule | move (pin exists): same `OwnerSettingRefusalsTest` row; the "new Team is not listed" half is the controller's and is the same family as row 13 |
+| 15 | A_Team_saved_with_a_source_Lighthouse_does_not_know_is_refused | code `team-setting-source-unknown` for source 99 | rule (the 99 as a JSON number is the wire half) | move (pin exists): `OwnerSettingRefusalsTest.A_source_this_version_does_not_know_is_refused_as_the_source_of_the_list`; JSON enum binding: `SettingsOwnerDtoRoundTripTest` |
+| 16-22 | A_Team_saved_by_a_client_that_may_not_send_the_source (7 TestCase) | source and reading after a save with or without source | rule | move (pin exists): `IncomingSettingTest` matrix (18 rows) covers all seven pairs (follower sends nothing / what it reads / another; owner sends nothing / another; None; as-following) |
+| 23-29 | A_script_that_saves_back_what_it_read_changes_nothing (7 TestCase) | echoing every property or dropping the unknown ones keeps source and reading | rule plus DTO shape | move (pin exists): `IncomingSettingTest` plus `ConnectionDefaultsDtoTest` / `TeamExtensionsTest` / `PortfolioExtensionsTest` round-trip rows (`A_follower_saved_back_without_its_source_keeps_following`, `An_older_clients_round_trip_keeps_...`) and `SettingsOwnerDtoRoundTripTest.EverySettingOf{ATeam,APortfolio}SurvivesBeingSavedAndReadBack` |
+| 30 | A_stale_copy_saved_back_without_its_source_makes_the_Team_own_the_old_default | follower becomes Own with the old value | rule | move (pin exists): `IncomingSettingTest` (ConnectionDefault, sends another field) |
+| 31 | A_stale_copy_saved_back_with_its_source_keeps_the_Team_following_the_new_default | stays following | rule | move (pin exists): `IncomingSettingTest` (ConnectionDefault, sends what the owner reads) |
+| 32 | A_stale_copy_of_a_follower_still_naming_a_removed_field_keeps_the_Team_following | follower keeps following after the field is removed | rule | move (pin exists): same matrix row; the removal half is `ConnectionSaveServiceTest` |
+
+Count: move 28 + rewrite 0 + stays 4 = 32. After the moves the class still starts a host (4 rows). Projected saving: 19.6 s x 28/32 = **17.2 s** (a projection; the stays are the rows with the real store).
+
+---
+
+### 7.2 Slice02NamedLinkThatMatchedNothingScenarios (19.1 s, 7 rows, about 2.7 s a row) [connector]
+
+Base: NamedDependencyLink. Time: each row seeds a Jira Portfolio and runs one refresh through `IPortfolioUpdater`; rows 6 and 7 refresh until a cheap (Delta) run (2 to 4 refreshes), then row 6 saves a setting and refreshes again, and row 7 refreshes `GetRefreshLogRetentionRuns() + 1` times. That is where the 19.1 s sits. Jira is a mocked `HttpMessageHandler`. Production: `JiraWorkTrackingConnector` (finding `NamedLinkMatchedNothing`, `RefreshFinding`), `RefreshLogService` (which finding survives pruning), the Refresh History answer (`SystemInfoController`).
+
+| # | Test method (short) | What it asserts | Rule or wire | Destination / reason |
+|---|---|---|---|---|
+| 1 | Nothing_matched_the_named_link_and_Refresh_History_lists_the_links_that_were_seen | one finding of kind, setting, named, seen; `FindingsAsOf` = newest run; one aggregated log line | wire plus rule | **stays**: the one row that runs refresh, log and the Refresh History route end to end. The rule halves are pinned below |
+| 2 | Several_Features_without_the_link_share_one_finding_and_one_line | one finding, one line for 3 Features | rule | move (pin exists): `JiraNamedDependencyLinkTest.Features_carrying_only_the_outward_end_of_other_links_are_told_the_named_link_matched_nothing`; confirm that the pin counts findings, else add the count |
+| 3 | Something_matched_so_Refresh_History_shows_no_finding | no finding when one Feature carries the link | rule | move (add row): `JiraNamedDependencyLinkTest`, a Feature that carries the link and one that does not |
+| 4 | A_Portfolio_whose_Features_carry_no_links_at_all_is_told_nothing | no finding without any link | rule | move (add row): same class |
+| 5 | A_Dependency_Field_naming_an_ordinary_field_stays_silent | no finding for an ordinary field | rule | move (pin exists): `JiraNamedDependencyLinkTest.A_Dependency_Field_naming_a_field_reads_what_was_typed_into_it` |
+| 6 | A_cheap_refresh_keeps_showing_the_full_downloads_finding_and_its_time... | after a Delta run the finding and its time are those of the last Full run; a later Full run that found it removes it | rule (which run's findings read) | move (pin exists): `RefreshLogServiceTest.LogRefreshAsync_NewerFullRunFoundNothing_PrunesTheOlderRunsFindings` and `..._MoreCheapRunsThanKept_KeepsTheNewestRunThatRecordedFindings`. The read side that fills `FindingsAsOf` and `NewestRunMode` was not located in this screen: locate it with `ctx_search` (not `FindingsAsOf`, which is the DTO word) and add a row there if the pin does not cover the time label |
+| 7 | The_finding_still_shows_after_more_cheap_refreshes_than_Refresh_History_keeps | the full run's row is not pruned | rule | move (pin exists): `RefreshLogServiceTest.LogRefreshAsync_MoreCheapRunsThanKept_KeepsTheNewestRunThatRecordedFindings` (a direct match) |
+
+Count: move 6 + rewrite 0 + stays 1 = 7. Class keeps its host (1 row). Projected saving: 19.1 s x 6/7 = **16.4 s**. The two rows that do most of the refreshing (6 and 7) both leave, so the real saving may be higher than the share says.
+
+---
+
+### 7.3 Slice04AzureDevOpsDependenciesFromANamedRelationEndScenarios (16.5 s, 19 rows, about 0.87 s a row) [connector]
+
+Base: NamedDependencyLink, Azure DevOps through a mocked `WorkItemTrackingHttpClient` (each row stores a Portfolio on an organisation and refreshes once, some twice). Unit home: `AzureDevOpsNamedRelationEndTest` (it has the same kind of double).
+
+| # | Test method (short) | What it asserts | Rule or wire | Destination / reason |
+|---|---|---|---|---|
+| 1 | A_Feature_waits_on_the_work_item_at_the_other_end_of_the_named_relation | a Feature lists the work item at the named end, source `TrackerLink` | rule plus read route | **stays** (the class's one end-to-end row: refresh, store, Feature Dependencies route). Rule: pinned by `GetFeaturesForProject_WhenTheNamedEndIsCarried_ReadsThatEndAloneAsALinkDrawnInTheTracker` |
+| 2 | Naming_the_reverse_end_reads_the_other_direction | reverse end | rule | move (add row): same class, reverse end |
+| 3 | Naming_a_relation_end_replaces_Predecessor_for_that_Portfolio | named end replaces Predecessor | rule | move (add row): same class |
+| 4 | A_Parent_Override_Field_on_the_same_Portfolio_does_not_stop_the_relation_being_read | both settings read | rule | move (add row): same class |
+| 5 | A_relation_type_named_without_its_end_reads_nothing_and_names_both_ends | nothing read, both ends named | rule | move (pin exists): `..._WhenTheBaseNameIsNamed_ReadsNothingAndNamesBothEnds` |
+| 6 | Related_has_no_direction_so_it_reads_nothing_and_says_so | Related reads nothing | rule | move (pin exists): `..._WhenARelationTypeWithoutDirectionIsNamed_ReadsNothingAndSaysWhy` |
+| 7 | Nothing_carrying_the_named_end_says_so_once_and_lists_the_relation_types_seen | one finding, types seen | rule | move (pin exists): `..._WhenNoFeatureCarriesTheNamedEnd_SaysSoNamingOnlyTheWorkItemLinksSeen` |
+| 8 | Features_carrying_only_their_hierarchy_say_nothing_about_the_named_end | no finding for hierarchy only | rule | move (pin exists, confirm): same row; add a hierarchy-only case if missing |
+| 9 | The_hierarchy_is_left_out_of_the_relation_types_seen | hierarchy not in the seen list | rule | move (pin exists, confirm): same row |
+| 10 | Features_carrying_no_relations_at_all_say_nothing_about_the_named_end | no finding | rule | move (pin exists): `..._WhenTheFeaturesCarryNoRelationsAtAll_SaysNothing` |
+| 11 | Resource_links_are_left_out_of_the_relation_types_seen | resource links not in the list | rule | move (add row): same class |
+| 12 | A_relation_type_named_without_its_end_validates_so_the_refresh_can_say_which_ends_it_has | validate accepts the name | rule | move (pin exists): `ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt` |
+| 13 | Related_validates_so_the_refresh_can_say_it_has_no_direction | validate accepts Related | rule | move (pin exists): same TestCase class |
+| 14 | A_name_without_an_end_whose_ends_are_not_both_listed_is_still_a_typo | refused | rule | move (pin exists): `ValidateConnection_WhenAReferenceNamesNoFieldAndNoRelationType_RefusesIt` |
+| 15 | Naming_a_relation_end_costs_one_relation_type_listing_and_nothing_per_work_item | one listing request | rule | move (add row): counting client in `AzureDevOpsNamedRelationEndTest` |
+| 16 | Two_organisations_on_one_shared_connector_each_answer_with_their_own_relation_types | the connector keys the listing by organisation | rule | move (add row): same class, one connector instance, two organisations |
+| 17 | A_refresh_that_cannot_list_the_relation_types_stops_and_keeps_what_the_last_one_read | the refresh stops, stored dependencies stay | updater plus store | **stays**: the connector half is `GetFeaturesForProject_WhenTheDependencyFieldCannotBeLookedUp_StopsWithASentenceAnOperatorCanActOn`; "keeps what was stored" runs through the updater and the store, which T10 does not widen into a port |
+| 18 | Refreshing_the_first_organisation_again_lists_its_relation_types_again | no stale cache | rule | move (add row): same class as row 16 |
+| 19 | A_Portfolio_naming_nothing_still_reads_Predecessor_without_listing_relation_types | no listing when nothing is named | rule | move (pin exists): `..._WhenNoRelationEndIsNamed_SaysNothingAboutThePredecessorLinkGoingUnmatched` and `..._WhenOnlyAnUnusedDefinitionNamesNoField_DoesNotListTheRelationTypes` |
+
+Count: move 17 + rewrite 0 + stays 2 = 19. Class keeps its host (2 rows). Projected saving: 16.5 s x 17/19 = **14.8 s**.
+
+---
+
+### 7.4 Slice12EstimationDefaultScenarios (15.8 s, 20 rows, about 0.79 s a row)
+
+Base: ConnectionDefaults. Rows 1 to 5 refresh nothing (estimation is read on page load) so most of the cost is set-up.
+
+| # | Test method (short) | What it asserts | Rule or wire | Destination / reason |
+|---|---|---|---|---|
+| 1 | Every_Team_without_an_estimation_shows_the_default_on_its_next_page_load_and_nothing_updates | followers read the default; 4 follow; log; no update | rule | move (pin exists): `EstimationBundleTest` (following reads the default), `ConnectionSaveServiceTest.Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_...` and the publish matrix; the follower count of the Estimation default goes on `WorkTrackingSystemConnectionUsageTest` if not covered (add row) |
+| 2 | Changing_only_the_unit_of_the_Estimation_default_is_logged_with_the_whole_default_before_and_after | log line | rule | move (pin exists): `ConnectionSaveServiceTest.Commit_OnlyTheCategoriesOfTheTeamsEstimationDefaultChanged_LogsOneEntryNamingTheWholeDefaultBeforeAndAfter`, `Commit_TheTeamsEstimationDefaultSetToANumericField_...` |
+| 3 | Clearing_the_Estimation_default_leaves_the_followers_without_an_estimation | followers read nothing | rule | move (add row): `EstimationBundleTest`, a following Team with no default reads no field |
+| 4 | A_Portfolio_with_its_own_estimation_keeps_it_and_the_Teams_default_never_reaches_a_Portfolio | own kept; no cross-grain | rule | move (pin exists): `EstimationBundleTest.A_following_Portfolio_reads_the_Portfolios_default_and_not_the_Teams`, `EffectiveSettingTest.A_Portfolio_has_no_Teams_default_to_follow` |
+| 5 | A_following_Portfolio_shows_the_Portfolios_Estimation_default | Portfolio reads its own default | rule | move (pin exists): same |
+| 6 | A_Team_admin_without_connection_rights_sees_the_Estimation_default_with_its_unit | the read-only view a Team admin gets, tracker name "Jira" | RBAC and wire | **stays** (the same family as Slice05a row 5; 403/401 and view shape belong to the wire) |
+| 7-8 | A_script_that_sends_the_estimation_categories_as_null... (2 TestCase) | save accepted, owner keeps following | rule plus DTO | move (pin exists): `EstimationBundleTest.A_bundle_without_a_field_leaves_the_Team_following`, `EstimationFieldSyncTest.Sync*EstimationCategoryValues`; add a null-categories DTO row to `SettingsOwnerDtoRoundTripTest` if the break does not flip |
+| 9-10 | A_script_that_saves_back_a_followers_estimation_leaves_it_following (2 TestCase) | echo or drop-unknown keeps following | rule | move (pin exists): `EstimationBundleTest.A_bundle_equal_to_what_the_Team_reads_leaves_it_following` |
+| 11 | A_script_that_drops_the_unit_and_switch_of_a_non_numeric_default_makes_the_follower_own_a_numeric_estimation | follower becomes Own, numeric | rule | move (pin exists): `EstimationBundleTest.A_bundle_differing_in_one_part_becomes_the_Teams_own_whole` |
+| 12-13 | An_owner_sent_back_an_empty_estimation_without_a_source_keeps_its_own (2 TestCase) | owner keeps own | rule | move (pin exists): `EstimationBundleTest.A_bundle_without_a_field_leaves_an_owning_Team_its_own_bundle` |
+| 14 | An_owner_saved_with_an_Estimation_source_Lighthouse_does_not_know_is_refused (Team) | 400, code, exact message | wire plus rule | **stays** (400 and wording through the controller); rule pinned by `OwnerSettingRefusalsTest` |
+| 15 | same, Portfolio | code `portfolio-setting-source-unknown` | rule | move (pin exists): `OwnerSettingRefusalsTest.A_portfolios_refusal_carries_its_own_code_and_noun` and the unknown-source row |
+| 16 | A_Team_moved_to_another_connection_with_an_Estimation_source_Lighthouse_does_not_know_is_refused_and_keeps_its_Work_Items | refusal, Work Items kept | rule | move (pin exists): `OwnerSettingRefusalsTest` unknown-source row; "kept" = nothing saved, the same half as row 14 |
+| 17-18 | An_owner_moved_to_another_connection_while_owning_an_Estimation_Field_of_the_old_one_is_refused (Team, Portfolio) | code, message with noun | rule | move (pin exists): `OwnerSettingRefusalsTest.One_field_the_connection_lacks_...` and `A_portfolios_refusal_carries_its_own_code_and_noun` |
+| 19-20 | A_new_owner_created_with_an_Estimation_source_Lighthouse_does_not_know_is_refused (Team, Portfolio) | code, not listed | rule | move (pin exists): same unknown-source row |
+
+Count: move 18 + rewrite 0 + stays 2 = 20. Class keeps its host (2 rows). Projected saving: 15.8 s x 18/20 = **14.2 s**.
+
+---
+
+### 7.5 Slice06DefaultChangeUpdatesTheFollowersScenarios (15.2 s, 5 rows, about 3.0 s a row)
+
+Base: ConnectionDefaults. Time: rows 1 to 4 run `GivenEveryTeamAndPortfolioHasBeenUpdatedOnce` (6 refreshes, each waiting for the queue), then the save, then `WhatRanSinceTheSave` (poll up to 30 s). Row 5 the same.
+
+| # | Test method (short) | What it asserts | Rule or wire | Destination / reason |
+|---|---|---|---|---|
+| 1 | Save_and_update_updates_exactly_the_Teams_that_follow_the_changed_default | listed in the Task Manager, ran Full, items hang under the new default, one log entry | wiring (the walking skeleton of the feature) | **stays**: the one row that proves save, queue, follower update, reading and log together |
+| 2 | Save_only_starts_no_update_and_still_names_the_followers | nothing ran; log names the followers | rule | move (pin exists): `ConnectionSaveServiceTest.Commit_UpdatesExactlyTheOwnersWhoseFetchTheSaveMoved` (startUpdates false rows) and `Commit_TheTeamsDefaultChanged_LogsOneEntryNamingTheFollowersInTheOrderTheyWereCreated` |
+| 3 | After_save_only_a_follower_picks_the_change_up_at_its_next_scheduled_update | the next scheduled update downloads everything once | rule (fetch-shape change) plus queue | **stays**: needs the update queue; its rule (the fetch fingerprint moved, so a Full run) was not located in this screen. If the crafter finds the unit that decides Full versus Delta by the fetch fingerprint, this row moves; the Given can also shrink to one follower updated once instead of six |
+| 4 | When_nobody_follows_the_default_nothing_updates_and_the_entry_says_none_follow | no update; entry "no Team follows it" | rule | move (pin exists): `Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt` |
+| 5 | A_changed_default_does_not_update_the_owners_or_the_Portfolios | followers updated, owners and Portfolios not | rule | move (pin exists): the publish matrix (`Own`, `ChangesTheTeamsDefault`, startUpdates true: nothing) |
+
+Count: move 3 + rewrite 0 + stays 2 = 5. Class keeps its host (2 rows). Projected saving: 15.2 s x 3/5 = **9.1 s**. The formula undercounts: the three leaving rows are 3 of the 4 six-refresh Givens.
+
+---
+
+### 7.6 The eight classes without a measured time (bound: at most 14.8 s each, 78.2 s together over 80 rows)
+
+**Slice01JiraDependenciesFromANamedLinkScenarios (13 rows) [connector]** (Jira over a mocked HTTP handler, as 7.2):
+
+| # | Test method (short) | Rule or wire | Destination / reason |
+|---|---|---|---|
+| 1 | A_Feature_waits_on_what_its_named_one_way_link_points_at | rule plus read route | **stays** (the class's end-to-end row: refresh, store, Dependencies route, source `TrackerLink`) |
+| 2 | The_other_ends_phrase_reads_the_other_direction | rule | move (pin exists): `JiraNamedDependencyLinkTest.A_phrase_typed_exactly_as_one_end_reads_picks_that_end_even_where_the_type_shares_its_name` |
+| 3 | Naming_blocks_on_the_stock_Blocks_type_reads_the_end_that_phrase_names | rule | move (pin exists): same |
+| 4 | A_renamed_phrase_typed_in_any_case_is_read_like_the_stock_one | rule | move (add row): same class, case-insensitive match on a renamed phrase |
+| 5 | A_real_field_carrying_the_name_of_a_link_phrase_is_read_as_the_field | rule | move (pin exists): `A_Dependency_Field_naming_a_field_reads_what_was_typed_into_it` |
+| 6 | A_link_types_own_name_reads_nothing_and_Refresh_History_names_both_phrases | rule | move (pin exists): `The_types_name_reads_nothing_and_says_it_points_both_ways` |
+| 7 | A_phrase_both_ends_share_reads_nothing_and_says_so | rule | move (pin exists, confirm): same TestCase class; add `relates to` as a typed value if missing |
+| 8 | Naming_a_link_replaces_is_blocked_by_for_that_Portfolio | rule | move (add row): same class |
+| 9 | A_refused_link_type_list_stops_the_refresh_and_leaves_the_stored_dependencies_as_they_were | updater plus store | **stays**: connector half pinned by `A_link_type_list_that_cannot_be_read_stops_the_refresh_and_says_how_Jira_answered`; "stored dependencies stay" needs the updater and the store |
+| 10 | An_unreadable_link_type_list_stops_the_refresh_and_leaves_the_stored_dependencies_as_they_were | updater plus store | **stays**: same as row 9 |
+| 11 | A_Portfolio_naming_an_ordinary_field_reads_its_keys_exactly_as_before | rule | move (pin exists): same as row 5 |
+| 12 | A_Portfolio_naming_nothing_still_reads_is_blocked_by | rule | move (add row): same class |
+| 13 | Naming_a_link_costs_the_Jira_instance_no_extra_request | rule (a request count) | move (add row): counting handler in `JiraNamedDependencyLinkTest` |
+
+Count: move 10 + stays 3 = 13. Keeps its host (3 rows). Saving: at most 14.8 x 10/13 = 11.4 s.
+
+**Slice03AzureDevOpsRelationTypeAcceptedScenarios (24 rows) [connector]** (24 rows = 16 `[Test]` + 8 TestCase rows). Most rows call the validate route only (no refresh), so they are cheaper than a refresh row; that is read from the source, not measured.
+
+| # | Test method (short) | Rule or wire | Destination / reason |
+|---|---|---|---|
+| 1 | A_relation_type_reference_with_its_end_validates_where_a_field_name_goes | wire plus rule | **stays** (the validate route: status, `isValid`, message member). The one validate wire row |
+| 2 | A_relation_type_reference_matches_in_any_case | rule | move (pin exists): `ValidateConnection_WhenAReferenceNamesARelationType_AcceptsIt(reference)` |
+| 3 | A_field_that_exists_validates_without_asking_for_the_relation_types | rule | move (pin exists): `ValidateConnection_WhenEveryReferenceIsAField_DoesNotListTheRelationTypes` |
+| 4 | The_shared_connector_keeps_no_relation_type_listing_between_calls | rule (lifetime of a cache) | move (add row): the connector, two calls, two listings |
+| 5 | A_typo_still_fails_and_lists_the_relation_types_the_organisation_defines | rule | move (pin exists): `ValidateConnection_WhenReferencesNameNothing_ListsThemAndTheRelationTypesThatDoExist` |
+| 6-7 | A_link_to_something_other_than_a_work_item... / The_relation_types_offered_on_a_typo_leave_out_links_to_anything_but_a_work_item | rule | move (pin exists, confirm): same row; add a non-work-item type to its double if missing |
+| 8-9 | An_organisation_that_listed_no_relation_types... (2 TestCase) | rule | move (pin exists): `ValidateConnection_WhenTheOrganisationListsNoRelationTypes_SaysSo` |
+| 10 | An_organisation_that_will_not_list_its_relation_types_fails_validation_saying_so | rule | move (pin exists): `ValidateConnection_WhenTheRelationTypesAreRefused_SaysTheReferenceCouldNotBeChecked` |
+| 11-13 | A_relation_type_listing_that_failed_on_the_way... (3 TestCase) | rule | move (pin exists): `..._WhenListingTheRelationTypesTimesOut_ReadsItAsUnreadable` and `..._FailsUnexpectedly_DoesNotPassItOffAsARefusal` |
+| 14 | Validate_asks_the_organisation_for_its_relation_types_at_most_once | rule | move (add row): counting client |
+| 15 | A_refresh_naming_only_fields_asks_for_no_relation_types_even_with_a_stale_Additional_Field... | rule | move (pin exists): `GetFeaturesForProject_WhenOnlyAnUnusedDefinitionNamesNoField_DoesNotListTheRelationTypes` |
+| 16 | A_refresh_does_not_report_a_relation_type_reference_as_a_missing_field | rule | move (pin exists): `GetFeaturesForProject_WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce` |
+| 17 | A_relation_type_named_as_Parent_Override_Field_keeps_the_native_parent_and_says_why | rule | move (pin exists): `..._WhenTheParentOverrideFieldNamesARelationTypeWithoutItsEnd_SaysItReadsNoParentFromIt` |
+| 18 | A_field_named_exactly_like_a_relation_type_end_is_read_as_the_field | rule | move (add row): same class |
+| 19-21 | A_relation_type_named_as_a_Teams_Parent_Override_Field... (x2) and A_Teams_parent_source_naming_nothing_the_organisation_defines_reads_no_parent | rule (the Team path of the connector) | move (add row): `AzureDevOpsNamedRelationEndTest` has only `GetFeaturesForProject` rows, so the Team path (`GetWorkItemsForTeam`) needs new rows; confirm the method in the step |
+| 22-24 | A_relation_type_named_in_another_setting_reads_as_nothing_named_and_says_why (3 TestCase: Size, Owner, Estimation) | rule | move (pin exists): `..._WhenSettingsThatReadAFieldNameARelationType_SaysSoForEachAndListsTheTypesOnce` |
+
+Count: move 23 + stays 1 = 24. Keeps its host (1 row). Saving: at most 14.8 x 23/24 = 14.2 s (the class is an upper bound; many rows are validate-only and cheap).
+
+**Slice05aTeamsParentOverrideDefaultScenarios (18 rows)** (ConnectionDefaults):
+
+| # | Test method (short) | Rule or wire | Destination / reason |
+|---|---|---|---|
+| 1 | One_save_on_the_connection_and_every_Team_that_named_nothing_reads_its_parents_from_the_default | wiring | **stays** (skeleton: save, follower update reads the default, settings page, count, log) |
+| 2 | A_Team_with_its_own_Parent_Override_Field_is_unaffected_by_the_default | rule | move (pin exists): `EffectiveSettingTest.A_Team_reads_its_own_Parent_Override_Field_or_the_connections_default_by_its_source` (Own, field, default) |
+| 3 | A_Team_that_chose_None_keeps_the_trackers_own_parent_whatever_the_default_says | rule | move (pin exists): same test (Own, null, default); follower count 2: `WorkTrackingSystemConnectionUsageTest.FollowersByConnection_CountsOnlyTheOwnersThatFollow...` |
+| 4 | A_new_Team_follows_the_default_from_the_start | rule | move (pin exists, confirm): `IncomingSettingTest` / `TeamExtensionsTest.A_new_Team_copied_from_a_follower_...`; add a "new Team follows" row to `EffectiveSettingTest` if the break does not flip |
+| 5 | A_Team_admin_without_connection_rights_sees_which_field_the_Team_follows | RBAC and wire | **stays** |
+| 6 | Someone_without_connection_rights_cannot_save_the_connection | RBAC | **stays** (403) |
+| 7-8 | Jira_and_Azure_DevOps_offer_every_default (2 TestCase) | rule (what a tracker offers) | move (pin exists): `SupportedConnectionDefaultsTest.A_tracker_honours_exactly_the_defaults_it_offers` |
+| 9 | A_CSV_connection_offers_only_Feature_Owner_and_Estimation | rule | move (pin exists): same |
+| 10-11 | Linear_and_ServiceNow_offer_no_default (2 TestCase) | rule | move (pin exists): same |
+| 12 | A_default_the_tracker_does_not_honour_is_refused_and_nothing_is_saved | wire plus rule | **stays** (400 and code `connection-default-not-supported`, nothing saved, through the controller); the rule is `SupportedConnectionDefaultsTest`. The JSON names of the "offered" list (`dependencyFieldForPortfolios`, ...) are wire: check that `ConnectionDefaultsDtoTest` pins them, else add one row to the wire contract rather than keep rows 7 to 11 |
+| 13 | A_save_that_changes_no_default_writes_no_log_entry | rule | move (pin exists): `Commit_TheTeamsDefaultUnchanged_LogsNothing`, `Commit_OnlyTheNameChanged_PublishesNothing` |
+| 14 | A_default_nobody_follows_still_writes_an_entry_saying_none_follow | rule | move (pin exists): `Commit_TheTeamsDefaultSetButEveryTeamOwnsItsField_LogsOneEntrySayingNoTeamFollowsIt` |
+| 15 | A_save_without_the_defaults_keeps_every_default | rule | move (pin exists, confirm): `ConnectionDefaultsDtoTest.An_Estimation_default_left_out_of_the_save_is_not_sent`; add the Parent-default variant if missing |
+| 16 | Clearing_a_default_stops_the_followers_reading_it_and_is_logged | rule | move (pin exists): `Commit_TheTeamsDefaultCleared_LogsOneEntryNamingTheFieldItWas` plus `EffectiveSettingTest` (follower, no default) |
+| 17 | The_admin_whose_copy_is_stale_is_refused_and_the_first_default_stands | concurrency token | **stays** (real store, as 7.1 row 12); unit side: `Commit_TheCopyIsStale_...` |
+| 18 | A_field_added_in_the_same_save_can_be_the_default | rule | move (pin exists): `Commit_TheDefaultNamesAFieldAddedInThisSave_PointsTheDefaultAtTheStoredField` |
+
+Count: move 13 + stays 5 = 18. Keeps its host (5 rows). Saving: at most 14.8 x 13/18 = 10.7 s.
+
+**Slice08PortfoliosParentOverrideDefaultScenarios (9 rows)**:
+
+| # | Test method (short) | Rule or wire | Destination / reason |
+|---|---|---|---|
+| 1 | A_Portfolio_that_names_nothing_hangs_its_Features_under_what_the_Portfolios_default_names | wiring (Portfolio side of the default) | **stays** (skeleton: the Portfolio follower's update reads the Portfolios default, 6-refresh Given) |
+| 2 | The_Teams_default_never_reaches_a_Portfolio | rule | move (pin exists): `EffectiveSettingTest.A_Portfolio_has_no_Teams_default_to_follow`; the log half (no Portfolio named) needs one row on `ConnectionSaveServiceTest` (add row) |
+| 3 | The_Portfolios_default_never_reaches_a_Team | rule | move (pin exists): `EffectiveSettingTest.A_Team_has_no_Portfolios_default_to_follow` |
+| 4 | A_Portfolio_with_its_own_field_is_unaffected | rule | move (pin exists): `EffectiveSettingTest.A_Portfolio_reads_its_own_Parent_Override_Field_or_the_connections_Portfolio_default_by_its_source` |
+| 5-6 | A_save_that_leaves_one_default_out_keeps_it (2 TestCase) | rule | move (add row): `ConnectionDefaultsDtoTest`, an older page's save without the Portfolio and the Teams parent default |
+| 7 | A_field_added_in_the_same_save_can_be_the_Portfolios_default | rule | move (pin exists): `Commit_PointingThePortfoliosDefaultAtAFieldAddedInThisSaveFails_...` and the Teams twin |
+| 8-9 | A_default_sent_as_empty_is_cleared (2 TestCase) | rule | move (pin exists): `ConnectionDefaultsDtoTest.An_explicit_null_list_clears_the_default_rather_than_saying_nothing`; the log half `Commit_TheTeamsDefaultCleared_...` (add a Portfolio-grain TestCase) |
+
+Count: move 8 + stays 1 = 9. Keeps its host (1 row). Saving: at most 14.8 x 8/9 = 13.2 s.
+
+**Slice09PortfoliosDependencyFieldDefaultScenarios (3 rows)**, **Slice10PortfoliosSizeEstimateFieldDefaultScenarios (5 rows)**, **Slice11PortfoliosFeatureOwnerFieldDefaultScenarios (6 rows)**: three copies of one pattern, one per Portfolio setting.
+
+| Class | # | Test method (short) | Rule or wire | Destination / reason |
+|---|---|---|---|---|
+| 09 | 1 | A_following_Portfolio_reads_its_dependencies_from_the_default_and_an_owner_is_left_alone | rule (what the connector is asked to read) | move (pin exists): `EffectiveSettingTest.A_Portfolio_reads_its_own_Dependency_Field_or_the_connections_default_by_its_source`, `A_new_Portfolio_follows_the_connections_Dependency_Field_default`; the updates queued: Portfolio grain on the publish matrix (add TestCase). The break must be on the effective getter the updater hands the connector |
+| 09 | 2 | The_settings_page_names_the_Dependency_Field_default_not_the_Parent_Override_one | rule plus DTO | move (add row): `SettingsOwnerDtoRoundTripTest` with two different defaults set |
+| 09 | 3 | Ignore_Dependencies_is_never_taken_from_the_connection | rule | move (pin exists, partial): `SupportedConnectionDefaultsTest` and `ConnectionDefaultsDtoTest.A_saved_Dependency_Field_default_binds_to_the_default_this_build_holds`; add a save-back row on `PortfolioExtensionsTest` for `ignoreDependencies` |
+| 10 | 1 | A_following_Portfolio_reads_its_sizes_from_the_default_and_an_owner_is_left_alone | rule | move (pin exists): `EffectiveSettingTest...Size_Estimate_Field...` |
+| 10 | 2 | The_settings_page_names_the_Size_Estimate_Field_default_not_the_Dependency_one | rule plus DTO | move (add row): as 09 row 2 |
+| 10 | 3 | A_following_Feature_is_sized_at_what_the_default_field_holds | rule over a fake tracker | **stays**: the fake tracker computes the size from the field it is asked for, so the host row proves updater, fake and store together; the owner of "an empty size takes the Portfolio's default size" was not located in this screen. If `ctx_search` finds it in a Models or service class, the row moves |
+| 10 | 4 | A_following_Feature_with_no_size_in_the_default_field_takes_the_Portfolios_default_size | rule | **stays**: same reason as row 3 |
+| 10 | 5 | A_Portfolio_that_owns_its_size_field_starts_no_update_when_the_default_changes | rule | move (add row): Portfolio grain on the publish matrix |
+| 11 | 1 | A_following_Portfolio_reads_its_Feature_owners_from_the_default_and_an_owner_is_left_alone | rule | move (pin exists): `EffectiveSettingTest...Feature_Owner_Field...` |
+| 11 | 2 | The_settings_page_names_the_Feature_Owner_Field_default_not_the_Size_Estimate_one | rule plus DTO | move (add row): as 09 row 2 |
+| 11 | 3 | A_following_Feature_is_owned_by_the_Team_the_default_field_names | rule over a fake tracker | **stays**: as 10 row 3 |
+| 11 | 4 | A_following_Feature_on_a_CSV_connection_is_owned_by_the_Team_the_default_column_names | rule over a fake tracker | **stays**: as 10 row 3, and it adds a CSV connection |
+| 11 | 5 | A_following_Feature_with_no_owner_in_the_default_field_is_shared_by_every_Team | rule over a fake tracker | **stays**: as 10 row 3 |
+| 11 | 6 | The_Owning_Team_is_never_taken_from_the_connection | rule | move (pin exists): `SupportedConnectionDefaultsTest`, `ConnectionDefaultsDtoTest.A_save_following_the_Feature_Owner_Field_default_keeps_the_Portfolios_own_Owning_Team` |
+
+Counts: Slice09 move 3 + stays 0 = 3 (**the class leaves the host entirely**, if the JSON names of `dependencyFieldForPortfolios` and the settings page names are pinned by an existing DTO or wire row; check in the step). Slice10 move 3 + stays 2 = 5 (keeps its host). Slice11 move 3 + stays 3 = 6 (keeps its host). Savings, bounds only: Slice09 at most 14.8 s; Slice10 at most 14.8 x 3/5 = 8.9 s; Slice11 at most 14.8 x 3/6 = 7.4 s. They cannot all reach their bound: with Slice01, 03, 05a, 08 and ClockIsolation they must fit in 78.2 s.
+
+**ClockIsolationScenarios (2 rows)**:
+
+| # | Test method (short) | Rule or wire | Destination / reason |
+|---|---|---|---|
+| 1 | A_scenario_that_lets_a_minute_pass_begins_at_the_instant_every_scenario_begins_at | fixture self-test: the base class resets the host clock in `SetUp` | **stays** while `NamedDependencyLinkAcceptanceTest` has a user (Slice01 to 04 keep rows) |
+| 2 | Another_scenario_that_lets_a_minute_pass_begins_at_the_same_instant | same | **stays** |
+
+Count: stays 2 = 2. Keeps its host. Nothing leaves. Time unmeasured (at most 14.8 s; two rows with no refresh, so most likely its host build and one set-up each: not measured).
+
+### 7.7 Counts for the family
+
+| Class | Rows | Move | Rewrite | Stays | Host after? |
+|---|---|---|---|---|---|
+| Slice05b | 32 | 28 | 0 | 4 | yes (4) |
+| Slice02 | 7 | 6 | 0 | 1 | yes (1) |
+| Slice04 | 19 | 17 | 0 | 2 | yes (2) |
+| Slice12 | 20 | 18 | 0 | 2 | yes (2) |
+| Slice06 | 5 | 3 | 0 | 2 | yes (2) |
+| Slice01 | 13 | 10 | 0 | 3 | yes (3) |
+| Slice03 | 24 | 23 | 0 | 1 | yes (1) |
+| Slice05a | 18 | 13 | 0 | 5 | yes (5) |
+| Slice08 | 9 | 8 | 0 | 1 | yes (1) |
+| Slice09 | 3 | 3 | 0 | 0 | **no** (conditional on one JSON-name check) |
+| Slice10 | 5 | 3 | 0 | 2 | yes (2) |
+| Slice11 | 6 | 3 | 0 | 3 | yes (3) |
+| ClockIsolation | 2 | 0 | 0 | 2 | yes (2) |
+| **Total** | **163** | **135** | **0** | **28** | 12 of 13 |
+
+Of the 135 moves, the pin is found **by name** for most; the rows marked "add row" (about 30) need a new row on an existing unit class with the same Given on that class's doubles. The count of "pin exists" versus "add row" is read by eye from the tables, not computed. The stays fall in four groups: the end-to-end rows (one per flow), the real-store concurrency rows, the wire rows (RBAC, status and code of a refusal, the validate route), and the rows whose owner I did not find (fake-tracker feature size and owner, Slice06 row 3).
+
+### 7.8 Suite 2 slices (at most 5 nwdes slices, largest projected saving first)
+
+The saving is the class seconds x the share of rows leaving, as in step 2 of the delta. **It is a projection, not a measurement**: the measured saving comes from the before/after runs of step 3. A part with "at most" belongs to a class with no measured seconds.
+
+| Order | Slice | Classes | Rows leaving | Projected saving | Unit homes |
+|---|---|---|---|---|---|
+| 1 | Save pipeline: field removal, refusals, older payloads, defaults offered | Slice05b, Slice05a | 28 + 13 = 41 | 17.2 s (Slice05b) + at most 10.7 s (Slice05a) | `ConnectionSaveServiceTest`, `IncomingSettingTest`, `OwnerSettingRefusalsTest`, `EffectiveSettingTest`, `SupportedConnectionDefaultsTest`, `ConnectionDefaultsDtoTest` |
+| 2 | Jira named link and what Refresh History says | Slice02, Slice01 | 6 + 10 = 16 | 16.4 s (Slice02) + at most 11.4 s (Slice01) | `JiraNamedDependencyLinkTest` **[connector]**, `RefreshLogServiceTest`, the Refresh History read side |
+| 3 | Azure DevOps named relation end and relation types | Slice04, Slice03 | 17 + 23 = 40 | 14.8 s (Slice04) + at most 14.2 s (Slice03) | `AzureDevOpsNamedRelationEndTest` **[connector]** |
+| 4 | Estimation default and the other Portfolio defaults | Slice12, Slice09, Slice10, Slice11 | 18 + 3 + 3 + 3 = 27 | 14.2 s (Slice12) + at most 14.8 + 8.9 + 7.4 s (together bounded by the 78.2 s the unmeasured classes hold) | `EstimationBundleTest`, `EffectiveSettingTest`, `OwnerSettingRefusalsTest`, `SettingsOwnerDtoRoundTripTest`, `ConnectionSaveServiceTest` |
+| 5 | Default change updates the followers (Team and Portfolio grain) | Slice06, Slice08 | 3 + 8 = 11 | 9.1 s (Slice06) + at most 13.2 s (Slice08) | `ConnectionSaveServiceTest` (publish matrix, logs), `EffectiveSettingTest` |
+
+Measured part of the projection: 17.2 + 16.4 + 14.8 + 14.2 + 9.1 = **71.7 s** of the 86.2 s that the five measured classes take on CI. The unmeasured classes add at most 78.2 x 63/80 = 61.6 s if every row cost the same (63 of their 80 rows leave); that figure is arithmetic on an assumption, not a measurement, and it assumes each class's seconds are spread evenly over its rows, which the measured classes show is false (0.61 to 3.0 s a row). Read the total as "at most about 133 s of the 164.4 s", and expect less; the host builds of the 12 classes that keep a row are not subtracted.
+
+Order and dependency. Slice 1 and Slice 4 and Slice 5 all add rows to `ConnectionSaveServiceTest`, `EffectiveSettingTest` and `IncomingSettingTest`: run them one after another (1, then 4, then 5), never in parallel, as S3 and S4 of suite 1 were. Slices 2 and 3 touch only their own connector's unit class and `RefreshLogServiceTest`, so they do not conflict with the others. If the crafter wants the unit-class edits ordered by value, the order in the table (largest measured saving first) already does it.
+
+**Classes I would leave out of the five slices**, and why:
+
+- **ClockIsolationScenarios**: 2 rows that guard the base class's clock reset; nothing is rule-shaped. It stays as long as Slice01 to 04 keep a host row on that base. Nothing to move, so no slice.
+- **The 28 stays**: see the four groups in 7.7. They are not backlog work. The wire rows (status and code of a refusal, RBAC, the validate route) and the real-store concurrency rows would fit better together in one `Contracts` class on `WireContractTest` with one host than in seven fixtures with seven hosts; that is a follow-up after the slices land, because the backend half measures that a split that adds host fixtures can be slower (27.0 s against 24.4 s), and the same holds for a merge that is not measured. It is not part of the savings above.
+- **Slice06 row 3 and the feature-size and owner rows of Slice10 and Slice11** (7 rows): kept only because the owner of the rule was not found in this screen. If the crafter finds it while working a slice, the row moves in that slice, and the saving only rises.
+
+### 7.9 What surprised me
+
+- The family is not slow in a fill: no row of 163 saves a long history. The cost is per-row set-up (`EnsureCreated`, every seeder, the Payments department) and refreshes that wait for the queue. So the 5 measured classes show 0.61 to 3.0 s a row, and the slowest per row (Slice02, Slice06) are the ones with 4 to 6 or more refreshes in the Given.
+- Slice02's 19.1 s comes from only 2 of its 7 rows (4 and more refreshes each), and both have a direct unit pin on `RefreshLogServiceTest`.
+- Rows that look like host tests are mostly rules the save service, `EffectiveSetting` or `IncomingSetting` already prove: `IncomingSettingTest` has an 18-row matrix that names every combination Slice05b rows 16 to 29 re-check.
+- `AzureDevOpsNamedRelationEndTest` has only `GetFeaturesForProject` and `ValidateConnection` rows, so the Team-path rows of Slice03 (19 to 21) are not just moves; they need new rows.
+- There is no live tracker anywhere in the family. All trackers are doubles; the connector-specific rows move to the connector's own unit class, which already uses the same double.
+- Slice09 can leave the host entirely, and no other class can; every other class keeps at least one row and so its own host build.
+- `TestHostUseGuardTest.HostUsersStillToMove` names these classes (lines 41 to 48 read: ClockIsolation, Slice01 to 06). Only Slice09 can come off that list in suite 2; the other 12 stay on it because each keeps at least one host row, which this screen does not propose to remove.
