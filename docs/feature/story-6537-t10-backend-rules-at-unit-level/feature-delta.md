@@ -945,3 +945,21 @@ overlapped a temporary break of its own summary run. nwdes publishes the feature
 "queues nothing" proof; the refused-move ordering; the class-level `epic-6303` categories left on Slice05a/05b/10/11.
 
 **Next: step 5, stop and ask (5.1).** Both suites are done, so T10 halts with the note to the maintainer.
+
+## Wave: DELIVER / [REF] Closing record (2026-11-14)
+
+**Maintainer decision (step 5 reply): (c), step 6 moves to Story #6647.** T10 does not wait for its own after set. The first
+item worked from #6647 (clean as we go, backend) takes 5 eligible runs whose head is after `15d0e986f`, the last move commit,
+reads the success the way step 6 says, and makes the JSON-only data commit that lowers the ceilings. The full method is in
+#6647's description.
+
+**What T10 did:** 179 host rows moved to unit or service-port level, 44 in suite 1 and 135 in suite 2. 135 includes the
+follow-up `15d0e986f`, which moved the seven rows suite 2 had kept (Slice08 rows 2, 4, 5-6 and 7, Slice12 rows 1 and 16), each
+with a deliberate break (`story-6537-b-configure-suite/evidence/followup_breaks.py`). The follow-up was done directly, without
+an nwdes review. No production code changed.
+
+**What T10 did not do, said plainly (5.3):** the outcome is predicted, not measured. The predicted fall is about 11 % of the
+Integration tier's CI time against the 5 % target, and step 6 is where it gets measured. No ceiling was lowered and no entry is
+written. Both happen under #6647. No third suite was taken.
+
+**Backlog:** #6647 (backend) and #6648 (frontend), the clean-as-we-go Stories, unparented and tagged Continuous Improvement.

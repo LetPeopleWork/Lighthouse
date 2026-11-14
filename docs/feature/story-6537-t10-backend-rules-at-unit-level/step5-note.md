@@ -120,7 +120,7 @@ On calendar time, both suites came in under the estimate. Two things took more e
 
 ## 5. What step 6 needs
 
-1. **Five eligible plain `main` runs** whose head is after `f2a2dd345` (the last move commit) and before the data commit. The push of `f2a2dd345` starts the first one, if it is eligible. Eligible means: test step passed, no `Failed` row, every connector answer `false`, not force-full. Up to four of the five depend on other Stories' pushes. T10 makes no synthetic push, and the data commit waits. **No run after `f2a2dd345` has been read yet.** The after set is not in the sources.
+1. **Five eligible plain `main` runs** whose head is after `15d0e986f` (the last move commit, the follow-up) and before the data commit. The push of `15d0e986f` starts the first one, if it is eligible. Eligible means: test step passed, no `Failed` row, every connector answer `false`, not force-full. Up to four of the five depend on other Stories' pushes. T10 makes no synthetic push, and the data commit waits. **No run after `15d0e986f` has been read yet.** The after set is not in the sources.
 2. **The before set.** Only 2 clean runs existed at the first move push (`b8c425ce6`, `61cda4e8e`). You decided on 2026-11-13 to rebuild it from those 2 plus older plain runs, with the classes Story 6602 moved removed by id. The rebuilt table is not in the workspace evidence (`evidence/step1/` holds only the 10-run ranking). It must be written before the success reading.
 3. **The success reading**, with all three conditions together: after median below before median; by-class fall larger than the range of the moved ids' own seconds across the before runs; fall reaches `P` = 5.0 %. The tier before spread was 1.62 over the 10 ranking runs, far larger than T4's 1.13, so a tier median alone may sit inside noise (scenario 6.2). The by-class fall is the proof that counts. Per-id seconds come from the CSVs and the id tables; the CSVs are not stored in the workspace.
 4. **Your ruling on the ceilings** (DESIGN questions 2, 4, 5), **before** the data commit. My recommendation: the formula is likely to lower both mean and total this time (section 4), so write what it gives where it is lower than the entry, and write nothing where it is not. Both are in the rules already; the ruling confirms them.
@@ -156,7 +156,7 @@ On calendar time, both suites came in under the estimate. Two things took more e
 
 ## 7. The question
 
-**Context.** Both suites are moved and pushed. Every suite is predicted above the 1 % line. The measured fall waits for five CI runs after `f2a2dd345`.
+**Context.** Both suites are moved and pushed. Every suite is predicted above the 1 % line. The measured fall waits for five CI runs after `15d0e986f`; by the maintainer's reply it is taken under #6647.
 
 **Recommendation.** Do not start a third suite inside T10. Let the after set build, make the success reading, then rule on the ceilings. Take the third suite as the separate backend Story above.
 
