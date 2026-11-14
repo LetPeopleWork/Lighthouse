@@ -1,7 +1,6 @@
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Lighthouse.Backend.Tests.TestHelpers;

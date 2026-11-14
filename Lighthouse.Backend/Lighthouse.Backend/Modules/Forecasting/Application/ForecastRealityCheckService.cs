@@ -3,7 +3,6 @@ using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 
 namespace Lighthouse.Backend.Modules.Forecasting.Application

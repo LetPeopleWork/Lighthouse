@@ -5,7 +5,7 @@ using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;

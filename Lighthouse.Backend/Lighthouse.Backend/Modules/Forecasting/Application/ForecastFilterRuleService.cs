@@ -1,6 +1,5 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.WorkItemRules;
 

@@ -1,8 +1,7 @@
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Health;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation.Forecast;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;
 using Lighthouse.Backend.Tests.TestDoubles;

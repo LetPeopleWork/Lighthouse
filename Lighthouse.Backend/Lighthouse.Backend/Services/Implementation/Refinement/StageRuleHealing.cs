@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Refinement;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 
 namespace Lighthouse.Backend.Services.Implementation.Refinement
 {

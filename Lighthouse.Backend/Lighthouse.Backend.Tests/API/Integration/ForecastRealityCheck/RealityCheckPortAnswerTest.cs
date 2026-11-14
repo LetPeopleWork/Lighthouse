@@ -1,7 +1,7 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.API.Integration.ForecastRealityCheck

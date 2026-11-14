@@ -1,5 +1,3 @@
-using Lighthouse.Backend.Services.Interfaces.Forecast;
-
 namespace Lighthouse.Backend.Modules.Forecasting.Domain
 {
     /// <summary>

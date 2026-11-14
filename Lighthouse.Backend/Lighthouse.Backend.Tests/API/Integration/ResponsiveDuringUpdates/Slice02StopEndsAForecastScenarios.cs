@@ -1,6 +1,6 @@
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 

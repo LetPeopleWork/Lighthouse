@@ -1,7 +1,7 @@
 using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Moq;

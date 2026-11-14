@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models.Refinement;
 using Lighthouse.Backend.Models.WorkItemRules;
 using Lighthouse.Backend.Services.Implementation.Refinement;
 using Lighthouse.Backend.Services.Implementation.WorkItemRules;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Moq;
 
 namespace Lighthouse.Backend.Tests.Services.Implementation.Refinement

@@ -3,7 +3,7 @@ using ArchUnitNET.NUnit;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using System.Text.RegularExpressions;
 using ArchUnitNET.Fluent.Syntax.Elements.Types;
-using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 

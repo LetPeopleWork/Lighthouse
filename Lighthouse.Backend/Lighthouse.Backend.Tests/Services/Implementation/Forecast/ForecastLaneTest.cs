@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 using Lighthouse.Backend.Models.Forecast;
-using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Microsoft.Extensions.Logging;
 using Moq;
 

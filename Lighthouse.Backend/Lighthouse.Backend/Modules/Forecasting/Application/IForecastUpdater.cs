@@ -1,4 +1,6 @@
-﻿namespace Lighthouse.Backend.Modules.Forecasting.Application
+﻿using Lighthouse.Backend.Services.Interfaces.Update;
+
+namespace Lighthouse.Backend.Modules.Forecasting.Application
 {
     public interface IForecastUpdater : IUpdateService
     {

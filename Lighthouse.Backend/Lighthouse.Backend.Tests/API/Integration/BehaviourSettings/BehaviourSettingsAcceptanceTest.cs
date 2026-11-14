@@ -5,6 +5,7 @@ using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.AppSettings;
 using Lighthouse.Backend.Models.OptionalFeatures;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Implementation.Authorization;
 using Lighthouse.Backend.Services.Interfaces.Licensing;

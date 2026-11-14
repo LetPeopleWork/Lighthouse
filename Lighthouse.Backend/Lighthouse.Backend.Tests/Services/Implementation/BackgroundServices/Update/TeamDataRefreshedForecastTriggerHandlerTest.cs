@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Models.Events;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;

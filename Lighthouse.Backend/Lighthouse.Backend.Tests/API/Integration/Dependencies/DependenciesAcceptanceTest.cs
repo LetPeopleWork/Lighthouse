@@ -3,7 +3,7 @@ using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Services.Factories;
 using Lighthouse.Backend.Services.Interfaces.Dependencies;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;

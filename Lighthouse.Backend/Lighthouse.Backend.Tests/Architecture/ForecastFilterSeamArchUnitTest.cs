@@ -1,7 +1,6 @@
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
-using Lighthouse.Backend.Services.Implementation.Forecast;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 

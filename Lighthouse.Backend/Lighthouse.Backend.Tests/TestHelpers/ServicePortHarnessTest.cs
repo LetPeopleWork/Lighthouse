@@ -2,7 +2,7 @@ using System.Data;
 using System.Data.Common;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;

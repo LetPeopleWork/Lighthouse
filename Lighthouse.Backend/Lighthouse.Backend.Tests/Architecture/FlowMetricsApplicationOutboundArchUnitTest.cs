@@ -9,7 +9,7 @@ using Lighthouse.Backend.FlowMetricsApplicationOutboundFixtures.ReachingTheDatab
 using Lighthouse.Backend.FlowMetricsApplicationOutboundFixtures.ReachingTheModuleAdapters.Application.Policies;
 using Lighthouse.Backend.FlowMetricsApplicationOutboundFixtures.SecondForecastingType.Application;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Mono.Cecil;
 
 namespace Lighthouse.Backend.Tests.Architecture
@@ -55,9 +55,9 @@ namespace Lighthouse.Backend.Tests.Architecture
         // Every edge from the module's Application into Forecasting when the module was cut out. The list only shrinks.
         private static readonly string[] ForecastingEdgesOfTheApplication =
         [
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.BaseMetricsService -> Lighthouse.Backend.Services.Interfaces.Forecast.IForecastService",
+            "Lighthouse.Backend.Modules.FlowMetrics.Application.BaseMetricsService -> Lighthouse.Backend.Modules.Forecasting.Application.IForecastService",
             "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Modules.Forecasting.Domain.ForecastDataSufficiencyPolicy",
-            "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Services.Interfaces.Forecast.IForecastFilterRuleService",
+            "Lighthouse.Backend.Modules.FlowMetrics.Application.TeamMetricsService -> Lighthouse.Backend.Modules.Forecasting.Application.IForecastFilterRuleService",
         ];
 
         private static readonly Lazy<ModuleDefinition> ProductionModule = new(() => IlDependencies.ReadModule(typeof(Feature).Assembly));

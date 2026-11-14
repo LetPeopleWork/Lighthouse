@@ -1,7 +1,7 @@
 using System.Text.RegularExpressions;
 using ArchUnitNET.NUnit;
 using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Tests.Integration.Containers;
 using ArchitectureModel = ArchUnitNET.Domain.Architecture;

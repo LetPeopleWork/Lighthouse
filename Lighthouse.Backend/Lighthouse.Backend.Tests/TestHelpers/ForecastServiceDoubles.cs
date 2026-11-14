@@ -1,5 +1,5 @@
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Moq;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
 

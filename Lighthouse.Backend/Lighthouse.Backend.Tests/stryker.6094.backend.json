@@ -4,7 +4,7 @@
     "solution": "../Lighthouse.sln",
     "test-projects": ["Lighthouse.Backend.Tests.csproj"],
     "mutate": [
-      "**/Services/Implementation/Forecast/ForecastRealityCheckService.cs"
+      "**/Modules/Forecasting/Application/ForecastRealityCheckService.cs"
     ],
     "thresholds": { "high": 80, "low": 70, "break": 0 },
     "coverage-analysis": "perTestInIsolation",

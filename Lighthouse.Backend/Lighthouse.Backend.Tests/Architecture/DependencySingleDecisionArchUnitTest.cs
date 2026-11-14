@@ -4,7 +4,7 @@ using Lighthouse.Backend.Models.Dependencies;
 using Lighthouse.Backend.Models.Metrics;
 using Lighthouse.Backend.Modules.FlowMetrics.Application;
 using Lighthouse.Backend.Services.Implementation.Dependencies;
-using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Implementation.Parents;
 using Lighthouse.Backend.Services.Implementation.Repositories;
 using Lighthouse.Backend.Services.Implementation.WorkTrackingConnectors.AzureDevOps;

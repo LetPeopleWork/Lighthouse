@@ -4,7 +4,6 @@ using System.Text.Json;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Models.Metrics;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.TestHelpers;
 using Microsoft.Extensions.DependencyInjection;

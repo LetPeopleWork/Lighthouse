@@ -1,7 +1,7 @@
 using Lighthouse.Backend.API.DTO;
 using Lighthouse.Backend.Models;
 using Lighthouse.Backend.Models.WorkItemRules;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.WorkItems;
 
 namespace Lighthouse.Backend.API.Helpers

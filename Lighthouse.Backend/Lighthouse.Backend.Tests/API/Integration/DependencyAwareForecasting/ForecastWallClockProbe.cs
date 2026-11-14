@@ -2,7 +2,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using System.Diagnostics;
 using Lighthouse.Backend.Models.Forecast;
 using Lighthouse.Backend.Services.Implementation;
-using Lighthouse.Backend.Services.Implementation.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Tests.TestDoubles;
 using Microsoft.Extensions.Logging;
 using Moq;

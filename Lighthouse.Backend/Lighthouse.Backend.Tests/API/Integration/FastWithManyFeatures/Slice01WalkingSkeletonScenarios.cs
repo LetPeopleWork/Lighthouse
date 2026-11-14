@@ -1,6 +1,6 @@
 using System.Net;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Tests.API.Integration.ResponsiveDuringUpdates;

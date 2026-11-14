@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Lighthouse.Backend.Data;
 using Lighthouse.Backend.Models;
-using Lighthouse.Backend.Services.Interfaces.Forecast;
+using Lighthouse.Backend.Modules.Forecasting.Application;
 using Lighthouse.Backend.Services.Interfaces.Licensing;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Seeding;
