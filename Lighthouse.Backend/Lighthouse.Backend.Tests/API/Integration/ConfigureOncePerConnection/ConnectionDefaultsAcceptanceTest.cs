@@ -318,12 +318,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             ThenTheSaveIsAccepted();
         }
 
-        protected async Task GivenTheTeamChoseNone(string team)
-        {
-            await WhenTheOwnersAdminSaves(team, OwnerSetting.ParentOverrideField, fieldName: null, Source.Own);
-            ThenTheOwnerSaveIsAccepted();
-        }
-
         protected async Task GivenTheTeamOwns(string team, string fieldName)
         {
             await WhenTheOwnersAdminSaves(team, OwnerSetting.ParentOverrideField, fieldName, Source.Own);
@@ -511,14 +505,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
         protected Task WhenTheAdminClearsTheDefault(ConnectionDefault theDefault)
             => SaveTheConnection(read => DefaultsOf(read)[TheMember(theDefault)] = null, startUpdates: false);
 
-        /// <summary>A script that knows nothing of defaults saves the connection with its name changed.</summary>
-        protected Task WhenAScriptSavesTheConnectionWithoutItsDefaults()
-            => SaveTheConnection(read =>
-            {
-                read.Remove(DefaultsMember);
-                read["name"] = $"{JiraDcPayments} (renamed)";
-            }, startUpdates: false);
-
         /// <summary>
         /// A page or script that does not know one default renames the connection: it sends the defaults it
         /// read, without that one.
@@ -529,9 +515,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
                 DefaultsOf(read).Remove(TheMember(theDefault));
                 read["name"] = $"{JiraDcPayments} (renamed)";
             }, startUpdates: false);
-
-        protected Task WhenTheAdminRenamesTheConnection()
-            => SaveTheConnection(read => read["name"] = $"{JiraDcPayments} (renamed)", startUpdates: false);
 
         /// <summary>
         /// The admin adds an Additional Field and, in the same save, names it as the default, the way the page
@@ -685,19 +668,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
             await PutTheOwner(portfolio, settings);
         }
 
-        /// <summary>A script saves back settings it read earlier, before the default moved, without any source.</summary>
-        protected async Task WhenAScriptSavesBackItsStaleCopy(string owner, JsonObject readEarlier, bool keepingTheSourceItRead)
-        {
-            await SetTheRestAside();
-
-            if (!keepingTheSourceItRead)
-            {
-                DropEverySourceAndDefaultName(readEarlier);
-            }
-
-            await PutTheOwner(owner, readEarlier);
-        }
-
         /// <summary>A new Team on the connection, created with a body copied from a Team that names nothing.</summary>
         protected async Task WhenANewTeamIsCreated(string name)
         {
@@ -709,19 +679,6 @@ namespace Lighthouse.Backend.Tests.API.Integration.ConfigureOncePerConnection
 
             Assert.That(response.StatusCode, Is.EqualTo(HttpStatusCode.OK), body);
             teamIds[name] = JsonNode.Parse(body)!["id"]!.GetValue<int>();
-        }
-
-        /// <summary>A new Team created with a field of another connection as its own Parent Override Field.</summary>
-        protected async Task WhenANewTeamIsCreatedNamingAFieldOf(string name, string connection, string fieldName)
-        {
-            var settings = await ANewTeamCopiedFromFraudSignals(name);
-            SetTheOwnersValue(settings, OwnerSetting.ParentOverrideField, await TheFieldId(connection, fieldName), Source.Own);
-
-            using var content = AsJson(settings);
-            using var response = await Client.PostAsync(new Uri(TeamsRoute, UriKind.Relative), content);
-
-            SaveAnswer = response.StatusCode;
-            SaveAnswerBody = await response.Content.ReadAsStringAsync();
         }
 
         /// <summary>
