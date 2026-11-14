@@ -3,7 +3,8 @@
 "B": 2,
 "C": 1,
 "D": 11,
-"F": 187,
+"E": 5,
+"F": 192,
 "K": 2,
 "L": 3,
 "P": 5,
@@ -903,6 +904,45 @@
 }
 }
 },
+"expectations": {
+"rows": [
+{
+"id": "E1",
+"promises": [
+"P1"
+],
+"text": "F188"
+},
+{
+"id": "E2",
+"promises": [
+"P2"
+],
+"text": "F189"
+},
+{
+"id": "E3",
+"promises": [
+"P3"
+],
+"text": "F190"
+},
+{
+"id": "E4",
+"promises": [
+"P4"
+],
+"text": "F191"
+},
+{
+"id": "E5",
+"promises": [
+"P5"
+],
+"text": "F192"
+}
+]
+},
 "facts": {
 "F1": "ADO Story 6502 Hide Outliers: on the Cycle Time scatterplot, hide exceptionally long closed Work Items so typical work stays readable, while the outliers stay known, one click away, and included in every statistic.",
 "F10": "Walking skeleton: typical work readable, outliers disclosed in the header chip and popover.",
@@ -1002,7 +1042,12 @@
 "F185": "Extra strings",
 "F186": "New term field",
 "F187": "Passes the configured Cycle Time term",
+"F188": "Cycle Time scatterplot of a Team or Portfolio does not draw a closed Work Item whose Cycle Time exceeds 5 times the 50th percentile; the y-axis rescales to the remaining items; percentile and SLE lines stay visible in place or as labelled markers at the top edge; with no such item the chart is unchanged.",
+"F189": "Widget header chip reads 1 outlier or N outliers and is absent when there are none; it opens a popover saying the items are not drawn, stating the cut and the median in days, and listing each outlier with closed date, Cycle Time in days and multiple of the median; while loading or failed the chip is disabled and never shows a count from a previous answer.",
 "F19": "Copy (maintainer S-4, S-6): popover title '{n} outlier(s)', line 1 'Not drawn: longer than {cut} days (5 times the median, {median} days).', line 2 'Still counted in the percentiles, {SLE} and View Data.', conditional line 'Above the axis: 95% at {p95} days, {SLE} at {sle} days.', then a table (closed date, Cycle Time days, times the median; factor rounding from 10 up is half-up) capped at 10 rows, then 'Open in a list' (slice 3). Empty plot: 'All visible {Work Items} are outliers.' or 'All types are hidden.' Work Item, Cycle Time and SLE render in the configured terms; 'outlier' is a fixed word.",
+"F190": "Chip and list count only outliers of visible Work Item types and follow the selected named Cycle Time and date range; toggling a type does not move the cut or the axis; when every visible item is an outlier or every type is hidden the plot says so instead of No data available.",
+"F191": "From the popover the reader opens the outliers in the existing Work Items list dialog with sort, export and tracker links working; the widget help explains the outlier rule in the reader's configured terminology.",
+"F192": "Percentiles, SLE share and RAG, tiles, View Data and forecasts are unchanged by the outlier feature and still include the outliers.",
 "F2": "A flow coach reads the picture of normal work on the Cycle Time scatterplot without one extreme item squashing it, and still knows which items were left out and why.",
 "F20": "Edge markers (maintainer S-5): a percentile or SLE line above the new axis top is drawn as a labelled triangle marker in the plot's top margin via OffScaleLineMarkers (aria-hidden, reads only useDrawingArea); fallback if the browser spike fails is a text line under the legend row. The Zenith demo has no line above the cut, so markers are proven by RTL and unit tests on fixtures, not E2E geometry.",
 "F21": "Usage data: name-only event OutlierPopoverOpened = 27 (next integer after SystemWideAccessGranted = 26, appended, never renumbered) in UsageDataEventName.cs and UsageDataService.ts, row in docs/settings/usagedata.md; reported once per closed-to-open change through the chip's usage-event callback prop (the chip imports no service). Emitted in slice 1, the slice that first makes the chip usable.",
