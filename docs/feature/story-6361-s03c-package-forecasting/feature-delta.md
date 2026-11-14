@@ -594,8 +594,13 @@ A learning aid for the maintainer, not a replacement for `brief.md` or the ADRs.
 - **EXAMINE left open at the hold (2026-11-14):** E1, E2 and E4 met (forecast answers 128/128 and Flow metrics answers
   366/366 identical; filtered forecasts identical). E3 stays an observation gap: the order pins pass with both runners, but
   no public command shows the updater, seeder and triggers firing for a user. nwdes refuses every close but `accepted`
-  (`RoleNotAccepted`), so the draft stays in `.nwdes-drafts/`. Maintainer to decide: accept the gap, or give the examiner a
-  public trigger capture before closing.
+  (`RoleNotAccepted`), so the draft stays in `.nwdes-drafts/`.
+  - **Maintainer decision (2026-11-14):** give the examiner one more round with the `backend-tests` fragments; if E3 stays
+    a gap, waive it. The round ran: updater 58/58, seeder 1/1, triggers 14/14 and 2/2 passed, but the examiner counts
+    these as producer tests, not a public observation, so E3 stays an observation gap. **E3 is waived for feature B**;
+    the EXAMINE draft is left unclosed on purpose.
+  - **For feature C:** before C's expectations are recorded, add an admitted public probe that shows a forecast refresh
+    after a team refresh (and the start-up seeding), so C's examiner can observe triggers firing.
 - **Follow-up, out of scope:** `Architecture/IlDependencies` does not read catch-clause types, events or named attribute
   arguments, so a reference used only there escapes every IL rule. No current code hits it. Candidate for a small
   improvement item.
