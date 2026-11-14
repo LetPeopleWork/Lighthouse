@@ -15,15 +15,12 @@ export interface MarkerSpec {
 	readonly row: number;
 }
 
-/** Lines at or below the top of the axis are drawn in place; the rest lie above it. */
-export function splitLinesByAxis<T extends { readonly value: number }>(
+/** The lines above the top of the axis; the others are drawn in place. */
+export function linesAboveAxis<T extends { readonly value: number }>(
 	lines: readonly T[],
 	axisTop: number,
-): { readonly drawn: T[]; readonly offScale: T[] } {
-	return {
-		drawn: lines.filter((line) => line.value <= axisTop),
-		offScale: lines.filter((line) => line.value > axisTop),
-	};
+): T[] {
+	return lines.filter((line) => line.value > axisTop);
 }
 
 export function markerSpecs(offScale: readonly ChartLine[]): MarkerSpec[] {

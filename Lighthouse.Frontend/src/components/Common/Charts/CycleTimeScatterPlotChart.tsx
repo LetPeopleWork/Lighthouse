@@ -35,8 +35,8 @@ import {
 	integerValueFormatter,
 } from "../../../utils/charts/chartAxisUtils";
 import {
+	linesAboveAxis,
 	markerSpecs,
-	splitLinesByAxis,
 } from "../../../utils/charts/offScaleLines";
 import { axisTop, findOutliers } from "../../../utils/charts/outliers";
 import { outlierWording } from "../../../utils/charts/outlierWording";
@@ -350,7 +350,7 @@ const CycleTimeScatterPlotChart: React.FC<CycleTimeScatterPlotChartProps> = ({
 		],
 	);
 
-	const offScaleLines = splitLinesByAxis(plotLines, yAxisMax).offScale;
+	const offScaleLines = linesAboveAxis(plotLines, yAxisMax);
 	const markerRows = reservedMarkerRows(
 		effectivePercentiles,
 		serviceLevelExpectation,
