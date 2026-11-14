@@ -1,4 +1,5 @@
 using Lighthouse.Backend.Services.Implementation.Seeding;
+using Lighthouse.Backend.Modules.Forecasting.Adapters.Background;
 using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Moq;
 

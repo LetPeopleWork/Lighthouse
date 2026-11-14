@@ -10,6 +10,7 @@ using Lighthouse.Backend.Services.Interfaces.Repositories;
 using Lighthouse.Backend.Services.Interfaces.Update;
 using System.Diagnostics;
 using Lighthouse.Backend.Modules.Forecasting.Domain;
+using Lighthouse.Backend.Services.Implementation.BackgroundServices.Update;
 
 namespace Lighthouse.Backend.Modules.Forecasting.Adapters.Background
 {
