@@ -98,6 +98,7 @@ var workDir = args[1];
 PinnedDraws.Seed = long.Parse(args[2]);
 var licence = args.Length > 3 && File.Exists(args[3]) ? args[3] : null;
 Directory.CreateDirectory(outDir);
+Console.WriteLine($"masked keys: {string.Join(", ", MaskedKeys.Names)}");
 
 Environment.SetEnvironmentVariable("Database__Provider", "sqlite");
 Environment.SetEnvironmentVariable("Database__ConnectionString", $"Data Source={Path.Combine(workDir, "LighthouseAppContext.db")}");
@@ -254,7 +255,6 @@ async Task<Dictionary<string, string>> Round(List<(string Name, string Path, obj
     return answers;
 }
 
-// When a stored forecast was made, and the token a write leaves behind, depend on the run, not on the answer.
 static JsonNode Normalised(JsonNode node)
 {
     switch (node)
@@ -262,7 +262,7 @@ static JsonNode Normalised(JsonNode node)
         case JsonObject obj:
             foreach (var key in obj.Select(p => p.Key).ToList())
             {
-                if (key is "lastUpdated" or "creationTime" or "concurrencyToken")
+                if (MaskedKeys.Names.Contains(key))
                 {
                     obj[key] = "<differs per run>";
                 }
@@ -277,6 +277,13 @@ static JsonNode Normalised(JsonNode node)
             break;
     }
     return node;
+}
+
+// When a stored forecast was made, and the token a write leaves behind, depend on the run, not on the answer;
+// their values are blanked at any depth and so not compared.
+public static class MaskedKeys
+{
+    public static readonly string[] Names = ["lastUpdated", "creationTime", "concurrencyToken"];
 }
 
 public class PinnedDraws : DispatchProxy
@@ -310,9 +317,14 @@ cat > "$out/forecast-answers-compare" <<EOF
 # numbers pinned, and compares them. Each demo scenario is loaded in turn; per scenario it asks every Team for
 # a manual When and How Many forecast, an item creation prediction, a backtest and a reality check, and reads
 # the feature lists, the Delivery likelihoods and the Feature forecasts. Prints one line per kind of answer and
-# a last VERDICT line; exit 0 and "IDENTICAL" mean every answer matches.
+# a last VERDICT line; exit 0 and "IDENTICAL" mean every answer was compared, answered with a 2xx status on
+# both sides, and matches. It fails when no answer was compared or when any captured answer is not a 2xx.
+# The values of the keys listed under "masked keys" are blanked at any depth and so not compared.
 # Usage: forecast-answers-compare [base-revision [candidate-revision]]   (takes about 2 to 4 minutes)
-# With no arguments it compares the last revision before the forecasting code moves (39a7f598f) with HEAD.
+#   no arguments   compares base 39a7f598f (the last revision before the forecasting code moves) with HEAD;
+#                  this is the before/after check
+#   one argument   is the base revision; the candidate is HEAD
+#   two arguments  are the base and the candidate revision
 # Given the same revision twice it shows the capture itself is repeatable.
 set -euo pipefail
 # The examiner runs commands in a bare environment; the .NET SDK and its local tools live under the user's home.
@@ -377,6 +389,23 @@ wait "$base_pid" || { grep -E "^(scenario|licence|FATAL)" "$work/base.log" | tai
 wait "$candidate_pid" || { grep -E "^(scenario|licence|FATAL)" "$work/candidate.log" | tail -5; echo "candidate capture failed"; failed=1; }
 [ "$failed" = 0 ] || { echo "VERDICT: capture failed"; exit 1; }
 grep -E "^(licence|captured)" "$work/base.log" | sed 's/^/base: /'
+grep -E "^masked keys:" "$work/base.log" | head -1 | sed 's/$/ (their values are not compared)/'
+
+# An error answer on both sides would match and hide that nothing was forecast, so every answer must be a 2xx.
+failing=0
+for side in base candidate; do
+  while IFS= read -r file; do
+    status="$(grep -m1 -E '^  "status": ' "$file" | grep -oE '[0-9]+' || true)"
+    case "$status" in
+      2[0-9][0-9]) ;;
+      *) echo "$side: ${file#"$work/$side/"} answered ${status:-no status}"; failing=$((failing + 1)) ;;
+    esac
+  done < <(find "$work/$side" -name '*.json' | sort)
+done
+if [ "$failing" -gt 0 ]; then
+  echo "VERDICT: FAILED, $failing captured forecast answers are not a 2xx, so they say nothing about the forecasts"
+  exit 1
+fi
 
 # One line per kind of forecast answer: how many were compared and how many differ.
 different=0
@@ -390,6 +419,10 @@ for kind in $( (cd "$work/base" && find . -name '*.json'; cd "$work/candidate" &
   compared=$((compared + same + differ)); different=$((different + differ))
   echo "$kind: $((same + differ)) compared, $differ different"
 done
+if [ "$compared" -eq 0 ]; then
+  echo "VERDICT: FAILED, no forecast answer was captured, so nothing was compared"
+  exit 1
+fi
 if [ "$different" -gt 0 ]; then
   echo "differences (first lines):"
   diff -r -u "$work/base" "$work/candidate" | grep -E '^(\+\+\+|Only in|[-+] )' | head -30
