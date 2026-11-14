@@ -1,24 +1,1096 @@
 {
 "counters": {
-"F": 14,
+"B": 2,
+"C": 1,
+"D": 11,
+"F": 187,
+"K": 2,
+"L": 3,
 "P": 5,
-"S": 3
+"S": 3,
+"Y": 4
+},
+"design": {
+"paradigm": "object_oriented",
+"shared": {
+"boundaries": {
+"dependency_direction": "F32",
+"driven_ports": [
+"F31"
+],
+"driving_port": "F30",
+"failures": [
+{
+"condition": "F33",
+"id": "B1",
+"observation": "F34",
+"outcome": "Refusal"
+},
+{
+"condition": "F35",
+"id": "B2",
+"observation": "F36",
+"outcome": "Refusal"
+}
+]
+},
+"claims": [
+{
+"admitted_input": "F65",
+"bypass": "F67",
+"constructor": "findOutliers in outliers.ts",
+"consumer": "chart drawing and OutlierChip only",
+"harm": "F64",
+"id": "C1",
+"owner": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"proposition": "F63",
+"public_observation": "F66"
+}
+],
+"closure": [
+{
+"axis": "Safety",
+"basis": "F77",
+"design": "Pass",
+"evidence": [
+"docs/feature/story-6502-hide-outliers/model/outliers.qnt"
+],
+"runtime": "DesignedNotBuilt",
+"subject": "F76"
+},
+{
+"axis": "Inhabitation",
+"basis": "F78",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F76"
+},
+{
+"axis": "PublicReachability",
+"basis": "F80",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F79"
+},
+{
+"axis": "Liveness",
+"basis": "F81",
+"design": "Pass",
+"runtime": "DesignedNotBuilt",
+"subject": "F79"
+}
+],
+"constraints": [
+{
+"id": "K1",
+"text": "F26"
+},
+{
+"id": "K2",
+"text": "F27"
+}
+],
+"decisions": [
+{
+"id": "D1",
+"text": "F15"
+},
+{
+"id": "D2",
+"text": "F16"
+},
+{
+"id": "D3",
+"text": "F17"
+},
+{
+"id": "D4",
+"text": "F18"
+},
+{
+"id": "D5",
+"text": "F19"
+},
+{
+"id": "D6",
+"text": "F20"
+},
+{
+"id": "D7",
+"text": "F21"
+},
+{
+"id": "D8",
+"text": "F22"
+},
+{
+"id": "D9",
+"text": "F23"
+},
+{
+"id": "D10",
+"text": "F24"
+},
+{
+"id": "D11",
+"text": "F25"
+}
+],
+"equality": [
+{
+"definition": "F39",
+"under": "OutlierPartition"
+}
+],
+"laws": [
+{
+"evidence": [
+"docs/feature/story-6502-hide-outliers/model/outliers.qnt"
+],
+"id": "L1",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"statement": "F40",
+"treatment": {
+"falsifier": "F48",
+"generator": {
+"depth_bound": "flat arrays",
+"domain": "F41",
+"must_include": [
+"F42",
+"F43",
+"F44",
+"F45"
+],
+"seed_policy": "fast-check fixed seed in the file, numRuns 100, failing seed printed",
+"shrinking": "F46",
+"size_bound": "0 to 200 items, values 1 to 400"
+},
+"independent_observation": "F47",
+"kind": "Broad"
+}
+},
+{
+"evidence": [
+"docs/feature/story-6502-hide-outliers/model/outliers.qnt"
+],
+"id": "L2",
+"kind": "Invariant",
+"layer": "Application",
+"owner": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"statement": "F49",
+"treatment": {
+"cases": [
+"F50",
+"F51"
+],
+"kind": "Finite",
+"reason": "F52"
+}
+},
+{
+"id": "L3",
+"kind": "Invariant",
+"layer": "Domain",
+"owner": "Lighthouse.Frontend/src/utils/charts/offScaleLines.ts",
+"statement": "F53",
+"treatment": {
+"falsifier": "F59",
+"generator": {
+"depth_bound": "flat",
+"domain": "F54",
+"must_include": [
+"F55",
+"F56"
+],
+"seed_policy": "fast-check fixed seed, numRuns 100",
+"shrinking": "F57",
+"size_bound": "0 to 50 values, 1 to 500"
+},
+"independent_observation": "F58",
+"kind": "Broad"
+}
+}
+],
+"models": [
+{
+"assumptions": [
+"F75"
+],
+"atoms": [
+{
+"kind": "State",
+"name": "hidden",
+"site": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"symbol": "useChartVisibility"
+},
+{
+"kind": "Action",
+"name": "toggle",
+"site": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"symbol": "useChartVisibility"
+},
+{
+"kind": "Constant",
+"name": "cut",
+"site": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"symbol": "OUTLIER_MEDIAN_MULTIPLE"
+}
+],
+"language": "Quint",
+"path": "docs/feature/story-6502-hide-outliers/model/outliers.qnt",
+"properties": [
+{
+"kind": "Invariant",
+"name": "partitionOk",
+"site": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"statement": "F71",
+"symbol": "findOutliers"
+},
+{
+"kind": "Invariant",
+"name": "cutStable",
+"site": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"statement": "F72",
+"symbol": "findOutliers"
+},
+{
+"kind": "Invariant",
+"name": "chipOk",
+"site": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx",
+"statement": "F73",
+"symbol": "OutlierChip"
+},
+{
+"kind": "Invariant",
+"name": "outlierIsSeparated",
+"site": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"statement": "F74",
+"symbol": "findOutliers"
+}
+]
+}
+],
+"not_applicable": [
+{
+"analysis": "contract_tests",
+"reason": "F28"
+},
+{
+"analysis": "architectural_tests",
+"reason": "F29"
+}
+],
+"observations": [
+{
+"cannot_distinguish": "F38",
+"description": "F37",
+"result_type": "OutlierPartition record / integer count / number"
+}
+],
+"refuted": [
+{
+"cause": "F61",
+"counterexample": "F62",
+"statement": "F60"
+}
+],
+"risks": [
+{
+"allowed": "F84",
+"forbidden": "F85",
+"id": "Y1",
+"kind": "Stressor",
+"owner": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"preserved": "F83",
+"residue": "F86",
+"source": "F82"
+},
+{
+"allowed": "F89",
+"forbidden": "F90",
+"id": "Y2",
+"kind": "Stressor",
+"owner": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"preserved": "F88",
+"residue": "F91",
+"source": "F87"
+},
+{
+"allowed": "F94",
+"forbidden": "F95",
+"id": "Y3",
+"kind": "Stressor",
+"owner": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+"preserved": "F93",
+"residue": "F96",
+"source": "F92"
+},
+{
+"allowed": "F99",
+"forbidden": "F100",
+"id": "Y4",
+"kind": "Bypass",
+"owner": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"preserved": "F98",
+"residue": "F101",
+"source": "F97"
+}
+],
+"states": [
+{
+"kind": "Admitted",
+"owner": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"state": "F68"
+},
+{
+"kind": "Excluded",
+"owner": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx",
+"state": "F69"
+},
+{
+"kind": "Unknown",
+"owner": "orchestrator at slice 1 review",
+"state": "F70"
+}
+]
+},
+"slices": {
+"S1": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx",
+"move": "F128",
+"preserved": "F129",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F126",
+"falsifier": "F127",
+"promises": [
+"P1",
+"P2",
+"P5"
+],
+"stimulus": "F125"
+},
+"records": {
+"agreement": [
+{
+"contract": "UsageDataEventName OutlierPopoverOpened = 27",
+"decision": "Migrated",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:96",
+"party": "Producer",
+"reason": "F158"
+},
+{
+"contract": "UsageDataEventName OutlierPopoverOpened = 27",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:51",
+"party": "Consumer",
+"reason": "F159"
+},
+{
+"contract": "WidgetShell header slot",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:42",
+"party": "Producer",
+"reason": "F160"
+},
+{
+"contract": "WidgetShell header slot",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
+"party": "Consumer",
+"reason": "F161"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
+"reason": "F146"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:42",
+"reason": "F147"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:362",
+"reason": "F148"
+},
+{
+"decision": "Changed",
+"kind": "test-support",
+"locator": "Lighthouse.EndToEndTests/tests/models/metrics/CycleTimeScatterPlotChart.ts:1",
+"reason": "F149"
+},
+{
+"decision": "UnchangedCompatible",
+"kind": "existing-test",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx:1",
+"reason": "F150"
+},
+{
+"decision": "Changed",
+"kind": "enum",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:96",
+"reason": "F151"
+},
+{
+"decision": "Changed",
+"kind": "demo-data",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv:1",
+"reason": "F152"
+},
+{
+"decision": "Changed",
+"kind": "new-module",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.ts:1",
+"reason": "F153"
+},
+{
+"decision": "Changed",
+"kind": "new-module",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1",
+"reason": "F153"
+},
+{
+"decision": "Changed",
+"kind": "new-module",
+"locator": "Lighthouse.Frontend/src/utils/charts/offScaleLines.ts:1",
+"reason": "F153"
+},
+{
+"decision": "Changed",
+"kind": "new-component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OffScaleLineMarkers.tsx:1",
+"reason": "F154"
+},
+{
+"decision": "Changed",
+"kind": "new-component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1",
+"reason": "F154"
+},
+{
+"decision": "Changed",
+"kind": "new-component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1",
+"reason": "F155"
+},
+{
+"decision": "Changed",
+"kind": "export-list",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:51",
+"reason": "F156"
+},
+{
+"decision": "Changed",
+"kind": "docs",
+"locator": "docs/settings/usagedata.md:1",
+"reason": "F157"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F162"
+},
+{
+"analysis": "contract_tests",
+"reason": "F163"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/utils/charts/chartAxisUtils.ts:19",
+"reason": "F130",
+"symbol": "getMaxYAxisHeight"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
+"reason": "F131",
+"symbol": "CycleTimeScatterPlotChart"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/LegendChip.tsx:1",
+"reason": "F132",
+"symbol": "LegendChip"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:42",
+"reason": "F133",
+"symbol": "WidgetShell"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/utils/charts/outliers.ts:1",
+"reason": "F134",
+"symbol": "fiftiethPercentile"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/BlackoutOverlay.tsx:2",
+"reason": "F135",
+"symbol": "OffScaleLineMarkers"
+},
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/PercentileCalculator.cs:8",
+"reason": "F136",
+"symbol": "PercentileCalculator"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1",
+"reason": "F137",
+"symbol": "outlierWording"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/utils/charts/offScaleLines.ts:1",
+"reason": "F138",
+"symbol": "splitLinesByAxis"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OffScaleLineMarkers.tsx:1",
+"reason": "F139",
+"symbol": "OffScaleLineMarkers"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1",
+"reason": "F140",
+"symbol": "OutlierChip"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1",
+"reason": "F141",
+"symbol": "OutlierPopoverContent"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts:51",
+"reason": "F142",
+"symbol": "UsageDataEventName"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:96",
+"reason": "F143",
+"symbol": "UsageDataEventName"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv:1",
+"reason": "F144",
+"symbol": "TZ-301"
+},
+{
+"decision": "CreateNew",
+"locator": "docs/settings/usagedata.md:1",
+"reason": "F145",
+"symbol": "OutlierPopoverOpened"
+}
+]
+},
+"targets": [
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/utils/charts/outliers.ts",
+"reason": "F113"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"reason": "F114"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/utils/charts/offScaleLines.ts",
+"reason": "F115"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/OffScaleLineMarkers.tsx",
+"reason": "F116"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx",
+"reason": "F117"
+},
+{
+"change": "Create",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx",
+"reason": "F118"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"reason": "F119"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx",
+"reason": "F120"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/services/Api/UsageDataService.ts",
+"reason": "F121"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs",
+"reason": "F122"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv",
+"reason": "F123"
+},
+{
+"change": "Extend",
+"path": "docs/settings/usagedata.md",
+"reason": "F124"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx"
+]
+},
+"S2": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx",
+"move": "F106",
+"preserved": "F107",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F104",
+"falsifier": "F105",
+"promises": [
+"P3"
+],
+"stimulus": "F103"
+},
+"records": {
+"agreement": [
+{
+"contract": "Named percentile fetch result tagged with definitionId",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:179",
+"party": "Producer",
+"reason": "F110"
+},
+{
+"contract": "Named percentile fetch result tagged with definitionId",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:259",
+"party": "Consumer",
+"reason": "F111"
+}
+],
+"impact": [
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
+"reason": "F109"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F112"
+},
+{
+"analysis": "contract_tests",
+"reason": "F112"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
+"reason": "F108",
+"symbol": "useChartVisibility"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"reason": "F102"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx"
+]
+},
+"S3": {
+"oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx",
+"prefactoring": {
+"existing_oracle": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx",
+"move": "F172",
+"preserved": "F173",
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx"
+]
+},
+"public_oracle": {
+"expected": "F170",
+"falsifier": "F171",
+"promises": [
+"P4"
+],
+"stimulus": "F169"
+},
+"records": {
+"agreement": [
+{
+"contract": "WidgetInfoTerms.cycleTime",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:156",
+"party": "Producer",
+"reason": "F186"
+},
+{
+"contract": "WidgetInfoTerms.cycleTime",
+"decision": "Migrated",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1",
+"party": "Consumer",
+"reason": "F187"
+}
+],
+"impact": [
+{
+"decision": "UnchangedCompatible",
+"kind": "consumer",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.test.ts:1",
+"reason": "F180"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:557",
+"reason": "F181"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1",
+"reason": "F182"
+},
+{
+"decision": "Changed",
+"kind": "component",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1",
+"reason": "F183"
+},
+{
+"decision": "Changed",
+"kind": "pure-module",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:156",
+"reason": "F184"
+},
+{
+"decision": "Changed",
+"kind": "pure-module",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1",
+"reason": "F185"
+}
+],
+"not_applicable": [
+{
+"analysis": "architectural_tests",
+"reason": "F112"
+},
+{
+"analysis": "contract_tests",
+"reason": "F112"
+}
+],
+"reuse": [
+{
+"decision": "Reuse",
+"locator": "Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:1",
+"reason": "F174",
+"symbol": "WorkItemsDialog"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:156",
+"reason": "F175",
+"symbol": "getWidgetInfo"
+},
+{
+"decision": "Extend",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22",
+"reason": "F176",
+"symbol": "CycleTimeScatterPlotChart"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1",
+"reason": "F177",
+"symbol": "OutlierPopoverContent"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1",
+"reason": "F178",
+"symbol": "OutlierChip"
+},
+{
+"decision": "CreateNew",
+"locator": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1",
+"reason": "F179",
+"symbol": "outlierWording"
+}
+]
+},
+"targets": [
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx",
+"reason": "F164"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx",
+"reason": "F165"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx",
+"reason": "F166"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts",
+"reason": "F167"
+},
+{
+"change": "Extend",
+"path": "Lighthouse.Frontend/src/utils/charts/outlierWording.ts",
+"reason": "F168"
+}
+],
+"verification": [
+"pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx"
+]
+}
+}
 },
 "facts": {
 "F1": "ADO Story 6502 Hide Outliers: on the Cycle Time scatterplot, hide exceptionally long closed Work Items so typical work stays readable, while the outliers stay known, one click away, and included in every statistic.",
 "F10": "Walking skeleton: typical work readable, outliers disclosed in the header chip and popover.",
+"F100": "a second multiple constant",
+"F101": "constant-versus-copy test pins the wording to the constant",
+"F102": "Visible-type filter of the chip count, named Cycle Time tag, empty-plot states",
+"F103": "Render the chart with a closed set holding outliers in two Work Item types; toggle type chips off and on, select a named Cycle Time (and change it again with a late answer for the old one), change the date range, then hide every type, and then use a set where every visible item is an outlier",
+"F104": "Chip count and popover list include only outliers of visible types; the cut and the axis top do not change on type toggles; the count follows the selected named Cycle Time percentiles and the date range; a late answer for a superseded definition is ignored; all-visible-outliers shows 'All visible Work Items are outliers.' and all-types-off shows 'All types are hidden.' with legend row and axes kept, never 'No data available'",
+"F105": "A cut taken from the visible subset, a count from hidden types, a stale named answer, or the 'No data available' text in those two states fails",
+"F106": "L1: none beyond slice 1 useMemo derivations",
+"F107": "Slice 1 behaviour",
+"F108": "Already owns the visible type state; the chip reads it and never changes it",
+"F109": "Adds the visibility filter, tag and empty states on top of slice 1",
 "F11": "Slice 02: the outlier chip follows the type chips, a named Cycle Time and the date range, the cut and axis stay put when a type is toggled, and an all-outlier or all-hidden view says so instead of 'No data available'.",
+"F110": "State carries {definitionId, fetcher, percentiles}",
+"F111": "Consumers read only the answer matching the selected definition",
+"F112": "Covered by the shared record",
+"F113": "Pure rule: fiftiethPercentile, findOutliers, axisTop, timesTheMedian, formatTimesTheMedian, OUTLIER_MEDIAN_MULTIPLE",
+"F114": "Term-injected popover, chip and tooltip strings",
+"F115": "splitLinesByAxis and markerSpecs, pure",
+"F116": "Top-margin markers, aria-hidden",
+"F117": "Header chip with popover open flag and effect-port props",
+"F118": "Pure popover view with 10-row table",
+"F119": "Memoised partition, filter, axis, chip handoff, tagged named percentiles",
 "F12": "The chip stays truthful whatever the reader filters.",
+"F120": "Header slot context rendered after the RAG chip, carries frameIsReady",
+"F121": "Add OutlierPopoverOpened name",
+"F122": "Append OutlierPopoverOpened = 27",
+"F123": "Add closed item TZ-301 above 5 x Zenith's 50th percentile",
+"F124": "Row for OutlierPopoverOpened",
+"F125": "Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header",
+"F126": "The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip '1 outlier'; the popover says 'Not drawn: longer than 30 days (5 times the median, 6 days).', lists the item with closed date, 58 and 9.7x; a line above the axis appears as a top-edge marker and in the 'Above the axis' line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; frame not ready shows the chip disabled with no count",
+"F127": "A chart that drops the item from statistics, uses >= or another multiple, computes the median from drawn items, shows no chip or a stale count while not ready, or draws the item, fails",
+"F128": "L2 extract: turn the axis and grouped-dots useEffect+setState derivations of CycleTimeScatterPlotChart into useMemo values, before any outlier behaviour; makes the partition and chip count derive in one render",
+"F129": "Chart output for sets without outliers, dialog items, legend and axis values",
 "F13": "Slice 03: 'Open in a list' in the popover opens the Work Items dialog with exactly the chip's outliers, focus returns to the chip, and the widget's help names the outlier rule in the configured terms.",
+"F130": "Already returns 1.1 x the largest of data values, percentiles and SLE; axisTop delegates to it; Feature Size and Estimation callers untouched",
+"F131": "Owns the view state of this chart; two useEffect+setState derivations (axis, grouped dots) become useMemo so chip, axis and dots share one render",
+"F132": "LegendChip has aria-pressed toggle semantics; the outlier chip is a disclosure button, so a new OutlierChip (MUI Chip outlined) copies its look only",
+"F133": "Header row already owns info, View Data, trend and RAG chips; adding a slot after RAG is cheaper than lifting type-chip state out of the chart",
+"F134": "Frontend has no median or outlier code; paceBands.ts and sleRisk.ts are the precedent for a pure chart module",
+"F135": "BlackoutOverlay shows the useDrawingArea overlay pattern but draws bands, not labelled markers",
+"F136": "Backend convention is mirrored not changed; fiftiethPercentile reproduces the index and a table test pins both",
+"F137": "Term-injected wording; paceBands.ts and sleRisk.ts are the precedent, nothing owns outlier copy",
+"F138": "No existing function splits percentile and SLE lines by the axis top",
+"F139": "Thin SVG component over the pure spec; BlackoutOverlay draws bands, not labelled markers",
 "F14": "Sorting, export and the full list of outliers, and the rule explained in the help.",
+"F140": "LegendChip has toggle semantics; this is a disclosure button with a popover",
+"F141": "InfoPopoverButton body is text only; this body is a table of rows",
+"F142": "Existing closed list of usage events",
+"F143": "Existing enum; append 27",
+"F144": "New data row in the existing Zenith file; no row owns an outlier case",
+"F145": "New catalog row in the existing file",
+"F146": "Partition, axis, header chip handoff",
+"F147": "Header slot context; every other widget renders unchanged",
+"F148": "cycleScatter node still passes the same props; frameIsReady arrives through the shell context",
+"F149": "Page object gains chip and popover accessors; waits for data-widget-status=ready",
+"F15": "Rule: a closed Work Item is an outlier when its Cycle Time is above 5 times the chart's 50th percentile, computed with the backend convention (sort ascending, index floor(0.5 x N) - 1, clamped to 0). The constant OUTLIER_MEDIAN_MULTIPLE = 5 lives once in Lighthouse.Frontend/src/utils/charts/outliers.ts; the rule is a pure function over the full closed set of the selected date range and named Cycle Time, never over the visible-type subset, so toggling a type never moves the cut or the axis.",
+"F150": "Existing scenarios use sets without an item above 5 x median, so output is unchanged",
+"F151": "Appended member 27; no renumbering",
+"F152": "One closed item TZ-301 added",
+"F153": "New pure module",
+"F154": "New component, mounted only by the chart",
+"F155": "New component, used only by the chip",
+"F156": "One name appended; consumers read by name",
+"F157": "One row",
+"F158": "Member appended",
+"F159": "Name appended to the frontend list; enums serialise as strings out",
+"F16": "Hexagonal view (frontend only): driving UI = BaseMetricsView/widgetNodes (unchanged); core = pure modules outliers.ts, outlierWording.ts, offScaleLines.ts; shell = CycleTimeScatterPlotChart (derives with useMemo, replacing the two effect+state derivations, so chip count, axis and dots come from one render), OutlierChip, OutlierPopoverContent, OffScaleLineMarkers. Backend, API, DTOs, RBAC, migrations, domain events: unchanged. No Plan/dry-run function exists. Layers: domain = outlier partition of the closed set; application = chip and popover state (one open flag), dialog state {title, items}; adapter = MUI X drawing-area hooks for markers, WidgetShell header slot; infrastructure = tagged named-percentile fetch so a late answer for an old definition never lands.",
+"F160": "Offers slot and frameIsReady",
+"F161": "Fills the slot",
+"F162": "Covered by the shared record: existing fallow layer check governs the new files",
+"F163": "Covered by the shared record: no independently released consumer",
+"F164": "Open in a list button, onOpenInList effect port",
+"F165": "Focus returns to the chip on close",
+"F166": "Dialog state becomes {title, items}; chip hands the outliers to the single dialog",
+"F167": "WidgetInfoTerms gains cycleTime; cycleScatter description built from terms for both owner kinds, long outlier rule sentence",
+"F168": "Help sentence and dialog title wording",
+"F169": "Render the chart with outliers, open the chip popover, activate 'Open in a list'; render the cycleScatter widget info through getWidgetInfo with custom Terminology",
+"F17": "Statistics stay untouched: percentiles, SLE share and RAG, tiles, View Data, forecasts and the dialog still receive the unpartitioned arrays; only the chart drawing and the chip receive the partition. Props are never mutated (tests pass deep-frozen props). With no outliers the chart renders exactly as before (no chip, today's axis, no markers).",
+"F170": "The Work Items dialog opens with exactly the chip's outliers (effective copies, same ids, sortable and exportable through the existing dialog), the popover closes, and on dialog close focus returns to the chip; the widget help names the outlier rule (5 times the 50th percentile) using the configured Work Item, Cycle Time and SLE terms, with 'outlier' fixed",
+"F171": "A dialog with all items or the drawn items, focus lost to the body, or help text with hard-coded Work Item or Cycle Time words fails",
+"F172": "L1: dialog state {items, derived title} becomes one {title, items} state in the chart, before wiring the chip",
+"F173": "Dot-click dialog opens with the same title and items",
+"F174": "Presentation only; handed {title, items, context}; no change to the dialog",
+"F175": "Existing cycleScatter entry; today only team gets term-built wording",
+"F176": "Owns the single dialog state",
+"F177": "File is created in slice 1 and does not exist yet; this slice adds the Open in a list button to it",
+"F178": "File is created in slice 1 and does not exist yet; this slice adds focus return to it",
+"F179": "File is created in slice 1 and does not exist yet; this slice adds the help and dialog title strings to it",
+"F18": "Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus '1 outlier' / '{n} outliers', words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready), so the chip is disabled while loading or failed and never shows an earlier count; it closes its popover when disabled turns true. Crafter may choose portal or context-held node; the oracle observes the header.",
+"F180": "Existing expectations hold for other widgets; cycleScatter wording changes but is checked by the slice oracle",
+"F181": "Single dialog gets a title",
+"F182": "New button and effect port",
+"F183": "Focus return",
+"F184": "cycleScatter help text and cycleTime term",
+"F185": "Extra strings",
+"F186": "New term field",
+"F187": "Passes the configured Cycle Time term",
+"F19": "Copy (maintainer S-4, S-6): popover title '{n} outlier(s)', line 1 'Not drawn: longer than {cut} days (5 times the median, {median} days).', line 2 'Still counted in the percentiles, {SLE} and View Data.', conditional line 'Above the axis: 95% at {p95} days, {SLE} at {sle} days.', then a table (closed date, Cycle Time days, times the median; factor rounding from 10 up is half-up) capped at 10 rows, then 'Open in a list' (slice 3). Empty plot: 'All visible {Work Items} are outliers.' or 'All types are hidden.' Work Item, Cycle Time and SLE render in the configured terms; 'outlier' is a fixed word.",
 "F2": "A flow coach reads the picture of normal work on the Cycle Time scatterplot without one extreme item squashing it, and still knows which items were left out and why.",
+"F20": "Edge markers (maintainer S-5): a percentile or SLE line above the new axis top is drawn as a labelled triangle marker in the plot's top margin via OffScaleLineMarkers (aria-hidden, reads only useDrawingArea); fallback if the browser spike fails is a text line under the legend row. The Zenith demo has no line above the cut, so markers are proven by RTL and unit tests on fixtures, not E2E geometry.",
+"F21": "Usage data: name-only event OutlierPopoverOpened = 27 (next integer after SystemWideAccessGranted = 26, appended, never renumbered) in UsageDataEventName.cs and UsageDataService.ts, row in docs/settings/usagedata.md; reported once per closed-to-open change through the chip's usage-event callback prop (the chip imports no service). Emitted in slice 1, the slice that first makes the chip usable.",
+"F22": "Claim-to-checker: Quint covers the pure partition and type-toggle state model (docs/feature/story-6502-hide-outliers/model/outliers.qnt: partition of visible items, cut stable under toggles, chip count, all-types-hidden); TLA+ and Agda not needed (no concurrency, no proof obligation beyond finite sets). Broad numeric laws (median convention, boundary equality, monotone axis, line split) are checked by fast-check at the pure-module seam, numRuns 100, because Quint int sets do not cover arbitrary arrays. Liveness: not applicable, render-time pure derivation and one boolean open flag, no eventual-progress claim.",
+"F23": "Type strength: native TypeScript only (repository checker is tsc -b with Biome). Outlier partition is returned as a record {drawn, outliers, median, cut} so a caller cannot take the cut without the median; OutlierChip props make rows, wording and the three effect ports (onOpenInList, onClose, usage callback) explicit. Representable invalid states left to runtime: negative or NaN Cycle Time (backend never emits; findOutliers treats the empty set as no median and returns no outliers).",
+"F24": "Paradigm object_oriented project, functional-leaning React; no anemic-entity concern since no domain entity is added: the new rule is a cohesive pure module (outliers.ts) owning the median, cut and partition decisions, and the chart component owns only view state. nw-code-design-oo smell classes apply only to the chart component (keep it free of the median and cut decision).",
+"F25": "Test substrate: Vitest + React Testing Library with the existing MUI mocks; one oracle file per slice under Lighthouse.Frontend/src/components/Common/Charts; command is pnpm --dir Lighthouse.Frontend exec vitest run <oracle path relative to Lighthouse.Frontend>. Per-test default budget applies, no derogation requested. No nWave scenario tags in code. The backend demo row (TZ-301) and enum member are pinned by existing backend test conventions at the application-service port, owned by the crafter and acceptance designer of slice 1; E2E page object for CycleTimeScatterPlotChart is extended with chip and popover and waits for data-widget-status=ready.",
+"F26": "Input bounds: Cycle Time is a whole number of days >= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value > 5 x median; value == cut is drawn) are fixed, not configurable. Popover list capped at 10 rows, longest first, remainder reachable via Open in a list. No bound on outlier count.",
+"F27": "Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.",
+"F28": "No external service, wire format or independently released consumer changes; the usage event name is a same-commit enum pair covered by the slice 1 oracle and existing backend tests.",
+"F29": "The existing fallow layer check (layerBoundaries.enforcement.test.ts) already forbids utils importing services, hooks and pages and components importing pages, and it governs the new modules by directory; the design adds no new dependency law.",
 "F3": "On the Cycle Time scatterplot of a Team or a Portfolio, a closed Work Item whose Cycle Time is more than 5 times the chart's 50th percentile is not drawn; the y-axis scales to the remaining items, and every percentile and SLE line stays visible, either in place or as a labelled marker at the top edge of the plot. With no such item the chart is exactly as before.",
+"F30": "CycleTimeScatterPlotChart React props (closed work items, percentiles, SLE, owner kind, frameIsReady) rendered through React Testing Library; pure functions in utils/charts/outliers.ts",
+"F31": "WorkItemsDialog (props only), usage-event callback prop, useChartVisibility, MUI X drawing-area hooks",
+"F32": "components -> utils/charts (pure) ; pages/Common/MetricsView/WidgetShell provides header slot context consumed by components; utils import only chartAxisUtils; no component imports a page (fallow layer rule already enforced)",
+"F33": "frame is loading or failed",
+"F34": "chip disabled, no count shown, popover closed",
+"F35": "named Cycle Time answer for a superseded definition arrives",
+"F36": "answer ignored; cut and chip follow the selected definition",
+"F37": "Outlier partition of the full closed set: {drawn, outliers, median, cut}; chip count = outliers among visible types; axis top = 1.1 x max of drawn values, percentiles and SLE",
+"F38": "Which hidden-type items would have been outliers (only visible ones are counted); two items with equal Cycle Time and date",
+"F39": "Equal iff same median, same cut and same drawn/outlier id sets; independent of input order and of which types are visible",
 "F4": "A chip in the widget header reads '1 outlier' or 'N outliers' (absent when there are none) and opens a popover that says the items are not drawn, states the cut and the median in days, and lists each outlier with its closed date, its Cycle Time in days and how many times the median it is; while the widget loads or has failed the chip is disabled and never shows a count from a previous answer.",
+"F40": "For every closed set, the cut is 5 x the backend-convention 50th percentile of the full set, and an item is an outlier iff its Cycle Time is strictly above the cut; drawn and outliers partition the set, order kept",
+"F41": "arrays of positive integers (Cycle Time days) with duplicates and with items placed exactly at, one below and one above the cut",
+"F42": "empty set",
+"F43": "single item",
+"F44": "item exactly at the cut",
+"F45": "all items equal",
+"F46": "fast-check built-in array and integer shrinking",
+"F47": "reference oracle: sort copy, index floor(N/2)-1 clamped, compare with strict >, written in the test and not reusing the module",
+"F48": "mutant using >= instead of >, floor(N/2) without minus one, or 4 instead of 5 fails the property",
+"F49": "Toggling a Work Item type never changes the cut or the axis top; the chip count equals the outliers of visible types only; all types hidden gives zero count",
 "F5": "The chip and its list stay truthful while the reader changes the view: they count only outliers of visible Work Item types, follow a selected named Cycle Time and the date range, and the cut and axis do not move when a type is toggled; when every visible item is an outlier or every type is hidden the plot says so instead of 'No data available'.",
+"F50": "toggle each of two types off and on over a set with one outlier: cut and axis equal before and after",
+"F51": "all types hidden: no chip, empty-plot copy",
+"F52": "state space is two type flags; Quint model checks all toggle traces to 6 steps",
+"F53": "The axis top is 1.1 x the largest of the drawn Cycle Times, every percentile and the SLE, so no drawn item or line value is lost, and a line above the top is split into off-scale markers with drawn + off-scale = all lines",
+"F54": "arrays of drawn Cycle Times and arrays of line values (percentiles, SLE) as positive numbers",
+"F55": "line exactly at the axis top",
+"F56": "no lines",
+"F57": "fast-check built-in",
+"F58": "test recomputes the max and splits with a filter",
+"F59": "mutant that drops the SLE from the axis or splits on >= instead of > fails",
 "F6": "From the popover the reader opens the outliers in the existing Work Items list dialog (sort, export, tracker links), and the widget's help explains the outlier rule in the reader's configured terms.",
+"F60": "Cut computed on the visible-type subset keeps the chip truthful",
+"F61": "carrier: the subset changes the median, so toggling a type moves the cut and axis",
+"F62": "Types A (1..9 days) and B (50 days items): hiding B changes the median and re-labels A items as outliers; the cut is therefore taken from the full set",
+"F63": "A hidden outlier is never lost from statistics: every percentile, SLE share, RAG, tile, View Data and forecast is computed from the unpartitioned data",
+"F64": "A silent number change after the feature ships",
+"F65": "closed work items, percentiles and SLE props",
+"F66": "percentile legend values, SLE line, dialog items and View Data unchanged with an outlier present",
+"F67": "a future edit passing drawn items to statistics; guarded by a frozen-props test and a wiring-point test",
+"F68": "Zero, one or many outliers; every type visible, some hidden, all hidden; named Cycle Time selected or default",
+"F69": "A chip showing a count while the frame is loading or failed; a cut computed from the visible-type subset; a chip with zero outliers",
 "F7": "No number changes: the percentiles, the SLE share and RAG, the tiles, View Data and the forecasts still include the outliers.",
+"F70": "MUI X behaviour of drawing in the top margin in the installed version; resolved by a browser spike inside slice 1 with the text-line fallback",
+"F71": "drawn and outliers partition the visible items",
+"F72": "the cut is unchanged by any type toggle",
+"F73": "chip count counts visible outliers only; all types hidden gives none",
+"F74": "every outlier is strictly above the cut and every drawn item at or below it",
+"F75": "Finite fixture of eight Cycle Times and two types stands for the rule; arbitrary arrays are covered by fast-check, not by Quint",
+"F76": "outlier partition and chip count",
+"F77": "Quint verify NoError to 6 steps on four invariants; invalid states (cut from visible subset, stale count) excluded by deriving from props with useMemo and disabling the chip while not frameIsReady",
+"F78": "Zenith demo data with TZ-301 (computed 58 days against cut 30) constructs a one-outlier chart from admitted input",
+"F79": "outlier chip and popover",
 "F8": "Other charts (Estimation vs Cycle Time, Feature Size, Work Item Aging, process behaviour charts, throughput), a change to View Data, a change to the backend percentile convention, and showing outliers in place on the chart.",
-"F9": "Slice 01: on Team Zenith's demo data the scatterplot leaves out TZ-301, scales its y-axis to the other items, shows lines above the axis as top-edge markers, and a header chip '1 outlier' opens a popover listing TZ-301 with 58 days and 9.7x the median; the statistics are unchanged."
+"F80": "closed items prop -> findOutliers -> OutlierChip in WidgetShell header slot -> RTL screen queries; Open in a list -> WorkItemsDialog (slice 3). Acyclic, seeded by the chart props",
+"F81": "Not applicable: render-time pure derivation and one open flag; no eventual-progress claim, no concurrency beyond the late named-percentile answer, which is a safety tag check",
+"F82": "Assumption: the median is stable across the date range; negate: range with one closed item or all equal items",
+"F83": "chart exactly as before when no item exceeds 5 x median",
+"F84": "no outlier on a single item",
+"F85": "a drawn item dropped without a chip entry",
+"F86": "very small N gives a noisy median; accepted",
+"F87": "Assumption: named Cycle Time answer arrives for the selected definition; negate: late answer for an old definition after the reader switched",
+"F88": "chip and axis follow the selected definition",
+"F89": "briefly the default percentiles",
+"F9": "Slice 01: on Team Zenith's demo data the scatterplot leaves out TZ-301, scales its y-axis to the other items, shows lines above the axis as top-edge markers, and a header chip '1 outlier' opens a popover listing TZ-301 with 58 days and 9.7x the median; the statistics are unchanged.",
+"F90": "percentiles of an old definition used for the cut",
+"F91": "none beyond the tag check",
+"F92": "Assumption: widget data is current when drawn; negate: slow connection, request failed",
+"F93": "no stale count",
+"F94": "chip dimmed or disabled, widget could-not-load message",
+"F95": "count from a previous answer; empty area read as no data",
+"F96": "header-slot context must reset when the chart unmounts",
+"F97": "A caller of the chart passes already-filtered items or a second chart adopts the rule differently",
+"F98": "single owner of the 5 x median rule",
+"F99": "second chart imports outliers.ts"
 },
 "product": {
 "promises": [

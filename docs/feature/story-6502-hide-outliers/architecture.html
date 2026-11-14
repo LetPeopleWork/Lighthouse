@@ -151,13 +151,1600 @@ dl.t-detail dd{margin:0;color:var(--ink)}
 
 <h2>Paradigm</h2>
 
-<p>None.</p>
+<p>object_oriented</p>
 
 <h2>Shared records</h2>
+
+<h3>Decisions</h3>
+
+<h4>D1</h4>
+
+<pre><code>Rule: a closed Work Item is an outlier when its Cycle Time is above 5 times the chart&#x27;s 50th percentile, computed with the backend convention (sort ascending, index floor(0.5 x N) - 1, clamped to 0). The constant OUTLIER_MEDIAN_MULTIPLE = 5 lives once in Lighthouse.Frontend/src/utils/charts/outliers.ts; the rule is a pure function over the full closed set of the selected date range and named Cycle Time, never over the visible-type subset, so toggling a type never moves the cut or the axis.
+</code></pre>
+
+<h4>D2</h4>
+
+<pre><code>Hexagonal view (frontend only): driving UI = BaseMetricsView/widgetNodes (unchanged); core = pure modules outliers.ts, outlierWording.ts, offScaleLines.ts; shell = CycleTimeScatterPlotChart (derives with useMemo, replacing the two effect+state derivations, so chip count, axis and dots come from one render), OutlierChip, OutlierPopoverContent, OffScaleLineMarkers. Backend, API, DTOs, RBAC, migrations, domain events: unchanged. No Plan/dry-run function exists. Layers: domain = outlier partition of the closed set; application = chip and popover state (one open flag), dialog state {title, items}; adapter = MUI X drawing-area hooks for markers, WidgetShell header slot; infrastructure = tagged named-percentile fetch so a late answer for an old definition never lands.
+</code></pre>
+
+<h4>D3</h4>
+
+<pre><code>Statistics stay untouched: percentiles, SLE share and RAG, tiles, View Data, forecasts and the dialog still receive the unpartitioned arrays; only the chart drawing and the chip receive the partition. Props are never mutated (tests pass deep-frozen props). With no outliers the chart renders exactly as before (no chip, today&#x27;s axis, no markers).
+</code></pre>
+
+<h4>D4</h4>
+
+<pre><code>Chip placement (maintainer S-3): OutlierChip renders in the WidgetShell header after the RAG chip, small outlined, (!) icon plus &#x27;1 outlier&#x27; / &#x27;{n} outliers&#x27;, words dropped below 600 px, accessible name keeps the full sentence, absent with no outliers. The chart hands the chip to the header through a header-slot context offered by WidgetShell and rendered by WidgetHeader; the same context carries frameIsReady (frame ready), so the chip is disabled while loading or failed and never shows an earlier count; it closes its popover when disabled turns true. Crafter may choose portal or context-held node; the oracle observes the header.
+</code></pre>
+
+<h4>D5</h4>
+
+<pre><code>Copy (maintainer S-4, S-6): popover title &#x27;{n} outlier(s)&#x27;, line 1 &#x27;Not drawn: longer than {cut} days (5 times the median, {median} days).&#x27;, line 2 &#x27;Still counted in the percentiles, {SLE} and View Data.&#x27;, conditional line &#x27;Above the axis: 95% at {p95} days, {SLE} at {sle} days.&#x27;, then a table (closed date, Cycle Time days, times the median; factor rounding from 10 up is half-up) capped at 10 rows, then &#x27;Open in a list&#x27; (slice 3). Empty plot: &#x27;All visible {Work Items} are outliers.&#x27; or &#x27;All types are hidden.&#x27; Work Item, Cycle Time and SLE render in the configured terms; &#x27;outlier&#x27; is a fixed word.
+</code></pre>
+
+<h4>D6</h4>
+
+<pre><code>Edge markers (maintainer S-5): a percentile or SLE line above the new axis top is drawn as a labelled triangle marker in the plot&#x27;s top margin via OffScaleLineMarkers (aria-hidden, reads only useDrawingArea); fallback if the browser spike fails is a text line under the legend row. The Zenith demo has no line above the cut, so markers are proven by RTL and unit tests on fixtures, not E2E geometry.
+</code></pre>
+
+<h4>D7</h4>
+
+<pre><code>Usage data: name-only event OutlierPopoverOpened = 27 (next integer after SystemWideAccessGranted = 26, appended, never renumbered) in UsageDataEventName.cs and UsageDataService.ts, row in docs/settings/usagedata.md; reported once per closed-to-open change through the chip&#x27;s usage-event callback prop (the chip imports no service). Emitted in slice 1, the slice that first makes the chip usable.
+</code></pre>
+
+<h4>D8</h4>
+
+<pre><code>Claim-to-checker: Quint covers the pure partition and type-toggle state model (docs/feature/story-6502-hide-outliers/model/outliers.qnt: partition of visible items, cut stable under toggles, chip count, all-types-hidden); TLA+ and Agda not needed (no concurrency, no proof obligation beyond finite sets). Broad numeric laws (median convention, boundary equality, monotone axis, line split) are checked by fast-check at the pure-module seam, numRuns 100, because Quint int sets do not cover arbitrary arrays. Liveness: not applicable, render-time pure derivation and one boolean open flag, no eventual-progress claim.
+</code></pre>
+
+<h4>D9</h4>
+
+<pre><code>Type strength: native TypeScript only (repository checker is tsc -b with Biome). Outlier partition is returned as a record {drawn, outliers, median, cut} so a caller cannot take the cut without the median; OutlierChip props make rows, wording and the three effect ports (onOpenInList, onClose, usage callback) explicit. Representable invalid states left to runtime: negative or NaN Cycle Time (backend never emits; findOutliers treats the empty set as no median and returns no outliers).
+</code></pre>
+
+<h4>D10</h4>
+
+<pre><code>Paradigm object_oriented project, functional-leaning React; no anemic-entity concern since no domain entity is added: the new rule is a cohesive pure module (outliers.ts) owning the median, cut and partition decisions, and the chart component owns only view state. nw-code-design-oo smell classes apply only to the chart component (keep it free of the median and cut decision).
+</code></pre>
+
+<h4>D11</h4>
+
+<pre><code>Test substrate: Vitest + React Testing Library with the existing MUI mocks; one oracle file per slice under Lighthouse.Frontend/src/components/Common/Charts; command is pnpm --dir Lighthouse.Frontend exec vitest run &lt;oracle path relative to Lighthouse.Frontend&gt;. Per-test default budget applies, no derogation requested. No nWave scenario tags in code. The backend demo row (TZ-301) and enum member are pinned by existing backend test conventions at the application-service port, owned by the crafter and acceptance designer of slice 1; E2E page object for CycleTimeScatterPlotChart is extended with chip and popover and waits for data-widget-status=ready.
+</code></pre>
+
+<h3>Constraints</h3>
+
+<h4>K1</h4>
+
+<pre><code>Input bounds: Cycle Time is a whole number of days &gt;= 1 (inclusive calendar days); closed Work Item count N is unbounded (0, 1 and 2 items give a median but, for 1 item, the item cannot exceed 5 times itself so no outlier). Multiple 5 and the exclusive comparison (value &gt; 5 x median; value == cut is drawn) are fixed, not configurable. Popover list capped at 10 rows, longest first, remainder reachable via Open in a list. No bound on outlier count.
+</code></pre>
+
+<h4>K2</h4>
+
+<pre><code>Scope out: other charts (Estimation vs Cycle Time, Feature Size, Aging, process behaviour, throughput), View Data, backend percentile convention (mirrored, table test against PercentileCalculator index for N = 1 to 6, 10, 11), showing outliers in place. Deviation: none from the authority.
+</code></pre>
+
+<h3>Reuse</h3>
+
+<p>None.</p>
+
+<h3>Impact</h3>
+
+<p>None.</p>
+
+<h3>Agreement</h3>
+
+<p>None.</p>
+
+<h3>Not applicable</h3>
+
+<p>contract_tests</p>
+
+<pre><code>No external service, wire format or independently released consumer changes; the usage event name is a same-commit enum pair covered by the slice 1 oracle and existing backend tests.
+</code></pre>
+
+<p>architectural_tests</p>
+
+<pre><code>The existing fallow layer check (layerBoundaries.enforcement.test.ts) already forbids utils importing services, hooks and pages and components importing pages, and it governs the new modules by directory; the design adds no new dependency law.
+</code></pre>
+
+<h3>Boundaries</h3>
+
+<pre><code>CycleTimeScatterPlotChart React props (closed work items, percentiles, SLE, owner kind, frameIsReady) rendered through React Testing Library; pure functions in utils/charts/outliers.ts
+</code></pre>
+
+<h4>Driven ports</h4>
+
+<pre><code>WorkItemsDialog (props only), usage-event callback prop, useChartVisibility, MUI X drawing-area hooks
+</code></pre>
+
+<pre><code>components -&gt; utils/charts (pure) ; pages/Common/MetricsView/WidgetShell provides header slot context consumed by components; utils import only chartAxisUtils; no component imports a page (fallow layer rule already enforced)
+</code></pre>
+
+<h4>Failures</h4>
+
+<h5>B1</h5>
+
+<pre><code>frame is loading or failed
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>chip disabled, no count shown, popover closed
+</code></pre>
+
+<h5>B2</h5>
+
+<pre><code>named Cycle Time answer for a superseded definition arrives
+</code></pre>
+
+<p>Refusal</p>
+
+<pre><code>answer ignored; cut and chip follow the selected definition
+</code></pre>
+
+<h3>Observations</h3>
+
+<pre><code>Outlier partition of the full closed set: {drawn, outliers, median, cut}; chip count = outliers among visible types; axis top = 1.1 x max of drawn values, percentiles and SLE
+</code></pre>
+
+<p>OutlierPartition record / integer count / number</p>
+
+<pre><code>Which hidden-type items would have been outliers (only visible ones are counted); two items with equal Cycle Time and date
+</code></pre>
+
+<h3>Equality</h3>
+
+<p>OutlierPartition</p>
+
+<pre><code>Equal iff same median, same cut and same drawn/outlier id sets; independent of input order and of which types are visible
+</code></pre>
+
+<h3>Constructors</h3>
+
+<p>None.</p>
+
+<h3>Laws</h3>
+
+<h4>L1</h4>
+
+<pre><code>For every closed set, the cut is 5 x the backend-convention 50th percentile of the full set, and an item is an outlier iff its Cycle Time is strictly above the cut; drawn and outliers partition the set, order kept
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>arrays of positive integers (Cycle Time days) with duplicates and with items placed exactly at, one below and one above the cut
+</code></pre>
+
+<p>0 to 200 items, values 1 to 400</p>
+
+<p>fast-check fixed seed in the file, numRuns 100, failing seed printed</p>
+
+<h6>Must include</h6>
+
+<pre><code>empty set
+</code></pre>
+
+<pre><code>single item
+</code></pre>
+
+<pre><code>item exactly at the cut
+</code></pre>
+
+<pre><code>all items equal
+</code></pre>
+
+<p>flat arrays</p>
+
+<pre><code>fast-check built-in array and integer shrinking
+</code></pre>
+
+<pre><code>reference oracle: sort copy, index floor(N/2)-1 clamped, compare with strict &gt;, written in the test and not reusing the module
+</code></pre>
+
+<pre><code>mutant using &gt;= instead of &gt;, floor(N/2) without minus one, or 4 instead of 5 fails the property
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6502-hide-outliers/model/outliers.qnt</p>
+
+<h4>L2</h4>
+
+<pre><code>Toggling a Work Item type never changes the cut or the axis top; the chip count equals the outliers of visible types only; all types hidden gives zero count
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Application</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<h5>Treatment</h5>
+
+<p>Finite</p>
+
+<h6>Cases</h6>
+
+<pre><code>toggle each of two types off and on over a set with one outlier: cut and axis equal before and after
+</code></pre>
+
+<pre><code>all types hidden: no chip, empty-plot copy
+</code></pre>
+
+<pre><code>state space is two type flags; Quint model checks all toggle traces to 6 steps
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6502-hide-outliers/model/outliers.qnt</p>
+
+<h4>L3</h4>
+
+<pre><code>The axis top is 1.1 x the largest of the drawn Cycle Times, every percentile and the SLE, so no drawn item or line value is lost, and a line above the top is split into off-scale markers with drawn + off-scale = all lines
+</code></pre>
+
+<p>Invariant</p>
+
+<p>Domain</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/offScaleLines.ts</p>
+
+<h5>Treatment</h5>
+
+<p>Broad</p>
+
+<h6>Generator</h6>
+
+<pre><code>arrays of drawn Cycle Times and arrays of line values (percentiles, SLE) as positive numbers
+</code></pre>
+
+<p>0 to 50 values, 1 to 500</p>
+
+<p>fast-check fixed seed, numRuns 100</p>
+
+<h6>Must include</h6>
+
+<pre><code>line exactly at the axis top
+</code></pre>
+
+<pre><code>no lines
+</code></pre>
+
+<p>flat</p>
+
+<pre><code>fast-check built-in
+</code></pre>
+
+<pre><code>test recomputes the max and splits with a filter
+</code></pre>
+
+<pre><code>mutant that drops the SLE from the axis or splits on &gt;= instead of &gt; fails
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Refuted</h3>
+
+<pre><code>Cut computed on the visible-type subset keeps the chip truthful
+</code></pre>
+
+<pre><code>carrier: the subset changes the median, so toggling a type moves the cut and axis
+</code></pre>
+
+<pre><code>Types A (1..9 days) and B (50 days items): hiding B changes the median and re-labels A items as outliers; the cut is therefore taken from the full set
+</code></pre>
+
+<h3>Claims</h3>
+
+<h4>C1</h4>
+
+<pre><code>A hidden outlier is never lost from statistics: every percentile, SLE share, RAG, tile, View Data and forecast is computed from the unpartitioned data
+</code></pre>
+
+<pre><code>A silent number change after the feature ships
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<pre><code>closed work items, percentiles and SLE props
+</code></pre>
+
+<p>findOutliers in outliers.ts</p>
+
+<p>chart drawing and OutlierChip only</p>
+
+<pre><code>percentile legend values, SLE line, dialog items and View Data unchanged with an outlier present
+</code></pre>
+
+<pre><code>a future edit passing drawn items to statistics; guarded by a frozen-props test and a wiring-point test
+</code></pre>
+
+<h3>States</h3>
+
+<p>Admitted</p>
+
+<pre><code>Zero, one or many outliers; every type visible, some hidden, all hidden; named Cycle Time selected or default
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>Excluded</p>
+
+<pre><code>A chip showing a count while the frame is loading or failed; a cut computed from the visible-type subset; a chip with zero outliers
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx</p>
+
+<p>Unknown</p>
+
+<pre><code>MUI X behaviour of drawing in the top margin in the installed version; resolved by a browser spike inside slice 1 with the text-line fallback
+</code></pre>
+
+<p>orchestrator at slice 1 review</p>
+
+<h3>Models</h3>
+
+<p>Quint</p>
+
+<p>docs/feature/story-6502-hide-outliers/model/outliers.qnt</p>
+
+<h5>Properties</h5>
+
+<p>partitionOk</p>
+
+<p>Invariant</p>
+
+<pre><code>drawn and outliers partition the visible items
+</code></pre>
+
+<p>findOutliers</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<p>cutStable</p>
+
+<p>Invariant</p>
+
+<pre><code>the cut is unchanged by any type toggle
+</code></pre>
+
+<p>findOutliers</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>chipOk</p>
+
+<p>Invariant</p>
+
+<pre><code>chip count counts visible outliers only; all types hidden gives none
+</code></pre>
+
+<p>OutlierChip</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx</p>
+
+<p>outlierIsSeparated</p>
+
+<p>Invariant</p>
+
+<pre><code>every outlier is strictly above the cut and every drawn item at or below it
+</code></pre>
+
+<p>findOutliers</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<h5>Atoms</h5>
+
+<p>State</p>
+
+<p>hidden</p>
+
+<p>useChartVisibility</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>None.</p>
+
+<p>Action</p>
+
+<p>toggle</p>
+
+<p>useChartVisibility</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>None.</p>
+
+<p>Constant</p>
+
+<p>cut</p>
+
+<p>OUTLIER_MEDIAN_MULTIPLE</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<p>None.</p>
+
+<h5>Assumptions</h5>
+
+<pre><code>Finite fixture of eight Cycle Times and two types stands for the rule; arbitrary arrays are covered by fast-check, not by Quint
+</code></pre>
+
+<h5>Mutants</h5>
+
+<p>None.</p>
+
+<h3>Closure</h3>
+
+<pre><code>outlier partition and chip count
+</code></pre>
+
+<p>Safety</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Quint verify NoError to 6 steps on four invariants; invalid states (cut from visible subset, stale count) excluded by deriving from props with useMemo and disabling the chip while not frameIsReady
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>docs/feature/story-6502-hide-outliers/model/outliers.qnt</p>
+
+<pre><code>outlier partition and chip count
+</code></pre>
+
+<p>Inhabitation</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Zenith demo data with TZ-301 (computed 58 days against cut 30) constructs a one-outlier chart from admitted input
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>outlier chip and popover
+</code></pre>
+
+<p>PublicReachability</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>closed items prop -&gt; findOutliers -&gt; OutlierChip in WidgetShell header slot -&gt; RTL screen queries; Open in a list -&gt; WorkItemsDialog (slice 3). Acyclic, seeded by the chart props
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<pre><code>outlier chip and popover
+</code></pre>
+
+<p>Liveness</p>
+
+<p>Pass</p>
+
+<p>DesignedNotBuilt</p>
+
+<pre><code>Not applicable: render-time pure derivation and one open flag; no eventual-progress claim, no concurrency beyond the late named-percentile answer, which is a safety tag check
+</code></pre>
+
+<h5>Evidence</h5>
+
+<p>None.</p>
+
+<h3>Risks</h3>
+
+<h4>Y1</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: the median is stable across the date range; negate: range with one closed item or all equal items
+</code></pre>
+
+<pre><code>chart exactly as before when no item exceeds 5 x median
+</code></pre>
+
+<pre><code>no outlier on a single item
+</code></pre>
+
+<pre><code>a drawn item dropped without a chip entry
+</code></pre>
+
+<pre><code>very small N gives a noisy median; accepted
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<h4>Y2</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: named Cycle Time answer arrives for the selected definition; negate: late answer for an old definition after the reader switched
+</code></pre>
+
+<pre><code>chip and axis follow the selected definition
+</code></pre>
+
+<pre><code>briefly the default percentiles
+</code></pre>
+
+<pre><code>percentiles of an old definition used for the cut
+</code></pre>
+
+<pre><code>none beyond the tag check
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<h4>Y3</h4>
+
+<p>Stressor</p>
+
+<pre><code>Assumption: widget data is current when drawn; negate: slow connection, request failed
+</code></pre>
+
+<pre><code>no stale count
+</code></pre>
+
+<pre><code>chip dimmed or disabled, widget could-not-load message
+</code></pre>
+
+<pre><code>count from a previous answer; empty area read as no data
+</code></pre>
+
+<pre><code>header-slot context must reset when the chart unmounts
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx</p>
+
+<h4>Y4</h4>
+
+<p>Bypass</p>
+
+<pre><code>A caller of the chart passes already-filtered items or a second chart adopts the rule differently
+</code></pre>
+
+<pre><code>single owner of the 5 x median rule
+</code></pre>
+
+<pre><code>second chart imports outliers.ts
+</code></pre>
+
+<pre><code>a second multiple constant
+</code></pre>
+
+<pre><code>constant-versus-copy test pins the wording to the constant
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<h3>Architectural tests</h3>
+
+<p>None.</p>
+
+<h3>Contract tests</h3>
 
 <p>None.</p>
 
 <h2>Slices</h2>
+
+<h3>S1</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts</p>
+
+<p>Create</p>
+
+<pre><code>Pure rule: fiftiethPercentile, findOutliers, axisTop, timesTheMedian, formatTimesTheMedian, OUTLIER_MEDIAN_MULTIPLE
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts</p>
+
+<p>Create</p>
+
+<pre><code>Term-injected popover, chip and tooltip strings
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/offScaleLines.ts</p>
+
+<p>Create</p>
+
+<pre><code>splitLinesByAxis and markerSpecs, pure
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OffScaleLineMarkers.tsx</p>
+
+<p>Create</p>
+
+<pre><code>Top-margin markers, aria-hidden
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx</p>
+
+<p>Create</p>
+
+<pre><code>Header chip with popover open flag and effect-port props
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx</p>
+
+<p>Create</p>
+
+<pre><code>Pure popover view with 10-row table
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Memoised partition, filter, axis, chip handoff, tagged named percentiles
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Header slot context rendered after the RAG chip, carries frameIsReady
+</code></pre>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Add OutlierPopoverOpened name
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs</p>
+
+<p>Extend</p>
+
+<pre><code>Append OutlierPopoverOpened = 27
+</code></pre>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv</p>
+
+<p>Extend</p>
+
+<pre><code>Add closed item TZ-301 above 5 x Zenith&#x27;s 50th percentile
+</code></pre>
+
+<p>docs/settings/usagedata.md</p>
+
+<p>Extend</p>
+
+<pre><code>Row for OutlierPopoverOpened
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render CycleTimeScatterPlotChart (RTL, inside the WidgetShell header host) with a Team Zenith-like closed set whose median is 6 days and one item of 58 days, plus percentiles and an SLE; click the chip in the header
+</code></pre>
+
+<pre><code>The 58-day item is not drawn and the axis top is 1.1 x the largest drawn value, percentile and SLE; the header shows chip &#x27;1 outlier&#x27;; the popover says &#x27;Not drawn: longer than 30 days (5 times the median, 6 days).&#x27;, lists the item with closed date, 58 and 9.7x; a line above the axis appears as a top-edge marker and in the &#x27;Above the axis&#x27; line; percentile legend values, SLE, dialog items are those of the unpartitioned data; with no item above the cut there is no chip and the axis is as before; frame not ready shows the chip disabled with no count
+</code></pre>
+
+<pre><code>A chart that drops the item from statistics, uses &gt;= or another multiple, computes the median from drawn items, shows no chip or a stale count while not ready, or draws the item, fails
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P1</p>
+
+<p>P2</p>
+
+<p>P5</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L2 extract: turn the axis and grouped-dots useEffect+setState derivations of CycleTimeScatterPlotChart into useMemo values, before any outlier behaviour; makes the partition and chip count derive in one render
+</code></pre>
+
+<pre><code>Chart output for sets without outliers, dialog items, legend and axis values
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>getMaxYAxisHeight</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/chartAxisUtils.ts:19</p>
+
+<p>Reuse</p>
+
+<pre><code>Already returns 1.1 x the largest of data values, percentiles and SLE; axisTop delegates to it; Feature Size and Estimation callers untouched
+</code></pre>
+
+<p>CycleTimeScatterPlotChart</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the view state of this chart; two useEffect+setState derivations (axis, grouped dots) become useMemo so chip, axis and dots share one render
+</code></pre>
+
+<p>LegendChip</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/LegendChip.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>LegendChip has aria-pressed toggle semantics; the outlier chip is a disclosure button, so a new OutlierChip (MUI Chip outlined) copies its look only
+</code></pre>
+
+<p>WidgetShell</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:42</p>
+
+<p>Extend</p>
+
+<pre><code>Header row already owns info, View Data, trend and RAG chips; adding a slot after RAG is cheaper than lifting type-chip state out of the chart
+</code></pre>
+
+<p>fiftiethPercentile</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Frontend has no median or outlier code; paceBands.ts and sleRisk.ts are the precedent for a pure chart module
+</code></pre>
+
+<p>OffScaleLineMarkers</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/BlackoutOverlay.tsx:2</p>
+
+<p>CreateNew</p>
+
+<pre><code>BlackoutOverlay shows the useDrawingArea overlay pattern but draws bands, not labelled markers
+</code></pre>
+
+<p>PercentileCalculator</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Modules/FlowMetrics/Domain/PercentileCalculator.cs:8</p>
+
+<p>Reuse</p>
+
+<pre><code>Backend convention is mirrored not changed; fiftiethPercentile reproduces the index and a table test pins both
+</code></pre>
+
+<p>outlierWording</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Term-injected wording; paceBands.ts and sleRisk.ts are the precedent, nothing owns outlier copy
+</code></pre>
+
+<p>splitLinesByAxis</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/offScaleLines.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>No existing function splits percentile and SLE lines by the axis top
+</code></pre>
+
+<p>OffScaleLineMarkers</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OffScaleLineMarkers.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>Thin SVG component over the pure spec; BlackoutOverlay draws bands, not labelled markers
+</code></pre>
+
+<p>OutlierChip</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>LegendChip has toggle semantics; this is a disclosure button with a popover
+</code></pre>
+
+<p>OutlierPopoverContent</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>InfoPopoverButton body is text only; this body is a table of rows
+</code></pre>
+
+<p>UsageDataEventName</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:51</p>
+
+<p>Extend</p>
+
+<pre><code>Existing closed list of usage events
+</code></pre>
+
+<p>UsageDataEventName</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:96</p>
+
+<p>Extend</p>
+
+<pre><code>Existing enum; append 27
+</code></pre>
+
+<p>TZ-301</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New data row in the existing Zenith file; no row owns an outlier case
+</code></pre>
+
+<p>OutlierPopoverOpened</p>
+
+<p>docs/settings/usagedata.md:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>New catalog row in the existing file
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22</p>
+
+<p>Changed</p>
+
+<pre><code>Partition, axis, header chip handoff
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:42</p>
+
+<p>Changed</p>
+
+<pre><code>Header slot context; every other widget renders unchanged
+</code></pre>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetNodes.tsx:362</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>cycleScatter node still passes the same props; frameIsReady arrives through the shell context
+</code></pre>
+
+<p>test-support</p>
+
+<p>Lighthouse.EndToEndTests/tests/models/metrics/CycleTimeScatterPlotChart.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Page object gains chip and popover accessors; waits for data-widget-status=ready
+</code></pre>
+
+<p>existing-test</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Existing scenarios use sets without an item above 5 x median, so output is unchanged
+</code></pre>
+
+<p>enum</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:96</p>
+
+<p>Changed</p>
+
+<pre><code>Appended member 27; no renumbering
+</code></pre>
+
+<p>demo-data</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Factories/DemoData/Team Zenith.csv:1</p>
+
+<p>Changed</p>
+
+<pre><code>One closed item TZ-301 added
+</code></pre>
+
+<p>new-module</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outliers.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New pure module
+</code></pre>
+
+<p>new-module</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New pure module
+</code></pre>
+
+<p>new-module</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/offScaleLines.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>New pure module
+</code></pre>
+
+<p>new-component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OffScaleLineMarkers.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New component, mounted only by the chart
+</code></pre>
+
+<p>new-component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New component, mounted only by the chart
+</code></pre>
+
+<p>new-component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New component, used only by the chip
+</code></pre>
+
+<p>export-list</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:51</p>
+
+<p>Changed</p>
+
+<pre><code>One name appended; consumers read by name
+</code></pre>
+
+<p>docs</p>
+
+<p>docs/settings/usagedata.md:1</p>
+
+<p>Changed</p>
+
+<pre><code>One row
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>UsageDataEventName OutlierPopoverOpened = 27</p>
+
+<p>Lighthouse.Backend/Lighthouse.Backend/Models/UsageData/UsageDataEventName.cs:96</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Member appended
+</code></pre>
+
+<p>UsageDataEventName OutlierPopoverOpened = 27</p>
+
+<p>Lighthouse.Frontend/src/services/Api/UsageDataService.ts:51</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Name appended to the frontend list; enums serialise as strings out
+</code></pre>
+
+<p>WidgetShell header slot</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/WidgetShell.tsx:42</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>Offers slot and frameIsReady
+</code></pre>
+
+<p>WidgetShell header slot</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Fills the slot
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>Covered by the shared record: existing fallow layer check governs the new files
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Covered by the shared record: no independently released consumer
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S2</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Visible-type filter of the chip count, named Cycle Time tag, empty-plot states
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierViews.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render the chart with a closed set holding outliers in two Work Item types; toggle type chips off and on, select a named Cycle Time (and change it again with a late answer for the old one), change the date range, then hide every type, and then use a set where every visible item is an outlier
+</code></pre>
+
+<pre><code>Chip count and popover list include only outliers of visible types; the cut and the axis top do not change on type toggles; the count follows the selected named Cycle Time percentiles and the date range; a late answer for a superseded definition is ignored; all-visible-outliers shows &#x27;All visible Work Items are outliers.&#x27; and all-types-off shows &#x27;All types are hidden.&#x27; with legend row and axes kept, never &#x27;No data available&#x27;
+</code></pre>
+
+<pre><code>A cut taken from the visible subset, a count from hidden types, a stale named answer, or the &#x27;No data available&#x27; text in those two states fails
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P3</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1: none beyond slice 1 useMemo derivations
+</code></pre>
+
+<pre><code>Slice 1 behaviour
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outliers.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>useChartVisibility</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22</p>
+
+<p>Reuse</p>
+
+<pre><code>Already owns the visible type state; the chip reads it and never changes it
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22</p>
+
+<p>Changed</p>
+
+<pre><code>Adds the visibility filter, tag and empty states on top of slice 1
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>Named percentile fetch result tagged with definitionId</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:179</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>State carries {definitionId, fetcher, percentiles}
+</code></pre>
+
+<p>Named percentile fetch result tagged with definitionId</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:259</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Consumers read only the answer matching the selected definition
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>Covered by the shared record
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Covered by the shared record
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
+
+<p>None.</p>
+
+<h3>S3</h3>
+
+<h4>Targets</h4>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Open in a list button, onOpenInList effect port
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Focus returns to the chip on close
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx</p>
+
+<p>Extend</p>
+
+<pre><code>Dialog state becomes {title, items}; chip hands the outliers to the single dialog
+</code></pre>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts</p>
+
+<p>Extend</p>
+
+<pre><code>WidgetInfoTerms gains cycleTime; cycleScatter description built from terms for both owner kinds, long outlier rule sentence
+</code></pre>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts</p>
+
+<p>Extend</p>
+
+<pre><code>Help sentence and dialog title wording
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx</p>
+
+<h4>Verification</h4>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.outlierList.test.tsx
+</code></pre>
+
+<h4>Supports</h4>
+
+<p>None.</p>
+
+<h4>Public oracle</h4>
+
+<pre><code>Render the chart with outliers, open the chip popover, activate &#x27;Open in a list&#x27;; render the cycleScatter widget info through getWidgetInfo with custom Terminology
+</code></pre>
+
+<pre><code>The Work Items dialog opens with exactly the chip&#x27;s outliers (effective copies, same ids, sortable and exportable through the existing dialog), the popover closes, and on dialog close focus returns to the chip; the widget help names the outlier rule (5 times the 50th percentile) using the configured Work Item, Cycle Time and SLE terms, with &#x27;outlier&#x27; fixed
+</code></pre>
+
+<pre><code>A dialog with all items or the drawn items, focus lost to the body, or help text with hard-coded Work Item or Cycle Time words fails
+</code></pre>
+
+<h5>Promises</h5>
+
+<p>P4</p>
+
+<h4>Prefactoring</h4>
+
+<pre><code>L1: dialog state {items, derived title} becomes one {title, items} state in the chart, before wiring the chip
+</code></pre>
+
+<pre><code>Dot-click dialog opens with the same title and items
+</code></pre>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx</p>
+
+<h5>Verification</h5>
+
+<pre><code>pnpm --dir Lighthouse.Frontend exec vitest run src/components/Common/Charts/CycleTimeScatterPlotChart.test.tsx
+</code></pre>
+
+<h4>Records</h4>
+
+<h5>Decisions</h5>
+
+<p>None.</p>
+
+<h5>Constraints</h5>
+
+<p>None.</p>
+
+<h5>Reuse</h5>
+
+<p>WorkItemsDialog</p>
+
+<p>Lighthouse.Frontend/src/components/Common/WorkItemsDialog/WorkItemsDialog.tsx:1</p>
+
+<p>Reuse</p>
+
+<pre><code>Presentation only; handed {title, items, context}; no change to the dialog
+</code></pre>
+
+<p>getWidgetInfo</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:156</p>
+
+<p>Extend</p>
+
+<pre><code>Existing cycleScatter entry; today only team gets term-built wording
+</code></pre>
+
+<p>CycleTimeScatterPlotChart</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:22</p>
+
+<p>Extend</p>
+
+<pre><code>Owns the single dialog state
+</code></pre>
+
+<p>OutlierPopoverContent</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>File is created in slice 1 and does not exist yet; this slice adds the Open in a list button to it
+</code></pre>
+
+<p>OutlierChip</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>File is created in slice 1 and does not exist yet; this slice adds focus return to it
+</code></pre>
+
+<p>outlierWording</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1</p>
+
+<p>CreateNew</p>
+
+<pre><code>File is created in slice 1 and does not exist yet; this slice adds the help and dialog title strings to it
+</code></pre>
+
+<h5>Impact</h5>
+
+<p>consumer</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.test.ts:1</p>
+
+<p>UnchangedCompatible</p>
+
+<pre><code>Existing expectations hold for other widgets; cycleScatter wording changes but is checked by the slice oracle
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/CycleTimeScatterPlotChart.tsx:557</p>
+
+<p>Changed</p>
+
+<pre><code>Single dialog gets a title
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierPopoverContent.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>New button and effect port
+</code></pre>
+
+<p>component</p>
+
+<p>Lighthouse.Frontend/src/components/Common/Charts/OutlierChip.tsx:1</p>
+
+<p>Changed</p>
+
+<pre><code>Focus return
+</code></pre>
+
+<p>pure-module</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:156</p>
+
+<p>Changed</p>
+
+<pre><code>cycleScatter help text and cycleTime term
+</code></pre>
+
+<p>pure-module</p>
+
+<p>Lighthouse.Frontend/src/utils/charts/outlierWording.ts:1</p>
+
+<p>Changed</p>
+
+<pre><code>Extra strings
+</code></pre>
+
+<h5>Agreement</h5>
+
+<p>WidgetInfoTerms.cycleTime</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/widgetInfoMetadata.ts:156</p>
+
+<p>Producer</p>
+
+<p>Migrated</p>
+
+<pre><code>New term field
+</code></pre>
+
+<p>WidgetInfoTerms.cycleTime</p>
+
+<p>Lighthouse.Frontend/src/pages/Common/MetricsView/BaseMetricsView.tsx:1</p>
+
+<p>Consumer</p>
+
+<p>Migrated</p>
+
+<pre><code>Passes the configured Cycle Time term
+</code></pre>
+
+<h5>Not applicable</h5>
+
+<p>architectural_tests</p>
+
+<pre><code>Covered by the shared record
+</code></pre>
+
+<p>contract_tests</p>
+
+<pre><code>Covered by the shared record
+</code></pre>
+
+<h5>Boundaries</h5>
+
+<p>None.</p>
+
+<h5>Observations</h5>
+
+<p>None.</p>
+
+<h5>Equality</h5>
+
+<p>None.</p>
+
+<h5>Constructors</h5>
+
+<p>None.</p>
+
+<h5>Laws</h5>
+
+<p>None.</p>
+
+<h5>Refuted</h5>
+
+<p>None.</p>
+
+<h5>Claims</h5>
+
+<p>None.</p>
+
+<h5>States</h5>
+
+<p>None.</p>
+
+<h5>Models</h5>
+
+<p>None.</p>
+
+<h5>Closure</h5>
+
+<p>None.</p>
+
+<h5>Risks</h5>
+
+<p>None.</p>
+
+<h5>Architectural tests</h5>
+
+<p>None.</p>
+
+<h5>Contract tests</h5>
 
 <p>None.</p>
 
